@@ -183,6 +183,7 @@ public class ApiConstants {
     public static final String TARGET_IQN = "targetiqn";
     public static final String TEMPLATE_FILTER = "templatefilter";
     public static final String TEMPLATE_ID = "templateid";
+    public static final String ISO_ID = "isoid";
     public static final String TIMEOUT = "timeout";
     public static final String TIMEZONE = "timezone";
     public static final String TYPE = "type";
@@ -293,6 +294,7 @@ public class ApiConstants {
     public static final String DHCP_RANGE = "dhcprange";
     public static final String UUID = "uuid";
     public static final String SECURITY_GROUP_EANBLED = "securitygroupenabled";
+    public static final String LOCAL_STORAGE_ENABLED = "localstorageenabled";
     public static final String GUEST_IP_TYPE = "guestiptype";
     public static final String XEN_NETWORK_LABEL = "xennetworklabel";
     public static final String KVM_NETWORK_LABEL = "kvmnetworklabel";
@@ -316,6 +318,7 @@ public class ApiConstants {
     public static final String FIREWALL_DEVICE_DEDICATED = "fwdevicededicated";
     public static final String SERVICE = "service";
     public static final String ASSOCIATED_NETWORK_ID = "associatednetworkid";
+    public static final String ASSOCIATED_NETWORK_NAME = "associatednetworkname";
     public static final String SOURCE_NAT_SUPPORTED = "sourcenatsupported";
     public static final String RESOURCE_STATE = "resourcestate";
     public static final String PROJECT_INVITE_REQUIRED = "projectinviterequired";
@@ -360,11 +363,30 @@ public class ApiConstants {
 	public static final String END_POINT = "endpoint";
 	public static final String REGION_ID = "regionid";
 	public static final String IS_PROPAGATE = "ispropagate";
+    public static final String VPC_OFF_ID = "vpcofferingid";
+    public static final String NETWORK = "network";
+    public static final String VPC_ID = "vpcid";
+    public static final String GATEWAY_ID = "gatewayid";
     public static final String CAN_USE_FOR_DEPLOY = "canusefordeploy";
     public static final String RESOURCE_IDS = "resourceids";
     public static final String RESOURCE_ID = "resourceid";
     public static final String CUSTOMER = "customer";
+    public static final String S2S_VPN_GATEWAY_ID = "s2svpngatewayid";
+    public static final String S2S_CUSTOMER_GATEWAY_ID = "s2scustomergatewayid";
+    public static final String IPSEC_PSK = "ipsecpsk";
+    public static final String GUEST_IP = "guestip";
+    public static final String REMOVED = "removed";
+    public static final String IKE_POLICY = "ikepolicy";
+    public static final String ESP_POLICY = "esppolicy";
+    public static final String IKE_LIFETIME = "ikelifetime";
+    public static final String ESP_LIFETIME = "esplifetime";
+    public static final String DPD = "dpd";
+    public static final String FOR_VPC = "forvpc";
+    public static final String NICIRA_NVP_DEVICE_ID = "nvpdeviceid";
+    public static final String NICIRA_NVP_TRANSPORT_ZONE_UUID = "transportzoneuuid";
+    public static final String NICIRA_NVP_DEVICE_NAME = "niciradevicename";
     
+
     public enum HostDetails {
         all, capacity, events, stats, min;
     }

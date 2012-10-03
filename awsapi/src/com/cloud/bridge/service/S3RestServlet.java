@@ -43,9 +43,12 @@ import org.w3c.dom.NodeList;
 
 import com.cloud.bridge.io.MultiPartDimeInputStream;
 import com.cloud.bridge.model.SAcl;
-import com.cloud.bridge.persist.PersistContext;
+import com.cloud.bridge.model.UserCredentialsVO;
 import com.cloud.bridge.persist.dao.CloudStackConfigurationDao;
+import com.cloud.bridge.persist.dao.CloudStackConfigurationDaoImpl;
 import com.cloud.bridge.persist.dao.UserCredentialsDao;
+
+import com.cloud.bridge.persist.dao.UserCredentialsDaoImpl;
 import com.cloud.bridge.service.controller.s3.S3BucketAction;
 import com.cloud.bridge.service.controller.s3.S3ObjectAction;
 import com.cloud.bridge.service.controller.s3.ServiceProvider;
@@ -57,26 +60,29 @@ import com.cloud.bridge.service.core.s3.S3Grant;
 import com.cloud.bridge.service.core.s3.S3MetaDataEntry;
 import com.cloud.bridge.service.core.s3.S3PutObjectRequest;
 import com.cloud.bridge.service.core.s3.S3PutObjectResponse;
-import com.cloud.bridge.service.exception.InternalErrorException;
 import com.cloud.bridge.service.exception.InvalidBucketName;
-import com.cloud.bridge.service.exception.NoSuchObjectException;
 import com.cloud.bridge.service.exception.PermissionDeniedException;
-import com.cloud.bridge.util.AuthenticationUtils;
 import com.cloud.bridge.util.ConfigurationHelper;
 import com.cloud.bridge.util.HeaderParam;
 import com.cloud.bridge.util.RestAuth;
 import com.cloud.bridge.util.S3SoapAuth;
+import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Transaction;
 
+import net.sf.ehcache.Cache;
 public class S3RestServlet extends HttpServlet {
 	private static final long serialVersionUID = -6168996266762804877L;
 	public static final String ENABLE_S3_API="enable.s3.api";
 	private static boolean isS3APIEnabled = false;
 
 	public static final Logger logger = Logger.getLogger(S3RestServlet.class);
+	protected final CloudStackConfigurationDao csDao = ComponentLocator.inject(CloudStackConfigurationDaoImpl.class);
+	protected final UserCredentialsDao ucDao = ComponentLocator.inject(UserCredentialsDaoImpl.class);
 	
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
 	    processRequest( req, resp, "GET" );
-    }
+	}
 	
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) 
     {
@@ -106,15 +112,13 @@ public class S3RestServlet extends HttpServlet {
     public void init( ServletConfig config ) throws ServletException {
 		try{
     	    ConfigurationHelper.preConfigureConfigPathFromServletContext(config.getServletContext());
-    		UserCredentialsDao.preCheckTableExistence();
     		// check if API is enabled
-    		CloudStackConfigurationDao csDao = new CloudStackConfigurationDao();
     		String value = csDao.getConfigValue(ENABLE_S3_API);
     		if(value != null) {
     		    isS3APIEnabled = Boolean.valueOf(value);
     		}
-    		PersistContext.commitTransaction(true);
-            PersistContext.closeSession(true);
+    		logger.info("S3Engine :: Configuration value is : " + value);
+    		
 		}catch(Exception e){
 		    throw new ServletException("Error initializing awsapi: " + e.getMessage());
         }
@@ -130,6 +134,7 @@ public class S3RestServlet extends HttpServlet {
 	 */
     private void processRequest( HttpServletRequest request, HttpServletResponse response, String method ) 
     {
+        Transaction txn = Transaction.open("cloudbridge", Transaction.AWSAPI_DB, true);
         try {
         	logRequest(request);
         	
@@ -164,12 +169,13 @@ public class S3RestServlet extends HttpServlet {
     	    }
 
             
+            txn.start();
     	    // -> authenticated calls
         	if ( !((method.equalsIgnoreCase( "POST" ) && !(request.getQueryString().equalsIgnoreCase("delete"))) ) ){
         	    S3AuthParams params = extractRequestHeaders( request );
         		authenticateRequest( request, params );
         	}
-        	
+
         	ServletAction action = routeRequest(request);
         	if ( action != null ) {
         		 action.execute(request, response);
@@ -178,35 +184,30 @@ public class S3RestServlet extends HttpServlet {
         		 response.setStatus(404);
             	 endResponse(response, "File not found");
         	}
-        	
-			PersistContext.commitTransaction();
-			
+        	txn.close();
         } 
         catch( InvalidBucketName e) {
-            PersistContext.rollbackTransaction();
     		logger.error("Unexpected exception " + e.getMessage(), e);
     		response.setStatus(400);
         	endResponse(response, "Invalid Bucket Name - " + e.toString());    	
         } 
         catch(PermissionDeniedException e) {
-            PersistContext.rollbackTransaction();
     		logger.error("Unexpected exception " + e.getMessage(), e);
     		response.setStatus(403);
         	endResponse(response, "Access denied - " + e.toString());
         } 
         catch(Throwable e) {
-            PersistContext.rollbackTransaction();
     		logger.error("Unexpected exception " + e.getMessage(), e);
     		response.setStatus(404);
         	endResponse(response, "Bad request");
         	
         } finally {
+            
         	try {
 				response.flushBuffer();
 			} catch (IOException e) {
 	    		logger.error("Unexpected exception " + e.getMessage(), e);
 			}
-			PersistContext.closeSession();
         }
     }
  
@@ -239,6 +240,7 @@ public class S3RestServlet extends HttpServlet {
      * 
      * As with all REST calls HTTPS should be used to ensure their security.
      */
+    @DB
     private void setUserKeys( HttpServletRequest request, HttpServletResponse response ) {
     	String[] accessKey = null;
     	String[] secretKey = null;
@@ -266,8 +268,14 @@ public class S3RestServlet extends HttpServlet {
         try {
             // -> use the keys to see if the account actually exists
     	    //ServiceProvider.getInstance().getEC2Engine().validateAccount( accessKey[0], secretKey[0] );
-    	    UserCredentialsDao credentialDao = new UserCredentialsDao();
-    	    credentialDao.setUserKeys( accessKey[0], secretKey[0] ); 
+    	    //UserCredentialsDaoImpl credentialDao = new UserCredentialsDao();
+            Transaction txn = Transaction.open(Transaction.AWSAPI_DB);
+            txn.start();
+    	    UserCredentialsVO user = new UserCredentialsVO(accessKey[0], secretKey[0]);
+    	    user = ucDao.persist(user);
+    	    txn.commit();
+    	    txn.close();
+    	    //credentialDao.setUserKeys( accessKey[0], secretKey[0] ); 
     	    
         } catch( Exception e ) {
    		    logger.error("SetUserKeys " + e.getMessage(), e);
@@ -586,7 +594,6 @@ private S3ObjectAction routePlainPostRequest (HttpServletRequest request)
                 xml.append( "</soap:Body></soap:Envelope>" );
       		
           	    endResponse(response, xml.toString());
-  			    PersistContext.commitTransaction();
   			    return;
     		}
     		   		
@@ -605,7 +612,6 @@ private S3ObjectAction routePlainPostRequest (HttpServletRequest request)
             xml.append( "</soap:Body></soap:Envelope>" );
             		
         	endResponse(response, xml.toString());
-			PersistContext.commitTransaction();
         } 
         catch(PermissionDeniedException e) {
 		    logger.error("Unexpected exception " + e.getMessage(), e);
@@ -618,7 +624,6 @@ private S3ObjectAction routePlainPostRequest (HttpServletRequest request)
         } 
         finally 
         {
-			PersistContext.closeSession();
         }
     }
 

@@ -35,19 +35,19 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
 
 public class SecurityGroupUsageParser {
-	public static final Logger s_logger = Logger.getLogger(SecurityGroupUsageParser.class.getName());
-	
-	private static ComponentLocator _locator = ComponentLocator.getLocator(UsageServer.Name, "usage-components.xml", "log4j-cloud_usage");
-	private static UsageDao m_usageDao = _locator.getDao(UsageDao.class);
-	private static UsageSecurityGroupDao m_usageSecurityGroupDao = _locator.getDao(UsageSecurityGroupDao.class);
-	
-	public static boolean parse(AccountVO account, Date startDate, Date endDate) {
-	    if (s_logger.isDebugEnabled()) {
-	        s_logger.debug("Parsing all SecurityGroup usage events for account: " + account.getId());
-	    }
-		if ((endDate == null) || endDate.after(new Date())) {
-			endDate = new Date();
-		}
+    public static final Logger s_logger = Logger.getLogger(SecurityGroupUsageParser.class.getName());
+    
+    private static ComponentLocator _locator = ComponentLocator.getLocator(UsageServer.Name, "usage-components.xml", "log4j-cloud_usage");
+    private static UsageDao m_usageDao = _locator.getDao(UsageDao.class);
+    private static UsageSecurityGroupDao m_usageSecurityGroupDao = _locator.getDao(UsageSecurityGroupDao.class);
+    
+    public static boolean parse(AccountVO account, Date startDate, Date endDate) {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Parsing all SecurityGroup usage events for account: " + account.getId());
+        }
+        if ((endDate == null) || endDate.after(new Date())) {
+            endDate = new Date();
+        }
 
         // - query usage_volume table with the following criteria:
         //     - look for an entry for accountId with start date in the given range
@@ -57,15 +57,15 @@ public class SecurityGroupUsageParser {
         List<UsageSecurityGroupVO> usageSGs = m_usageSecurityGroupDao.getUsageRecords(account.getId(), account.getDomainId(), startDate, endDate, false, 0);
         
         if(usageSGs.isEmpty()){
-        	s_logger.debug("No SecurityGroup usage events for this period");
-        	return true;
+            s_logger.debug("No SecurityGroup usage events for this period");
+            return true;
         }
 
         // This map has both the running time *and* the usage amount.
         Map<String, Pair<Long, Long>> usageMap = new HashMap<String, Pair<Long, Long>>();
         Map<String, SGInfo> sgMap = new HashMap<String, SGInfo>();
 
-		// loop through all the security groups, create a usage record for each
+        // loop through all the security groups, create a usage record for each
         for (UsageSecurityGroupVO usageSG : usageSGs) {
             long vmId = usageSG.getVmInstanceId();
             long sgId = usageSG.getSecurityGroupId();
@@ -103,9 +103,9 @@ public class SecurityGroupUsageParser {
         }
 
         return true;
-	}
+    }
 
-	private static void updateSGUsageData(Map<String, Pair<Long, Long>> usageDataMap, String key, long vmId, long duration) {
+    private static void updateSGUsageData(Map<String, Pair<Long, Long>> usageDataMap, String key, long vmId, long duration) {
         Pair<Long, Long> sgUsageInfo = usageDataMap.get(key);
         if (sgUsageInfo == null) {
             sgUsageInfo = new Pair<Long, Long>(new Long(vmId), new Long(duration));
@@ -115,9 +115,9 @@ public class SecurityGroupUsageParser {
             sgUsageInfo = new Pair<Long, Long>(sgUsageInfo.first(), runningTime);
         }
         usageDataMap.put(key, sgUsageInfo);
-	}
+    }
 
-	private static void createUsageRecord(int type, long runningTime, Date startDate, Date endDate, AccountVO account, long vmId, long sgId, long zoneId) {
+    private static void createUsageRecord(int type, long runningTime, Date startDate, Date endDate, AccountVO account, long vmId, long sgId, long zoneId) {
         // Our smallest increment is hourly for now
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Total running time " + runningTime + "ms");
@@ -139,26 +139,26 @@ public class SecurityGroupUsageParser {
                 new Double(usage), vmId, null, null, null, sgId, null, startDate, endDate);
         m_usageDao.persist(usageRecord);
     }
-	
-	private static class SGInfo {
-	    private long vmId;
-	    private long zoneId;
-	    private long sgId;
+    
+    private static class SGInfo {
+        private long vmId;
+        private long zoneId;
+        private long sgId;
 
-	    public SGInfo(long vmId, long zoneId, long sgId) {
-	        this.vmId = vmId;
-	        this.zoneId = zoneId;
-	        this.sgId = sgId;
-	    }
-	    public long getZoneId() {
-	        return zoneId;
-	    }
-	    public long getVmId() {
-	        return vmId;
-	    }
-	    public long getSGId() {
-	        return sgId;
-	    }
-	}
+        public SGInfo(long vmId, long zoneId, long sgId) {
+            this.vmId = vmId;
+            this.zoneId = zoneId;
+            this.sgId = sgId;
+        }
+        public long getZoneId() {
+            return zoneId;
+        }
+        public long getVmId() {
+            return vmId;
+        }
+        public long getSGId() {
+            return sgId;
+        }
+    }
 
 }

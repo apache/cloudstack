@@ -23,6 +23,7 @@ from marvin.cloudstackAPI import *
 from integration.lib.utils import *
 from integration.lib.base import *
 from integration.lib.common import *
+from nose.plugins.attrib import attr
 import urllib
 from random import random
 #Import System modules
@@ -42,7 +43,7 @@ class Services:
                         "username": "test",
                         # Random characters are appended in create account to 
                         # ensure unique username generated each time
-                        "password": "fr3sca",
+                        "password": "password",
                 },
             "iso_1":
                     {
@@ -53,7 +54,7 @@ class Services:
                         "isextractable": True,
                         "isfeatured": True,
                         "ispublic": True,
-                        "ostypeid": '5776c0d2-f331-42db-ba3a-29f1f8319bc9',
+                        "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                     },
             "iso_2":
                     {
@@ -64,7 +65,7 @@ class Services:
                         "isextractable": True,
                         "isfeatured": True,
                         "ispublic": True,
-                        "ostypeid": '5776c0d2-f331-42db-ba3a-29f1f8319bc9',
+                        "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                         "mode": 'HTTP_DOWNLOAD',
                         # Used in Extract template, value must be HTTP_DOWNLOAD
                     },
@@ -77,7 +78,7 @@ class Services:
             "passwordenabled": True,
             "sleep": 60,
             "timeout": 10,
-            "ostypeid": '5776c0d2-f331-42db-ba3a-29f1f8319bc9',
+            "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
             # CentOS 5.3 (64 bit)
             "mode": 'advanced'
             # Networking mode: Basic or Advanced
@@ -117,6 +118,7 @@ class TestCreateIso(cloudstackTestCase):
 
         return
 
+    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke"])
     def test_01_create_iso(self):
         """Test create public & private ISO
         """
@@ -254,6 +256,7 @@ class TestISO(cloudstackTestCase):
 
         return
 
+    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke"])
     def test_02_edit_iso(self):
         """Test Edit ISO
         """
@@ -318,6 +321,7 @@ class TestISO(cloudstackTestCase):
                         )
         return
 
+    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke"])
     def test_03_delete_iso(self):
         """Test delete ISO
         """
@@ -345,6 +349,7 @@ class TestISO(cloudstackTestCase):
                          )
         return
 
+    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke"])
     def test_04_extract_Iso(self):
         "Test for extract ISO"
 
@@ -395,6 +400,7 @@ class TestISO(cloudstackTestCase):
                          )
         return
 
+    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke"])
     def test_05_iso_permissions(self):
         """Update & Test for ISO permissions"""
 
@@ -446,6 +452,7 @@ class TestISO(cloudstackTestCase):
                         )
         return
 
+    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke", "multizone"])
     def test_06_copy_iso(self):
         """Test for copy ISO from one zone to another"""
 

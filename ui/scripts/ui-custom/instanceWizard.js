@@ -14,6 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 (function($, cloudStack) {
   /**
    * Instance wizard
@@ -105,15 +106,28 @@
                       })
                       .val(id)
                       .click(function() {
-                        var $radio = $(this).closest('.select').find('input[type=radio]');
+                        var $select = $(this).closest('.select');
+                        var $radio = $select.find('input[type=radio]');
+                        var $newNetwork = $(this).closest('.content').find('.select.new-network');
+                        var $otherSelects = $select.siblings().filter(':visible');
+                        var isCheckbox = $(this).attr('type') == 'checkbox';
+                        var isSingleSelect = $(this).closest('.select-container').hasClass('single-select');
 
+                        if (isCheckbox) {
+                          if ((isSingleSelect || !$otherSelects.size()) &&
+                              $newNetwork.find('input[type=checkbox]').is(':unchecked')) {
+                            $otherSelects.find('input[type=checkbox]').attr('checked', false);
+
+                            // Set as default
+                            $(this).closest('.select').find('input[type=radio]').click();
+                          }
+                        }
+                        
                         if ($radio.is(':checked') && !$(this).is(':checked')) {
                           if (!$radio.closest('.select').index()) {
                             return false;
                           } else {
-                            $radio
-                              .closest('.select')
-                              .siblings().filter(':first')
+                            $otherSelects.filter(':first')
                               .find('input[type=radio]').click();
                           }
                         }
@@ -125,7 +139,8 @@
                     $('<div>').addClass('select-desc')
                       .append($('<div>').addClass('name').html(this[fields.name]))
                       .append($('<div>').addClass('desc').html(this[fields.desc]))
-                  );
+                  )
+                  .data('json-obj', this);
 
             $selects.append($select);
 
@@ -134,7 +149,8 @@
                 $('<input>')
                   .attr({
                     type: options.secondary.type,
-                    name: options.secondary.name
+                    name: options.secondary.name,
+                    'wizard-field': options.secondary['wizard-field']
                   })
                   .val(id)
                   .click(function() {
@@ -142,6 +158,11 @@
 
                     if (!$checkbox.is(':checked')) {
                       $checkbox.attr('checked', true);
+                    }
+
+                    if ($(this).closest('.select-container').hasClass('single-select')) {
+                      $(this).closest('.select').siblings().find('input[type=checkbox]')
+                        .attr('checked', false);
                     }
                   })
                   .after(
@@ -166,7 +187,9 @@
         var dataProvider = function(step, providerArgs, callback) {
           // Call appropriate data provider
           args.steps[step - 1]($.extend(providerArgs, {
-            currentData: cloudStack.serializeForm($form)
+            currentData: cloudStack.serializeForm($form),
+						initArgs: args,
+						context: context
           }));
         };
 
@@ -241,6 +264,25 @@
                     }, {
                       'wizard-field': 'template'
                     });
+                    var $templateHypervisor = $step.find('input[type=hidden][wizard-field=hypervisor]');
+
+                    // Get hypervisor from template
+                    if (type == 'featuredtemplates' || type == 'communitytemplates' || type == 'mytemplates') {                    
+                      $selects.each(function() {
+                        var $select = $(this);
+                        var template = $.grep(args.data.templates[type], function(tmpl, v) {
+                          return tmpl.id == $select.find('input').val();
+                        })[0];
+
+                        $select.change(function() {
+                          $templateHypervisor
+                            .attr('disabled', false)
+                            .val(template.hypervisor);
+                        });
+                      });
+                    } else {
+                      $templateHypervisor.attr('disabled', 'disabled');
+                    }
 
                     if (type == 'featuredisos' || type == 'communityisos' || type == 'myisos') {
                       // Create hypervisor select
@@ -458,7 +500,7 @@
 
               // Select another default if hiding field
               if ($newNetwork.hasClass('unselected')) {
-                $step.find('input[type=radio]:first').click();
+                $step.find('input[type=radio]:visible:first').click();
               } else {
                 $newNetwork.find('input[type=radio]').click();
               }
@@ -468,12 +510,11 @@
               var $checkbox = $step.find('.new-network input[type=checkbox]');
               var $newNetwork = $checkbox.closest('.new-network');
 
-              if ($step.find('.select.my-networks .select-container .select').size()) {
+              if ($step.find('.select.my-networks .select-container .select:visible').size()) {
                 $checkbox.attr('checked', false);
                 $newNetwork.addClass('unselected');
               } else {
-                $checkbox.attr('checked', true);
-                $newNetwork.removeClass('unselected');
+                $newNetwork.find('input[name=defaultNetwork]').filter('[value=new-network]').click();
               }
 
               $checkbox.change();
@@ -482,9 +523,81 @@
             // Show relevant conditional sub-step if present
             $step.find('.wizard-step-conditional').hide();
 
+            // Filter network list by VPC ID
+            var filterNetworkList = function(vpcID) {
+              var $selects = $step.find('.my-networks .select-container .select');
+              var $visibleSelects = $($.grep($selects, function(select) {
+                var $select = $(select);
+                
+                return args.vpcFilter($select.data('json-obj'), vpcID);
+              }));
+              var $addNetworkForm = $step.find('.select.new-network');
+              var $addNewNetworkCheck = $addNetworkForm.find('input[name=new-network]');
+
+              // VPC networks cannot be created via instance wizard
+              if (vpcID != -1) {
+                $step.find('.my-networks .select-container').addClass('single-select');
+                $addNetworkForm.hide();
+
+                if ($addNewNetworkCheck.is(':checked')) {
+                  $addNewNetworkCheck.click();
+                  $addNewNetworkCheck.attr('checked', false);
+                }
+              } else {
+                $step.find('.my-networks .select-container').removeClass('single-select');
+                $addNetworkForm.show();
+              }
+              
+              $selects.find('input[type=checkbox]').attr('checked', false);
+              $selects.hide();
+              $visibleSelects.show();
+
+              // Select first visible item by default
+              $visibleSelects.filter(':first')
+                .find('input[type=radio]')
+                .click();
+
+              cloudStack.evenOdd($visibleSelects, 'div.select', {
+                even: function($elem) {
+                  $elem.removeClass('odd');
+                  $elem.addClass('even');
+                },
+                odd: function($elem) {
+                  $elem.removeClass('even');
+                  $elem.addClass('odd');
+                }
+              });
+            };
+
+            var $vpcSelect = $step.find('select[name=vpc-filter]');
+
+            $vpcSelect.unbind('change');
+            $vpcSelect.change(function() {
+              filterNetworkList($vpcSelect.val());
+            });
+
             return {
               response: {
                 success: function(args) {
+                  var vpcs = args.data.vpcs;
+
+                  // Populate VPC drop-down
+                  $vpcSelect.html('');
+                  $(vpcs).map(function(index, vpc) {
+                    var $option = $('<option>');
+                    var id = vpc.id;
+                    var description = vpc.name;
+
+                    $option.attr('value', id);
+                    $option.html(description);
+                    $option.appendTo($vpcSelect);
+                  });
+
+                  // 'No VPC' option
+                  $('<option>').attr('value', '-1').html('None').prependTo($vpcSelect);
+
+                  $vpcSelect.val(-1);
+                  
                   // Populate network offering drop-down
                   $(args.data.networkOfferings).each(function() {
                     $('<option>')
@@ -513,10 +626,14 @@
                       secondary: {
                         desc: 'Default',
                         name: 'defaultNetwork',
-                        type: 'radio'
+                        type: 'radio',
+                        'wizard-field': 'default-network'
                       }
                     })
                   );
+
+                  // Show non-VPC networks by default
+                  filterNetworkList(-1);
 
                   // Security groups (alt. page)
                   $step.find('.security-groups .select-container').append(
@@ -525,7 +642,8 @@
                       desc: 'description',
                       id: 'id'
                     }, {
-                      type: 'checkbox'
+                      type: 'checkbox',
+                      'wizard-field': 'security-groups'
                     })
                   );
 
@@ -536,37 +654,60 @@
           },
 
           'review': function($step, formData) {
-            return {
-              response: {
-                success: function(args) {
-                  $step.find('[wizard-field]').each(function() {
-                    var field = $(this).attr('wizard-field');
-                    var fieldName;
-                    var $input = $wizard.find('[wizard-field=' + field + ']').filter(function() {
-                      return $(this).is(':selected') || $(this).is(':checked');
-                    });
+            $step.find('[wizard-field]').each(function() {
+              var field = $(this).attr('wizard-field');
+              var fieldName;
+              var $input = $wizard.find('[wizard-field=' + field + ']').filter(function() {
+                return ($(this).is(':selected') ||
+                        $(this).is(':checked') ||
+                        $(this).attr('type') == 'hidden') &&
+                  $(this).is(':not(:disabled)');
+              });
 
-                    if ($input.is('option')) {
-                      fieldName = $input.html();
-                    } else if ($input.is('input[type=radio]')) {
-                      fieldName = $input.parent().find('.select-desc .name').html();
-                    }
+              if ($input.is('option')) {
+                fieldName = $input.html();
+              } else if ($input.is('input[type=radio]')) {
+                // Choosen New network as default
+                if ($input.parents('div.new-network').size()) {
+                  fieldName = $input.closest('div.new-network').find('input[name="new-network-name"]').val();
+                  // Choosen Network from existed
+                } else if ($input.parents('div.my-networks').size()) {
+                  fieldName = $input.closest('div.select').find('.select-desc .name').html();
+                } else {
+                  fieldName = $input.parent().find('.select-desc .name').html();
+                }
+              } else if ($input.eq(0).is('input[type=checkbox]')) {
+                fieldName = '';
+                $input.each(function(index) {
+                  if (index != 0) fieldName += '<br />';
+                  fieldName += $(this).next('div.select-desc').find('.name').html();
+                });
+              } else if ($input.is('input[type=hidden]')) {
+                fieldName = $input.val();
+              }
 
-                    if (fieldName) {
-                      $(this).html(fieldName);
-                    } else {
-                      $(this).html('(' + _l('label.none') + ')');
-                    }
-                  });
+              if (fieldName) {
+                $(this).html(fieldName);
+              } else {
+                $(this).html('(' + _l('label.none') + ')');
+              }
+
+              var conditionalFieldFrom = $(this).attr('conditional-field');
+              if (conditionalFieldFrom) {
+                if ($wizard.find('.'+conditionalFieldFrom).css('display') == 'block') {
+                  $(this).closest('div.select').show();
+                } else {
+                  $(this).closest('div.select').hide();
                 }
               }
-            };
+            });
           }
         };
 
         // Go to specified step in wizard,
         // updating nav items and diagram
-        var showStep = function(index) {
+        var showStep = function(index, options) {
+          if (!options) options = {};
           var targetIndex = index - 1;
 
           if (index <= 1) targetIndex = 0;

@@ -18,12 +18,14 @@
 """
 #Import Local Modules
 import marvin
+from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from integration.lib.utils import *
 from integration.lib.base import *
 from integration.lib.common import *
 import datetime
+
 
 class Services:
     """Test Resource Limits Services
@@ -45,7 +47,7 @@ class Services:
                                     "username": "test",
                                     # Random characters are appended for unique
                                     # username
-                                    "password": "fr3sca",
+                                    "password": "password",
                          },
                          "user": {
                                     "email": "administrator@clogeny.com",
@@ -54,7 +56,7 @@ class Services:
                                     "username": "User",
                                     # Random characters are appended for unique
                                     # username
-                                    "password": "fr3sca",
+                                    "password": "password",
                          },
                          "service_offering": {
                                     "name": "Tiny Instance",
@@ -84,10 +86,33 @@ class Services:
                         "template": {
                                     "displaytext": "Cent OS Template",
                                     "name": "Cent OS Template",
-                                    "ostypeid": '471a4b5b-5523-448f-9608-7d6218995733',
+                                    "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                                     "templatefilter": 'self',
                         },
-                        "ostypeid": '471a4b5b-5523-448f-9608-7d6218995733',
+                        "network_offering": {
+                                    "name": 'Network offering-VR services',
+                                    "displaytext": 'Network offering-VR services',
+                                    "guestiptype": 'Isolated',
+                                    "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,Vpn,Firewall,Lb,UserData,StaticNat',
+                                    "traffictype": 'GUEST',
+                                    "availability": 'Optional',
+                                    "serviceProviderList": {
+                                            "Dhcp": 'VirtualRouter',
+                                            "Dns": 'VirtualRouter',
+                                            "SourceNat": 'VirtualRouter',
+                                            "PortForwarding": 'VirtualRouter',
+                                            "Vpn": 'VirtualRouter',
+                                            "Firewall": 'VirtualRouter',
+                                            "Lb": 'VirtualRouter',
+                                            "UserData": 'VirtualRouter',
+                                            "StaticNat": 'VirtualRouter',
+                                        },
+                                    },
+                         "network": {
+                                  "name": "Test Network",
+                                  "displaytext": "Test Network",
+                                },
+                        "ostypeid": 'bc66ada0-99e7-483b-befc-8fb0c2129b70',
                         # Cent OS 5.3 (64 bit)
                         "sleep": 60,
                         "timeout": 10,
@@ -100,13 +125,13 @@ class TestProjectLimits(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         cls.api_client = super(
-                               TestProjectLimits, 
+                               TestProjectLimits,
                                cls
                                ).getClsTestClient().getApiClient()
         cls.services = Services().services
         # Get Zone
         cls.zone = get_zone(cls.api_client, cls.services)
-        
+
         # Create domains, account etc.
         cls.domain = Domain.create(
                                    cls.api_client,
@@ -125,10 +150,10 @@ class TestProjectLimits(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
         cls._cleanup = [
-			cls.admin,
-			cls.user,
-			cls.domain
-			]
+            cls.admin,
+            cls.user,
+            cls.domain
+            ]
         return
 
     @classmethod
@@ -154,10 +179,10 @@ class TestProjectLimits(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
     def test_01_project_limits(self):
         """ Test project limits
         """
-
         # Validate the following
         # 1. Create a Project. Verify once projects are created, they inherit
         #    a default set of resource limits as configured by the Cloud Stack
@@ -183,9 +208,9 @@ class TestProjectLimits(cloudstackTestCase):
         self.cleanup.append(project)
         self.debug("Created project with domain admin with ID: %s" %
                                                                 project.id)
-        
+
         list_projects_reponse = Project.list(
-                                             self.apiclient, 
+                                             self.apiclient,
                                              id=project.id,
                                              listall=True
                                              )
@@ -223,7 +248,7 @@ class TestProjectLimits(cloudstackTestCase):
                          )
 
         # Reduce resource limits for project
-        # Resource: 0 - Instance. Number of instances a user can create. 
+        # Resource: 0 - Instance. Number of instances a user can create.
         # Resource: 1 - IP. Number of public IP addresses a user can own.
         # Resource: 2 - Volume. Number of disk volumes a user can create.
         # Resource: 3 - Snapshot. Number of snapshots a user can create.
@@ -261,7 +286,7 @@ class TestProjectLimits(cloudstackTestCase):
                          1,
                          "Resource limit should be updated to 1"
                          )
-        
+
         # Get the resource limits for domain
         resource_limits = list_resource_limits(
                                                 self.apiclient,
@@ -277,7 +302,7 @@ class TestProjectLimits(cloudstackTestCase):
                          0,
                          "List resource API response should not be empty"
                          )
-        
+
         for resource in resource_limits:
             # Update domain resource limits to 2
             update_resource_limit(
@@ -300,11 +325,12 @@ class TestProjectLimits(cloudstackTestCase):
                                         projectid=project.id
                                       )
         return
+
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
     @unittest.skip("No provision for updating resource limits from account through API")
     def test_02_project_limits_normal_user(self):
         """ Test project limits
         """
-
         # Validate the following
         # 1. Create a Project
         # 2. Reduce the projects limits as a domain admin. Verify resource
@@ -323,9 +349,9 @@ class TestProjectLimits(cloudstackTestCase):
         self.cleanup.append(project)
         self.debug("Created project with domain admin with ID: %s" %
                                                                 project.id)
-        
+
         list_projects_reponse = Project.list(
-                                             self.apiclient, 
+                                             self.apiclient,
                                              id=project.id,
                                              listall=True
                                              )
@@ -363,7 +389,7 @@ class TestProjectLimits(cloudstackTestCase):
                          )
 
         # Reduce resource limits for project
-        # Resource: 0 - Instance. Number of instances a user can create. 
+        # Resource: 0 - Instance. Number of instances a user can create.
         # Resource: 1 - IP. Number of public IP addresses a user can own.
         # Resource: 2 - Volume. Number of disk volumes a user can create.
         # Resource: 3 - Snapshot. Number of snapshots a user can create.
@@ -401,7 +427,7 @@ class TestProjectLimits(cloudstackTestCase):
                          1,
                          "Resource limit should be updated to 1"
                          )
-        
+
         self.debug("Adding %s user to project: %s" % (
                                                 self.user.account.name,
                                                 project.name
@@ -409,10 +435,10 @@ class TestProjectLimits(cloudstackTestCase):
 
         # Add user to the project
         project.addAccount(
-                           self.apiclient, 
-                           self.user.account.name, 
+                           self.apiclient,
+                           self.user.account.name,
                            )
-        
+
         # Get the resource limits for domain
         resource_limits = list_resource_limits(
                                                 self.apiclient,
@@ -428,7 +454,7 @@ class TestProjectLimits(cloudstackTestCase):
                          0,
                          "List resource API response should not be empty"
                          )
-        
+
         for resource in resource_limits:
             #with self.assertRaises(Exception):
             self.debug(
@@ -524,10 +550,10 @@ class TestResourceLimitsProject(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
     def test_03_vm_per_project(self):
         """Test VM limit per project
         """
-
         # Validate the following
         # 1. Set max VM per project to 2
         # 2. Create account and start 2 VMs. Verify VM state is Up and Running
@@ -535,7 +561,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
         #    should be raised
 
         self.debug(
-            "Updating instance resource limits for project: %s" % 
+            "Updating instance resource limits for project: %s" %
                                                         self.project.id)
         # Set usage_vm=1 for Account 1
         update_resource_limit(
@@ -586,10 +612,10 @@ class TestResourceLimitsProject(cloudstackTestCase):
                                 )
         return
 
+    @attr(tags=["advanced", "eip", "advancedns", "simulator"])
     def test_04_publicip_per_project(self):
         """Test Public IP limit per project
         """
-
         # Validate the following
         # 1. set max no of IPs per project to 2.
         # 2. Create an account in this domain
@@ -599,7 +625,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
         #    appropriate error and an alert should be generated.
 
         self.debug(
-            "Updating public IP resource limits for project: %s" % 
+            "Updating public IP resource limits for project: %s" %
                                                             self.project.id)
         # Set usage_vm=1 for Account 1
         update_resource_limit(
@@ -625,7 +651,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
                             "Check VM state is Running or not"
                         )
         networks = Network.list(
-                                self.apiclient, 
+                                self.apiclient,
                                 projectid=self.project.id,
                                 listall=True
                                 )
@@ -640,7 +666,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
                     "Check list networks response returns a valid network"
                     )
         network = networks[0]
-        self.debug("Associating public IP for project: %s" % 
+        self.debug("Associating public IP for project: %s" %
                                                             self.project.id)
         public_ip_1 = PublicIPAddress.create(
                                            self.apiclient,
@@ -671,19 +697,19 @@ class TestResourceLimitsProject(cloudstackTestCase):
                                            )
         return
 
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
     def test_05_snapshots_per_project(self):
         """Test Snapshot limit per project
         """
-
         # Validate the following
         # 1. set max no of snapshots per project to 1.
         # 2. Create one snapshot in the project. Snapshot should be
         #    successfully created
-        # 5. Try to create another snapshot in this project. It should give      
+        # 5. Try to create another snapshot in this project. It should give
         #    user an appropriate error and an alert should be generated.
 
         self.debug(
-            "Updating snapshot resource limits for project: %s" % 
+            "Updating snapshot resource limits for project: %s" %
                                         self.project.id)
         # Set usage_vm=1 for Account 1
         update_resource_limit(
@@ -748,10 +774,10 @@ class TestResourceLimitsProject(cloudstackTestCase):
                             )
         return
 
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
     def test_06_volumes_per_project(self):
         """Test Volumes limit per project
         """
-
         # Validate the following
         # 1. set max no of volume per project to 1.
         # 2. Create 1 VM in this project
@@ -760,7 +786,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
         #    should be generated.
 
         self.debug(
-            "Updating volume resource limits for project: %s" % 
+            "Updating volume resource limits for project: %s" %
                                                     self.project.id)
         # Set usage_vm=1 for Account 1
         update_resource_limit(
@@ -796,12 +822,11 @@ class TestResourceLimitsProject(cloudstackTestCase):
                           projectid=self.project.id
                         )
         return
-    
+
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns"])
     def test_07_templates_per_project(self):
         """Test Templates limit per project
         """
-
-        # Validate the following 
         # 1. set max no of templates per project to 1.
         # 2. Create a template in this project. Both template should be in
         #    ready state
@@ -816,7 +841,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
                               projectid=self.project.id
                               )
         self.debug(
-            "Updating template resource limits for domain: %s" % 
+            "Updating template resource limits for domain: %s" %
                                         self.account.account.domainid)
         # Set usage_vm=1 for Account 1
         update_resource_limit(
@@ -881,4 +906,142 @@ class TestResourceLimitsProject(cloudstackTestCase):
                             volumeid=volume.id,
                             projectid=self.project.id
                             )
+        return
+
+
+class TestMaxProjectNetworks(cloudstackTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.api_client = super(
+                               TestMaxProjectNetworks,
+                               cls
+                               ).getClsTestClient().getApiClient()
+        cls.services = Services().services
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client, cls.services)
+        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.template = get_template(
+                            cls.api_client,
+                            cls.zone.id,
+                            cls.services["ostypeid"]
+                            )
+        cls.service_offering = ServiceOffering.create(
+                                            cls.api_client,
+                                            cls.services["service_offering"]
+                                            )
+        cls.network_offering = NetworkOffering.create(
+                                            cls.api_client,
+                                            cls.services["network_offering"],
+                                            conservemode=True
+                                            )
+        # Enable Network offering
+        cls.network_offering.update(cls.api_client, state='Enabled')
+
+        cls._cleanup = [
+                        cls.service_offering,
+                        cls.network_offering
+                        ]
+        return
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            #Cleanup resources used
+            cleanup_resources(cls.api_client, cls._cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.dbclient = self.testClient.getDbConnection()
+        self.account = Account.create(
+                                     self.apiclient,
+                                     self.services["account"],
+                                     admin=True,
+                                     domainid=self.domain.id
+                                     )
+        self.cleanup = []
+        return
+
+    def tearDown(self):
+        try:
+            #Clean up, terminate the created network offerings
+            cleanup_resources(self.apiclient, self.cleanup)
+            self.account.delete(self.apiclient)
+            interval = list_configurations(
+                                    self.apiclient,
+                                    name='account.cleanup.interval'
+                                    )
+            # Sleep to ensure that all resources are deleted
+            time.sleep(int(interval[0].value) * 2)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    @attr(tags=["advanced", "advancedns", "simulator",
+                "api", "basic", "eip", "sg"])
+    def test_maxAccountNetworks(self):
+        """Test Limit number of guest account specific networks
+        """
+
+        # Steps for validation
+        # 1. Fetch max.account.networks from configurations
+        # 2. Create an account. Create account more that max.accout.network
+        # 3. Create network should fail
+
+        self.debug("Creating project with '%s' as admin" %
+                                            self.account.account.name)
+        # Create project as a domain admin
+        project = Project.create(
+                                 self.apiclient,
+                                 self.services["project"],
+                                 account=self.account.account.name,
+                                 domainid=self.account.account.domainid
+                                 )
+        # Cleanup created project at end of test
+        self.cleanup.append(project)
+        self.debug("Created project with domain admin with ID: %s" %
+                                                                project.id)
+
+        config = Configurations.list(
+                                    self.apiclient,
+                                    name='max.project.networks',
+                                    listall=True
+                                    )
+        self.assertEqual(
+                isinstance(config, list),
+                True,
+                "List configurations hsould have max.project.networks"
+                )
+
+        config_value = int(config[0].value)
+        self.debug("max.project.networks: %s" % config_value)
+
+        for ctr in range(config_value):
+            # Creating network using the network offering created
+            self.debug("Creating network with network offering: %s" %
+                                                    self.network_offering.id)
+            network = Network.create(
+                                    self.apiclient,
+                                    self.services["network"],
+                                    projectid=project.id,
+                                    networkofferingid=self.network_offering.id,
+                                    zoneid=self.zone.id
+                                    )
+            self.debug("Created network with ID: %s" % network.id)
+        self.debug(
+            "Creating network in account already having networks : %s" %
+                                                            config_value)
+
+        with self.assertRaises(Exception):
+            Network.create(
+                                    self.apiclient,
+                                    self.services["network"],
+                                    projectid=project.id,
+                                    networkofferingid=self.network_offering.id,
+                                    zoneid=self.zone.id
+                                    )
+        self.debug('Create network failed (as expected)')
         return

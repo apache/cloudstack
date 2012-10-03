@@ -67,6 +67,8 @@ public class CloudStackUserVm {
     private String jobId;
     @SerializedName(ApiConstants.JOB_STATUS)
     private Integer jobStatus;
+    @SerializedName(ApiConstants.SSH_KEYPAIR)
+    private String keyPairName;
     @SerializedName(ApiConstants.MEMORY)
     private Integer memory;
     @SerializedName(ApiConstants.NAME)
@@ -103,6 +105,8 @@ public class CloudStackUserVm {
     private List<CloudStackNic> nics;
     @SerializedName(ApiConstants.SECURITY_GROUP)
     private List<CloudStackSecurityGroup> securityGroupList;
+    @SerializedName(ApiConstants.TAGS)
+    private List<CloudStackKeyValue> tags;
     
 	public CloudStackUserVm() {
 	}
@@ -338,6 +342,13 @@ public class CloudStackUserVm {
 		return serviceOfferingName;
 	}
 
+    /**
+      * @return the sshKeyPairName
+      */
+    public String getKeyPairName() {
+        return keyPairName;
+    }
+
 	/**
 	 * @return the state
 	 */
@@ -393,6 +404,13 @@ public class CloudStackUserVm {
 	public List<CloudStackSecurityGroup> getSecurityGroupList() {
 		return securityGroupList;
 	}
+
+    /**
+     * @return all tags
+     */
+    public List<CloudStackKeyValue> getTags() {
+        return tags;
+    }
 
 }
 

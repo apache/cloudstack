@@ -20,10 +20,11 @@
 import marvin
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin import remoteSSHClient
+from marvin.remoteSSHClient import remoteSSHClient
 from integration.lib.utils import *
 from integration.lib.base import *
 from integration.lib.common import *
+from nose.plugins.attrib import attr
 #Import System modules
 import time
 
@@ -45,7 +46,7 @@ class Services:
                     "username": "test",
                     # Random characters are appended in create account to 
                     # ensure unique username generated each time
-                    "password": "fr3sca",
+                    "password": "password",
                 },
                 "small":
                 # Create a small virtual machine instance with disk offering 
@@ -87,7 +88,7 @@ class Services:
                         "name": "Small Instance",
                         "displaytext": "Small Instance",
                         "cpunumber": 1,
-                        "cpuspeed": 500,
+                        "cpuspeed": 100,
                         "memory": 256
                     },
                 "medium":
@@ -97,8 +98,8 @@ class Services:
                         "name": "Medium Instance",
                         "displaytext": "Medium Instance",
                         "cpunumber": 1,
-                        "cpuspeed": 1000,
-                        "memory": 1024
+                        "cpuspeed": 100,
+                        "memory": 256
                     }
                 },
                 "iso":  # ISO settings for Attach/Detach ISO tests
@@ -107,7 +108,7 @@ class Services:
                     "name": "testISO",
                     "url": "http://iso.linuxquestions.org/download/504/1819/http/gd4.tuwien.ac.at/dsl-4.4.10.iso",
                      # Source URL where ISO is located
-                    "ostypeid": '5776c0d2-f331-42db-ba3a-29f1f8319bc9',
+                    "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                     "mode": 'HTTP_DOWNLOAD', # Downloading existing ISO 
                 },
                 "template": {
@@ -121,7 +122,7 @@ class Services:
             "sleep": 60,
             "timeout": 10,
             #Migrate VM to hostid
-            "ostypeid": '5776c0d2-f331-42db-ba3a-29f1f8319bc9',
+            "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
             # CentOS 5.3 (64-bit)
             "mode":'advanced',
         }
@@ -168,6 +169,7 @@ class TestDeployVM(cloudstackTestCase):
                         self.account
                         ]
 
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
     def test_deploy_vm(self):
         """Test Deploy Virtual Machine
         """
@@ -315,6 +317,8 @@ class TestVMLifeCycle(cloudstackTestCase):
         cleanup_resources(self.apiclient, self.cleanup)
         return
 
+    
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
     def test_01_stop_vm(self):
         """Test Stop Virtual Machine
         """
@@ -350,6 +354,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                         )
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
     def test_02_start_vm(self):
         """Test Start Virtual Machine
         """
@@ -387,6 +392,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                         )
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
     def test_03_reboot_vm(self):
         """Test Reboot Virtual Machine
         """
@@ -422,6 +428,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                         )
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke"])
     def test_04_change_offering_small(self):
         """Change Offering to a small capacity
         """
@@ -539,6 +546,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                         )
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke"])
     def test_05_change_offering_medium(self):
         """Change Offering to a medium capacity
         """
@@ -660,6 +668,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                         )
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
     def test_06_destroy_vm(self):
         """Test destroy Virtual Machine
         """
@@ -695,6 +704,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                         )
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
     def test_07_restore_vm(self):
         """Test recover Virtual Machine
         """
@@ -734,6 +744,7 @@ class TestVMLifeCycle(cloudstackTestCase):
 
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg", "multihost"])
     def test_08_migrate_vm(self):
         """Test migrate VM
         """
@@ -754,18 +765,15 @@ class TestVMLifeCycle(cloudstackTestCase):
                          True,
                          "Check the number of hosts in the zone"
                          )
-        self.assertEqual(
+        self.assertGreaterEqual(
                 len(hosts),
                 2,
                 "Atleast 2 hosts should be present in a zone for VM migration"
                 )
+        # Remove the host of current VM from the hosts list
+        hosts[:] = [host for host in hosts if host.id != self.medium_virtual_machine.hostid]
 
-        # Find the host of VM and also the new host to migrate VM.
-        if self.medium_virtual_machine.hostid == hosts[0].id:
-            host = hosts[1]
-        else:
-            host = hosts[0]
-
+        host = hosts[0]
         self.debug("Migrating VM-ID: %s to Host: %s" % (
                                         self.medium_virtual_machine.id,
                                         host.id
@@ -807,6 +815,9 @@ class TestVMLifeCycle(cloudstackTestCase):
                         )
         return
 
+    @attr(configuration = "expunge.interval")
+    @attr(configuration = "expunge.delay")
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
     def test_09_expunge_vm(self):
         """Test destroy(expunge) Virtual Machine
         """
@@ -827,11 +838,26 @@ class TestVMLifeCycle(cloudstackTestCase):
         response = config[0]
         # Wait for some time more than expunge.delay
         time.sleep(int(response.value) * 2)
-
-        list_vm_response = list_virtual_machines(
-                                            self.apiclient,
-                                            id=self.small_virtual_machine.id
-                                            )
+        
+        #VM should be destroyed unless expunge thread hasn't run
+        #Wait for two cycles of the expunge thread
+        config = list_configurations(
+                                     self.apiclient,
+                                     name='expunge.interval'
+                                     )
+        expunge_cycle = int(config[0].value)*2
+        while expunge_cycle > 0:
+            list_vm_response = list_virtual_machines(
+                                                self.apiclient,
+                                                id=self.small_virtual_machine.id
+                                                )
+            if list_vm_response:
+                time.sleep(expunge_cycle)
+                expunge_cycle = 0
+                continue
+            else:
+                break
+            
         self.assertEqual(
                         list_vm_response,
                         None,
@@ -839,6 +865,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                     )
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
     def test_10_attachAndDetach_iso(self):
         """Test for detach ISO to virtual machine"""
 
@@ -1080,6 +1107,7 @@ class TestVMPasswordEnabled(cloudstackTestCase):
         cleanup_resources(self.apiclient, self.cleanup)
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
     def test_11_get_vm_password(self):
         """Test get VM password for password enabled template"""
 

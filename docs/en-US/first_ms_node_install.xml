@@ -1,0 +1,58 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
+    <section id="first_ms_node_install">
+        <title>Install the First Management Server</title>
+            <orderedlist>
+                <listitem><para>Download the &PRODUCT; Management Server onto the host where it will run from one of the following links. If your operating system is CentOS, use the download file for RHEL.</para>
+                    <itemizedlist>
+                        <listitem><para>Open-source community: <ulink url="http://sourceforge.net/projects/cloudstack/files/CloudStack Acton/">http://sourceforge.net/projects/cloudstack/files/CloudStack Acton/</ulink></para></listitem>
+                        <listitem><para>Commercial customers: <ulink url="https://www.citrix.com/English/ss/downloads/">https://www.citrix.com/English/ss/downloads/</ulink>.
+                            Commercial customers will need a <ulink url="http://www.citrix.com/lang/English/publicindex.asp?destURL=%2FEnglish%2FmyCitrix%2Findex.asp%3F">MyCitrix account</ulink>.</para>
+                        </listitem>
+                    </itemizedlist>
+                </listitem>
+                <listitem><para>Install the &PRODUCT; packages. You should have a file in the form of “CloudStack-VERSION-N-OSVERSION.tar.gz”. Untar the file and then run the install.sh script inside it. Replace the file and directory names below with those you are using:</para>
+                    <programlisting># tar xzf CloudStack-VERSION-N-OSVERSION.tar.gz
+# cd CloudStack-VERSION-N-OSVERSION
+# ./install.sh
+</programlisting>
+                    <para>You should see a few messages as the installer prepares, followed by a list of choices.</para>
+                </listitem>
+                <listitem><para>Choose M to install the Management Server software.</para>
+                    <programlisting>  > M</programlisting>
+                </listitem>
+                <listitem><para>Wait for a message like “Complete! Done,” which indicates that the software was installed successfully.</para>
+                </listitem>
+                <listitem><para>(RHEL or CentOS) When the installation is finished, run the following commands to start essential services  (the commands might be different depending on your OS):</para>
+                    <programlisting># service rpcbind start
+# service nfs start
+# chkconfig nfs on
+# chkconfig rpcbind on
+                            </programlisting>
+                </listitem>
+                <listitem><para>Continue to Install and Configure the Database.</para>
+                </listitem>
+            </orderedlist>
+    </section>

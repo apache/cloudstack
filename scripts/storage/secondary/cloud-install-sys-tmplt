@@ -33,13 +33,14 @@ failed() {
 mflag=
 fflag=
 ext="vhd"
-templateId=1
+templateId=
 hyper=
 msKey=password
 DISKSPACE=5120000  #free disk space required in kilobytes
 dbHost=
 dbUser=
 dbPassword=
+jasypt='/usr/share/java/jasypt-1.9.0.jar'
 while getopts 'm:h:f:u:Ft:e:s:o:r:d' OPTION
 do
   case $OPTION in
@@ -105,7 +106,7 @@ fi
 if [ "$oflag" != 1 ]; then
     dbHost=$(sed '/^\#/d' /etc/cloud/management/db.properties | grep 'db.cloud.host'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
 fi
-if [ "$rflag" != 1]; then
+if [ "$rflag" != 1 ]; then
     dbUser=$(sed '/^\#/d' /etc/cloud/management/db.properties | grep 'db.cloud.username'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
 fi
 
@@ -129,7 +130,7 @@ then
 	encPassword=$(sed '/^\#/d' /etc/cloud/management/db.properties | grep 'db.cloud.password'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'i | sed 's/^ENC(\(.*\))/\1/')
 	if [ ! $encPassword == "" ]
 	then
-		dbPassword=(`java -classpath /usr/share/java/cloud-jasypt-1.8.jar org.jasypt.intf.cli.JasyptPBEStringDecryptionCLI decrypt.sh input=$encPassword password=$msKey verbose=false`)
+		dbPassword=(`java -classpath $jasypt org.jasypt.intf.cli.JasyptPBEStringDecryptionCLI decrypt.sh input=$encPassword password=$msKey verbose=false`)
 		if [ ! $dbPassword ]
 		then
 			echo "Failed to decrypt DB password from db.properties"
@@ -137,26 +138,29 @@ then
 		fi
 	fi
 else
-    if [ "$dflag" != 1]; then
+    if [ "$dflag" != 1 ]; then
         dbPassword=$(sed '/^\#/d' /etc/cloud/management/db.properties | grep 'db.cloud.password'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'i )
     fi
 fi
 
-if [ "$hyper" == "kvm" ]
+if [ "$templateId" == "" ]
 then
-   ext="qcow2"
-   templateId=(`mysql -h $dbHost --user=$dbUser --password=$dbPassword --skip-column-names -U cloud -e "select max(id) from cloud.vm_template where type = \"SYSTEM\" and hypervisor_type = \"KVM\" and removed is null"`)
-elif [ "$hyper" == "xenserver" ]
-then
-   ext="vhd"
-   templateId=(`mysql -h $dbHost --user=$dbUser --password=$dbPassword --skip-column-names -U cloud -e "select max(id) from cloud.vm_template where type = \"SYSTEM\" and hypervisor_type = \"XenServer\" and removed is null"`)
-elif [ "$hyper" == "vmware" ]
-then
-   ext="ova"
-   templateId=(`mysql -h $dbHost --user=$dbUser --password=$dbPassword --skip-column-names -U cloud -e "select max(id) from cloud.vm_template where type = \"SYSTEM\" and hypervisor_type = \"VMware\" and removed is null"`)
-else
-   usage
-   failed 2
+   if [ "$hyper" == "kvm" ]
+   then
+      ext="qcow2"
+      templateId=(`mysql -h $dbHost --user=$dbUser --password=$dbPassword --skip-column-names -U cloud -e "select max(id) from cloud.vm_template where type = \"SYSTEM\" and hypervisor_type = \"KVM\" and removed is null"`)
+   elif [ "$hyper" == "xenserver" ]
+   then
+      ext="vhd"
+      templateId=(`mysql -h $dbHost --user=$dbUser --password=$dbPassword --skip-column-names -U cloud -e "select max(id) from cloud.vm_template where type = \"SYSTEM\" and hypervisor_type = \"XenServer\" and removed is null"`)
+   elif [ "$hyper" == "vmware" ]
+   then
+      ext="ova"
+      templateId=(`mysql -h $dbHost --user=$dbUser --password=$dbPassword --skip-column-names -U cloud -e "select max(id) from cloud.vm_template where type = \"SYSTEM\" and hypervisor_type = \"VMware\" and removed is null"`)
+   else
+      usage
+      failed 2
+   fi
 fi
 
 if [ ! $templateId ]

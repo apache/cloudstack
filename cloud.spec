@@ -1,3 +1,20 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
 %define __os_install_post %{nil}
 %global debug_package %{nil}
 
@@ -59,13 +76,13 @@ CloudStack management server.
 Summary:   CloudStack server library
 Requires: java >= 1.6.0
 Obsoletes: vmops-server < %{version}-%{release}
-Requires: %{name}-utils = %{version}, %{name}-core = %{version}, %{name}-deps = %{version}, tomcat6-servlet-2.5-api
+Requires: %{name}-utils = %{version}, %{name}-core = %{version}, %{name}-deps = %{version}, %{name}-scripts = %{version}, tomcat6-servlet-2.5-api
 Group:     System Environment/Libraries
 %description server
 The CloudStack server libraries provide a set of Java classes for CloudStack.
 
-%package agent-scripts
-Summary:   CloudStack agent scripts
+%package scripts
+Summary:   CloudStack scripts
 # FIXME nuke the archdependency
 Requires: python
 Requires: bash
@@ -78,13 +95,10 @@ Requires: nfs-utils
 Requires: wget
 # there is a fsimage.so in the source code, which adds xen-libs as a dependence, needs to supress it, as rhel doesn't have this pacakge
 AutoReqProv: no
-Obsoletes: vmops-agent-scripts < %{version}-%{release}
+Obsoletes: cloud-agent-scripts < %{version}-%{release}
 Group:     System Environment/Libraries
-%description agent-scripts
-The CloudStack agent is in charge of managing shared computing resources in
-a KVM-powered cloud.  Install this package if this computer 
-will participate in your cloud -- this is a requirement for the CloudStack KVM
-agent.
+%description scripts
+This package contains common scripts used by the Agent and Management server
 
 %package python
 Summary:   CloudStack Python library
@@ -98,6 +112,7 @@ CloudStack uses.
 %package deps
 Summary:   CloudStack library dependencies
 Requires: java >= 1.6.0
+Requires: mysql-connector-java
 Obsoletes: vmops-deps < %{version}-%{release}
 Group:     System Environment/Libraries
 %description deps
@@ -125,8 +140,7 @@ Requires: java >= 1.6.0
 Requires: %{name}-deps = %{version}, %{name}-utils = %{version}, %{name}-server = %{version}
 Requires: %{name}-client-ui = %{version}
 Requires: %{name}-setup = %{version}
-# reqs the agent-scripts package because of xenserver within the management server
-Requires: %{name}-agent-scripts = %{version}
+Requires: %{name}-scripts = %{version}
 Requires: %{name}-python = %{version}
 Requires: %{name}-aws-api = %{version}
 # for consoleproxy
@@ -147,6 +161,8 @@ Requires: %{name}-utils = %{version}
 Requires: apache-commons-dbcp
 Requires: apache-commons-collections
 Requires: jakarta-commons-httpclient
+Requires: jakarta-taglibs-standard
+Requires: mysql-connector-java
 %endif
 
 Group:     System Environment/Libraries
@@ -189,7 +205,7 @@ Obsoletes: cloud-premium-agent < %{version}-%{release}
 Requires: java >= 1.6.0
 Requires: %{name}-utils = %{version}, %{name}-core = %{version}, %{name}-deps = %{version}
 Requires: %{name}-agent-libs = %{version}
-Requires: %{name}-agent-scripts = %{version}
+Requires: %{name}-scripts = %{version}
 Requires: python
 Requires: %{name}-python = %{version}
 Requires: commons-httpclient
@@ -201,6 +217,8 @@ Requires: /sbin/service
 Requires: /sbin/chkconfig
 Requires: jna
 Requires: ebtables
+Requires: jsvc
+Requires: jakarta-commons-daemon
 Group:     System Environment/Libraries
 
 Requires: kvm
@@ -255,7 +273,8 @@ Requires: java >= 1.6.0
 Requires: %{name}-utils = %{version}, %{name}-core = %{version}, %{name}-deps = %{version}, %{name}-server = %{version} 
 Requires: %{name}-setup = %{version}
 Requires: %{name}-client = %{version}
-License:   GPLv3+
+Requires: jsvc
+License:   Apache License 2.0
 Group:     System Environment/Libraries
 %description usage
 The CloudStack usage monitor provides usage accounting across the entire cloud for
@@ -266,6 +285,12 @@ Summary:   CloudStack CloudBridge
 Group:     System Environment/Libraries
 Requires: java >= 1.6.0
 Requires: tomcat6
+%if 0%{?fedora} > 15
+Requires: apache-commons-lang
+%endif
+%if 0%{?rhel} >= 5
+Requires: jakarta-commons-lang
+%endif
 Obsoletes: cloud-bridge < %{version}-%{release}
 %description aws-api
 This is the CloudStack CloudBridge
@@ -291,7 +316,7 @@ echo Doing CloudStack build
 rm $RPM_BUILD_ROOT/etc/rc.d/init.d/cloud-console-proxy
 rm $RPM_BUILD_ROOT/usr/bin/cloud-setup-console-proxy
 rm $RPM_BUILD_ROOT/usr/libexec/console-proxy-runner
-./tools/ant/apache-ant-1.7.1/bin/ant deploy-rpm-install -Drpm.install.dir=$RPM_BUILD_ROOT
+ant deploy-rpm-install -Drpm.install.dir=$RPM_BUILD_ROOT
 
 %clean
 
@@ -348,10 +373,6 @@ else
     /sbin/service %{name}-usage condrestart >/dev/null 2>&1 || true
 fi
 
-%pre agent-scripts
-id %{name} > /dev/null 2>&1 || /usr/sbin/useradd -M -c "CloudStack unprivileged user" \
-     -r -s /bin/sh -d %{_sharedstatedir}/%{name}/management %{name}|| true
-
 %preun agent
 if [ "$1" == "0" ] ; then
     /sbin/chkconfig --del %{name}-agent  > /dev/null 2>&1 || true
@@ -365,6 +386,17 @@ if [ "$1" == "1" ] ; then
 else
     /sbin/service %{name}-agent condrestart >/dev/null 2>&1 || true
 fi
+
+if [ -x /etc/sysconfig/modules/kvm.modules ] ; then
+    /bin/sh /etc/sysconfig/modules/kvm.modules
+fi
+
+%post scripts
+rm -fr %{_libdir}/%{name}/agent
+ln -f -s %{_libdir}/%{name}/common %{_libdir}/%{name}/agent
+
+%postun scripts
+rm -fr %{_libdir}/%{name}/agent
 
 %post client
 if [ "$1" == "1" ] ; then
@@ -386,7 +418,7 @@ if [ "$1" == "1" ] ; then
         cp -f $root/lib/$j $root/webapps/awsapi/WEB-INF/lib/
     done
 
-    confs="cloud-bridge.properties ec2-service.properties hibernate.cfg.xml CloudStack.cfg.xml"
+    confs="cloud-bridge.properties ec2-service.properties"
     for c in $confs
     do
         cp -f $root/conf/$c $target/conf
@@ -399,87 +431,83 @@ fi
 %{_javadir}/%{name}-api.jar
 %attr(0755,root,root) %{_bindir}/cloud-sccs
 %attr(0755,root,root) %{_bindir}/cloud-gitrevs
-%doc %{_docdir}/%{name}-%{version}/sccs-info
 %doc %{_docdir}/%{name}-%{version}/version-info
+%doc %{_docdir}/%{name}-%{version}/sccs-info
 %doc %{_docdir}/%{name}-%{version}/configure-info
-%doc README.html
-%doc debian/copyright
+%doc LICENSE
+%doc NOTICE
 
 %files client-ui
 %defattr(0644,root,root,0755)
 %{_datadir}/%{name}/management/webapps/client/*
+%doc LICENSE
+%doc NOTICE
 
 %files server
 %defattr(0644,root,root,0755)
 %{_javadir}/%{name}-server.jar
-%{_javadir}/%{name}-vmware-base.jar
 %{_javadir}/%{name}-ovm.jar
 %{_javadir}/%{name}-dp-user-concentrated-pod.jar
 %{_javadir}/%{name}-dp-user-dispersing.jar
 %{_javadir}/%{name}-host-allocator-random.jar
-%{_javadir}/%{name}-plugin-f5.jar
-%{_javadir}/%{name}-plugin-netscaler.jar
 %{_javadir}/%{name}-plugin-ovs.jar
-%{_javadir}/%{name}-plugin-srx.jar
 %{_javadir}/%{name}-storage-allocator-random.jar
 %{_javadir}/%{name}-user-authenticator-ldap.jar
 %{_javadir}/%{name}-user-authenticator-md5.jar
 %{_javadir}/%{name}-user-authenticator-plaintext.jar
-%{_javadir}/%{name}-vmware.jar
-%{_javadir}/%{name}-xen.jar
+%{_javadir}/%{name}-plugin-hypervisor-xen.jar
+%{_javadir}/%{name}-plugin-elb.jar
+%{_javadir}/%{name}-plugin-nicira-nvp.jar
 %config(noreplace) %{_sysconfdir}/%{name}/server/*
+%doc LICENSE
+%doc NOTICE
 
-%files agent-scripts
+%files scripts
 %defattr(-,root,root,-)
-%{_libdir}/%{name}/agent/scripts/*
-# maintain the following list in sync with files agent-scripts
-%{_libdir}/%{name}/agent/vms/systemvm.zip
-%{_libdir}/%{name}/agent/vms/systemvm.iso
-
+%{_libdir}/%{name}/common/scripts/*
+# maintain the following list in sync with files scripts
+%{_libdir}/%{name}/common/vms/systemvm.zip
+%{_libdir}/%{name}/common/vms/systemvm.iso
+%doc LICENSE
+%doc NOTICE
 
 %files deps
 %defattr(0644,root,root,0755)
-%{_javadir}/%{name}-commons-codec-1.5.jar
-%{_javadir}/%{name}-commons-dbcp-1.4.jar
-%{_javadir}/%{name}-commons-pool-1.5.6.jar
-%{_javadir}/%{name}-commons-httpclient-3.1.jar
-%{_javadir}/%{name}-google-gson-1.7.1.jar
-%{_javadir}/%{name}-netscaler.jar
-%{_javadir}/%{name}-netscaler-sdx.jar
-%{_javadir}/%{name}-log4j-extras.jar
-%{_javadir}/%{name}-backport-util-concurrent-3.0.jar
-%{_javadir}/%{name}-ehcache.jar
-%{_javadir}/%{name}-email.jar
-%{_javadir}/%{name}-httpcore-4.0.jar
-%{_javadir}/%{name}-libvirt-0.4.5.jar
-%{_javadir}/%{name}-log4j.jar
-%{_javadir}/%{name}-trilead-ssh2-build213.jar
-%{_javadir}/%{name}-cglib.jar
-%{_javadir}/%{name}-mysql-connector-java-5.1.7-bin.jar
-%{_javadir}/%{name}-xenserver-5.6.100-1.jar
-%{_javadir}/%{name}-xmlrpc-common-3.*.jar
-%{_javadir}/%{name}-xmlrpc-client-3.*.jar
-%{_javadir}/%{name}-jstl-1.2.jar
-%{_javadir}/jetty-6.1.26.jar
-%{_javadir}/jetty-util-6.1.26.jar
-%{_javadir}/%{name}-axis.jar
-%{_javadir}/%{name}-commons-discovery.jar
-%{_javadir}/%{name}-wsdl4j-1.6.2.jar
-%{_javadir}/%{name}-bcprov-jdk16-1.45.jar
-%{_javadir}/%{name}-jsch-0.1.42.jar
-%{_javadir}/%{name}-iControl.jar
-%{_javadir}/%{name}-manageontap.jar
-%{_javadir}/vmware*.jar
-%{_javadir}/%{name}-jnetpcap.jar
-%{_javadir}/%{name}-junit.jar
-%{_javadir}/%{name}-jasypt-1.8.jar
-%{_javadir}/%{name}-commons-configuration-1.8.jar
-%{_javadir}/%{name}-commons-lang-2.6.jar
-
+%{_javadir}/commons-codec-1.6.jar
+%{_javadir}/commons-dbcp-1.4.jar
+%{_javadir}/commons-pool-1.6.jar
+%{_javadir}/gson-1.7.1.jar
+%{_javadir}/CAStorSDK-*.jar
+%{_javadir}/backport-util-concurrent-3.1.jar
+%{_javadir}/ehcache-1.5.0.jar
+%{_javadir}/httpcore-4.0.jar
+%{_javadir}/mail-1.4.jar
+%{_javadir}/activation-1.1.jar
+%{_javadir}/xapi-5.6.100-1-SNAPSHOT.jar
+%{_javadir}/log4j-*.jar
+%{_javadir}/apache-log4j-extras-1.1.jar
+%{_javadir}/trilead-ssh2-build213-svnkit-1.3-patch.jar
+%{_javadir}/cglib-nodep-2.2.2.jar
+%{_javadir}/xmlrpc-common-3.*.jar
+%{_javadir}/xmlrpc-client-3.*.jar
+%{_javadir}/wsdl4j-1.6.2.jar
+%{_javadir}/jsch-0.1.42.jar
+%{_javadir}/jasypt-1.*.jar
+%{_javadir}/commons-configuration-1.8.jar
+%{_javadir}/ejb-api-3.0.jar
+%{_javadir}/axis2-1.5.1.jar
+%{_javadir}/commons-discovery-0.5.jar
+%{_javadir}/jstl-1.2.jar
+%{_javadir}/javax.persistence-2.0.0.jar
+%{_javadir}/bcprov-jdk16-1.45.jar
+%doc LICENSE
+%doc NOTICE
 
 %files core
 %defattr(0644,root,root,0755)
 %{_javadir}/%{name}-core.jar
+%doc LICENSE
+%doc NOTICE
 
 %files python
 %defattr(0644,root,root,0755)
@@ -487,6 +515,8 @@ fi
 %attr(0755,root,root) %{_bindir}/cloud-external-ipallocator.py
 %attr(0755,root,root) %{_initrddir}/cloud-ipallocator
 %dir %attr(0770,root,root) %{_localstatedir}/log/%{name}/ipallocator
+%doc LICENSE
+%doc NOTICE
 
 %files setup
 %attr(0755,root,root) %{_bindir}/%{name}-setup-databases
@@ -500,10 +530,12 @@ fi
 %{_datadir}/%{name}/setup/db/*.sql
 %{_datadir}/%{name}/setup/*.sh
 %{_datadir}/%{name}/setup/server-setup.xml
+%doc LICENSE
+%doc NOTICE
 
 %files client
 %defattr(0644,root,root,0775)
-%config(noreplace) %{_sysconfdir}/%{name}/management/*
+%config(noreplace) %{_sysconfdir}/%{name}/management
 %config(noreplace) %attr(0640,root,%{name}) %{_sysconfdir}/%{name}/management/db.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/log4j-%{name}.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/tomcat6.conf
@@ -523,23 +555,28 @@ fi
 %dir %attr(0770,root,%{name}) %{_localstatedir}/cache/%{name}/management/temp
 %dir %attr(0770,root,%{name}) %{_localstatedir}/log/%{name}/management
 %dir %attr(0770,root,%{name}) %{_localstatedir}/log/%{name}/agent
+%doc LICENSE
+%doc NOTICE
 
 %files agent-libs
 %defattr(0644,root,root,0755)
 %{_javadir}/%{name}-agent.jar
+%{_javadir}/%{name}-plugin-hypervisor-kvm.jar
+%{_javadir}/libvirt-0.4.9.jar
+%doc LICENSE
+%doc NOTICE
 
 %files agent
 %defattr(0644,root,root,0755)
 %config(noreplace) %{_sysconfdir}/%{name}/agent/agent.properties
-%config(noreplace) %{_sysconfdir}/%{name}/agent/dummy.agent.properties
 %config(noreplace) %{_sysconfdir}/%{name}/agent/developer.properties.template
 %config(noreplace)  %{_sysconfdir}/%{name}/agent/environment.properties
 %config(noreplace) %{_sysconfdir}/%{name}/agent/log4j-%{name}.xml
 %attr(0755,root,root) %{_initrddir}/%{name}-agent
-%attr(0755,root,root) %{_libexecdir}/agent-runner
 %attr(0755,root,root) %{_bindir}/%{name}-setup-agent
 %dir %attr(0770,root,root) %{_localstatedir}/log/%{name}/agent
-%attr(0755,root,root) %{_bindir}/mycloud-setup-agent
+%doc LICENSE
+%doc NOTICE
 
 %files cli
 %{_bindir}/%{name}-tool
@@ -549,44 +586,55 @@ fi
 %dir %{_prefix}/lib*/python*/site-packages/%{name}tool
 %{_prefix}/lib*/python*/site-packages/%{name}tool/*
 %{_prefix}/lib*/python*/site-packages/%{name}apis.py
+%doc LICENSE
+%doc NOTICE
 
 %files baremetal-agent
 %attr(0755,root,root) %{_bindir}/cloud-setup-baremetal
+%doc LICENSE
+%doc NOTICE
 
 %files usage
 %defattr(0644,root,root,0775)
 %{_javadir}/%{name}-usage.jar
 %attr(0755,root,root) %{_initrddir}/%{name}-usage
-%attr(0755,root,root) %{_libexecdir}/usage-runner
 %dir %attr(0770,root,%{name}) %{_localstatedir}/log/%{name}/usage
 %config(noreplace) %{_sysconfdir}/%{name}/usage/usage-components.xml
 %config(noreplace) %{_sysconfdir}/%{name}/usage/log4j-%{name}_usage.xml
 %config(noreplace) %attr(0640,root,%{name}) %{_sysconfdir}/%{name}/usage/db.properties
+%doc LICENSE
+%doc NOTICE
 
 %files aws-api
 %defattr(0644,cloud,cloud,0755)
 %{_datadir}/cloud/bridge/conf/*
-%{_datadir}/cloud/bridge/lib/*
-%{_datadir}/cloud/bridge/webapps/*
+%{_datadir}/cloud/bridge/webapps7080/*
 %attr(0644,root,root) %{_datadir}/cloud/setup/bridge/db/*
 %attr(0755,root,root) %{_bindir}/cloudstack-aws-api-register
 %attr(0755,root,root) %{_bindir}/cloud-setup-bridge
+%doc LICENSE
+%doc NOTICE
 
 %changelog
+* Fri Sep 14 2012 Marcus Sorensen <shadowsor@gmail.com> 4.0.1
+- adding dependency jakarta-commons-daemon to fix "cannot find daemon loader"
+
+* Thu Aug 16 2012 Marcus Sorensen <shadowsor@gmail.com> 4.0
+- rearranged files sections to match currently built files
+
 * Mon May 3 2010 Manuel Amador (Rudd-O) <manuel@vmops.com> 1.9.12
 - Bump version for RC4 release
 
-%changelog
 * Fri Apr 30 2010 Manuel Amador (Rudd-O) <manuel@vmops.com> 1.9.11
 - Rename to CloudStack everywhere
 
 * Wed Apr 28 2010 Manuel Amador (Rudd-O) <manuel@vmops.com> 1.9.10
 - FOSS release
 
-%changelog
 * Mon Apr 05 2010 Manuel Amador (Rudd-O) <manuel@vmops.com> 1.9.8
 - RC3 branched
 
 * Wed Feb 17 2010 Manuel Amador (Rudd-O) <manuel@vmops.com> 1.9.7
 - First initial broken-up release
+
 

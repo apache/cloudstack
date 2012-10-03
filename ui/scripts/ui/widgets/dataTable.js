@@ -18,7 +18,6 @@
   /**
    * Convert table to be resizable and sortable
    *
-   * @author Brian Federle
    */
   $.fn.dataTable = function(method, options) {
     var $table = this;

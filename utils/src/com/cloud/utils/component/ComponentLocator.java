@@ -71,15 +71,48 @@ import com.cloud.utils.mgmt.JmxUtil;
 import com.cloud.utils.mgmt.ManagementBean;
 
 /**
- * ComponentLocator manages all of the adapters within a system. It operates on
- * top of an components.xml and uses reflection to instantiate all of the
- * adapters. It also supports rereading of all of the adapters.
+ * ComponentLocator ties together several different concepts.  First, it 
+ * deals with how a system should be put together.  It manages different 
+ * types of components:
+ *   - Manager: Singleton implementation of a certain process.
+ *   - Adapter: Different singleton implementations for the same functions.
+ *   - SystemIntegrityChecker: Singletons that are called at the load time.
+ *   - Dao: Data Access Objects.
+ *   
+ * These components can be declared in several ways:
+ *   - ComponentLibrary - A Java class that declares the above components.  The
+ *     advantage of declaring components here is they change automatically
+ *     with any refactoring.
+ *   - components specification - An xml file that overrides the 
+ *     ComponentLibrary.  The advantage of declaring components here is 
+ *     they can change by hand on every deployment.
+ * 
+ * The two are NOT mutually exclusive.  ComponentLocator basically locates 
+ * the components specification, which specifies the ComponentLibrary within.  
+ * Components found in the ComponentLibrary are overridden by components 
+ * found in components specification.
+ * 
+ * Components specification can also be nested.  One components specification
+ * can point to another components specification and, therefore, "inherits"
+ * those components but still override one or more components.  ComponentLocator 
+ * reads the child components specification first and follow the chain up.  
+ * the child's components overrides the ones in the parent. 
+ * 
+ * ComponentLocator looks for the components specification as follows:
+ *   1. By following the path specified by "cloud-stack-components-specification"
+ *      within the environment.properties file.
+ *   2. Look for components.xml in the class path.
+ *   
+ * ComponentLocator also ties in component injection.  Components can specify 
+ * an @Inject annotation to components ComponentLocator knows.  When 
+ * instantiating components, ComponentLocator attempts to inject these 
+ * components.
  * 
  **/
 @SuppressWarnings("unchecked")
 public class ComponentLocator implements ComponentLocatorMBean {
     protected static final Logger                      s_logger     = Logger.getLogger(ComponentLocator.class);
-    
+
     protected static final ThreadLocal<ComponentLocator> s_tl = new ThreadLocal<ComponentLocator>();
     protected static final ConcurrentHashMap<Class<?>, Singleton> s_singletons = new ConcurrentHashMap<Class<?>, Singleton>(111);
     protected static final HashMap<String, ComponentLocator> s_locators = new HashMap<String, ComponentLocator>();
@@ -90,7 +123,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
     protected static CallbackFilter s_callbackFilter = new DatabaseCallbackFilter();
     protected static final List<AnnotationInterceptor<?>> s_interceptors = new ArrayList<AnnotationInterceptor<?>>();
     protected static CleanupThread s_janitor = null;
-    
+
     protected HashMap<String, Adapters<? extends Adapter>>              _adapterMap;
     protected HashMap<String, ComponentInfo<Manager>>                   _managerMap;
     protected LinkedHashMap<String, ComponentInfo<SystemIntegrityChecker>>     _checkerMap;
@@ -98,8 +131,8 @@ public class ComponentLocator implements ComponentLocatorMBean {
     protected String                                                    _serverName;
     protected Object                                                    _component;
     protected HashMap<Class<?>, Class<?>>                               _factories;
-    protected HashMap<String, ComponentInfo<PluggableService>>          _pluggableServicesMap;
-    
+    protected HashMap<String, ComponentInfo<PluggableService>>          _pluginsMap;
+
     static {
         if (s_janitor == null) {
             s_janitor = new CleanupThread();
@@ -118,7 +151,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
     public String getLocatorName() {
         return _serverName;
     }
-    
+
     @Override
     public String getName() {
         return getLocatorName();
@@ -133,7 +166,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
             _checkerMap = new LinkedHashMap<String, ComponentInfo<SystemIntegrityChecker>>();
             _adapterMap = new HashMap<String, Adapters<? extends Adapter>>();
             _factories = new HashMap<Class<?>, Class<?>>();
-            _pluggableServicesMap = new LinkedHashMap<String, ComponentInfo<PluggableService>>();
+            _pluginsMap = new LinkedHashMap<String, ComponentInfo<PluggableService>>();
             File file = PropertiesUtil.findConfigFile(filename);
             if (file == null) {
                 s_logger.info("Unable to find " + filename);
@@ -157,7 +190,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
                 _daoMap.putAll(parentLocator._daoMap);
                 _managerMap.putAll(parentLocator._managerMap);
                 _factories.putAll(parentLocator._factories);
-                _pluggableServicesMap.putAll(parentLocator._pluggableServicesMap);
+                _pluginsMap.putAll(parentLocator._pluginsMap);
             }
 
             ComponentLibrary library = null;
@@ -168,15 +201,15 @@ public class ComponentLocator implements ComponentLocatorMBean {
                 _managerMap.putAll(library.getManagers());
                 adapters.putAll(library.getAdapters());
                 _factories.putAll(library.getFactories());
-                _pluggableServicesMap.putAll(library.getPluggableServices());
+                _pluginsMap.putAll(library.getPluggableServices());
             }
 
             _daoMap.putAll(handler.daos);
             _managerMap.putAll(handler.managers);
             _checkerMap.putAll(handler.checkers);
             adapters.putAll(handler.adapters);
-            _pluggableServicesMap.putAll(handler.pluggableServices);
-            
+            _pluginsMap.putAll(handler.pluggableServices);
+
             return new Pair<XmlHandler, HashMap<String, List<ComponentInfo<Adapter>>>>(handler, adapters);
         } catch (ParserConfigurationException e) {
             s_logger.error("Unable to load " + _serverName + " due to errors while parsing " + filename, e);
@@ -203,7 +236,9 @@ public class ComponentLocator implements ComponentLocatorMBean {
             s_logger.info("Skipping configuration using " + filename);
             return;
         }
-        
+
+        instantiatePluggableServices();
+
         XmlHandler handler = result.first();
         HashMap<String, List<ComponentInfo<Adapter>>> adapters = result.second();
         try {
@@ -220,13 +255,12 @@ public class ComponentLocator implements ComponentLocatorMBean {
             startAdapters();
             //TODO do we need to follow the instantiate -> inject -> configure -> start -> stop flow of singletons like managers/adapters?
             //TODO do we need to expose pluggableServices to MBean (provide getNames?)
-            instantiatePluggableServices();
         } catch (CloudRuntimeException e) {
             s_logger.error("Unable to load configuration for " + _serverName + " from " + filename, e);
             System.exit(1);
         } catch (Exception e) {
-        	s_logger.error("Unable to load configuration for " + _serverName + " from " + filename, e);
-        	System.exit(1);
+            s_logger.error("Unable to load configuration for " + _serverName + " from " + filename, e);
+            System.exit(1);
         }
     }
 
@@ -288,7 +322,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
             }
         }
     }
-    
+
     private static Object createInstance(Class<?> clazz, boolean inject, boolean singleton, Object... args) {
         Factory factory = null;
         Singleton entity = null;
@@ -313,8 +347,8 @@ public class ComponentLocator implements ComponentLocatorMBean {
                 factory = info.factory;
             }
         }
-        
-        
+
+
         Class<?>[] argTypes = null;
         if (args != null && args.length > 0) {
             Constructor<?>[] constructors = clazz.getConstructors();
@@ -334,49 +368,49 @@ public class ComponentLocator implements ComponentLocatorMBean {
                     }
                 }
             }
-            
+
             if (argTypes == null) {
                 throw new CloudRuntimeException("Unable to find constructor to match parameters given: " + clazz.getName());
             }
-        
+
             entity = new Singleton(factory.newInstance(argTypes, args, s_callbacks));
         } else {
             entity = new Singleton(factory.newInstance(s_callbacks));
         }
-        
+
         if (inject) {
             inject(clazz, entity.singleton);
             entity.state = Singleton.State.Injected;
         }
-        
+
         if (singleton) {
             synchronized(s_factories) {
                 s_singletons.put(clazz, entity);
             }
         }
-        
+
         return entity.singleton;
     }
-    
+
 
     protected ComponentInfo<GenericDao<?, ?>> getDao(String name) {
         ComponentInfo<GenericDao<?, ?>> info = _daoMap.get(name);
         if (info == null) {
             throw new CloudRuntimeException("Unable to find DAO " + name);
         }
-        
+
         return info;
     }
 
     public static synchronized Object getComponent(String componentName) {
-    	synchronized(_hasCheckerRun) {
-    		/* System Integrity checker will run before all components really loaded */
-	    	if (!_hasCheckerRun && !componentName.equalsIgnoreCase(SystemIntegrityChecker.Name)) {
-	    	    ComponentLocator.getComponent(SystemIntegrityChecker.Name);
-	    	    _hasCheckerRun = true;
-	    	}
-    	}
-    	
+        synchronized(_hasCheckerRun) {
+            /* System Integrity checker will run before all components really loaded */
+            if (!_hasCheckerRun && !componentName.equalsIgnoreCase(SystemIntegrityChecker.Name)) {
+                ComponentLocator.getComponent(SystemIntegrityChecker.Name);
+                _hasCheckerRun = true;
+            }
+        }
+
         ComponentLocator locator = s_locators.get(componentName);
         if (locator == null) {
             locator = ComponentLocator.getLocator(componentName);
@@ -441,10 +475,10 @@ public class ComponentLocator implements ComponentLocatorMBean {
             }
         }
     }
-    
+
     protected static void inject(Class<?> clazz, Object entity) {
         ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        
+
         do {
             Field[] fields = clazz.getDeclaredFields();
             for (Field field : fields) {
@@ -467,11 +501,11 @@ public class ComponentLocator implements ComponentLocatorMBean {
                     s_logger.trace("Other:" + fc.getName());
                     instance = locator.getManager(fc);
                 }
-        
+
                 if (instance == null) {
                     throw new CloudRuntimeException("Unable to inject " + fc.getSimpleName() + " in " + clazz.getSimpleName());
                 }
-                
+
                 try {
                     field.setAccessible(true);
                     field.set(entity, instance);
@@ -545,7 +579,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
         }
         return (T)info.instance;
     }
-    
+
     protected void configureAdapters() {
         for (Adapters<? extends Adapter> adapters : _adapterMap.values()) {
             List<ComponentInfo<Adapter>> infos = adapters._infos;
@@ -597,7 +631,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
             _adapterMap.put(entry.getKey(), adapters);
         }
     }
-    
+
     protected void instantiateAdapters(Map<String, List<ComponentInfo<Adapter>>> map) {
         Set<Map.Entry<String, List<ComponentInfo<Adapter>>>> entries = map.entrySet();
         for (Map.Entry<String, List<ComponentInfo<Adapter>>> entry : entries) {
@@ -641,18 +675,26 @@ public class ComponentLocator implements ComponentLocatorMBean {
     }
 
     protected void instantiatePluggableServices() {
-        Set<Map.Entry<String, ComponentInfo<PluggableService>>> entries = _pluggableServicesMap.entrySet();
+        Set<Map.Entry<String, ComponentInfo<PluggableService>>> entries = _pluginsMap.entrySet();
         for (Map.Entry<String, ComponentInfo<PluggableService>> entry : entries) {
             ComponentInfo<PluggableService> info = entry.getValue();
             if (info.instance == null) {
                 s_logger.info("Instantiating PluggableService: " + info.name);
                 info.instance = (PluggableService)createInstance(info.clazz, false, info.singleton);
+
+                if (info.instance instanceof Plugin) {
+                    Plugin plugin = (Plugin)info.instance;
+
+                    ComponentLibrary lib = plugin.getComponentLibrary();
+                    _managerMap.putAll(lib.getManagers());
+                    _daoMap.putAll(lib.getDaos());
+                }
             }
         }
     }
-    
+
     protected ComponentInfo<PluggableService> getPluggableService(String name) {
-        ComponentInfo<PluggableService> mgr = _pluggableServicesMap.get(name);
+        ComponentInfo<PluggableService> mgr = _pluginsMap.get(name);
         return mgr;
     }
 
@@ -669,7 +711,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
 
     public <T> List<T> getAllPluggableServices() {
         List<T> services = new ArrayList<T>();
-        Set<Map.Entry<String, ComponentInfo<PluggableService>>> entries = _pluggableServicesMap.entrySet();
+        Set<Map.Entry<String, ComponentInfo<PluggableService>>> entries = _pluginsMap.entrySet();
         for (Map.Entry<String, ComponentInfo<PluggableService>> entry : entries) {
             ComponentInfo<PluggableService> info = entry.getValue();
             if (info.instance == null) {
@@ -680,11 +722,11 @@ public class ComponentLocator implements ComponentLocatorMBean {
         }
         return services;
     }
-    
+
     public static <T> T inject(Class<T> clazz) {
         return (T)createInstance(clazz, true, false);
     }
-    
+
     public <T> T createInstance(Class<T> clazz) {
         Class<? extends T> impl = (Class<? extends T>)_factories.get(clazz);
         if (impl == null) {
@@ -692,11 +734,11 @@ public class ComponentLocator implements ComponentLocatorMBean {
         }
         return inject(impl);
     }
-    
+
     public static <T> T inject(Class<T> clazz, Object... args) {
         return (T)createInstance(clazz, true, false, args);
     }
-    
+
     @Override
     public Map<String, List<String>> getAdapterNames() {
         HashMap<String, List<String>> result = new HashMap<String, List<String>>();
@@ -749,7 +791,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
         }
         return new Adapters<Adapter>(key, new ArrayList<ComponentInfo<Adapter>>());
     }
-    
+
     protected void resetInterceptors(InterceptorLibrary library) {
         library.addInterceptors(s_interceptors);
         if (s_interceptors.size() > 0) {
@@ -781,7 +823,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
                 s_once = true;
             }
         }
-        
+
         ComponentLocator locator;
         synchronized (s_locators) {
             locator = s_locators.get(server);
@@ -822,7 +864,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
         } catch (IOException e) {
             s_logger.debug("environment.properties could not be loaded:" + e.toString());
         }
-        
+
         if (configFile == null || PropertiesUtil.findConfigFile(configFile) == null) {
             configFile = "components.xml";
             if (PropertiesUtil.findConfigFile(configFile) == null){
@@ -843,31 +885,31 @@ public class ComponentLocator implements ComponentLocatorMBean {
         List<String>            keys = new ArrayList<String>();
         T                       instance;
         boolean                 singleton = true;
-        
+
         protected ComponentInfo() {
         }
-        
+
         public List<String> getKeys() {
             return keys;
         }
-        
+
         public String getName() {
             return name;
         }
-        
+
         public ComponentInfo(String name, Class<? extends T> clazz) {
             this(name, clazz, new ArrayList<Pair<String, Object>>(0));
         }
-        
+
         public ComponentInfo(String name, Class<? extends T> clazz, T instance) {
             this(name, clazz);
             this.instance = instance;
         }
-        
+
         public ComponentInfo(String name, Class<? extends T> clazz, List<Pair<String, Object>> params) {
             this(name, clazz, params, true);
         }
-        
+
         public ComponentInfo(String name, Class<? extends T> clazz, List<Pair<String, Object>> params, boolean singleton) {
             this.name = name;
             this.clazz = clazz;
@@ -877,10 +919,10 @@ public class ComponentLocator implements ComponentLocatorMBean {
             }
             fillInfo();
         }
-        
+
         protected void fillInfo() {
             String clazzName = clazz.getName();
-            
+
             Local local = clazz.getAnnotation(Local.class);
             if (local == null) {
                 throw new CloudRuntimeException("Unable to find Local annotation for class " + clazzName);
@@ -900,7 +942,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
                 }
             }
         }
-        
+
         public void addParameter(String name, String value) {
             params.put(name, value);
         }
@@ -964,13 +1006,13 @@ public class ComponentLocator implements ComponentLocatorMBean {
             if (singleton != null) {
                 info.singleton = Boolean.parseBoolean(singleton);
             }
-            
+
             info.fillInfo();
         }
-        
+
         @Override
         public void startElement(String namespaceURI, String localName, String qName, Attributes atts)
-        throws SAXException {
+                throws SAXException {
             if (qName.equals("interceptor") && s_interceptors.size() == 0) {
                 synchronized(s_interceptors){
                     if (s_interceptors.size() == 0) {
@@ -1001,7 +1043,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
                             throw new CloudRuntimeException("Unable to find " + implementationClass, e);
                         }
                     }
-                    
+
                     library = getAttribute(atts, "library");
                 }
             } else if (qName.equals("adapters")) {
@@ -1041,7 +1083,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
                 checkers.put(info.name, info);
                 s_logger.info("Adding system integrity checker: " + info.name);
                 currentInfo = info;
-            } else if (qName.equals("pluggableservice")) {
+            } else if (qName.equals("pluggableservice") || qName.equals("plugin")) {
                 ComponentInfo<PluggableService> info = new ComponentInfo<PluggableService>();
                 fillInfo(atts, PluggableService.class, info);
                 s_logger.info("Adding PluggableService: " + info.name);
@@ -1096,17 +1138,17 @@ public class ComponentLocator implements ComponentLocatorMBean {
             }
         }
     }
-    
+
     protected static class InjectInfo {
         public Factory factory;
         public Enhancer enhancer;
-        
+
         public InjectInfo(Enhancer enhancer, Factory factory) {
             this.factory = factory;
             this.enhancer = enhancer;
         }
     }
-    
+
     protected static class CleanupThread extends Thread {
         @Override
         public void run() {
@@ -1133,7 +1175,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
                         }
                     }
                 }
-                
+
                 for (ComponentLocator locator : s_locators.values()) {
                     Iterator<ComponentInfo<Manager>> itManagers = locator._managerMap.values().iterator();
                     while (itManagers.hasNext()) {
@@ -1154,7 +1196,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
             }
         }
     }
-    
+
     static class Singleton {
         public enum State {
             Instantiated,
@@ -1163,16 +1205,16 @@ public class ComponentLocator implements ComponentLocatorMBean {
             Started,
             Stopped
         }
-        
+
         public Object singleton;
         public State state;
-        
+
         public Singleton(Object singleton) {
             this.singleton = singleton;
             this.state = State.Instantiated;
         }
     }
-    
+
     protected class InterceptorDispatcher implements MethodInterceptor {
 
         @Override
@@ -1200,7 +1242,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
             }
         }
     }
-    
+
     protected static class InterceptorFilter implements CallbackFilter {
         @Override
         public int accept(Method method) {
@@ -1215,7 +1257,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
                     }
                 }
             }
-            
+
             return index;
         }
     }

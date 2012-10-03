@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-//
+// 
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -21,12 +21,9 @@ import java.util.List;
 
 import javax.ejb.Local;
 
-import com.cloud.exception.UnsupportedServiceException;
-import com.cloud.network.NetworkServiceMapVO;
-import com.cloud.network.Network.Service;
 import com.cloud.network.Network.Provider;
+import com.cloud.network.Network.Service;
 import com.cloud.offerings.NetworkOfferingServiceMapVO;
-import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
@@ -41,6 +38,8 @@ public class NetworkOfferingServiceMapDaoImpl extends GenericDaoBase<NetworkOffe
     final SearchBuilder<NetworkOfferingServiceMapVO> MultipleServicesSearch;
     final GenericSearchBuilder<NetworkOfferingServiceMapVO, String> ProvidersSearch;
     final GenericSearchBuilder<NetworkOfferingServiceMapVO, String> ServicesSearch;
+    final GenericSearchBuilder<NetworkOfferingServiceMapVO, String> DistinctProvidersSearch;
+
     
     protected NetworkOfferingServiceMapDaoImpl() {
         super();
@@ -66,6 +65,12 @@ public class NetworkOfferingServiceMapDaoImpl extends GenericDaoBase<NetworkOffe
         ServicesSearch.and("networkOfferingId", ServicesSearch.entity().getNetworkOfferingId(), SearchCriteria.Op.EQ);
         ServicesSearch.select(null, Func.DISTINCT, ServicesSearch.entity().getService());
         ServicesSearch.done();
+        
+        DistinctProvidersSearch = createSearchBuilder(String.class);
+        DistinctProvidersSearch.and("offId", DistinctProvidersSearch.entity().getNetworkOfferingId(), SearchCriteria.Op.EQ);
+        DistinctProvidersSearch.and("provider", DistinctProvidersSearch.entity().getProvider(), SearchCriteria.Op.EQ);
+        DistinctProvidersSearch.selectField(DistinctProvidersSearch.entity().getProvider());
+        DistinctProvidersSearch.done();
     }
     
     @Override
@@ -153,4 +158,11 @@ public class NetworkOfferingServiceMapDaoImpl extends GenericDaoBase<NetworkOffe
         return mappingInDb!=null? mappingInDb : super.persist(entity); 
 	}
     
+    @Override
+    public List<String> getDistinctProviders(long offId) {
+        SearchCriteria<String> sc = DistinctProvidersSearch.create();
+        sc.setParameters("offId", offId);
+        List<String> results = customSearch(sc, null);
+        return results;
+    }
 }

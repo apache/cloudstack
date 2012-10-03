@@ -1,0 +1,36 @@
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ http://www.apache.org/licenses/LICENSE-2.0.
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
+<section id="multi_node_management_server">
+    <title>Multi-Node Management Server</title>
+    <para>The &PRODUCT; Management Server is deployed on one or more front-end servers connected to a single MySQL database. Optionally a pair of hardware load balancers distributes requests from the web. A backup management server set may be deployed using MySQL replication at a remote site to add DR capabilities.</para>
+    <mediaobject>
+        <imageobject>
+            <imagedata fileref="./images/multi_node_management_server.png" />
+        </imageobject>
+        <textobject><phrase>Multi-Node Management Server</phrase></textobject>
+    </mediaobject>
+    <para>The administrator must decide the following.</para>
+    <itemizedlist>
+        <listitem><para>Whether or not load balancers will be used.</para></listitem>
+        <listitem><para>How many Management Servers will be deployed.</para></listitem>
+        <listitem><para>Whether MySQL replication will be deployed to enable disaster recovery.</para></listitem>
+    </itemizedlist>
+</section>

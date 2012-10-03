@@ -60,14 +60,14 @@ binlog-format = 'ROW'
       </para>
 
   </section>
-	
+    
   <section id="sect-Runbook-Management-extraction">
     <title>Extraction</title>
     <para>
-	The next step is to extract the contents of the CloudStack tarball 
-	(mentioned in <xref linkend="sect-Runbook-Overview-prereqs" />) you
-	downloaded previously. To extract the contents of this tarball use 
-	the following command:
+    The next step is to extract the contents of the CloudStack tarball 
+    (mentioned in <xref linkend="sect-Runbook-Overview-prereqs" />) you
+    downloaded previously. To extract the contents of this tarball use 
+    the following command:
     </para>
     <screen>
       <prompt># </prompt><userinput><command>tar</command> -xzvf CloudStack-oss-3.0.2-1-rhel6.2.tar.gz</userinput>

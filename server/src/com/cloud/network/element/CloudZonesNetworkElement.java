@@ -19,6 +19,7 @@ package com.cloud.network.element;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.ejb.Local;
 
@@ -47,7 +48,6 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.uservm.UserVm;
@@ -73,8 +73,6 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
     NetworkDao _networkConfigDao;
     @Inject
     NetworkManager _networkMgr;
-    @Inject
-    VirtualNetworkApplianceManager _routerMgr;
     @Inject
     UserVmManager _userVmMgr;
     @Inject
@@ -154,7 +152,7 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
     }
 
     private VmDataCommand generateVmDataCommand(String vmPrivateIpAddress,
-            String userData, String serviceOffering, String zoneName, String guestIpAddress, String vmName, String vmInstanceName, long vmId, String publicKey) {
+            String userData, String serviceOffering, String zoneName, String guestIpAddress, String vmName, String vmInstanceName, long vmId, String vmUuid, String publicKey) {
         VmDataCommand cmd = new VmDataCommand(vmPrivateIpAddress, vmName);
 
         cmd.addVmData("userdata", "user-data", userData);
@@ -164,12 +162,26 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
         cmd.addVmData("metadata", "local-hostname", vmName);
         cmd.addVmData("metadata", "public-ipv4", guestIpAddress);
         cmd.addVmData("metadata", "public-hostname", guestIpAddress);
-        cmd.addVmData("metadata", "instance-id", vmInstanceName);
-        cmd.addVmData("metadata", "vm-id", String.valueOf(vmId));
+        if (vmUuid == null) {
+            setVmInstanceId(vmInstanceName, vmId, cmd);
+        }  else {
+            setVmInstanceId(vmUuid, cmd);
+        }
         cmd.addVmData("metadata", "public-keys", publicKey);
 
         return cmd;
     }
+
+        private void setVmInstanceId(String vmUuid, VmDataCommand cmd) {
+            cmd.addVmData("metadata", "instance-id", vmUuid);
+            cmd.addVmData("metadata", "vm-id", vmUuid);
+        }
+
+        private void setVmInstanceId(String vmInstanceName, long vmId, VmDataCommand cmd) {
+            cmd.addVmData("metadata", "instance-id", vmInstanceName);
+            cmd.addVmData("metadata", "vm-id", String.valueOf(vmId));
+        }
+
 
     @Override
     public boolean isReady(PhysicalNetworkServiceProvider provider) {
@@ -214,8 +226,8 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
 
             cmds.addCommand(
                     "vmdata",
-                    generateVmDataCommand(nic.getIp4Address(), userData, serviceOffering, zoneName, nic.getIp4Address(), uservm.getVirtualMachine().getHostName(), uservm.getVirtualMachine().getInstanceName(),
-                            uservm.getId(), sshPublicKey));
+                    generateVmDataCommand(nic.getIp4Address(), userData, serviceOffering, zoneName, nic.getIp4Address(), uservm.getVirtualMachine().getHostName(),
+                            uservm.getInstanceName(), uservm.getId(), uservm.getUuid(), sshPublicKey));
             try {
                 _agentManager.send(dest.getHost().getId(), cmds);
             } catch (OperationTimedoutException e) {
@@ -240,7 +252,7 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
     }
 
     @Override
-    public boolean verifyServicesCombination(List<String> services) {
+    public boolean verifyServicesCombination(Set<Service> services) {
         return true;
     }
 

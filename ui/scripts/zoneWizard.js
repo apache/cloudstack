@@ -14,6 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 (function(cloudStack, $) {
   var selectedNetworkOfferingHavingSG = false;
   var selectedNetworkOfferingHavingEIP = false;
@@ -156,7 +157,7 @@
           fields: {
 					  'gateway': { edit: true, label: 'label.gateway' },			
             'netmask': { edit: true, label: 'label.netmask' },
-            'vlanid': { edit: true, label: 'label.vlan', isOptional: true },
+            'vlan': { edit: true, label: 'label.vlan', isOptional: true },
             'startip': { edit: true, label: 'label.start.IP' },
             'endip': { edit: true, label: 'label.end.IP' },
             'add-rule': { label: 'label.add', addButton: true }
@@ -287,31 +288,8 @@
         return (args.groupedData.zone.hypervisor != "VMware");
       },
 						
-			addPrimaryStorage: function(args) {		
-			  var item;
-				$.ajax({
-				  url: createURL("listConfigurations&name=" + todb("use.local.storage")),
-					dataType: 'json',
-					async: false,
-					success: function(json) {					  
-					  var items = json.listconfigurationsresponse.configuration; //unfortunately, it returns 2 items("system.vm.use.local.storage", "use.local.storage") instead of 1 item. 						
-						if(items != null && items.length > 0) { 
-						  for(var i = 0; i < items.length; i++) {
-							  item = items[i];
-							  if(item.name == "use.local.storage") {								  
-								  break; //break for loop
-								}
-							}
-						}
-					}
-				});		
-
-				if(item == null || item.value == null || item.value.length == 0 || item.value == "false")
-				  configurationUseLocalStorage = false;
-				else				
-          configurationUseLocalStorage = true;
-					
-				return (!configurationUseLocalStorage);
+			addPrimaryStorage: function(args) {
+        return args.data.localstorageenabled != 'on';
       }	
     },
 
@@ -516,6 +494,29 @@
                 }
               });
             }
+          },
+          localstorageenabled: {
+            label: 'label.local.storage.enabled',
+            isBoolean: true,
+            onChange: function(args) {
+              var $checkbox = args.$checkbox;
+
+              if ($checkbox.is(':checked')) {
+                cloudStack.dialog.confirm({
+                  message: 'message.zoneWizard.enable.local.storage',
+                  action: function() {
+                    $checkbox.attr('checked', true);
+                  },
+                  cancelAction: function() {
+                    $checkbox.attr('checked', false);
+                  }
+                });
+
+                return false;
+              }
+
+              return true;
+            }
           }
         }
       },
@@ -549,7 +550,14 @@
       },
 
       basicPhysicalNetwork: { //"Netscaler" now
-			  preFilter: cloudStack.preFilter.addLoadBalancerDevice,	
+        preFilter: function(args) {
+          if (args.data['network-model'] == 'Basic' && (selectedNetworkOfferingHavingELB || selectedNetworkOfferingHavingEIP)) {
+            args.$form.find('[rel=dedicated]').hide();
+          } else {
+            args.$form.find('[rel=dedicated]').show();
+          };
+          cloudStack.preFilter.addLoadBalancerDevice
+        },
         fields: {
          ip: {
             label: 'label.ip.address'
@@ -959,6 +967,7 @@
                 var items = [];
                 items.push({id: "nfs", description: "nfs"});
                 items.push({id: "SharedMountPoint", description: "SharedMountPoint"});
+                items.push({id: "clvm", description: "CLVM"});
                 args.response.success({data: items});
               }
               else if(selectedClusterObj.hypervisortype == "XenServer") {
@@ -1230,7 +1239,7 @@
     },
 
     action: function(args) {
-      var advZoneConfiguredPhysicalNetworkCount = 0; //for multiple physical networks in advanced zone
+      var advZoneConfiguredVirtualRouterCount = 0; //for multiple physical networks in advanced zone. Each physical network has 2 virtual routers: regular one and VPC one.
 
       var success = args.response.success;
       var error = args.response.error;
@@ -1253,6 +1262,9 @@
 
           array1.push("&name=" + todb(args.data.zone.name));
 
+          if (args.data.zone.localstorageenabled == 'on') {
+            array1.push("&localstorageenabled=true");
+          }
           array1.push("&dns1=" + todb(args.data.zone.dns1));
 
           var dns2 = args.data.zone.dns2;
@@ -1878,7 +1890,7 @@
                           if (result.jobstatus == 1) {
                             //alert("updatePhysicalNetwork succeeded.");
 
-                            // get network service provider ID of Virtual Router
+                            // ***** Virtual Router ***** (begin) *****
                             var virtualRouterProviderId;
                             $.ajax({
                               url: createURL("listNetworkServiceProviders&name=VirtualRouter&physicalNetworkId=" + thisPhysicalNetwork.id),
@@ -1951,8 +1963,8 @@
 																											clearInterval(enableVirtualRouterProviderIntervalID); 
 																											
                                                       if (result.jobstatus == 1) { //Virtual Router Provider has been enabled successfully
-                                                        advZoneConfiguredPhysicalNetworkCount++;
-                                                        if(advZoneConfiguredPhysicalNetworkCount == args.data.returnedPhysicalNetworks.length) { //not call addPod() until all physical networks get configured
+                                                        advZoneConfiguredVirtualRouterCount++;
+                                                        if(advZoneConfiguredVirtualRouterCount == (args.data.returnedPhysicalNetworks.length * 2)) { //not call addPod() until virtualRouter and vpcVirtualRouter of all physical networks get configured
                                                           stepFns.addPod({
                                                             data: args.data
                                                           });
@@ -1985,6 +1997,116 @@
 																}, 3000); 	
                               }
                             });
+														// ***** Virtual Router ***** (end) *****
+														
+														// ***** VPC Virtual Router ***** (begin) *****
+                            var vpcVirtualRouterProviderId;
+                            $.ajax({
+                              url: createURL("listNetworkServiceProviders&name=VpcVirtualRouter&physicalNetworkId=" + thisPhysicalNetwork.id),
+                              dataType: "json",
+                              async: false,
+                              success: function(json) {
+                                var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;
+                                if(items != null && items.length > 0) {
+                                  vpcVirtualRouterProviderId = items[0].id;
+                                }
+                              }
+                            });
+                            if(vpcVirtualRouterProviderId == null) {
+                              alert("error: listNetworkServiceProviders API doesn't return VpcVirtualRouter provider ID");
+                              return;
+                            }
+
+                            var vpcVirtualRouterElementId;
+                            $.ajax({
+                              url: createURL("listVirtualRouterElements&nspid=" + vpcVirtualRouterProviderId),
+                              dataType: "json",
+                              async: false,
+                              success: function(json) {
+                                var items = json.listvirtualrouterelementsresponse.virtualrouterelement;
+                                if(items != null && items.length > 0) {
+                                  vpcVirtualRouterElementId = items[0].id;
+                                }
+                              }
+                            });
+                            if(vpcVirtualRouterElementId == null) {
+                              alert("error: listVirtualRouterElements API doesn't return VPC Virtual Router Element Id");
+                              return;
+                            }
+
+                            $.ajax({
+                              url: createURL("configureVirtualRouterElement&enabled=true&id=" + vpcVirtualRouterElementId),
+                              dataType: "json",
+                              async: false,
+                              success: function(json) {
+                                var jobId = json.configurevirtualrouterelementresponse.jobid;                                
+																var enableVpcVirtualRouterElementIntervalID = setInterval(function() { 	
+                                  $.ajax({
+                                    url: createURL("queryAsyncJobResult&jobId="+jobId),
+                                    dataType: "json",
+                                    success: function(json) {
+                                      var result = json.queryasyncjobresultresponse;
+                                      if (result.jobstatus == 0) {
+                                        return; //Job has not completed
+                                      }
+                                      else {                                        
+																				clearInterval(enableVpcVirtualRouterElementIntervalID); 
+																				
+                                        if (result.jobstatus == 1) { //configureVirtualRouterElement succeeded
+                                          $.ajax({
+                                            url: createURL("updateNetworkServiceProvider&state=Enabled&id=" + vpcVirtualRouterProviderId),
+                                            dataType: "json",
+                                            async: false,
+                                            success: function(json) {
+                                              var jobId = json.updatenetworkserviceproviderresponse.jobid;                                             
+																							var enableVpcVirtualRouterProviderIntervalID = setInterval(function() { 	
+                                                $.ajax({
+                                                  url: createURL("queryAsyncJobResult&jobId="+jobId),
+                                                  dataType: "json",
+                                                  success: function(json) {
+                                                    var result = json.queryasyncjobresultresponse;
+                                                    if (result.jobstatus == 0) {
+                                                      return; //Job has not completed
+                                                    }
+                                                    else {                                                      
+																											clearInterval(enableVpcVirtualRouterProviderIntervalID); 
+																											
+                                                      if (result.jobstatus == 1) { //Virtual Router Provider has been enabled successfully
+                                                        advZoneConfiguredVirtualRouterCount++;
+                                                        if(advZoneConfiguredVirtualRouterCount == (args.data.returnedPhysicalNetworks.length * 2)) { //not call addPod() until virtualRouter and vpcVirtualRouter of all physical networks get configured
+                                                          stepFns.addPod({
+                                                            data: args.data
+                                                          });
+                                                        }
+                                                      }
+                                                      else if (result.jobstatus == 2) {
+                                                        alert("failed to enable VPC Virtual Router Provider. Error: " + _s(result.jobresult.errortext));
+                                                      }
+                                                    }
+                                                  },
+                                                  error: function(XMLHttpResponse) {
+                                                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                                    alert("updateNetworkServiceProvider failed. Error: " + errorMsg);
+                                                  }
+                                                });                                              
+																							}, 3000); 	
+                                            }
+                                          });
+                                        }
+                                        else if (result.jobstatus == 2) {
+                                          alert("configureVirtualRouterElement failed. Error: " + _s(result.jobresult.errortext));
+                                        }
+                                      }
+                                    },
+                                    error: function(XMLHttpResponse) {
+                                      var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                      alert("configureVirtualRouterElement failed. Error: " + errorMsg);
+                                    }
+                                  });                                
+																}, 3000); 	
+                              }
+                            });
+														// ***** VPC Virtual Router ***** (end) *****
                           }
                           else if (result.jobstatus == 2) {
                             alert("updatePhysicalNetwork failed. Error: " + _s(result.jobresult.errortext));
@@ -2039,10 +2161,10 @@
 											var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
 											alert("addNetworkServiceProvider&name=Netscaler failed. Error: " + errorMsg);
 										}
-									});
-								});
-							}						
-						}, 3000); 								
+									});							
+								}, 3000); 
+							}		
+            });		
 						//add netscaler provider (end)
 					}
 					else { //selectedNetworkOfferingHavingNetscaler == false
@@ -2376,7 +2498,8 @@
 
           $(storageIPRanges).each(function() {
             var item = this;
-            
+              if('vlan' in item && (item.vlan == null || item.vlan.length == 0))
+                delete item.vlan;
             $.ajax({
               url: createURL('createStorageNetworkIpRange'),
               data: $.extend(true, {}, item, {
@@ -2682,8 +2805,8 @@
           });
         },
 
-        addPrimaryStorage: function(args) {     
-					if(configurationUseLocalStorage == true) { //use local storage, don't need primary storage. So, skip this step.
+        addPrimaryStorage: function(args) {
+					if(args.data.zone.localstorageenabled == 'on') { //use local storage, don't need primary storage. So, skip this step.
             stepFns.addSecondaryStorage({
               data: args.data
             });

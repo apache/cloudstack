@@ -23,24 +23,50 @@ public class NetworkUsageCommand extends Command {
     private String privateIP;
     private String domRName;
     private String option;
+    boolean forVpc = false;
+    private String gatewayIP;
+    private String vpcCIDR;
 
     protected NetworkUsageCommand() {
 
     }
 
-    public NetworkUsageCommand(String privateIP, String domRName)
+    public NetworkUsageCommand(String privateIP, String domRName, boolean forVpc, String gatewayIP)
     {
         this.privateIP = privateIP;
         this.domRName = domRName;
+        this.forVpc = forVpc;
+        this.gatewayIP = gatewayIP;
+        this.option = "get";
     }
 
-    public NetworkUsageCommand(String privateIP, String domRName, String option)
+    public NetworkUsageCommand(String privateIP, String domRName, String option, boolean forVpc)
     {
         this.privateIP = privateIP;
         this.domRName = domRName;
         this.option = option;
+        this.forVpc = forVpc;
     }
 
+    public NetworkUsageCommand(String privateIP, String domRName, boolean forVpc, String gatewayIP, String vpcCIDR)
+    {
+        this.privateIP = privateIP;
+        this.domRName = domRName;
+        this.forVpc = forVpc;
+        this.gatewayIP = gatewayIP;
+        this.option = "create";
+        this.vpcCIDR = vpcCIDR;
+    }
+    
+    public NetworkUsageCommand(String privateIP, String domRName, String option, boolean forVpc, String gatewayIP)
+    {
+        this.privateIP = privateIP;
+        this.domRName = domRName;
+        this.forVpc = forVpc;
+        this.gatewayIP = gatewayIP;
+        this.option = option;
+    }
+    
     public String getPrivateIP() {
         return privateIP;
     }
@@ -52,6 +78,18 @@ public class NetworkUsageCommand extends Command {
     public String getOption() {
         return option;
     }
+
+    public boolean isForVpc() {
+        return forVpc;
+    }
+
+	public String getVpcCIDR() {
+		return vpcCIDR;
+	}
+
+	public String getGatewayIP() {
+		return gatewayIP;
+	}
 
     @Override
     public boolean executeInSequence() {

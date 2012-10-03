@@ -80,6 +80,7 @@ import com.cloud.api.commands.UpdateStoragePoolCmd;
 import com.cloud.api.commands.UploadVolumeCmd;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.capacity.Capacity;
+import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.CapacityState;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
@@ -125,13 +126,15 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.network.NetworkManager;
-import com.cloud.network.router.VirtualNetworkApplianceManager;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Grouping;
 import com.cloud.org.Grouping.AllocationState;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.server.ManagementServer;
+import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.server.StatsCollector;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage.ImageFormat;
@@ -156,6 +159,8 @@ import com.cloud.storage.listener.StoragePoolMonitor;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.storage.snapshot.SnapshotScheduler;
+import com.cloud.tags.ResourceTagVO;
+import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -271,6 +276,8 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
     @Inject
     protected CapacityDao _capacityDao;
     @Inject
+    protected CapacityManager _capacityMgr;
+    @Inject
     protected DiskOfferingDao _diskOfferingDao;
     @Inject
     protected AccountDao _accountDao;
@@ -292,8 +299,6 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
     protected UserDao _userDao;
     @Inject
     protected ClusterDao _clusterDao;
-    @Inject
-    protected VirtualNetworkApplianceManager _routerMgr;
     @Inject
     protected UsageEventDao _usageEventDao;
     @Inject
@@ -320,11 +325,14 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
     protected CheckPointManager _checkPointMgr;
     @Inject
     protected DownloadMonitor _downloadMonitor;
+    @Inject
+    protected ResourceTagDao _resourceTagDao;
 
     @Inject(adapter = StoragePoolAllocator.class)
     protected Adapters<StoragePoolAllocator> _storagePoolAllocators;
     @Inject(adapter = StoragePoolDiscoverer.class)
     protected Adapters<StoragePoolDiscoverer> _discoverers;
+
 
     protected SearchBuilder<VMTemplateHostVO> HostTemplateStatesSearch;
     protected GenericSearchBuilder<StoragePoolHostVO, Long> UpHostsInPoolSearch;
@@ -347,6 +355,11 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
     private StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
     private int _customDiskOfferingMinSize = 1;
     private int _customDiskOfferingMaxSize = 1024;
+    private double _storageUsedThreshold = 1.0d;
+    private double _storageAllocatedThreshold = 1.0d;
+    protected BigDecimal _storageOverprovisioningFactor = new BigDecimal(1);
+
+	private boolean _recreateSystemVmEnabled;
 
     public boolean share(VMInstanceVO vm, List<VolumeVO> vols, HostVO host, boolean cancelPreviousShare) throws StorageUnavailableException {
 
@@ -445,13 +458,13 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         return false;
     }
 
-    protected StoragePoolVO findStoragePool(DiskProfile dskCh, final DataCenterVO dc, HostPodVO pod, Long clusterId, VMInstanceVO vm, final Set<StoragePool> avoid) {
+    protected StoragePoolVO findStoragePool(DiskProfile dskCh, final DataCenterVO dc, HostPodVO pod, Long clusterId, Long hostId, VMInstanceVO vm, final Set<StoragePool> avoid) {
 
         VirtualMachineProfile<VMInstanceVO> profile = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
         Enumeration<StoragePoolAllocator> en = _storagePoolAllocators.enumeration();
         while (en.hasMoreElements()) {
             final StoragePoolAllocator allocator = en.nextElement();
-            final List<StoragePool> poolList = allocator.allocateToPool(dskCh, profile, dc.getId(), pod.getId(), clusterId, avoid, 1);
+            final List<StoragePool> poolList = allocator.allocateToPool(dskCh, profile, dc.getId(), pod.getId(), clusterId, hostId, avoid, 1);
             if (poolList != null && !poolList.isEmpty()) {
                 return (StoragePoolVO) poolList.get(0);
             }
@@ -559,7 +572,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         while ((pod = _resourceMgr.findPod(null, null, dc, account.getId(), podsToAvoid)) != null) {
             podsToAvoid.add(pod.first().getId());
             // Determine what storage pool to store the volume in
-            while ((pool = findStoragePool(dskCh, dc, pod.first(), null, null, poolsToAvoid)) != null) {
+            while ((pool = findStoragePool(dskCh, dc, pod.first(), null, null, null, poolsToAvoid)) != null) {
                 poolsToAvoid.add(pool);
                 volumeFolder = pool.getPath();
                 if (s_logger.isDebugEnabled()) {
@@ -639,6 +652,9 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         Pair<VolumeVO, String> volumeDetails = createVolumeFromSnapshot(volume, snapshot);
         if (volumeDetails != null) {
             createdVolume = volumeDetails.first();
+        	UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, createdVolume.getAccountId(), createdVolume.getDataCenterId(), createdVolume.getId(), createdVolume.getName(), 
+        			                                   createdVolume.getDiskOfferingId(), null, createdVolume.getSize());
+        	_usageEventDao.persist(usageEvent);
         }
         return createdVolume;
     }
@@ -726,9 +742,10 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
     	DiskProfile dskCh = createDiskCharacteristics(volume, template, dc, diskOffering);
     	dskCh.setHyperType(vm.getHypervisorType());
     	// Find a suitable storage to create volume on 
-    	StoragePoolVO destPool = findStoragePool(dskCh, dc, pod, clusterId, vm, avoidPools);
+	StoragePoolVO destPool = findStoragePool(dskCh, dc, pod, clusterId, null, vm, avoidPools);
     	
     	// Copy the volume from secondary storage to the destination storage pool    	  	
+    	stateTransitTo(volume, Event.CopyRequested);
     	VolumeHostVO volumeHostVO = _volumeHostDao.findByVolumeId(volume.getId());
     	HostVO secStorage = _hostDao.findById(volumeHostVO.getHostId());
     	String secondaryStorageURL = secStorage.getStorageUrl();
@@ -802,7 +819,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
                 break;
             }
 
-            pool = findStoragePool(dskCh, dc, pod, clusterId, vm, avoidPools);
+            pool = findStoragePool(dskCh, dc, pod, clusterId, vm.getHostId(), vm, avoidPools);
             if (pool == null) {
                 s_logger.warn("Unable to find storage poll when create volume " + volume.getName());
                 break;
@@ -944,11 +961,27 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         value = configDao.getValue(Config.CopyVolumeWait.toString());
         _copyvolumewait = NumbersUtil.parseInt(value, Integer.parseInt(Config.CopyVolumeWait.getDefaultValue()));
 
+        value = configDao.getValue(Config.RecreateSystemVmEnabled.key());
+        _recreateSystemVmEnabled = Boolean.parseBoolean(value);
+        
         value = configDao.getValue(Config.StorageTemplateCleanupEnabled.key());
         _templateCleanupEnabled = (value == null ? true : Boolean.parseBoolean(value));
 
         String time = configs.get("storage.cleanup.interval");
         _storageCleanupInterval = NumbersUtil.parseInt(time, 86400);
+
+        String storageUsedThreshold = configDao.getValue(Config.StorageCapacityDisableThreshold.key());
+        if (storageUsedThreshold != null) {
+            _storageUsedThreshold = Double.parseDouble(storageUsedThreshold);
+        }
+
+        String storageAllocatedThreshold = configDao.getValue(Config.StorageAllocatedCapacityDisableThreshold.key());
+        if (storageAllocatedThreshold != null) {
+            _storageAllocatedThreshold = Double.parseDouble(storageAllocatedThreshold);
+        }
+
+        String globalStorageOverprovisioningFactor = configs.get("storage.overprovisioning.factor");
+        _storageOverprovisioningFactor = new BigDecimal(NumbersUtil.parseFloat(globalStorageOverprovisioningFactor, 2.0f));
 
         s_logger.info("Storage cleanup enabled: " + _storageCleanupEnabled + ", interval: " + _storageCleanupInterval + ", template cleanup enabled: " + _templateCleanupEnabled);
 
@@ -956,10 +989,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         int wrks = NumbersUtil.parseInt(workers, 10);
         _executor = Executors.newScheduledThreadPool(wrks, new NamedThreadFactory("StorageManager-Scavenger"));
 
-        boolean localStorage = Boolean.parseBoolean(configs.get(Config.UseLocalStorage.key()));
-        if (localStorage) {
-            _agentMgr.registerForHostEvents(ComponentLocator.inject(LocalStoragePoolListener.class), true, false, false);
-        }
+        _agentMgr.registerForHostEvents(ComponentLocator.inject(LocalStoragePoolListener.class), true, false, false);
 
         String maxVolumeSizeInGbString = configDao.getValue("storage.max.volume.size");
         _maxVolumeSizeInGb = NumbersUtil.parseLong(maxVolumeSizeInGbString, 2000);
@@ -1066,9 +1096,10 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         List<HostVO> storageHosts = _resourceMgr.listAllHostsInOneZoneByType(Host.Type.SecondaryStorage, dataCenterId);
         if (storageHosts != null) {
             for (HostVO storageHost : storageHosts) {
-                VMTemplateHostVO templateHostVO = _vmTemplateHostDao.findByHostTemplate(storageHost.getId(), templateId);
-                if (templateHostVO != null) {
-                    isoPath = storageHost.getStorageUrl() + "/" + templateHostVO.getInstallPath();
+                List<VMTemplateHostVO> templateHostVOs = _vmTemplateHostDao.listByTemplateHostStatus(templateId, storageHost.getId(), VMTemplateStorageResourceAssoc.Status.DOWNLOADED );
+                if (templateHostVOs != null && !templateHostVOs.isEmpty()) {
+                    VMTemplateHostVO tmpHostVO = templateHostVOs.get(0);
+                    isoPath = storageHost.getStorageUrl() + "/" + tmpHostVO.getInstallPath();
                     return new Pair<String, String>(isoPath, storageHost.getStorageUrl());
                 }
             }
@@ -1252,10 +1283,10 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
                 if (uriPath == null) {
                     throw new InvalidParameterValueException("host or path is null, should be sharedmountpoint://localhost/path");
                 }
-            } else if (uri.getScheme().equalsIgnoreCase("clvm")) {
+            }  else if (uri.getScheme().equalsIgnoreCase("rbd")) {
                 String uriPath = uri.getPath();
                 if (uriPath == null) {
-                    throw new InvalidParameterValueException("host or path is null, should be clvm://localhost/path");
+                    throw new InvalidParameterValueException("host or path is null, should be rbd://hostname/pool");
                 }
             }
         } catch (URISyntaxException e) {
@@ -1278,6 +1309,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         String scheme = uri.getScheme();
         String storageHost = uri.getHost();
         String hostPath = uri.getPath();
+        String userInfo = uri.getUserInfo();
         int port = uri.getPort();
         StoragePoolVO pool = null;
         if (s_logger.isDebugEnabled()) {
@@ -1298,6 +1330,13 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
             pool = new StoragePoolVO(StoragePoolType.Filesystem, "localhost", 0, hostPath);
         } else if (scheme.equalsIgnoreCase("sharedMountPoint")) {
             pool = new StoragePoolVO(StoragePoolType.SharedMountPoint, storageHost, 0, hostPath);
+        } else if (scheme.equalsIgnoreCase("clvm")) {
+            pool = new StoragePoolVO(StoragePoolType.CLVM, storageHost, 0, hostPath.replaceFirst("/", ""));
+        } else if (scheme.equalsIgnoreCase("rbd")) {
+            if (port == -1) {
+                port = 6789;
+            }
+            pool = new StoragePoolVO(StoragePoolType.RBD, storageHost, port, hostPath.replaceFirst("/", ""), userInfo);
         } else if (scheme.equalsIgnoreCase("PreSetup")) {
             pool = new StoragePoolVO(StoragePoolType.PreSetup, storageHost, 0, hostPath);
         } else if (scheme.equalsIgnoreCase("iscsi")) {
@@ -1464,7 +1503,10 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
             s_logger.warn("Unable to find pool:" + id);
             throw new InvalidParameterValueException("Unable to find pool by id " + id);
         }
-
+        if(sPool.getStatus() != StoragePoolStatus.Maintenance){
+            s_logger.warn("Unable to delete storage id: " + id +" due to it is not in Maintenance state");
+            throw new InvalidParameterValueException("Unable to delete storage due to it is not in Maintenance state, id: " + id);           
+        }
         if (sPool.getPoolType().equals(StoragePoolType.LVM) || sPool.getPoolType().equals(StoragePoolType.EXT)) {
             s_logger.warn("Unable to delete local storage id:" + id);
             throw new InvalidParameterValueException("Unable to delete local storage id: " + id);
@@ -1506,8 +1548,6 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
 
         // mark storage pool as removed (so it can't be used for new volumes creation), release the lock
         boolean isLockReleased = false;
-        sPool.setStatus(StoragePoolStatus.Removed);
-        _storagePoolDao.update(id, sPool);
         isLockReleased = _storagePoolDao.releaseFromLockTable(lock.getId());
         s_logger.trace("Released lock for storage pool " + id);
 
@@ -1596,7 +1636,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         s_logger.debug("creating pool " + pool.getName() + " on  host " + hostId);
         if (pool.getPoolType() != StoragePoolType.NetworkFilesystem && pool.getPoolType() != StoragePoolType.Filesystem && pool.getPoolType() != StoragePoolType.IscsiLUN
                 && pool.getPoolType() != StoragePoolType.Iscsi && pool.getPoolType() != StoragePoolType.VMFS && pool.getPoolType() != StoragePoolType.SharedMountPoint
-                && pool.getPoolType() != StoragePoolType.PreSetup && pool.getPoolType() != StoragePoolType.OCFS2) {
+                && pool.getPoolType() != StoragePoolType.PreSetup && pool.getPoolType() != StoragePoolType.OCFS2 && pool.getPoolType() != StoragePoolType.RBD && pool.getPoolType() != StoragePoolType.CLVM) {
             s_logger.warn(" Doesn't support storage pool type " + pool.getPoolType());
             return false;
         }
@@ -1672,7 +1712,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         dskCh.setHyperType(dataDiskHyperType);
         DataCenterVO destPoolDataCenter = _dcDao.findById(destPoolDcId);
         HostPodVO destPoolPod = _podDao.findById(destPoolPodId);
-        StoragePoolVO destPool = findStoragePool(dskCh, destPoolDataCenter, destPoolPod, destPoolClusterId, null, new HashSet<StoragePool>());
+        StoragePoolVO destPool = findStoragePool(dskCh, destPoolDataCenter, destPoolPod, destPoolClusterId, null, null, new HashSet<StoragePool>());
         String secondaryStorageURL = getSecondaryStorageURL(volume.getDataCenterId());
 
         if (destPool == null) {
@@ -1853,6 +1893,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
 
         Long zoneId = cmd.getZoneId();
         Long diskOfferingId = null;
+        DiskOfferingVO diskOffering = null;
         Long size = null;
 
         // validate input parameters before creating the volume
@@ -1872,11 +1913,9 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
                     throw new InvalidParameterValueException("Disk size must be larger than 0");
                 }
             }
-            if (diskOfferingId == null) {
-                throw new InvalidParameterValueException("Missing parameter(s),either a positive volume size or a valid disk offering id must be specified.");
-            }
+
             // Check that the the disk offering is specified
-            DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
+            diskOffering = _diskOfferingDao.findById(diskOfferingId);
             if ((diskOffering == null) || diskOffering.getRemoved() != null || !DiskOfferingVO.Type.Disk.equals(diskOffering.getType())) {
                 throw new InvalidParameterValueException("Please specify a valid disk offering.");
             }
@@ -1918,7 +1957,8 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
                 throw new InvalidParameterValueException("Snapshot id=" + snapshotId + " is not in " + Snapshot.Status.BackedUp + " state yet and can't be used for volume creation");
             }
 
-            diskOfferingId = (cmd.getDiskOfferingId() != null) ? cmd.getDiskOfferingId() : snapshotCheck.getDiskOfferingId();
+            diskOfferingId = snapshotCheck.getDiskOfferingId();
+            diskOffering = _diskOfferingDao.findById(diskOfferingId);
             zoneId = snapshotCheck.getDataCenterId();
             size = snapshotCheck.getSize(); // ; disk offering is used for tags purposes
 
@@ -1947,12 +1987,27 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
             throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + zoneId);
         }
 
-        // Check that there is a shared primary storage pool in the specified zone
+        // If local storage is disabled then creation of volume with local disk offering not allowed
+        if (!zone.isLocalStorageEnabled() && diskOffering.getUseLocalStorage()) {
+            throw new InvalidParameterValueException("Zone is not configured to use local storage but volume's disk offering " + diskOffering.getName() + " uses it");
+        }
+
+        // Check that there is appropriate primary storage pool in the specified zone
         List<StoragePoolVO> storagePools = _storagePoolDao.listByDataCenterId(zoneId);
-        boolean sharedPoolExists = false;
-        for (StoragePoolVO storagePool : storagePools) {
-            if (storagePool.isShared()) {
-                sharedPoolExists = true;
+        boolean appropriatePoolExists = false;
+        if (!diskOffering.getUseLocalStorage()) {
+            for (StoragePoolVO storagePool : storagePools) {
+                if (storagePool.isShared()) {
+                    appropriatePoolExists = true;
+                    break;
+                }
+            }
+        } else {
+            for (StoragePoolVO storagePool : storagePools) {
+                if (storagePool.isLocal()) {
+                    appropriatePoolExists = true;
+                    break;
+                }
             }
         }
 
@@ -1962,8 +2017,9 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
             throw new InvalidParameterValueException("There is no workable host in data center id " + zoneId + ", please check hosts' agent status and see if they are disabled");
         }
 
-        if (!sharedPoolExists) {
-            throw new InvalidParameterValueException("Please specify a zone that has at least one shared primary storage pool.");
+        if (!appropriatePoolExists) {
+            String storageType = diskOffering.getUseLocalStorage() ? ServiceOffering.StorageType.local.toString() : ServiceOffering.StorageType.shared.toString();
+            throw new InvalidParameterValueException("Volume's disk offering uses " + storageType + " storage, please specify a zone that has at least one " + storageType + " primary storage pool.");
         }
 
         String userSpecifiedName = cmd.getVolumeName();
@@ -1987,8 +2043,11 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         volume.setDomainId((caller == null) ? Domain.ROOT_DOMAIN : caller.getDomainId());
 
         volume = _volsDao.persist(volume);
-        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), diskOfferingId, null, size);
-        _usageEventDao.persist(usageEvent);
+        if(cmd.getSnapshotId() == null){
+        	//for volume created from snapshot, create usage event after volume creation
+        	UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), diskOfferingId, null, size);
+        	_usageEventDao.persist(usageEvent);
+        }
 
         UserContext.current().setEventDetails("Volume Id: " + volume.getId());
 
@@ -2081,14 +2140,11 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
     @Override
     public void createCapacityEntry(StoragePoolVO storagePool, short capacityType, long allocated) {
         SearchCriteria<CapacityVO> capacitySC = _capacityDao.createSearchCriteria();
-
-        List<CapacityVO> capacities = _capacityDao.search(capacitySC, null);
-        capacitySC = _capacityDao.createSearchCriteria();
         capacitySC.addAnd("hostOrPoolId", SearchCriteria.Op.EQ, storagePool.getId());
         capacitySC.addAnd("dataCenterId", SearchCriteria.Op.EQ, storagePool.getDataCenterId());
         capacitySC.addAnd("capacityType", SearchCriteria.Op.EQ, capacityType);
 
-        capacities = _capacityDao.search(capacitySC, null);
+        List<CapacityVO> capacities = _capacityDao.search(capacitySC, null);
 
         long totalOverProvCapacity;
         if (storagePool.getPoolType() == StoragePoolType.NetworkFilesystem) {
@@ -2222,6 +2278,17 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
                             s_logger.warn("Unable to destroy " + vol.getId(), e);
                         }
                     }
+                    
+                    // remove snapshots in Error state
+                    List<SnapshotVO> snapshots = _snapshotDao.listAllByStatus(Snapshot.Status.Error);
+                    for (SnapshotVO snapshotVO : snapshots) {
+                        try{
+                            _snapshotDao.expunge(snapshotVO.getId());
+                        }catch (Exception e) {
+                            s_logger.warn("Unable to destroy " + snapshotVO.getId(), e);
+                        }
+                    }
+                    
                 } finally {
                     scanLock.unlock();
                 }
@@ -2995,7 +3062,11 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
 
         StoragePool destPool = _storagePoolDao.findById(storagePoolId);
         if (destPool == null) {
-            throw new InvalidParameterValueException("Faild to find the destination storage pool: " + storagePoolId);
+            throw new InvalidParameterValueException("Failed to find the destination storage pool: " + storagePoolId);
+        }
+
+        if (!volumeOnSharedStoragePool(vol)) {
+            throw new InvalidParameterValueException("Migration of volume from local storage pool is not supported");
         }
 
         List<Volume> vols = new ArrayList<Volume>();
@@ -3180,6 +3251,8 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Checking if we need to prepare " + vols.size() + " volumes for " + vm);
         }
+        
+        boolean recreate = _recreateSystemVmEnabled;
 
         List<VolumeVO> recreateVols = new ArrayList<VolumeVO>(vols.size());
 
@@ -3188,7 +3261,11 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
             if (dest.getStorageForDisks() != null) {
                 assignedPool = dest.getStorageForDisks().get(vol);
             }
-            if (assignedPool != null) {
+            if (assignedPool == null && recreate) {
+            	assignedPool = _storagePoolDao.findById(vol.getPoolId());
+            	
+            }
+            if (assignedPool != null || recreate) {
                 Volume.State state = vol.getState();
                 if (state == Volume.State.Allocated || state == Volume.State.Creating) {
                     recreateVols.add(vol);
@@ -3201,10 +3278,28 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
                     } else {
                         if (assignedPool.getId() != vol.getPoolId()) {
                             if (s_logger.isDebugEnabled()) {
-                                s_logger.debug("Volume " + vol + " is not recreatable! Cannot recreate on storagepool: " + assignedPool);
+                                s_logger.debug("Mismatch in storage pool " + assignedPool + " assigned by deploymentPlanner and the one associated with volume " + vol);
                             }
-                            throw new StorageUnavailableException("Volume is not recreatable, Unable to create " + vol, Volume.class, vol.getId());
-                            // copy volume usecase - not yet developed.
+                            DiskOfferingVO diskOffering = _diskOfferingDao.findById(vol.getDiskOfferingId());
+                            if (diskOffering.getUseLocalStorage())
+                            {
+                                if (s_logger.isDebugEnabled()) {
+                                    s_logger.debug("Local volume " + vol + " will be recreated on storage pool " + assignedPool + " assigned by deploymentPlanner");
+                                }
+                                recreateVols.add(vol);
+                            } else {
+                                if (s_logger.isDebugEnabled()) {
+                                    s_logger.debug("Shared volume " + vol + " will be migrated on storage pool " + assignedPool + " assigned by deploymentPlanner");
+                                }
+                                try {
+                                    List<Volume> volumesToMigrate = new ArrayList<Volume>();
+                                    volumesToMigrate.add(vol);
+                                    migrateVolumes(volumesToMigrate, assignedPool);
+                                    vm.addDisk(new VolumeTO(vol, assignedPool));
+                                } catch (ConcurrentOperationException e) {
+                                    throw new CloudRuntimeException("Migration of volume " + vol + " to storage pool " + assignedPool + " failed", e);
+                                }
+                            }
                         } else {
                             StoragePoolVO pool = _storagePoolDao.findById(vol.getPoolId());
                             vm.addDisk(new VolumeTO(vol, pool));
@@ -3226,6 +3321,12 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
 
         for (VolumeVO vol : recreateVols) {
             VolumeVO newVol;
+            StoragePool existingPool = null;
+            if (recreate && (dest.getStorageForDisks() == null || dest.getStorageForDisks().get(vol) == null)) {
+            	existingPool = _storagePoolDao.findById(vol.getPoolId());
+            	s_logger.debug("existing pool: " + existingPool.getId());
+            }
+            
             if (vol.getState() == Volume.State.Allocated || vol.getState() == Volume.State.Creating) {
                 newVol = vol;
             } else {
@@ -3246,7 +3347,9 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
             } catch (NoTransitionException e) {
                 throw new CloudRuntimeException("Unable to create " + e.toString());
             }
-            Pair<VolumeTO, StoragePool> created = createVolume(newVol, _diskOfferingDao.findById(newVol.getDiskOfferingId()), vm, vols, dest);
+
+            Pair<VolumeTO, StoragePool> created = createVolume(newVol, _diskOfferingDao.findById(newVol.getDiskOfferingId()), vm, vols, dest, existingPool);
+
             if (created == null) {
                 Long poolId = newVol.getPoolId();
                 newVol.setPoolId(null);
@@ -3302,7 +3405,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
     }
 
     public Pair<VolumeTO, StoragePool> createVolume(VolumeVO toBeCreated, DiskOfferingVO offering, VirtualMachineProfile<? extends VirtualMachine> vm, List<? extends Volume> alreadyCreated,
-            DeployDestination dest) throws StorageUnavailableException {
+            DeployDestination dest, StoragePool sPool) throws StorageUnavailableException {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Creating volume: " + toBeCreated);
         }
@@ -3312,9 +3415,15 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         if (toBeCreated.getTemplateId() != null) {
             template = _templateDao.findById(toBeCreated.getTemplateId());
         }
+        
+        StoragePool pool = null;
+        if (sPool != null) {
+        	pool = sPool;
+        } else {
+        	pool = dest.getStorageForDisks().get(toBeCreated);
+        }
 
-        if (dest.getStorageForDisks() != null) {
-            StoragePool pool = dest.getStorageForDisks().get(toBeCreated);
+        if (pool != null) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Trying to create in " + pool);
             }
@@ -3725,6 +3834,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         String name = cmd.getVolumeName();
         String keyword = cmd.getKeyword();
         String type = cmd.getType();
+        Map<String, String> tags = cmd.getTags();
 
         Long zoneId = cmd.getZoneId();
         Long podId = null;
@@ -3764,6 +3874,18 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         vmSearch.and("type", vmSearch.entity().getType(), SearchCriteria.Op.NIN);
         vmSearch.or("nulltype", vmSearch.entity().getType(), SearchCriteria.Op.NULL);
         sb.join("vmSearch", vmSearch, sb.entity().getInstanceId(), vmSearch.entity().getId(), JoinBuilder.JoinType.LEFTOUTER);
+        
+        if (tags != null && !tags.isEmpty()) {
+            SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
+            for (int count=0; count < tags.size(); count++) {
+                tagSearch.or().op("key" + String.valueOf(count), tagSearch.entity().getKey(), SearchCriteria.Op.EQ);
+                tagSearch.and("value" + String.valueOf(count), tagSearch.entity().getValue(), SearchCriteria.Op.EQ);
+                tagSearch.cp();
+            }
+            tagSearch.and("resourceType", tagSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
+            sb.groupBy(sb.entity().getId());
+            sb.join("tagSearch", tagSearch, sb.entity().getId(), tagSearch.entity().getResourceId(), JoinBuilder.JoinType.INNER);
+        }
 
         // now set the SC criteria...
         SearchCriteria<VolumeVO> sc = sb.create();
@@ -3782,6 +3904,16 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         }
 
         sc.setJoinParameters("diskOfferingSearch", "systemUse", 1);
+        
+        if (tags != null && !tags.isEmpty()) {
+            int count = 0;
+            sc.setJoinParameters("tagSearch", "resourceType", TaggedResourceType.Volume.toString());
+            for (String key : tags.keySet()) {
+                sc.setJoinParameters("tagSearch", "key" + String.valueOf(count), key);
+                sc.setJoinParameters("tagSearch", "value" + String.valueOf(count), tags.get(key));
+                count++;
+            }
+        }
 
         if (id != null) {
             sc.setParameters("id", id);
@@ -3844,6 +3976,82 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         } else {
             return HypervisorType.None;
         }
+    }
+
+    private boolean checkUsagedSpace(StoragePool pool){
+        StatsCollector sc = StatsCollector.getInstance();
+        if (sc != null) {
+            long totalSize = pool.getCapacityBytes();
+            StorageStats stats = sc.getStoragePoolStats(pool.getId());
+            if(stats == null){
+                stats = sc.getStorageStats(pool.getId());
+            }
+            if (stats != null) {
+                double usedPercentage = ((double)stats.getByteUsed() / (double)totalSize);
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Checking pool " + pool.getId() + " for storage, totalSize: " + pool.getCapacityBytes() + ", usedBytes: " + stats.getByteUsed() + ", usedPct: " + usedPercentage + ", disable threshold: " + _storageUsedThreshold);
+                }
+                if (usedPercentage >= _storageUsedThreshold) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Insufficient space on pool: " + pool.getId() + " since its usage percentage: " +usedPercentage + " has crossed the pool.storage.capacity.disablethreshold: " + _storageUsedThreshold);
+                    }
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean storagePoolHasEnoughSpace(List<Volume> volumes, StoragePool pool) {
+        if(volumes == null || volumes.isEmpty())
+            return false;
+
+        if(!checkUsagedSpace(pool))
+            return false;
+
+        // allocated space includes template of specified volume
+        StoragePoolVO poolVO = _storagePoolDao.findById(pool.getId());
+        long allocatedSizeWithtemplate = _capacityMgr.getAllocatedPoolCapacity(poolVO, null);
+        long totalAskingSize = 0;
+        for (Volume volume : volumes) {
+            if(volume.getTemplateId()!=null){
+                VMTemplateVO tmpl = _templateDao.findById(volume.getTemplateId());
+                if (tmpl.getFormat() != ImageFormat.ISO){
+                    allocatedSizeWithtemplate = _capacityMgr.getAllocatedPoolCapacity(poolVO, tmpl);
+                }
+            }
+            if(volume.getState() != Volume.State.Ready)
+                totalAskingSize = totalAskingSize + volume.getSize();
+        }
+
+        long totalOverProvCapacity;
+        if (pool.getPoolType() == StoragePoolType.NetworkFilesystem) {
+            totalOverProvCapacity = _storageOverprovisioningFactor.multiply(new BigDecimal(pool.getCapacityBytes())).longValue();// All this for the inaccuracy of floats for big number multiplication.
+        }else {
+            totalOverProvCapacity = pool.getCapacityBytes();
+        }
+
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Checking pool: " + pool.getId() + " for volume allocation " + volumes.toString() + ", maxSize : " + totalOverProvCapacity + ", totalAllocatedSize : " + allocatedSizeWithtemplate + ", askingSize : " + totalAskingSize + ", allocated disable threshold: " + _storageAllocatedThreshold);
+        }
+
+        double usedPercentage = (allocatedSizeWithtemplate + totalAskingSize) / (double)(totalOverProvCapacity);
+        if (usedPercentage > _storageAllocatedThreshold){
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Insufficient un-allocated capacity on: " + pool.getId() + " for volume allocation: " + volumes.toString() + " since its allocated percentage: " +usedPercentage + " has crossed the allocated pool.storage.allocated.capacity.disablethreshold: " + _storageAllocatedThreshold + ", skipping this pool");
+            }
+            return false;
+        }
+
+        if (totalOverProvCapacity < (allocatedSizeWithtemplate + totalAskingSize)) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Insufficient un-allocated capacity on: " + pool.getId() + " for volume allocation: " + volumes.toString() + ", not enough storage, maxSize : " + totalOverProvCapacity + ", totalAllocatedSize : " + allocatedSizeWithtemplate + ", askingSize : " + totalAskingSize);
+            }
+            return false;
+        }
+        return true;
     }
     
 }

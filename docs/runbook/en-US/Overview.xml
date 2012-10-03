@@ -26,17 +26,17 @@
 <chapter id="chap-Runbook-Overview">
   <title>Overview</title>
     <para>
-	Infrastructure-as-a-Service (IaaS) clouds can be a complex thing to build, 
-	and by definition they have a plethora of options, which often lead to confusion
-	for even experienced admins who are newcomers to building cloud platforms. 
-	The goal for this runbook is to provide a straightforward set of instructions 
-	to get you up and running with CloudStack with a minimum amount of trouble. 
+    Infrastructure-as-a-Service (IaaS) clouds can be a complex thing to build, 
+    and by definition they have a plethora of options, which often lead to confusion
+    for even experienced admins who are newcomers to building cloud platforms. 
+    The goal for this runbook is to provide a straightforward set of instructions 
+    to get you up and running with CloudStack with a minimum amount of trouble. 
     </para>
     <section id="sect-Runbook-Overview-What_building">
       <title>What exactly are we building?</title>
       <para>
-	  This runbook will focus on building a CloudStack cloud using KVM with 
-	  CentOS 6.2 with NFS storage on a flat layer-2 network utilizing 
+      This runbook will focus on building a CloudStack cloud using KVM with 
+      CentOS 6.2 with NFS storage on a flat layer-2 network utilizing 
           layer-3 network isolation (aka Security Groups), and doing it all
           on a single piece of hardware.   
       </para>
@@ -60,7 +60,7 @@
         software. Finally we'll spend a good deal of time configuring the entire
         cloud in the CloudStack web interface. 
       </para>
-    </section>	
+    </section>    
     <section id="sect-Runbook-Overview-prereqs">
       <title>Prerequisites</title>
         <para>
@@ -81,8 +81,8 @@
             </listitem>
             <listitem>
               <para>
-		  A /24 network with the gateway being at xxx.xxx.xxx.1, no DHCP should be on this network and 
-		  none of the computers running CloudStack may have a dynamic address.
+          A /24 network with the gateway being at xxx.xxx.xxx.1, no DHCP should be on this network and 
+          none of the computers running CloudStack may have a dynamic address.
               </para>
             </listitem>
             <listitem>

@@ -26,6 +26,7 @@ import java.nio.channels.SocketChannel;
 import java.rmi.RemoteException;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.SQLRecoverableException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
@@ -801,7 +802,7 @@ public class ClusterManagerImpl implements ClusterManager {
 
     private boolean isRootCauseConnectionRelated(Throwable e) {
         while (e != null) {
-            if (e instanceof com.mysql.jdbc.CommunicationsException || e instanceof com.mysql.jdbc.exceptions.jdbc4.CommunicationsException) {
+            if (e instanceof SQLRecoverableException) {
                 return true;
             }
 

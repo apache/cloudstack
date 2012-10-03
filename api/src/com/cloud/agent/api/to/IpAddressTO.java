@@ -18,7 +18,6 @@ package com.cloud.agent.api.to;
 
 import com.cloud.network.Networks.TrafficType;
 
-
 public class IpAddressTO {
 
     private long accountId;
@@ -31,12 +30,12 @@ public class IpAddressTO {
     private String vlanGateway;
     private String vlanNetmask;
     private String vifMacAddress;
-    private String guestIp;
     private Integer networkRate;
     private TrafficType trafficType;
     private String networkName;
 
-    public IpAddressTO(long accountId, String ipAddress, boolean add, boolean firstIP, boolean sourceNat, String vlanId, String vlanGateway, String vlanNetmask, String vifMacAddress, String guestIp, Integer networkRate, boolean isOneToOneNat) {
+    public IpAddressTO(long accountId, String ipAddress, boolean add, boolean firstIP, boolean sourceNat, String vlanId,
+            String vlanGateway, String vlanNetmask, String vifMacAddress, Integer networkRate, boolean isOneToOneNat) {
         this.accountId = accountId;
         this.publicIp = ipAddress;
         this.add = add;
@@ -46,7 +45,6 @@ public class IpAddressTO {
         this.vlanGateway = vlanGateway;
         this.vlanNetmask = vlanNetmask;
         this.vifMacAddress = vifMacAddress;
-        this.guestIp = guestIp;
         this.networkRate = networkRate;
         this.oneToOneNat = isOneToOneNat;
     }
@@ -56,10 +54,6 @@ public class IpAddressTO {
 
     public long getAccountId() {
         return accountId;
-    }
-
-    public String getGuestIp(){
-        return guestIp;
     }
 
     public String getPublicIp() {

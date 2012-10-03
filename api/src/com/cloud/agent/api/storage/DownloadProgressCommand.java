@@ -18,10 +18,6 @@ package com.cloud.agent.api.storage;
 
 
 
-/**
- * @author chiradeep
- *
- */
 public class DownloadProgressCommand extends DownloadCommand {
 	public static enum RequestType {GET_STATUS, ABORT, RESTART, PURGE, GET_OR_RESTART}
 	private String jobId;

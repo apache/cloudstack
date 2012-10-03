@@ -16,64 +16,20 @@
 // under the License.
 package com.cloud.bridge.persist.dao;
 
-import java.util.ArrayList;
 import java.util.List;
 
-import com.cloud.bridge.model.SBucket;
-import com.cloud.bridge.model.SObject;
-import com.cloud.bridge.persist.EntityDao;
-import com.cloud.bridge.util.EntityParam;
+import com.cloud.bridge.model.SBucketVO;
+import com.cloud.bridge.model.SObjectVO;
+import com.cloud.utils.db.GenericDao;
 
-/**
- * @author Kelven Yang
- */
-public class SObjectDao extends EntityDao<SObject> {
-	public SObjectDao() {
-		super(SObject.class);
-	}
+public interface SObjectDao extends GenericDao<SObjectVO, Long> {
 
-	public SObject getByNameKey(SBucket bucket, String nameKey) {
-		return queryEntity("from SObject where bucket=? and nameKey=?", 
-				new Object[] { new EntityParam(bucket), nameKey });
-	}
-	
-	public List<SObject> listBucketObjects(SBucket bucket, String prefix, String marker, int maxKeys) {
-		StringBuffer sb = new StringBuffer();
-		List<Object> params = new ArrayList<Object>();
+    List<SObjectVO> listBucketObjects(SBucketVO bucket, String prefix,
+            String marker, int maxKeys);
 
-		sb.append("from SObject o left join fetch o.items where deletionMark is null and o.bucket=?");
-		params.add(new EntityParam(bucket));
-		
-		if(prefix != null && !prefix.isEmpty()) {
-			sb.append(" and o.nameKey like ?");
-			params.add(new String(prefix + "%"));
-		}
-		
-		if(marker != null && !marker.isEmpty()) {
-			sb.append(" and o.nameKey > ?");
-			params.add(marker);
-		}
-		
-		return queryEntities(sb.toString(), 0, maxKeys, params.toArray());
-	}
-	
-	public List<SObject> listAllBucketObjects(SBucket bucket, String prefix, String marker, int maxKeys) {
-		StringBuffer sb = new StringBuffer();
-		List<Object> params = new ArrayList<Object>();
+    List<SObjectVO> listAllBucketObjects(SBucketVO bucket, String prefix,
+            String marker, int maxKeys);
 
-		sb.append("from SObject o left join fetch o.items where o.bucket=?");
-		params.add(new EntityParam(bucket));
-		
-		if(prefix != null && !prefix.isEmpty()) {
-			sb.append(" and o.nameKey like ?");
-			params.add(new String(prefix + "%"));
-		}
-		
-		if(marker != null && !marker.isEmpty()) {
-			sb.append(" and o.nameKey > ?");
-			params.add(marker);
-		}
-		
-		return queryEntities(sb.toString(), 0, maxKeys, params.toArray());
-	}
+    SObjectVO getByNameKey(SBucketVO bucket, String nameKey);
+
 }

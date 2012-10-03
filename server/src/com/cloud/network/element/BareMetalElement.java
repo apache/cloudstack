@@ -18,6 +18,7 @@ package com.cloud.network.element;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.ejb.Local;
 
@@ -73,7 +74,7 @@ public class BareMetalElement extends AdapterBase implements NetworkElement {
 	public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest,
 			ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
 		Host host = dest.getHost();
-		if (host.getHypervisorType() != HypervisorType.BareMetal) {
+		if (host == null || host.getHypervisorType() != HypervisorType.BareMetal) {
 			return true;
 		}
 		
@@ -122,7 +123,7 @@ public class BareMetalElement extends AdapterBase implements NetworkElement {
     }
     
     @Override
-    public boolean verifyServicesCombination(List<String> services) {
+    public boolean verifyServicesCombination(Set<Service> services) {
         return true;
     }
 }

@@ -77,10 +77,10 @@ public class FirstFitAllocator implements HostAllocator {
     @Inject ConfigurationDao _configDao = null;
     @Inject GuestOSDao _guestOSDao = null; 
     @Inject GuestOSCategoryDao _guestOSCategoryDao = null;
-    @Inject HypervisorCapabilitiesDao _hypervisorCapabilitiesDao = null;
     @Inject VMInstanceDao _vmInstanceDao = null;
     @Inject ResourceManager _resourceMgr;
     float _factor = 1;
+    boolean _checkHvm = true;
     protected String _allocationAlgorithm = "random";
     @Inject CapacityManager _capacityMgr;
     
@@ -205,11 +205,9 @@ public class FirstFitAllocator implements HostAllocator {
             }
                         
             //find number of guest VMs occupying capacity on this host.
-            Long vmCount = _vmInstanceDao.countRunningByHostId(host.getId());
-            Long maxGuestLimit = getHostMaxGuestLimit(host);
-            if (vmCount.longValue() == maxGuestLimit.longValue()){
+            if (_capacityMgr.checkIfHostReachMaxGuestLimit(host)){
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Host name: " + host.getName() + ", hostId: "+ host.getId() +" already has max Running VMs(count includes system VMs), limit is: " + maxGuestLimit + " , skipping this and trying other available hosts");
+                    s_logger.debug("Host name: " + host.getName() + ", hostId: "+ host.getId() +" already has max Running VMs(count includes system VMs), skipping this and trying other available hosts");
                 }
                 continue;
             }
@@ -285,6 +283,7 @@ public class FirstFitAllocator implements HostAllocator {
     	String templateGuestOSCategory = getTemplateGuestOSCategory(template);
     	
     	List<HostVO> prioritizedHosts = new ArrayList<HostVO>();
+	List<HostVO> noHvmHosts = new ArrayList<HostVO>();
     	
     	// If a template requires HVM and a host doesn't support HVM, remove it from consideration
     	List<HostVO> hostsToCheck = new ArrayList<HostVO>();
@@ -292,12 +291,19 @@ public class FirstFitAllocator implements HostAllocator {
     		for (HostVO host : hosts) {
     			if (hostSupportsHVM(host)) {
     				hostsToCheck.add(host);
+			} else {
+				noHvmHosts.add(host);
     			}
     		}
     	} else {
     		hostsToCheck.addAll(hosts);
     	}
     	
+	if (s_logger.isDebugEnabled()) {
+		if (noHvmHosts.size() > 0) {
+			s_logger.debug("Not considering hosts: "  + noHvmHosts + "  to deploy template: " + template +" as they are not HVM enabled");
+		}
+	}
     	// If a host is tagged with the same guest OS category as the template, move it to a high priority list
     	// If a host is tagged with a different guest OS category than the template, move it to a low priority list
     	List<HostVO> highPriorityHosts = new ArrayList<HostVO>();
@@ -335,6 +341,9 @@ public class FirstFitAllocator implements HostAllocator {
     }
     
     protected boolean hostSupportsHVM(HostVO host) {
+        if ( !_checkHvm ) {
+            return true;
+        }
     	// Determine host capabilities
 		String caps = host.getCapabilities();
 		
@@ -381,15 +390,7 @@ public class FirstFitAllocator implements HostAllocator {
     	GuestOSCategoryVO guestOSCategory = _guestOSCategoryDao.findById(guestOSCategoryId);
     	return guestOSCategory.getName();
     }
-    
-    protected Long getHostMaxGuestLimit(HostVO host) {
-        HypervisorType hypervisorType = host.getHypervisorType();
-        String hypervisorVersion = host.getHypervisorVersion();
 
-        Long maxGuestLimit = _hypervisorCapabilitiesDao.getMaxGuestsLimit(hypervisorType, hypervisorVersion);
-        return maxGuestLimit;
-    }
-    
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _name = name;
@@ -403,6 +404,8 @@ public class FirstFitAllocator implements HostAllocator {
             if (allocationAlgorithm != null) {
             	_allocationAlgorithm = allocationAlgorithm;
             }
+            String value = configs.get("xen.check.hvm");
+            _checkHvm = value == null ? true : Boolean.parseBoolean(value);
         }
         return true;
     }

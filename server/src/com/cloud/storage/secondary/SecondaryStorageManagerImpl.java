@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-//
+// 
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -46,6 +46,8 @@ import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
+import com.cloud.agent.api.to.NicTO;
+import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.cluster.ClusterManager;
@@ -73,6 +75,7 @@ import com.cloud.info.RunningHostInfoAgregator;
 import com.cloud.info.RunningHostInfoAgregator.ZoneHostInfo;
 import com.cloud.keystore.KeystoreManager;
 import com.cloud.network.IPAddressVO;
+import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.TrafficType;
@@ -1061,8 +1064,13 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 
         if (_configDao.isPremium()) {
             if (profile.getHypervisorType() == HypervisorType.Hyperv) {
+            	s_logger.debug("Hyperv hypervisor configured, telling the ssvm to load the CifsSecondaryStorageResource");
                 buf.append(" resource=com.cloud.storage.resource.CifsSecondaryStorageResource");
+            } else if (profile.getHypervisorType() == HypervisorType.VMware) {
+            	s_logger.debug("VmWare hypervisor configured, telling the ssvm to load the PremiumSecondaryStorageResource");
+            	buf.append(" resource=com.cloud.storage.resource.PremiumSecondaryStorageResource");
             } else {
+            	s_logger.debug("Telling the ssvm to load the NfsSecondaryStorageResource");
                 buf.append(" resource=com.cloud.storage.resource.NfsSecondaryStorageResource");
             }
         } else {
@@ -1093,7 +1101,6 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
                 buf.append(" eth").append(deviceId).append("mask=").append(nic.getNetmask());
             }
 
-            buf.append(" eth").append(deviceId).append("mask=").append(nic.getNetmask());
             if (nic.isDefaultNic()) {
                 buf.append(" gateway=").append(nic.getGateway());
             }
@@ -1450,4 +1457,25 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         }
         return null;
     }
+	
+    @Override
+    public boolean plugNic(Network network, NicTO nic, VirtualMachineTO vm,
+            ReservationContext context, DeployDestination dest) throws ConcurrentOperationException, ResourceUnavailableException,
+            InsufficientCapacityException {
+        //not supported
+        throw new UnsupportedOperationException("Plug nic is not supported for vm of type " + vm.getType());
+    }
+
+
+    @Override
+    public boolean unplugNic(Network network, NicTO nic, VirtualMachineTO vm,
+            ReservationContext context, DeployDestination dest) throws ConcurrentOperationException, ResourceUnavailableException {
+        //not supported
+        throw new UnsupportedOperationException("Unplug nic is not supported for vm of type " + vm.getType());
+    }
+
+	@Override
+	public void prepareStop(VirtualMachineProfile<SecondaryStorageVmVO> profile) {
+		
+	}
 }

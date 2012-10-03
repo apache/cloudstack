@@ -34,7 +34,6 @@ import com.cloud.api.commands.DeleteZoneCmd;
 import com.cloud.api.commands.LDAPConfigCmd;
 import com.cloud.api.commands.LDAPRemoveCmd;
 import com.cloud.api.commands.ListNetworkOfferingsCmd;
-import com.cloud.api.commands.MarkDefaultZoneForAccountCmd;
 import com.cloud.api.commands.UpdateCfgCmd;
 import com.cloud.api.commands.UpdateDiskOfferingCmd;
 import com.cloud.api.commands.UpdateNetworkOfferingCmd;
@@ -263,4 +262,10 @@ public interface ConfigurationService {
     boolean updateLDAP(LDAPConfigCmd cmd) throws NamingException;
 
 	boolean removeLDAP(LDAPRemoveCmd cmd);
+
+    /**
+     * @param offering
+     * @return
+     */
+    boolean isOfferingForVpc(NetworkOffering offering);
 }

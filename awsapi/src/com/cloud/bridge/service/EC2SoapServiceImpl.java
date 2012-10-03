@@ -33,6 +33,7 @@ import com.cloud.bridge.service.core.ec2.EC2CreateImage;
 import com.cloud.bridge.service.core.ec2.EC2CreateImageResponse;
 import com.cloud.bridge.service.core.ec2.EC2CreateKeyPair;
 import com.cloud.bridge.service.core.ec2.EC2CreateVolume;
+import com.cloud.bridge.service.core.ec2.EC2Tags;
 import com.cloud.bridge.service.core.ec2.EC2DeleteKeyPair;
 import com.cloud.bridge.service.core.ec2.EC2DescribeAddresses;
 import com.cloud.bridge.service.core.ec2.EC2DescribeAddressesResponse;
@@ -46,10 +47,13 @@ import com.cloud.bridge.service.core.ec2.EC2DescribeInstances;
 import com.cloud.bridge.service.core.ec2.EC2DescribeInstancesResponse;
 import com.cloud.bridge.service.core.ec2.EC2DescribeKeyPairs;
 import com.cloud.bridge.service.core.ec2.EC2DescribeKeyPairsResponse;
+import com.cloud.bridge.service.core.ec2.EC2ResourceTag;
 import com.cloud.bridge.service.core.ec2.EC2DescribeSecurityGroups;
 import com.cloud.bridge.service.core.ec2.EC2DescribeSecurityGroupsResponse;
 import com.cloud.bridge.service.core.ec2.EC2DescribeSnapshots;
 import com.cloud.bridge.service.core.ec2.EC2DescribeSnapshotsResponse;
+import com.cloud.bridge.service.core.ec2.EC2DescribeTags;
+import com.cloud.bridge.service.core.ec2.EC2DescribeTagsResponse;
 import com.cloud.bridge.service.core.ec2.EC2DescribeVolumes;
 import com.cloud.bridge.service.core.ec2.EC2DescribeVolumesResponse;
 import com.cloud.bridge.service.core.ec2.EC2DisassociateAddress;
@@ -69,6 +73,8 @@ import com.cloud.bridge.service.core.ec2.EC2PasswordData;
 import com.cloud.bridge.service.core.ec2.EC2RebootInstances;
 import com.cloud.bridge.service.core.ec2.EC2RegisterImage;
 import com.cloud.bridge.service.core.ec2.EC2ReleaseAddress;
+import com.cloud.bridge.service.core.ec2.EC2TagKeyValue;
+import com.cloud.bridge.service.core.ec2.EC2TagTypeId;
 import com.cloud.bridge.service.core.ec2.EC2RunInstances;
 import com.cloud.bridge.service.core.ec2.EC2RunInstancesResponse;
 import com.cloud.bridge.service.core.ec2.EC2SSHKeyPair;
@@ -79,6 +85,7 @@ import com.cloud.bridge.service.core.ec2.EC2StartInstances;
 import com.cloud.bridge.service.core.ec2.EC2StartInstancesResponse;
 import com.cloud.bridge.service.core.ec2.EC2StopInstances;
 import com.cloud.bridge.service.core.ec2.EC2StopInstancesResponse;
+import com.cloud.bridge.service.core.ec2.EC2TagsFilterSet;
 import com.cloud.bridge.service.core.ec2.EC2Volume;
 import com.cloud.bridge.service.core.ec2.EC2VolumeFilterSet;
 import com.cloud.bridge.service.exception.EC2ServiceException;
@@ -198,6 +205,93 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 		request.setZoneName( cvt.getAvailabilityZone());
 		return toCreateVolumeResponse( engine.createVolume( request ));
 	}
+
+    public CreateTagsResponse createTags(CreateTags createTags) {
+        EC2Tags request = new EC2Tags();
+        CreateTagsType ctt = createTags.getCreateTags();
+
+        ResourceIdSetType resourceIds = ctt.getResourcesSet();
+        ResourceTagSetType resourceTags = ctt.getTagSet();
+        request = toResourceTypeAndIds(resourceIds);
+        //add resource tag's to the request
+        if (resourceTags != null) {
+            ResourceTagSetItemType[] items = resourceTags.getItem();
+            if (items != null) {
+                for( int i=0; i < items.length; i++ ) {
+                    EC2TagKeyValue param1 = new EC2TagKeyValue();
+                    param1.setKey(items[i].getKey());
+                    param1.setValue(items[i].getValue());
+                    request.addResourceTag(param1);
+                }
+            }
+        }
+        return toCreateTagsResponse( engine.modifyTags( request, "create"));
+    }
+
+    public DeleteTagsResponse deleteTags(DeleteTags deleteTags) {
+        EC2Tags request = new EC2Tags();
+        DeleteTagsType dtt = deleteTags.getDeleteTags();
+
+        ResourceIdSetType resourceIds = dtt.getResourcesSet();
+        DeleteTagsSetType resourceTags = dtt.getTagSet();
+        request = toResourceTypeAndIds(resourceIds);
+        //add resource tag's to the request
+        if (resourceTags != null) {
+            DeleteTagsSetItemType[] items = resourceTags.getItem();
+            if (items != null) {
+                for( int i=0; i < items.length; i++ ) {
+                    EC2TagKeyValue param1 = new EC2TagKeyValue();
+                    param1.setKey(items[i].getKey());
+                    if (items[i].getValue() != null)
+                        param1.setValue(items[i].getValue());
+                    request.addResourceTag(param1);
+                }
+            }
+        }
+        return toDeleteTagsResponse( engine.modifyTags( request, "delete"));
+    }
+
+    private EC2Tags toResourceTypeAndIds(ResourceIdSetType resourceIds) {
+        EC2Tags request = new EC2Tags();
+        //add resource-type and resource-id's to the request
+        if (resourceIds != null) {
+            ResourceIdSetItemType[] items = resourceIds.getItem();
+            List<String> resourceTypeList = new ArrayList<String>();
+            if (items != null) {
+                for( int i=0; i < items.length; i++ ) {
+                    if (!items[i].getResourceId().contains(":") || items[i].getResourceId().split(":").length != 2) {
+                        throw new EC2ServiceException( ClientError.InvalidResourceId_Format,
+                                "Invalid Format. ResourceId format is resource-type:resource-uuid");
+                    }
+                    String resourceType = items[i].getResourceId().split(":")[0];
+                    if (resourceTypeList.isEmpty())
+                        resourceTypeList.add(resourceType);
+                    else {
+                        Boolean existsInList = false;
+                        for (String addedResourceType : resourceTypeList) {
+                            if (addedResourceType.equalsIgnoreCase(resourceType)) {
+                                existsInList = true;
+                                break;
+                            }
+                        }
+                        if (!existsInList)
+                            resourceTypeList.add(resourceType);
+                    }
+                }
+                for (String resourceType : resourceTypeList){
+                    EC2TagTypeId param1 = new EC2TagTypeId();
+                    param1.setResourceType(resourceType);
+                    for( int i=0; i < items.length; i++ ) {
+                        String[] resourceTag = items[i].getResourceId().split(":");
+                        if (resourceType.equals(resourceTag[0]))
+                            param1.addResourceId(resourceTag[1]);
+                    }
+                    request.addResourceType(param1);
+                }
+            }
+        }
+        return request;
+    }
 
 	public DeleteSecurityGroupResponse deleteSecurityGroup(DeleteSecurityGroup deleteSecurityGroup) {
         DeleteSecurityGroupType sgt = deleteSecurityGroup.getDeleteSecurityGroup();
@@ -323,11 +417,10 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 		if (null != items) {  // -> can be empty
 			for( int i=0; i < items.length; i++ ) request.addInstanceId( items[i].getInstanceId());
 		}
-		
-		if (null != fst) {
-			request.setFilterSet( toInstanceFilterSet( fst ));
-		}
-		
+
+        if (null != fst)
+            request = toInstanceFilterSet( request, fst );
+
 		return toDescribeInstancesResponse( engine.describeInstances( request ), engine );
 	}
 
@@ -428,13 +521,24 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 		{
 			String[] timeFilters = new String[1];
 			timeFilters[0] = new String( "start-time" );
-			request.setFilterSet( toSnapshotFilterSet( fst, timeFilters ));
+            request = toSnapshotFilterSet( request, fst, timeFilters );
 		}
 
 		return toDescribeSnapshotsResponse(engine.handleRequest(request));
 	}
 
-	
+    public DescribeTagsResponse describeTags(DescribeTags decsribeTags) {
+        EC2DescribeTags request = new EC2DescribeTags();
+        DescribeTagsType dtt = decsribeTags.getDescribeTags();
+
+        FilterSetType fst = dtt.getFilterSet();
+
+        if (fst != null)
+            request.setFilterSet( toTagsFilterSet( fst ));
+
+        return toDescribeTagsResponse(engine.describeTags(request));
+    }
+
 	public DescribeVolumesResponse describeVolumes(DescribeVolumes describeVolumes) 
 	{
 		EC2DescribeVolumes request = new EC2DescribeVolumes();
@@ -456,7 +560,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 			String[] timeFilters = new String[2];
 			timeFilters[0] = new String( "attachment.attach-time" );
 			timeFilters[1] = new String( "create-time"            );
-			request.setFilterSet( toVolumeFilterSet( fst, timeFilters ));
+            request = toVolumeFilterSet( request, fst, timeFilters );
 		}
 		
 		return toDescribeVolumesResponse( engine.handleRequest( request ));
@@ -855,7 +959,11 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
             param7.addItem( param8 );
 
             param3.setBlockDeviceMapping( param7 );
-		    param2.addItem( param3 );
+
+            EC2TagKeyValue[] tags = images[i].getResourceTags();
+            param3.setTagSet(setResourceTags(tags));
+
+            param2.addItem( param3 );
 		}
 
 		param1.setImagesSet( param2 );
@@ -940,8 +1048,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 		return vfs;
 	}
 
-	
-	private EC2VolumeFilterSet toVolumeFilterSet( FilterSetType fst, String[] timeStrs )
+    private EC2DescribeVolumes toVolumeFilterSet( EC2DescribeVolumes request, FilterSetType fst, String[] timeStrs )
 	{
 		EC2VolumeFilterSet vfs = new EC2VolumeFilterSet();
 		boolean timeFilter = false;
@@ -952,73 +1059,94 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 			// -> each filter can have one or more values associated with it
 			for( int j=0; j < items.length; j++ )
 			{
-				EC2Filter oneFilter = new EC2Filter();
-				String filterName = items[j].getName();
-				oneFilter.setName( filterName );
-				
-				// -> is the filter one of the xsd:dateTime filters?
-				timeFilter = false;
-				for( int m=0; m < timeStrs.length; m++ )
-				{
-					 timeFilter = filterName.equalsIgnoreCase( timeStrs[m] );
-					 if (timeFilter) break;
-				}
-				
-				ValueSetType vst = items[j].getValueSet();
-				ValueType[] valueItems = vst.getItem();
-				for( int k=0; k < valueItems.length; k++ ) 
-				{
-					// -> time values are not encoded as regexes
-					if ( timeFilter )
-					     oneFilter.addValue( valueItems[k].getValue());
-					else oneFilter.addValueEncoded( valueItems[k].getValue());
-				}
-				vfs.addFilter( oneFilter );
-			}
-		}		
-		return vfs;
-	}
+                String filterName = items[j].getName();
+                ValueSetType vst = items[j].getValueSet();
+                ValueType[] valueItems = vst.getItem();
 
-	
-	private EC2SnapshotFilterSet toSnapshotFilterSet( FilterSetType fst, String[] timeStrs )
-	{
-		EC2SnapshotFilterSet vfs = new EC2SnapshotFilterSet();
+                if (filterName.startsWith("tag:")) {
+                    String key= filterName.split(":")[1];
+                    for (ValueType valueItem : valueItems) {
+                        EC2TagKeyValue tag = new EC2TagKeyValue();
+                        tag.setKey(key);
+                        tag.setValue(valueItem.getValue());
+                        request.addResourceTag(tag);
+                    }
+                } else {
+                    EC2Filter oneFilter = new EC2Filter();
+                    oneFilter.setName( filterName );
+
+                    // -> is the filter one of the xsd:dateTime filters?
+                    timeFilter = false;
+                    for( int m=0; m < timeStrs.length; m++ ) {
+                        timeFilter = filterName.equalsIgnoreCase( timeStrs[m] );
+                        if (timeFilter) break;
+                    }
+
+                    for( int k=0; k < valueItems.length; k++ ) {
+                        // -> time values are not encoded as regexes
+                        if ( timeFilter )
+                            oneFilter.addValue( valueItems[k].getValue());
+                        else
+                            oneFilter.addValueEncoded( valueItems[k].getValue());
+                    }
+                    vfs.addFilter( oneFilter );
+                }
+            }
+            request.setFilterSet(vfs);
+        }
+        return request;
+    }
+
+    private EC2DescribeSnapshots toSnapshotFilterSet( EC2DescribeSnapshots request, FilterSetType fst, String[] timeStrs )
+    {
+        EC2SnapshotFilterSet sfs = new EC2SnapshotFilterSet();
 		boolean timeFilter = false;
-		
+
 		FilterType[] items = fst.getItem();
 		if (null != items) 
 		{
 			// -> each filter can have one or more values associated with it
 			for( int j=0; j < items.length; j++ )
 			{
-				EC2Filter oneFilter = new EC2Filter();
-				String filterName = items[j].getName();
-				oneFilter.setName( filterName );
-				
-				// -> is the filter one of the xsd:dateTime filters?
-				timeFilter = false;
-				for( int m=0; m < timeStrs.length; m++ )
-				{
-					 timeFilter = filterName.equalsIgnoreCase( timeStrs[m] );
-					 if (timeFilter) break;
-				}
-				
-				ValueSetType vst = items[j].getValueSet();
-				ValueType[] valueItems = vst.getItem();
-				for( int k=0; k < valueItems.length; k++ ) 
-				{
-					// -> time values are not encoded as regexes
-					if ( timeFilter )
-					     oneFilter.addValue( valueItems[k].getValue());
-					else oneFilter.addValueEncoded( valueItems[k].getValue());
-				}
-				vfs.addFilter( oneFilter );
-			}
-		}		
-		return vfs;
-	}
+                String filterName = items[j].getName();
+                ValueSetType vst = items[j].getValueSet();
+                ValueType[] valueItems = vst.getItem();
 
-	
+                if (filterName.startsWith("tag:")) {
+                    String key= filterName.split(":")[1];
+                    for (ValueType valueItem : valueItems) {
+                        EC2TagKeyValue tag = new EC2TagKeyValue();
+                        tag.setKey(key);
+                        tag.setValue(valueItem.getValue());
+                        request.addResourceTag(tag);
+                    }
+                }
+                else {
+                    EC2Filter oneFilter = new EC2Filter();
+                    oneFilter.setName( filterName );
+
+                    // -> is the filter one of the xsd:dateTime filters?
+                    timeFilter = false;
+                    for( int m=0; m < timeStrs.length; m++ ) {
+                        timeFilter = filterName.equalsIgnoreCase( timeStrs[m] );
+                        if (timeFilter) break;
+                    }
+
+                    for( int k=0; k < valueItems.length; k++ ) {
+                        // -> time values are not encoded as regexes
+                        if ( timeFilter )
+                            oneFilter.addValue( valueItems[k].getValue());
+                        else
+                            oneFilter.addValueEncoded( valueItems[k].getValue());
+                    }
+                    sfs.addFilter( oneFilter );
+                }
+            }
+            request.setFilterSet(sfs);
+        }
+        return request;
+    }
+
 	// TODO make these filter set functions use generics 
 	private EC2GroupFilterSet toGroupFilterSet( FilterSetType fst )
 	{
@@ -1046,8 +1174,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 		return gfs;
 	}
 
-	
-	private EC2InstanceFilterSet toInstanceFilterSet( FilterSetType fst )
+    private EC2DescribeInstances toInstanceFilterSet( EC2DescribeInstances request, FilterSetType fst )
 	{
 		EC2InstanceFilterSet ifs = new EC2InstanceFilterSet();
 		
@@ -1057,22 +1184,30 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 			// -> each filter can have one or more values associated with it
 			for( int j=0; j < items.length; j++ )
 			{
-				EC2Filter oneFilter = new EC2Filter();
-				String filterName = items[j].getName();
-				oneFilter.setName( filterName );
-				
-				ValueSetType vst = items[j].getValueSet();
-				ValueType[] valueItems = vst.getItem();
-				for( int k=0; k < valueItems.length; k++ ) 
-				{
-					oneFilter.addValueEncoded( valueItems[k].getValue());
-				}
-				ifs.addFilter( oneFilter );
-			}
-		}		
-		return ifs;
-	}
+                String filterName = items[j].getName();
+                ValueSetType vst = items[j].getValueSet();
+                ValueType[] valueItems = vst.getItem();
 
+                if (filterName.startsWith("tag:")) {
+                    String key= filterName.split(":")[1];
+                    for (ValueType valueItem : valueItems) {
+                        EC2TagKeyValue tag = new EC2TagKeyValue();
+                        tag.setKey(key);
+                        tag.setValue(valueItem.getValue());
+                        request.addResourceTag(tag);
+                    }
+                } else {
+                    EC2Filter oneFilter = new EC2Filter();
+                    oneFilter.setName( filterName );
+                    for( int k=0; k < valueItems.length; k++ )
+                        oneFilter.addValueEncoded( valueItems[k].getValue());
+                    ifs.addFilter( oneFilter );
+                }
+            }
+            request.setFilterSet(ifs);
+        }
+        return request;
+    }
 
     private EC2AvailabilityZonesFilterSet toAvailabiltyZonesFilterSet( FilterSetType fst )	{
         EC2AvailabilityZonesFilterSet azfs = new EC2AvailabilityZonesFilterSet();
@@ -1094,8 +1229,28 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
         }
         return azfs;
     }
-	
-	
+
+    private EC2TagsFilterSet toTagsFilterSet( FilterSetType fst ) {
+        EC2TagsFilterSet tfs = new EC2TagsFilterSet();
+
+        FilterType[] items = fst.getItem();
+        if (items != null) {
+            for (FilterType item : items) {
+                EC2Filter oneFilter = new EC2Filter();
+                String filterName = item.getName();
+                oneFilter.setName( filterName );
+
+                ValueSetType vft = item.getValueSet();
+                ValueType[] valueItems = vft.getItem();
+                for (ValueType valueItem : valueItems) {
+                    oneFilter.addValueEncoded( valueItem.getValue());
+                }
+                tfs.addFilter( oneFilter );
+            }
+        }
+        return tfs;
+    }
+
 	// toMethods
 	public static DescribeVolumesResponse toDescribeVolumesResponse( EC2DescribeVolumesResponse engineResponse ) 
 	{
@@ -1142,14 +1297,9 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
             }
 	        
             param3.setAttachmentSet( param4 );
-            
-            // -> try to generate an empty tag does not seem to work
-            ResourceTagSetType param6 = new ResourceTagSetType();
-            ResourceTagSetItemType param7 = new ResourceTagSetItemType();
-            param7.setKey("");
-            param7.setValue("");
-            param6.addItem( param7 );
-            param3.setTagSet( param6 );          
+
+            EC2TagKeyValue[] tags = vol.getResourceTags();
+            param3.setTagSet( setResourceTags(tags) );
             param2.addItem( param3 );
         }
 	    param1.setVolumeSet( param2 );
@@ -1228,7 +1378,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 	        param7.setPrivateDnsName( "" );
 	        param7.setDnsName( "" );
 	        param7.setReason( "" );
-	        param7.setKeyName( "" );
+            param7.setKeyName( inst.getKeyPairName());
 	        param7.setAmiLaunchIndex( "" );
 	        param7.setInstanceType( inst.getServiceOffering());
 	        
@@ -1276,6 +1426,9 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
             param7.setInstanceLifecycle( "" );
             param7.setSpotInstanceRequestId( "" );
             param7.setHypervisor(inst.getHypervisor());
+
+            EC2TagKeyValue[] tags = inst.getResourceTags();
+            param7.setTagSet(setResourceTags(tags));
 
 	        param6.addItem( param7 );
 	        param3.setInstancesSet( param6 );
@@ -1547,7 +1700,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 	        param7.setPrivateDnsName( "" );
 	        param7.setDnsName( "" );
 	        param7.setReason( "" );
-	        param7.setKeyName( "" );
+            param7.setKeyName( inst.getKeyPairName());
 	        param7.setAmiLaunchIndex( "" );
 	        
 	        ProductCodesSetType param9 = new ProductCodesSetType();
@@ -1759,12 +1912,9 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 	         param3.setDescription( snap.getName());
 	         param3.setOwnerAlias( snap.getAccountName() );
 	         
-	         ResourceTagSetType param18 = new ResourceTagSetType();
-	         ResourceTagSetItemType param19 = new ResourceTagSetItemType();
-	         param19.setKey("");
-	         param19.setValue("");
-	         param18.addItem( param19 );
-	         param3.setTagSet( param18 );          
+
+	         EC2TagKeyValue[] tags = snap.getResourceTags();
+	         param3.setTagSet(setResourceTags(tags));
              param2.addItem( param3 );
 	    }
 	    
@@ -1931,7 +2081,48 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 		response.setRevokeSecurityGroupIngressResponse( param1 );
         return response;
 	}
-	
+
+    public static CreateTagsResponse toCreateTagsResponse( boolean success ) {
+        CreateTagsResponse response = new CreateTagsResponse();
+        CreateTagsResponseType param1 = new CreateTagsResponseType();
+
+        param1.set_return(success);
+        param1.setRequestId( UUID.randomUUID().toString());
+        response.setCreateTagsResponse(param1);
+        return response;
+    }
+
+    public static DeleteTagsResponse toDeleteTagsResponse( boolean success ) {
+        DeleteTagsResponse response = new DeleteTagsResponse();
+        DeleteTagsResponseType param1 = new DeleteTagsResponseType();
+
+        param1.set_return(success);
+        param1.setRequestId( UUID.randomUUID().toString());
+        response.setDeleteTagsResponse(param1);
+        return response;
+    }
+
+    public static DescribeTagsResponse toDescribeTagsResponse( EC2DescribeTagsResponse engineResponse) {
+        DescribeTagsResponse response = new DescribeTagsResponse();
+        DescribeTagsResponseType param1 = new DescribeTagsResponseType();
+
+        EC2ResourceTag[] tags = engineResponse.getTagsSet();
+        TagSetType param2 = new TagSetType();
+        for (EC2ResourceTag tag : tags) {
+            TagSetItemType param3 = new TagSetItemType();
+            param3.setResourceId(tag.getResourceId());
+            param3.setResourceType(tag.getResourceType());
+            param3.setKey(tag.getKey());
+            if (tag.getValue() != null)
+                param3.setValue(tag.getValue());
+            param2.addItem(param3);
+        }
+        param1.setTagSet(param2);
+        param1.setRequestId( UUID.randomUUID().toString());
+        response.setDescribeTagsResponse(param1);
+        return response;
+    }
+
 	public DescribeKeyPairsResponse describeKeyPairs(DescribeKeyPairs describeKeyPairs) {
 		
 		EC2DescribeKeyPairs ec2Request = new EC2DescribeKeyPairs();
@@ -2047,7 +2238,29 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 	public GetPasswordDataResponse getPasswordData(GetPasswordData getPasswordData) {
 		return toGetPasswordData(engine.getPasswordData(getPasswordData.getGetPasswordData().getInstanceId()));
 	}
-	
+
+    public static ResourceTagSetType setResourceTags(EC2TagKeyValue[] tags){
+        ResourceTagSetType param1 = new ResourceTagSetType();
+        if (null == tags || 0 == tags.length) {
+            ResourceTagSetItemType param2 = new ResourceTagSetItemType();
+            param2.setKey("");
+            param2.setValue("");
+            param1.addItem( param2 );
+        }
+        else {
+            for(EC2TagKeyValue tag : tags) {
+                ResourceTagSetItemType param2 = new ResourceTagSetItemType();
+                param2.setKey(tag.getKey());
+                if (tag.getValue() != null)
+                    param2.setValue(tag.getValue());
+                else
+                    param2.setValue("");
+                param1.addItem(param2);
+            }
+        }
+        return param1;
+    }
+
 	@SuppressWarnings("serial")
 	public static GetPasswordDataResponse toGetPasswordData(final EC2PasswordData passwdData) {
 		return new GetPasswordDataResponse() {{
@@ -2116,10 +2329,6 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 	public CreateSubnetResponse createSubnet(CreateSubnet createSubnet) {
 		throw new EC2ServiceException(ClientError.Unsupported, "This operation is not available");
 	}
-	
-	public CreateTagsResponse createTags(CreateTags createTags) {
-		throw new EC2ServiceException(ClientError.Unsupported, "This operation is not available");
-	}
 
 	public CreateVpcResponse createVpc(CreateVpc createVpc) {
 		throw new EC2ServiceException(ClientError.Unsupported, "This operation is not available");
@@ -2154,10 +2363,6 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 	}
 
 	public DeleteSubnetResponse deleteSubnet(DeleteSubnet deleteSubnet) {
-		throw new EC2ServiceException(ClientError.Unsupported, "This operation is not available");
-	}
-		
-	public DeleteTagsResponse deleteTags(DeleteTags deleteTags) {
 		throw new EC2ServiceException(ClientError.Unsupported, "This operation is not available");
 	}
 
@@ -2226,10 +2431,6 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 	}
 
 	public DescribeSubnetsResponse describeSubnets(DescribeSubnets describeSubnets) {
-		throw new EC2ServiceException(ClientError.Unsupported, "This operation is not available");
-	}
-	
-	public DescribeTagsResponse describeTags(DescribeTags describeTags) {
 		throw new EC2ServiceException(ClientError.Unsupported, "This operation is not available");
 	}
 	

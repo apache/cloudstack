@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-//
+// 
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -25,8 +25,8 @@ import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
@@ -40,12 +40,10 @@ import com.cloud.network.NetworkProfile;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
-import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
-import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -173,9 +171,15 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
         	DataCenterVO dcVo = _dcDao.findById(dcId);
         	if(dcVo.getNetworkType() != NetworkType.Basic) {
 	        	super.release(nic, vm, reservationId);
+	        	if (s_logger.isDebugEnabled()) {
+	                s_logger.debug("Released nic: " + nic);
+	            }
 	        	return true;
         	} else {
                 nic.deallocate();
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Released nic: " + nic);
+                }
         		return true;
         	}
         }
@@ -183,6 +187,9 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
         _dcDao.releaseLinkLocalIpAddress(nic.getId(), reservationId);
         
         nic.deallocate();
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Released nic: " + nic);
+        }
         
         return true;
     }

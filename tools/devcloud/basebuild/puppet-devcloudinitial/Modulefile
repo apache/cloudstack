@@ -1,0 +1,8 @@
+name    'puppet-devcloudinitial'
+version '0.0.1'
+source ''
+author 'Apache Software Foundation'
+license 'Licensed under the Apache License, Version 2.0. http://www.apache.org/licenses/LICENSE-2.0'
+summary 'CloudStack DevCloud initial configuration module'
+description 'Installation and configuration of all prequisites for building a DevCloud image.'
+project_page 'http://cloudstack.org'

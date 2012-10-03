@@ -73,17 +73,20 @@
       return $(this).hasClass(sectionID);
     });
     var data = args.sections[sectionID];
+    
     data.$browser = $browser;
-
     $navItem.siblings().removeClass('active');
     $navItem.addClass('active');
 
     // Reset browser panels
     $browser.cloudBrowser('removeAllPanels');
     $browser.cloudBrowser('addPanel', {
-      title: _l(data.title),
+      title: '<span class="section">' + _l(data.title) + '</span>' + '<span class="subsection"></span>',
       data: '',
-      complete: function($panel) {
+      complete: function($panel, $breadcrumb) {
+        $breadcrumb.attr('title', _l(data.title));
+        data.$breadcrumb = $breadcrumb;
+        
         // Hide breadcrumb if this is the home section
         if (args.home === sectionID) {
           $('#breadcrumbs').find('li:first, div.end:last').hide();
@@ -349,9 +352,26 @@
 
   // Events
   $(function() {
+    // Check if target should be hovered
+    function checkHoveredLabel($target) {
+      var $multiWizard = $('div.ui-dialog div.multi-wizard');
+      if (($target.is('label[for]') && !$target.parents('body.login')) || 
+        ($multiWizard.size() && 
+          ($target.is('.multi-wizard label') && $target.prev('input[type="radio"],input[type="checkbox"]').size()) || 
+          ($target.is('.multi-wizard .select-desc div.name') && $target.parent('div.select-desc').prev('input[type="radio"],input[type="checkbox"]').size())
+        ))
+        return true;
+
+      return false;
+    }
+
     // Rollover behavior for user options
     $(document).bind('mouseover', function(event) {
-      if ($(event.target).closest('#user, #user-options').size()) {
+      var $target = $(event.target);
+      if (checkHoveredLabel($target)) {
+        $target.addClass('label-hovered');
+      }
+      if ($target.closest('#user, #user-options').size()) {
         return false;
       }
       else $('#user-options').hide();
@@ -359,11 +379,29 @@
       return false;
     });
 
+    $(document).bind('mouseout', function(event) {
+      var $target = $(event.target);
+      if (checkHoveredLabel($target)) {
+        $target.removeClass('label-hovered');
+      }
+    });
+
     $(document).bind('click', function(event) {
       var $target = $(event.target);
       var $container = $target.closest('[cloudStack-container]');
       var args = $container.data('cloudStack-args');
       var $browser = $container.find('#browser .container');
+      var $multiWizard = $('div.ui-dialog div.multi-wizard');
+
+      // Wizard: trigger click event for input when click it label
+      if ($multiWizard.size()) {
+          if ($target.is('.multi-wizard label') && $target.prev('input[type="radio"],input[type="checkbox"]').size()) {
+            $target.prev('input').trigger('click');
+          }
+          if ($target.is('.multi-wizard .select-desc div.name') && $target.parent('div.select-desc').prev('input[type="radio"],input[type="checkbox"]').size()) {
+            $target.parent('div.select-desc').prev('input').trigger('click');
+          }
+      }
 
       if (!$container.size()) return true;
 

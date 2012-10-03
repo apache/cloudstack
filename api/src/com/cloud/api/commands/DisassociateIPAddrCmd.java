@@ -45,7 +45,8 @@ public class DisassociateIPAddrCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @IdentityMapper(entityTableName="user_ip_address")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the id of the public ip address to disassociate")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the id of the public ip address" +
+    		" to disassociate")
     private Long id;
 
     // unexposed parameter needed for events logging
@@ -71,8 +72,8 @@ public class DisassociateIPAddrCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws InsufficientAddressCapacityException{
-        UserContext.current().setEventDetails("Ip Id: "+getIpAddressId());
-        boolean result = _networkService.disassociateIpAddress(id);
+        UserContext.current().setEventDetails("Ip Id: " + getIpAddressId());
+        boolean result = _networkService.releaseIpAddress(getIpAddressId());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);

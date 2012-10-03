@@ -17,12 +17,12 @@
 
 import deployDataCenter
 import TestCaseExecuteEngine
-import NoseTestExecuteEngine
 from optparse import OptionParser
 import os
 
 if __name__ == "__main__":
-    parser = OptionParser()
+
+    parser = OptionParser() #TODO: deprecate and use the argparse module
   
     parser.add_option("-c", "--config", action="store", default="./datacenterCfg", dest="config", help="the path where the json config file generated, by default is ./datacenterCfg")
     parser.add_option("-d", "--directory", dest="testCaseFolder", help="the test case directory")
@@ -30,8 +30,7 @@ if __name__ == "__main__":
     parser.add_option("-t", "--client", dest="testcaselog", help="test case log file")
     parser.add_option("-l", "--load", dest="load", action="store_true", help="only load config, do not deploy, it will only run testcase")
     parser.add_option("-f", "--file", dest="module", help="run tests in the given file")
-    parser.add_option("-n", "--nose", dest="nose", action="store_true", help="run tests using nose")
-    parser.add_option("-x", "--xml", dest="xmlrunner", action="store_true", help="use the xml runner to generate xml reports")
+    parser.add_option("-x", "--xml", dest="xmlrunner", help="use the xml runner to generate xml reports and path to store xml files")
     (options, args) = parser.parse_args()
     
     testResultLogFile = None
@@ -47,8 +46,10 @@ if __name__ == "__main__":
     else:
         deploy.deploy()
         
-    format = "text"        
-    if options.xmlrunner:
+    format = "text"
+    xmlDir = None
+    if options.xmlrunner is not None:
+        xmlDir = options.xmlrunner
         format = "xml"
     
     if options.testCaseFolder is None:
@@ -56,18 +57,10 @@ if __name__ == "__main__":
             parser.print_usage()
             exit(1)
         else:
-            if options.nose:
-                engine = NoseTestExecuteEngine.NoseTestExecuteEngine(deploy.testClient, testCaseLogFile, testResultLogFile, format)
-                engine.runTestsFromFile(options.module)
-            else:
-                engine = TestCaseExecuteEngine.TestCaseExecuteEngine(deploy.testClient, testCaseLogFile, testResultLogFile, format)
-                engine.loadTestsFromFile(options.module)
-                engine.run()
+            engine = TestCaseExecuteEngine.TestCaseExecuteEngine(deploy.testClient, testCaseLogFile, testResultLogFile, format, xmlDir)
+            engine.loadTestsFromFile(options.module)
+            engine.run()
     else:
-        if options.nose:
-            engine = NoseTestExecuteEngine.NoseTestExecuteEngine(deploy.testClient, clientLog=testCaseLogFile, resultLog=testResultLogFile, workingdir=options.testCaseFolder, format=format)
-            engine.runTests()
-        else:
-           engine = TestCaseExecuteEngine.TestCaseExecuteEngine(deploy.testClient, testCaseLogFile, testResultLogFile, format)
-           engine.loadTestsFromDir(options.testCaseFolder)
-           engine.run()
+       engine = TestCaseExecuteEngine.TestCaseExecuteEngine(deploy.testClient, testCaseLogFile, testResultLogFile, format, xmlDir)
+       engine.loadTestsFromDir(options.testCaseFolder)
+       engine.run()

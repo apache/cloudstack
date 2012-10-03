@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-//
+// 
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -53,6 +53,7 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.http.ConnectionClosedException;
 import org.apache.http.HttpException;
 import org.apache.http.HttpRequest;
@@ -112,7 +113,6 @@ import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
-import com.cloud.utils.encoding.Base64;
 import com.cloud.utils.exception.CSExceptionErrorCode;
 import com.cloud.uuididentity.dao.IdentityDao;
 
@@ -503,7 +503,8 @@ public class ApiServer implements HttpRequestHandler {
             asyncCmd.setStartEventId(startEventId);
 
             // save the scheduled event
-            Long eventId = EventUtils.saveScheduledEvent((callerUserId == null) ? User.UID_SYSTEM : callerUserId, asyncCmd.getEntityOwnerId(), asyncCmd.getEventType(), asyncCmd.getEventDescription(),
+            Long eventId = EventUtils.saveScheduledEvent((callerUserId == null) ? User.UID_SYSTEM : callerUserId, 
+                    asyncCmd.getEntityOwnerId(), asyncCmd.getEventType(), asyncCmd.getEventDescription(),
                     startEventId);
             if (startEventId == 0) {
                 // There was no create event before, set current event id as start eventId
@@ -751,7 +752,7 @@ public class ApiServer implements HttpRequestHandler {
             mac.init(keySpec);
             mac.update(unsignedRequest.getBytes());
             byte[] encryptedBytes = mac.doFinal();
-            String computedSignature = Base64.encodeBytes(encryptedBytes);
+            String computedSignature = Base64.encodeBase64String(encryptedBytes);
             boolean equalSig = signature.equals(computedSignature);
             if (!equalSig) {
                 s_logger.info("User signature: " + signature + " is not equaled to computed signature: " + computedSignature);
@@ -843,7 +844,7 @@ public class ApiServer implements HttpRequestHandler {
             SecureRandom sesssionKeyRandom = new SecureRandom();
             byte sessionKeyBytes[] = new byte[20];
             sesssionKeyRandom.nextBytes(sessionKeyBytes);
-            String sessionKey = Base64.encodeBytes(sessionKeyBytes);
+            String sessionKey = Base64.encodeBase64String(sessionKeyBytes);
             session.setAttribute("sessionkey", sessionKey);
 
             return;

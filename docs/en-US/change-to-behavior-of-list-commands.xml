@@ -1,0 +1,89 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
+<section id="change-to-behavior-of-list-commands">
+        <title>Change to Behavior of List Commands</title>
+        <para>There was a major change in how our List* API commands work in CloudStack 3.0 compared to 2.2.x. The rules below apply only for managed resources – those that belong to an account, domain, or project. They are irrelevant for the List* commands displaying unmanaged (system) resources, such as hosts, clusters, and external network resources.</para>
+        <para>When no parameters are passed in to the call, the caller sees only resources owned by the caller (even when the caller is the administrator). Previously, the administrator saw everyone else's resources by default.</para>
+        <para>When accountName and domainId are passed in:</para>
+        <itemizedlist>
+            <listitem><para>The caller sees the resources dedicated to the account specified.</para></listitem>
+            <listitem><para>If the call is executed by a regular user, the user is authorized to specify only the user's own account and domainId.</para></listitem>
+            <listitem><para>If the caller is a domain administrator, CloudStack performs an authorization check to see whether the caller is permitted to view resources for the given account and domainId.</para></listitem>
+        </itemizedlist>
+        <para>When projectId is passed in, only resources belonging to that project are listed.</para>
+        <para>When domainId is passed in, the call returns only resources belonging to the domain specified. To see the resources of subdomains, use the parameter isRecursive=true. Again, the regular user can see only resources owned by that user, the root administrator can list anything, and a domain administrator is authorized to see only resources of the administrator's own domain and subdomains.</para>
+        <para>To see all resources the caller is authorized to see, except for Project resources, use the parameter listAll=true.</para>
+        <para>To see all Project resources the caller is authorized to see, use the parameter projectId=-1.</para>
+        <para>There is one API command that doesn't fall under the rules above completely: the listTemplates command. This command has its own flags defining the list rules:</para>
+        <informaltable frame="all">
+            <tgroup cols="2" align="left" colsep="1" rowsep="1">
+                <colspec colname="c1" />
+                <colspec colname="c2" />
+                <thead>
+                    <row>
+                        <entry><para>listTemplates Flag</para></entry>
+                        <entry><para>Description</para></entry>
+                    </row>
+                </thead>
+                <tbody>
+                    <row>
+                        <entry><para>featured</para></entry>
+                        <entry><para>Returns templates that have been marked as featured and public.</para></entry>
+                    </row>
+
+                        <row>
+                            <entry><para>self</para></entry>
+                            <entry><para>Returns templates that have been registered or created by the calling user.</para></entry>
+                        </row>
+
+                        <row>
+                            <entry><para>selfexecutable</para></entry>
+                            <entry><para>Same as self, but only returns templates that are ready to be deployed with.</para></entry>
+                        </row>
+
+                        <row>
+                            <entry><para>sharedexecutable</para></entry>
+                            <entry><para>Ready templates that have been granted to the calling user by another user.</para></entry>
+                        </row>
+
+                    <row>
+                        <entry><para>executable</para></entry>
+                        <entry><para>Templates that are owned by the calling user, or public templates, that can be used to deploy a new VM.</para></entry>
+                    </row>
+
+                        <row>
+                            <entry><para>community</para></entry>
+                            <entry><para>Returns templates that have been marked as public but not featured.</para></entry>
+                        </row>
+
+                    <row>
+                        <entry><para>all</para></entry>
+                        <entry><para>Returns all templates (only usable by admins).</para></entry>
+                    </row>
+                </tbody>
+                </tgroup>
+        </informaltable>    
+        <para>The &PRODUCT; UI on a general view will display all resources that the logged-in user is authorized to see, except for project resources. To see the project resources, select the project view.</para>
+    </section>

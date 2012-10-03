@@ -18,41 +18,16 @@ package com.cloud.bridge.persist.dao;
 
 import java.util.List;
 
-import com.cloud.bridge.model.SMeta;
-import com.cloud.bridge.persist.EntityDao;
-import com.cloud.bridge.persist.PersistContext;
+import com.cloud.bridge.model.SMetaVO;
 import com.cloud.bridge.service.core.s3.S3MetaDataEntry;
+import com.cloud.utils.db.GenericDao;
 
-/**
- * @author Kelven Yang, John Zucker
- */
-public class SMetaDao extends EntityDao<SMeta> {
-	public SMetaDao() {
-		super(SMeta.class);
-	}
-	
-	public List<SMeta> getByTarget(String target, long targetId) {
-		return queryEntities("from SMeta where target=? and targetId=?", new Object[] {target, targetId});
-	}
+public interface SMetaDao extends GenericDao<SMetaVO, Long> {
 
-	public SMeta save(String target, long targetId, S3MetaDataEntry entry) {
-		SMeta meta = new SMeta();
-		meta.setTarget(target);
-		meta.setTargetId(targetId);
-		meta.setName(entry.getName());
-		meta.setValue(entry.getValue());
-		
-		PersistContext.getSession().save(meta);
-		return meta;
-	}
-	
-	public void save(String target, long targetId, S3MetaDataEntry[] entries) {
-		// To redefine the target's metadaa
-		executeUpdate("delete from SMeta where target=? and targetId=?", new Object[] { target, new Long(targetId)});
+    List<SMetaVO> getByTarget(String target, long targetId);
 
-		if(entries != null) {
-			for(S3MetaDataEntry entry : entries)
-				save(target, targetId, entry);
-		}
-	}
+    SMetaVO save(String target, long targetId, S3MetaDataEntry entry);
+
+    void save(String target, long targetId, S3MetaDataEntry[] entries);
+
 }

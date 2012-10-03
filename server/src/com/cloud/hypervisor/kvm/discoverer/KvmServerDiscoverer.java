@@ -51,11 +51,9 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.hypervisor.kvm.resource.KvmDummyResourceBase;
+import com.cloud.hypervisor.kvm.discoverer.KvmDummyResourceBase;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.PhysicalNetworkSetupInfo;
-import com.cloud.network.PhysicalNetworkVO;
-import com.cloud.network.Networks.TrafficType;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
 import com.cloud.resource.ResourceManager;
@@ -66,9 +64,6 @@ import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SSHCmdHelper;
-import com.trilead.ssh2.ChannelCondition;
-import com.trilead.ssh2.SCPClient;
-import com.trilead.ssh2.Session;
 
 @Local(value=Discoverer.class)
 public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,

@@ -18,6 +18,7 @@ package com.cloud.network.element;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
@@ -56,7 +57,8 @@ public interface NetworkElement extends Adapter {
      * @return true if network configuration is now usable; false if not; null if not handled by this element.
      * @throws InsufficientNetworkCapacityException TODO
      */
-    boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+    boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) 
+            throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
     
     /**
      * Prepare for a nic to be added into this network.
@@ -70,7 +72,9 @@ public interface NetworkElement extends Adapter {
      * @throws ResourceUnavailableException
      * @throws InsufficientNetworkCapacityException
      */
-    boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+    boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, 
+            DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, 
+            ResourceUnavailableException, InsufficientCapacityException;
     
     /**
      * A nic is released from this network.
@@ -82,7 +86,8 @@ public interface NetworkElement extends Adapter {
      * @throws ConcurrentOperationException
      * @throws ResourceUnavailableException
      */
-    boolean release(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException;
+    boolean release(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, 
+            ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException;
     
     /**
      * The network is being shutdown.
@@ -93,7 +98,8 @@ public interface NetworkElement extends Adapter {
      * @throws ConcurrentOperationException
      * @throws ResourceUnavailableException
      */
-    boolean shutdown(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException;
+    boolean shutdown(Network network, ReservationContext context, boolean cleanup) 
+            throws ConcurrentOperationException, ResourceUnavailableException;
     
     /**
      * The network is being destroyed.
@@ -118,7 +124,8 @@ public interface NetworkElement extends Adapter {
      * @throws ConcurrentOperationException
      * @throws ResourceUnavailableException
      */
-    boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException;
+    boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) 
+            throws ConcurrentOperationException, ResourceUnavailableException;
     
     /**
      * This should return true if out of multiple services provided by this element, only some can be enabled. If all the services MUST be provided, this should return false. 
@@ -131,5 +138,5 @@ public interface NetworkElement extends Adapter {
      * @param services
      * @return true/false
      */
-    boolean verifyServicesCombination(List<String> services);
+    boolean verifyServicesCombination(Set<Service> services);
 }

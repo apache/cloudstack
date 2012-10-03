@@ -18,10 +18,6 @@ package com.cloud.network.security;
 
 import com.cloud.async.AsyncInstanceCreateStatus;
 
-/**
- * @author ahuang
- * 
- */
 public interface SecurityRule {
 
     public static class SecurityRuleType {

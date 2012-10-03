@@ -22,11 +22,9 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCmd;
-import com.cloud.api.BaseCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
 import com.cloud.api.response.PhysicalNetworkResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
@@ -99,13 +97,9 @@ public class UpdatePhysicalNetworkCmd extends BaseAsyncCmd {
     @Override
     public void execute(){
         PhysicalNetwork result = _networkService.updatePhysicalNetwork(getId(),getNetworkSpeed(), getTags(), getVlan(), getState());
-        if (result != null) {
-            PhysicalNetworkResponse response = _responseGenerator.createPhysicalNetworkResponse(result);
-            response.setResponseName(getCommandName());
-            this.setResponseObject(response);
-        }else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update physical network");
-        }
+        PhysicalNetworkResponse response = _responseGenerator.createPhysicalNetworkResponse(result);
+        response.setResponseName(getCommandName());
+        this.setResponseObject(response);
     }
 
     @Override

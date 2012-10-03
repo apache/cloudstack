@@ -46,6 +46,16 @@ def describeResources(config):
     z.name = 'Sandbox-%s'%(config.get('cloudstack', 'hypervisor'))
     z.networktype = 'Advanced'
     z.guestcidraddress = '10.1.1.0/24'
+    
+    vpcprovider = provider()
+    vpcprovider.name = 'VpcVirtualRouter'
+    
+    pn = physical_network()
+    pn.name = "Sandbox-pnet"
+    pn.traffictypes = [traffictype("Guest"), traffictype("Management"), traffictype("Public")]
+    pn.providers.append(vpcprovider)
+    
+    z.physical_networks.append(pn)
 
     p = pod()
     p.name = 'POD0'

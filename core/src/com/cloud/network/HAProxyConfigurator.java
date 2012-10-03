@@ -38,10 +38,6 @@ import com.cloud.network.rules.LbStickinessMethod.StickinessMethodType;
 import com.cloud.utils.net.NetUtils;
 
 
-/**
- * @author chiradeep
- *
- */
 public class HAProxyConfigurator implements LoadBalancerConfigurator {
 
     private static final Logger s_logger = Logger.getLogger(HAProxyConfigurator.class);
@@ -573,20 +569,22 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
 
         }
         result.add(getBlankLine());
-
-        if (lbCmd.getLoadBalancers().length == 0) {
+        boolean has_listener = false;
+        for (LoadBalancerTO lbTO : lbCmd.getLoadBalancers()) {
+            if ( lbTO.isRevoked() ) {
+                continue;
+            }
+            List<String> poolRules = getRulesForPool(lbTO);
+            result.addAll(poolRules);
+            has_listener = true;
+        }
+        result.add(getBlankLine());
+        if ( !has_listener) {
             // haproxy cannot handle empty listen / frontend or backend, so add
             // a dummy listener
             // on port 9
             result.addAll(Arrays.asList(defaultListen));
         }
-        result.add(getBlankLine());
-
-        for (LoadBalancerTO lbTO : lbCmd.getLoadBalancers()) {
-            List<String> poolRules = getRulesForPool(lbTO);
-            result.addAll(poolRules);
-        }
-
         return result.toArray(new String[result.size()]);
     }
 

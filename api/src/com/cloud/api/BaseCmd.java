@@ -14,10 +14,12 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 package com.cloud.api;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -39,12 +41,15 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.NetworkService;
 import com.cloud.network.StorageNetworkService;
-import com.cloud.network.VirtualNetworkApplianceService;
+import com.cloud.network.VpcVirtualNetworkApplianceService;
 import com.cloud.network.firewall.FirewallService;
+import com.cloud.network.firewall.NetworkACLService;
 import com.cloud.network.lb.LoadBalancingRulesService;
 import com.cloud.network.rules.RulesService;
 import com.cloud.network.security.SecurityGroupService;
+import com.cloud.network.vpc.VpcService;
 import com.cloud.network.vpn.RemoteAccessVpnService;
+import com.cloud.network.vpn.Site2SiteVpnService;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectService;
 import com.cloud.region.RegionService;
@@ -58,9 +63,9 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.DomainService;
 import com.cloud.user.ResourceLimitService;
+import com.cloud.utils.IdentityProxy;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.AnnotationHelper;
 import com.cloud.vm.BareMetalVmService;
 import com.cloud.vm.UserVmService;
 
@@ -117,7 +122,7 @@ public abstract class BaseCmd {
     public static SecurityGroupService _securityGroupService;
     public static SnapshotService _snapshotService;
     public static ConsoleProxyService _consoleProxyService;
-    public static VirtualNetworkApplianceService _routerService;
+    public static VpcVirtualNetworkApplianceService _routerService;
     public static ResponseGenerator _responseGenerator;
     public static EntityManager _entityMgr;
     public static RulesService _rulesService;
@@ -132,6 +137,9 @@ public abstract class BaseCmd {
     public static StorageNetworkService _storageNetworkService;
     public static RegionService _regionService;
     public static TaggedResourceService _taggedResourceService;
+    public static VpcService _vpcService;
+    public static NetworkACLService _networkACLService;
+    public static Site2SiteVpnService _s2sVpnService;
 
     static void setComponents(ResponseGenerator generator) {
         ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
@@ -146,7 +154,7 @@ public abstract class BaseCmd {
         _securityGroupService = locator.getManager(SecurityGroupService.class);
         _snapshotService = locator.getManager(SnapshotService.class);
         _consoleProxyService = locator.getManager(ConsoleProxyService.class);
-        _routerService = locator.getManager(VirtualNetworkApplianceService.class);
+        _routerService = locator.getManager(VpcVirtualNetworkApplianceService.class);
         _entityMgr = locator.getManager(EntityManager.class);
         _rulesService = locator.getManager(RulesService.class);
         _lbService = locator.getManager(LoadBalancingRulesService.class);
@@ -161,6 +169,9 @@ public abstract class BaseCmd {
         _storageNetworkService = locator.getManager(StorageNetworkService.class);
         _regionService = locator.getManager(RegionService.class);
         _taggedResourceService = locator.getManager(TaggedResourceService.class);
+        _vpcService = locator.getManager(VpcService.class);
+        _networkACLService = locator.getManager(NetworkACLService.class);
+        _s2sVpnService = locator.getManager(Site2SiteVpnService.class);
     }
 
     public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException;
@@ -486,7 +497,7 @@ public abstract class BaseCmd {
 
             Domain domain = _domainService.getDomain(domainId);
             if (domain == null) {
-                throw new InvalidParameterValueException("Unable to find domain by id=" + domainId);
+                throw new InvalidParameterValueException("Unable to find domain by id");
             }
 
             Account account = _accountService.getActiveAccountByName(accountName, domainId);
@@ -497,7 +508,9 @@ public abstract class BaseCmd {
                     throw new PermissionDeniedException("Can't add resources to the account id=" + account.getId() + " in state=" + account.getState() + " as it's no longer active");                    
                 }
             } else {
-                throw new InvalidParameterValueException("Unable to find account by name " + accountName + " in domain id=" + domainId);
+                List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+                idList.add(new IdentityProxy("domain", domainId, "domainId"));
+                throw new InvalidParameterValueException("Unable to find account by name " + accountName + " in domain with specified id");
             }
         }
 
@@ -512,9 +525,7 @@ public abstract class BaseCmd {
                     throw ex;
                 }
             } else {
-            	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find project with specified projectId");
-            	ex.addProxyObject(project, projectId, "projectId");                
-                throw ex;
+                throw new InvalidParameterValueException("Unable to find project by id");
             }
         }
         return null;

@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-//
+// 
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -37,6 +37,7 @@ import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.StateMachine;
 import com.cloud.utils.fsm.FiniteStateObject;
@@ -55,7 +56,8 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     @Column(name="name", updatable=false, nullable=false, length=255)
 	protected String hostName = null;
 
-    @Column(name="vnc_password", updatable=true, nullable=false, length=255, encryptable=true)
+    @Encrypt
+    @Column(name="vnc_password", updatable=true, nullable=false, length=255)
     protected String vncPassword;
     
     @Column(name="proxy_id", updatable=true, nullable=true)
@@ -146,7 +148,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 
     @Column(name="uuid")
     protected String uuid = UUID.randomUUID().toString();
-;
+    ;
     
     public VMInstanceVO(long id,
                         long serviceOfferingId,
@@ -412,6 +414,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 	    return this.reservationId;
 	}
 	
+    @Override
     public Map<String, String> getDetails() {
         return details;
     }
@@ -461,6 +464,11 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 	
     public void setServiceOfferingId(long serviceOfferingId) {
         this.serviceOfferingId = serviceOfferingId;
+    }
+    
+    @Override
+    public boolean canPlugNics() {
+        return false;
     }
 
 }

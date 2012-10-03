@@ -1,0 +1,60 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
+<section id="using-netscaler-load-balancers">
+    <title>About Using a NetScaler Load Balancer</title>
+    <para>Citrix NetScaler is supported as an external network element for load balancing in zones that use advanced networking (also called advanced zones). Set up an external load balancer when you want to provide load balancing through means other than &PRODUCT;’s provided virtual router.</para>
+    <para>The NetScaler can be set up in direct (outside the firewall) mode. It must be added before any load balancing rules are deployed on guest VMs in the zone.</para>
+    <para>The functional behavior of the NetScaler with &PRODUCT; is the same as described in the &PRODUCT; documentation for using an F5 external load balancer. The only exception is that the F5 supports routing domains, and NetScaler does not. NetScaler can not yet be used as a firewall.</para>
+    <para>The Citrix NetScaler comes in three varieties. The following table summarizes how these variants are treated in &PRODUCT;.</para>
+    <informaltable>
+        <tgroup cols="3" align="left" colsep="1" rowsep="1">
+            <thead>
+                <row>
+                    <entry><para>NetScaler ADC Type</para></entry>
+                    <entry><para>Description of Capabilities</para></entry>
+                    <entry><para>&PRODUCT; 3.0.3 Supported Features</para></entry>
+                </row>    
+            </thead>
+            <tbody>
+                <row>
+                    <entry><para>MPX</para></entry>
+                    <entry><para>Physical appliance. Capable of deep packet inspection. Can act as application firewall and load balancer</para></entry>
+                    <entry><para>In advanced zones, load balancer functionality fully supported without limitation. In basic zones, static NAT, elastic IP (EIP), and elastic load balancing (ELB) are also provided</para></entry>
+                    
+                </row>
+                <row>
+                    <entry><para>VPX</para></entry>
+                    <entry><para>Virtual appliance. Can run as VM on XenServer, ESXi, and Hyper-V hypervisors. Same functionality as MPX</para></entry>
+                    <entry><para>Supported only on ESXi. Same functional support as for MPX. &PRODUCT; will treat VPX and MPX as the same device type</para></entry>
+                </row>
+                <row>
+                    <entry><para>SDX</para></entry>
+                    <entry><para>Physical appliance. Can create multiple fully isolated VPX instances on a single appliance to support multi-tenant usage</para></entry>
+                    <entry><para>&PRODUCT; will dynamically provision, configure, and manage the lifecycle of VPX instances on the SDX. Provisioned instances are added into &PRODUCT; automatically – no manual configuration by the administrator is required. Once a VPX instance is added into &PRODUCT;, it is treated the same as a VPX on an ESXi host.</para></entry>
+                </row>
+            </tbody>
+        </tgroup>
+    </informaltable>
+</section>

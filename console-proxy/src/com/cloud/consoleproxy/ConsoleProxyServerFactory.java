@@ -23,7 +23,7 @@ import javax.net.ssl.SSLServerSocket;
 import com.sun.net.httpserver.HttpServer;
 
 public interface ConsoleProxyServerFactory {
-	void init(byte[] ksBits, String ksPassword);
-	HttpServer createHttpServerInstance(int port) throws IOException;
-	SSLServerSocket createSSLServerSocket(int port) throws IOException;
+    void init(byte[] ksBits, String ksPassword);
+    HttpServer createHttpServerInstance(int port) throws IOException;
+    SSLServerSocket createSSLServerSocket(int port) throws IOException;
 }

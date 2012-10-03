@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-//
+// 
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -17,8 +17,6 @@
 package com.cloud.network.rules;
 
 import java.util.List;
-
-import com.cloud.network.rules.FirewallRule.FirewallRuleType;
 
 
 public class StaticNatRuleImpl implements StaticNatRule{
@@ -94,7 +92,7 @@ public class StaticNatRuleImpl implements StaticNatRule{
     }
 
     @Override
-    public long getSourceIpAddressId() {
+    public Long getSourceIpAddressId() {
         return sourceIpAddressId;
     }
 
@@ -132,5 +130,10 @@ public class StaticNatRuleImpl implements StaticNatRule{
 	public FirewallRuleType getType() {
 		return FirewallRuleType.User;
 	}
+	
+    @Override
+    public TrafficType getTrafficType() {
+        return null;
+    }
 
 }

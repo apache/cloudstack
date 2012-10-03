@@ -18,9 +18,6 @@ package com.cloud.bridge.service.core.s3;
 
 import java.util.Calendar;
 
-/**
- * @author Kelven
- */
 public class S3Request {
 	protected String accessKey;
 	protected String signature;

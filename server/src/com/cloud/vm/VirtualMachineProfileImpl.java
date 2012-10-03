@@ -128,6 +128,11 @@ public class VirtualMachineProfileImpl<T extends VMInstanceVO> implements Virtua
         return _vm.getId();
     }
     
+    @Override
+    public String getUuid() {
+	return _vm.getUuid();
+    }
+
     public void setNics(List<NicProfile> nics) {
         _nics = nics;
     }

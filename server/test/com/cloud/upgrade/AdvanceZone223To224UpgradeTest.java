@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.upgrade;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 import junit.framework.TestCase;
@@ -30,7 +28,7 @@ import com.cloud.upgrade.dao.VersionDaoImpl;
 import com.cloud.utils.component.ComponentLocator;
 
 public class AdvanceZone223To224UpgradeTest extends TestCase {
-    private static final Logger s_logger = Logger.getLogger(AdvanceZone217To224UpgradeTest.class);
+    private static final Logger s_logger = Logger.getLogger(AdvanceZone223To224UpgradeTest.class);
 
     @Override
     @Before
@@ -43,20 +41,15 @@ public class AdvanceZone223To224UpgradeTest extends TestCase {
     public void tearDown() throws Exception {
     }
 
-    public void test217to22Upgrade() throws SQLException {
-        s_logger.debug("Finding sample data from 2.2.14");
-//        DbTestUtils.executeScript("PreviousDatabaseSchema/2.2.14/dave-sample.sql", false, true);
-
-        Connection conn;
-        PreparedStatement pstmt;
+    public void test223to224Upgrade() throws SQLException {
 
         VersionDaoImpl dao = ComponentLocator.inject(VersionDaoImpl.class);
         DatabaseUpgradeChecker checker = ComponentLocator.inject(DatabaseUpgradeChecker.class);
 
         String version = dao.getCurrentVersion();
-        assert version.equals("2.2.14") : "Version returned is not 2.2.14 but " + version;
+        assert version.equals("2.2.3") : "Version returned is not 2.2.3 but " + version;
 
-        checker.upgrade("2.2.14", "3.0.3");
+        checker.upgrade("2.2.3", "2.2.4");
     }
 
 }

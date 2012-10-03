@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-//
+// 
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -32,9 +32,12 @@ import org.apache.log4j.Logger;
 
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDaoImpl;
+import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.Attribute;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder;
@@ -47,7 +50,6 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicVO;
-import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Event;
@@ -76,6 +78,10 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     protected GenericSearchBuilder<VMInstanceVO, Long> CountRunningByHost;
     protected GenericSearchBuilder<VMInstanceVO, Long> CountRunningByAccount;
     protected SearchBuilder<VMInstanceVO> NetworkTypeSearch;
+    protected GenericSearchBuilder<VMInstanceVO, String> DistinctHostNameSearch;
+    
+    ResourceTagsDaoImpl _tagsDao = ComponentLocator.inject(ResourceTagsDaoImpl.class);
+    NicDao _nicDao = ComponentLocator.inject(NicDaoImpl.class);
 
     protected final Attribute _updateTimeAttr;
     
@@ -95,6 +101,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     protected final HostDaoImpl _hostDao = ComponentLocator.inject(HostDaoImpl.class);
     
     protected VMInstanceDaoImpl() {
+
         IdStatesSearch = createSearchBuilder();
         IdStatesSearch.and("id", IdStatesSearch.entity().getId(), Op.EQ);
         IdStatesSearch.and("states", IdStatesSearch.entity().getState(), Op.IN);
@@ -110,6 +117,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         LHVMClusterSearch = createSearchBuilder();
         SearchBuilder<HostVO> hostSearch1 = _hostDao.createSearchBuilder();
         LHVMClusterSearch.join("hostSearch1", hostSearch1, hostSearch1.entity().getId(), LHVMClusterSearch.entity().getLastHostId(), JoinType.INNER);
+        LHVMClusterSearch.and("hostid", LHVMClusterSearch.entity().getHostId(), Op.NULL);
         hostSearch1.and("clusterId", hostSearch1.entity().getClusterId(), SearchCriteria.Op.EQ);
         LHVMClusterSearch.done();
 
@@ -530,7 +538,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     @Override
     public List<VMInstanceVO> listNonRemovedVmsByTypeAndNetwork(long networkId, VirtualMachine.Type... types) {
         if (NetworkTypeSearch == null) {
-            NicDao _nicDao = ComponentLocator.getLocator("management-server").getDao(NicDao.class);
+            
             SearchBuilder<NicVO> nicSearch = _nicDao.createSearchBuilder();
             nicSearch.and("networkId", nicSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
 
@@ -549,5 +557,47 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         sc.setJoinParameters("nicSearch", "networkId", networkId);
 
         return listBy(sc);
+    }
+    
+    
+    
+    @Override
+    public List<String> listDistinctHostNames(long networkId, VirtualMachine.Type... types) {
+        if (DistinctHostNameSearch == null) {
+            
+            SearchBuilder<NicVO> nicSearch = _nicDao.createSearchBuilder();
+            nicSearch.and("networkId", nicSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
+
+            DistinctHostNameSearch = createSearchBuilder(String.class);
+            DistinctHostNameSearch.selectField(DistinctHostNameSearch.entity().getHostName());
+            
+            DistinctHostNameSearch.and("types", DistinctHostNameSearch.entity().getType(), SearchCriteria.Op.IN);
+            DistinctHostNameSearch.and("removed", DistinctHostNameSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
+            DistinctHostNameSearch.join("nicSearch", nicSearch, DistinctHostNameSearch.entity().getId(), 
+                    nicSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
+            DistinctHostNameSearch.done();
+        }
+
+        SearchCriteria<String> sc = DistinctHostNameSearch.create();
+        if (types != null && types.length != 0) {
+            sc.setParameters("types", (Object[]) types);
+        }        
+        sc.setJoinParameters("nicSearch", "networkId", networkId);
+
+        return  customSearch(sc, null);
+    }
+    
+    @Override
+    @DB
+    public boolean remove(Long id) {
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        VMInstanceVO vm = findById(id);
+        if (vm != null && vm.getType() == Type.User) {
+            _tagsDao.removeByIdAndType(id, TaggedResourceType.UserVm);
+        }
+        boolean result = super.remove(id);
+        txn.commit();
+        return result;
     }
 }

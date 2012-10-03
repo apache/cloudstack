@@ -16,27 +16,14 @@
 // under the License.
 package com.cloud.bridge.persist.dao;
 
-import org.apache.log4j.Logger;
+import com.cloud.bridge.model.CloudStackServiceOfferingVO;
+import com.cloud.utils.db.GenericDao;
 
-import com.cloud.bridge.persist.EntityDao;
-import com.cloud.stack.models.CloudStackConfiguration;
-import com.cloud.stack.models.CloudStackServiceOffering;
+public interface CloudStackSvcOfferingDao extends GenericDao<CloudStackServiceOfferingVO, String>{
 
+    public CloudStackServiceOfferingVO getSvcOfferingByName(String name);
 
-public class CloudStackSvcOfferingDao extends EntityDao<CloudStackServiceOffering> {
-	public static final Logger logger = Logger.getLogger(CloudStackSvcOfferingDao.class);
+    public CloudStackServiceOfferingVO getSvcOfferingById(String id);
 
-	public CloudStackSvcOfferingDao() {
-	    super(CloudStackServiceOffering.class, true);
-	}
-
-
-	public CloudStackServiceOffering getSvcOfferingByName( String name ){
-		return queryEntity("from CloudStackServiceOffering where name=?", new Object[] {name});
-	}
-
-    public CloudStackServiceOffering getSvcOfferingById( String id ){
-        return queryEntity("from CloudStackServiceOffering where id=?", new Object[] {id});
-    }
 
 }

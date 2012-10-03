@@ -46,7 +46,7 @@ import javax.net.ssl.X509TrustManager;
  * connections and import/export operations.
  */
 public final class RawHTTP {
-	private static final Logger s_logger = Logger.getLogger(RawHTTP.class);
+    private static final Logger s_logger = Logger.getLogger(RawHTTP.class);
 
     private static final Pattern END_PATTERN = Pattern.compile("^\r\n$");
     private static final Pattern HEADER_PATTERN = Pattern
@@ -55,47 +55,47 @@ public final class RawHTTP {
             .compile("^HTTP/\\d+\\.\\d+ (\\d*) (.*)\r\n$");
 
     /**
-	 * @uml.property  name="command"
-	 */
+     * @uml.property  name="command"
+     */
     private final String command;
     /**
-	 * @uml.property  name="host"
-	 */
+     * @uml.property  name="host"
+     */
     private final String host;
     /**
-	 * @uml.property  name="port"
-	 */
+     * @uml.property  name="port"
+     */
     private final int port;
     /**
-	 * @uml.property  name="path"
-	 */
+     * @uml.property  name="path"
+     */
     private final String path;
     /**
-	 * @uml.property  name="session"
-	 */
+     * @uml.property  name="session"
+     */
     private final String session;
     /**
-	 * @uml.property  name="useSSL"
-	 */
+     * @uml.property  name="useSSL"
+     */
     private final boolean useSSL;
 
     /**
-	 * @uml.property  name="responseHeaders"
-	 * @uml.associationEnd  qualifier="group:java.lang.String java.lang.String"
-	 */
+     * @uml.property  name="responseHeaders"
+     * @uml.associationEnd  qualifier="group:java.lang.String java.lang.String"
+     */
     private final Map<String, String> responseHeaders = new HashMap<String, String>();
 
     /**
-	 * @uml.property  name="ic"
-	 */
+     * @uml.property  name="ic"
+     */
     private InputStream ic;
     /**
-	 * @uml.property  name="oc"
-	 */
+     * @uml.property  name="oc"
+     */
     private OutputStream oc;
     /**
-	 * @uml.property  name="s"
-	 */
+     * @uml.property  name="s"
+     */
     private Socket s;
 
     public InputStream getInputStream() {
@@ -138,7 +138,7 @@ public final class RawHTTP {
         if (useSSL) {
             SSLContext context = getClientSSLContext();
             if(context == null)
-            	throw new IOException("Unable to setup SSL context");
+                throw new IOException("Unable to setup SSL context");
             
             SSLSocket ssl = null;
             try {
@@ -237,13 +237,13 @@ public final class RawHTTP {
     
     private SSLContext getClientSSLContext() {
         SSLContext sslContext = null;
-		try {
-			sslContext = SSLContext.getInstance("SSL", "SunJSSE");
-		} catch (NoSuchAlgorithmException e) {
-			s_logger.error("Unexpected exception ", e);
-		} catch (NoSuchProviderException e) {
-			s_logger.error("Unexpected exception ", e);
-		}
+        try {
+            sslContext = SSLContext.getInstance("SSL", "SunJSSE");
+        } catch (NoSuchAlgorithmException e) {
+            s_logger.error("Unexpected exception ", e);
+        } catch (NoSuchProviderException e) {
+            s_logger.error("Unexpected exception ", e);
+        }
         return sslContext;
     }
 }

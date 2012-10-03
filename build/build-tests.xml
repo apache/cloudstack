@@ -49,6 +49,10 @@
   <property name="agent-simulator.jar" value="cloud-agent-simulator.jar" />
   <property name="testclient.jar" value="cloud-test.jar" />
 
+  <property name="simulator.setup.dir" value="${base.dir}/setup/db/" />
+  <property name="marvin.sandbox.dir" value="${base.dir}/tools/marvin/marvin/sandbox/" />
+  <property name="marvin.config" value="${base.dir}/tools/marvin/marvin/sandbox/demo/simulator/simulator.cfg" />
+  <property name="marvin.config.abspath" location="${marvin.config}" />
 
   <!-- =================== Agent Simulator ==================== -->
   <path id="agent-simulator.classpath">
@@ -85,10 +89,6 @@
         <include name="commons-collections-3.2.1.jar" />
       </fileset>
     </copy>
-    <copy todir="${agent-simulator.dist.dir}">
-      <fileset dir="${agent-simulator.dir}/scripts">
-      </fileset>
-    </copy>
     <copy overwrite="true" todir="${server.dist.dir}/conf">
       <fileset dir="${agent-simulator.dir}/tomcatconf">
         <include name="*.in" />
@@ -98,12 +98,33 @@
     <copy todir="${agent-simulator.dist.dir}/conf">
       <fileset dir="${agent.dir}/conf">
         <include name="log4j-cloud.xml" />
-        <include name="simulator.properties" />
       </fileset>
     </copy>
   </target>
   <!-- =================== Agent Simulator ==================== -->
 
+  <!-- Run Simulator Tests  -->
+  <target name="setup-simulator"  depends="clean-all">
+      <mkdir dir="${simulator.setup.dir}/override">
+      </mkdir>
+      <copy overwrite="true" file="${simulator.setup.dir}/templates.simulator.sql" tofile="${simulator.setup.dir}/override/templates.sql" />
+
+      <mkdir dir="${build.dir}/override">
+      </mkdir>
+      <copy overwrite="true" file="${build.dir}/replace.properties" tofile="${build.dir}/override/replace.properties" />
+      <!-- Replace the COMPONENT-SPEC for components-simulator.xml -->
+      <copy overwrite="true" file="${build.dir}/simulator.properties" tofile="${build.dir}/override/replace.properties" />
+  </target>
+
+  <target name="run-simulator" depends="setup-simulator, build-all-with-simulator, deploy-server, deploydb-simulator, debug">
+  </target>
+
+  <target name="run-marvin" depends="install-marvin">
+      <exec dir="${marvin.sandbox.dir}/" executable="bash">
+          <arg line="run-marvin.sh -d localhost -m localhost -c ${marvin.config.abspath}" />
+      </exec>
+  </target>
+  <!--   -->
 
   <!-- =================== QA Testing Client ==================== -->
   <target name="-init-test" depends="-init">

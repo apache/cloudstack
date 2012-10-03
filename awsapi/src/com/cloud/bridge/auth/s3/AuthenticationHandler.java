@@ -29,10 +29,11 @@ import org.apache.axis2.AxisFault;
 import org.apache.axis2.description.HandlerDescription; 
 import org.apache.axis2.description.Parameter;
 
-import com.cloud.bridge.model.UserCredentials;
-import com.cloud.bridge.persist.dao.UserCredentialsDao;
+import com.cloud.bridge.model.UserCredentialsVO;
+import com.cloud.bridge.persist.dao.UserCredentialsDaoImpl;
 import com.cloud.bridge.service.UserContext;
 import com.cloud.bridge.util.S3SoapAuth;
+import com.cloud.utils.component.ComponentLocator;
 
 /*
  *  For SOAP compatibility.
@@ -40,7 +41,7 @@ import com.cloud.bridge.util.S3SoapAuth;
 
 public class AuthenticationHandler implements Handler {
      protected final static Logger logger = Logger.getLogger(AuthenticationHandler.class);
-     
+     protected final UserCredentialsDaoImpl ucDao = ComponentLocator.inject(UserCredentialsDaoImpl.class);
 	 protected HandlerDescription handlerDesc = new HandlerDescription( "default handler" );
      private String name = "S3AuthenticationHandler";
     
@@ -190,8 +191,7 @@ public class AuthenticationHandler implements Handler {
      private String lookupSecretKey( String accessKey )
 	    throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException
      {
- 	    UserCredentialsDao credentialDao = new UserCredentialsDao();
-	    UserCredentials cloudKeys = credentialDao.getByAccessKey( accessKey ); 
+	    UserCredentialsVO cloudKeys = ucDao.getByAccessKey( accessKey );
 	    if ( null == cloudKeys ) {
 	    	 logger.debug( accessKey + " is not defined in the S3 service - call SetUserKeys" );
 	         return null; 

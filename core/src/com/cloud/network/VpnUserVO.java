@@ -28,6 +28,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.api.Identity;
+import com.cloud.utils.db.Encrypt;
 
 @Entity
 @Table(name=("vpn_users"))
@@ -39,25 +40,26 @@ public class VpnUserVO implements VpnUser, Identity {
 
     @Column(name="owner_id")
     private long accountId;
-    
+
     @Column(name="domain_id")
     private long domainId;
 
     @Column(name="username")
     private String username;
-    
-    @Column(name="password", encryptable=true)
+
+    @Encrypt
+    @Column(name="password")
     private String password;
-    
+
     @Column(name="state")
     @Enumerated(value=EnumType.STRING)
     private State state;
 
     @Column(name="uuid")
     private String uuid;
-    
+
     public VpnUserVO() {
-    	this.uuid = UUID.randomUUID().toString();
+        this.uuid = UUID.randomUUID().toString();
     }
 
     public VpnUserVO(long accountId, long domainId, String userName, String password) {
@@ -66,7 +68,7 @@ public class VpnUserVO implements VpnUser, Identity {
         this.username = userName;
         this.password = password;
         this.state = State.Add;
-    	this.uuid = UUID.randomUUID().toString();
+        this.uuid = UUID.randomUUID().toString();
     }
 
     @Override
@@ -78,51 +80,51 @@ public class VpnUserVO implements VpnUser, Identity {
     public long getAccountId() {
         return accountId;
     }
-    
-	@Override
+
+    @Override
     public String getUsername() {
-		return username;
-	}
+        return username;
+    }
 
-	public void setUsername(String userName) {
-		this.username = userName;
-	}
+    public void setUsername(String userName) {
+        this.username = userName;
+    }
 
-	@Override
+    @Override
     public String getPassword() {
-		return password;
-	}
-	
-	@Override
+        return password;
+    }
+
+    @Override
     public State getState() {
-	    return state;
-	}
-	
-	public void setState(State state) {
-	    this.state = state;
-	}
+        return state;
+    }
 
-	public void setPassword(String password) {
-		this.password = password;
-	}
+    public void setState(State state) {
+        this.state = state;
+    }
 
-	@Override
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    @Override
     public long getDomainId() {
-		return domainId;
-	}
-    
+        return domainId;
+    }
 
-	@Override
+
+    @Override
     public String toString() {
-	    return new StringBuilder("VpnUser[").append(id).append("-").append(username).append("-").append(accountId).append("]").toString();
-	}
-	
-	@Override
-	public String getUuid() {
-		return this.uuid;
-	}
-	
-	public void setUuid(String uuid) {
-		this.uuid = uuid;
-	}
+        return new StringBuilder("VpnUser[").append(id).append("-").append(username).append("-").append(accountId).append("]").toString();
+    }
+
+    @Override
+    public String getUuid() {
+        return this.uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
 }

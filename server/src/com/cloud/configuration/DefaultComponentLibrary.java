@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-//
+// 
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -95,13 +95,16 @@ import com.cloud.network.dao.PhysicalNetworkServiceProviderDaoImpl;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDaoImpl;
 import com.cloud.network.dao.PortProfileDaoImpl;
 import com.cloud.network.dao.RemoteAccessVpnDaoImpl;
+import com.cloud.network.dao.Site2SiteCustomerGatewayDaoImpl;
+import com.cloud.network.dao.Site2SiteVpnConnectionDaoImpl;
+import com.cloud.network.dao.Site2SiteVpnGatewayDaoImpl;
 import com.cloud.network.dao.VirtualRouterProviderDaoImpl;
 import com.cloud.network.dao.VpnUserDaoImpl;
 import com.cloud.network.element.VirtualRouterElement;
 import com.cloud.network.element.VirtualRouterElementService;
 import com.cloud.network.firewall.FirewallManagerImpl;
 import com.cloud.network.lb.LoadBalancingRulesManagerImpl;
-import com.cloud.network.router.VirtualNetworkApplianceManagerImpl;
+import com.cloud.network.router.VpcVirtualNetworkApplianceManagerImpl;
 import com.cloud.network.rules.RulesManagerImpl;
 import com.cloud.network.rules.dao.PortForwardingRulesDaoImpl;
 import com.cloud.network.security.SecurityGroupManagerImpl2;
@@ -111,7 +114,16 @@ import com.cloud.network.security.dao.SecurityGroupRulesDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupVMMapDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupWorkDaoImpl;
 import com.cloud.network.security.dao.VmRulesetLogDaoImpl;
+import com.cloud.network.vpc.NetworkACLManagerImpl;
+import com.cloud.network.vpc.VpcManagerImpl;
+import com.cloud.network.vpc.dao.PrivateIpDaoImpl;
+import com.cloud.network.vpc.dao.StaticRouteDaoImpl;
+import com.cloud.network.vpc.dao.VpcDaoImpl;
+import com.cloud.network.vpc.dao.VpcGatewayDaoImpl;
+import com.cloud.network.vpc.dao.VpcOfferingDaoImpl;
+import com.cloud.network.vpc.dao.VpcOfferingServiceMapDaoImpl;
 import com.cloud.network.vpn.RemoteAccessVpnManagerImpl;
+import com.cloud.network.vpn.Site2SiteVpnManagerImpl;
 import com.cloud.offerings.dao.NetworkOfferingDaoImpl;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDaoImpl;
 import com.cloud.projects.ProjectManagerImpl;
@@ -318,7 +330,16 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("StorageNetworkIpAddressDao", StorageNetworkIpAddressDaoImpl.class);
         addDao("StorageNetworkIpRangeDao", StorageNetworkIpRangeDaoImpl.class);
         addDao("RegionDao", RegionDaoImpl.class);
+        addDao("VpcDao", VpcDaoImpl.class);
+        addDao("VpcOfferingDao", VpcOfferingDaoImpl.class);
+        addDao("VpcOfferingServiceMapDao", VpcOfferingServiceMapDaoImpl.class);
+        addDao("PrivateIpDao", PrivateIpDaoImpl.class);
+        addDao("VpcGatewayDao", VpcGatewayDaoImpl.class);
+        addDao("StaticRouteDao", StaticRouteDaoImpl.class);
         addDao("TagsDao", ResourceTagsDaoImpl.class);
+        addDao("Site2SiteVpnGatewayDao", Site2SiteVpnGatewayDaoImpl.class);
+        addDao("Site2SiteCustomerGatewayDao", Site2SiteCustomerGatewayDaoImpl.class);
+        addDao("Site2SiteVpnConnnectionDao", Site2SiteVpnConnectionDaoImpl.class);
     }
 
     @Override
@@ -354,7 +375,6 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addManager("Snapshot Manager", SnapshotManagerImpl.class);
         addManager("SnapshotScheduler", SnapshotSchedulerImpl.class);
         addManager("SecurityGroupManager", SecurityGroupManagerImpl2.class);
-        addManager("DomainRouterManager", VirtualNetworkApplianceManagerImpl.class);
         addManager("EntityManager", EntityManagerImpl.class);
         addManager("LoadBalancingRulesManager", LoadBalancingRulesManagerImpl.class);
         addManager("RulesManager", RulesManagerImpl.class);
@@ -374,7 +394,11 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addManager("ExternalLoadBalancerUsageManager", ExternalLoadBalancerUsageManagerImpl.class);
         addManager("HA Manager", HighAvailabilityManagerImpl.class);
         addManager("Region Manager", RegionManagerImpl.class);
+        addManager("VPC Manager", VpcManagerImpl.class);
+        addManager("VpcVirtualRouterManager", VpcVirtualNetworkApplianceManagerImpl.class);
+        addManager("NetworkACLManager", NetworkACLManagerImpl.class);
         addManager("TaggedResourcesManager", TaggedResourceManagerImpl.class);
+        addManager("Site2SiteVpnManager", Site2SiteVpnManagerImpl.class);
     }
 
     @Override

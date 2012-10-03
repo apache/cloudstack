@@ -14,14 +14,17 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
+
 package com.cloud.utils.exception;
 
 import java.util.HashMap;
+
 import org.apache.log4j.Logger;
 
 /**
  * CSExceptionErrorCode lists the CloudStack error codes that correspond
- * to each exception thrown by the CloudStack API.
+ * to a each exception thrown by the CloudStack API.
  */
 
 public class CSExceptionErrorCode {

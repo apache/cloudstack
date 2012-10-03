@@ -73,7 +73,6 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 
 /**
- * @author nitin
  * Monitors the progress of upload.
  */
 @Local(value={UploadMonitor.class})
@@ -235,25 +234,14 @@ public class UploadMonitorImpl implements UploadMonitor {
             }
 
     	    //Construct actual URL locally now that the symlink exists at SSVM
-    	    List<SecondaryStorageVmVO> ssVms = _secStorageVmDao.getSecStorageVmListInStates(SecondaryStorageVm.Role.templateProcessor, dataCenterId, State.Running);
-    	    if (ssVms.size() > 0) {
-                SecondaryStorageVmVO ssVm = ssVms.get(0);
-                if (ssVm.getPublicIpAddress() == null) {
-                    errorString = "A running secondary storage vm has a null public ip?";
-                    s_logger.error(errorString);
-                    throw new CloudRuntimeException(errorString);
-                }
-                String extractURL = generateCopyUrl(ssVm.getPublicIpAddress(), uuid);
-                UploadVO vo = _uploadDao.createForUpdate();
-                vo.setLastUpdated(new Date());
-                vo.setUploadUrl(extractURL);
-                vo.setUploadState(Status.DOWNLOAD_URL_CREATED);
-                _uploadDao.update(uploadTemplateObj.getId(), vo);
-                success = true;
-                return _uploadDao.findById(uploadTemplateObj.getId(), true);
-            }
-            errorString = "Couldnt find a running SSVM in the zone" + dataCenterId+ ". Couldnt create the extraction URL.";
-            throw new CloudRuntimeException(errorString);
+            String extractURL = generateCopyUrl(ssvm.getPublicIpAddress(), uuid);
+            UploadVO vo = _uploadDao.createForUpdate();
+            vo.setLastUpdated(new Date());
+            vo.setUploadUrl(extractURL);
+            vo.setUploadState(Status.DOWNLOAD_URL_CREATED);
+            _uploadDao.update(uploadTemplateObj.getId(), vo);
+            success = true;
+            return _uploadDao.findById(uploadTemplateObj.getId(), true);        
 	    }finally{
            if(!success){
                 UploadVO uploadJob = _uploadDao.createForUpdate(uploadTemplateObj.getId());
@@ -437,8 +425,6 @@ public class UploadMonitorImpl implements UploadMonitor {
         @Override
         public void run() {
             try {
-                s_logger.info("Extract Monitor Garbage Collection Thread is running.");
-
                 GlobalLock scanLock = GlobalLock.getInternLock("uploadmonitor.storageGC");
                 try {
                     if (scanLock.lock(3)) {
@@ -476,24 +462,26 @@ public class UploadMonitorImpl implements UploadMonitor {
             if( getTimeDiff(extractJob.getLastUpdated()) > EXTRACT_URL_LIFE_LIMIT_IN_SECONDS ){                           
                 String path = extractJob.getInstallPath();
                 HostVO secStorage = ApiDBUtils.findHostById(extractJob.getHostId());
-                s_logger.debug("Sending deletion of extract URL "+extractJob.getUploadUrl());
+                
                 // Would delete the symlink for the Type and if Type == VOLUME then also the volume
                 DeleteEntityDownloadURLCommand cmd = new DeleteEntityDownloadURLCommand(path, extractJob.getType(),extractJob.getUploadUrl(), secStorage.getParent());
                 HostVO ssvm = _ssvmMgr.pickSsvmHost(secStorage);
                 if( ssvm == null ) {
-                	s_logger.warn("There is no secondary storage VM for secondary storage host " + extractJob.getHostId());
-                	continue;
+                	s_logger.warn("UploadMonitor cleanup: There is no secondary storage VM for secondary storage host " + extractJob.getHostId());
+                	continue; //TODO: why continue? why not break?
                 }
-                
+                if (s_logger.isDebugEnabled()) {
+                	s_logger.debug("UploadMonitor cleanup: Sending deletion of extract URL "+ extractJob.getUploadUrl() + " to ssvm " + ssvm.getId());
+                }
                 try {
-	                send(ssvm.getId(), cmd, null);
+                    send(ssvm.getId(), cmd, null); //TODO: how do you know if it was successful?
                     _uploadDao.remove(extractJob.getId());
                 } catch (AgentUnavailableException e) {
-                	s_logger.warn("Unable to delete the link for " +extractJob.getType()+ " id=" +extractJob.getTypeId()+ " url="+extractJob.getUploadUrl(), e);
+                	s_logger.warn("UploadMonitor cleanup: Unable to delete the link for " + extractJob.getType()+ " id=" + extractJob.getTypeId()+ " url="+ extractJob.getUploadUrl() + " on ssvm " + ssvm.getId(), e);
                 }
             }
         }
                 
     }
-	
+
 }

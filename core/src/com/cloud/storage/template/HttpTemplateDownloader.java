@@ -52,7 +52,6 @@ import com.cloud.utils.Pair;
 
 /**
  * Download a template file using HTTP
- * @author Chiradeep
  *
  */
 public class HttpTemplateDownloader implements TemplateDownloader {

@@ -24,11 +24,14 @@ import javax.persistence.Id;
 import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.SecondaryTable;
 import javax.persistence.Table;
+
 import com.cloud.network.security.SecurityRule.SecurityRuleType;
+import com.cloud.utils.db.JoinType;
 
 @Entity
 @Table(name = ("security_group"))
-@SecondaryTable(name = "security_group_rule", join = "left", pkJoinColumns = { @PrimaryKeyJoinColumn(name = "id", referencedColumnName = "security_group_id") })
+@JoinType(type = "left")
+@SecondaryTable(name = "security_group_rule", pkJoinColumns = { @PrimaryKeyJoinColumn(name = "id", referencedColumnName = "security_group_id") })
 public class SecurityGroupRulesVO implements SecurityGroupRules {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -58,7 +61,7 @@ public class SecurityGroupRulesVO implements SecurityGroupRules {
 
     @Column(name = "protocol", table = "security_group_rule", insertable = false, updatable = false)
     private String protocol;
-    
+
     @Column(name = "type", table = "security_group_rule", insertable = false, updatable = false)
     private String type;
 
@@ -130,7 +133,7 @@ public class SecurityGroupRulesVO implements SecurityGroupRules {
     public String getProtocol() {
         return protocol;
     }
-    
+
     @Override
     public SecurityRuleType getRuleType() {
         if ("ingress".equalsIgnoreCase(this.type)) {

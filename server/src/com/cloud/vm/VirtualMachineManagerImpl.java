@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-//
+// 
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -14,8 +14,10 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 package com.cloud.vm;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -61,6 +63,7 @@ import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.StartupRoutingCommand.VmState;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
+import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.agent.manager.allocator.HostAllocator;
@@ -107,6 +110,7 @@ import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceManager;
@@ -221,6 +225,8 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     protected StoragePoolDao _storagePoolDao;
     @Inject
     protected HypervisorGuruManager _hvGuruMgr;
+    @Inject
+    protected NetworkDao _networkDao;
 
     @Inject(adapter = DeploymentPlanner.class)
     protected Adapters<DeploymentPlanner> _planners;
@@ -752,14 +758,13 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                         reuseVolume = true;
                     }
                     
-                    VirtualMachineTO vmTO = null;
                     Commands cmds = null;
                     vmGuru.finalizeVirtualMachineProfile(vmProfile, dest, ctx);
 
-                    vmTO = hvGuru.implement(vmProfile);
+                    VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
 
                     cmds = new Commands(OnError.Stop);
-                    cmds.addCommand(new StartCommand(vmTO, dest.getHost()));
+                    cmds.addCommand(new StartCommand(vmTO));
 
                     vmGuru.finalizeDeployment(cmds, vmProfile, dest, ctx);
 
@@ -798,6 +803,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                             if (s_logger.isDebugEnabled()) {
                                 s_logger.info("The guru did not like the answers so stopping " + vm);
                             }
+                           
                             StopCommand cmd = new StopCommand(vm.getInstanceName());
                             StopAnswer answer = (StopAnswer) _agentMgr.easySend(destHostId, cmd);
                             if (answer == null || !answer.getResult()) {
@@ -1063,11 +1069,10 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         if (vm.getState() != State.Stopping) {
             throw new CloudRuntimeException("We cannot proceed with stop VM " + vm + " since it is not in 'Stopping' state, current state: " + vm.getState());
         }
-        String routerPrivateIp = null;
-        if (vm.getType() == VirtualMachine.Type.DomainRouter) {
-            routerPrivateIp = vm.getPrivateIpAddress();
-        }
-        StopCommand stop = new StopCommand(vm, vm.getInstanceName(), null, routerPrivateIp);
+
+        vmGuru.prepareStop(profile);
+        
+        StopCommand stop = new StopCommand(vm, vm.getInstanceName(), null);
         boolean stopped = false;
         StopAnswer answer = null;
         try {
@@ -1304,9 +1309,8 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         VirtualMachineProfile<VMInstanceVO> profile = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
         _networkMgr.prepareNicForMigration(profile, dest);
         _storageMgr.prepareForMigration(profile, dest);
-        HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
 
-        VirtualMachineTO to = hvGuru.implement(profile);
+        VirtualMachineTO to = toVmTO(profile);
         PrepareForMigrationCommand pfmc = new PrepareForMigrationCommand(to);
 
         ItWorkVO work = new ItWorkVO(UUID.randomUUID().toString(), _nodeId, State.Migrating, vm.getType(), vm.getId());
@@ -1409,6 +1413,13 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             work.setStep(Step.Done);
             _workDao.update(work.getId(), work);
         }
+    }
+
+    @Override
+    public VirtualMachineTO toVmTO(VirtualMachineProfile<? extends VMInstanceVO> profile) {
+        HypervisorGuru hvGuru = _hvGuruMgr.getGuru(profile.getVirtualMachine().getHypervisorType());
+        VirtualMachineTO to = hvGuru.implement(profile);
+        return to;
     }
 
     protected void cancelWorkItems(long nodeId) {
@@ -1734,7 +1745,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         set_vms.addAll(_vmDao.listLHByClusterId(clusterId));
 
         for (VMInstanceVO vm : set_vms) {
-            if (vm.isRemoved() || vm.getState() == State.Destroyed  || vm.getState() == State.Expunging) continue;
             AgentVmInfo info =  infos.remove(vm.getId());
             VMInstanceVO castedVm = null;
             if ((info == null && (vm.getState() == State.Running || vm.getState() == State.Starting))  
@@ -1778,23 +1788,26 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                     e.printStackTrace();
                 }
             }
-            else if (info != null && (vm.getState() == State.Stopped || vm.getState() == State.Stopping)) {
-            	 Host host = _hostDao.findByGuid(info.getHostUuid());
-                 if (host != null){
-                    s_logger.warn("Stopping a VM which is stopped/stopping " + info.name);
-                    vm.setState(State.Stopped); // set it as stop and clear it from host
-                    vm.setHostId(null);
-                    _vmDao.persist(vm);
-                     try {
-	                     Answer answer = _agentMgr.send(host.getId(), cleanup(info.name));
-	                     if (!answer.getResult()) {
-	                         s_logger.warn("Unable to stop a VM due to " + answer.getDetails());
-	                     }
-                     }
-                     catch (Exception e) {
-                         s_logger.warn("Unable to stop a VM due to " + e.getMessage());
-                     }
-                 }
+            else if (info != null && (vm.getState() == State.Stopped || vm.getState() == State.Stopping
+                    || vm.isRemoved() || vm.getState() == State.Destroyed || vm.getState() == State.Expunging)) {
+                Host host = _hostDao.findByGuid(info.getHostUuid());
+                if (host != null){
+                    s_logger.warn("Stopping a VM which is stopped/stopping/destroyed/expunging " + info.name);
+                    if (vm.getState() == State.Stopped || vm.getState() == State.Stopping) {
+                        vm.setState(State.Stopped); // set it as stop and clear it from host
+                        vm.setHostId(null);
+                        _vmDao.persist(vm);
+                    }
+                    try {
+                        Answer answer = _agentMgr.send(host.getId(), cleanup(info.name));
+                        if (!answer.getResult()) {
+                            s_logger.warn("Unable to stop a VM due to " + answer.getDetails());
+                        }
+                    }
+                    catch (Exception e) {
+                        s_logger.warn("Unable to stop a VM due to " + e.getMessage());
+                    }
+                }
             }
             else
             // host id can change
@@ -1810,11 +1823,17 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 					}
         		}
             }
-            
+             /* else if(info == null && vm.getState() == State.Stopping) { //Handling CS-13376
+                        s_logger.warn("Marking the VM as Stopped as it was still stopping on the CS" +vm.getName());
+                        vm.setState(State.Stopped); // Setting the VM as stopped on the DB and clearing it from the host
+                        vm.setLastHostId(vm.getHostId());
+                        vm.setHostId(null);
+                        _vmDao.persist(vm);
+                 }*/
         }
 
         for (final AgentVmInfo left : infos.values()) {
-        	if (VirtualMachineName.isValidVmName(left.name)) continue;  // if the vm follows cloudstack naming ignore it for stopping
+            if (!VirtualMachineName.isValidVmName(left.name)) continue;  // if the vm doesn't follow CS naming ignore it for stopping
             try {
                 Host host = _hostDao.findByGuid(left.getHostUuid());
                 if (host != null){
@@ -2132,7 +2151,8 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         List<NicVO> nics = _nicsDao.listByVmId(profile.getId());
         for (NicVO nic : nics) {
             Network network = _networkMgr.getNetwork(nic.getNetworkId());
-            NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), null, _networkMgr.isSecurityGroupSupportedInNetwork(network), _networkMgr.getNetworkTag(profile.getHypervisorType(), network));
+            NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), null, 
+                    _networkMgr.isSecurityGroupSupportedInNetwork(network), _networkMgr.getNetworkTag(profile.getHypervisorType(), network));
             profile.addNic(nicProfile);
         }
 
@@ -2430,4 +2450,112 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         vmForUpdate.setServiceOfferingId(newSvcOff.getId());
         return _vmDao.update(vmId, vmForUpdate);
     }
+    
+    @Override
+    public NicProfile addVmToNetwork(VirtualMachine vm, Network network, NicProfile requested) throws ConcurrentOperationException, 
+                                                    ResourceUnavailableException, InsufficientCapacityException {
+        
+        s_logger.debug("Adding vm " + vm + " to network " + network + "; requested nic profile " + requested);
+        VMInstanceVO vmVO = _vmDao.findById(vm.getId());
+        ReservationContext context = new ReservationContextImpl(null, null, _accountMgr.getActiveUser(User.UID_SYSTEM), 
+                _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM));
+        
+        VirtualMachineProfileImpl<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmVO, null, 
+                null, null, null);
+        
+        DataCenter dc = _configMgr.getZone(network.getDataCenterId());
+        Host host = _hostDao.findById(vm.getHostId()); 
+        DeployDestination dest = new DeployDestination(dc, null, null, host);
+        
+        //check vm state
+        if (vm.getState() == State.Running) {
+            //1) allocate and prepare nic
+            NicProfile nic = _networkMgr.createNicForVm(network, requested, context, vmProfile, true);
+            
+            //2) Convert vmProfile to vmTO
+            HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vmProfile.getVirtualMachine().getHypervisorType());
+            VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
+            
+            //3) Convert nicProfile to NicTO
+            NicTO nicTO = toNicTO(nic, vmProfile.getVirtualMachine().getHypervisorType());
+            
+            //4) plug the nic to the vm
+            VirtualMachineGuru<VMInstanceVO> vmGuru = getVmGuru(vmVO);
+            
+            s_logger.debug("Plugging nic for vm " + vm + " in network " + network);
+            if (vmGuru.plugNic(network, nicTO, vmTO, context, dest)) {
+                s_logger.debug("Nic is plugged successfully for vm " + vm + " in network " + network + ". Vm  is a part of network now");
+                return nic;
+            } else {
+                s_logger.warn("Failed to plug nic to the vm " + vm + " in network " + network);
+                return null;
+            }
+        } else if (vm.getState() == State.Stopped) {
+            //1) allocate nic
+            return _networkMgr.createNicForVm(network, requested, context, vmProfile, false);
+        } else {
+            s_logger.warn("Unable to add vm " + vm + " to network  " + network);
+            throw new ResourceUnavailableException("Unable to add vm " + vm + " to network, is not in the right state",
+                    DataCenter.class, vm.getDataCenterIdToDeployIn());
+        }
+    }
+
+
+    @Override
+    public NicTO toNicTO(NicProfile nic, HypervisorType hypervisorType) {
+        HypervisorGuru hvGuru = _hvGuruMgr.getGuru(hypervisorType);
+        
+        NicTO nicTO = hvGuru.toNicTO(nic);
+        return nicTO;
+    }
+    
+    @Override
+    public boolean removeVmFromNetwork(VirtualMachine vm, Network network, URI broadcastUri) throws ConcurrentOperationException, ResourceUnavailableException {
+        VMInstanceVO vmVO = _vmDao.findById(vm.getId());
+        ReservationContext context = new ReservationContextImpl(null, null, _accountMgr.getActiveUser(User.UID_SYSTEM), 
+                _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM));
+        
+        VirtualMachineProfileImpl<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmVO, null, 
+                null, null, null);
+        
+        DataCenter dc = _configMgr.getZone(network.getDataCenterId());
+        Host host = _hostDao.findById(vm.getHostId()); 
+        DeployDestination dest = new DeployDestination(dc, null, null, host);
+        VirtualMachineGuru<VMInstanceVO> vmGuru = getVmGuru(vmVO);
+        HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vmProfile.getVirtualMachine().getHypervisorType());
+        VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
+        
+        Nic nic = null;
+        
+        if (broadcastUri != null) {
+            nic = _nicsDao.findByNetworkIdInstanceIdAndBroadcastUri(network.getId(), vm.getId(), broadcastUri.toString());
+        } else {
+            nic = _networkMgr.getNicInNetwork(vm.getId(), network.getId());
+        }
+        
+        NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), 
+                _networkMgr.getNetworkRate(network.getId(), vm.getId()), 
+                _networkMgr.isSecurityGroupSupportedInNetwork(network), 
+                _networkMgr.getNetworkTag(vmProfile.getVirtualMachine().getHypervisorType(), network));
+        
+        //1) Unplug the nic
+        NicTO nicTO = toNicTO(nicProfile, vmProfile.getVirtualMachine().getHypervisorType());
+        s_logger.debug("Un-plugging nic for vm " + vm + " from network " + network);
+        boolean result = vmGuru.unplugNic(network, nicTO, vmTO, context, dest);
+        if (result) {
+            s_logger.debug("Nic is unplugged successfully for vm " + vm + " in network " + network );
+        } else {
+            s_logger.warn("Failed to unplug nic for the vm " + vm + " from network " + network);
+            return false;
+        }
+        
+        //2) Release the nic
+        _networkMgr.releaseNic(vmProfile, nic);
+        s_logger.debug("Successfully released nic " + nic +  "for vm " + vm);
+        
+        //3) Remove the nic
+        _networkMgr.removeNic(vmProfile, nic);
+        return result;
+    }
+   
 }

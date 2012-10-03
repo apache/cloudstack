@@ -19,12 +19,13 @@
 """
 #Import Local Modules
 import marvin
+from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from integration.lib.utils import *
 from integration.lib.base import *
 from integration.lib.common import *
-from marvin import remoteSSHClient
+from marvin.remoteSSHClient import remoteSSHClient
 import datetime
 
 
@@ -41,14 +42,14 @@ class Services:
                                     "username": "test",
                                     # Random characters are appended for unique
                                     # username
-                                    "password": "fr3sca",
+                                    "password": "password",
                                     },
                          "service_offering": {
                                     "name": "Tiny Instance",
                                     "displaytext": "Tiny Instance",
                                     "cpunumber": 1,
-                                    "cpuspeed": 100, # in MHz
-                                    "memory": 64, # In MBs
+                                    "cpuspeed": 100,    # in MHz
+                                    "memory": 64,       # In MBs
                                     },
                          "network_offering": {
                                     "name": 'Network offering-VR services',
@@ -57,16 +58,16 @@ class Services:
                                     "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,Vpn,Firewall,Lb,UserData,StaticNat',
                                     "traffictype": 'GUEST',
                                     "availability": 'Optional',
-                                    "serviceProviderList" : {
+                                    "serviceProviderList": {
                                             "Dhcp": 'VirtualRouter',
                                             "Dns": 'VirtualRouter',
                                             "SourceNat": 'VirtualRouter',
                                             "PortForwarding": 'VirtualRouter',
-					                        "Vpn": 'VirtualRouter',
-					                        "Firewall": 'VirtualRouter',
-					                        "Lb": 'VirtualRouter',
-					                        "UserData": 'VirtualRouter',
-					                        "StaticNat": 'VirtualRouter',
+                                            "Vpn": 'VirtualRouter',
+                                            "Firewall": 'VirtualRouter',
+                                            "Lb": 'VirtualRouter',
+                                            "UserData": 'VirtualRouter',
+                                            "StaticNat": 'VirtualRouter',
                                         },
                                     },
                          "network_offering_netscaler": {
@@ -76,7 +77,7 @@ class Services:
                                     "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,Vpn,Firewall,Lb,UserData,StaticNat',
                                     "traffictype": 'GUEST',
                                     "availability": 'Optional',
-                                    "serviceProviderList" : {
+                                    "serviceProviderList": {
                                             "Dhcp": 'VirtualRouter',
                                             "Dns": 'VirtualRouter',
                                             "SourceNat": 'VirtualRouter',
@@ -91,6 +92,7 @@ class Services:
                          "network": {
                                   "name": "Test Network",
                                   "displaytext": "Test Network",
+                                  "vlan": 2370,
                                 },
                          "lbrule": {
                                     "name": "SSH",
@@ -118,7 +120,7 @@ class Services:
                                     "publicport": 66,
                                     "protocol": "TCP"
                                 },
-                         "fw_rule":{
+                         "fw_rule": {
                                     "startport": 1,
                                     "endport": 6000,
                                     "cidr": '55.55.0.0/11',
@@ -136,11 +138,11 @@ class Services:
                                     "publicport": 22,
                                     "protocol": 'TCP',
                                 },
-                         "ostypeid": '9958b10f-9e5d-4ef1-908d-a047372d823b',
+                         "ostypeid": 'bc66ada0-99e7-483b-befc-8fb0c2129b70',
                          # Cent OS 5.3 (64 bit)
                          "sleep": 60,
                          "timeout": 10,
-                         "mode":'advanced'
+                         "mode": 'advanced'
                     }
 
 
@@ -209,9 +211,11 @@ class TestNOVirtualRouter(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced"])
     def test_01_network_off_without_conserve_mode(self):
         """Test Network offering with Conserve mode off and VR - All services
         """
+
 
         # Validate the following
         # 1. Create a Network from the above network offering and deploy a VM.
@@ -243,7 +247,7 @@ class TestNOVirtualRouter(cloudstackTestCase):
 
         self.debug("Created n/w offering with ID: %s" %
                                                     self.network_offering.id)
-	    # Enable Network offering
+        # Enable Network offering
         self.network_offering.update(self.apiclient, state='Enabled')
 
         # Creating network using the network offering created
@@ -255,7 +259,7 @@ class TestNOVirtualRouter(cloudstackTestCase):
                                     accountid=self.account.account.name,
                                     domainid=self.account.account.domainid,
                                     networkofferingid=self.network_offering.id,
-				                    zoneid=self.zone.id
+                                    zoneid=self.zone.id
                                     )
         self.debug("Created network with ID: %s" % self.network.id)
 
@@ -332,7 +336,7 @@ class TestNOVirtualRouter(cloudstackTestCase):
                                         ip_with_nat_rule.ipaddress.ipaddress)
         NATRule.create(
                          self.apiclient,
-                       	 virtual_machine,
+                         virtual_machine,
                          self.services["natrule"],
                          ipaddressid=ip_with_nat_rule.ipaddress.id
                       )
@@ -452,9 +456,11 @@ class TestNOVirtualRouter(cloudstackTestCase):
                             )
         return
 
+    @attr(tags = ["advanced"])
     def test_02_network_off_with_conserve_mode(self):
         """Test Network offering with Conserve mode ON and VR - All services
         """
+
 
         # Validate the following
         # 1. Create a Network from the above network offering and deploy a VM.
@@ -484,7 +490,7 @@ class TestNOVirtualRouter(cloudstackTestCase):
 
         self.debug("Created n/w offering with ID: %s" %
                                                     self.network_offering.id)
-	# Enable Network offering
+    # Enable Network offering
         self.network_offering.update(self.apiclient, state='Enabled')
 
         # Creating network using the network offering created
@@ -496,7 +502,7 @@ class TestNOVirtualRouter(cloudstackTestCase):
                                     accountid=self.account.account.name,
                                     domainid=self.account.account.domainid,
                                     networkofferingid=self.network_offering.id,
-				                    zoneid=self.zone.id
+                                    zoneid=self.zone.id
                                     )
         self.debug("Created network with ID: %s" % self.network.id)
 
@@ -701,7 +707,7 @@ class TestNOVirtualRouter(cloudstackTestCase):
         vpns = Vpn.list(
                         self.apiclient,
                         publicipid=src_nat.id,
-			listall=True,
+            listall=True,
                         )
 
         self.assertEqual(
@@ -783,9 +789,11 @@ class TestNOWithNetscaler(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advancedns"])
     def test_01_network_off_without_conserve_mode(self):
         """Test Nw off with Conserve mode off, VR-All services, LB-netscaler
         """
+
 
         # Validate the following
         # 1. Create a Network from the above network offering and deploy a VM.
@@ -796,13 +804,12 @@ class TestNOWithNetscaler(cloudstackTestCase):
         # 5. On an ipaddress that has Lb rules , we should NOT allow firewall
         #    rules to be programmed.
         # 6. On an ipaddress that has Lb rules , we should NOT allow PF rules
-        #    to be programmed.   
+        #    to be programmed.
         # 7. We should be allowed to program multiple PF rules on the same Ip
         #    address on different public ports.
         # 8. We should be allowed to program multiple LB rules on the same Ip
-        #    address for different public port ranges.   
+        #    address for different public port ranges.
         # 9. On source NAT ipaddress, we should NOT be allowed to Enable VPN.
-
 
         # Create a network offering with all virtual router services enabled
         self.debug(
@@ -891,7 +898,7 @@ class TestNOWithNetscaler(cloudstackTestCase):
                            )
         self.debug("Creating firewall rule on source NAT: %s" %
                                                         src_nat.ipaddress)
-        #Create Firewall rule on source NAT       
+        #Create Firewall rule on source NAT
         fw_rule = FireWallRule.create(
                             self.apiclient,
                             ipaddressid=src_nat.id,
@@ -1051,9 +1058,11 @@ class TestNOWithNetscaler(cloudstackTestCase):
                         )
         return
 
+    @attr(tags = ["advancedns"])
     def test_02_network_off_with_conserve_mode_netscaler(self):
         """Test NW off with Conserve mode ON, LB-Netscaler and VR-All services
         """
+
 
         # Validate the following
         # 1. Create a Network from the above network offering and deploy a VM.
@@ -1065,13 +1074,12 @@ class TestNOWithNetscaler(cloudstackTestCase):
         # 5. On an ipaddress that has Lb rules , we should NOT allow firewall
         #    rules to be programmed.
         # 6. On an ipaddress that has Lb rules , we should NOT allow PF rules
-        #    to be programmed.   
+        #    to be programmed.
         # 7. We should be allowed to program multiple PF rules on the same Ip
         #    address on different public ports.
         # 8. We should be allowed to program multiple LB rules on the same Ip
-        #    address for different public port ranges.   
+        #    address for different public port ranges.
         # 9. On source NAT ipaddress, we should be allowed to Enable VPN.
-
 
         # Create a network offering with all virtual router services enabled
         self.debug(
@@ -1425,9 +1433,12 @@ class TestNetworkUpgrade(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(speed = "slow")
+    @attr(tags = ["advancedns"])
     def test_01_nwupgrade_netscaler_conserve_on(self):
         """Test Nw upgrade to netscaler lb service and conserve mode ON
         """
+
 
         # Validate the following
         # 1. Upgrade a network with VR and conserve mode ON TO
@@ -1579,7 +1590,7 @@ class TestNetworkUpgrade(cloudstackTestCase):
         vpns = Vpn.list(
                         self.apiclient,
                         publicipid=src_nat.id,
-            listall=True,
+                        listall=True,
                         )
 
         self.assertEqual(
@@ -1622,9 +1633,12 @@ class TestNetworkUpgrade(cloudstackTestCase):
                         )
         return
 
+    @attr(speed = "slow")
+    @attr(tags = ["advancedns"])
     def test_02_nwupgrade_netscaler_conserve_off(self):
         """Test Nw upgrade to netscaler lb service and conserve mode OFF
         """
+
 
         # Validate the following
         # 1. Upgrade a network with VR and conserve mode ON TO
@@ -1797,4 +1811,132 @@ class TestNetworkUpgrade(cloudstackTestCase):
                             networkofferingid=ns_lb_offering.id,
                             changecidr=True
                             )
+        return
+
+
+@unittest.skip("Skipped since shared network requires StartIp/endIp/gateway/netmask")
+class TestSharedNetworkWithoutIp(cloudstackTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.api_client = super(
+                               TestSharedNetworkWithoutIp,
+                               cls
+                               ).getClsTestClient().getApiClient()
+        cls.services = Services().services
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client, cls.services)
+        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.template = get_template(
+                            cls.api_client,
+                            cls.zone.id,
+                            cls.services["ostypeid"]
+                            )
+        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
+        cls.services["virtual_machine"]["template"] = cls.template.id
+
+        cls.service_offering = ServiceOffering.create(
+                                            cls.api_client,
+                                            cls.services["service_offering"]
+                                            )
+
+        cls._cleanup = [
+                        cls.service_offering,
+                        ]
+        return
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            #Cleanup resources used
+            cleanup_resources(cls.api_client, cls._cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.dbclient = self.testClient.getDbConnection()
+        self.account = Account.create(
+                                     self.apiclient,
+                                     self.services["account"],
+                                     admin=True,
+                                     domainid=self.domain.id
+                                     )
+        self.cleanup = []
+        return
+
+    def tearDown(self):
+        try:
+            self.account.delete(self.apiclient)
+            interval = list_configurations(
+                                    self.apiclient,
+                                    name='account.cleanup.interval'
+                                    )
+            # Sleep to ensure that all resources are deleted
+            time.sleep(int(interval[0].value) * 2)
+            #Clean up, terminate the created network offerings
+            cleanup_resources(self.apiclient, self.cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    @attr(tags=["advanced", "advancedns", "simulator", "network", "api"])
+    def test_deployVmSharedNetworkWithoutIpRange(self):
+        """Test deployVM in shared network without startIp/endIp
+        """
+
+        # Steps for validation
+        # 1. create a shared network using shared network offering but do not
+        #    specify startIp/endIp arguments
+        # 2. create an account
+        # 3. deploy a VM in this account using the above network
+        # Validate the following
+        # 1. listNetworks should return the created network
+        # 2. listAccounts to return the created account
+        # 3. VM deployment should succeed and NIC is in networks address space
+        # 4. delete the account
+
+        self.debug(
+                "Fetching default shared network offering from nw offerings")
+        network_offerings = NetworkOffering.list(
+                                    self.apiclient,
+                                    listall=True,
+                                    guestiptype="Shared",
+                                    name="DefaultSharedNetworkOffering",
+                                    displaytext="Offering for Shared networks"
+                                    )
+        self.assertEqual(
+                    isinstance(network_offerings, list),
+                    True,
+                    "Nw offerings should have atleast a shared nw offering"
+                    )
+        shared_nw_off = network_offerings[0]
+        self.debug("Shared netwrk offering: %s" % shared_nw_off.name)
+
+        self.debug("Creating a network from shared network offering")
+        self.network = Network.create(
+                                    self.apiclient,
+                                    self.services["network"],
+                                    accountid=self.account.account.name,
+                                    domainid=self.account.account.domainid,
+                                    networkofferingid=shared_nw_off.id,
+                                    zoneid=self.zone.id
+                                    )
+        self.debug("Created network with ID: %s" % self.network.id)
+
+        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        try:
+            # Spawn an instance in that network
+            VirtualMachine.create(
+                                  self.apiclient,
+                                  self.services["virtual_machine"],
+                                  accountid=self.account.account.name,
+                                  domainid=self.account.account.domainid,
+                                  serviceofferingid=self.service_offering.id,
+                                  networkids=[str(self.network.id)]
+                                  )
+            self.debug("Deployed VM in network: %s" % self.network.id)
+        except Exception as e:
+            self.fail("Deply Vm in shared network failed! - %s" % e)
         return

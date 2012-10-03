@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-//
+// 
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -33,6 +33,8 @@ public interface NicDao extends GenericDao<NicVO, Long> {
     NicVO findByInstanceIdAndNetworkId(long networkId, long instanceId);
     
     NicVO findByInstanceIdAndNetworkIdIncludingRemoved(long networkId, long instanceId);
+    
+    NicVO findByNetworkIdTypeAndGateway(long networkId, VirtualMachine.Type vmType, String gateway);
 
     void removeNicsForInstance(long instanceId);
     
@@ -41,4 +43,19 @@ public interface NicDao extends GenericDao<NicVO, Long> {
     NicVO findByIp4AddressAndNetworkId(String ip4Address, long networkId);
     
     NicVO findDefaultNicForVM(long instanceId);
+
+    /**
+     * @param networkId
+     * @param instanceId
+     * @return
+     */
+    NicVO findNonReleasedByInstanceIdAndNetworkId(long networkId, long instanceId);
+    
+    String getIpAddress(long networkId, long instanceId);
+    
+    int countNics(long instanceId);
+    
+    NicVO findByNetworkIdInstanceIdAndBroadcastUri(long networkId, long instanceId, String broadcastUri);
+    
+    NicVO findByIp4AddressAndNetworkIdAndInstanceId(long networkId, long instanceId, String ip4Address);
 }

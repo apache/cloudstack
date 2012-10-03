@@ -16,27 +16,10 @@
 // under the License.
 package com.cloud.bridge.persist.dao;
 
-import org.apache.log4j.Logger;
+import com.cloud.bridge.model.CloudStackConfigurationVO;
+import com.cloud.utils.db.GenericDao;
 
-import com.cloud.bridge.persist.EntityDao;
-import com.cloud.stack.models.CloudStackConfiguration;
+public interface CloudStackConfigurationDao extends GenericDao<CloudStackConfigurationVO, String> {
 
-
-public class CloudStackConfigurationDao extends EntityDao<CloudStackConfiguration> {
-	public static final Logger logger = Logger.getLogger(CloudStackConfigurationDao.class);
-
-	public CloudStackConfigurationDao() {
-	    super(CloudStackConfiguration.class, true);
-	}
-
-
-	public String getConfigValue( String configName ){
-		CloudStackConfiguration config = queryEntity("from CloudStackConfiguration where name=?", new Object[] {configName});
-		if(config != null){
-		    return config.getValue();
-		}
-		return null;
-	}
-
-
+    public String getConfigValue(String name);
 }

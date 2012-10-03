@@ -40,7 +40,9 @@ public class EC2Instance {
     private String      hypervisor;
     private String      rootDeviceType;
     private String      rootDeviceId;
+    private String      keyPairName;
     private List<String>    groupSet;
+    private List<EC2TagKeyValue>    tagsSet;
     
 	public EC2Instance() {
 		id               = null;
@@ -59,7 +61,9 @@ public class EC2Instance {
 		hypervisor       = null;
 		rootDeviceType   = null;
 		rootDeviceId     = null;
+		keyPairName		 = null;
 		groupSet         = new ArrayList<String>();
+        tagsSet          = new ArrayList<EC2TagKeyValue>();
 	}
 	
 	public void setId( String id ) {
@@ -190,6 +194,14 @@ public class EC2Instance {
 		rootDeviceId = param;
 	}
 
+	public String getKeyPairName() {
+		return keyPairName;
+    }
+
+	public void setKeyPairName(String param) {
+		keyPairName = param;
+    }
+
     public void addGroupName( String param ) {
         groupSet.add( param );
     }
@@ -197,5 +209,13 @@ public class EC2Instance {
     public String[] getGroupSet() {
         return groupSet.toArray(new String[0]);
     }
-    
+
+    public void addResourceTag( EC2TagKeyValue param ) {
+        tagsSet.add( param );
+    }
+
+    public EC2TagKeyValue[] getResourceTags() {
+        return tagsSet.toArray(new EC2TagKeyValue[0]);
+    }
+
 }

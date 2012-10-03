@@ -26,11 +26,6 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
-/**
- * 
- * @author Will Chan
- *
- */
 @Local(value={UserDao.class})
 public class UserDaoImpl extends GenericDaoBase<UserVO, Long> implements UserDao {
     protected SearchBuilder<UserVO> UsernamePasswordSearch;

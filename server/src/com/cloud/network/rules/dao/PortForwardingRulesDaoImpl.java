@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-//
+// 
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -20,8 +20,6 @@ import java.util.List;
 
 import javax.ejb.Local;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.network.dao.FirewallRulesCidrsDaoImpl;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRule.State;
@@ -34,7 +32,6 @@ import com.cloud.utils.db.SearchCriteria.Op;
 
 @Local(value=PortForwardingRulesDao.class)
 public class PortForwardingRulesDaoImpl extends GenericDaoBase<PortForwardingRuleVO, Long> implements PortForwardingRulesDao {
-    private static final Logger s_logger = Logger.getLogger(PortForwardingRulesDaoImpl.class);
 
     protected final SearchBuilder<PortForwardingRuleVO> AllFieldsSearch;
     protected final SearchBuilder<PortForwardingRuleVO> ApplicationSearch;

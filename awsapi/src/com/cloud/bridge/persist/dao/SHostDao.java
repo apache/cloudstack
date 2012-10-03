@@ -16,23 +16,13 @@
 // under the License.
 package com.cloud.bridge.persist.dao;
 
-import com.cloud.bridge.model.SHost;
-import com.cloud.bridge.persist.EntityDao;
+import com.cloud.bridge.model.SHostVO;
+import com.cloud.utils.db.GenericDao;
 
-/**
- * @author Kelven Yang
- */
-public class SHostDao extends EntityDao<SHost> {
-	public SHostDao() {
-		super(SHost.class);
-	}
-	
-	public SHost getByHost(String host) {
-		return queryEntity("from SHost where host=?", new Object[] { host });
-	}
-	
-	public SHost getLocalStorageHost(long mhostId, String storageRoot) {
-		return queryEntity("from SHost where mhost=? and exportRoot=?", 
-			new Object[] { new Long(mhostId), storageRoot});
-	}
+public interface SHostDao extends GenericDao<SHostVO, Long> {
+
+    SHostVO getByHost(String host);
+
+    SHostVO getLocalStorageHost(long mhostId, String storageRoot);
+
 }

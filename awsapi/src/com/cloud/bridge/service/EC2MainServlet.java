@@ -27,12 +27,18 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.log4j.Logger;
 
-import com.cloud.bridge.persist.PersistContext;
 import com.cloud.bridge.persist.dao.CloudStackConfigurationDao;
-import com.cloud.bridge.persist.dao.UserCredentialsDao;
+import com.cloud.bridge.persist.dao.CloudStackConfigurationDaoImpl;
 import com.cloud.bridge.util.ConfigurationHelper;
+import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.component.Inject;
+import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Transaction;
 
+import net.sf.ehcache.Cache;
+@DB
 public class EC2MainServlet extends HttpServlet{
 
 	private static final long serialVersionUID = 2201599478145974479L;
@@ -41,25 +47,25 @@ public class EC2MainServlet extends HttpServlet{
 	public static final String EC2_SOAP_SERVLET_PATH="/services/AmazonEC2/";
 	public static final String ENABLE_EC2_API="enable.ec2.api";
 	private static boolean isEC2APIEnabled = false;
+	public static final Logger logger = Logger.getLogger(EC2MainServlet.class);
+	CloudStackConfigurationDao csDao = ComponentLocator.inject(CloudStackConfigurationDaoImpl.class);
 	
 	/**
 	 * We build the path to where the keystore holding the WS-Security X509 certificates
 	 * are stored.
 	 */
+	@DB
 	public void init( ServletConfig config ) throws ServletException {
 		try{
-    	    ConfigurationHelper.preConfigureConfigPathFromServletContext(config.getServletContext());
-    		UserCredentialsDao.preCheckTableExistence();
+		    ConfigurationHelper.preConfigureConfigPathFromServletContext(config.getServletContext());
     		// check if API is enabled
-    		CloudStackConfigurationDao csDao = new CloudStackConfigurationDao();
     		String value = csDao.getConfigValue(ENABLE_EC2_API);
     		if(value != null){
     		    isEC2APIEnabled = Boolean.valueOf(value);
     		}
-    		PersistContext.commitTransaction(true);
-            PersistContext.closeSession(true);
+    		logger.info("Value of EC2 API Flag ::" + value);
 		}catch(Exception e){
-		    throw new ServletException("Error initializing awsapi: " + e.getMessage());
+		    throw new ServletException("Error initializing awsapi: " + e.getMessage(), e);
 		}
 	}
 	

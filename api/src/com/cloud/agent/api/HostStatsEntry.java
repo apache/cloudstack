@@ -18,10 +18,6 @@ package com.cloud.agent.api;
 
 import com.cloud.host.HostStats;
 
-/**
- * @author ajoshi
- *
- */
 public class HostStatsEntry implements HostStats {
 	
 	long hostId;

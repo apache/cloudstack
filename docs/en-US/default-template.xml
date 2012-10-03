@@ -1,0 +1,56 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
+<section id="default-template">
+    <title>The Default Template</title>
+    <para>&PRODUCT; includes a CentOS template. This template is downloaded by the Secondary Storage VM after the primary and secondary storage are configured. You can use this template in your production deployment or you can delete it and use custom templates.</para>
+    <para>The root password for the default template is "password".</para>
+    <para>A default template is provided for each of XenServer, KVM, and vSphere.  The templates that are downloaded depend on the hypervisor type that is available in your cloud.  Each template is approximately 2.5 GB physical size.</para>
+    <para>The default template includes the standard iptables rules, which will block most access to the template excluding ssh.</para>
+    <programlisting># iptables --list
+Chain INPUT (policy ACCEPT)
+target     prot opt source               destination
+RH-Firewall-1-INPUT  all  --  anywhere             anywhere
+
+Chain FORWARD (policy ACCEPT)
+target     prot opt source               destination
+RH-Firewall-1-INPUT  all  --  anywhere             anywhere
+
+Chain OUTPUT (policy ACCEPT)
+target     prot opt source               destination
+
+Chain RH-Firewall-1-INPUT (2 references)
+target     prot opt source               destination
+ACCEPT     all  --  anywhere             anywhere
+ACCEPT     icmp --  anywhere        anywhere       icmp any
+ACCEPT     esp  --  anywhere        anywhere
+ACCEPT     ah   --  anywhere        anywhere
+ACCEPT     udp  --  anywhere        224.0.0.251    udp dpt:mdns
+ACCEPT     udp  --  anywhere        anywhere       udp dpt:ipp
+ACCEPT     tcp  --  anywhere        anywhere       tcp dpt:ipp
+ACCEPT     all  --  anywhere        anywhere       state RELATED,ESTABLISHED
+ACCEPT     tcp  --  anywhere        anywhere       state NEW tcp dpt:ssh
+REJECT     all  --  anywhere        anywhere       reject-with icmp-host-
+</programlisting>
+</section>

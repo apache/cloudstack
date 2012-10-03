@@ -21,41 +21,6 @@
    * Breadcrumb-related functions
    */
   var _breadcrumb = cloudStack.ui.widgets.browser.breadcrumb = {
-    fixSize: function($breadcrumbContainer) {
-      var width = 0;
-      var containerWidth = $breadcrumbContainer.width();
-      var $elems = $breadcrumbContainer.find('ul li, div');
-
-      $elems.each(function() {
-        width += $(this).width();
-      });
-
-      if (width > containerWidth) {
-        $elems.filter('li').each(function() {
-          var targetWidth = $(this).width() - (
-            (width - containerWidth) / $elems.filter('li').size()
-          ) - 10;
-
-          $(this).width(targetWidth);
-
-          // Concatenate title
-          var $text = $(this).find('span');
-          var text = $(this).attr('title');
-
-          $text.html(
-            text
-              .substring(0, text.length - targetWidth / 15)
-              .concat('...')
-          );
-        });
-      } else {
-        $elems.css({ width: '' });
-        $elems.find('span').each(function() {
-          $(this).html($(this).closest('li').attr('title'));
-        });
-      }
-    },
-
     /**
      * Generate new breadcrumb
      */
@@ -244,7 +209,6 @@
           .removeClass('maximized')
           .addClass('reduced')
       ).removeClass('active maximized');
-      _breadcrumb.fixSize($('#breadcrumbs'));
 
       $toRemove.animate(
         _panel.initialState($container),
@@ -271,6 +235,7 @@
       var $panel = args.panel;
       var $container = this.element;
       var $toHide = $panel.siblings(':not(.always-maximized)');
+      var $shadow = $toHide.find('div.shadow');
 
       if (args.panel.hasClass('maximized')) {
         _breadcrumb.filter($panel).removeClass('maximized');
@@ -279,6 +244,7 @@
         _breadcrumb.filter($panel.siblings()).find('span').animate({ opacity: 1 });
         $toHide.animate({ left: _panel.position($container, {}) },
                         { duration: 500 });
+        $shadow.show();
       } else {
         _breadcrumb.filter($panel).addClass('maximized');
         $panel.removeClass('reduced');
@@ -286,6 +252,7 @@
         _breadcrumb.filter($panel.siblings()).find('span').animate({ opacity: 0.5 });
         $toHide.animate(_panel.initialState($container),
                         { duration: 500 });
+        $shadow.hide();
       }
     },
 
@@ -327,8 +294,6 @@
         .addClass('active')
         .appendTo('#breadcrumbs ul');
 
-      _breadcrumb.fixSize($('#breadcrumbs'));
-
       // Reduced appearance for previous panels
       $panel.siblings().filter(function() {
         return $(this).index() < $panel.index();
@@ -349,7 +314,7 @@
         $panel.css(
           { left: targetPosition }
         );
-        if (args.complete) args.complete($panel);
+        if (args.complete) args.complete($panel, _breadcrumb.filter($panel));
       } else {
         // Animate slide-in
         $panel.animate({ left: targetPosition }, {
@@ -377,7 +342,6 @@
       this.element.find('div.panel').remove();
       $('#breadcrumbs').find('ul li').remove();
       $('#breadcrumbs').find('ul div.end').remove();
-      _breadcrumb.fixSize($('#breadcrumbs'));
     }
   });
 

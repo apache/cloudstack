@@ -39,7 +39,10 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.security.dao.SecurityGroupDao;
+import com.cloud.network.vpc.dao.StaticRouteDao;
+import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
+import com.cloud.projects.dao.ProjectDao;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.server.TaggedResourceService;
@@ -62,12 +65,11 @@ import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.uuididentity.dao.IdentityDao;
 import com.cloud.vm.dao.UserVmDao;
 
-/**
- * @author Alena Prokharchyk
- */
+
 @Local(value = { TaggedResourceService.class})
 public class TaggedResourceManagerImpl implements TaggedResourceService, Manager{
     public static final Logger s_logger = Logger.getLogger(TaggedResourceManagerImpl.class);
@@ -106,6 +108,12 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
     RemoteAccessVpnDao _vpnDao;
     @Inject
     IPAddressDao _publicIpDao;
+    @Inject
+    ProjectDao _projectDao;
+    @Inject
+    VpcDao _vpcDao;
+    @Inject
+    StaticRouteDao _staticRouteDao;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -121,6 +129,10 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
         _daoMap.put(TaggedResourceType.FirewallRule, _firewallDao);
         _daoMap.put(TaggedResourceType.SecurityGroup, _securityGroupDao);
         _daoMap.put(TaggedResourceType.PublicIpAddress, _publicIpDao);
+        _daoMap.put(TaggedResourceType.Project, _projectDao);
+        _daoMap.put(TaggedResourceType.Vpc, _vpcDao);
+        _daoMap.put(TaggedResourceType.NetworkACL, _firewallDao);
+        _daoMap.put(TaggedResourceType.StaticRoute, _staticRouteDao);
 
         return true;
     }
@@ -143,6 +155,9 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
     
     private Long getResourceId(String resourceId, TaggedResourceType resourceType) {   
         GenericDao<?, Long> dao = _daoMap.get(resourceType);
+        if (dao == null) {
+            throw new CloudRuntimeException("Dao is not loaded for the resource type " + resourceType);
+        }
         Class<?> claz = DbUtil.getEntityBeanType(dao);
         
         Long identityId = null;
@@ -186,7 +201,7 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
                 if (tableName == null) {
                     throw new InvalidParameterValueException("Unable to find resource of type " + resourceType + " in the database");
                 }
-                pair = _identityDao.getAccountDomainInfo(tableName, resourceId);
+                pair = _identityDao.getAccountDomainInfo(tableName, resourceId, resourceType);
                 if (pair.first() != null || pair.second() != null) {
                     break;
                 }
@@ -233,13 +248,15 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
         Transaction txn = Transaction.currentTxn();
         txn.start();
         
-        for (String tag : tags.keySet()) {
+        for (String key : tags.keySet()) {
             for (String resourceId : resourceIds) {
                 Long id = getResourceId(resourceId, resourceType);
+                String resourceUuid = getUuid(resourceId, resourceType);
                 
                 //check if object exists
                 if (_daoMap.get(resourceType).findById(id) == null) {
-                    throw new InvalidParameterValueException("Unable to find resource by id " + resourceId + " and type " + resourceType);
+                    throw new InvalidParameterValueException("Unable to find resource by id " + resourceId + 
+                            " and type " + resourceType);
                 }
                 
                 Pair<Long, Long> accountDomainPair = getAccountDomain(id, resourceType);
@@ -252,15 +269,20 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
                     _accountMgr.checkAccess(caller, _domainMgr.getDomain(domainId));
                 } else {
                     throw new PermissionDeniedException("Account " + caller + " doesn't have permissions to create tags" +
-                    		" for resource " + tag);
+                    		" for resource " + key);
+                }
+                
+                String value = tags.get(key);
+                
+                if (value == null || value.isEmpty()) {
+                    throw new InvalidParameterValueException("Value for the key " + key + " is either null or empty");
                 }
                
-                ResourceTagVO resourceTag = new ResourceTagVO(tag, tags.get(tag), accountDomainPair.first(),
+                ResourceTagVO resourceTag = new ResourceTagVO(key, value, accountDomainPair.first(),
                         accountDomainPair.second(), 
-                        id, resourceType, customer);
+                        id, resourceType, customer, resourceUuid);
                 resourceTag = _resourceTagDao.persist(resourceTag);
                 resourceTags.add(resourceTag);
-
             }
         }
         
@@ -282,14 +304,14 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
                if (tableName == null) {
                    throw new InvalidParameterValueException("Unable to find resource of type " + resourceType + " in the database");
                }
-               identiyUUId = _identityDao.getIdentityUuid(tableName, resourceId);
-               if (identiyUUId != null) {
-                   break;
-               }
+               
+               claz = claz.getSuperclass();
+               if (claz == Object.class) {
+                   identiyUUId = _identityDao.getIdentityUuid(tableName, resourceId);
+               } 
            } catch (Exception ex) {
                //do nothing here, it might mean uuid field is missing and we have to search further
            }
-           claz = claz.getSuperclass();
        }
        
        if (identiyUUId == null) {
@@ -324,7 +346,13 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
 
        sb.and("key", sb.entity().getKey(), SearchCriteria.Op.EQ);
        sb.and("value", sb.entity().getValue(), SearchCriteria.Op.EQ);
-       sb.and("resourceId", sb.entity().getResourceId(), SearchCriteria.Op.EQ);
+       
+       if (resourceId != null) {
+       sb.and().op("resourceId", sb.entity().getResourceId(), SearchCriteria.Op.EQ);
+       sb.or("resourceUuid", sb.entity().getResourceUuid(), SearchCriteria.Op.EQ);
+       sb.cp();
+       }
+       
        sb.and("resourceType", sb.entity().getResourceType(), SearchCriteria.Op.EQ);
        sb.and("customer", sb.entity().getCustomer(), SearchCriteria.Op.EQ);
        
@@ -342,6 +370,7 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
        
        if (resourceId != null) {
            sc.setParameters("resourceId", resourceId);
+           sc.setParameters("resourceUuid", resourceId);
        }
        
        if (resourceType != null) {
@@ -362,10 +391,14 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
         Account caller = UserContext.current().getCaller();
         
         SearchBuilder<ResourceTagVO> sb = _resourceTagDao.createSearchBuilder();
-        sb.and("resourceId", sb.entity().getResourceId(), SearchCriteria.Op.IN);
+        sb.and().op("resourceId", sb.entity().getResourceId(), SearchCriteria.Op.IN);
+        sb.or("resourceUuid", sb.entity().getResourceUuid(), SearchCriteria.Op.IN);
+        sb.cp();
         sb.and("resourceType", sb.entity().getResourceType(), SearchCriteria.Op.EQ);
+        
         SearchCriteria<ResourceTagVO> sc = sb.create();
         sc.setParameters("resourceId", resourceIds.toArray());
+        sc.setParameters("resourceUuid", resourceIds.toArray());
         sc.setParameters("resourceType", resourceType);
         
         List<? extends ResourceTag> resourceTags = _resourceTagDao.search(sc, null);;
@@ -400,6 +433,10 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
             }
         }
         
+        if (tagsToRemove.isEmpty()) {
+            throw new InvalidParameterValueException("Unable to find tags by parameters specified");
+        }
+        
         //Remove the tags
         Transaction txn = Transaction.currentTxn();
         txn.start();
@@ -410,5 +447,11 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
         txn.commit();
 
         return true;
+    }
+
+
+    @Override
+    public List<? extends ResourceTag> listByResourceTypeAndId(TaggedResourceType type, long resourceId) {
+        return _resourceTagDao.listBy(resourceId, type);
     }
 }

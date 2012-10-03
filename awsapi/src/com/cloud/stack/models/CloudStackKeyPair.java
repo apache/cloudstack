@@ -19,10 +19,6 @@ package com.cloud.stack.models;
 
 import com.google.gson.annotations.SerializedName;
 
-/**
- * @author slriv
- *
- */
 public class CloudStackKeyPair {
 	@SerializedName(ApiConstants.FINGERPRINT)
 	private String fingerprint;

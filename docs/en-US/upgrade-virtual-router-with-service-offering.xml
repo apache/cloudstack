@@ -1,0 +1,33 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
+<section id="upgrade-virtual-router-with-service-offering">
+    <title>Upgrading a Virtual Router with System Service Offerings</title>
+    <para>When &PRODUCT; creates a virtual router, it uses default settings which are defined in a default system service offering. See <xref linkend="system-service-offerings"/>. All the virtual routers in a single guest network use the same system service offering. You can upgrade the capabilities of the virtual router by creating and applying a custom system service offering.</para>
+    <orderedlist>
+        <listitem><para>Define your custom system service offering. See <xref linkend="creating-system-service-offerings"/>. In System VM Type, choose Domain Router.</para></listitem>
+        <listitem><para>Associate the system service offering with a network offering. See <xref linkend="creating-network-offerings"/></para></listitem>
+        <listitem><para>Apply the network offering to the network where you want the virtual routers to use the new system service offering. If this is a new network, follow the steps in Adding an Additional Guest Network on page 66. To change the service offering for existing virtual routers, follow the steps in <xref linkend="change-network-offering-on-guest-network"/>.</para></listitem>
+        </orderedlist>
+</section>

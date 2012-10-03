@@ -1,0 +1,87 @@
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-----------------------------------------------------------
+
+
+Nicira Network Virtualization Platform (NVP) integration code is contributed 
+by Nicira and Schuberg Philis and copyright is donated to the Apache Software
+Foundation.
+
+Authors
+    Somik Behera <sbehera@nicira.com>
+    Hugo Trippaers <htrippaers@schubergphilis.com>
+    
+== New API Calls 
+
+The following API calls are added to CloudStack to support the integrations with
+the Nicira NVP platform. Please see the API documentation of CloudStack for 
+parameters and return values.
+
+ * addNiciraNvpDevice
+ * deleteNiciraNvpDevice        
+ * listNiciraNvpDevices
+ * listNiciraNvpDeviceNetworks
+
+== How to enable the Nicira NVP integration.
+
+When configuring a zone create a new physical network for "Guest" traffic and 
+select "STT" as the isolation type. Set the Xen traffic label for "Guest" 
+traffic to the label of the integration bridge (refer to the Nicira 
+Documentation for setting up the integration bridge). Note that this requires 
+all traffic types to have their traffic labels set.
+
+These steps are specified by the API calls as there is currently no GUI 
+available.
+
+1. addNetworkServiceProvider
+    name="NiciraNvp", physicalnetworkid=<see above>, 
+    servicelist="Connectivity"
+2. updateNetworkServiceProvider
+    id=<id from step1>, state="Enabled"
+3. addNiciraNvpDevice
+    physicalnetworkid=<see step 1>, 
+    hostname=<hostname or IP of the controller>
+    username=<admin username>
+    password=<admin password>
+    transportzoneuuid=<transport zone uuid>
+
+== How to use the Nicira integration
+
+When creating a guest network make sure it is created in the physical network 
+with the isolation type set to "STT". When the first virtual machine is 
+launched in this network the NiciraNvpNetworkGuru will configure a logical 
+switch on the NVP Controller. During the startup of a virtual machine the 
+NiciraNvpElement will create a logical port for any NICs in the guest networks
+and attach the port to the existing logical swith.
+
+== Debugging/Troubleshooting
+
+All elements created on the NVP controller have tags with the name of the 
+account, this can be used to search the items using the NVP manager. The NVP 
+uuid of the logical switch is also stored in the BroadcastUri of the 
+corresponding Guest network in an lswitch uri scheme. The CloudStack uuid of 
+the NIC is used to make the Vif attachement on the logical switchport.
+
+The following classes should be set to log level debug when troubleshooting.
+    com.cloud.network 
+        (Most NiciraNvp related objects live in this package and subpackages)
+    org.apache.commons.httpclient 
+        (used by NiciraNvpApi to make calls to the SDN Controller)
+    httpclient.wire
+        (wirelevel http tracing of httpclient)
+    
+Please report any findings to the developer mailing list.

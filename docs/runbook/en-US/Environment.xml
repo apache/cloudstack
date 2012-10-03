@@ -65,9 +65,16 @@ ONBOOT="no"
       <para>
         Unfortunately, this configuration will not permit you to connect to the network,
         and is also unsuitable for our purposes with CloudStack. We want to 
-	configure that file so that it specifies the IP address, netmask, etc., as shown
-	in the following example:
+    configure that file so that it specifies the IP address, netmask, etc., as shown
+    in the following example:
       </para>
+      <important>
+        <title>Hardware Addresses</title>
+    <para>You should not use the hardware address (aka MAC address) from our example
+        for your configuration. It is network interface specific, so you should keep the 
+        address already provided in the HWADDR directive.
+        </para>
+      </important>
       <screen>
 DEVICE=eth0
 HWADDR=52:54:00:B9:A6:C0
@@ -77,6 +84,8 @@ BOOTPROTO=none
 IPADDR=172.16.10.2
 NETMASK=255.255.255.0
 GATEWAY=172.16.10.1
+DNS1=8.8.8.8
+DNS2=8.8.4.4
       </screen>
       <note>
         <title>IP Addressing</title>
@@ -89,26 +98,10 @@ GATEWAY=172.16.10.1
         <userinput><replaceable>192.168.55</replaceable>.2</userinput>
         </para>
       </note>
-      <important>
-        <title>Hardware Addresses</title>
-	<para>You should not use the hardware address (aka MAC address) from our example
-	    for your configuration. It is network interface specific, so you should keep the 
-	    address already provided in the HWADDR directive.
-        </para>
-      </important>
       <para> Now that we have the configuration files properly set up, we need to run a
       few commands to start up the network</para>
       <screen><prompt># </prompt><userinput><command>chkconfig</command> network on</userinput></screen>
       <screen><prompt># </prompt><userinput><command>service</command> network start</userinput></screen>
-      <para>This should bring the network up successfully, but we now need to enable name resolution.
-      To do that we will edit <filename>/etc/resolv.conf</filename>. These instructions will add
-      one of the nameservers from Google, though you are free to add a local nameserver if you wish. 
-      Your <filename>/etc/resolv.conf</filename> should modified to look like:
-      </para>
-      <screen>
-nameserver 8.8.8.8
-      </screen>
-    
     </section>
     <section id="sect-Runbook-Environment-operatingsys-hostname">
       <title>Hostname</title>
@@ -142,7 +135,7 @@ nameserver 8.8.8.8
       <para> 
         To ensure that it remains in that state we need to configure the file 
         <filename>/etc/selinux/config</filename> to reflect the permissive state, 
-	as shown in this example: </para>
+    as shown in this example: </para>
       <screen>
 
 # This file controls the state of SELinux on the system.
@@ -195,8 +188,6 @@ SELINUXTYPE=targeted
     <screen>
 <prompt># </prompt><userinput><command>mkdir</command> /primary</userinput>
 <prompt># </prompt><userinput><command>mkdir</command> /secondary</userinput>
-<prompt># </prompt><userinput><command>chmod</command> 777 /primary</userinput>
-<prompt># </prompt><userinput><command>chmod</command> 777 /secondary</userinput>
     </screen>
     <para>CentOS 6.x releases use NFSv4 by default. NFSv4 requires that domain setting matches on all clients. 
     In our case, the domain is cloud.priv, so ensure that the domain setting in <filename>/etc/idmapd.conf</filename>
@@ -215,17 +206,17 @@ STATD_OUTGOING_PORT=2020
     Edit the file <filename>/etc/sysconfig/iptables</filename>
     </para>
     <screen>
--A INPUT -m state --state NEW -p udp --dport 111 -j ACCEPT
--A INPUT -m state --state NEW -p tcp --dport 111 -j ACCEPT
--A INPUT -m state --state NEW -p tcp --dport 2049 -j ACCEPT
--A INPUT -m state --state NEW -p tcp --dport 32803 -j ACCEPT
--A INPUT -m state --state NEW -p udp --dport 32769 -j ACCEPT
--A INPUT -m state --state NEW -p tcp --dport 892 -j ACCEPT
--A INPUT -m state --state NEW -p udp --dport 892 -j ACCEPT
--A INPUT -m state --state NEW -p tcp --dport 875 -j ACCEPT
--A INPUT -m state --state NEW -p udp --dport 875 -j ACCEPT
--A INPUT -m state --state NEW -p tcp --dport 662 -j ACCEPT
--A INPUT -m state --state NEW -p udp --dport 662 -j ACCEPT
+-A INPUT -s 172.16.10.0/24 -m state --state NEW -p udp --dport 111 -j ACCEPT
+-A INPUT -s 172.16.10.0/24 -m state --state NEW -p tcp --dport 111 -j ACCEPT
+-A INPUT -s 172.16.10.0/24 -m state --state NEW -p tcp --dport 2049 -j ACCEPT
+-A INPUT -s 172.16.10.0/24 -m state --state NEW -p tcp --dport 32803 -j ACCEPT
+-A INPUT -s 172.16.10.0/24 -m state --state NEW -p udp --dport 32769 -j ACCEPT
+-A INPUT -s 172.16.10.0/24 -m state --state NEW -p tcp --dport 892 -j ACCEPT
+-A INPUT -s 172.16.10.0/24 -m state --state NEW -p udp --dport 892 -j ACCEPT
+-A INPUT -s 172.16.10.0/24 -m state --state NEW -p tcp --dport 875 -j ACCEPT
+-A INPUT -s 172.16.10.0/24 -m state --state NEW -p udp --dport 875 -j ACCEPT
+-A INPUT -s 172.16.10.0/24 -m state --state NEW -p tcp --dport 662 -j ACCEPT
+-A INPUT -s 172.16.10.0/24 -m state --state NEW -p udp --dport 662 -j ACCEPT
     </screen>
     <para>Now you can restart the iptables service with the following command:
     </para>

@@ -27,12 +27,13 @@ import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.SecondaryTable;
 import javax.persistence.Table;
 
+import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="user")
 @SecondaryTable(name="account",
-        pkJoinColumns={@PrimaryKeyJoinColumn(name="account_id", referencedColumnName="id")})
+pkJoinColumns={@PrimaryKeyJoinColumn(name="account_id", referencedColumnName="id")})
 public class UserAccountVO implements UserAccount {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -63,7 +64,8 @@ public class UserAccountVO implements UserAccount {
     @Column(name="api_key")
     private String apiKey = null;
 
-    @Column(name="secret_key", encryptable=true)
+    @Encrypt
+    @Column(name="secret_key")
     private String secretKey = null;
 
     @Column(name=GenericDao.CREATED_COLUMN)
@@ -71,15 +73,18 @@ public class UserAccountVO implements UserAccount {
 
     @Column(name=GenericDao.REMOVED_COLUMN)
     private Date removed;
-    
+
     @Column(name="timezone")
     private String timezone;
-    
+
     @Column(name="registration_token")
     private String registrationToken = null;
-    
+
     @Column(name="is_registered")
     boolean registered;
+
+    @Column (name="incorrect_login_attempts")
+    int loginAttempts;
 
     @Column(name="account_name", table="account", insertable=false, updatable=false)
     private String accountName = null;
@@ -238,33 +243,41 @@ public class UserAccountVO implements UserAccount {
     public void setAccountDisabled(String accountState) {
         this.accountState = accountState;
     }
-    
+
     @Override
-	public String getTimezone(){
-    	return timezone;
+    public String getTimezone(){
+        return timezone;
     }
-    
+
     public void setTimezone(String timezone)
     {
-    	this.timezone = timezone; 
+        this.timezone = timezone; 
     }
-    
+
     @Override
-	public String getRegistrationToken(){
-    	return registrationToken;
+    public String getRegistrationToken(){
+        return registrationToken;
     }
-    
+
     public void setRegistrationToken(String registrationToken)
     {
-    	this.registrationToken = registrationToken; 
+        this.registrationToken = registrationToken; 
     }
-    
+
     @Override 
     public boolean isRegistered() {
         return registered;
     }
-    
+
     public void setRegistered(boolean registered) {
         this.registered = registered;
+    }
+
+    public void setLoginAttempts(int loginAttempts) {
+        this.loginAttempts = loginAttempts;
+    }
+
+    public int getLoginAttempts() {
+        return loginAttempts;
     }
 }

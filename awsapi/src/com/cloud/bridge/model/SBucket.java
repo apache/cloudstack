@@ -22,7 +22,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * @author Kelven Yang, John Zucker
  * Holds the relation
  *  Id,
  *  Name, 
@@ -32,14 +31,13 @@ import java.util.Set;
  *  VersioningStatus
  * For ORM see "com/cloud/bridge/model/SHost.hbm.xml"
  */
-public class SBucket implements Serializable {
-	private static final long serialVersionUID = 7430267766019671273L;
-	
-	public static final int VERSIONING_NULL = 0;   
+public interface SBucket {
+
+    public static final int VERSIONING_NULL = 0;   
 	public static final int VERSIONING_ENABLED = 1;
 	public static final int VERSIONING_SUSPENDED = 2;
 
-	private Long id;
+/*	private Long id;
 	
 	private String name;
 	private String ownerCanonicalId;
@@ -125,5 +123,5 @@ public class SBucket implements Serializable {
 	@Override
 	public int hashCode() {
 		return getName().hashCode();
-	}
+	}*/
 }

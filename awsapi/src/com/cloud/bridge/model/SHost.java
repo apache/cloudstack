@@ -20,20 +20,21 @@ import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * @author Kelven Yang, John Zucker
- */
-public class SHost implements Serializable {
-	private static final long serialVersionUID = 213346565810468018L;
+public interface SHost  {
 	
 	public static final int STORAGE_HOST_TYPE_LOCAL = 0;
 	public static final int STORAGE_HOST_TYPE_NFS = 1;
-
-	private Long id;
+    public static final int STORAGE_HOST_TYPE_CASTOR = 2;
+	public static enum StorageHostType {
+	    STORAGE_HOST_TYPE_LOCAL, //0
+        STORAGE_HOST_TYPE_NFS, //1
+        STORAGE_HOST_TYPE_CASTOR //2
+	}
+/*	private Long id;
 	
 	private String host;
 	private int hostType;
-	private MHost mhost;
+	private MHostVO mhost;
 	private String exportRoot;
 	private String userOnHost;
 	private String userPassword;
@@ -92,11 +93,11 @@ public class SHost implements Serializable {
 		this.userPassword = userPassword;
 	}
 	
-	public MHost getMhost() {
+	public MHostVO getMhost() {
 		return mhost;
 	}
 
-	public void setMhost(MHost mhost) {
+	public void setMhost(MHostVO mhost) {
 		this.mhost = mhost;
 	}
 
@@ -114,5 +115,5 @@ public class SHost implements Serializable {
 
 	public void setMounts(Set<MHostMount> mounts) {
 		this.mounts = mounts;
-	}
+	}*/
 }

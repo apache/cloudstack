@@ -41,7 +41,8 @@ public interface Host extends StateObject<Status> {
 
         ExternalDhcp(false),
         SecondaryStorageVM(true),
-        LocalSecondaryStorage(false);
+        LocalSecondaryStorage(false),
+        L2Networking(false);
         boolean _virtual;
         private Type(boolean virtual) {
             _virtual = virtual;

@@ -43,7 +43,7 @@ import com.cloud.utils.db.SearchCriteria;
 
 
 @Local(value = { AccountManager.class, AccountService.class })
-public class MockAccountManagerImpl implements Manager, AccountManager {
+public class MockAccountManagerImpl implements Manager, AccountManager, AccountService {
 
 
     @Override
@@ -102,14 +102,12 @@ public class MockAccountManagerImpl implements Manager, AccountManager {
 
     @Override
     public Account getSystemAccount() {
-        // TODO Auto-generated method stub
-        return null;
+        return new AccountVO();
     }
 
     @Override
     public User getSystemUser() {
-        // TODO Auto-generated method stub
-        return null;
+        return new UserVO();
     }
 
     @Override
@@ -334,6 +332,15 @@ public class MockAccountManagerImpl implements Manager, AccountManager {
     @Override
     public void buildACLSearchParameters(Account caller, Long id, String accountName, Long projectId, List<Long> permittedAccounts, Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject, boolean listAll, boolean forProjectInvitation) {
         // TODO Auto-generated method stub
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.user.AccountService#getUserByApiKey(java.lang.String)
+     */
+    @Override
+    public UserAccount getUserByApiKey(String apiKey) {
+        // TODO Auto-generated method stub
+        return null;
     }
 
 }

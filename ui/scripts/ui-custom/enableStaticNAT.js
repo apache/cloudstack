@@ -18,6 +18,7 @@
   cloudStack.uiCustom.enableStaticNAT = function(args) {
     var listView = args.listView;
     var action = args.action;
+    var tierSelect = args.tierSelect;
 
     return function(args) {
       var context = args.context;
@@ -74,6 +75,11 @@
             text: _l('label.apply'),
             'class': 'ok',
             click: function() {
+              if ($dataList.find('.tier-select select').val() == -1) {
+                cloudStack.dialog.notice({ message: ('Please select a tier')});
+                 return false;
+               } 
+
               if (!$dataList.find(
                 'input[type=radio]:checked, input[type=checkbox]:checked'
               ).size()) {
@@ -86,6 +92,7 @@
 
               $dataList.fadeOut(function() {
                 action({
+                  tierID: $dataList.find('.tier-select select').val(),
                   context: $.extend(true, {}, context, {
                     instances: [
                       $dataList.find('tr.multi-edit-selected').data('json-obj')
@@ -124,6 +131,38 @@
           }
         ]
       }).parent('.ui-dialog').overlay();
+
+      // Add tier select dialog
+      if (tierSelect) {
+        var $toolbar = $dataList.find('.toolbar');
+        var $tierSelect = $('<div>').addClass('filters tier-select').prependTo($toolbar);
+        var $tierSelectLabel = $('<label>').html('Select tier').appendTo($tierSelect);
+        var $tierSelectInput = $('<select>').appendTo($tierSelect);
+
+        // Get tier data
+        tierSelect({
+          context: context,
+          $tierSelect: $tierSelect,
+          response: {
+            success: function(args) {
+              var data = args.data;
+
+              $(data).map(function(index, item) {
+                var $option = $('<option>');
+
+                $option.attr('value', item.id);
+                $option.html(item.description);
+                $option.appendTo($tierSelectInput);
+              });
+            },
+            error: function(message) {
+              cloudStack.dialog.notice({
+                message: message ? message : 'Could not retrieve VPC tiers'
+              });
+            }
+          }
+        });
+      }
     };
   };
 }(cloudStack, jQuery));

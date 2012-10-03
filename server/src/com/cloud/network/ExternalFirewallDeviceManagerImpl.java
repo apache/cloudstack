@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-//
+// 
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -383,11 +383,13 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
         
         IPAddressVO sourceNatIp = null;
         if (!sharedSourceNat) {
-            // Get the source NAT IP address for this network          
-            List<IPAddressVO> sourceNatIps = _networkMgr.listPublicIpAddressesInVirtualNetwork(network.getAccountId(), zoneId, true, null);
+            // Get the source NAT IP address for this account          
+            List<IPAddressVO> sourceNatIps = _networkMgr.listPublicIpsAssignedToAccount(network.getAccountId(), 
+                    zoneId, true);
 
             if (sourceNatIps.size() != 1) {
-                String errorMsg = "External firewall was unable to find the source NAT IP address for account " + account.getAccountName();
+                String errorMsg = "External firewall was unable to find the source NAT IP address for account " 
+            + account.getAccountName();
                 s_logger.error(errorMsg);
                 return true;
             } else {
@@ -411,7 +413,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
         // Get network rate
         Integer networkRate = _networkMgr.getNetworkRate(network.getId(), null);
 
-        IpAddressTO ip = new IpAddressTO(account.getAccountId(), sourceNatIpAddress, add, false, !sharedSourceNat, publicVlanTag, null, null, null, null, networkRate, false);
+        IpAddressTO ip = new IpAddressTO(account.getAccountId(), sourceNatIpAddress, add, false, !sharedSourceNat, publicVlanTag, null, null, null, networkRate, false);
         IpAddressTO[] ips = new IpAddressTO[1];
         ips[0] = ip;
         IpAssocCommand cmd = new IpAssocCommand(ips);
@@ -494,7 +496,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
 
     protected void applyStaticNatRules(List<StaticNatRuleTO> staticNatRules, DataCenter zone, long externalFirewallId) throws ResourceUnavailableException {
         if (!staticNatRules.isEmpty()) {
-            SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(staticNatRules);
+            SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(staticNatRules, null);
             Answer answer = _agentMgr.easySend(externalFirewallId, cmd);
             if (answer == null || !answer.getResult()) {
                 String details = (answer != null) ? answer.getDetails() : "details unavailable";

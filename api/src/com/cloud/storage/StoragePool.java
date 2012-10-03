@@ -20,11 +20,6 @@ import java.util.Date;
 
 import com.cloud.storage.Storage.StoragePoolType;
 
-/**
- * @author chiradeep
- * 
- */
-
 public interface StoragePool {
 
     /**
@@ -84,6 +79,11 @@ public interface StoragePool {
      * @return the filesystem path of the pool on the storage host (server)
      */
     String getPath();
+
+    /**
+     * @return the user information / credentials for the storage host
+     */
+    String getUserInfo();
 
     /**
      * @return the storage pool represents a shared storage resource

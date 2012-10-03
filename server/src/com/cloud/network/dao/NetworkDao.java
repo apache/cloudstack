@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-//
+// 
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -33,9 +33,9 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long> {
 
     List<NetworkVO> listBy(long accountId, long offeringId, long dataCenterId);
 
-    List<NetworkVO> listBy(long accountId, long dataCenterId, String cidr);
+    List<NetworkVO> listBy(long accountId, long dataCenterId, String cidr, boolean skipVpc);
 
-    List<NetworkVO> listBy(long accountId, long dataCenterId, Network.GuestType type);
+    List<NetworkVO> listByZoneAndGuestType(long accountId, long dataCenterId, Network.GuestType type, Boolean isSystem);
 
     NetworkVO persist(NetworkVO network, boolean gc, Map<String, String> serviceProviderMap);
 
@@ -76,8 +76,6 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long> {
 
     void addDomainToNetwork(long networkId, long domainId, Boolean subdomainAccess);
 
-    Long getNetworkCountByOfferingId(long offeringId);
-
     List<NetworkVO> listByPhysicalNetwork(long physicalNetworkId);
 
     List<NetworkVO> listSecurityGroupEnabledNetworks();
@@ -101,5 +99,13 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long> {
     long countNetworksUserCanCreate(long ownerId);
 
     List<NetworkVO> listSourceNATEnabledNetworks(long accountId, long dataCenterId, GuestType type);
+    
+    int getNetworkCountByVpcId(long vpcId);
+    
+    List<NetworkVO> listByVpc(long vpcId);
+    
+    NetworkVO getPrivateNetwork(String broadcastUri, String cidr, long accountId, long zoneId);
+    
+    long countVpcNetworks(long vpcId);
 
 }

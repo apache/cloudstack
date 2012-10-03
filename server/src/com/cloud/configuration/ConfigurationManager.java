@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-//
+// 
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -93,7 +93,7 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
      * @param isCustomized
      * @return newly created disk offering
      */
-    DiskOfferingVO createDiskOffering(Long domainId, String name, String description, Long numGibibytes, String tags, boolean isCustomized);
+    DiskOfferingVO createDiskOffering(Long domainId, String name, String description, Long numGibibytes, String tags, boolean isCustomized, boolean localStorageRequired);
 
     /**
      * Creates a new pod
@@ -133,7 +133,7 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
      * @throws
      */
     DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String guestCidr, String domain, Long domainId, NetworkType zoneType, String allocationState,
-            String networkDomain, boolean isSecurityGroupEnabled);
+            String networkDomain, boolean isSecurityGroupEnabled, boolean isLocalStorageEnabled);
 
     /**
      * Deletes a VLAN from the database, along with all of its IP addresses. Will not delete VLANs that have allocated
@@ -168,11 +168,12 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
 
     /**
      * Creates a new network offering
-     * 
      * @param name
      * @param displayText
      * @param trafficType
      * @param tags
+     * @param specifyVlan
+     *            ;
      * @param networkRate
      *            TODO
      * @param serviceProviderMap
@@ -184,19 +185,18 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
      * @param systemOnly
      *            TODO
      * @param serviceOfferingId
+     * @param conserveMode
+     *            ;
      * @param specifyIpRanges
      *            TODO
      * @param id
-     * @param specifyVlan
-     *            ;
-     * @param conserveMode
-     *            ;
+     * 
      * @return network offering object
      */
 
-    NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, TrafficType trafficType, String tags, boolean specifyVlan, Availability availability, Integer networkRate,
-            Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, Network.GuestType type, boolean systemOnly, Long serviceOfferingId, boolean conserveMode,
-            Map<Service, Map<Capability, String>> serviceCapabilityMap, boolean specifyIpRanges);
+    NetworkOfferingVO createNetworkOffering(String name, String displayText, TrafficType trafficType, String tags, boolean specifyVlan, Availability availability, Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap,
+            boolean isDefault, Network.GuestType type, boolean systemOnly, Long serviceOfferingId, boolean conserveMode, Map<Service, Map<Capability, String>> serviceCapabilityMap,
+            boolean specifyIpRanges);
 
     Vlan createVlanAndPublicIpRange(long zoneId, long networkId, long physicalNetworkId, boolean forVirtualNetwork, Long podId, String startIP, String endIP, String vlanGateway, String vlanNetmask, String vlanId, Account vlanOwner) throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException;
 
@@ -229,5 +229,11 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
 	AllocationState findPodAllocationState(HostPodVO pod);
 
 	AllocationState findClusterAllocationState(ClusterVO cluster);
+
+    /**
+     * @param tags
+     * @return
+     */
+    String cleanupTags(String tags);
 
 }

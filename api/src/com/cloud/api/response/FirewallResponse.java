@@ -16,11 +16,14 @@
 // under the License.
 package com.cloud.api.response;
 
+import java.util.List;
+
 import com.cloud.api.ApiConstants;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
+import com.cloud.utils.IdentityProxy;
 import com.google.gson.annotations.SerializedName;
 
+@SuppressWarnings("unused")
 public class FirewallResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the firewall rule")
     private IdentityProxy id = new IdentityProxy("firewall_rules");
@@ -34,10 +37,10 @@ public class FirewallResponse extends BaseResponse {
     @SerializedName(ApiConstants.END_PORT)  @Param(description = "the ending port of firewall rule's port range")
     private String endPort;
     
-    @SerializedName(ApiConstants.IP_ADDRESS_ID) @Param(description="the public ip address id for the port forwarding rule")
+    @SerializedName(ApiConstants.IP_ADDRESS_ID) @Param(description="the public ip address id for the firewall rule")
     private Long publicIpAddressId;
 
-    @SerializedName(ApiConstants.IP_ADDRESS) @Param(description="the public ip address for the port forwarding rule")
+    @SerializedName(ApiConstants.IP_ADDRESS) @Param(description="the public ip address for the firewall rule")
     private String publicIpAddress;
     
     @SerializedName(ApiConstants.STATE) @Param(description="the state of the rule")
@@ -51,6 +54,9 @@ public class FirewallResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ICMP_CODE) @Param(description = "error code for this icmp message")
     private Integer icmpCode;
+
+    @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with the rule", responseObject = ResourceTagResponse.class)
+    private List<ResourceTagResponse> tags;
 
     public void setId(Long id) {
         this.id.setValue(id);
@@ -92,6 +98,7 @@ public class FirewallResponse extends BaseResponse {
         this.icmpCode = icmpCode;
     }
 
- 
-    
+    public void setTags(List<ResourceTagResponse> tags) {
+        this.tags = tags;
+    }
 }

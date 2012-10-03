@@ -1,0 +1,344 @@
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements. See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership. The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License. You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied. See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.apache</groupId>
+    <artifactId>apache</artifactId>
+    <version>11</version>
+  </parent>
+
+  <groupId>org.apache.cloudstack</groupId>
+  <artifactId>cloudstack</artifactId>
+  <version>4.1.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <name>Apache CloudStack</name>
+  <description>CloudStack is an IaaS (“Infrastracture as a Service”) cloud orchestration platform.</description>
+  <url>http://www.cloudstack.org</url>
+  <scm>
+    <connection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-cloudstack.git</connection>
+    <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-cloudstack.git</developerConnection>
+  </scm>
+  <issueManagement>
+    <system>jira</system>
+    <url>https://issues.apache.org/jira/browse/CLOUDSTACK</url>
+  </issueManagement>
+
+  <properties>
+    <cs.jdk.version>1.6</cs.jdk.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+    <cs.log4j.version>1.2.16</cs.log4j.version>
+    <cs.log4j.extras.version>1.1</cs.log4j.extras.version>
+    <cs.cglib.version>2.2.2</cs.cglib.version>
+    <cs.dbcp.version>1.4</cs.dbcp.version>
+    <cs.pool.version>1.6</cs.pool.version>
+    <cs.codec.version>1.6</cs.codec.version>
+    <cs.configuration.version>1.8</cs.configuration.version>
+    <cs.collections.version>3.2.1</cs.collections.version>
+    <cs.logging.version>1.1.1</cs.logging.version>
+    <cs.discovery.version>0.5</cs.discovery.version>
+    <cs.ejb.version>3.0</cs.ejb.version>
+    <cs.junit.version>4.10</cs.junit.version>
+    <cs.bcprov.version>1.46</cs.bcprov.version>
+    <cs.jsch.version>0.1.42</cs.jsch.version>
+    <cs.jpa.version>2.0.0</cs.jpa.version>
+    <cs.jasypt.version>1.9.0</cs.jasypt.version>
+    <cs.trilead.version>build213-svnkit-1.3-patch</cs.trilead.version>
+    <cs.ehcache.version>1.5.0</cs.ehcache.version>
+    <cs.gson.version>1.7.1</cs.gson.version>
+    <cs.xapi.version>5.6.100-1-SNAPSHOT</cs.xapi.version>
+    <cs.httpclient.version>3.1</cs.httpclient.version>
+    <cs.httpcore.version>4.0</cs.httpcore.version>
+    <cs.mysql.version>5.1.12</cs.mysql.version>
+    <cs.xstream.version>1.3.1</cs.xstream.version>
+    <cs.xmlrpc.version>3.1.3</cs.xmlrpc.version>
+    <cs.mail.version>1.4</cs.mail.version>
+    <cs.axis.version>1.4</cs.axis.version>
+    <cs.axis2.version>1.5.1</cs.axis2.version>
+    <cs.rampart.version>1.5.1</cs.rampart.version>
+    <cs.axiom.version>1.2.8</cs.axiom.version>
+    <cs.neethi.version>2.0.4</cs.neethi.version>
+    <cs.servlet.version>2.4</cs.servlet.version>
+    <cs.jstl.version>1.2</cs.jstl.version>
+    <cs.selenium.server.version>1.0-20081010.060147</cs.selenium.server.version>
+    <skipTests>true</skipTests>
+
+  </properties>
+
+  <distributionManagement>
+    <site>
+      <id>apache.cloudstack.site</id>
+      <url>${site.deploy.url}</url>
+    </site>
+  </distributionManagement>
+
+  <inceptionYear>2012</inceptionYear>
+
+  <mailingLists>
+    <mailingList>
+      <name>Apache CloudStack User List</name>
+      <subscribe>cloudstack-users-subscribe@incubator.apache.org</subscribe>
+      <unsubscribe>cloudstack-users-unsubscribe@incubator.apache.org</unsubscribe>
+      <post>cloudstack-users@incubator.apache.org</post>
+      <archive>http://mail-archives.apache.org/mod_mbox/incubator-cloudstack-users</archive>
+    </mailingList>
+    <mailingList>
+      <name>Apache CloudStack Developer List</name>
+      <subscribe>cloudstack-dev-subscribe@incubator.apache.org</subscribe>
+      <unsubscribe>cloudstack-dev-unsubscribe@incubator.apache.org</unsubscribe>
+      <post>cloudstack-dev@incubator.apache.org</post>
+      <archive>http://mail-archives.apache.org/mod_mbox/incubator-cloudstack-dev</archive>
+    </mailingList>
+    <mailingList>
+      <name>Apache CloudStack Commits List</name>
+      <subscribe>cloudstack-commits-subscribe@incubator.apache.org</subscribe>
+      <unsubscribe>cloudstack-commits-unsubscribe@incubator.apache.org</unsubscribe>
+      <post>cloudstack-commits@incubator.apache.org</post>
+      <archive>http://mail-archives.apache.org/mod_mbox/incubator-cloudstack-commits</archive>
+    </mailingList>
+  </mailingLists>
+
+  <developers>
+    <developer>
+      <name>The Apache CloudStack Team</name>
+      <email>cloudstack-dev@incubator.apache.org</email>
+      <url>http://incubator.apache.org/projects/cloudstack.html</url>
+      <organization>Apache Software Foundation</organization>
+      <organizationUrl>http://apache.org/</organizationUrl>
+    </developer>
+  </developers>
+
+  <ciManagement>
+    <system>Jenkin</system>
+    <url>http://jenkins.cloudstack.org/</url>
+  </ciManagement>
+
+  <licenses>
+    <license>
+      <name>The Apache Software License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <organization>
+    <name>The Apache Software Foundation</name>
+    <url>http://www.apache.org/</url>
+  </organization>
+
+  <modules>
+    <module>api</module>
+    <module>agent</module>
+    <module>console-proxy</module>
+    <module>core</module>
+    <module>server</module>
+    <module>usage</module>
+    <module>utils</module>
+    <module>deps/XenServerJava</module>
+    <module>plugins</module>
+    <module>awsapi</module>
+    <module>patches</module>
+    <module>client</module>
+    <module>test</module>
+  </modules>
+
+  <dependencies>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>${cs.junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <defaultGoal>install</defaultGoal>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.tomcat.maven</groupId>
+          <artifactId>tomcat7-maven-plugin</artifactId>
+          <version>2.0-SNAPSHOT</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.rat</groupId>
+          <artifactId>apache-rat-plugin</artifactId>
+          <version>0.8</version>
+          <configuration>
+            <numUnapprovedLicenses>0</numUnapprovedLicenses>
+            <excludeSubProjects>false</excludeSubProjects>
+            <excludes>
+              <exclude>INSTALL.md</exclude>
+              <exclude>.git/**</exclude>
+              <exclude>.gitignore</exclude>
+              <exclude>**/*.crt</exclude>
+              <exclude>**/*.csr</exclude>
+              <exclude>**/*.key</exclude>
+              <exclude>**/authorized_keys</exclude>
+              <exclude>**/*.mar</exclude>
+              <exclude>**/*.jar</exclude>
+              <exclude>**/*.iso</exclude>
+              <exclude>**/*.tgz</exclude>
+              <exclude>**/*.zip</exclude>
+              <exclude>**/target/**</exclude>
+              <exclude>build/build.number</exclude>
+              <exclude>console-proxy/js/jquery.js</exclude>
+              <exclude>debian/compat</exclude>
+              <exclude>debian/control</exclude>
+              <exclude>debian/dirs</exclude>
+              <exclude>debian/rules</exclude>
+              <exclude>deps/XenServerJava/src/com/xensource/xenapi/*.java</exclude>
+              <exclude>deps/XenServerJava/BSD</exclude>
+              <exclude>deps/XenServerJava/Makefile</exclude>
+              <exclude>dist/console-proxy/js/jquery.js</exclude>
+              <exclude>scripts/vm/systemvm/id_rsa.cloud</exclude>
+              <exclude>tools/devcloud/basebuild/puppet-devcloudinitial/files/network.conf</exclude>
+              <exclude>tools/devcloud/devcloud.cfg</exclude>
+              <exclude>ui/lib/flot/jquery.colorhelpers.js</exclude>
+              <exclude>ui/lib/flot/jquery.flot.crosshair.js</exclude>
+              <exclude>ui/lib/flot/jquery.flot.fillbetween.js</exclude>
+              <exclude>ui/lib/flot/jquery.flot.image.js</exclude>
+              <exclude>ui/lib/flot/jquery.flot.js</exclude>
+              <exclude>ui/lib/flot/jquery.flot.navigate.js</exclude>
+              <exclude>ui/lib/flot/jquery.flot.pie.js</exclude>
+              <exclude>ui/lib/flot/jquery.flot.resize.js</exclude>
+              <exclude>ui/lib/flot/jquery.flot.selection.js</exclude>
+              <exclude>ui/lib/flot/jquery.flot.stack.js</exclude>
+              <exclude>ui/lib/flot/jquery.flot.symbol.js</exclude>
+              <exclude>ui/lib/flot/jquery.flot.threshold.js</exclude>
+              <exclude>ui/lib/jquery-ui/css/jquery-ui.css</exclude>
+              <exclude>ui/lib/jquery-ui/index.html</exclude>
+              <exclude>ui/lib/jquery-ui/js/jquery-ui.js</exclude>
+              <exclude>ui/lib/jquery.cookies.js</exclude>
+              <exclude>ui/lib/jquery.easing.js</exclude>
+              <exclude>ui/lib/jquery.js</exclude>
+              <exclude>ui/lib/jquery.md5.js</exclude>
+              <exclude>ui/lib/jquery.validate.js</exclude>
+              <exclude>ui/lib/qunit/qunit.css</exclude>
+              <exclude>ui/lib/qunit/qunit.js</exclude>
+              <exclude>ui/lib/reset.css</exclude>
+              <exclude>waf</exclude>
+              <exclude>patches/systemvm/debian/systemvm.vmx</exclude>
+              <exclude>patches/systemvm/debian/config/root/.ssh/authorized_keys</exclude>
+              <exclude>patches/systemvm/debian/config/etc/apache2/httpd.conf</exclude>
+              <exclude>patches/systemvm/debian/config/etc/apache2/ports.conf</exclude>
+              <exclude>patches/systemvm/debian/config/etc/apache2/sites-available/default</exclude>
+              <exclude>patches/systemvm/debian/config/etc/apache2/sites-available/default-ssl</exclude>
+              <exclude>patches/systemvm/debian/config/etc/apache2/vhostexample.conf</exclude>
+              <exclude>patches/systemvm/debian/config/etc/dnsmasq.conf</exclude>
+              <exclude>patches/systemvm/debian/config/etc/vpcdnsmasq.conf</exclude>
+              <exclude>patches/systemvm/debian/config/etc/ssh/sshd_config</exclude> <!-- Pending resolution of CLOUDSTACK-145 -->
+              <exclude>patches/systemvm/debian/config/etc/rsyslog.conf</exclude> <!-- Pending resolution of CLOUDSTACK-147 -->
+              <exclude>patches/systemvm/debian/config/etc/logrotate.conf</exclude>
+              <exclude>patches/systemvm/debian/config/etc/logrotate.d/*</exclude>
+              <exclude>patches/systemvm/debian/config/etc/sysctl.conf</exclude>
+              <exclude>patches/systemvm/debian/config/root/redundant_router/keepalived.conf.templ</exclude>
+              <exclude>patches/systemvm/debian/config/root/redundant_router/arping_gateways.sh.templ</exclude>
+              <exclude>patches/systemvm/debian/config/root/redundant_router/conntrackd.conf.templ</exclude> <!-- Pending resolution of CLOUDSTACK-166 -->
+              <exclude>patches/systemvm/debian/vpn/etc/ipsec.conf</exclude>
+              <exclude>patches/systemvm/debian/vpn/etc/ppp/options.xl2tpd</exclude>
+              <exclude>patches/systemvm/debian/vpn/etc/xl2tpd/xl2tpd.conf</exclude>
+              <exclude>patches/systemvm/debian/vpn/etc/ipsec.secrets</exclude>
+              <exclude>patches/systemvm/debian/config/etc/haproxy/haproxy.cfg</exclude>
+              <exclude>patches/systemvm/debian/config/etc/cloud-nic.rules</exclude>
+              <exclude>patches/systemvm/debian/config/etc/modprobe.d/aesni_intel</exclude>
+              <exclude>patches/systemvm/debian/config/etc/rc.local</exclude>
+              <exclude>patches/systemvm/debian/config/var/www/html/userdata/.htaccess</exclude>
+              <exclude>patches/systemvm/debian/config/var/www/html/latest/.htaccess</exclude>
+              <exclude>patches/systemvm/debian/vpn/etc/ipsec.d/l2tp.conf</exclude>
+
+            </excludes>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>2.5.1</version>
+          <configuration>
+            <source>${cs.jdk.version}</source>
+            <target>${cs.jdk.version}</target>
+			<fork>true</fork>
+          	<meminitial>128m</meminitial>
+          	<maxmem>512m</maxmem>            
+          </configuration>
+        </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>2.4</version>
+        <configuration>
+          <archive>
+            <manifest>
+              <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+              <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+            </manifest>
+          </archive>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>1.7</version>
+        <executions>
+          <execution>
+            <id>remove-old-installers</id>
+            <goals>
+              <goal>remove-project-artifact</goal>
+            </goals>
+            <configuration>
+              <removeAll>true</removeAll>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
+
+  <profiles>
+
+    <profile>
+      <id>deps</id>
+      <modules>
+        <module>deps</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>developer</id>
+      <modules>
+        <module>developer</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>vmware</id>
+      <activation>
+        <property>
+          <name>nonoss</name>
+        </property>
+      </activation>
+      <modules>
+        <module>vmware-base</module>
+      </modules>
+    </profile>
+
+  </profiles>
+
+</project>

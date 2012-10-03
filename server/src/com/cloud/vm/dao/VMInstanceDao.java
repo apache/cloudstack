@@ -26,6 +26,7 @@ import com.cloud.utils.fsm.StateDao;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachine.Type;
 
 
 /*
@@ -99,5 +100,12 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
     Long countRunningByAccount(long accountId);
     
     List<VMInstanceVO> listNonRemovedVmsByTypeAndNetwork(long networkId, VirtualMachine.Type... types);
+
+    /**
+     * @param networkId
+     * @param types
+     * @return
+     */
+    List<String> listDistinctHostNames(long networkId, VirtualMachine.Type... types);
 
 }

@@ -25,9 +25,6 @@ import javax.activation.DataSource;
 
 import org.apache.log4j.Logger;
 
-/**
- * @author Kelven Yang
- */
 public class FileRangeDataSource implements DataSource {
     protected final static Logger logger = Logger.getLogger(FileRangeDataSource.class);
     

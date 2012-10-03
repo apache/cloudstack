@@ -1,0 +1,70 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
+<section id="hypervisor-host-install-security-policies">
+    <title>Configure the Security Policies</title>
+    <para>&PRODUCT; does various things which can be blocked by security mechanisms like AppArmor and SELinux. These have to be disabled to ensure the Agent has all the required permissions.</para>
+    <orderedlist>
+        <listitem>
+            <para>Configure SELinux (RHEL and CentOS)</para>
+            <orderedlist numeration="loweralpha">
+                <listitem>
+                    <para>Check to see whether SELinux is installed on your machine. If not, you can skip this section.</para>
+                    <para>In RHEL or CentOS, SELinux is installed and enabled by default. You can verify this with:</para>
+                    <programlisting language="Bash">rpm -qa | grep selinux</programlisting>
+                </listitem>
+                <listitem>
+                    <para>Set the SELINUX variable in /etc/selinux/config to "permissive". This ensures that the permissive setting will be maintained after a system reboot.</para>
+                    <para>In RHEL or CentOS:</para>
+                    <programlisting language="Bash">vi /etc/selinux/config</programlisting>
+                    <para>Change the following line</para>
+                    <programlisting>SELINUX=enforcing</programlisting>
+                    <para>to this</para>
+                    <programlisting>SELINUX=permissive</programlisting>
+                </listitem>
+                <listitem>
+                    <para>Then set SELinux to permissive starting immediately, without requiring a system reboot.</para>
+                    <programlisting language="Bash">setenforce permissive</programlisting>
+                </listitem>
+            </orderedlist>
+        </listitem>
+        <listitem>
+            <para>Configure Apparmor (Ubuntu)</para>
+            <orderedlist numeration="loweralpha">
+                <listitem>
+                    <para>Check to see whether AppArmor is installed on your machine. If not, you can skip this section.</para>
+                    <para>In Ubuntu AppArmor is installed and enabled by default. You can verify this with:</para>
+                    <programlisting language="Bash">dpkg --list 'apparmor'</programlisting>
+                </listitem>
+                <listitem>
+                    <para>Disable the AppArmor profiles for libvirt</para>
+                    <programlisting language="Bash">ln -s /etc/apparmor.d/usr.sbin.libvirtd /etc/apparmor.d/disable/</programlisting>
+                    <programlisting language="Bash">ln -s /etc/apparmor.d/usr.lib.libvirt.virt-aa-helper /etc/apparmor.d/disable/</programlisting>
+                    <programlisting language="Bash">apparmor_parser -R /etc/apparmor.d/usr.sbin.libvirtd</programlisting>
+                    <programlisting language="Bash">apparmor_parser -R /etc/apparmor.d/usr.lib.libvirt.virt-aa-helper</programlisting>
+                </listitem>
+            </orderedlist>
+        </listitem>
+    </orderedlist>
+</section>

@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-//
+// 
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -385,7 +385,8 @@ public class PodZoneConfig {
         String defaultXenStorageNetworkLabel = getDefaultXenNetworkLabel(TrafficType.Storage);
         String defaultXenGuestNetworkLabel = getDefaultXenNetworkLabel(TrafficType.Guest);
         
-        String insertTraficType = "INSERT INTO `cloud`.`physical_network_traffic_types` (physical_network_id, traffic_type, xen_network_label) VALUES ( ?, ?, ?)";
+        String insertTraficType = "INSERT INTO `cloud`.`physical_network_traffic_types` " +
+        		"(physical_network_id, traffic_type, xen_network_label) VALUES ( ?, ?, ?)";
 
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertTraficType);

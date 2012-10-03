@@ -17,10 +17,11 @@
 package com.cloud.api.response;
 
 import java.util.Date;
+import java.util.List;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
+import com.cloud.utils.IdentityProxy;
 import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
@@ -85,6 +86,9 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
     @SerializedName(ApiConstants.ASSOCIATED_NETWORK_ID) @Param(description="the ID of the Network associated with the IP address")
     private IdentityProxy associatedNetworkId = new IdentityProxy("networks");
     
+    @SerializedName(ApiConstants.ASSOCIATED_NETWORK_NAME) @Param(description="the name of the Network associated with the IP address")
+    private String associatedNetworkName;
+    
     @SerializedName(ApiConstants.NETWORK_ID) @Param(description="the ID of the Network where ip belongs to")
     private IdentityProxy networkId = new IdentityProxy("networks");
     
@@ -96,16 +100,17 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
     
     @SerializedName(ApiConstants.PURPOSE) @Param(description="purpose of the IP address. In Acton this value is not null for Ips with isSystem=true, and can have either StaticNat or LB value")
     private String purpose;
+    
+    @SerializedName(ApiConstants.VPC_ID) @Param(description="VPC the ip belongs to")
+    private IdentityProxy vpcId = new IdentityProxy("vpc");
+    @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with ip address", responseObject = ResourceTagResponse.class)
+    private List<ResourceTagResponse> tags;
 
 /*    
     @SerializedName(ApiConstants.JOB_ID) @Param(description="shows the current pending asynchronous job ID. This tag is not returned if no current pending jobs are acting on the volume")
     private IdentityProxy jobId = new IdentityProxy("async_job");
 */    
 
-/*    
-    @SerializedName(ApiConstants.JOB_STATUS) @Param(description="shows the current pending asynchronous job status")
-    private Integer jobStatus;
-*/    
 
     public void setIpAddress(String ipAddress) {
         this.ipAddress = ipAddress;
@@ -215,5 +220,17 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
 
     public void setPurpose(String purpose) {
         this.purpose = purpose;
+    }
+    
+    public void setVpcId(Long vpcId) {
+        this.vpcId.setValue(vpcId);
+    }
+    
+    public void setTags(List<ResourceTagResponse> tags) {
+        this.tags = tags;
+    }
+
+    public void setAssociatedNetworkName(String associatedNetworkName) {
+        this.associatedNetworkName = associatedNetworkName;
     }
 }

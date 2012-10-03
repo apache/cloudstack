@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-//
+// 
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -62,6 +62,8 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.NetworkRuleConfigVO;
 import com.cloud.network.NetworkVO;
+import com.cloud.network.Site2SiteVpnGatewayVO;
+import com.cloud.network.Site2SiteCustomerGatewayVO;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.FirewallRulesCidrsDao;
 import com.cloud.network.dao.IPAddressDao;
@@ -69,10 +71,14 @@ import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkDomainDao;
 import com.cloud.network.dao.NetworkRuleConfigDao;
+import com.cloud.network.dao.Site2SiteVpnGatewayDao;
+import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.security.dao.SecurityGroupDao;
+import com.cloud.network.vpc.VpcManager;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -81,6 +87,7 @@ import com.cloud.projects.ProjectService;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.Criteria;
 import com.cloud.server.ManagementServer;
+import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.server.StatsCollector;
 import com.cloud.server.TaggedResourceService;
@@ -118,10 +125,12 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountDetailsDao;
 import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
+import com.cloud.user.SSHKeyPairVO;
 import com.cloud.user.User;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
@@ -132,6 +141,7 @@ import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.NicProfile;
+import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
@@ -141,6 +151,7 @@ import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmData;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class ApiDBUtils {
@@ -180,6 +191,8 @@ public class ApiDBUtils {
     private static UserVmDao _userVmDao;
     private static VlanDao _vlanDao;
     private static VolumeDao _volumeDao;
+    private static Site2SiteVpnGatewayDao _site2SiteVpnGatewayDao;
+    private static Site2SiteCustomerGatewayDao _site2SiteCustomerGatewayDao;
     private static VolumeHostDao _volumeHostDao;
     private static DataCenterDao _zoneDao;
     private static NetworkOfferingDao _networkOfferingDao;
@@ -195,7 +208,10 @@ public class ApiDBUtils {
     private static AccountDetailsDao _accountDetailsDao;
     private static NetworkDomainDao _networkDomainDao;
     private static HighAvailabilityManager _haMgr;
+    private static VpcManager _vpcMgr;
     private static TaggedResourceService _taggedResourceService;
+    private static UserVmDetailsDao _userVmDetailsDao;
+    private static SSHKeyPairDao _sshKeyPairDao;
 
     static {
         _ms = (ManagementServer) ComponentLocator.getComponent(ManagementServer.Name);
@@ -234,6 +250,8 @@ public class ApiDBUtils {
         _userVmDao = locator.getDao(UserVmDao.class);
         _vlanDao = locator.getDao(VlanDao.class);
         _volumeDao = locator.getDao(VolumeDao.class);
+        _site2SiteVpnGatewayDao = locator.getDao(Site2SiteVpnGatewayDao.class);
+        _site2SiteCustomerGatewayDao = locator.getDao(Site2SiteCustomerGatewayDao.class);
         _volumeHostDao = locator.getDao(VolumeHostDao.class);
         _zoneDao = locator.getDao(DataCenterDao.class);
         _securityGroupDao = locator.getDao(SecurityGroupDao.class);
@@ -249,7 +267,10 @@ public class ApiDBUtils {
         _accountDetailsDao = locator.getDao(AccountDetailsDao.class);
         _networkDomainDao = locator.getDao(NetworkDomainDao.class);
         _haMgr = locator.getManager(HighAvailabilityManager.class);
+        _vpcMgr = locator.getManager(VpcManager.class);
         _taggedResourceService = locator.getManager(TaggedResourceService.class);
+        _sshKeyPairDao = locator.getDao(SSHKeyPairDao.class);
+        _userVmDetailsDao = locator.getDao(UserVmDetailsDao.class);
 
         // Note: stats collector should already have been initialized by this time, otherwise a null instance is returned
         _statsCollector = StatsCollector.getInstance();
@@ -301,7 +322,7 @@ public class ApiDBUtils {
     }
 
     public static List<UserVmVO> searchForUserVMs(Criteria c, List<Long> permittedAccounts) {
-        return _userVmMgr.searchForUserVMs(c, _accountDao.findById(Account.ACCOUNT_ID_SYSTEM), null, false, permittedAccounts, false, null);
+        return _userVmMgr.searchForUserVMs(c, _accountDao.findById(Account.ACCOUNT_ID_SYSTEM), null, false, permittedAccounts, false, null, null);
     }
 
     public static List<? extends StoragePoolVO> searchForStoragePools(Criteria c) {
@@ -550,6 +571,14 @@ public class ApiDBUtils {
         return _volumeDao.findByIdIncludingRemoved(volumeId);
     }
 
+    public static Site2SiteVpnGatewayVO findVpnGatewayById(Long vpnGatewayId) {
+        return _site2SiteVpnGatewayDao.findById(vpnGatewayId);
+    }
+    
+    public static Site2SiteCustomerGatewayVO findCustomerGatewayById(Long customerGatewayId) {    	
+    	return _site2SiteCustomerGatewayDao.findById(customerGatewayId);
+    }
+    
     public static List<UserVO> listUsersByAccount(long accountId) {
         return _userDao.listByAccount(accountId);
     }
@@ -757,7 +786,15 @@ public class ApiDBUtils {
     public static String getHaTag() {
         return _haMgr.getHaTag();
     }
-
+    
+    public static Map<Service, Set<Provider>> listVpcOffServices(long vpcOffId) {
+        return _vpcMgr.getVpcOffSvcProvidersMap(vpcOffId);
+    }
+    
+    public static List<? extends Network> listVpcNetworks(long vpcId) {
+        return _networkMgr.listNetworksByVpc(vpcId);
+    }
+    
     public static boolean canUseForDeploy(Network network) {
         return _networkMgr.canUseForDeploy(network);
     }
@@ -765,5 +802,26 @@ public class ApiDBUtils {
     public static String getUuid(String resourceId, TaggedResourceType resourceType) {
         return _taggedResourceService.getUuid(resourceId, resourceType);
     }
+    
+    public static boolean isOfferingForVpc(NetworkOffering offering) {
+        boolean vpcProvider = _configMgr.isOfferingForVpc(offering);
+        return vpcProvider;
+    }
 
+    public static List<? extends ResourceTag> listByResourceTypeAndId(TaggedResourceType type, long resourceId) {
+        return _taggedResourceService.listByResourceTypeAndId(type, resourceId);
+    }
+
+    public static String getKeyPairName(String sshPublicKey) {
+        SSHKeyPairVO sshKeyPair = _sshKeyPairDao.findByPublicKey(sshPublicKey);
+        //key might be removed prior to this point
+        if (sshKeyPair != null) {
+            return sshKeyPair.getName();
+        }
+        return null;
+    }
+
+    public static UserVmDetailVO  findPublicKeyByVmId(long vmId) {
+        return _userVmDetailsDao.findDetail(vmId, "SSH.PublicKey");
+    }
 }

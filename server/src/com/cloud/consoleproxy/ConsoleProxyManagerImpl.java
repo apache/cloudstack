@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-//
+// 
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -28,6 +29,7 @@ import java.util.UUID;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
+import javax.persistence.Table;
 
 import org.apache.log4j.Logger;
 
@@ -47,6 +49,8 @@ import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.proxy.ConsoleProxyLoadAnswer;
 import com.cloud.agent.api.proxy.StartConsoleProxyAgentHttpHandlerCommand;
+import com.cloud.agent.api.to.NicTO;
+import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.DestroyConsoleProxyCmd;
@@ -86,6 +90,7 @@ import com.cloud.keystore.KeystoreDao;
 import com.cloud.keystore.KeystoreManager;
 import com.cloud.keystore.KeystoreVO;
 import com.cloud.network.IPAddressVO;
+import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.TrafficType;
@@ -99,10 +104,10 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
-import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.servlet.ConsoleProxyServlet;
+import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StoragePoolVO;
@@ -137,7 +142,6 @@ import com.cloud.uuididentity.dao.IdentityDao;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
-import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.SystemVmLoadScanHandler;
 import com.cloud.vm.SystemVmLoadScanner;
 import com.cloud.vm.SystemVmLoadScanner.AfterScanAction;
@@ -467,9 +471,9 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
         KeystoreVO ksVo = _ksDao.findByName(ConsoleProxyManager.CERTIFICATE_NAME);
         assert (ksVo != null);
-        
+
         if (_staticPublicIp == null) {
-        	return new ConsoleProxyInfo(proxy.isSslEnabled(), proxy.getPublicIpAddress(), _consoleProxyPort, proxy.getPort(), ksVo.getDomainSuffix());
+        return new ConsoleProxyInfo(proxy.isSslEnabled(), proxy.getPublicIpAddress(), _consoleProxyPort, proxy.getPort(), ksVo.getDomainSuffix());
         } else {
         	return new ConsoleProxyInfo(proxy.isSslEnabled(), _staticPublicIp, _consoleProxyPort, _staticPort, ksVo.getDomainSuffix());
         }
@@ -655,6 +659,13 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         assert (allocator != null);
         List<ConsoleProxyVO> runningList = _consoleProxyDao.getProxyListInStates(dataCenterId, State.Running);
         if (runningList != null && runningList.size() > 0) {
+            Iterator<ConsoleProxyVO> it = runningList.iterator();
+            while (it.hasNext()) {
+                ConsoleProxyVO proxy = it.next();
+                if(proxy.getActiveSession() >= _capacityPerProxy){
+                    it.remove();
+                }
+            }            
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace("Running proxy pool size : " + runningList.size());
                 for (ConsoleProxyVO proxy : runningList) {
@@ -1183,7 +1194,11 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
                 }
             } else {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Zone host is ready, but console proxy template: " + template.getId() +  " is not ready on secondary storage: " + secondaryStorageHost.getId());
+                	if (secondaryStorageHost != null) {
+                		s_logger.debug("Zone host is ready, but console proxy template: " + template.getId() +  " is not ready on secondary storage: " + secondaryStorageHost.getId());
+                	} else {
+                		s_logger.debug("Zone host is ready, but console proxy template: " + template.getId() +  " is not ready on secondary storage.");
+                	}
                 }
             }
         }
@@ -1510,14 +1525,20 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         //check if there is a default service offering configured
         String cpvmSrvcOffIdStr = configs.get(Config.ConsoleProxyServiceOffering.key()); 
         if (cpvmSrvcOffIdStr != null) {
-            Long cpvmSrvcOffId = Long.parseLong(cpvmSrvcOffIdStr);
-            _serviceOffering = _offeringDao.findById(cpvmSrvcOffId);
-            if (_serviceOffering == null || !_serviceOffering.getSystemUse()) {
-                String msg = "Can't find system service offering id=" + cpvmSrvcOffId + " for console proxy vm";
-                s_logger.error(msg);
-                throw new ConfigurationException(msg);
+            
+            Long cpvmSrvcOffId = null;
+            try {
+                cpvmSrvcOffId = _identityDao.getIdentityId(DiskOfferingVO.class.getAnnotation(Table.class).name(),cpvmSrvcOffIdStr);
+            } catch (Exception e) {
+                String msg = "Can't find system service offering specified by global config, uuid=" + cpvmSrvcOffIdStr + " for console proxy vm";
+                s_logger.warn(msg);
             }
-        } else {
+            if(cpvmSrvcOffId != null){
+                _serviceOffering = _offeringDao.findById(cpvmSrvcOffId);
+            }
+        } 
+
+        if(_serviceOffering == null || !_serviceOffering.getSystemUse()){
         	int ramSize = NumbersUtil.parseInt(_configDao.getValue("console.ram.size"), DEFAULT_PROXY_VM_RAMSIZE);
         	int cpuFreq = NumbersUtil.parseInt(_configDao.getValue("console.cpu.mhz"), DEFAULT_PROXY_VM_CPUMHZ);
             _serviceOffering = new ServiceOfferingVO("System Offering For Console Proxy", 1, ramSize, cpuFreq, 0, 0, false, null, useLocalStorage, true, null, true, VirtualMachine.Type.ConsoleProxy, true);
@@ -1535,7 +1556,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         _loadScanner = new SystemVmLoadScanner<Long>(this);
         _loadScanner.initScan(STARTUP_DELAY, _capacityScanInterval);
         _resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
-        
+
         _staticPublicIp = _configDao.getValue("consoleproxy.static.publicIp");
         if (_staticPublicIp != null) {
         	_staticPort = NumbersUtil.parseInt(_configDao.getValue("consoleproxy.static.port"), 8443);
@@ -2006,4 +2027,24 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         }
         return _hashKey;
     }
+
+    @Override
+    public boolean plugNic(Network network, NicTO nic, VirtualMachineTO vm,
+            ReservationContext context, DeployDestination dest) throws ConcurrentOperationException, ResourceUnavailableException,
+            InsufficientCapacityException {
+        //not supported
+        throw new UnsupportedOperationException("Plug nic is not supported for vm of type " + vm.getType());
+    }
+
+
+    @Override
+    public boolean unplugNic(Network network, NicTO nic, VirtualMachineTO vm,
+            ReservationContext context, DeployDestination dest) throws ConcurrentOperationException, ResourceUnavailableException {
+        //not supported
+        throw new UnsupportedOperationException("Unplug nic is not supported for vm of type " + vm.getType());
+    }
+	
+	@Override
+	public void prepareStop(VirtualMachineProfile<ConsoleProxyVO> profile) {
+	}
 }

@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-//
+// 
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -75,14 +75,22 @@ import com.cloud.network.IpAddress;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.RemoteAccessVpnVO;
+import com.cloud.network.Site2SiteCustomerGatewayVO;
+import com.cloud.network.Site2SiteVpnConnectionVO;
 import com.cloud.network.VpnUserVO;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
+import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
+import com.cloud.network.dao.Site2SiteVpnConnectionDao;
+import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.dao.SecurityGroupDao;
+import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpn.RemoteAccessVpnService;
+import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.projects.Project;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.projects.ProjectInvitationVO;
@@ -129,7 +137,9 @@ import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -208,9 +218,17 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     @Inject
     private RegionManager _regionMgr;
     
+    private VpcManager _vpcMgr;
+    @Inject
+    private DomainRouterDao _routerDao;
+    @Inject
+    Site2SiteVpnManager _vpnMgr;
+
     private Adapters<UserAuthenticator> _userAuthenticators;
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AccountChecker"));
+
+    int _allowedLoginAttempts;
 
     UserVO _systemUser;
     AccountVO _systemAccount;
@@ -236,8 +254,11 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
         Map<String, String> configs = configDao.getConfiguration(params);
 
+        String loginAttempts = configs.get(Config.IncorrectLoginAttemptsAllowed.key());
+        _allowedLoginAttempts = NumbersUtil.parseInt(loginAttempts, 5);
+
         String value = configs.get(Config.AccountCleanupInterval.key());
-        _cleanupInterval = NumbersUtil.parseInt(value, 60 * 60 * 24); // 1 hour.
+        _cleanupInterval = NumbersUtil.parseInt(value, 60 * 60 * 24); // 1 day.
 
         _userAuthenticators = locator.getAdapters(UserAuthenticator.class);
         if (_userAuthenticators == null || !_userAuthenticators.isSet()) {
@@ -288,6 +309,13 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
     public boolean isResourceDomainAdmin(short accountType) {
         return (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN);
+    }
+
+    public boolean isInternalAccount(short accountType) {
+        if (isRootAdmin(accountType) || (accountType == Account.ACCOUNT_ID_SYSTEM)) {
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -406,6 +434,25 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         else
             throw new CloudRuntimeException("Failed to find any private zone for Resource domain admin.");
 
+    }
+
+    @DB
+    public void updateLoginAttempts(Long id, int attempts, boolean toDisable) {
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        try {
+            UserAccountVO user = null;
+            user = _userAccountDao.lockRow(id, true);
+            user.setLoginAttempts(attempts);
+            if(toDisable) {
+                user.setState(State.disabled.toString());
+            }
+            _userAccountDao.update(id, user);
+             txn.commit();
+        } catch (Exception e) {
+            s_logger.error("Failed to update login attempts for user with id " + id );
+        }
+        txn.close();
     }
 
     private boolean doSetUserStatus(long userId, State state) {
@@ -558,7 +605,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 s_logger.warn("Failed to cleanup remote access vpn resources as a part of account id=" + accountId + " cleanup due to Exception: ", ex);
                 accountCleanupNeeded = true;
             }
-
+            
             // Cleanup security groups
             int numRemoved = _securityGroupDao.removeByAccountId(accountId);
             s_logger.info("deleteAccount: Deleted " + numRemoved + " network groups for account " + accountId);
@@ -581,20 +628,42 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                     }
                 }
             }
+            
+            //Delete all VPCs
+            boolean vpcsDeleted = true;
+            s_logger.debug("Deleting vpcs for account " + account.getId());
+            List<? extends Vpc> vpcs = _vpcMgr.getVpcsForAccount(account.getId());
+            for (Vpc vpc : vpcs) {
 
-            // release ip addresses belonging to the account
-            List<? extends IpAddress> ipsToRelease = _ipAddressDao.listByAccount(accountId);
-            for (IpAddress ip : ipsToRelease) {
-                s_logger.debug("Releasing ip " + ip + " as a part of account id=" + accountId + " cleanup");
-                if (!_networkMgr.releasePublicIpAddress(ip.getId(), callerUserId, caller)) {
-                    s_logger.warn("Failed to release ip address " + ip + " as a part of account id=" + accountId + " clenaup");
+                if (!_vpcMgr.destroyVpc(vpc)) {
+                    s_logger.warn("Unable to destroy VPC " + vpc + " as a part of account id=" + accountId + " cleanup.");
                     accountCleanupNeeded = true;
+                    vpcsDeleted = false;
+                } else {
+                    s_logger.debug("VPC " + vpc.getId() + " successfully deleted as a part of account id=" + accountId + " cleanup.");
                 }
             }
 
+            if (vpcsDeleted) {
+                // release ip addresses belonging to the account
+                List<? extends IpAddress> ipsToRelease = _ipAddressDao.listByAccount(accountId);
+                for (IpAddress ip : ipsToRelease) {
+                    s_logger.debug("Releasing ip " + ip + " as a part of account id=" + accountId + " cleanup");
+                    if (!_networkMgr.disassociatePublicIpAddress(ip.getId(), callerUserId, caller)) {
+                    s_logger.warn("Failed to release ip address " + ip + " as a part of account id=" + accountId + " clenaup");
+                    accountCleanupNeeded = true;
+                    }
+                }
+            }
+
+            // Delete Site 2 Site VPN customer gateway
+            s_logger.debug("Deleting site-to-site VPN customer gateways for account " + accountId);
+            if (!_vpnMgr.deleteCustomerGatewayByAccount(accountId)) {
+                s_logger.warn("Fail to delete site-to-site VPN customer gateways for account " + accountId);
+            }
+
             // delete account specific Virtual vlans (belong to system Public Network) - only when networks are cleaned
-            // up
-            // successfully
+            // up successfully
             if (networksDeleted) {
                 if (!_configMgr.deleteAccountSpecificVirtualRanges(accountId)) {
                     accountCleanupNeeded = true;
@@ -662,7 +731,13 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         for (VMInstanceVO vm : vms) {
             try {
                 try {
-                    success = (success && _itMgr.advanceStop(vm, false, getSystemUser(), getSystemAccount()));
+                    if (vm.getType() == Type.User) {
+                        success = (success && _itMgr.advanceStop(_userVmDao.findById(vm.getId()), false, getSystemUser(), getSystemAccount()));
+                    } else if (vm.getType() == Type.DomainRouter) {
+                        success = (success && _itMgr.advanceStop(_routerDao.findById(vm.getId()), false, getSystemUser(), getSystemAccount()));
+                    } else {
+                        success = (success && _itMgr.advanceStop(vm, false, getSystemUser(), getSystemAccount()));
+                    }
                 } catch (OperationTimedoutException ote) {
                     s_logger.warn("Operation for stopping vm timed out, unable to stop vm " + vm.getHostName(), ote);
                     success = false;
@@ -692,7 +767,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         if (domainId == null) {
             domainId = DomainVO.ROOT_DOMAIN;
         }
-        
+
         if (userName.isEmpty()) {
             throw new InvalidParameterValueException("Username is empty");
         }
@@ -700,7 +775,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         if (firstName.isEmpty()) {
             throw new InvalidParameterValueException("Firstname is empty");
         }
-        
+
         if (lastName.isEmpty()) {
             throw new InvalidParameterValueException("Lastname is empty");
         }
@@ -993,6 +1068,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         txn.commit();
 
         if (success) {
+            // whenever the user is successfully enabled, reset the login attempts to zero
+            updateLoginAttempts(userId, 0, false);
             return _userAccountDao.findById(userId);
         } else {
             throw new CloudRuntimeException("Unable to enable user " + userId);
@@ -1819,10 +1896,35 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 throw new CloudAuthenticationException("User " + username + " in domain " + domainName + " is disabled/locked (or account is disabled/locked)");
                 // return null;
             }
+            // Whenever the user is able to log in successfully, reset the login attempts to zero
+            if(!isInternalAccount(userAccount.getType()))
+                updateLoginAttempts(userAccount.getId(), 0, false);
+
             return userAccount;
         } else {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Unable to authenticate user with username " + username + " in domain " + domainId);
+            }
+
+            UserAccount userAccount = _userAccountDao.getUserAccount(username, domainId);
+            UserAccountVO user = _userAccountDao.findById(userAccount.getId());
+            if (user != null) {
+                if ((user.getState().toString()).equals("enabled")) {
+                    if (!isInternalAccount(user.getType())) {
+                        //Internal accounts are not disabled
+                        int attemptsMade = user.getLoginAttempts() + 1;
+                        if (attemptsMade < _allowedLoginAttempts) {
+                            updateLoginAttempts(userAccount.getId(), attemptsMade, false);
+                            s_logger.warn("Login attempt failed. You have " + ( _allowedLoginAttempts - attemptsMade ) + " attempt(s) remaining");
+                        } else {
+                            updateLoginAttempts(userAccount.getId(), _allowedLoginAttempts, true);
+                            s_logger.warn("User " + user.getUsername() + " has been disabled due to multiple failed login attempts." +
+                                    " Please contact admin.");
+                        }
+                    }
+                } else {
+                    s_logger.info("User " + user.getUsername() + " is disabled/locked");
+                }
             }
             return null;
         }
@@ -1950,7 +2052,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 if (domainId == null) {
                     domainId = caller.getDomainId();
                 }
-            } else if (domainId != null) {
+            } else if (isAdmin(caller.getType()) && domainId != null) {
                 listForDomain = true;
             } else {
                 accountId = caller.getAccountId();
@@ -2191,7 +2293,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     }
 
     @Override
-    public void buildACLSearchParameters(Account caller, Long id, String accountName, Long projectId, List<Long> permittedAccounts, Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject,
+    public void buildACLSearchParameters(Account caller, Long id, String accountName, Long projectId, List<Long> 
+    permittedAccounts, Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject,
             boolean listAll, boolean forProjectInvitation) {
         Long domainId = domainIdRecursiveListProject.first();
 
@@ -2217,6 +2320,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             }
 
             if (userAccount != null) {
+                checkAccess(caller, null, false, userAccount);
+                //check permissions
                 permittedAccounts.add(userAccount.getId());
             } else {
                 throw new InvalidParameterValueException("could not find account " + accountName + " in domain " + domainId);
@@ -2267,4 +2372,9 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
         }
     }
+
+	@Override
+	public UserAccount getUserByApiKey(String apiKey) {
+		return _userAccountDao.getUserByApiKey(apiKey);
+	}
 }

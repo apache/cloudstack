@@ -23,6 +23,20 @@ usage() {
 
 }
 
+if [ ! -f "/etc/modprobe.d/disable-ipv6" ] ; then
+    # disable IPv6 until reboot
+    if [ -d "/proc/sys/net/ipv6/conf/all" ] ; then
+        /sbin/sysctl -w net.ipv6.conf.all.forwarding=0
+        /sbin/sysctl -w net.ipv6.conf.all.accept_ra=0
+        /sbin/sysctl -w net.ipv6.conf.all.accept_redirects=0
+        /sbin/sysctl -w net.ipv6.conf.all.autoconf=0
+        /sbin/sysctl -w net.ipv6.conf.all.disable_ipv6=1
+    fi
+
+    # reinstate the disable-ipv6 file
+    echo "alias ipv6 no" > /etc/modprobe.d/disable-ipv6
+    echo "alias net-pf-10 off" >> /etc/modprobe.d/disable-ipv6
+fi
 
 #removing iptables entry for vnc ports
 iptables -D RH-Firewall-1-INPUT -p tcp -m tcp --dport 5900:6099 -j ACCEPT 2>&1

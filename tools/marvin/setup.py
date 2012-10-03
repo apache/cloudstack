@@ -18,10 +18,11 @@
 
 from distutils.core import setup
 from sys import version
+import sys
 
 if version < "2.7":
     print "Marvin needs at least python 2.7, found : \n%s"%version
-    raise
+    sys.exit(1)
 
 setup(name="Marvin",
       version="0.1.0",
@@ -33,11 +34,12 @@ setup(name="Marvin",
       long_description="Marvin is the cloudstack testclient written around the python unittest framework",
       platforms=("Any",),
       url="http://jenkins.cloudstack.org:8080/job/marvin",
-      packages=["marvin", "marvin.cloudstackAPI", "marvin.sandbox", "marvin.sandbox.advanced", "marvin.sandbox.basic", "marvin.pymysql", "marvin.pymysql.constants", "marvin.pymysql.tests"],
+      packages=["marvin", "marvin.cloudstackAPI", "marvin.sandbox", "marvin.sandbox.advanced", "marvin.sandbox.basic"],
       license="LICENSE.txt",
       install_requires=[
-          "Python>=2.7",
+          "pymysql",
           "paramiko",
-          "nose"
+          "nose",
+          "unittest-xml-reporting"
       ],         
      )

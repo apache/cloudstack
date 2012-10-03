@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-//
+// 
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -19,6 +19,7 @@ package com.cloud.vm.dao;
 import java.util.List;
 
 import com.cloud.network.Network;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.DomainRouterVO;
@@ -68,16 +69,7 @@ public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long> {
      * @param hostId id of the host.  null if to get all.
      * @return list of DomainRouterVO
      */
-    public List<DomainRouterVO> listVirtualByHostId(Long hostId);
-    
-    /**
-     * list virtual machine routers by host id.  exclude destroyed, stopped, expunging VM, 
-     * pass in null to get all
-     * virtual machine routers.
-     * @param hostId id of the host.  null if to get all.
-     * @return list of DomainRouterVO
-     */
-    public List<DomainRouterVO> listVirtualUpByHostId(Long hostId);
+    public List<DomainRouterVO> listIsolatedByHostId(Long hostId);
     
 	/**
 	 * Find the list of domain routers for a domain
@@ -105,4 +97,36 @@ public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long> {
     List<DomainRouterVO> listByNetworkAndRole(long networkId, Role role);
     
     List<DomainRouterVO> listByElementId(long elementId);
+    
+    /**
+     * Persists the domain router instance + creates the reference to the guest network (if not null)
+     * @param guestNetworks TODO
+     * @return
+     */    
+    DomainRouterVO persist(DomainRouterVO router, List<Network> guestNetworks);
+
+    /**
+     * @param routerId
+     * @return
+     */
+    List<Long> getRouterNetworks(long routerId);
+
+    /**
+     * @param vpcId
+     * @return
+     */
+    List<DomainRouterVO> listByVpcId(long vpcId);
+
+    /**
+     * @param routerId
+     * @param guestNetwork
+     */
+    void addRouterToGuestNetwork(VirtualRouter router, Network guestNetwork);
+
+    /**
+     * @param routerId
+     * @param guestNetworkId
+     */
+    void removeRouterFromGuestNetwork(long routerId, long guestNetworkId);
+    
 }

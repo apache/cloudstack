@@ -678,9 +678,12 @@
                     account: { label: 'label.account' },
                     created: { label: 'label.created', converter: cloudStack.converters.toLocalDate }
                   }
-                ],
+                 ],
+         
+               tags: cloudStack.api.tags({ resourceType: 'Template', contextId: 'templates' }),
+ 
 
-                dataProvider: function(args) {
+               dataProvider: function(args) {
                   var jsonObj = args.context.templates[0];
                   var apiCmd = "listTemplates&templatefilter=self&id=" + jsonObj.id;
                   if(jsonObj.zoneid != null)
@@ -822,6 +825,7 @@
                   }
                 }
               },
+             
 
               action: function(args) {
                 var array1 = [];
@@ -1192,8 +1196,10 @@
                     created: { label: 'label.created', converter: cloudStack.converters.toLocalDate }
                   }
                 ],
+                  
+                 tags: cloudStack.api.tags({ resourceType: 'ISO', contextId: 'isos' }),
 
-                dataProvider: function(args) {
+                 dataProvider: function(args) {
                   var jsonObj = args.context.isos[0];
                   var apiCmd = "listIsos&isofilter=self&id="+jsonObj.id;
                   if(jsonObj.zoneid != null)

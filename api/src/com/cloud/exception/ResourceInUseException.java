@@ -16,10 +16,6 @@
 // under the License.
 package com.cloud.exception;
 
-/**
- * @author chiradeep
- * 
- */
 public class ResourceInUseException extends ManagementServerException {
 
     private static final long serialVersionUID = 1383416910411639324L;

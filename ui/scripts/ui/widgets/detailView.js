@@ -287,10 +287,14 @@
      * @param callback
      */
     edit: function($detailView, args) {
+      $detailView.addClass('edit-mode');
+
       if ($detailView.find('.button.done').size()) return false;
 
       // Convert value TDs
-      var $inputs = $detailView.find('input, select');
+      var $inputs = $detailView.find('input, select').filter(function() {
+        return !$(this).closest('.tagger').size() && !$(this).attr('type') == 'submit';
+      });
       var action = args.actions[args.actionName];
       var id = $detailView.data('view-args').id;
       var $editButton = $('<div>').addClass('button done').html(_l('label.apply')).hide();
@@ -302,9 +306,13 @@
           $detailView.find('.ui-tabs-panel .detail-group.actions')
         ).fadeIn();
 
+      $detailView.find('.tagger').find('input[type=text]').val('');
+
       var convertInputs = function($inputs) {
         // Save and turn back into labels
         $inputs.each(function() {
+          if ($(this).closest('.tagger').size()) return true;
+          
           var $input = $(this);
           var $value = $input.closest('td.value span');
 
@@ -328,8 +336,12 @@
       };
 	    
 	    var removeEditForm = function() {
+        $detailView.removeClass('edit-mode');
+        
 		    // Remove Edit form
-		    var $form = $detailView.find('form');
+		    var $form = $detailView.find('form').filter(function() {
+          return !$(this).closest('.tagger').size();
+        });
 		    if ($form.size()) {
 			    var $mainGroups = $form.find('div.main-groups').detach();
 			    $form.parent('div').append($mainGroups);
@@ -337,11 +349,13 @@
 		    }
 		    //Remove required labels
 		    $detailView.find('span.field-required').remove();
-	    }
+	    };
 
       // Put in original values
       var cancelEdits = function($inputs, $editButton) {
         $inputs.each(function() {
+          if ($(this).closest('.tagger').size()) return true;
+
           var $input = $(this);
           var $value = $input.closest('td.value span');
           var originalValue = $input.data('original-value');
@@ -424,8 +438,12 @@
       };
 
 	    $editButton.click(function() {
-        var $inputs = $detailView.find('input, select'),
-			      $form = $detailView.find('form');
+        var $inputs = $detailView.find('input, select').filter(function() {
+          return !$(this).closest('.tagger').size();
+        });
+			  var $form = $detailView.find('form').filter(function() {
+          return !$(this).closest('.tagger').size();
+        });
 
         if ($(this).hasClass('done')) {
 			    if (!$form.valid()) {
@@ -438,6 +456,8 @@
         } else { // Cancel
           cancelEdits($inputs, $editButton);
         }
+
+        return true;
       });
 	    
 	    $detailView.find('td.value span').each(function() {
@@ -511,8 +531,11 @@
 		  }
 	    
 		  // Setup form validation
-		  $detailView.find('form').validate();
-		  $detailView.find('form').find('input, select').each(function() {
+      var $form = $detailView.find('form').filter(function() {
+        return !$(this).closest('.tagger').size();
+      });
+		  $form.validate();
+		  $form.find('input, select').each(function() {
 			  var data = $(this).parent('span').data('validation-rules');
 			  if (data) {
 				  $(this).rules('add', data);
@@ -641,10 +664,18 @@
               )
               .appendTo($action);
 
+        if (value.textLabel) {
+          $action
+            .addClass('single text')
+            .prepend(
+              $('<span>').addClass('label').html(_l(value.textLabel))
+            );
+        }
+
         return true;
       });
 
-      var $actionButtons = $actions.find('div.action');
+      var $actionButtons = $actions.find('div.action:not(.text)');
       if ($actionButtons.size() == 1)
         $actionButtons.addClass('single');
       else {
@@ -758,7 +789,7 @@
 
         // Set up editable metadata				
 				if(typeof(value.isEditable) == 'function')
-				  $value.data('detail-view-is-editable', value.isEditable());
+				  $value.data('detail-view-is-editable', value.isEditable(context));
 				else //typeof(value.isEditable) == 'boolean' or 'undefined'
           $value.data('detail-view-is-editable', value.isEditable);
         if (value.select) {
@@ -805,7 +836,7 @@
           actionFilter: actionFilter,
           data: data,
           context: $detailView.data('view-args').context
-        }).prependTo($firstRow.closest('div.detail-group').closest('.details'));
+        });
 
       // 'View all' button
       var showViewAll = detailViewArgs.viewAll ?
@@ -815,6 +846,9 @@
                   context: context
                 }) : true
             ) : true;
+      if ($actions && ($actions.find('div.action').size() || (detailViewArgs.viewAll && showViewAll))) {
+        $actions.prependTo($firstRow.closest('div.detail-group').closest('.details'));
+      }
       if (detailViewArgs.viewAll && showViewAll) {
         $('<div>')
           .addClass('view-all')
@@ -926,6 +960,14 @@
             actionFilter: actionFilter
           }).appendTo($tabContent);
 
+          if (tabs.tags) {
+            $('<div>').tagger(
+              $.extend(true, {}, tabs.tags, {
+                context: $detailView.data('view-args').context
+              })
+            ).appendTo($detailView.find('.main-groups'));
+          }
+
           return true;
         },
         error: function() {
@@ -996,7 +1038,7 @@
     );
   };
 
-  var replaceTabs = function($detailView, $newTabs, tabs, options) {
+  var replaceTabs = function($detailView, tabs, options) {
     var $detailViewElems = $detailView.find('ul.ui-tabs-nav, .detail-group');
     $detailView.tabs('destroy');
     $detailViewElems.remove();
@@ -1015,24 +1057,31 @@
       );
   };
 
-  $.fn.detailView = function(args) {
+  $.fn.detailView = function(args, options) {
     var $detailView = this;
+    
+    if (options == 'refresh') {
+      var $tabs = replaceTabs($detailView, args.tabs, {
+        context: args.context,
+        tabFilter: args.tabFilter
+      });
+    } else {
+      $detailView.addClass('detail-view');
+      $detailView.data('view-args', args);
 
-    $detailView.addClass('detail-view');
-    $detailView.data('view-args', args);
+      if (args.$listViewRow) {
+        $detailView.data('list-view-row', args.$listViewRow);
+      }
 
-    if (args.$listViewRow) {
-      $detailView.data('list-view-row', args.$listViewRow);
+      // Create toolbar
+      var $toolbar = makeToolbar().appendTo($detailView);
+
+      // Create tabs
+      var $tabs = makeTabs($detailView, args.tabs, {
+        context: args.context,
+        tabFilter: args.tabFilter
+      }).appendTo($detailView);
     }
-
-    // Create toolbar
-    var $toolbar = makeToolbar().appendTo($detailView);
-
-    // Create tabs
-    var $tabs = makeTabs($detailView, args.tabs, {
-      context: args.context,
-      tabFilter: args.tabFilter
-    }).appendTo($detailView);
 
     $detailView.tabs();
 
@@ -1091,8 +1140,8 @@
     }
 
     // Detail action
-    if ($target.closest('div.detail-view [detail-action]').size()) {
-      var $action = $target.closest('div.detail-view [detail-action]');
+    if ($target.closest('div.detail-view [detail-action], div.detail-view .action.text').size()) {
+      var $action = $target.closest('.action').find('[detail-action]');
       var actionName = $action.attr('detail-action');
       var actionCallback = $action.data('detail-view-action-callback');
       var detailViewArgs = $action.closest('div.detail-view').data('view-args');
@@ -1112,4 +1161,17 @@
 
     return true;
   });
+
+  // Detail view refresh handler
+  $(window).bind('cloudStack.detailsRefresh', function() {
+    var $detailView = $('.detail-view');
+
+    $detailView.each(function() {
+      var $detailView = $(this),
+      args = $detailView.data('view-args');
+
+      $detailView.detailView(args, 'refresh');
+    });
+  });
+
 }(window.jQuery, window.cloudStack, window._l));

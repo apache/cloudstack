@@ -2,17 +2,22 @@
 #
 # /etc/init.d/tomcat6 -- startup script for the Tomcat 6 servlet engine
 
-#Copyright 2012 Citrix Systems, Inc. Licensed under the 
-#Apache License, Version 2.0 (the "License"); you may not use this
-#file except in compliance with the License.  Citrix Systems, Inc.
-#reserves all rights not expressly granted by the License.
-#You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-#Unless required by applicable law or agreed to in writing, software
-#distributed under the License is distributed on an "AS IS" BASIS,
-#WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#See the License for the specific language governing permissions and 
-#limitations under the License.
-
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 ### BEGIN INIT INFO
 # Provides:          tomcat-vmops
 # Required-Start:    $local_fs $remote_fs $network
@@ -55,7 +60,7 @@ TOMCAT6_USER=tomcat6
 
 # The first existing directory is used for JAVA_HOME (if JAVA_HOME is not
 # defined in $DEFAULT)
-JDK_DIRS="/usr/lib/jvm/java-6-openjdk /usr/lib/jvm/java-6-sun /usr/lib/jvm/java-1.5.0-sun /usr/lib/j2sdk1.5-sun /usr/lib/j2sdk1.5-ibm"
+JDK_DIRS="/usr/lib/jvm/java-1.6.0-openjdk-amd64/ /usr/lib/jvm/java-1.6.0-openjdk-i386/ /usr/lib/jvm/java-1.6.0-openjdk/ /usr/lib/jvm/java-6-openjdk /usr/lib/jvm/java-6-sun"
 
 # Look for the right JVM to use
 for jdir in $JDK_DIRS; do

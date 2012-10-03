@@ -18,6 +18,7 @@
 package com.cloud.uuididentity.dao;
 
 import com.cloud.api.IdentityMapper;
+import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 
@@ -29,7 +30,8 @@ public interface IdentityDao extends GenericDao<IdentityVO, Long> {
     /**
      * @param tableName
      * @param identityId
+     * @param resourceType TODO
      * @return
      */
-    Pair<Long, Long> getAccountDomainInfo(String tableName, Long identityId);
+    Pair<Long, Long> getAccountDomainInfo(String tableName, Long identityId, TaggedResourceType resourceType);
 }

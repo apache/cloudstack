@@ -19,12 +19,6 @@
 	var domainObjs;
 	var rootDomainId;
 
-  var systemAccountId = 1;
-  var adminAccountId = 2;
-
-  var systemUserId = 1;
-  var adminUserId = 2;
-
   cloudStack.sections.accounts = {
     title: 'label.accounts',
     id: 'accounts',
@@ -181,6 +175,8 @@
                 var password = args.data.password;
                 if (md5Hashed)
                   password = $.md5(password);
+								else
+                  password = todb(password);
                 array1.push("&password=" + password);
 
                 array1.push("&email=" + todb(args.data.email));
@@ -286,50 +282,71 @@
  
                   });
 
-                  $.ajax({
-                    url: createURL("updateResourceLimit&resourceType=0&max=" + todb(args.data.vmLimit) + "&account=" + accountObj.name + "&domainid=" + accountObj.domainid),
-                    dataType: "json",
-                    async: false,
-                    success: function(json) {
-                      accountObj["vmLimit"] = args.data.vmLimit;
-                    }
-                  });
+									if(args.data.vmLimit != null) {
+										$.ajax({
+											url: createURL("updateResourceLimit&resourceType=0&max=" + todb(args.data.vmLimit) + "&account=" + accountObj.name + "&domainid=" + accountObj.domainid),
+											dataType: "json",
+											async: false,
+											success: function(json) {
+												accountObj["vmLimit"] = args.data.vmLimit;
+											}
+										});
+									}
 
-                  $.ajax({
-                    url: createURL("updateResourceLimit&resourceType=1&max=" + todb(args.data.ipLimit) + "&account=" + accountObj.name + "&domainid=" + accountObj.domainid),
-                    dataType: "json",
-                    async: false,
-                    success: function(json) {
-                      accountObj["ipLimit"] = args.data.ipLimit;
-                    }
-                  });
+									if(args.data.ipLimit != null) {
+										$.ajax({
+											url: createURL("updateResourceLimit&resourceType=1&max=" + todb(args.data.ipLimit) + "&account=" + accountObj.name + "&domainid=" + accountObj.domainid),
+											dataType: "json",
+											async: false,
+											success: function(json) {
+												accountObj["ipLimit"] = args.data.ipLimit;
+											}
+										});
+									}
 
-                  $.ajax({
-                    url: createURL("updateResourceLimit&resourceType=2&max=" + todb(args.data.volumeLimit) + "&account=" + accountObj.name + "&domainid=" + accountObj.domainid),
-                    dataType: "json",
-                    async: false,
-                    success: function(json) {
-                      accountObj["volumeLimit"] = args.data.volumeLimit;
-                    }
-                  });
+									if(args.data.volumeLimit != null) {
+										$.ajax({
+											url: createURL("updateResourceLimit&resourceType=2&max=" + todb(args.data.volumeLimit) + "&account=" + accountObj.name + "&domainid=" + accountObj.domainid),
+											dataType: "json",
+											async: false,
+											success: function(json) {
+												accountObj["volumeLimit"] = args.data.volumeLimit;
+											}
+										});
+									}
 
-                  $.ajax({
-                    url: createURL("updateResourceLimit&resourceType=3&max=" + todb(args.data.snapshotLimit) + "&account=" + accountObj.name + "&domainid=" + accountObj.domainid),
-                    dataType: "json",
-                    async: false,
-                    success: function(json) {
-                      accountObj["snapshotLimit"] = args.data.snapshotLimit;
-                    }
-                  });
-
-                  $.ajax({
-                    url: createURL("updateResourceLimit&resourceType=4&max=" + todb(args.data.templateLimit) + "&account=" + accountObj.name + "&domainid=" + accountObj.domainid),
-                    dataType: "json",
-                    async: false,
-                    success: function(json) {
-                      accountObj["templateLimit"] = args.data.templateLimit;
-                    }
-                  });
+									if(args.data.snapshotLimit != null) {
+										$.ajax({
+											url: createURL("updateResourceLimit&resourceType=3&max=" + todb(args.data.snapshotLimit) + "&account=" + accountObj.name + "&domainid=" + accountObj.domainid),
+											dataType: "json",
+											async: false,
+											success: function(json) {
+												accountObj["snapshotLimit"] = args.data.snapshotLimit;
+											}
+										});
+									}
+ 
+                  if(args.data.templateLimit != null) {
+										$.ajax({
+											url: createURL("updateResourceLimit&resourceType=4&max=" + todb(args.data.templateLimit) + "&account=" + accountObj.name + "&domainid=" + accountObj.domainid),
+											dataType: "json",
+											async: false,
+											success: function(json) {
+												accountObj["templateLimit"] = args.data.templateLimit;
+											}
+										});
+                  }
+									
+									if(args.data.vpcLimit != null) {
+										$.ajax({
+											url: createURL("updateResourceLimit&resourceType=7&max=" + todb(args.data.vpcLimit) + "&account=" + accountObj.name + "&domainid=" + accountObj.domainid),
+											dataType: "json",
+											async: false,
+											success: function(json) {
+												accountObj["vpcLimit"] = args.data.vpcLimit;
+											}
+										});
+									}
 
                   if(errorMsg == "")
                   args.response.success({data: accountObj});
@@ -541,23 +558,57 @@
                     },
                     vmLimit: {
                       label: 'label.instance.limits',
-                      isEditable: true
+                      isEditable: function(context) {											  
+											  if (context.accounts[0].accounttype == roleTypeUser || context.accounts[0].accounttype == roleTypeDomainAdmin) //updateResourceLimits is only allowed on account whose type is user or domain-admin
+												  return true;
+												else
+												  return false;
+											}
                     },
                     ipLimit: {
                       label: 'label.ip.limits',
-                      isEditable: true
+                      isEditable: function(context) {											  
+											  if (context.accounts[0].accounttype == roleTypeUser || context.accounts[0].accounttype == roleTypeDomainAdmin) //updateResourceLimits is only allowed on account whose type is user or domain-admin
+												  return true;
+												else
+												  return false;
+											}
                     },
                     volumeLimit: {
                       label: 'label.volume.limits',
-                      isEditable: true
+                      isEditable: function(context) {											  
+											  if (context.accounts[0].accounttype == roleTypeUser || context.accounts[0].accounttype == roleTypeDomainAdmin) //updateResourceLimits is only allowed on account whose type is user or domain-admin
+												  return true;
+												else
+												  return false;
+											}
                     },
                     snapshotLimit: {
                       label: 'label.snapshot.limits',
-                      isEditable: true
+                      isEditable: function(context) {											  
+											  if (context.accounts[0].accounttype == roleTypeUser || context.accounts[0].accounttype == roleTypeDomainAdmin) //updateResourceLimits is only allowed on account whose type is user or domain-admin
+												  return true;
+												else
+												  return false;
+											}
                     },
                     templateLimit: {
                       label: 'label.template.limits',
-                      isEditable: true
+                      isEditable: function(context) {											  
+											  if (context.accounts[0].accounttype == roleTypeUser || context.accounts[0].accounttype == roleTypeDomainAdmin) //updateResourceLimits is only allowed on account whose type is user or domain-admin
+												  return true;
+												else
+												  return false;
+											}
+                    },
+                    vpcLimit: {
+                      label: 'VPC limits',
+                      isEditable: function(context) {											  
+											  if (context.accounts[0].accounttype == roleTypeUser || context.accounts[0].accounttype == roleTypeDomainAdmin) //updateResourceLimits is only allowed on account whose type is user or domain-admin
+												  return true;
+												else
+												  return false;
+											}
                     },
 
                     vmtotal: { label: 'label.total.of.vm' },
@@ -599,21 +650,24 @@
 														for (var i = 0; i < limits.length; i++) {
 															var limit = limits[i];
 															switch (limit.resourcetype) {
-																case "0":
-																	accountObj["vmLimit"] = limit.max;
-																	break;
-																case "1":
-																	accountObj["ipLimit"] = limit.max;
-																	break;
-																case "2":
-																	accountObj["volumeLimit"] = limit.max;
-																	break;
-																case "3":
-																	accountObj["snapshotLimit"] = limit.max;
-																	break;
-																case "4":
-																	accountObj["templateLimit"] = limit.max;
-																	break;
+															case "0":
+																accountObj["vmLimit"] = limit.max;
+																break;
+															case "1":
+																accountObj["ipLimit"] = limit.max;
+																break;
+															case "2":
+																accountObj["volumeLimit"] = limit.max;
+																break;
+															case "3":
+																accountObj["snapshotLimit"] = limit.max;
+																break;
+															case "4":
+																accountObj["templateLimit"] = limit.max;
+																break;
+                              case "7":
+																accountObj["vpcLimit"] = limit.max;
+																break;
 															}
 														}
 													}																										
@@ -804,6 +858,9 @@
                     success: function(json) {
                       var item = json.updateuserresponse.user;
                       args.response.success({data:item});
+                    },
+                    error: function(data) {
+                      args.response.error(parseXMLHttpResponse(data));
                     }
                   });
 
@@ -1076,12 +1133,8 @@
     if (jsonObj.state == 'Destroyed') return [];
 
     if(isAdmin()) {
-      if(jsonObj.id != systemAccountId && jsonObj.id != adminAccountId) {
-        //allowedActions.push("edit");
-        if (jsonObj.accounttype == roleTypeUser || jsonObj.accounttype == roleTypeDomainAdmin) {
-          //allowedActions.push("updateResourceLimits");
-          allowedActions.push("edit");
-        }
+		  allowedActions.push("edit"); //updating networkdomain is allowed on any account, including system-generated default admin account 
+      if(!(jsonObj.domain == "ROOT" && jsonObj.name == "admin" && jsonObj.accounttype == 1)) { //if not system-generated default admin account    
         if(jsonObj.state == "enabled") {
           allowedActions.push("disable");
           allowedActions.push("lock");
@@ -1106,7 +1159,7 @@
       allowedActions.push("edit");
       allowedActions.push("changePassword");
       allowedActions.push("generateKeys");
-      if(jsonObj.id != systemUserId && jsonObj.id != adminUserId) {
+      if(!(jsonObj.domain == "ROOT" && jsonObj.account == "admin" && jsonObj.accounttype == 1)) { //if not system-generated default admin account user 
         if(jsonObj.state == "enabled")
           allowedActions.push("disable");
         if(jsonObj.state == "disabled")

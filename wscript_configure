@@ -1,4 +1,21 @@
 #!/usr/bin/env python
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
 """examines environment, then:
 	- configures classpath as per environment or command-line options
 	- detects Tomcat (on Windows)
@@ -25,12 +42,13 @@ systemjars = {
 		"commons-collections.jar",
 		# "commons-daemon.jar",
 		"commons-dbcp.jar",
+		"commons-codec.jar",
 		"commons-logging.jar",
 		"commons-logging-api.jar",
 		"commons-pool.jar",
 		"commons-httpclient.jar",
 		"ws-commons-util.jar",
-		"jnetpcap.jar",
+		"mysql-connector-java.jar",
 	),
 	'Fedora':
 	(
@@ -44,31 +62,44 @@ systemjars = {
 		"tomcat6-servlet-2.5-api.jar",
 		"tomcat6-el-2.1-api-6.0.24.jar",
 		"tomcat6-jsp-2.1-api-6.0.24.jar",
+                "jakarta-taglibs-core-1.1.1.jar",
+                "jakarta-taglibs-standard-1.1.1.jar",
+                "tomcat6/jasper.jar",
+                "tomcat6/jasper-el.jar",
+                "tomcat6/jasper-jdt.jar",
+                
 	),
 	'CentOS':
 	(
 		"tomcat6-servlet-2.5-api.jar",
 		"tomcat6-jsp-2.1-api-6.0.24.jar",
 		"tomcat6-el-2.1-api-6.0.24.jar",
+                "jakarta-taglibs-core-1.1.1.jar",
+                "jakarta-taglibs-standard-1.1.1.jar",
+                "tomcat6/jasper.jar",
+                "tomcat6/jasper-el.jar",
+                "tomcat6/jasper-jdt.jar",
 		#"tomcat6/catalina.jar", # all supported distros put the file there
 	),
 	'Ubuntu':
 	(
 		"servlet-api-2.5.jar",
 		"jsp-api-2.1.jar",
-		"jasper-6.0.28.jar",
+		"jasper.jar",
 		"el-api-2.1.jar",
-		"jasper-el-6.0.28.jar",
-        "cglib.jar",
-        "asm3.jar",
-        "jetty.jar",
-        "jetty-util.jar",
-        "jetty-start-daemon.jar",
-        "jetty-sslengine.jar",
-        "jetty-start.jar",
-        "slf4j-log4j12.jar",
-        "jna.jar",
-		#"catalina.jar",
+		"jasper-el.jar",
+		"ecj.jar",
+		"cglib.jar",
+		"asm3.jar",
+		"jsch.jar",
+		"backport-util-concurrent.jar",
+		"jetty.jar",
+		"jetty-util.jar",
+		"jetty-start-daemon.jar",
+		"jetty-sslengine.jar",
+		"jetty-start.jar",
+		"jna.jar",
+		"log4j-1.2.jar",
 	),
 	'Windows':
 	(
@@ -79,18 +110,18 @@ systemjars = {
 	(
 		"servlet-api.jar",
 	),
-    'openSUSE':
-    (
-        "tomcat6-servlet-2.5-api.jar",
-        "tomcat6-jsp-2.1-api-6.0.24.jar",
-        "tomcat6-el-1.0-api.jar"
-    ),
-    'SLES':
-    (
-        "tomcat6-servlet-2.5-api.jar",
-        "tomcat6-jsp-2.1-api-6.0.24.jar",
-        "tomcat6-el-1.0-api.jar"
-    )
+	'openSUSE':
+	(
+		"tomcat6-servlet-2.5-api.jar",
+		"tomcat6-jsp-2.1-api-6.0.24.jar",
+		"tomcat6-el-1.0-api.jar"
+	),
+	'SLES':
+	(
+		"tomcat6-servlet-2.5-api.jar",
+		"tomcat6-jsp-2.1-api-6.0.24.jar",
+		"tomcat6-el-1.0-api.jar"
+	)
 }
 
 #A JAR dependency may be:
@@ -204,6 +235,7 @@ try: conf.check_tool("tomcat")
 except Configure.ConfigurationError,e:
 	conf.fatal("Tomcat directory %r not found.  Either install Tomcat using ./waf installrpmdeps or ./waf installdebdeps, or manually install Tomcat to a directory in your system and set the environment variable TOMCAT_HOME to point to it."%conf.env.TOMCATHOME)
 
+conf.env.COMMONPATH = _join(conf.env.PACKAGE,"common")
 conf.env.AGENTPATH = _join(conf.env.PACKAGE,"agent")
 conf.env.CPPATH = _join(conf.env.PACKAGE,"console-proxy")
 conf.env.IPALLOCATORPATH = _join(conf.env.PACKAGE,"ipallocator")
@@ -245,6 +277,8 @@ else:
 in_javadir = lambda name: _join(conf.env.JAVADIR,_basename(name)) # $PREFIX/share/java
 in_system_javadir = lambda name: _join(conf.env.SYSTEMJAVADIR,name) # /usr/share/java
 in_premiumjavadir = lambda name: _join(conf.env.PREMIUMJAVADIR,name) # $PREFIX/share/java/cloud-premium
+
+conf.env.COMMONLIBDIR = Utils.subst_vars(_join("${LIBDIR}","${COMMONPATH}"),conf.env)
 
 conf.env.AGENTLIBDIR = Utils.subst_vars(_join("${LIBDIR}","${AGENTPATH}"),conf.env)
 conf.env.AGENTSYSCONFDIR = Utils.subst_vars(_join("${SYSCONFDIR}","${AGENTPATH}"),conf.env)
@@ -288,11 +322,11 @@ depsclasspath = [ in_javadir(_basename(x)) for x in _glob(_join(conf.srcdir,"dep
 conf.env.DEPSCLASSPATH = pathsep.join(depsclasspath)
 
 # the MS classpath points to JARs required to run the management server
-msclasspath = [ in_javadir("%s-%s.jar"%(conf.env.PACKAGE,x)) for x in "utils api core server server-extras core-extras vmware-base ovm dp-user-concentrated-pod dp-user-dispersing host-allocator-random plugin-f5 plugin-netscaler plugin-ovs plugin-srx storage-allocator-random user-authenticator-ldap user-authenticator-md5 user-authenticator-plaintext vmware xen".split() ]
+msclasspath = [ in_javadir("%s-%s.jar"%(conf.env.PACKAGE,x)) for x in "utils api core server server-extras core-extras vmware-base ovm dp-user-concentrated-pod dp-user-dispersing host-allocator-random plugin-f5 plugin-netscaler plugin-ovs plugin-srx storage-allocator-random user-authenticator-ldap user-authenticator-md5 user-authenticator-plaintext vmware plugin-hypervisor-xen plugin-nicira-nvp plugin-elb plugin-netapp".split() ]
 conf.env.MSCLASSPATH = pathsep.join(msclasspath)
 
 # the agent and simulator classpaths point to JARs required to run these two applications
-agentclasspath = [ in_javadir("%s-%s.jar"%(conf.env.PACKAGE,x)) for x in "utils api core server server-extras agent console-common console-proxy core-extras agent-extras".split() ]
+agentclasspath = [ in_javadir("%s-%s.jar"%(conf.env.PACKAGE,x)) for x in "utils api core server server-extras agent console-common console-proxy core-extras agent-extras plugin-hypervisor-kvm".split() ]
 agentclasspath.append(in_javadir("jna.jar"))
 conf.env.AGENTCLASSPATH = pathsep.join(agentclasspath)
 conf.env.AGENTSIMULATORCLASSPATH = pathsep.join(agentclasspath+[in_javadir("%s-agent-simulator.jar"%conf.env.PACKAGE)])
@@ -323,6 +357,8 @@ conf.env.CLASSPATH = pathsep.join(compilecp)
 conf.check_message_2('Done','GREEN')
 
 # log4j config and property config files require backslash escapes on Windows
+
+conf.env.COMMONLIBDIR = Utils.subst_vars(_join("${LIBDIR}","${COMMONPATH}"),conf.env)
 
 conf.env.AGENTLIBDIR = Utils.subst_vars(_join("${LIBDIR}","${AGENTPATH}"),conf.env)
 conf.env.AGENTSYSCONFDIR = Utils.subst_vars(_join("${SYSCONFDIR}","${AGENTPATH}"),conf.env)

@@ -18,23 +18,13 @@ package com.cloud.bridge.persist.dao;
 
 import java.util.List;
 
-import com.cloud.bridge.model.SBucket;
-import com.cloud.bridge.persist.EntityDao;
+import com.cloud.bridge.model.SBucketVO;
+import com.cloud.utils.db.GenericDao;
 
-/**
- * @author Kelven Yang
- */
-public class SBucketDao extends EntityDao<SBucket> {
-	public SBucketDao() {
-		super(SBucket.class);
-	}
+public interface SBucketDao extends GenericDao<SBucketVO, Long> {
 
-	public SBucket getByName(String bucketName) {
-		return queryEntity("from SBucket where name=?", new Object[] {bucketName});
-	}
-	
-	public List<SBucket> listBuckets(String canonicalId) {
-		return queryEntities("from SBucket where ownerCanonicalId=? order by createTime asc", 
-			new Object[] {canonicalId});
-	}
+    SBucketVO getByName(String bucketName);
+
+    List<SBucketVO> listBuckets(String canonicalId);
+
 }

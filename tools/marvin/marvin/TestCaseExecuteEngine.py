@@ -27,7 +27,7 @@ def testCaseLogger(message, logger=None):
         logger.debug(message)
 
 class TestCaseExecuteEngine(object):
-    def __init__(self, testclient, testcaseLogFile=None, testResultLogFile=None, format="text"):
+    def __init__(self, testclient, testcaseLogFile=None, testResultLogFile=None, format="text", xmlDir="xml-reports"):
         """
         Initialize the testcase execution engine, just the basics here
         @var testcaseLogFile: client log file
@@ -55,6 +55,8 @@ class TestCaseExecuteEngine(object):
             self.testResultLogFile = fp
         else:
             self.testResultLogFile = sys.stdout
+        if self.format == "xml"  and (xmlDir is not None):
+            self.xmlDir = xmlDir
             
     def loadTestsFromDir(self, testDirectory):
         """ Load the test suites from a package with multiple test files """
@@ -91,4 +93,4 @@ class TestCaseExecuteEngine(object):
             if self.format == "text":
                 unittest.TextTestRunner(stream=self.testResultLogFile, verbosity=2).run(self.suite)
             elif self.format == "xml":
-                xmlrunner.XMLTestRunner(output=self.testResultLogFile, verbose=True).run(self.suite)
+                xmlrunner.XMLTestRunner(output=self.xmlDir, verbose=True).run(self.suite)

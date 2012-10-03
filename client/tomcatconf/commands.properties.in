@@ -1,3 +1,20 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
 ### bitmap of permissions at the end of each classname, 1 = ADMIN, 2 = RESOURCE_DOMAIN_ADMIN, 4 = DOMAIN_ADMIN, 8 = USER
 ### Please standardize naming conventions to camel-case (even for acronyms).
 
@@ -19,6 +36,7 @@ listUsers=com.cloud.api.commands.ListUsersCmd;7
 ####lockUser=com.cloud.api.commands.LockUserCmd;7
 disableUser=com.cloud.api.commands.DisableUserCmd;7
 enableUser=com.cloud.api.commands.EnableUserCmd;7
+getUser=com.cloud.api.commands.GetUserCmd;1
 
 #### Domain commands
 createDomain=com.cloud.api.commands.CreateDomainCmd;1
@@ -339,7 +357,56 @@ updateRegion=com.cloud.api.commands.UpdateRegionCmd;1
 removeRegion=com.cloud.api.commands.RemoveRegionCmd;1
 listRegions=com.cloud.api.commands.ListRegionsCmd;7
 
+### Network Devices commands
+addNetworkDevice=com.cloud.api.commands.AddNetworkDeviceCmd;1
+listNetworkDevice=com.cloud.api.commands.ListNetworkDeviceCmd;1
+deleteNetworkDevice=com.cloud.api.commands.DeleteNetworkDeviceCmd;1
+
+### VPC commands
+createVPC=com.cloud.api.commands.CreateVPCCmd;15
+listVPCs=com.cloud.api.commands.ListVPCsCmd;15
+deleteVPC=com.cloud.api.commands.DeleteVPCCmd;15
+updateVPC=com.cloud.api.commands.UpdateVPCCmd;15
+restartVPC=com.cloud.api.commands.RestartVPCCmd;15
+
+#### VPC offering commands
+createVPCOffering=com.cloud.api.commands.CreateVPCOfferingCmd;1
+updateVPCOffering=com.cloud.api.commands.UpdateVPCOfferingCmd;1
+deleteVPCOffering=com.cloud.api.commands.DeleteVPCOfferingCmd;1
+listVPCOfferings=com.cloud.api.commands.ListVPCOfferingsCmd;15
+
+#### Private gateway commands
+createPrivateGateway=com.cloud.api.commands.CreatePrivateGatewayCmd;1
+listPrivateGateways=com.cloud.api.commands.ListPrivateGatewaysCmd;15
+deletePrivateGateway=com.cloud.api.commands.DeletePrivateGatewayCmd;1
+
+#### Network ACL commands
+createNetworkACL=com.cloud.api.commands.CreateNetworkACLCmd;15
+deleteNetworkACL=com.cloud.api.commands.DeleteNetworkACLCmd;15
+listNetworkACLs=com.cloud.api.commands.ListNetworkACLsCmd;15
+
+#### Static route commands
+createStaticRoute=com.cloud.api.commands.CreateStaticRouteCmd;15
+deleteStaticRoute=com.cloud.api.commands.DeleteStaticRouteCmd;15
+listStaticRoutes=com.cloud.api.commands.ListStaticRoutesCmd;15
+
 #### Tags commands
 createTags=com.cloud.api.commands.CreateTagsCmd;15
 deleteTags=com.cloud.api.commands.DeleteTagsCmd;15
 listTags=com.cloud.api.commands.ListTagsCmd;15
+<<<<<<< HEAD
+=======
+
+### Site-to-site VPN commands
+createVpnCustomerGateway=com.cloud.api.commands.CreateVpnCustomerGatewayCmd;15
+createVpnGateway=com.cloud.api.commands.CreateVpnGatewayCmd;15
+createVpnConnection=com.cloud.api.commands.CreateVpnConnectionCmd;15
+deleteVpnCustomerGateway=com.cloud.api.commands.DeleteVpnCustomerGatewayCmd;15
+deleteVpnGateway=com.cloud.api.commands.DeleteVpnGatewayCmd;15
+deleteVpnConnection=com.cloud.api.commands.DeleteVpnConnectionCmd;15
+updateVpnCustomerGateway=com.cloud.api.commands.UpdateVpnCustomerGatewayCmd;15
+resetVpnConnection=com.cloud.api.commands.ResetVpnConnectionCmd;15
+listVpnCustomerGateways=com.cloud.api.commands.ListVpnCustomerGatewaysCmd;15
+listVpnGateways=com.cloud.api.commands.ListVpnGatewaysCmd;15
+listVpnConnections=com.cloud.api.commands.ListVpnConnectionsCmd;15
+>>>>>>> master

@@ -157,21 +157,6 @@ def pingxenserver(session, args):
     return txt
 
 @echo
-def ipassoc(session, args):
-    sargs = args['args']
-    cmd = sargs.split(' ')
-    cmd.insert(0, "/opt/xensource/bin/ipassoc.sh")
-    cmd.insert(0, "/bin/bash")
-    try:
-        txt = util.pread2(cmd)
-        txt = 'success'
-    except:
-        util.SMlog("  ip associate failed "  )
-        txt = '' 
-
-    return txt
-
-@echo
 def vm_data(session, args):
     router_ip = args.pop('routerIP')
     vm_ip = args.pop('vmIP')
@@ -265,21 +250,6 @@ def saveDhcpEntry(session, args):
     return txt
     
 @echo
-def lt2p_vpn(session, args):
-    sargs = args['args']
-    cmd = sargs.split(' ')
-    cmd.insert(0, "/opt/xensource/bin/l2tp_vpn.sh")
-    cmd.insert(0, "/bin/bash")
-    try:
-        txt = util.pread2(cmd)
-        txt = 'success'
-    except:
-        util.SMlog("l2tp vpn failed "  )
-        txt = '' 
-
-    return txt    
-
-@echo
 def setLinkLocalIP(session, args):
     brName = args['brName']
     try:
@@ -323,6 +293,8 @@ def setLinkLocalIP(session, args):
         txt = '' 
     txt = 'success'
     return txt
+
+
     
 @echo
 def setFirewallRule(session, args):
@@ -338,6 +310,24 @@ def setFirewallRule(session, args):
         txt = '' 
 
     return txt
+    
+@echo
+def routerProxy(session, args):
+    sargs = args['args']
+    cmd = sargs.split(' ')
+    cmd.insert(0, "/opt/xensource/bin/router_proxy.sh")
+    cmd.insert(0, "/bin/bash")
+    try:
+        txt = util.pread2(cmd)
+        if txt is None or len(txt) == 0 :
+            txt = 'success'
+    except:
+        util.SMlog("routerProxy command " + sargs + " failed "  )
+        txt = '' 
+
+    return txt
+
+
 
 @echo
 def setLoadBalancerRule(session, args):
@@ -371,6 +361,26 @@ def createFile(session, args):
     return txt
 
 @echo
+def createFileInDomr(session, args):
+    file_path = args['filepath']
+    file_contents = args['filecontents']
+    domrip = args['domrip']
+    try:
+        tmpfile = util.pread2(['mktemp']).strip()
+        f = open(tmpfile, "w")
+        f.write(file_contents)
+        f.close()
+        target = "root@" + domrip + ":" + file_path
+        util.pread2(['scp','-P','3922','-q','-o','StrictHostKeyChecking=no','-i','/root/.ssh/id_rsa.cloud',tmpfile, target])
+        util.pread2(['rm',tmpfile])
+        txt = 'success'
+    except:
+        util.SMlog(" failed to create HA proxy cfg file ")
+        txt = ''
+
+    return txt
+
+@echo
 def deleteFile(session, args):
     file_path = args["filepath"]
 
@@ -385,19 +395,6 @@ def deleteFile(session, args):
     return txt
 
 
-@echo
-def networkUsage(session, args):
-    sargs = args['args']
-    cmd = sargs.split(' ')
-    cmd.insert(0, "/opt/xensource/bin/networkUsage.sh")
-    cmd.insert(0, "/bin/bash")
-    try:
-        txt = util.pread2(cmd)
-    except:
-        util.SMlog("  network usage error "  )
-        txt = '' 
-
-    return txt
     
 def get_private_nic(session, args):
     vms = session.xenapi.VM.get_all()
@@ -449,6 +446,19 @@ def can_bridge_firewall(session, args):
         util.pread2(['iptables', '-D', 'FORWARD',  '-j', 'RH-Firewall-1-INPUT'])
     except:
         util.SMlog('Chain BRIDGE-FIREWALL already exists')
+
+    try:
+        util.pread2(['iptables', '-N', 'BRIDGE-DEFAULT-FIREWALL'])
+        util.pread2(['iptables', '-A', 'BRIDGE-DEFAULT-FIREWALL', '-m', 'state', '--state', 'RELATED,ESTABLISHED', '-j', 'ACCEPT'])
+        util.pread2(['iptables', '-A', 'BRIDGE-DEFAULT-FIREWALL', '-m', 'physdev', '--physdev-is-bridged',  '-p', 'udp', '--dport', '67', '--sport', '68',  '-j', 'ACCEPT'])
+        util.pread2(['iptables', '-A', 'BRIDGE-DEFAULT-FIREWALL', '-m', 'physdev', '--physdev-is-bridged',  '-p', 'udp', '--dport', '68', '--sport', '67',  '-j', 'ACCEPT'])
+        util.pread2(['iptables', '-I', 'BRIDGE-FIREWALL', '-j', 'BRIDGE-DEFAULT-FIREWALL'])
+        util.pread2(['iptables', '-D', 'BRIDGE-FIREWALL', '-m', 'state', '--state', 'RELATED,ESTABLISHED', '-j', 'ACCEPT'])
+        util.pread2(['iptables', '-D', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged',  '-p', 'udp', '--dport', '67', '--sport', '68',  '-j', 'ACCEPT'])
+        util.pread2(['iptables', '-D', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged',  '-p', 'udp', '--dport', '68', '--sport', '67',  '-j', 'ACCEPT'])
+    except:
+        util.SMlog('Chain BRIDGE-DEFAULT-FIREWALL already exists')
+
     privnic = get_private_nic(session, args)
     result = 'true'
     try:
@@ -847,11 +857,6 @@ def default_network_rules(session, args):
         for v in vifs:
             util.pread2(['iptables', '-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', v, '-j', vmchain_default])
             util.pread2(['iptables', '-I', 'BRIDGE-FIREWALL', '2', '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '-j', vmchain_default])
-        util.pread2(['iptables', '-A', vmchain_default, '-m', 'state', '--state', 'RELATED,ESTABLISHED', '-j', 'ACCEPT'])
-        #allow dhcp
-        for v in vifs:
-            util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '-p', 'udp', '--dport', '67', '--sport', '68',  '-j', 'ACCEPT'])
-            util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', v, '-p', 'udp', '--dport', '68', '--sport', '67',  '-j', 'ACCEPT'])
 
         #don't let vm spoof its ip address
         for v in vifs:
@@ -859,8 +864,6 @@ def default_network_rules(session, args):
             util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '--source', '!', vm_ip, '-j', 'DROP'])
             util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', v, '--destination', '!', vm_ip, '-j', 'DROP'])
             util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '--source', vm_ip, '-j', vmchain_egress])
-        
-        for v in vifs:
             util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', v,  '-j', vmchain])
     except:
         util.SMlog("Failed to program default rules for vm " + vm_name)
@@ -957,7 +960,7 @@ def network_rules_for_rebooted_vm(session, vmName):
 
     for v in vifs:
         util.pread2(['iptables', '-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', v, '-j', vmchain_default])
-        util.pread2(['iptables', '-I', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '-j', vmchain_default])
+        util.pread2(['iptables', '-I', 'BRIDGE-FIREWALL', '2', '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '-j', vmchain_default])
 
     #change antispoof rule in vmchain
     try:
@@ -1117,17 +1120,13 @@ def cleanup_rules(session, args):
     cleaned = 0
     cleanup = []
     for chain in vmchains:
-        vm = session.xenapi.VM.get_by_name_label(chain)
-        if len(vm) != 1:
-            vm = session.xenapi.VM.get_by_name_label(chain + "-untagged")
-            if len(vm) != 1:
-                util.SMlog("chain " + chain + " does not correspond to a vm, cleaning up")
+        vmname = chain
+        if vmname not in resident_vms:
+            vmname = chain + "-untagged"
+            if vmname not in resident_vms:
+                util.SMlog("vm " + chain + " is not running on this host, cleaning up")
                 cleanup.append(chain)
-                continue
-        if chain not in resident_vms:
-            util.SMlog("vm " + chain + " is not running, cleaning up")
-            cleanup.append(chain)
-                
+
     for vm_name in cleanup:
         destroy_network_rules_for_vm(session, {'vmName':vm_name})
                     
@@ -1410,10 +1409,20 @@ def network_rules(session, args):
             cmds.append(iptables)
             util.SMlog(iptables)
       
-    vmchain = chain_name(vm_name)        
-    util.pread2(['iptables', '-F', vmchain])
-    egress_vmchain = egress_chain_name(vm_name)        
-    util.pread2(['iptables', '-F', egress_vmchain])
+    vmchain = chain_name(vm_name)
+    try:
+        util.pread2(['iptables', '-F', vmchain])
+    except:
+        util.SMlog("Ignoring failure to delete chain " + vmchain)
+        util.pread2(['iptables', '-N', vmchain])
+
+    egress_vmchain = egress_chain_name(vm_name)
+    try:
+        util.pread2(['iptables', '-F', egress_vmchain])
+    except:
+        util.SMlog("Ignoring failure to delete chain " + egress_vmchain)
+        util.pread2(['iptables', '-N', egress_vmchain])
+
     
     for cmd in cmds:
         util.pread2(cmd)
@@ -1433,20 +1442,6 @@ def network_rules(session, args):
     util.SMlog("Failed to network rule !")
 
 @echo
-def checkRouter(session, args):
-    sargs = args['args']
-    cmd = sargs.split(' ')
-    cmd.insert(0, "/opt/xensource/bin/getRouterStatus.sh")
-    cmd.insert(0, "/bin/bash")
-    try:
-        txt = util.pread2(cmd)
-    except:
-        util.SMlog("  check router status fail! ")
-        txt = '' 
-
-    return txt
-
-@echo
 def bumpUpPriority(session, args):
     sargs = args['args']
     cmd = sargs.split(' ')
@@ -1461,33 +1456,21 @@ def bumpUpPriority(session, args):
 
     return txt
 
-@echo
-def getDomRVersion(session, args):
-    sargs = args['args']
-    cmd = sargs.split(' ')
-    cmd.insert(0, "/opt/xensource/bin/getDomRVersion.sh")
-    cmd.insert(0, "/bin/bash")
-    try:
-        txt = util.pread2(cmd)
-    except:
-        util.SMlog("  get domR version fail! ")
-        txt = '' 
-
-    return txt
 
 if __name__ == "__main__":
      XenAPIPlugin.dispatch({"pingtest": pingtest, "setup_iscsi":setup_iscsi, "gethostvmstats": gethostvmstats, 
                             "getvncport": getvncport, "getgateway": getgateway, "preparemigration": preparemigration, 
                             "setIptables": setIptables, "pingdomr": pingdomr, "pingxenserver": pingxenserver,  
-                            "ipassoc": ipassoc, "vm_data": vm_data, "savePassword": savePassword, 
-                            "saveDhcpEntry": saveDhcpEntry, "setFirewallRule": setFirewallRule, 
+                            "vm_data": vm_data, "savePassword": savePassword, 
+                            "saveDhcpEntry": saveDhcpEntry, "setFirewallRule": setFirewallRule, "routerProxy": routerProxy, 
                             "setLoadBalancerRule": setLoadBalancerRule, "createFile": createFile, "deleteFile": deleteFile, 
-                            "networkUsage": networkUsage, "network_rules":network_rules, 
+                            "network_rules":network_rules, 
                             "can_bridge_firewall":can_bridge_firewall, "default_network_rules":default_network_rules,
                             "destroy_network_rules_for_vm":destroy_network_rules_for_vm, 
                             "default_network_rules_systemvm":default_network_rules_systemvm, 
                             "get_rule_logs_for_vms":get_rule_logs_for_vms, 
-                            "setLinkLocalIP":setLinkLocalIP, "lt2p_vpn":lt2p_vpn,
-                            "cleanup_rules":cleanup_rules, "checkRouter":checkRouter,
-                            "bumpUpPriority":bumpUpPriority, "getDomRVersion":getDomRVersion,
+                            "setLinkLocalIP":setLinkLocalIP,
+                            "cleanup_rules":cleanup_rules,
+                            "bumpUpPriority":bumpUpPriority,
+                            "createFileInDomr":createFileInDomr,
                             "kill_copy_process":kill_copy_process})

@@ -199,7 +199,7 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
     }
 
     @Override
-    public long getSourceIpAddressId() {
+    public Long getSourceIpAddressId() {
         return ipAddressId;
     }
 
@@ -301,6 +301,11 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
 	@Override
     public AsyncJob.Type getInstanceType() {
         return AsyncJob.Type.FirewallRule;
+    }
+	
+    @Override
+    public TrafficType getTrafficType() {
+        return null;
     }
 
 }

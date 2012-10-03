@@ -1,17 +1,26 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
 #### usage commands
 generateUsageRecords=com.cloud.api.commands.GenerateUsageRecordsCmd;1
 listUsageRecords=com.cloud.api.commands.GetUsageRecordsCmd;1
 listUsageTypes=com.cloud.api.commands.ListUsageTypesCmd;1
 
-#### external firewall commands
-addExternalFirewall=com.cloud.api.commands.AddExternalFirewallCmd;1
-deleteExternalFirewall=com.cloud.api.commands.DeleteExternalFirewallCmd;1
-listExternalFirewalls=com.cloud.api.commands.ListExternalFirewallsCmd;1
 
-#### external loadbalancer commands
-addExternalLoadBalancer=com.cloud.api.commands.AddExternalLoadBalancerCmd;1
-deleteExternalLoadBalancer=com.cloud.api.commands.DeleteExternalLoadBalancerCmd;1
-listExternalLoadBalancers=com.cloud.api.commands.ListExternalLoadBalancersCmd;1
 
 ### Network Devices commands
 addNetworkDevice=com.cloud.api.commands.AddNetworkDeviceCmd;1
@@ -23,16 +32,4 @@ addTrafficMonitor=com.cloud.api.commands.AddTrafficMonitorCmd;1
 deleteTrafficMonitor=com.cloud.api.commands.DeleteTrafficMonitorCmd;1
 listTrafficMonitors=com.cloud.api.commands.ListTrafficMonitorsCmd;1
 
-####Netapp integration commands
-createVolumeOnFiler=com.cloud.api.commands.netapp.CreateVolumeOnFilerCmd;15
-destroyVolumeOnFiler=com.cloud.api.commands.netapp.DestroyVolumeOnFilerCmd;15
-listVolumesOnFiler=com.cloud.api.commands.netapp.ListVolumesOnFilerCmd;15
-createLunOnFiler=com.cloud.api.commands.netapp.CreateLunCmd;15
-destroyLunOnFiler=com.cloud.api.commands.netapp.DestroyLunCmd;15
-listLunsOnFiler=com.cloud.api.commands.netapp.ListLunsCmd;15
-associateLun=com.cloud.api.commands.netapp.AssociateLunCmd;15
-dissociateLun=com.cloud.api.commands.netapp.DissociateLunCmd;15
-createPool=com.cloud.api.commands.netapp.CreateVolumePoolCmd;15
-deletePool=com.cloud.api.commands.netapp.DeleteVolumePoolCmd;15
-modifyPool=com.cloud.api.commands.netapp.ModifyVolumePoolCmd;15
-listPools=com.cloud.api.commands.netapp.ListVolumePoolsCmd;15
+

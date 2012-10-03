@@ -30,6 +30,7 @@ import com.cloud.api.response.VirtualRouterProviderResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.VirtualRouterProvider;
+import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
 import com.cloud.network.element.VirtualRouterElementService;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
@@ -96,7 +97,7 @@ public class CreateVirtualRouterElementCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void create() throws ResourceAllocationException {
-        VirtualRouterProvider result = _service.addElement(getNspId());
+        VirtualRouterProvider result = _service.addElement(getNspId(), VirtualRouterProviderType.VirtualRouter);
         if (result != null) {
             setEntityId(result.getId());
         } else {

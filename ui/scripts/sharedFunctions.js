@@ -265,10 +265,6 @@ cloudStack.actionFilter = {
     var jsonObj = args.context.item;
 		var allowedActions = [];
 
-    if (!isAdmin()) {
-      return [];
-    }
-
 		if(jsonObj.type == 'Isolated') {
 		  allowedActions.push('edit');		//only Isolated network can be upgraded
 		}
@@ -404,11 +400,54 @@ cloudStack.converters = {
       case 2: return cloudStack.converters.convertBytes(value);
       case 3: return cloudStack.converters.convertBytes(value);
       case 6: return cloudStack.converters.convertBytes(value);
+      case 9: return cloudStack.converters.convertBytes(value);
       case 11: return cloudStack.converters.convertBytes(value);
     }
 
     return value;
   }
+}
+
+//data parameter passed to API call in listView
+function listViewDataProvider(args, data) {   
+  //search 
+	if(args.filterBy != null) {				    
+		if(args.filterBy.advSearch != null && typeof(args.filterBy.advSearch) == "object") { //advanced search		  
+			for(var key in args.filterBy.advSearch) {	
+				if(key == 'tagKey' && args.filterBy.advSearch[key].length > 0) {
+				  $.extend(data, {
+					  'tags[0].key': args.filterBy.advSearch[key]
+					});
+				}	
+				else if(key == 'tagValue' && args.filterBy.advSearch[key].length > 0) {
+				  $.extend(data, {
+					  'tags[0].value': args.filterBy.advSearch[key]
+					});					
+				}	
+				else if(args.filterBy.advSearch[key] != null && args.filterBy.advSearch[key].length > 0) {				  
+					data[key] = args.filterBy.advSearch[key]; //do NOT use  $.extend(data, { key: args.filterBy.advSearch[key] }); which will treat key variable as "key" string 
+        }					
+			}			
+		}		
+		else if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) { //basic search
+			switch(args.filterBy.search.by) {
+			  case "name":
+				  if(args.filterBy.search.value.length > 0) {
+				    $.extend(data, {
+					    keyword: args.filterBy.search.value
+					  });					
+				  }
+				  break;
+			}
+		}		
+	}
+
+	//pagination
+	$.extend(data, {
+	  listAll: true,
+		page: args.page,
+		pagesize: pageSize		
+	});	
 }
 
 //find service object in network object
@@ -472,6 +511,31 @@ function SharedMountPointURL(server, path) {
 		url = "SharedMountPoint://" + server + path;
 	else
 		url = server + path;
+	return url;
+}
+
+function rbdURL(monitor, pool, id, secret) {
+	var url;
+
+	/*
+	Replace the + and / symbols by - and _ to have URL-safe base64 going to the API
+	It's hacky, but otherwise we'll confuse java.net.URI which splits the incoming URI
+	*/
+	secret = secret.replace("+", "-");
+	secret = secret.replace("/", "_");
+
+	if (id != null && secret != null) {
+		monitor = id + ":" + secret + "@" + monitor;
+	}
+
+	if(pool.substring(0,1) != "/")
+		pool = "/" + pool;
+
+	if(monitor.indexOf("://")==-1)
+		url = "rbd://" + monitor + pool;
+	else
+		url = monitor + pool;
+
 	return url;
 }
 
@@ -617,5 +681,91 @@ cloudStack.api = {
         }
       }
     }
+  },
+
+  tags: function(args) {
+    var resourceType = args.resourceType;
+    var contextId = args.contextId;
+    
+    return {
+      actions: {
+        add: function(args) {
+          var data = args.data;
+          var resourceId = args.context[contextId][0].id;
+
+          $.ajax({
+            url: createURL(
+              'createTags&tags[0].key=' + data.key + '&tags[0].value=' + data.value
+            ),
+            data: {
+              resourceIds: resourceId,
+              resourceType: resourceType
+            },
+            success: function(json) {
+              args.response.success({
+                _custom: { jobId: json.createtagsresponse.jobid },
+                notification: {
+                  desc: 'Add tag for ' + resourceType,
+                  poll: pollAsyncJobResult
+                }
+              });
+            }
+          });
+        },
+
+        remove: function(args) {
+          var data = args.context.tagItems[0];
+          var resourceId = args.context[contextId][0].id;
+
+          $.ajax({
+            url: createURL(
+              'deleteTags&tags[0].key=' + data.key + '&tags[0].value=' + data.value
+            ),
+            data: {
+              resourceIds: resourceId,
+              resourceType: resourceType
+            },
+            success: function(json) {
+              args.response.success({
+                _custom: { jobId: json.deletetagsresponse.jobid },
+                notification: {
+                  desc: 'Remove tag for ' + resourceType,
+                  poll: pollAsyncJobResult
+                }
+              });
+            }
+          });
+        }
+      },
+      dataProvider: function(args) {
+        var resourceId = args.context[contextId][0].id;
+        var data = {
+          resourceId: resourceId,
+          resourceType: resourceType
+        };
+
+        if (isAdmin() || isDomainAdmin()) {
+          data.listAll = true;
+        }
+
+        if (args.context.projects) {
+          data.projectid=args.context.projects[0].id;
+        }
+        
+        $.ajax({
+          url: createURL('listTags'),
+          data: data,
+          success: function(json) {
+            args.response.success({
+              data: json.listtagsresponse ?
+                json.listtagsresponse.tag : []
+            });
+          },
+          error: function(json) {
+            args.response.error(parseXMLHttpResponse(json));
+          }
+        });
+      }
+    };
   }
 };

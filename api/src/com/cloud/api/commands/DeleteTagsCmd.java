@@ -6,7 +6,7 @@
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
 //
-// http:www.apache.org/licenses/LICENSE-2.0
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
+
 package com.cloud.api.commands;
 
 import java.util.Collection;
@@ -33,18 +33,12 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
-import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.TaggedResourceType;
-
-/**
- * @author Alena Prokharchyk
- */
-
 @Implementation(description = "Deleting resource tag(s)", responseObject = SuccessResponse.class, since = "Burbank")
 public class DeleteTagsCmd extends BaseAsyncCmd{
     public static final Logger s_logger = Logger.getLogger(DeleteTagsCmd.class.getName());
 
-    private static final String s_name = "deleteTagsresponse";
+    private static final String s_name = "deletetagsresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////

@@ -22,7 +22,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseListProjectAndAccountResourcesCmd;
+import com.cloud.api.BaseListTaggedResourcesCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -31,8 +31,9 @@ import com.cloud.api.response.ListResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.network.IpAddress;
 
+
 @Implementation(description="Lists all public ip addresses", responseObject=IPAddressResponse.class)
-public class ListPublicIpAddressesCmd extends BaseListProjectAndAccountResourcesCmd {
+public class ListPublicIpAddressesCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListPublicIpAddressesCmd.class.getName());
 
     private static final String s_name = "listpublicipaddressesresponse";
@@ -78,6 +79,10 @@ public class ListPublicIpAddressesCmd extends BaseListProjectAndAccountResources
     
     @Parameter(name=ApiConstants.IS_STATIC_NAT, type=CommandType.BOOLEAN, description="list only static nat ip addresses")
     private Boolean isStaticNat;
+    
+    @IdentityMapper(entityTableName="vpc")
+    @Parameter(name=ApiConstants.VPC_ID, type=CommandType.LONG, description="List ips belonging to the VPC")
+    private Long vpcId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -120,6 +125,10 @@ public class ListPublicIpAddressesCmd extends BaseListProjectAndAccountResources
 
 	public Boolean getIsStaticNat() {
 		return isStaticNat;
+	}
+
+	public Long getVpcId() {
+        return vpcId;
 	}
 
 	/////////////////////////////////////////////////////

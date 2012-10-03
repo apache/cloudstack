@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-//
+// 
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -65,6 +65,7 @@ import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network;
+import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Network.State;
@@ -98,7 +99,6 @@ import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
@@ -588,10 +588,10 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         String already = _configDao.getValue("ssh.privatekey");
         String homeDir = null;
         homeDir = Script.runSimpleBashScript("echo ~" + username);
-        if (homeDir == null) {
+        	if (homeDir == null) {
             throw new CloudRuntimeException("Cannot get home directory for account: " + username);
         }
-
+        
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Processing updateKeyPairs");
         }
@@ -875,16 +875,22 @@ public class ConfigurationServerImpl implements ConfigurationServer {
     @DB
     protected void createDefaultNetworkOfferings() {
 
-        NetworkOfferingVO publicNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemPublicNetwork, TrafficType.Public, true);
+        NetworkOfferingVO publicNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemPublicNetwork, 
+                TrafficType.Public, true);
         publicNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(publicNetworkOffering);
-        NetworkOfferingVO managementNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemManagementNetwork, TrafficType.Management, false);
+        NetworkOfferingVO managementNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemManagementNetwork, 
+                TrafficType.Management, false);
         managementNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(managementNetworkOffering);
-        NetworkOfferingVO controlNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemControlNetwork, TrafficType.Control, false);
+        NetworkOfferingVO controlNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemControlNetwork, 
+                TrafficType.Control, false);
         controlNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(controlNetworkOffering);
-        NetworkOfferingVO storageNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemStorageNetwork, TrafficType.Storage, true);
+        NetworkOfferingVO storageNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemStorageNetwork, 
+                TrafficType.Storage, true);
         storageNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(storageNetworkOffering);
+        NetworkOfferingVO privateGatewayNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemPrivateGatewayNetworkOffering, GuestType.Isolated);
+        privateGatewayNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(privateGatewayNetworkOffering);
 
-        // populate providers
+        //populate providers
         Map<Network.Service, Network.Provider> defaultSharedNetworkOfferingProviders = new HashMap<Network.Service, Network.Provider>();
         defaultSharedNetworkOfferingProviders.put(Service.Dhcp, Provider.VirtualRouter);
         defaultSharedNetworkOfferingProviders.put(Service.Dns, Provider.VirtualRouter);
@@ -969,7 +975,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         defaultIsolatedSourceNatEnabledNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultIsolatedSourceNatEnabledNetworkOffering);
 
         for (Service service : defaultIsolatedSourceNatEnabledNetworkOfferingProviders.keySet()) {
-            NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(defaultIsolatedSourceNatEnabledNetworkOffering.getId(), service, defaultIsolatedSourceNatEnabledNetworkOfferingProviders.get(service));
+            NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO
+                    (defaultIsolatedSourceNatEnabledNetworkOffering.getId(), service, defaultIsolatedSourceNatEnabledNetworkOfferingProviders.get(service));
             _ntwkOfferingServiceMapDao.persist(offService);
             s_logger.trace("Added service for the network offering: " + offService);
         }
@@ -1007,6 +1014,67 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             _ntwkOfferingServiceMapDao.persist(offService);
             s_logger.trace("Added service for the network offering: " + offService);
         }
+        
+        // Offering #6
+        NetworkOfferingVO defaultNetworkOfferingForVpcNetworks = new NetworkOfferingVO(
+                NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworks,
+                "Offering for Isolated Vpc networks with Source Nat service enabled",
+                TrafficType.Guest,
+                false, false, null, null, true, Availability.Optional,
+                null, Network.GuestType.Isolated, false, false);
+
+        defaultNetworkOfferingForVpcNetworks.setState(NetworkOffering.State.Enabled);
+        defaultNetworkOfferingForVpcNetworks = _networkOfferingDao.persistDefaultNetworkOffering(defaultNetworkOfferingForVpcNetworks);
+        
+        Map<Network.Service, Network.Provider> defaultVpcNetworkOfferingProviders = new HashMap<Network.Service, Network.Provider>();
+        defaultVpcNetworkOfferingProviders.put(Service.Dhcp, Provider.VPCVirtualRouter);
+        defaultVpcNetworkOfferingProviders.put(Service.Dns, Provider.VPCVirtualRouter);
+        defaultVpcNetworkOfferingProviders.put(Service.UserData, Provider.VPCVirtualRouter);
+        defaultVpcNetworkOfferingProviders.put(Service.NetworkACL, Provider.VPCVirtualRouter);
+        defaultVpcNetworkOfferingProviders.put(Service.Gateway, Provider.VPCVirtualRouter);
+        defaultVpcNetworkOfferingProviders.put(Service.Lb, Provider.VPCVirtualRouter);
+        defaultVpcNetworkOfferingProviders.put(Service.SourceNat, Provider.VPCVirtualRouter);
+        defaultVpcNetworkOfferingProviders.put(Service.StaticNat, Provider.VPCVirtualRouter);
+        defaultVpcNetworkOfferingProviders.put(Service.PortForwarding, Provider.VPCVirtualRouter);
+        defaultVpcNetworkOfferingProviders.put(Service.Vpn, Provider.VPCVirtualRouter);
+        
+        for (Service service : defaultVpcNetworkOfferingProviders.keySet()) {
+            NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO
+                    (defaultNetworkOfferingForVpcNetworks.getId(), service, defaultVpcNetworkOfferingProviders.get(service));
+            _ntwkOfferingServiceMapDao.persist(offService);
+            s_logger.trace("Added service for the network offering: " + offService);
+        }
+        
+        // Offering #7
+        NetworkOfferingVO defaultNetworkOfferingForVpcNetworksNoLB = new NetworkOfferingVO(
+                NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworksNoLB,
+                "Offering for Isolated Vpc networks with Source Nat service enabled and LB service Disabled",
+                TrafficType.Guest,
+                false, false, null, null, true, Availability.Optional,
+                null, Network.GuestType.Isolated, false, false);
+
+        defaultNetworkOfferingForVpcNetworksNoLB.setState(NetworkOffering.State.Enabled);
+        defaultNetworkOfferingForVpcNetworksNoLB = _networkOfferingDao.persistDefaultNetworkOffering(defaultNetworkOfferingForVpcNetworksNoLB);
+        
+        Map<Network.Service, Network.Provider> defaultVpcNetworkOfferingProvidersNoLB = new HashMap<Network.Service, Network.Provider>();
+        defaultVpcNetworkOfferingProvidersNoLB.put(Service.Dhcp, Provider.VPCVirtualRouter);
+        defaultVpcNetworkOfferingProvidersNoLB.put(Service.Dns, Provider.VPCVirtualRouter);
+        defaultVpcNetworkOfferingProvidersNoLB.put(Service.UserData, Provider.VPCVirtualRouter);
+        defaultVpcNetworkOfferingProvidersNoLB.put(Service.NetworkACL, Provider.VPCVirtualRouter);
+        defaultVpcNetworkOfferingProvidersNoLB.put(Service.Gateway, Provider.VPCVirtualRouter);
+        defaultVpcNetworkOfferingProvidersNoLB.put(Service.SourceNat, Provider.VPCVirtualRouter);
+        defaultVpcNetworkOfferingProvidersNoLB.put(Service.StaticNat, Provider.VPCVirtualRouter);
+        defaultVpcNetworkOfferingProvidersNoLB.put(Service.PortForwarding, Provider.VPCVirtualRouter);
+        defaultVpcNetworkOfferingProvidersNoLB.put(Service.Vpn, Provider.VPCVirtualRouter);
+        
+        for (Service service : defaultVpcNetworkOfferingProvidersNoLB.keySet()) {
+            NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO
+                    (defaultNetworkOfferingForVpcNetworksNoLB.getId(), service, defaultVpcNetworkOfferingProvidersNoLB.get(service));
+            _ntwkOfferingServiceMapDao.persist(offService);
+            s_logger.trace("Added service for the network offering: " + offService);
+        }
+        
+        
         
         txn.commit();
     }
@@ -1062,8 +1130,9 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                     }
 
                     if (broadcastDomainType != null) {
-                        NetworkVO network = new NetworkVO(id, trafficType, mode, broadcastDomainType, networkOfferingId, domainId, accountId, related, null, null, networkDomain, Network.GuestType.Shared, zoneId, null,
-                                null, specifyIpRanges);
+                        NetworkVO network = new NetworkVO(id, trafficType, mode, broadcastDomainType, networkOfferingId,
+                                domainId, accountId, related, null, null, networkDomain, Network.GuestType.Shared, zoneId, null,
+                                null, specifyIpRanges, null);
                         network.setGuruName(guruNames.get(network.getTrafficType()));
                         network.setDns1(zone.getDns1());
                         network.setDns2(zone.getDns2());

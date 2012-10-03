@@ -16,10 +16,6 @@
 // under the License.
 package com.cloud.capacity;
 
-/**
- * @author ahuang
- * 
- */
 public interface Capacity {
     public static final short CAPACITY_TYPE_MEMORY = 0;
     public static final short CAPACITY_TYPE_CPU = 1;

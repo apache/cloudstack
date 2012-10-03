@@ -1,1 +1,0 @@
-Can be found at : http://wiki.cloudstack.org/display/QA/Testing+with+python

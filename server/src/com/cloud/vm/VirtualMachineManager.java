@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-//
+// 
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -16,9 +16,12 @@
 // under the License.
 package com.cloud.vm;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.agent.api.to.NicTO;
+import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.AgentUnavailableException;
@@ -30,6 +33,7 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.Network;
 import com.cloud.network.NetworkVO;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
@@ -135,5 +139,41 @@ public interface VirtualMachineManager extends Manager {
      * @return
      */
     boolean upgradeVmDb(long vmId, long serviceOfferingId);
+
+    /**
+     * @param vm
+     * @param network
+     * @param requested TODO
+     * @return
+     * @throws ConcurrentOperationException
+     * @throws ResourceUnavailableException
+     * @throws InsufficientCapacityException
+     */
+    NicProfile addVmToNetwork(VirtualMachine vm, Network network, NicProfile requested) throws ConcurrentOperationException, 
+                ResourceUnavailableException, InsufficientCapacityException;
+
+    /**
+     * @param vm
+     * @param network
+     * @param broadcastUri TODO
+     * @return
+     * @throws ResourceUnavailableException 
+     * @throws ConcurrentOperationException 
+     */
+    boolean removeVmFromNetwork(VirtualMachine vm, Network network, URI broadcastUri) throws ConcurrentOperationException, ResourceUnavailableException;
+
+    /**
+     * @param nic
+     * @param hypervisorType
+     * @return
+     */
+    NicTO toNicTO(NicProfile nic, HypervisorType hypervisorType);
+
+    /**
+     * @param profile
+     * @param hvGuru
+     * @return
+     */
+    VirtualMachineTO toVmTO(VirtualMachineProfile<? extends VMInstanceVO> profile);
 
 }

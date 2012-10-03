@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-//
+// 
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -136,7 +136,8 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override
-    public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws InsufficientVirtualNetworkCapcityException,
+    public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) 
+            throws InsufficientVirtualNetworkCapcityException,
     InsufficientAddressCapacityException, ConcurrentOperationException {
 
         DataCenter dc = _dcDao.findById(network.getDataCenterId());       
@@ -176,7 +177,8 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override
-    public Network implement(Network network, NetworkOffering offering, DeployDestination destination, ReservationContext context) throws InsufficientVirtualNetworkCapcityException {
+    public Network implement(Network network, NetworkOffering offering, DeployDestination destination, ReservationContext context)
+            throws InsufficientVirtualNetworkCapcityException {
         return network;
     }
 
@@ -198,6 +200,10 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
             txn.commit();
         }
         nic.deallocate();
+        
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Deallocated nic: " + nic);
+        }
     }
 
     @Override

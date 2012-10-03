@@ -22,7 +22,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseListProjectAndAccountResourcesCmd;
+import com.cloud.api.BaseListTaggedResourcesCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -32,7 +32,7 @@ import com.cloud.network.Network;
 
 
 @Implementation(description="Lists all available networks.", responseObject=NetworkResponse.class)
-public class ListNetworksCmd extends BaseListProjectAndAccountResourcesCmd {
+public class ListNetworksCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListNetworksCmd.class.getName());
     private static final String _name = "listnetworksresponse";
 
@@ -66,14 +66,22 @@ public class ListNetworksCmd extends BaseListProjectAndAccountResourcesCmd {
     @Parameter(name=ApiConstants.SUPPORTED_SERVICES, type=CommandType.LIST, collectionType=CommandType.STRING, description="list networks supporting certain services")
     private List<String> supportedServices;
     
-    @Parameter(name=ApiConstants.RESTART_REQUIRED, type=CommandType.BOOLEAN, description="list networks by restartRequired option")
+    @Parameter(name=ApiConstants.RESTART_REQUIRED, type=CommandType.BOOLEAN, description="list networks by restartRequired")
+    
     private Boolean restartRequired;
     
     @Parameter(name=ApiConstants.SPECIFY_IP_RANGES, type=CommandType.BOOLEAN, description="true if need to list only networks which support specifying ip ranges")
     private Boolean specifyIpRanges;
     
+    @IdentityMapper(entityTableName="vpc")
+    @Parameter(name=ApiConstants.VPC_ID, type=CommandType.LONG, description="List networks by VPC")
+    private Long vpcId;
+
     @Parameter(name=ApiConstants.CAN_USE_FOR_DEPLOY, type=CommandType.BOOLEAN, description="list networks available for vm deployment")
     private Boolean canUseForDeploy;
+    
+    @Parameter(name=ApiConstants.FOR_VPC, type=CommandType.BOOLEAN, description="the network belongs to vpc")
+    private Boolean forVpc;
    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -118,9 +126,17 @@ public class ListNetworksCmd extends BaseListProjectAndAccountResourcesCmd {
     public Boolean getSpecifyIpRanges() {
     	return specifyIpRanges;
     }
-    
+
+	public Long getVpcId() {
+        return vpcId;
+	}
+	
 	public Boolean canUseForDeploy() {
         return canUseForDeploy;
+    }
+	
+    public Boolean getForVpc() {
+        return forVpc;
     }
 
     /////////////////////////////////////////////////////

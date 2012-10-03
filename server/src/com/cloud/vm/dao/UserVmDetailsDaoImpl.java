@@ -39,7 +39,7 @@ public class UserVmDetailsDaoImpl extends GenericDaoBase<UserVmDetailVO, Long> i
         VmSearch.done();
 		
 		DetailSearch = createSearchBuilder();
-        DetailSearch.and("hostId", DetailSearch.entity().getVmId(), SearchCriteria.Op.EQ);
+        DetailSearch.and("vmId", DetailSearch.entity().getVmId(), SearchCriteria.Op.EQ);
         DetailSearch.and("name", DetailSearch.entity().getName(), SearchCriteria.Op.EQ);
         DetailSearch.done();
 	}

@@ -16,18 +16,15 @@
 // under the License.
 package com.cloud.bridge.persist.dao;
 
-import com.cloud.bridge.model.SObjectItem;
-import com.cloud.bridge.persist.EntityDao;
+import java.util.List;
 
-/**
- * @author Kelven Yang
- */
-public class SObjectItemDao extends EntityDao<SObjectItem> {
-	public SObjectItemDao() {
-		super(SObjectItem.class);
-	}
-	
-	public SObjectItem getByObjectIdNullVersion(long id) {
-		return queryEntity("from SObjectItem where theObject=? and version is null", new Object[] { id });
-	}
+import com.cloud.bridge.model.SObjectItemVO;
+import com.cloud.utils.db.GenericDao;
+
+public interface SObjectItemDao extends GenericDao<SObjectItemVO, Long> {
+
+    SObjectItemVO getByObjectIdNullVersion(long id);
+
+    List<SObjectItemVO> getItems(long sobjectID);
+
 }

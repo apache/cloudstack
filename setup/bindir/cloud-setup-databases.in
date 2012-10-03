@@ -69,7 +69,7 @@ class DBDeployer(object):
     dbDotProperties = {}
     dbDotPropertiesIndex = 0
     encryptionKeyFile = '@MSCONF@/key'
-    encryptionJarPath = '@JAVADIR@/cloud-jasypt-1.8.jar'
+    encryptionJarPath = '@JAVADIR@/jasypt-1.9.0.jar'
     success = False
     magicString = 'This_is_a_magic_string_i_think_no_one_will_duplicate'
     tmpMysqlFile = os.path.join(os.path.expanduser('~/'), 'cloudstackmysql.tmp.sql')
@@ -475,8 +475,15 @@ for example:
                 self.errorAndExit("There are more than one parameters for user:password@hostname (%s)"%self.args)
             
             arg = self.args[0]
-            stuff = arg.split("@", 1)
-            if len(stuff) == 1: stuff.append("localhost")
+            try:
+                splitIndex = arg.rindex('@')
+            except ValueError:
+                # If it failed to find @, use host=localhost
+                splitIndex = len(arg)
+                arg += "@localhost"
+            finally:
+                stuff = [arg[:splitIndex], arg[splitIndex+1:]]
+
             self.user,self.password = parseUserAndPassword(stuff[0])
             self.host,self.port = parseHostInfo(stuff[1])
             

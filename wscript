@@ -1,10 +1,30 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 
-# the following two variables are used by the target "waf dist"
-# if you change 'em here, you need to change it also in cloud.spec, add a %changelog entry there, and add an entry in debian/changelog
-VERSION = '3.0.3.2012-05-15T19:32:03Z'
 
+# the following variables are used by the target "waf dist"
+# if you change APPNAME here, you need to change 'Name' also 
+# in cloud.spec, add a %changelog entry there, and add an 
+# entry in debian/changelog. SHORTVERSION is used in package
+# naming for deb/rpm, VERSION is used for tarball and bin 
+VERSION = '4.0.0.2012-08-15T18:03:12Z'
+SHORTVERSION = '4.0.0'
 APPNAME = 'cloud'
 
 import shutil,os
@@ -63,6 +83,14 @@ for pattern in ["**/.project","**/.classpath","**/.pydevproject"]: Node.exclude_
 
 # Support functions
 
+def distclean(ctx):
+   """Clear the build artifacts"""
+   for root, folder, files in os.walk(blddir):
+       for f in files:
+           path = os.path.join(root, f)
+           print "Removing artifact %s"%path
+           os.remove(path)
+
 def inspectobj(x):
 	"""Look inside an object"""
 	for m in dir(x): print m,":	",getattr(x,m)
@@ -85,23 +113,7 @@ def getrpmdeps():
 		yield "rpm-build"
 
 	deps = set(rpmdeps(_glob("./*.spec")))
-	return deps
-
-def getdebdeps():
-	def debdeps(fileset):
-		for f in fileset:
-			lines = file(f).readlines()
-			lines = [ x[len("Build-Depends: "):] for x in lines if x.startswith("Build-Depends") ]
-			for l in lines:
-				deps = [ x.strip() for x in l.split(",") ]
-				for d in deps:
-					if "%s-"%APPNAME in d: continue
-					yield d
-		yield "build-essential"
-		yield "devscripts"
-		yield "debhelper"
-
-	deps = set(debdeps(["debian/control"]))
+	deps.add("ant")
 	return deps
 
 # CENTOS does not have this -- we have to put this here
@@ -268,17 +280,17 @@ Utils.discover_ant_targets_and_properties = discover_ant_targets_and_properties
 # this is NOT a task for a task generator -- it is a plain function.
 # If you want to use it as a task function in a task generator, use a lambda x: runant("targetname")
 def runant(tsk):
+
 	environ = dict(os.environ)
 	environ["CATALINA_HOME"] = tsk.env.TOMCATHOME
-	environ["ANT_HOME"] = _join("tools","ant","apache-ant-1.7.1")
 	if tsk.generator.env.DISTRO == "Windows":
 		stanzas = [
-			_join(environ["ANT_HOME"],"bin","ant.bat"),
+			"ant",
 			"-Dthirdparty.classpath=\"%s\""%(tsk.env.CLASSPATH.replace(os.pathsep,",")),
 		]
 	else:
 		stanzas = [
-			_join(environ["ANT_HOME"],"bin","ant"),
+			"ant",
 			"-Dthirdparty.classpath=%s"%(tsk.env.CLASSPATH.replace(os.pathsep,",")),
 		]
 	stanzas += tsk.generator.antargs
@@ -580,6 +592,10 @@ def bindist(ctx):
 	_chdir(cwd)
 
 @throws_command_errors
+def deb(context):
+	raise Utils.WafError("Debian packages are no longer build with waf. Use dpkg-buildpackage instead.")
+
+@throws_command_errors
 def rpm(context):
 	buildnumber = Utils.getbuildnumber()
 	if buildnumber: buildnumber = ["--define","_build_number %s"%buildnumber]
@@ -599,7 +615,7 @@ def rpm(context):
 
 	if Options.options.VERNUM:
 		ver = Options.options.VERNUM
-	else: ver = "2.2"
+	else: ver = SHORTVERSION
 
 	packagever = ["--define", "_ver %s" % ver]
 	
@@ -624,73 +640,6 @@ def rpm(context):
 		installrpmdeps(context)
 	dorpm()
 
-@throws_command_errors
-def deb(context):
-	buildnumber = Utils.getbuildnumber()
-	if buildnumber: buildnumber = ["--set-envvar=BUILDNUMBER=%s"%buildnumber]
-	else: buildnumber = []
-	
-	if Options.options.VERNUM:
-		VERSION = Options.options.VERNUM
-	else:
-		VERSION = "2.2"
-
-	version = ["--set-envvar=PACKAGEVERSION=%s"%VERSION]
-
-	if Options.options.PRERELEASE:
-		if not buildnumber:
-			raise Utils.WafError("Please specify a build number to go along with --prerelease")
-		# version/release numbers are read by dpkg-buildpackage from line 1 of debian/changelog
-		# http://www.debian.org/doc/debian-policy/ch-controlfields.html#s-f-Version
-		tempchangelog = """%s (%s-~%s%s) unstable; urgency=low
-
-  * Automatic prerelease build
-
- -- Automated build system <noreply@cloud.com>  %s"""%(
-			APPNAME,
-			VERSION,
-			Utils.getbuildnumber(),
-			Options.options.PRERELEASE,
-			email.Utils.formatdate(time.time())
-		)
-	else:
-		tempchangelog = """%s (%s-1) stable; urgency=low
-
-  * Automatic release build
-
- -- Automated build system <noreply@cloud.com>  %s"""%(
-			APPNAME,
-			VERSION,
-			email.Utils.formatdate(time.time())
-		)
-	
-	# FIXME wrap the source tarball in POSIX locking!
-	if not Options.options.blddir: outputdir = _join(context.curdir,blddir,"debbuild")
-	else:			   outputdir = _join(_abspath(Options.options.blddir),"debbuild")
-	Utils.pprint("GREEN","Building DEBs")
-
-	tarball = Scripting.dist('', VERSION)	
-	srcdir = "%s/%s-%s"%(outputdir,APPNAME,VERSION)
-
-	if _exists(srcdir): shutil.rmtree(srcdir)
-	mkdir_p(outputdir)
-
-	f = tarfile.open(tarball,'r:bz2')
-	f.extractall(path=outputdir)
-	if tempchangelog:
-		f = file(_join(srcdir,"debian","changelog"),"w")
-		f.write(tempchangelog)
-		f.flush()
-		f.close()
-	
-	checkdeps = lambda: c(["dpkg-checkbuilddeps"],srcdir)
-	dodeb = lambda: c(["debuild",'-e','WAFCACHE','--no-lintian', '--no-tgz-check']+buildnumber+version+["-us","-uc"],srcdir)
-	try: checkdeps()
-	except (CalledProcessError,OSError),e:
-		Utils.pprint("YELLOW","Dependencies might be missing.  Trying to auto-install them...")
-		installdebdeps(context)
-	dodeb()
-
 def uninstallrpms(context):
 	"""uninstalls any Cloud Stack RPMs on this system"""
 	Utils.pprint("GREEN","Uninstalling any installed RPMs")
@@ -698,34 +647,15 @@ def uninstallrpms(context):
 	Utils.pprint("BLUE",cmd)
 	system(cmd)
 
-def uninstalldebs(context):
-	"""uninstalls any Cloud Stack DEBs on this system"""
-	Utils.pprint("GREEN","Uninstalling any installed DEBs")
-	cmd = "dpkg -l '%s-*' | grep ^i | awk '{ print $2 } ' | xargs aptitude purge -y"%APPNAME
-	Utils.pprint("BLUE",cmd)
-	system(cmd)
-
 def viewrpmdeps(context):
 	"""shows all the necessary dependencies to build the RPM packages of the stack"""
 	for dep in getrpmdeps(): print dep
-
-def viewdebdeps(context):
-	"""shows all the necessary dependencies to build the DEB packages of the stack"""
-	for dep in getdebdeps(): print dep
 
 @throws_command_errors
 def installrpmdeps(context):
 	"""installs all the necessary dependencies to build the RPM packages of the stack"""
 	runnable = ["sudo","yum","install","-y"]+list(getrpmdeps())
 	Utils.pprint("GREEN","Installing RPM build dependencies")
-	Utils.pprint("BLUE"," ".join(runnable))
-	_check_call(runnable)
-
-@throws_command_errors
-def installdebdeps(context):
-	"""installs all the necessary dependencies to build the DEB packages of the stack"""
-	runnable = ["sudo","aptitude","install","-y"]+list( [ x.split()[0] for x in getdebdeps() ] )
-	Utils.pprint("GREEN","Installing DEB build dependencies")
 	Utils.pprint("BLUE"," ".join(runnable))
 	_check_call(runnable)
 

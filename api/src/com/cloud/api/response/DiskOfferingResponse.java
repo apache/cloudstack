@@ -51,6 +51,9 @@ public class DiskOfferingResponse extends BaseResponse {
     @SerializedName(ApiConstants.TAGS) @Param(description="the tags for the disk offering")
     private String tags;
 
+    @SerializedName("storagetype") @Param(description="the storage type for this disk offering")
+    private String storageType;
+
     public Long getId() {
         return id.getValue();
     }
@@ -123,4 +126,11 @@ public class DiskOfferingResponse extends BaseResponse {
         this.customized = customized;
     }
 
+    public String getStorageType() {
+        return storageType;
+    }
+
+    public void setStorageType(String storageType) {
+        this.storageType = storageType;
+    }
 }

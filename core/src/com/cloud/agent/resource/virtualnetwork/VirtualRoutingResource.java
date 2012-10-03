@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-//
+// 
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -42,6 +42,8 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.BumpUpPriorityCommand;
 import com.cloud.agent.api.CheckRouterAnswer;
 import com.cloud.agent.api.CheckRouterCommand;
+import com.cloud.agent.api.CheckS2SVpnConnectionsAnswer;
+import com.cloud.agent.api.CheckS2SVpnConnectionsCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.GetDomRVersionAnswer;
 import com.cloud.agent.api.GetDomRVersionCmd;
@@ -59,13 +61,18 @@ import com.cloud.agent.api.routing.SetFirewallRulesAnswer;
 import com.cloud.agent.api.routing.SetFirewallRulesCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesAnswer;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
+import com.cloud.agent.api.routing.SetPortForwardingRulesVpcCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesAnswer;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
+import com.cloud.agent.api.routing.SetStaticRouteAnswer;
+import com.cloud.agent.api.routing.SetStaticRouteCommand;
+import com.cloud.agent.api.routing.Site2SiteVpnCfgCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
+import com.cloud.exception.InternalErrorException;
 import com.cloud.network.HAProxyConfigurator;
 import com.cloud.network.LoadBalancerConfigurator;
 import com.cloud.utils.NumbersUtil;
@@ -86,7 +93,6 @@ import com.cloud.utils.script.Script;
 public class VirtualRoutingResource implements Manager {
     private static final Logger s_logger = Logger.getLogger(VirtualRoutingResource.class);
     private String _savepasswordPath; 	// This script saves a random password to the DomR file system
-    private String _ipassocPath;
     private String _publicIpAddress;
     private String _firewallPath;
     private String _loadbPath;
@@ -94,11 +100,8 @@ public class VirtualRoutingResource implements Manager {
     private String _vmDataPath;
     private String _publicEthIf;
     private String _privateEthIf;
-    private String _getRouterStatusPath;
     private String _bumpUpPriorityPath;
-    private String _l2tpVpnPath;
-    private String _getDomRVersionPath;
-
+    private String _routerProxyPath;
 
     private int _timeout;
     private int _startTimeout;
@@ -110,11 +113,15 @@ public class VirtualRoutingResource implements Manager {
 
     public Answer executeRequest(final Command cmd) {
         try {
-            if (cmd instanceof SetPortForwardingRulesCommand ) {
+            if (cmd instanceof SetPortForwardingRulesVpcCommand ) {
+                return execute((SetPortForwardingRulesVpcCommand)cmd);
+            } else if (cmd instanceof SetPortForwardingRulesCommand){
                 return execute((SetPortForwardingRulesCommand)cmd);
+            } else if (cmd instanceof SetStaticRouteCommand){
+                return execute((SetStaticRouteCommand)cmd);
             } else if (cmd instanceof SetStaticNatRulesCommand){
                 return execute((SetStaticNatRulesCommand)cmd);
-            }else if (cmd instanceof LoadBalancerConfigCommand) {
+            } else if (cmd instanceof LoadBalancerConfigCommand) {
                 return execute((LoadBalancerConfigCommand)cmd);
             } else if (cmd instanceof IpAssocCommand) {
                 return execute((IpAssocCommand)cmd);
@@ -140,6 +147,10 @@ public class VirtualRoutingResource implements Manager {
                 return execute((VpnUsersCfgCommand)cmd);
             } else if (cmd instanceof GetDomRVersionCmd) {
                 return execute((GetDomRVersionCmd)cmd);
+            } else if (cmd instanceof Site2SiteVpnCfgCommand) {
+                return execute((Site2SiteVpnCfgCommand)cmd);
+            } else if (cmd instanceof CheckS2SVpnConnectionsCommand) {
+                return execute((CheckS2SVpnConnectionsCommand)cmd);
             }
             else {
                 return Answer.createUnsupportedCommandAnswer(cmd);
@@ -150,37 +161,41 @@ public class VirtualRoutingResource implements Manager {
     }
 
     private Answer execute(VpnUsersCfgCommand cmd) {
-        for (VpnUsersCfgCommand.UsernamePassword userpwd: cmd.getUserpwds()) {
-            Script command = new Script(_l2tpVpnPath, _timeout, s_logger);
-            command.add(cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP));
+        for (VpnUsersCfgCommand.UsernamePassword userpwd: cmd.getUserpwds()) {         
+            String args = "";
             if (!userpwd.isAdd()) {
-                command.add("-U ", userpwd.getUsername());
+                args +="-U ";
+                args +=userpwd.getUsername();
             } else {
-                command.add("-u ", userpwd.getUsernamePassword());
+                args +="-u ";
+                args += userpwd.getUsernamePassword();
             }
-            String result = command.execute();
+            String result = routerProxy("vpn_l2tp.sh", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), args);
             if (result != null) {
                 return new Answer(cmd, false, "Configure VPN user failed for user " + userpwd.getUsername());
             }
-        }
-        
+        }       
         return new Answer(cmd);
     }
 
     private Answer execute(RemoteAccessVpnCfgCommand cmd) {
-        Script command = new Script(_l2tpVpnPath, _timeout, s_logger);
-        command.add(cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP));
+        String args = "";
         if (cmd.isCreate()) {
-            command.add("-r ", cmd.getIpRange());
-            command.add("-p ", cmd.getPresharedKey());
-            command.add("-s ", cmd.getVpnServerIp());
-            command.add("-l ", cmd.getLocalIp());
-            command.add("-c ");
+            args += "-r ";
+            args += cmd.getIpRange();
+            args += " -p ";
+            args += cmd.getPresharedKey();
+            args += " -s ";
+            args += cmd.getVpnServerIp();
+            args += " -l ";
+            args += cmd.getLocalIp();
+            args += " -c ";
         } else {
-            command.add("-d ");
-            command.add("-s ", cmd.getVpnServerIp());
+            args +="-d ";
+            args += " -s ";
+            args += cmd.getVpnServerIp();
         }
-        String result = command.execute();
+        String result = routerProxy("vpn_l2tp.sh", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), args);
         if (result != null) {
             return new Answer(cmd, false, "Configure VPN failed");
         }
@@ -225,12 +240,11 @@ public class VirtualRoutingResource implements Manager {
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         String[] results = new String[cmd.getRules().length];
         int i = 0;
-        
         boolean endResult = true;
         for (PortForwardingRuleTO rule : cmd.getRules()) {
             String result = null;
             final Script command = new Script(_firewallPath, _timeout, s_logger);
-            
+
             command.add(routerIp);
             command.add(rule.revoked() ? "-D" : "-A");
             command.add("-P ", rule.getProtocol().toLowerCase());
@@ -390,7 +404,7 @@ public class VirtualRoutingResource implements Manager {
         for (IpAddressTO ip : ips) {
             result = assignPublicIpAddress(routerName, routerIp, ip.getPublicIp(), ip.isAdd(), 
                      ip.isFirstIP(), ip.isSourceNat(), ip.getVlanId(), ip.getVlanGateway(), ip.getVlanNetmask(),
-                     ip.getVifMacAddress(), ip.getGuestIp(), 2);
+                     ip.getVifMacAddress(), 2);
             if (result != null) {
                 results[i++] = IpAssocAnswer.errorResult;
             } else {
@@ -478,14 +492,48 @@ public class VirtualRoutingResource implements Manager {
     }
 
     public String getRouterStatus(String routerIP) {
-        final Script command  = new Script(_getRouterStatusPath, _timeout, s_logger);
+        return routerProxyWithParser("checkrouter.sh", routerIP, null);
+    }
+    
+    
+    public String routerProxyWithParser(String script, String routerIP, String args) {
+        final Script command  = new Script(_routerProxyPath, _timeout, s_logger);
         final OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
+        command.add(script);
         command.add(routerIP);
+        if ( args != null ) {
+            command.add(args);
+        }
         String result = command.execute(parser);
         if (result == null) {
             return parser.getLine();
         }
         return null;
+    }
+
+    private CheckS2SVpnConnectionsAnswer execute(CheckS2SVpnConnectionsCommand cmd) {
+        final String routerIP = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+    
+        String args = "";
+        for (String ip : cmd.getVpnIps()) {
+            args += " " + ip;
+        }
+        
+        final String result = routerProxy("checkbatchs2svpn.sh", routerIP, args);
+        if (result == null || result.isEmpty()) {
+            return new CheckS2SVpnConnectionsAnswer(cmd, false, "CheckS2SVpnConneciontsCommand failed");
+        }
+        return new CheckS2SVpnConnectionsAnswer(cmd, true, result);
+    }
+    
+    public String routerProxy(String script, String routerIP, String args) {
+        final Script command  = new Script(_routerProxyPath, _timeout, s_logger);
+        command.add(script);
+        command.add(routerIP);
+        if ( args != null ) {
+            command.add(args);
+        }
+        return command.execute();
     }
 
     protected Answer execute(CheckRouterCommand cmd) {
@@ -511,14 +559,7 @@ public class VirtualRoutingResource implements Manager {
     }
 
     protected String getDomRVersion(String routerIP) {
-        final Script command  = new Script(_getDomRVersionPath, _timeout, s_logger);
-        final OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
-        command.add(routerIP);
-        String result = command.execute(parser);
-        if (result == null) {
-            return parser.getLine();
-        }
-        return null;
+        return routerProxyWithParser("get_template_version.sh", routerIP, null);
     }
 
     protected Answer execute(GetDomRVersionCmd cmd) {
@@ -541,6 +582,52 @@ public class VirtualRoutingResource implements Manager {
 
     protected Answer execute(final WatchConsoleProxyLoadCommand cmd) {
         return executeProxyLoadScan(cmd, cmd.getProxyVmId(), cmd.getProxyVmName(), cmd.getProxyManagementIp(), cmd.getProxyCmdPort());
+    }
+    
+    protected Answer execute(Site2SiteVpnCfgCommand cmd) {
+        String args;
+        if (cmd.isCreate()) {
+            args = "-A";
+            args += " -l ";
+	        args += cmd.getLocalPublicIp();
+            args += " -n ";
+	        args += cmd.getLocalGuestCidr();
+            args += " -g ";
+	        args += cmd.getLocalPublicGateway();
+            args += " -r ";
+	        args += cmd.getPeerGatewayIp();
+            args += " -N ";
+	        args += cmd.getPeerGuestCidrList();
+            args += " -e ";
+	        args += "\"" + cmd.getEspPolicy() + "\"";
+            args += " -i ";
+	        args += "\"" + cmd.getIkePolicy() + "\"";
+            args += " -t ";
+	        args += Long.toString(cmd.getIkeLifetime());
+            args += " -T ";
+	        args += Long.toString(cmd.getEspLifetime());
+            args += " -s ";
+	        args += "\"" + cmd.getIpsecPsk() + "\"";
+	        args += " -d ";
+	        if (cmd.getDpd()) {
+	            args += "1";
+	        } else {
+	            args += "0";
+	        }
+        } else {
+            args = "-D";
+            args += " -r ";
+            args += cmd.getPeerGatewayIp();
+            args += " -n ";
+            args += cmd.getLocalGuestCidr();
+            args += " -N ";
+            args += cmd.getPeerGuestCidrList();
+        }
+        String result = routerProxy("ipsectunnel", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), args);
+        if (result != null) {
+            return new Answer(cmd, false, "Configure site to site VPN failed due to " + result);
+        }
+        return new Answer(cmd);
     }
 
     private Answer executeProxyLoadScan(final Command cmd, final long proxyVmId, final String proxyVmName, final String proxyManagementIp, final int cmdPort) {
@@ -594,95 +681,164 @@ public class VirtualRoutingResource implements Manager {
         return command.execute();
     }
 
+    public String assignGuestNetwork(final String dev, final String routerIP,
+            final String routerGIP, final String gateway, final String cidr,
+            final String netmask, final String dns, final String domainName){
 
-    public String assignPublicIpAddress(final String vmName, final long id, final String vnet, final String privateIpAddress, final String macAddress, final String publicIpAddress) {
-
-        final Script command = new Script(_ipassocPath, _timeout, s_logger);
-        command.add("-A");
-        command.add("-f"); //first ip is source nat ip
-        command.add("-r", vmName);
-        command.add("-i", privateIpAddress);
-        command.add("-a", macAddress);
-        command.add("-l", publicIpAddress);
-
-        return command.execute();
+        String args = " -C";
+        args += " -d " + dev;
+        args += " -i " + routerGIP;
+        args += " -g " + gateway;
+        args += " -m " + cidr;
+        args += " -n " + netmask;
+        if ( dns != null && !dns.isEmpty() ) {
+            args += " -s " + dns;
+        }
+        if ( domainName != null && !domainName.isEmpty() ) {
+            args += " -e " + domainName;
+        }
+        return routerProxy("vpc_guestnw.sh", routerIP, args);
     }
+
+    public String assignNetworkACL(final String routerIP, final String dev,
+            final String routerGIP, final String netmask, final String rule){
+        String args = " -d " + dev;
+        args += " -i " + routerGIP;
+        args += " -m " + netmask;
+        args += " -a " + rule;
+        return routerProxy("vpc_acl.sh", routerIP, args);
+    }
+
+    public String assignSourceNat(final String routerIP, final String pubIP, final String dev) {
+        String args = " -A ";
+        args += " -l ";
+        args += pubIP;
+        args += " -c ";
+        args += dev;
+        return routerProxy("vpc_snat.sh", routerIP, args);
+    }
+
+    private SetPortForwardingRulesAnswer execute(SetPortForwardingRulesVpcCommand cmd) {
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        String[] results = new String[cmd.getRules().length];
+        int i = 0;
+
+        boolean endResult = true;
+        for (PortForwardingRuleTO rule : cmd.getRules()) {
+            String args = rule.revoked() ? " -D" : " -A";
+            args += " -P " + rule.getProtocol().toLowerCase();
+            args += " -l " + rule.getSrcIp();
+            args += " -p " + rule.getStringSrcPortRange();
+            args += " -r " + rule.getDstIp();
+            args += " -d " + rule.getStringDstPortRange().replace(":", "-");
+
+            String result = routerProxy("vpc_portforwarding.sh", routerIp, args);
+
+            if (result != null) {
+                results[i++] = "Failed";
+                endResult = false;
+            } else {
+                results[i++] = null;
+            }
+        }
+        return new SetPortForwardingRulesAnswer(cmd, results, endResult);
+    }
+
+    public void assignVpcIpToRouter(final String routerIP, final boolean add, final String pubIP,
+            final String nicname, final String gateway, final String netmask, final String subnet) throws Exception {
+        try {
+            String args = "";
+
+            if (add) {
+                args += " -A ";
+            } else {
+                args += " -D ";
+            }
+
+            args += " -l ";
+            args += pubIP;
+            args += " -c ";
+            args += nicname;
+            args += " -g ";
+            args += gateway;
+            args += " -m ";
+            args += netmask;
+            args += " -n ";
+            args += subnet;
+
+            String result = routerProxy("vpc_ipassoc.sh", routerIP, args);
+            if (result != null) {
+                throw new InternalErrorException("KVM plugin \"vpc_ipassoc\" failed:"+result);
+            }
+        } catch (Exception e) {
+            String msg = "Unable to assign public IP address due to " + e.toString();
+            s_logger.warn(msg, e);
+            throw new Exception(msg);
+        }
+    }
+
+    private SetStaticRouteAnswer execute(SetStaticRouteCommand cmd) {
+        String routerIP = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        try {
+            String[] results = new String[cmd.getStaticRoutes().length];
+            String [][] rules = cmd.generateSRouteRules();
+            StringBuilder sb = new StringBuilder();
+            String[] srRules = rules[0];
+
+            for (int i = 0; i < srRules.length; i++) {
+                sb.append(srRules[i]).append(',');
+            }
+
+            String args = " -a " + sb.toString();
+            String result = routerProxy("vpc_staticroute.sh", routerIP, args);
+
+            if (result != null) {
+                for (int i=0; i < results.length; i++) {
+                    results[i] = "Failed";
+                }
+                return new SetStaticRouteAnswer(cmd, false, results);
+            }
+
+            return new SetStaticRouteAnswer(cmd, true, results);
+        } catch (Exception e) {
+            String msg = "SetStaticRoute failed due to " + e.toString();
+            s_logger.error(msg, e);
+            return new SetStaticRouteAnswer(cmd, false, null);
+        }
+    }
+
 
     public String assignPublicIpAddress(final String vmName,
             final String privateIpAddress, final String publicIpAddress,
             final boolean add, final boolean firstIP, final boolean sourceNat,
             final String vlanId, final String vlanGateway,
-            final String vlanNetmask, final String vifMacAddress, String guestIp, int nicNum){
+            final String vlanNetmask, final String vifMacAddress, int nicNum){
 
-        final Script command = new Script(_ipassocPath, _timeout, s_logger);
-        command.add( privateIpAddress);
+        String args = "";
         if (add) {
-            command.add("-A");
+            args += "-A";
         } else {
-            command.add("-D");
-        }
-
-        if (sourceNat) {
-            command.add("-s");
-        } 
-        if (firstIP) {
-            command.add( "-f");
-
+            args += "-D";
         }
         String cidrSize = Long.toString(NetUtils.getCidrSize(vlanNetmask));
-        command.add( "-l", publicIpAddress + "/" + cidrSize);
-        String publicNic = "eth" + nicNum;
-        command.add("-c", publicNic);
-        
-        command.add("-g", vlanGateway);
-        
+        if (sourceNat) {
+            args +=" -s";
+        }
+        if (firstIP) {
+            args += " -f";
+        }
+        args += " -l ";
+        args += publicIpAddress + "/" + cidrSize;
 
-        return command.execute();
+        String publicNic = "eth" + nicNum;
+        args += " -c ";
+        args += publicNic;
+
+        args +=" -g ";
+        args += vlanGateway;
+        return routerProxy("ipassoc.sh", privateIpAddress, args);
     }
     
-    private void deletExitingLinkLocalRoutTable(String linkLocalBr) {
-        Script command = new Script("/bin/bash", _timeout);
-        command.add("-c");
-        command.add("ip route | grep " + NetUtils.getLinkLocalCIDR());
-        OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
-        String result = command.execute(parser);
-        boolean foundLinkLocalBr = false;
-        if (result == null && parser.getLines() != null) {
-            String[] lines = parser.getLines().split("\\n");
-            for (String line : lines) {
-                String[] tokens = line.split(" ");
-                if (!tokens[2].equalsIgnoreCase(linkLocalBr)) {
-                    Script.runSimpleBashScript("ip route del " + NetUtils.getLinkLocalCIDR());
-                } else {
-                    foundLinkLocalBr = true;
-                }
-            }
-        }
-        if (!foundLinkLocalBr) {
-            Script.runSimpleBashScript("ifconfig " + linkLocalBr + " 169.254.0.1;" + "ip route add " + NetUtils.getLinkLocalCIDR() + " dev " + linkLocalBr + " src " + NetUtils.getLinkLocalGateway());
-        }
-    }
-
-    public void createControlNetwork(String privBrName) {
-        deletExitingLinkLocalRoutTable(privBrName);
-        if (!isBridgeExists(privBrName)) {
-            Script.runSimpleBashScript("brctl addbr " + privBrName + "; ifconfig " + privBrName + " up; ifconfig " + privBrName + " 169.254.0.1", _timeout);
-        }
-    }
-
-    private boolean isBridgeExists(String bridgeName) {
-        Script command = new Script("/bin/sh", _timeout);
-        command.add("-c");
-        command.add("brctl show|grep " + bridgeName);
-        final OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
-        String result = command.execute(parser);
-        if (result != null || parser.getLine() == null) {
-            return false;
-        } else {
-            return true;
-        }
-    }
-
     private void deleteBridge(String brName) {
         Script cmd = new Script("/bin/sh", _timeout);
         cmd.add("-c");
@@ -707,12 +863,6 @@ public class VirtualRoutingResource implements Manager {
         cmd.add("-c");
         cmd.add("kill -9 `cat /var/run/libvirt/network/"  + dnsmasqName +".pid`");
         cmd.execute();
-    }
-
-    public void cleanupPrivateNetwork(String privNwName, String privBrName){
-        if (isBridgeExists(privBrName)) {
-            deleteBridge(privBrName);
-        }
     }
 
     //    protected Answer execute(final SetFirewallRuleCommand cmd) {
@@ -805,12 +955,6 @@ public class VirtualRoutingResource implements Manager {
         value = (String)params.get("ssh.port");
         _port = NumbersUtil.parseInt(value, 3922);
 
-        _ipassocPath = findScript("ipassoc.sh");
-        if (_ipassocPath == null) {
-            throw new ConfigurationException("Unable to find the ipassoc.sh");
-        }
-        s_logger.info("ipassoc.sh found in " + _ipassocPath);
-
         _publicIpAddress = (String)params.get("public.ip.address");
         if (_publicIpAddress != null) {
             s_logger.warn("Incoming public ip address is overriden.  Will always be using the same ip address: " + _publicIpAddress);
@@ -841,11 +985,6 @@ public class VirtualRoutingResource implements Manager {
             throw new ConfigurationException("Unable to find user_data.sh");
         }
 
-        _getRouterStatusPath = findScript("getRouterStatus.sh");
-        if(_getRouterStatusPath == null) {
-            throw new ConfigurationException("Unable to find getRouterStatus.sh");
-        }
-
         _publicEthIf = (String)params.get("public.network.device");
         if (_publicEthIf == null) {
             _publicEthIf = "xenbr1";
@@ -863,14 +1002,9 @@ public class VirtualRoutingResource implements Manager {
             throw new ConfigurationException("Unable to find bumpUpPriority.sh");
         }
         
-        _l2tpVpnPath = findScript("l2tp_vpn.sh");
-        if (_l2tpVpnPath == null) {
-            throw new ConfigurationException("Unable to find l2tp_vpn.sh");
-        }
-
-        _getDomRVersionPath = findScript("getDomRVersion.sh");
-        if(_getDomRVersionPath == null) {
-            throw new ConfigurationException("Unable to find getDomRVersion.sh");
+        _routerProxyPath = findScript("router_proxy.sh");
+        if (_routerProxyPath == null) {
+            throw new ConfigurationException("Unable to find router_proxy.sh");
         }
         
         return true;

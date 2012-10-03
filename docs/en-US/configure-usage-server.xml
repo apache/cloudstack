@@ -1,0 +1,101 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
+<section id="configure-usage-server">
+    <title>Configuring the Usage Server</title>
+    <para>To configure the usage server:</para>
+    <orderedlist>
+        <listitem><para>Be sure the Usage Server has been installed. This requires extra steps beyond just installing the &PRODUCT; software. See Installing the Usage Server (Optional) in the Advanced Installation Guide.</para></listitem>
+        <listitem><para>Log in to the &PRODUCT; UI as administrator.</para></listitem>
+        <listitem><para>Click Global Settings.</para></listitem>
+        <listitem><para>In Search, type usage. Find the configuration parameter that controls the behavior you want to set. See the table below for a description of the available parameters.</para></listitem>
+        <listitem><para>In Actions, click the Edit icon.</para></listitem>
+        <listitem><para>Type the desired value and click the Save icon.</para></listitem>
+        <listitem><para>Restart the Management Server (as usual with any global configuration change) and also the Usage Server:</para>
+         <programlisting># service cloud-management restart
+# service cloud-usage restart 
+</programlisting></listitem>
+    </orderedlist>
+    <para>The following table shows the global configuration settings that control the behavior of the Usage Server.</para>
+    <informaltable>
+        <tgroup cols="2" align="left" colsep="1" rowsep="1">
+            <thead>
+                <row>
+                    <entry><para>Parameter Name</para></entry>
+                    <entry><para>Description</para></entry>                                     
+                </row>
+                </thead>
+                <tbody> 
+                <row>
+                    <entry><para>enable.usage.server</para></entry>
+                    <entry><para>Whether the Usage Server is active.</para></entry>                
+                </row>
+                <row>
+                    <entry><para>usage.aggregation.timezone</para></entry>
+                    <entry><para>Time zone of usage records. Set this if the usage records and daily job execution are in different time zones. For example, with the following settings, the usage job will run at PST 00:15 and generate usage records for the 24 hours from 00:00:00 GMT to 23:59:59 GMT:</para>
+                    <programlisting>usage.stats.job.exec.time = 00:15    
+usage.execution.timezone = PST
+usage.aggregation.timezone = GMT
+                        </programlisting>
+                        <para>Valid values for the time zone are specified in <xref linkend="appendix-a-time-zones"/></para>
+                        <para>Default: GMT</para>
+                    </entry>                    
+                </row>
+                <row>
+                    <entry><para>usage.execution.timezone</para></entry>
+                    <entry><para>The time zone of usage.stats.job.exec.time.  Valid values for the time zone are specified in <xref linkend="appendix-a-time-zones"/></para>
+                        <para>Default: The time zone of the management server.</para>
+                    </entry>                    
+                </row>
+                <row>
+                    <entry><para>usage.sanity.check.interval</para></entry>
+                    <entry><para>The number of days between sanity checks. Set this in order to periodically search for records with erroneous data before issuing customer invoices. For example, this checks for VM usage records created after the VM was destroyed, and similar checks for templates, volumes, and so on. It also checks for usage times longer than the aggregation range.  If any issue is found, the alert ALERT_TYPE_USAGE_SANITY_RESULT = 21 is sent.</para></entry>                    
+                </row>
+                <row>
+                    <entry><para>usage.stats.job.aggregation.range</para></entry>
+                    <entry><para>The time period in minutes between Usage Server processing jobs. For example, if you set it to 1440, the Usage Server will run once per day. If you set it to 600, it will run every ten hours. In general, when a Usage Server job runs, it processes all events generated since usage was last run.</para>
+                        <para>There is special handling for the case of 1440 (once per day). In this case the Usage Server does not necessarily process all records since Usage was last run. &PRODUCT; assumes that you require processing once per day for the previous, complete day’s records. For example, if the current day is October 7, then it is assumed you would like to process records for October 6, from midnight to midnight. &PRODUCT; assumes this "midnight to midnight" is relative to the usage.execution.timezone.</para>
+                        <para>Default: 1440</para>
+                    </entry>                    
+                </row>
+                <row>
+                    <entry><para>usage.stats.job.exec.time</para></entry>
+                    <entry><para>The time when the Usage Server processing will start. It is specified in 24-hour format (HH:MM) in the time zone of the server, which should be GMT. For example, to start the Usage job at 10:30 GMT, enter "10:30".</para>
+                    <para>If usage.stats.job.aggregation.range is also set, and its value is not 1440, then its value will be added to usage.stats.job.exec.time to get the time to run the Usage Server job again. This is repeated until 24 hours have elapsed, and the next day's processing begins again at usage.stats.job.exec.time.</para>
+                        <para>Default: 00:15.</para>
+                    </entry>                    
+                </row>
+            </tbody>
+        </tgroup>
+    </informaltable>
+    <para>For example, suppose that your server is in GMT, your user population is predominantly in the East Coast of the United States, and you would like to process usage records every night at 2 AM local (EST) time. Choose these settings:</para>
+    <itemizedlist>
+        <listitem><para>enable.usage.server = true</para></listitem>
+        <listitem><para>usage.execution.timezone = America/New_York</para></listitem>
+        <listitem><para>usage.stats.job.exec.time = 07:00. This will run the Usage job at 2:00 AM EST. Note that this will shift by an hour as the East Coast of the U.S. enters and exits Daylight Savings Time.</para></listitem>
+        <listitem><para>usage.stats.job.aggregation.range = 1440</para></listitem>
+    </itemizedlist>
+    <para>With this configuration, the Usage job will run every night at 2 AM EST and will process records for the previous day’s midnight-midnight as defined by the EST (America/New_York) time zone.</para>
+    <note><para>Because the special value 1440 has been used for usage.stats.job.aggregation.range, the Usage Server will ignore the data between midnight and 2 AM. That data will be included in the next day's run</para></note>    
+</section>

@@ -36,7 +36,6 @@ import com.cloud.utils.db.GenericDaoBase;
 
 /**
  * Join table for storage hosts and volumes
- * @author Nitin
  *
  */
 @Entity

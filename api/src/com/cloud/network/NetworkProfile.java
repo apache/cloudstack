@@ -47,6 +47,7 @@ public class NetworkProfile implements Network {
     private ACLType aclType;
     private boolean restartRequired;
     private boolean specifyIpRanges;
+    private Long vpcId;
 
     public NetworkProfile(Network network) {
         this.id = network.getId();
@@ -71,6 +72,7 @@ public class NetworkProfile implements Network {
         this.aclType = network.getAclType();
         this.restartRequired = network.isRestartRequired();
         this.specifyIpRanges = network.getSpecifyIpRanges();
+        this.vpcId = network.getVpcId();
     }
 
     public String getDns1() {
@@ -208,6 +210,11 @@ public class NetworkProfile implements Network {
     public boolean getSpecifyIpRanges() {
         // TODO Auto-generated method stub
         return false;
+    }
+
+    @Override
+    public Long getVpcId() {
+        return vpcId;
     }
 
 }

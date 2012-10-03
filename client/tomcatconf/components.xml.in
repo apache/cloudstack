@@ -1,5 +1,23 @@
 <?xml version="1.0"?>
 <!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+<!--
   components.xml is the configuration file for the VM Ops
   insertion servers.  Someone can quickly pull together an
   insertion server by selecting the correct adapters to use.
@@ -78,6 +96,8 @@
             <adapter name="DirectNetworkGuru" class="com.cloud.network.guru.DirectNetworkGuru"/>
             <adapter name="DirectPodBasedNetworkGuru" class="com.cloud.network.guru.DirectPodBasedNetworkGuru"/>
             <adapter name="OvsGuestNetworkGuru" class="com.cloud.network.guru.OvsGuestNetworkGuru"/>
+            <adapter name="PrivateNetworkGuru" class="com.cloud.network.guru.PrivateNetworkGuru"/>
+            <adapter name="NiciraNvpGuestNetworkGuru" class="com.cloud.network.guru.NiciraNvpGuestNetworkGuru"/>
         </adapters>
         <adapters key="com.cloud.cluster.ClusterServiceAdapter">
             <adapter name="ClusterService" class="com.cloud.cluster.ClusterServiceServletAdapter"/>
@@ -94,7 +114,6 @@
         </adapters>
         <adapters key="com.cloud.ha.Investigator">
             <adapter name="SimpleInvestigator" class="com.cloud.ha.CheckOnAgentInvestigator"/>
-            <adapter name="VmwareInvestigator" class="com.cloud.ha.VmwareInvestigator"/>
             <adapter name="XenServerInvestigator" class="com.cloud.ha.XenServerInvestigator"/>
             <adapter name="PingInvestigator" class="com.cloud.ha.UserVmDomRInvestigator"/>
 			<adapter name="ManagementIPSysVMInvestigator" class="com.cloud.ha.ManagementIPSystemVMInvestigator"/>
@@ -102,7 +121,6 @@
         <adapters key="com.cloud.ha.FenceBuilder">
             <adapter name="XenServerFenceBuilder" class="com.cloud.ha.XenServerFencer"/>
             <adapter name="KVMFenceBuilder" class="com.cloud.ha.KVMFencer"/>
-            <adapter name="VmwareFenceBuilder" class="com.cloud.ha.VmwareFencer"/>
             <adapter name="OvmFenceBuilder" class="com.cloud.ovm.hypervisor.OvmFencer"/>
         </adapters>
         <adapters key="com.cloud.hypervisor.HypervisorGuru">
@@ -113,7 +131,6 @@
             <adapter name="XCP Agent" class="com.cloud.hypervisor.xen.discoverer.XcpServerDiscoverer"/>
             <adapter name="SecondaryStorage" class="com.cloud.storage.secondary.SecondaryStorageDiscoverer"/>
             <adapter name="KVM Agent" class="com.cloud.hypervisor.kvm.discoverer.KvmServerDiscoverer"/>
-            <adapter name="VShpereServer" class="com.cloud.hypervisor.vmware.VmwareServerDiscoverer"/>
             <adapter name="Bare Metal Agent" class="com.cloud.baremetal.BareMetalDiscoverer"/>
             <adapter name="SCVMMServer" class="com.cloud.hypervisor.hyperv.HypervServerDiscoverer"/>            
 			<adapter name="Ovm Discover" class="com.cloud.ovm.hypervisor.OvmDiscoverer" />
@@ -133,15 +150,13 @@
             <adapter name="DomainChecker" class="com.cloud.acl.DomainChecker"/>
         </adapters>
         <adapters key="com.cloud.network.element.NetworkElement">
-            <adapter name="JuniperSRX" class="com.cloud.network.element.JuniperSRXExternalFirewallElement"/>
-            <adapter name="Netscaler" class="com.cloud.network.element.NetscalerElement"/>
-            <adapter name="F5BigIp" class="com.cloud.network.element.F5ExternalLoadBalancerElement"/>
             <adapter name="VirtualRouter" class="com.cloud.network.element.VirtualRouterElement"/>
             <adapter name="Ovs" class="com.cloud.network.element.OvsElement"/>
             <adapter name="ExternalDhcpServer" class="com.cloud.network.element.ExternalDhcpElement"/>
             <adapter name="BareMetal" class="com.cloud.network.element.BareMetalElement"/>
             <adapter name="SecurityGroupProvider" class="com.cloud.network.element.SecurityGroupElement"/>
-            <adapter name="CiscoNexus1000vVSM" class="com.cloud.network.element.CiscoNexusVSMElement"/>
+            <adapter name="VpcVirtualRouter" class="com.cloud.network.element.VpcVirtualRouterElement"/>
+            <adapter name="NiciraNvp" class="com.cloud.network.element.NiciraNvpElement"/>
         </adapters>
         <adapters key="com.cloud.cluster.agentlb.AgentLoadBalancerPlanner">
             <adapter name="ClusterBasedAgentLbPlanner" class="com.cloud.cluster.agentlb.ClusterBasedAgentLoadBalancerPlanner"/>
@@ -149,7 +164,6 @@
         <adapters key="com.cloud.hypervisor.HypervisorGuru">
             <adapter name="XenServerGuru" class="com.cloud.hypervisor.XenServerGuru"/>
             <adapter name="KVMGuru" class="com.cloud.hypervisor.KVMGuru"/>
-            <adapter name="VMwareGuru" class="com.cloud.hypervisor.guru.VMwareGuru"/>
             <adapter name="BareMetalGuru" class="com.cloud.baremetal.BareMetalGuru"/>
             <adapter name="HypervGuru" class="com.cloud.hypervisor.guru.HypervGuru"/>            
             <adapter name="OvmGuru" class="com.cloud.ovm.hypervisor.OvmGuru" />
@@ -157,22 +171,14 @@
         <adapters key="com.cloud.agent.StartupCommandProcessor">
             <adapter name="BasicAgentAuthorizer" class="com.cloud.agent.manager.authn.impl.BasicAgentAuthManager"/>
         </adapters>
-        <manager name="VmwareManager" key="com.cloud.hypervisor.vmware.manager.VmwareManager" class="com.cloud.hypervisor.vmware.manager.VmwareManagerImpl"/>
         <manager name="OvsTunnelManager" key="com.cloud.network.ovs.OvsTunnelManager" class="com.cloud.network.ovs.OvsTunnelManagerImpl"/>
         <manager name="ElasticLoadBalancerManager" key="com.cloud.network.lb.ElasticLoadBalancerManager" class="com.cloud.network.lb.ElasticLoadBalancerManagerImpl"/>
         <pluggableservice name="VirtualRouterElementService" key="com.cloud.network.element.VirtualRouterElementService" class="com.cloud.network.element.VirtualRouterElement"/>
-        <pluggableservice name="NetscalerExternalLoadBalancerElementService" key="com.cloud.network.element.NetscalerLoadBalancerElementService" class="com.cloud.network.element.NetscalerElement"/>
-        <pluggableservice name="F5ExternalLoadBalancerElementService" key="com.cloud.network.element.F5ExternalLoadBalancerElementService" class="com.cloud.network.element.F5ExternalLoadBalancerElement"/>
-        <pluggableservice name="JuniperSRXFirewallElementService" key="com.cloud.network.element.JuniperSRXFirewallElementService" class="com.cloud.network.element.JuniperSRXExternalFirewallElement"/>
-        <pluggableservice name="CiscoNexusVSMElementService" key="com.coud.network.element.CiscoNexusVSMElementService" class="com.cloud.network.element.CiscoNexusVSMElement"/>
-        <dao name="NetScalerPodDao" class="com.cloud.network.dao.NetScalerPodDaoImpl" singleton="false"/>
-        <dao name="CiscoNexusVSMDeviceDao" class="com.cloud.network.dao.CiscoNexusVSMDeviceDaoImpl" singleton="false"/>
+        <pluggableservice name="NiciraNvpElementService" key="com.cloud.network.element.NiciraNvpElementService" class="com.cloud.network.element.NiciraNvpElement"/>
         <dao name="OvsTunnelInterfaceDao" class="com.cloud.network.ovs.dao.OvsTunnelInterfaceDaoImpl" singleton="false"/>
         <dao name="OvsTunnelAccountDao" class="com.cloud.network.ovs.dao.OvsTunnelNetworkDaoImpl" singleton="false"/>
-        <dao name="NetappPool" class="com.cloud.netapp.dao.PoolDaoImpl" singleton="false"/>
-        <dao name="NetappVolume" class="com.cloud.netapp.dao.VolumeDaoImpl" singleton="false"/>
-        <dao name="NetappLun" class="com.cloud.netapp.dao.LunDaoImpl" singleton="false"/>
-        <manager name="NetappManager" key="com.cloud.netapp.NetappManager" class="com.cloud.netapp.NetappManagerImpl"/>
+        <dao name="NiciraNvpDao" class="com.cloud.network.dao.NiciraNvpDaoImpl" singleton="false"/>
+        <dao name="NiciraNvpNicMappingDao" class="com.cloud.network.dao.NiciraNvpNicMappingDaoImpl" singleton="false"/>
         <dao name="ElasticLbVmMapDao" class="com.cloud.network.lb.dao.ElasticLbVmMapDaoImpl" singleton="false"/>
     </management-server>
 
@@ -197,5 +203,35 @@
         <dao name="NetworkOfferingServiceDao" class="com.cloud.offerings.dao.NetworkOfferingServiceMapDaoImpl" singleton="false"/>
         <dao name="VirtualRouterProviderDao" class="com.cloud.network.dao.VirtualRouterProviderDaoImpl" singleton="false"/>
         <dao name="IdentityDao" class="com.cloud.uuididentity.dao.IdentityDaoImpl" singleton="false"/>
+        <dao name="Site2SiteCustomerGatewayDao" class="com.cloud.network.dao.Site2SiteCustomerGatewayDaoImpl" singleton="false"/>
+        <dao name="Site2SiteVpnGatewayDao" class="com.cloud.network.dao.Site2SiteVpnGatewayDaoImpl" singleton="false"/>
+        <dao name="Site2SiteVpnConnectionDao" class="com.cloud.network.dao.Site2SiteVpnConnectionDaoImpl" singleton="false"/>
     </configuration-server>
+    
+    <awsapi-ec2server class="com.cloud.bridge.service.EC2MainServlet">
+        <dao name="CloudStackConfigurationDao" class="com.cloud.bridge.persist.dao.CloudStackConfigurationDaoImpl" singleton="false"/>
+        <dao name="UserCredentialsDao" class="com.cloud.bridge.persist.dao.UserCredentialsDaoImpl" singleton="false"/>
+        <dao name="CloudStackSvcOfferingDao" class="com.cloud.bridge.persist.dao.CloudStackSvcOfferingDaoImpl" singleton="false"/>
+        <dao name="OfferingDao" class="com.cloud.bridge.persist.dao.OfferingDaoImpl" singleton="false"/>
+        <dao name="CloudStackAccountDao" class="com.cloud.bridge.persist.dao.CloudStackAccountDaoImpl" singleton="false"/>
+    </awsapi-ec2server>
+    
+    <awsapi-s3server class="com.cloud.bridge.service.S3RestServlet">
+        <dao name="CloudStackConfigurationDao" class="com.cloud.bridge.persist.dao.CloudStackConfigurationDaoImpl" singleton="false"/>
+        <dao name="MHostDao" class="com.cloud.bridge.persist.dao.MHostDaoImpl" singleton="false"/>
+        <dao name="SHostDao" class="com.cloud.bridge.persist.dao.SHostDaoImpl" singleton="false"/>
+        <dao name="UserCredentialsDao" class="com.cloud.bridge.persist.dao.UserCredentialsDaoImpl" singleton="false"/>
+        <dao name="BucketPolicyDao" class="com.cloud.bridge.persist.dao.BucketPolicyDaoImpl" singleton="false"/>
+        <dao name="MHostMountDao" class="com.cloud.bridge.persist.dao.MHostMountDaoImpl" singleton="false"/>
+        <dao name="SAclDao" class="com.cloud.bridge.persist.dao.SAclDaoImpl" singleton="false"/>
+        <dao name="SBucketDao" class="com.cloud.bridge.persist.dao.SBucketDaoImpl" singleton="false"/>
+        <dao name="SMetaDao" class="com.cloud.bridge.persist.dao.SMetaDaoImpl" singleton="false"/>
+        <dao name="SObjectDao" class="com.cloud.bridge.persist.dao.SObjectDaoImpl" singleton="false"/>
+        <dao name="SObjectItemDao" class="com.cloud.bridge.persist.dao.SObjectItemDaoImpl" singleton="false"/>
+        <dao name="MultiPartPartsDao" class="com.cloud.bridge.persist.dao.MultiPartPartsDaoImpl" singleton="false"/>
+        <dao name="MultiPartUploadsDao" class="com.cloud.bridge.persist.dao.MultiPartUploadsDaoImpl" singleton="false"/>
+        <dao name="MultipartMetaDao" class="com.cloud.bridge.persist.dao.MultipartMetaDaoImpl" singleton="false"/>
+        <dao name="UserCredentialsDao" class="com.cloud.bridge.persist.dao.UserCredentialsDaoImpl" singleton="false"/>
+    </awsapi-s3server>
+    
 </components.xml>

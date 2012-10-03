@@ -24,7 +24,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiConstants.VMDetails;
-import com.cloud.api.BaseListProjectAndAccountResourcesCmd;
+import com.cloud.api.BaseListTaggedResourcesCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -35,7 +35,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.uservm.UserVm;
 
 @Implementation(description="List the virtual machines owned by the account.", responseObject=UserVmResponse.class)
-public class ListVMsCmd extends BaseListProjectAndAccountResourcesCmd {
+public class ListVMsCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListVMsCmd.class.getName());
 
     private static final String s_name = "listvirtualmachinesresponse";
@@ -87,8 +87,18 @@ public class ListVMsCmd extends BaseListProjectAndAccountResourcesCmd {
     @Parameter(name=ApiConstants.DETAILS, type=CommandType.LIST, collectionType=CommandType.STRING, description="comma separated list of host details requested, " +
     		"value can be a list of [all, group, nics, stats, secgrp, tmpl, servoff, iso, volume, min]. If no parameter is passed in, the details will be defaulted to all" )
     private List<String> viewDetails; 
-   
 
+    @IdentityMapper(entityTableName="vm_template")
+    @Parameter(name=ApiConstants.TEMPLATE_ID, type=CommandType.LONG, description="list vms by template")
+    private Long templateId;
+    
+    @IdentityMapper(entityTableName="vm_template")
+    @Parameter(name=ApiConstants.ISO_ID, type=CommandType.LONG, description="list vms by iso")
+    private Long isoId;
+
+    @IdentityMapper(entityTableName="vpc")
+    @Parameter(name=ApiConstants.VPC_ID, type=CommandType.LONG, description="list vms by vpc")
+    private Long vpcId;
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -139,6 +149,18 @@ public class ListVMsCmd extends BaseListProjectAndAccountResourcesCmd {
     
     public Long getStorageId() {
         return storageId;
+    }
+
+    public Long getTemplateId() {
+        return templateId;
+    }
+    
+    public Long getIsoId() {
+        return isoId;
+    }
+
+    public Long getVpcId(){
+        return vpcId;
     }
     
     public EnumSet<VMDetails> getDetails() throws InvalidParameterValueException {

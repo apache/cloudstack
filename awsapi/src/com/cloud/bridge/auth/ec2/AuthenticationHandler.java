@@ -37,15 +37,16 @@ import java.io.InputStream;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
-import com.cloud.bridge.model.UserCredentials;
-import com.cloud.bridge.persist.dao.UserCredentialsDao;
+import com.cloud.bridge.model.UserCredentialsVO;
+import com.cloud.bridge.persist.dao.UserCredentialsDaoImpl;
 import com.cloud.bridge.service.UserContext;
 import com.cloud.bridge.util.AuthenticationUtils;
+import com.cloud.utils.component.ComponentLocator;
 
 
 public class AuthenticationHandler implements Handler {
      protected final static Logger logger = Logger.getLogger(AuthenticationHandler.class);
-     
+     protected final UserCredentialsDaoImpl ucDao = ComponentLocator.inject(UserCredentialsDaoImpl.class);
      private DocumentBuilderFactory dbf = null;
 
 	 protected HandlerDescription handlerDesc = new HandlerDescription( "EC2AuthenticationHandler" );
@@ -111,13 +112,15 @@ public class AuthenticationHandler implements Handler {
                 logger.debug( "X509 cert's uniqueId: " + uniqueId );
                 
                 // -> find the Cloud API key and the secret key from the cert's uniqueId 
-	     	    UserCredentialsDao credentialDao = new UserCredentialsDao();
+/*	     	    UserCredentialsDao credentialDao = new UserCredentialsDao();
 	     	    UserCredentials cloudKeys = credentialDao.getByCertUniqueId( uniqueId );
-	     	    if ( null == cloudKeys ) {
-	        	     logger.error( "Cert does not map to Cloud API keys: " + uniqueId );
-	        	  throw new AxisFault( "User not properly registered: Certificate does not map to Cloud API Keys", "Client.Blocked" );
-	     	    }
-	     	    else UserContext.current().initContext( cloudKeys.getAccessKey(), cloudKeys.getSecretKey(), cloudKeys.getAccessKey(), "SOAP Request", null );
+*/	     	    
+                UserCredentialsVO cloudKeys = ucDao.getByCertUniqueId(uniqueId);
+                if ( null == cloudKeys ) {
+                    logger.error( "Cert does not map to Cloud API keys: " + uniqueId );
+                    throw new AxisFault( "User not properly registered: Certificate does not map to Cloud API Keys", "Client.Blocked" );
+                }
+	     	else UserContext.current().initContext( cloudKeys.getAccessKey(), cloudKeys.getSecretKey(), cloudKeys.getAccessKey(), "SOAP Request", null );
                 //System.out.println( "end of cert match: " + UserContext.current().getSecretKey());
 	        }
     	} 

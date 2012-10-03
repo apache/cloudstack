@@ -30,19 +30,27 @@ import org.apache.log4j.Logger;
 
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.server.StatsCollector;
+import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.user.Account;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.utils.component.Inject;
 
 @Local(value=StoragePoolAllocator.class)
 public class FirstFitStoragePoolAllocator extends AbstractStoragePoolAllocator {
     private static final Logger s_logger = Logger.getLogger(FirstFitStoragePoolAllocator.class);
     protected String _allocationAlgorithm = "random";
+
+    @Inject
+    DiskOfferingDao _diskOfferingDao;
     
     @Override
     public boolean allocatorIsCorrectType(DiskProfile dskCh) {
@@ -75,11 +83,12 @@ public class FirstFitStoragePoolAllocator extends AbstractStoragePoolAllocator {
         	s_logger.debug("Looking for pools in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId);
         }
 
-		List<StoragePoolVO> pools = _storagePoolDao.findPoolsByTags(dcId, podId, clusterId, dskCh.getTags(), null);
+        List<StoragePoolVO> pools = _storagePoolDao.findPoolsByTags(dcId, podId, clusterId, dskCh.getTags(), null);
         if (pools.size() == 0) {
-    		if (s_logger.isDebugEnabled()) {
-    			s_logger.debug("No storage pools available for allocation, returning");
-    		}
+            if (s_logger.isDebugEnabled()) {
+                String storageType = dskCh.useLocalStorage() ? ServiceOffering.StorageType.local.toString() : ServiceOffering.StorageType.shared.toString();
+                s_logger.debug("No storage pools available for " + storageType + " volume allocation, returning");
+            }
             return suitablePools;
         }
         
@@ -97,10 +106,16 @@ public class FirstFitStoragePoolAllocator extends AbstractStoragePoolAllocator {
             s_logger.debug("FirstFitStoragePoolAllocator has " + pools.size() + " pools to check for allocation");
         }
     	
+        DiskOfferingVO diskOffering = _diskOfferingDao.findById(dskCh.getDiskOfferingId());
         for (StoragePoolVO pool: pools) {
         	if(suitablePools.size() == returnUpTo){
         		break;
         	}
+            if (diskOffering.getSystemUse() && pool.getPoolType() == StoragePoolType.RBD) {
+                s_logger.debug("Skipping RBD pool " + pool.getName() + " as a suitable pool. RBD is not supported for System VM's");
+                continue;
+            }
+
         	if (checkPool(avoid, pool, dskCh, template, null, sc, plan)) {
         		suitablePools.add(pool);
         	}

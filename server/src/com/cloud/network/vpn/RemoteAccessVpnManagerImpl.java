@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-//
+// 
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -53,7 +53,6 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.element.RemoteAccessVPNServiceProvider;
-import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.rules.FirewallManager;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
@@ -90,7 +89,6 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
     @Inject VpnUserDao _vpnUsersDao;
     @Inject RemoteAccessVpnDao _remoteAccessVpnDao;
     @Inject IPAddressDao _ipAddressDao;
-    @Inject VirtualNetworkApplianceManager _routerMgr;
     @Inject AccountManager _accountMgr;
     @Inject DomainManager _domainMgr;
     @Inject NetworkManager _networkMgr;
@@ -106,7 +104,8 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
     SearchBuilder<RemoteAccessVpnVO> VpnSearch;
 
     @Override
-    public RemoteAccessVpn createRemoteAccessVpn(long publicIpId, String ipRange, boolean openFirewall) throws NetworkRuleConflictException {
+    public RemoteAccessVpn createRemoteAccessVpn(long publicIpId, String ipRange, boolean openFirewall, long networkId) 
+            throws NetworkRuleConflictException {
         UserContext ctx = UserContext.current();
         Account caller = ctx.getCaller();
 
@@ -118,12 +117,12 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         
         _accountMgr.checkAccess(caller, null, true, ipAddr);
 
-        if (!ipAddr.readyToUse() || ipAddr.getAssociatedWithNetworkId() == null) {
+        if (!ipAddr.readyToUse()) {
             throw new InvalidParameterValueException("The Ip address is not ready to be used yet: " + ipAddr.getAddress());
         }
         
         IPAddressVO ipAddress = _ipAddressDao.findById(publicIpId);
-        _networkMgr.checkIpForService(ipAddress, Service.Vpn);
+        _networkMgr.checkIpForService(ipAddress, Service.Vpn, null);
 
         RemoteAccessVpnVO vpnVO = _remoteAccessVpnDao.findByPublicIpAddress(publicIpId);
        
@@ -136,7 +135,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         }
 
         // TODO: assumes one virtual network / domr per account per zone
-        vpnVO = _remoteAccessVpnDao.findByAccountAndNetwork(ipAddr.getAccountId(), ipAddr.getAssociatedWithNetworkId());
+        vpnVO = _remoteAccessVpnDao.findByAccountAndNetwork(ipAddr.getAccountId(), networkId);
         if (vpnVO != null) {
             //if vpn is in Added state, return it to the api
             if (vpnVO.getState() == RemoteAccessVpn.State.Added) {
@@ -146,7 +145,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         }
         
         //Verify that vpn service is enabled for the network
-        Network network = _networkMgr.getNetwork(ipAddr.getAssociatedWithNetworkId());
+        Network network = _networkMgr.getNetwork(networkId);
         if (!_networkMgr.areServicesSupportedInNetwork(network.getId(), Service.Vpn)) {
             throw new InvalidParameterValueException("Vpn service is not supported in network id=" + ipAddr.getAssociatedWithNetworkId());
         }
@@ -419,7 +418,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
 
     @DB
     @Override
-    public boolean applyVpnUsers(long vpnOwnerId) {
+    public boolean applyVpnUsers(long vpnOwnerId, String userName) {
         Account caller = UserContext.current().getCaller();
         Account owner = _accountDao.findById(vpnOwnerId);
         _accountMgr.checkAccess(caller, null, true, owner);
@@ -482,7 +481,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
                     _vpnUsersDao.remove(user.getId());
                 }
             } else {
-            	if (user.getState() == State.Add) {
+            	if (user.getState() == State.Add && (user.getUsername()).equals(userName)) {
                     Transaction txn = Transaction.currentTxn();
                     txn.start();            		
                     _vpnUsersDao.remove(user.getId());

@@ -34,7 +34,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
-@Implementation(description="Update a Storage network IP range, only allowed when no IPs in this range have been allocated.", responseObject=UpdateStorageNetworkIpRangeCmd.class, since="3.0.0")
+@Implementation(description="Update a Storage network IP range, only allowed when no IPs in this range have been allocated.", responseObject=StorageNetworkIpRangeResponse.class, since="3.0.0")
 public class UpdateStorageNetworkIpRangeCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(UpdateStorageNetworkIpRangeCmd.class);
 	private static final String s_name = "updatestoragenetworkiprangeresponse";
@@ -117,3 +117,4 @@ public class UpdateStorageNetworkIpRangeCmd extends BaseAsyncCmd {
 	}
 
 }
+

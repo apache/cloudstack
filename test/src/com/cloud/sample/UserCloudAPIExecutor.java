@@ -27,14 +27,14 @@ import java.util.StringTokenizer;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.methods.GetMethod;
 
-import com.cloud.utils.encoding.Base64;
 
 /**
-*
+ *
  *
  *
  *
@@ -51,7 +51,6 @@ import com.cloud.utils.encoding.Base64;
  * Prerequisites: - Edit usercloud.properties to include your host, apiUrl, apiKey, and secretKey - Use ./executeUserAPI.sh to
  * execute this test class
  * 
- * @author will
  * 
  */
 public class UserCloudAPIExecutor {
@@ -180,7 +179,7 @@ public class UserCloudAPIExecutor {
             mac.init(keySpec);
             mac.update(request.getBytes());
             byte[] encryptedBytes = mac.doFinal();
-            return URLEncoder.encode(Base64.encodeBytes(encryptedBytes), "UTF-8");
+            return URLEncoder.encode(Base64.encodeBase64String(encryptedBytes), "UTF-8");
         } catch (Exception ex) {
             System.out.println(ex);
         }

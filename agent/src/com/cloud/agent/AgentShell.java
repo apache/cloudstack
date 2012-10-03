@@ -27,6 +27,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -291,7 +292,7 @@ public class AgentShell implements IAgentShell {
 
             if (tokens[0].equalsIgnoreCase("port")) {
                 port = tokens[1];
-            } else if (tokens[0].equalsIgnoreCase("threads")) {
+            } else if (tokens[0].equalsIgnoreCase("threads") || tokens[0].equalsIgnoreCase("workers")) {
                 workers = tokens[1];
             } else if (tokens[0].equalsIgnoreCase("host")) {
                 host = tokens[1];
@@ -371,7 +372,7 @@ public class AgentShell implements IAgentShell {
         return true;
     }
 
-    private void init(String[] args) throws ConfigurationException {
+    public void init(String[] args) throws ConfigurationException {
 
         final ComponentLocator locator = ComponentLocator.getLocator("agent");
 
@@ -383,7 +384,13 @@ public class AgentShell implements IAgentShell {
         }
         s_logger.info("Implementation Version is " + _version);
 
+        loadProperties();
         parseCommand(args);
+
+        List<String> properties = Collections.list((Enumeration<String>)_properties.propertyNames());
+        for (String property:properties){
+            s_logger.debug("Found property: " + property);
+        }
 
         _storage = locator.getManager(StorageComponent.class);
         if (_storage == null) {
@@ -558,12 +565,9 @@ public class AgentShell implements IAgentShell {
         return _nextAgentId++;
     }
 
-    private void run(String[] args) {
+    public void start() {
         try {
             System.setProperty("java.net.preferIPv4Stack", "true");
-
-            loadProperties();
-            init(args);
 
             String instance = getProperty(null, "instance");
             if (instance == null) {
@@ -579,7 +583,7 @@ public class AgentShell implements IAgentShell {
             String pidDir = getProperty(null, "piddir");
 
             final String run = "agent." + instance + "pid";
-            s_logger.debug("Checking to see if " + run + "exists.");
+            s_logger.debug("Checking to see if " + run + " exists.");
             ProcessUtil.pidCheck(pidDir, run);
 
             launchAgent();
@@ -616,22 +620,17 @@ public class AgentShell implements IAgentShell {
         }
     }
 
-    public static void main(String[] args) {
-        AgentShell shell = new AgentShell();
-        Runtime.getRuntime().addShutdownHook(new ShutdownThread(shell));
-        shell.run(args);
+    public void destroy() {
+
     }
 
-    private static class ShutdownThread extends Thread {
-        AgentShell _shell;
-
-        public ShutdownThread(AgentShell shell) {
-            this._shell = shell;
-        }
-
-        @Override
-        public void run() {
-            _shell.stop();
+    public static void main(String[] args) {
+        try {
+            AgentShell shell = new AgentShell();
+            shell.init(args);
+            shell.start();
+        } catch (ConfigurationException e) {
+            System.out.println(e.getMessage());
         }
     }
 }

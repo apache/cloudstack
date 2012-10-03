@@ -17,6 +17,7 @@
 package com.cloud.storage.dao;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import com.cloud.domain.DomainVO;
@@ -40,6 +41,7 @@ public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long> {
 
 	//public void update(VMTemplateVO template);
 
+
 	public List<VMTemplateVO> listAllSystemVMTemplates();
 
 	public List<VMTemplateVO> listDefaultBuiltinTemplates();
@@ -47,17 +49,21 @@ public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long> {
 	public List<VMTemplateVO> findIsosByIdAndPath(Long domainId, Long accountId, String path);
 	public List<VMTemplateVO> listReadyTemplates();
 	public List<VMTemplateVO> listByAccountId(long accountId);
-	public Set<Pair<Long, Long>> searchTemplates(String name, String keyword, TemplateFilter templateFilter, boolean isIso, List<HypervisorType> hypers, Boolean bootable,
-			DomainVO domain, Long pageSize, Long startIndex, Long zoneId, HypervisorType hyperType, boolean onlyReady, boolean showDomr, List<Account> permittedAccounts, Account caller, ListProjectResourcesCriteria listProjectResourcesCriteria);
+	public Set<Pair<Long, Long>> searchTemplates(String name, String keyword, TemplateFilter templateFilter, boolean isIso,
+	        List<HypervisorType> hypers, Boolean bootable, DomainVO domain, Long pageSize, Long startIndex, Long zoneId,
+	        HypervisorType hyperType, boolean onlyReady, boolean showDomr, List<Account> permittedAccounts, Account caller,
+	        ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags);
 	
-    public Set<Pair<Long, Long>> searchSwiftTemplates(String name, String keyword, TemplateFilter templateFilter, boolean isIso, List<HypervisorType> hypers, Boolean bootable, DomainVO domain,
-            Long pageSize, Long startIndex, Long zoneId, HypervisorType hyperType, boolean onlyReady, boolean showDomr, List<Account> permittedAccounts, Account caller);
+    public Set<Pair<Long, Long>> searchSwiftTemplates(String name, String keyword, TemplateFilter templateFilter,
+            boolean isIso, List<HypervisorType> hypers, Boolean bootable, DomainVO domain, Long pageSize, Long startIndex,
+            Long zoneId, HypervisorType hyperType, boolean onlyReady, boolean showDomr, List<Account> permittedAccounts, Account caller, Map<String, String> tags);
 
 	public long addTemplateToZone(VMTemplateVO tmplt, long zoneId);
 	public List<VMTemplateVO> listAllInZone(long dataCenterId);	
 	
     public List<VMTemplateVO> listByHypervisorType(List<HypervisorType> hyperTypes);
-	public List<VMTemplateVO> publicIsoSearch(Boolean bootable, boolean listRemoved);
+	public List<VMTemplateVO> publicIsoSearch(Boolean bootable, boolean listRemoved, Map<String, String> tags);
+	public List<VMTemplateVO> userIsoSearch(boolean listRemoved);
     VMTemplateVO findSystemVMTemplate(long zoneId);
     VMTemplateVO findSystemVMTemplate(long zoneId, HypervisorType hType);
 

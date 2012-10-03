@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-//
+// 
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -25,7 +25,10 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.FirewallRuleType;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRule.State;
+import com.cloud.network.rules.FirewallRule.TrafficType;
 import com.cloud.network.rules.FirewallRuleVO;
+import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
@@ -49,6 +52,7 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
     protected final GenericSearchBuilder<FirewallRuleVO, Long> RulesByIpCount;
 
     protected final FirewallRulesCidrsDaoImpl _firewallRulesCidrsDao = ComponentLocator.inject(FirewallRulesCidrsDaoImpl.class);
+    ResourceTagsDaoImpl _tagsDao = ComponentLocator.inject(ResourceTagsDaoImpl.class);
 
     protected FirewallRulesDaoImpl() {
         super();
@@ -73,6 +77,7 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
         NotRevokedSearch.and("sourcePortStart", NotRevokedSearch.entity().getSourcePortStart(), Op.EQ);
         NotRevokedSearch.and("sourcePortEnd", NotRevokedSearch.entity().getSourcePortEnd(), Op.EQ);
         NotRevokedSearch.and("networkId", NotRevokedSearch.entity().getNetworkId(), Op.EQ);
+        NotRevokedSearch.and("trafficType", NotRevokedSearch.entity().getTrafficType(), Op.EQ);
         NotRevokedSearch.done();
 
         ReleaseSearch = createSearchBuilder();
@@ -267,6 +272,41 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
         SearchCriteria<Long> sc = RulesByIpCount.create();
         sc.setParameters("ipAddressId", sourceIpId);
         return customSearch(sc, null).get(0);
+    }
+
+    @Override
+    public List<FirewallRuleVO> listByNetworkPurposeTrafficTypeAndNotRevoked(long networkId, Purpose purpose, TrafficType trafficType) {
+        SearchCriteria<FirewallRuleVO> sc = NotRevokedSearch.create();
+        sc.setParameters("networkId", networkId);
+        sc.setParameters("state", State.Revoke);
+
+        if (purpose != null) {
+            sc.setParameters("purpose", purpose);
+        }
+        
+        sc.setParameters("trafficType", trafficType);
+
+        return listBy(sc);
+    }
+    @DB
+    public boolean remove(Long id) {
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        FirewallRuleVO entry = findById(id);
+        if (entry != null) {
+            if (entry.getPurpose() == Purpose.LoadBalancing) {
+                _tagsDao.removeByIdAndType(id, TaggedResourceType.LoadBalancer);
+            } else if (entry.getPurpose() == Purpose.PortForwarding) {
+                _tagsDao.removeByIdAndType(id, TaggedResourceType.PortForwardingRule);
+            } else if (entry.getPurpose() == Purpose.Firewall) {
+                _tagsDao.removeByIdAndType(id, TaggedResourceType.FirewallRule);
+            } else if (entry.getPurpose() == Purpose.NetworkACL) {
+                _tagsDao.removeByIdAndType(id, TaggedResourceType.NetworkACL);
+            }
+        }
+        boolean result = super.remove(id);
+        txn.commit();
+        return result;
     }
 
 }

@@ -17,10 +17,12 @@
 package com.cloud.deploy;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeSet;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -55,6 +57,7 @@ import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
 import com.cloud.resource.ResourceState;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolVO;
@@ -70,6 +73,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.Inject;
 import com.cloud.vm.DiskProfile;
@@ -98,6 +102,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
     @Inject protected StoragePoolDao _storagePoolDao;
     @Inject protected CapacityDao _capacityDao;
     @Inject protected AccountManager _accountMgr;
+    @Inject protected StorageManager _storageMgr;
 
     @Inject(adapter=StoragePoolAllocator.class)
     protected Adapters<StoragePoolAllocator> _storagePoolAllocators;
@@ -192,6 +197,8 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
                 s_logger.debug("The last host of this VM cannot be found");
             }else if(avoid.shouldAvoid(host)){
                 s_logger.debug("The last host of this VM is in avoid set");
+            }else if(_capacityMgr.checkIfHostReachMaxGuestLimit(host)){
+                s_logger.debug("The last Host, hostId: "+ host.getId() +" already has max Running VMs(count includes system VMs), skipping this and trying other available hosts");
             }else{
                 if (host.getStatus() == Status.Up && host.getResourceState() == ResourceState.Enabled) {
                     if(_capacityMgr.checkIfHostHasCapacity(host.getId(), cpu_requested, ram_requested, true, cpuOverprovisioningFactor, true)){
@@ -451,7 +458,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
     	return capacityList;
     }
     
-    private void removeClustersCrossingThreshold(List<Long> clusterList, ExcludeList avoid, VirtualMachineProfile<? extends VirtualMachine> vmProfile){
+    private void removeClustersCrossingThreshold(List<Long> clusterListForVmAllocation, ExcludeList avoid, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan){
     	        
     	Map<Short,Float> capacityThresholdMap = getCapacityThresholdMap();
     	List<Short> capacityList = getCapacitiesForCheckingThreshold();
@@ -461,37 +468,33 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
         int cpu_requested = offering.getCpu() * offering.getSpeed();
         long ram_requested = offering.getRamSize() * 1024L * 1024L;
     	
-    	// Iterate over the cluster List and check for each cluster whether it breaks disable threshold for any of the capacity types
-    	for (Long clusterId : clusterList){
-    		for(short capacity : capacityList){
-    			
-    			List<SummedCapacity> summedCapacityList = _capacityDao.findCapacityBy(new Integer(capacity), null, null, clusterId);    			
-    	    	if (summedCapacityList != null && summedCapacityList.size() != 0  && summedCapacityList.get(0).getTotalCapacity() != 0){
-    	    		
-    	    		double used = (double)(summedCapacityList.get(0).getUsedCapacity() + summedCapacityList.get(0).getReservedCapacity());
-    	    		double total = summedCapacityList.get(0).getTotalCapacity();
-    	    		
-    	    		if (capacity == Capacity.CAPACITY_TYPE_CPU){
-    	    			total = total * ApiDBUtils.getCpuOverprovisioningFactor();
-    	    			used = used + cpu_requested;
-    	    		}else{
-    	    			used = used + ram_requested;
-    	    		}
-    	    		
-    	    		double usedPercentage = used/total;
-    	    		if ( usedPercentage > capacityThresholdMap.get(capacity)){    	    			
-    	    			avoid.addCluster(clusterId);
-    	    			clustersCrossingThreshold.add(clusterId);
-						s_logger.debug("Cannot allocate cluster " + clusterId + " for vm creation since its allocated percentage: " +usedPercentage + 
-								" will cross the disable capacity threshold: " + capacityThresholdMap.get(capacity) + " for capacity Type : " + capacity + ", skipping this cluster");    	    			
-    	    			break;
-    	    		}    	    				
-    	    	}    	    	
-        	}	    			
-    	}
-    	
-    	clusterList.removeAll(clustersCrossingThreshold);	    	
-    	
+        // 	For each capacity get the cluster list crossing the threshold and remove it from the clusterList that will be used for vm allocation.
+        for(short capacity : capacityList){
+        	
+        	if (clusterListForVmAllocation == null || clusterListForVmAllocation.size() == 0){
+           		return;
+           	}
+           	
+           	if (capacity == Capacity.CAPACITY_TYPE_CPU){
+           		clustersCrossingThreshold = _capacityDao.listClustersCrossingThreshold(Capacity.CAPACITY_TYPE_CPU, plan.getDataCenterId(),
+           				capacityThresholdMap.get(capacity), cpu_requested, ApiDBUtils.getCpuOverprovisioningFactor());
+           	}else{
+           		clustersCrossingThreshold = _capacityDao.listClustersCrossingThreshold(capacity, plan.getDataCenterId(),
+           				capacityThresholdMap.get(capacity), ram_requested, 1.0f);//Mem overprov not supported yet
+           	}
+
+           	
+           	if (clustersCrossingThreshold != null && clustersCrossingThreshold.size() != 0){
+               	// addToAvoid Set
+           		avoid.addClusterList(clustersCrossingThreshold);
+           		// Remove clusters crossing disabled threshold
+               	clusterListForVmAllocation.removeAll(clustersCrossingThreshold);
+               	
+           		s_logger.debug("Cannot allocate cluster list " + clustersCrossingThreshold.toString() + " for vm creation since their allocated percentage" +
+           				" crosses the disable capacity threshold: " + capacityThresholdMap.get(capacity) + " for capacity Type : " + capacity + ", skipping these clusters");           		
+           	}
+           	           	           	
+        }
     }
 
     private DeployDestination checkClustersforDestination(List<Long> clusterList, VirtualMachineProfile<? extends VirtualMachine> vmProfile,
@@ -501,7 +504,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
             s_logger.trace("ClusterId List to consider: " + clusterList);
         }
 
-        removeClustersCrossingThreshold(clusterList, avoid, vmProfile);
+        removeClustersCrossingThreshold(clusterList, avoid, vmProfile, plan);
         
         for(Long clusterId : clusterList){
             Cluster clusterVO = _clusterDao.findById(clusterId);
@@ -638,25 +641,56 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
         s_logger.debug("Trying to find a potenial host and associated storage pools from the suitable host/pool lists for this VM");
 
         boolean hostCanAccessPool = false;
+        boolean haveEnoughSpace = false;
         Map<Volume, StoragePool> storage = new HashMap<Volume, StoragePool>();
+        TreeSet<Volume> volumesOrderBySizeDesc = new TreeSet<Volume>(new Comparator<Volume>() {
+            @Override
+            public int compare(Volume v1, Volume v2) {
+                if(v1.getSize() < v2.getSize())
+                    return 1;
+                else 
+                    return -1;
+            }
+        });
+        volumesOrderBySizeDesc.addAll(suitableVolumeStoragePools.keySet());
+        boolean multipleVolume = volumesOrderBySizeDesc.size() > 1;
         for(Host potentialHost : suitableHosts){
-            for(Volume vol : suitableVolumeStoragePools.keySet()){
+            Map<StoragePool,List<Volume>> volumeAllocationMap = new HashMap<StoragePool,List<Volume>>();
+            for(Volume vol : volumesOrderBySizeDesc){
+                haveEnoughSpace = false;
                 s_logger.debug("Checking if host: "+potentialHost.getId() +" can access any suitable storage pool for volume: "+ vol.getVolumeType());
                 List<StoragePool> volumePoolList = suitableVolumeStoragePools.get(vol);
                 hostCanAccessPool = false;
                 for(StoragePool potentialSPool : volumePoolList){
                     if(hostCanAccessSPool(potentialHost, potentialSPool)){
-                        storage.put(vol, potentialSPool);
                         hostCanAccessPool = true;
+                        if(multipleVolume){
+                            List<Volume> requestVolumes  = null;
+                            if(volumeAllocationMap.containsKey(potentialSPool))
+                                requestVolumes = volumeAllocationMap.get(potentialSPool);
+                            else
+                                requestVolumes = new ArrayList<Volume>();
+                            requestVolumes.add(vol);
+
+                            if(!_storageMgr.storagePoolHasEnoughSpace(requestVolumes, potentialSPool))
+                                continue;
+                            volumeAllocationMap.put(potentialSPool,requestVolumes);
+                        }
+                        storage.put(vol, potentialSPool);
+                        haveEnoughSpace = true;
                         break;
                     }
                 }
                 if(!hostCanAccessPool){
                     break;
                 }
+                if(!haveEnoughSpace) {
+                    s_logger.warn("insufficient capacity to allocate all volumes");
+                    break;
+                }
             }
-            if(hostCanAccessPool){
-                s_logger.debug("Found a potential host " + "id: "+potentialHost.getId() + " name: " +potentialHost.getName()+ " and associated storage pools for this VM");
+            if(hostCanAccessPool && haveEnoughSpace){
+                s_logger.debug("Found a potential host " + "id: "+potentialHost.getId() + " name: " +potentialHost.getName() + " and associated storage pools for this VM");
                 return new Pair<Host, Map<Volume, StoragePool>>(potentialHost, storage);
             }
         }

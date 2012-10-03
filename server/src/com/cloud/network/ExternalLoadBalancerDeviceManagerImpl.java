@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-//
+// 
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -516,7 +516,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                                         // release the public & private IP back to dc pool, as the load balancer
 // appliance is now destroyed
                                         _dcDao.releasePrivateIpAddress(lbIP, guestConfig.getDataCenterId(), null);
-                                        _networkMgr.releasePublicIpAddress(publicIp.getId(), _accountMgr.getSystemUser().getId(), _accountMgr.getSystemAccount());
+                                        _networkMgr.disassociatePublicIpAddress(publicIp.getId(), _accountMgr.getSystemUser().getId(), _accountMgr.getSystemAccount());
                                     }
                                 } catch (Exception e) {
                                     s_logger.warn("Failed to destroy load balancer appliance created for the network" + guestConfig.getId() + " due to " + e.getMessage());
@@ -668,7 +668,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                     // release the public IP allocated for this LB appliance
                     DetailVO publicIpDetail = _hostDetailDao.findDetail(lbHost.getId(), "publicip");
                     IPAddressVO ipVo = _ipAddressDao.findByIpAndDcId(guestConfig.getDataCenterId(), publicIpDetail.toString());
-                    _networkMgr.releasePublicIpAddress(ipVo.getId(), _accountMgr.getSystemUser().getId(), _accountMgr.getSystemAccount());
+                    _networkMgr.disassociatePublicIpAddress(ipVo.getId(), _accountMgr.getSystemUser().getId(), _accountMgr.getSystemAccount());
                 } else {
                     deviceMapLock.unlock();
                 }
@@ -736,7 +736,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         List<StaticNatRuleTO> staticNatRules = new ArrayList<StaticNatRuleTO>();
         IPAddressVO ipVO = _ipAddressDao.listByDcIdIpAddress(zone.getId(), publicIp).get(0);
         VlanVO vlan = _vlanDao.findById(ipVO.getVlanId());
-        FirewallRuleVO fwRule = new FirewallRuleVO(null, ipVO.getId(), -1, -1, "any", network.getId(), network.getAccountId(), network.getDomainId(), Purpose.StaticNat, null, null, null, null);
+        FirewallRuleVO fwRule = new FirewallRuleVO(null, ipVO.getId(), -1, -1, "any", network.getId(), network.getAccountId(), network.getDomainId(), Purpose.StaticNat, null, null, null, null, null);
         FirewallRule.State state = !revoked ? FirewallRule.State.Add : FirewallRule.State.Revoke;
         fwRule.setState(state);
         StaticNatRule rule = new StaticNatRuleImpl(fwRule, privateIp);
@@ -748,7 +748,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
 
     protected void applyStaticNatRules(List<StaticNatRuleTO> staticNatRules, Network network, long firewallHostId) throws ResourceUnavailableException {
         if (!staticNatRules.isEmpty()) {
-            SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(staticNatRules);
+            SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(staticNatRules, null);
             Answer answer = _agentMgr.easySend(firewallHostId, cmd);
             if (answer == null || !answer.getResult()) {
                 String details = (answer != null) ? answer.getDetails() : "details unavailable";
@@ -873,7 +873,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         if (loadBalancersToApply.size() > 0) {
             int numLoadBalancersForCommand = loadBalancersToApply.size();
             LoadBalancerTO[] loadBalancersForCommand = loadBalancersToApply.toArray(new LoadBalancerTO[numLoadBalancersForCommand]);
-            LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(loadBalancersForCommand);
+            LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(loadBalancersForCommand, null);
             long guestVlanTag = Integer.parseInt(network.getBroadcastUri().getHost());
             cmd.setAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG, String.valueOf(guestVlanTag));
             Answer answer = _agentMgr.easySend(externalLoadBalancer.getId(), cmd);
@@ -946,7 +946,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
             selfIp = selfipNic.getIp4Address();
         }
 
-        IpAddressTO ip = new IpAddressTO(guestConfig.getAccountId(), null, add, false, true, String.valueOf(guestVlanTag), selfIp, guestVlanNetmask, null, null, networkRate, false);
+        IpAddressTO ip = new IpAddressTO(guestConfig.getAccountId(), null, add, false, true, String.valueOf(guestVlanTag), selfIp, guestVlanNetmask, null, networkRate, false);
         IpAddressTO[] ips = new IpAddressTO[1];
         ips[0] = ip;
         IpAssocCommand cmd = new IpAssocCommand(ips);

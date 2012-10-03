@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-//
+// 
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -60,6 +60,9 @@ import com.cloud.projects.ProjectAccount.Role;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.projects.dao.ProjectInvitationDao;
+import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.tags.ResourceTagVO;
+import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -73,7 +76,6 @@ import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.NamedThreadFactory;
-import com.cloud.utils.AnnotationHelper;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.JoinBuilder;
@@ -112,6 +114,8 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
     private ConfigurationDao _configDao;
     @Inject
     private ProjectInvitationDao _projectInvitationDao;
+    @Inject
+    protected ResourceTagDao _resourceTagDao;
     
     protected boolean _invitationRequired = false;
     protected long _invitationTimeOut = 86400000;
@@ -348,7 +352,9 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
     }
     
     @Override
-    public List<? extends Project> listProjects(Long id, String name, String displayText, String state, String accountName, Long domainId, String keyword, Long startIndex, Long pageSize, boolean listAll, boolean isRecursive) {
+    public List<? extends Project> listProjects(Long id, String name, String displayText, String state, 
+            String accountName, Long domainId, String keyword, Long startIndex, Long pageSize, boolean listAll, 
+            boolean isRecursive, Map<String, String> tags) {
         Account caller = UserContext.current().getCaller();
         Long accountId = null;
         String path = null;
@@ -385,14 +391,12 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
             accountId = caller.getId();
         }
         
-
     	if (domainId == null && accountId == null && (caller.getType() == Account.ACCOUNT_TYPE_NORMAL || !listAll)) {
     		accountId = caller.getId();
     	} else if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || (isRecursive && !listAll)) {
             DomainVO domain = _domainDao.findById(caller.getDomainId());
             path = domain.getPath();
         }
-
         
         if (path != null) {
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
@@ -404,6 +408,18 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
             SearchBuilder<ProjectAccountVO> projectAccountSearch = _projectAccountDao.createSearchBuilder();
             projectAccountSearch.and("accountId", projectAccountSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
             sb.join("projectAccountSearch", projectAccountSearch, sb.entity().getId(), projectAccountSearch.entity().getProjectId(), JoinBuilder.JoinType.INNER);
+        }
+        
+        if (tags != null && !tags.isEmpty()) {
+            SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
+                for (int count=0; count < tags.size(); count++) {
+                    tagSearch.or().op("key" + String.valueOf(count), tagSearch.entity().getKey(), SearchCriteria.Op.EQ);
+                    tagSearch.and("value" + String.valueOf(count), tagSearch.entity().getValue(), SearchCriteria.Op.EQ);
+                    tagSearch.cp();
+                }
+                tagSearch.and("resourceType", tagSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
+                sb.groupBy(sb.entity().getId());
+                sb.join("tagSearch", tagSearch, sb.entity().getId(), tagSearch.entity().getResourceId(), JoinBuilder.JoinType.INNER);
         }
         
         SearchCriteria<ProjectVO> sc = sb.create();
@@ -441,6 +457,16 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         
         if (path != null) {
             sc.setJoinParameters("domainSearch", "path", path);
+        }
+        
+        if (tags != null && !tags.isEmpty()) {
+            int count = 0;
+            sc.setJoinParameters("tagSearch", "resourceType", TaggedResourceType.Project.toString());
+            for (String key : tags.keySet()) {
+                sc.setJoinParameters("tagSearch", "key" + String.valueOf(count), key);
+                sc.setJoinParameters("tagSearch", "value" + String.valueOf(count), tags.get(key));
+                count++;
+            }
         }
         
         return _projectDao.search(sc, searchFilter);

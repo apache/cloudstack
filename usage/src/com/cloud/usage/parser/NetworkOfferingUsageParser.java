@@ -35,19 +35,19 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
 
 public class NetworkOfferingUsageParser {
-	public static final Logger s_logger = Logger.getLogger(NetworkOfferingUsageParser.class.getName());
-	
-	private static ComponentLocator _locator = ComponentLocator.getLocator(UsageServer.Name, "usage-components.xml", "log4j-cloud_usage");
-	private static UsageDao m_usageDao = _locator.getDao(UsageDao.class);
-	private static UsageNetworkOfferingDao m_usageNetworkOfferingDao = _locator.getDao(UsageNetworkOfferingDao.class);
-	
-	public static boolean parse(AccountVO account, Date startDate, Date endDate) {
-	    if (s_logger.isDebugEnabled()) {
-	        s_logger.debug("Parsing all NetworkOffering usage events for account: " + account.getId());
-	    }
-		if ((endDate == null) || endDate.after(new Date())) {
-			endDate = new Date();
-		}
+    public static final Logger s_logger = Logger.getLogger(NetworkOfferingUsageParser.class.getName());
+    
+    private static ComponentLocator _locator = ComponentLocator.getLocator(UsageServer.Name, "usage-components.xml", "log4j-cloud_usage");
+    private static UsageDao m_usageDao = _locator.getDao(UsageDao.class);
+    private static UsageNetworkOfferingDao m_usageNetworkOfferingDao = _locator.getDao(UsageNetworkOfferingDao.class);
+    
+    public static boolean parse(AccountVO account, Date startDate, Date endDate) {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Parsing all NetworkOffering usage events for account: " + account.getId());
+        }
+        if ((endDate == null) || endDate.after(new Date())) {
+            endDate = new Date();
+        }
 
         // - query usage_volume table with the following criteria:
         //     - look for an entry for accountId with start date in the given range
@@ -57,15 +57,15 @@ public class NetworkOfferingUsageParser {
         List<UsageNetworkOfferingVO> usageNOs = m_usageNetworkOfferingDao.getUsageRecords(account.getId(), account.getDomainId(), startDate, endDate, false, 0);
         
         if(usageNOs.isEmpty()){
-        	s_logger.debug("No NetworkOffering usage events for this period");
-        	return true;
+            s_logger.debug("No NetworkOffering usage events for this period");
+            return true;
         }
 
         // This map has both the running time *and* the usage amount.
         Map<String, Pair<Long, Long>> usageMap = new HashMap<String, Pair<Long, Long>>();
         Map<String, NOInfo> noMap = new HashMap<String, NOInfo>();
 
-		// loop through all the network offerings, create a usage record for each
+        // loop through all the network offerings, create a usage record for each
         for (UsageNetworkOfferingVO usageNO : usageNOs) {
             long vmId = usageNO.getVmInstanceId();
             long noId = usageNO.getNetworkOfferingId();
@@ -103,9 +103,9 @@ public class NetworkOfferingUsageParser {
         }
 
         return true;
-	}
+    }
 
-	private static void updateNOUsageData(Map<String, Pair<Long, Long>> usageDataMap, String key, long vmId, long duration) {
+    private static void updateNOUsageData(Map<String, Pair<Long, Long>> usageDataMap, String key, long vmId, long duration) {
         Pair<Long, Long> noUsageInfo = usageDataMap.get(key);
         if (noUsageInfo == null) {
             noUsageInfo = new Pair<Long, Long>(new Long(vmId), new Long(duration));
@@ -115,9 +115,9 @@ public class NetworkOfferingUsageParser {
             noUsageInfo = new Pair<Long, Long>(noUsageInfo.first(), runningTime);
         }
         usageDataMap.put(key, noUsageInfo);
-	}
+    }
 
-	private static void createUsageRecord(int type, long runningTime, Date startDate, Date endDate, AccountVO account, long vmId, long noId, long zoneId, boolean isDefault) {
+    private static void createUsageRecord(int type, long runningTime, Date startDate, Date endDate, AccountVO account, long vmId, long noId, long zoneId, boolean isDefault) {
         // Our smallest increment is hourly for now
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Total running time " + runningTime + "ms");
@@ -140,32 +140,32 @@ public class NetworkOfferingUsageParser {
                 new Double(usage), vmId, null, noId, null, defaultNic, null, startDate, endDate);
         m_usageDao.persist(usageRecord);
     }
-	
-	private static class NOInfo {
-	    private long vmId;
-	    private long zoneId;
-	    private long noId;
-	    private boolean isDefault;
+    
+    private static class NOInfo {
+        private long vmId;
+        private long zoneId;
+        private long noId;
+        private boolean isDefault;
 
-	    public NOInfo(long vmId, long zoneId, long noId, boolean isDefault) {
-	        this.vmId = vmId;
-	        this.zoneId = zoneId;
-	        this.noId = noId;
-	        this.isDefault = isDefault;
-	    }
-	    public long getZoneId() {
-	        return zoneId;
-	    }
-	    public long getVmId() {
-	        return vmId;
-	    }
-	    public long getNOId() {
-	        return noId;
-	    }
-	    
-	    public boolean isDefault(){
-	        return isDefault;
-	    }
-	}
+        public NOInfo(long vmId, long zoneId, long noId, boolean isDefault) {
+            this.vmId = vmId;
+            this.zoneId = zoneId;
+            this.noId = noId;
+            this.isDefault = isDefault;
+        }
+        public long getZoneId() {
+            return zoneId;
+        }
+        public long getVmId() {
+            return vmId;
+        }
+        public long getNOId() {
+            return noId;
+        }
+        
+        public boolean isDefault(){
+            return isDefault;
+        }
+    }
 
 }

@@ -16,64 +16,22 @@
 // under the License.
 package com.cloud.bridge.persist.dao;
 
-import java.util.Date;
 import java.util.List;
 
 import com.cloud.bridge.model.SAcl;
-import com.cloud.bridge.persist.EntityDao;
-import com.cloud.bridge.persist.PersistContext;
+import com.cloud.bridge.model.SAclVO;
 import com.cloud.bridge.service.core.s3.S3AccessControlList;
 import com.cloud.bridge.service.core.s3.S3Grant;
+import com.cloud.utils.db.GenericDao;
 
-/**
- * @author Kelven Yang
- */
-public class SAclDao extends EntityDao<SAcl> {
-	
-	public SAclDao() {
-		super(SAcl.class);
-	}
-	
-	public List<SAcl> listGrants(String target, long targetId) {
-		return queryEntities("from SAcl where target=? and targetId=? order by grantOrder asc",
-			new Object[] { target, new Long(targetId)});
-	}
+public interface SAclDao extends GenericDao<SAclVO, Long> {
 
-	public List<SAcl> listGrants(String target, long targetId, String userCanonicalId) {
-		return queryEntities("from SAcl where target=? and targetId=? and granteeCanonicalId=? order by grantOrder asc",
-			new Object[] { target, new Long(targetId), userCanonicalId });
-	}
+    List<SAclVO> listGrants(String target, long targetId, String userCanonicalId);
 
-	public void save(String target, long targetId, S3AccessControlList acl) {
-		// -> the target's ACLs are being redefined
-		executeUpdate("delete from SAcl where target=? and targetId=?",	new Object[] { target, new Long(targetId)});
-		
-		if(acl != null) {
-			S3Grant[] grants = acl.getGrants();
-			if(grants != null && grants.length > 0) {
-				int grantOrder = 1;
-				for(S3Grant grant : grants) {
-					save(target, targetId, grant, grantOrder++);
-				}
-			}
-		}
-	}
-	
-	public SAcl save(String target, long targetId, S3Grant grant, int grantOrder) {
-		SAcl aclEntry = new SAcl();
-		aclEntry.setTarget(target);
-		aclEntry.setTargetId(targetId);
-		aclEntry.setGrantOrder(grantOrder);
-		
-		int grantee = grant.getGrantee();
-		aclEntry.setGranteeType(grantee);
-		aclEntry.setPermission(grant.getPermission());
-		aclEntry.setGranteeCanonicalId(grant.getCanonicalUserID());
-		
-		Date ts = new Date();
-		aclEntry.setCreateTime(ts);
-		aclEntry.setLastModifiedTime(ts);
-		PersistContext.getSession().save(aclEntry);
-		return aclEntry;
-	}
+    void save(String target, long targetId, S3AccessControlList acl);
+
+    SAcl save(String target, long targetId, S3Grant grant, int grantOrder);
+
+    List<SAclVO> listGrants(String target, long targetId);
+
 }

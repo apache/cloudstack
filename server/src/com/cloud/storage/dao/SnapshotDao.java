@@ -41,4 +41,5 @@ public interface SnapshotDao extends GenericDao<SnapshotVO, Long> {
     public Long countSnapshotsForAccount(long accountId);
 	List<SnapshotVO> listByInstanceId(long instanceId, Snapshot.Status... status);
 	List<SnapshotVO> listByStatus(long volumeId, Snapshot.Status... status);
+    List<SnapshotVO> listAllByStatus(Snapshot.Status... status);
 }

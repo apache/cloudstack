@@ -15,6 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 (function(cloudStack) {
+  var getProjectAdmin, selectedProjectObj;
   cloudStack.projects = {
     requireInvitation: function(args) {
       return g_capabilities.projectinviterequired;
@@ -70,7 +71,7 @@
             var resourceLimits = $.grep(
               json.listresourcelimitsresponse.resourcelimit,
               function(resourceLimit) {
-                return resourceLimit.resourcetype != 5;
+                return resourceLimit.resourcetype != 5 && resourceLimit.resourcetype != 8;
               }
             );
             
@@ -106,7 +107,11 @@
                     6: {
                       id: 'network',
                       label: 'label.max.networks'
-                    }
+                    },
+                    7: {
+                      id: 'vpc',
+                      label: 'label.max.vpcs'
+                    }                    
                   };
 
                   return {
@@ -447,11 +452,27 @@
             return ['destroy'];
         }
 
-        if (args.context.multiRule[0].role != 'Admin') {
+        if (args.context.multiRule[0].role != 'Admin' &&
+            (cloudStack.context.users[0].account == getProjectAdmin || isAdmin() || isDomainAdmin())) { // This is for the new project wizard: check if current logged in User is the Project Owner
           return args.context.actions;
         }
 
         return [];
+      },
+      readOnlyCheck: function(args) { // check if current logged in User is the Project Owner
+        if (isAdmin() || isDomainAdmin())
+            return true;
+
+        var projectOwner, currentUser = cloudStack.context.users[0].account;
+        $(args.data).each(function() {
+            var data = this;
+            if (data.role == 'Admin')
+                projectOwner = data.username;
+        });
+        if (projectOwner == currentUser)
+            return true;
+
+        return false;
       },
       actions: {
         destroy: {
@@ -497,7 +518,15 @@
               success: function(data) {
                 args.response.success({
                   _custom: {
-                    jobId: data.updateprojectresponse.jobid
+                    jobId: data.updateprojectresponse.jobid,
+                    onComplete: function(){
+                      setTimeout(function() {
+                        $(window).trigger('cloudStack.fullRefresh');
+                        if (isUser()) {
+                          $(window).trigger('cloudStack.detailsRefresh');
+                        }
+                      }, 500);
+                    }
                   },
                   notification: {
                     label: 'label.make.project.owner',
@@ -522,6 +551,8 @@
           success: function(data) {
             args.response.success({
               data: $.map(data.listprojectaccountsresponse.projectaccount, function(elem) {
+                if (elem.role == 'Owner' || elem.role == 'Admin')
+                  getProjectAdmin = elem.account;
                 return {
                   id: elem.accountid,
                   role: elem.role,
@@ -635,6 +666,30 @@
           },
 
           detailView: {
+            updateContext: function (args) {
+              var project;
+              var projectID = args.context.projects[0].id;
+              var url = 'listProjects';
+              if (isDomainAdmin()) {
+                url += '&domainid=' + args.context.users[0].domainid;
+              }
+              $.ajax({
+                url: createURL(url),
+                data: {
+                  listAll: true,
+                  id: projectID
+                },
+                async: false,
+                success: function(json) {
+                  project = json.listprojectsresponse.project[0]; // override project after update owner
+                }
+              });
+              selectedProjectObj = project;
+
+              return {
+                projects: [project]
+              };
+            },
             actions: {
               edit: {
                 label: 'label.edit',
@@ -756,8 +811,9 @@
                 }
               }
             },
+
             tabFilter: function(args) {
-              var project = args.context.projects[0];
+              var project = selectedProjectObj;
               var projectOwner = project.account;
               var currentAccount = args.context.users[0].account;
               var hiddenTabs = [];
@@ -791,6 +847,9 @@
                     state: { label: 'label.state' }
                   }
                 ],
+
+                tags: cloudStack.api.tags({ resourceType: 'Project', contextId: 'projects' }),
+
                 dataProvider: function(args) {
                   var projectID = args.context.projects[0].id;
 

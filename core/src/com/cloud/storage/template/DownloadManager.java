@@ -28,10 +28,6 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.resource.SecondaryStorageResource;
 import com.cloud.utils.component.Manager;
 
-/**
- * @author chiradeep
- *
- */
 public interface DownloadManager extends Manager {
 
 	/**

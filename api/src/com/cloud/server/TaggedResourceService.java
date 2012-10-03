@@ -16,17 +16,12 @@
 // under the License.package com.cloud.server;
 
 package com.cloud.server;
-
-
 import java.util.List;
 import java.util.Map;
 
 import com.cloud.api.commands.ListTagsCmd;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 
-/**
- * @author Alena Prokharchyk
- */
 public interface TaggedResourceService {
     
     TaggedResourceType getResourceType (String resourceTypeStr);
@@ -60,4 +55,6 @@ public interface TaggedResourceService {
      * @return
      */
     boolean deleteTags(List<String> resourceIds, TaggedResourceType resourceType, Map<String, String> tags);
+    
+    List<? extends ResourceTag> listByResourceTypeAndId(TaggedResourceType type, long resourceId);
 }

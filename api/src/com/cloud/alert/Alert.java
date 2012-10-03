@@ -18,10 +18,6 @@ package com.cloud.alert;
 
 import java.util.Date;
 
-/**
- * @author ahuang
- *
- */
 public interface Alert {
     long getId();
     short getType();

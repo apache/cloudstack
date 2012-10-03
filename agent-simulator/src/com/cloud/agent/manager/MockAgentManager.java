@@ -33,28 +33,34 @@ import com.cloud.simulator.MockHost;
 import com.cloud.utils.component.Manager;
 
 public interface MockAgentManager extends Manager {
-    public static final long DEFAULT_HOST_MEM_SIZE  = 8 * 1024 * 1024 * 1024L; // 8G, unit of
-    // Mbytes
-    public static final int DEFAULT_HOST_CPU_CORES = 4; // 2 dual core CPUs (2 x
-    // 2)
-    public static final int DEFAULT_HOST_SPEED_MHZ = 8000; // 1 GHz CPUs
-    boolean configure(String name, Map<String, Object> params) throws ConfigurationException;
+	public static final long DEFAULT_HOST_MEM_SIZE = 8 * 1024 * 1024 * 1024L; // 8G,
+																				// unit
+																				// of
+	// Mbytes
+	public static final int DEFAULT_HOST_CPU_CORES = 4; // 2 dual core CPUs (2 x
+	// 2)
+	public static final int DEFAULT_HOST_SPEED_MHZ = 8000; // 1 GHz CPUs
 
-    Map<AgentResourceBase, Map<String, String>> createServerResources(Map<String, Object> params);
+	boolean configure(String name, Map<String, Object> params) throws ConfigurationException;
 
-    boolean handleSystemVMStart(long vmId, String privateIpAddress, String privateMacAddress, String privateNetMask, long dcId, long podId, String name, String vmType, String url);
+	Map<AgentResourceBase, Map<String, String>> createServerResources(Map<String, Object> params);
 
-    boolean handleSystemVMStop(long vmId);
+	boolean handleSystemVMStart(long vmId, String privateIpAddress, String privateMacAddress, String privateNetMask,
+			long dcId, long podId, String name, String vmType, String url);
 
-    GetHostStatsAnswer getHostStatistic(GetHostStatsCommand cmd);
-    Answer checkHealth(CheckHealthCommand cmd);
-    Answer pingTest(PingTestCommand cmd);
-    
-    Answer PrepareForMigration(PrepareForMigrationCommand cmd);
-    
-    MockHost getHost(String guid);
+	boolean handleSystemVMStop(long vmId);
 
-    Answer MaintainCommand(MaintainCommand cmd);
+	GetHostStatsAnswer getHostStatistic(GetHostStatsCommand cmd);
+
+	Answer checkHealth(CheckHealthCommand cmd);
+
+	Answer pingTest(PingTestCommand cmd);
+
+	Answer prepareForMigrate(PrepareForMigrationCommand cmd);
+
+	MockHost getHost(String guid);
+
+	Answer maintain(MaintainCommand cmd);
 
 	Answer checkNetworkCommand(CheckNetworkCommand cmd);
 }

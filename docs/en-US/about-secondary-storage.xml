@@ -1,0 +1,35 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
+<section id="about-secondary-storage">
+    <title>About Secondary Storage</title>
+    <para>Secondary storage is associated with a zone, and it stores the following:</para>
+    <itemizedlist>
+        <listitem><para>Templates &mdash; OS images that can be used to boot VMs and can include additional configuration information, such as installed applications</para></listitem>
+        <listitem><para>ISO images &mdash; disc images containing data or bootable media for operating systems</para></listitem>
+        <listitem><para>Disk volume snapshots &mdash; saved copies of VM data which can be used for data recovery or to create new templates</para></listitem>
+    </itemizedlist>
+    <para>The items in zone-based NFS secondary storage are available to all hosts in the zone. &PRODUCT; manages the allocation of guest virtual disks to particular primary storage devices.</para>
+    <para>To make items in secondary storage available to all hosts throughout the cloud, you can add OpenStack Object Storage (Swift, <ulink url="http://swift.openstack.org">swift.openstack.org</ulink>) in addition to the zone-based NFS secondary storage. When using Swift, you configure Swift storage for the entire &PRODUCT;, then set up NFS secondary storage for each zone as usual. The NFS storage in each zone acts as a staging area through which all templates and other secondary storage data pass before being forwarded to Swift. The Swift storage acts as a cloud-wide resource, making templates and other data available to any zone in the cloud. There is no hierarchy in the Swift storage, just one Swift container per storage object. Any secondary storage in the whole cloud can pull a container from Swift at need. It is not necessary to copy templates and snapshots from one zone to another, as would be required when using zone NFS alone. Everything is available everywhere.</para>
+</section>

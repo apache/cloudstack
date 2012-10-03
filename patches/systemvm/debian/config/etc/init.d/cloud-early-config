@@ -9,6 +9,22 @@
 # Default-Stop:      0 6
 # Short-Description: configure according to cmdline
 ### END INIT INFO
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 
 PATH="/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin"
 
@@ -99,6 +115,7 @@ get_boot_params() {
           cp -f $EXTRA_MOUNT/authorized_keys /var/cache/cloud/authorized_keys
           privkey=/var/cache/cloud/authorized_keys
           umount $EXTRA_MOUNT
+          cp -f $privkey /root/.ssh/ && chmod go-rwx /root/.ssh/authorized_keys
           ;;
      vmware)
           vmtoolsd --cmd 'machine.id.get' > /var/cache/cloud/cmdline 
@@ -391,8 +408,30 @@ setup_dnsmasq() {
 
 setup_sshd(){
   local ip=$1
+  local eth=$2
   [ -f /etc/ssh/sshd_config ] && sed -i -e "s/^[#]*ListenAddress.*$/ListenAddress $ip/" /etc/ssh/sshd_config
+  sed -i "/3922/s/eth./$eth/" /etc/iptables/rules
 }
+
+
+setup_vpc_apache2() {
+  log_it "Setting up apache web server for VPC"
+  chkconfig apache2 off
+  rm -f /etc/apache2/conf.d/vhost*.conf
+  [ -f /etc/apache2/sites-available/default ] && echo "" >/etc/apache2/sites-available/default
+  [ -f /etc/apache2/sites-available/default-ssl ] && echo "">/etc/apache2/sites-available/default-ssl
+  [ -f /etc/apache2/ports.conf ] && echo "">/etc/apache2/ports.conf
+  [ -f /etc/apache2/ports.conf ] && echo "">/etc/apache2/ports.conf
+  [ -f /etc/apache2/ports.conf ] && echo "">/etc/apache2/ports.conf
+  [ -f /etc/apache2/conf.d/security ] && sed -i -e "s/^ServerTokens .*/ServerTokens Prod/g" /etc/apache2/conf.d/security
+  [ -f /etc/apache2/conf.d/security ] && sed -i -e "s/^ServerSignature .*/ServerSignature Off/g" /etc/apache2/conf.d/security
+
+  # Disable listing of http://SSVM-IP/icons folder for security issue. see article http://www.i-lateral.com/tutorials/disabling-the-icons-folder-on-an-ubuntu-web-server/
+  [ -f /etc/apache2/mods-available/alias.conf ] && sed -i s/"Options Indexes MultiViews"/"Options -Indexes MultiViews"/ /etc/apache2/mods-available/alias.conf
+
+  echo "Options -Indexes" > /var/www/html/.htaccess
+}
+
 
 setup_apache2() {
   log_it "Setting up apache web server"
@@ -433,7 +472,7 @@ setup_redundant_router() {
     cp /root/redundant_router/arping_gateways.sh.templ $rrouter_bin_path/arping_gateways.sh
     cp /root/redundant_router/check_bumpup.sh $rrouter_bin_path/
     cp /root/redundant_router/disable_pubip.sh $rrouter_bin_path/
-    cp /root/redundant_router/checkrouter.sh.templ /root/checkrouter.sh
+    cp /root/redundant_router/checkrouter.sh.templ /opt/cloud/bin/checkrouter.sh
     sed -i "s/\[ROUTER_ID\]/$NAME/g" /etc/keepalived/keepalived.conf
     sed -i "s/\[ROUTER_IP\]/$GUEST_GW\/$GUEST_CIDR_SIZE/g" /etc/keepalived/keepalived.conf
     sed -i "s/\[BOARDCAST\]/$GUEST_BRD/g" /etc/keepalived/keepalived.conf
@@ -460,7 +499,7 @@ setup_redundant_router() {
     sed -i "s/\[RROUTER_LOG\]/$rrouter_log_str/g" $rrouter_bin_path/primary-backup.sh
     sed -i "s/\[RROUTER_LOG\]/$rrouter_log_str/g" $rrouter_bin_path/check_heartbeat.sh
     sed -i "s/\[RROUTER_LOG\]/$rrouter_log_str/g" $rrouter_bin_path/arping_gateways.sh
-    sed -i "s/\[RROUTER_LOG\]/$rrouter_log_str/g" /root/checkrouter.sh
+    sed -i "s/\[RROUTER_LOG\]/$rrouter_log_str/g" /opt/cloud/bin/checkrouter.sh
     chmod a+x $rrouter_bin_path/*.sh
 
     sed -i "s/--exec\ \$DAEMON;/--exec\ \$DAEMON\ --\ --vrrp;/g" /etc/init.d/keepalived
@@ -538,7 +577,6 @@ setup_router() {
   sed -i  /gateway/d /etc/hosts
   echo "$ETH0_IP $NAME" >> /etc/hosts
 
-  setup_sshd $ETH1_IP
 
   enable_svc dnsmasq 1
   enable_svc haproxy 1
@@ -548,7 +586,82 @@ setup_router() {
   enable_fwding 1
   chkconfig nfs-common off
   cp /etc/iptables/iptables-router /etc/iptables/rules
+  setup_sshd $ETH1_IP "eth1"
 }
+
+
+
+setup_vpcrouter() {
+  log_it "Setting up VPC virtual router system vm"
+
+  if [ "$hyp" == "vmware" ]; then
+    setup_vmware_extra_nics
+  fi
+
+    cat > /etc/network/interfaces << EOF
+auto lo $1
+iface lo inet loopback
+EOF
+  setup_interface "0" $ETH0_IP $ETH0_MASK $GW
+   
+  echo $NAME > /etc/hostname
+  echo 'AVAHI_DAEMON_DETECT_LOCAL=0' > /etc/default/avahi-daemon
+  hostname $NAME
+  
+  #Nameserver
+  sed -i -e "/^nameserver.*$/d" /etc/resolv.conf # remove previous entries
+  sed -i -e "/^nameserver.*$/d" /etc/dnsmasq-resolv.conf # remove previous entries
+  if [ -n "$internalNS1" ]
+  then
+    echo "nameserver $internalNS1" > /etc/dnsmasq-resolv.conf
+    echo "nameserver $internalNS1" > /etc/resolv.conf
+  fi
+  
+  if [ -n "$internalNS2" ]
+  then
+    echo "nameserver $internalNS2" >> /etc/dnsmasq-resolv.conf
+    echo "nameserver $internalNS2" >> /etc/resolv.conf
+  fi
+  if [ -n "$NS1" ]
+  then
+    echo "nameserver $NS1" >> /etc/dnsmasq-resolv.conf
+    echo "nameserver $NS1" >> /etc/resolv.conf
+  fi
+  
+  if [ -n "$NS2" ]
+  then
+    echo "nameserver $NS2" >> /etc/dnsmasq-resolv.conf
+    echo "nameserver $NS2" >> /etc/resolv.conf
+  fi
+  if [ -n "$MGMTNET"  -a -n "$LOCAL_GW" ]
+  then
+    ip route add $MGMTNET via $LOCAL_GW dev eth1
+  fi
+
+  ip route delete default
+  # create route table for static route
+
+  sudo echo "252 static_route" >> /etc/iproute2/rt_tables 2>/dev/null
+  sudo echo "251 static_route_back" >> /etc/iproute2/rt_tables 2>/dev/null
+  sudo ip rule add from $VPCCIDR table static_route 2>/dev/null
+  sudo ip rule add from $VPCCIDR table static_route_back 2>/dev/null
+
+  setup_vpc_apache2
+
+  enable_svc dnsmasq 1
+  enable_svc haproxy 1
+  enable_svc cloud 0
+  disable_rpfilter_domR
+  enable_fwding 1
+  cp /etc/iptables/iptables-vpcrouter /etc/iptables/rules
+  setup_sshd $ETH0_IP "eth0"
+  cp /etc/vpcdnsmasq.conf /etc/dnsmasq.conf
+  cp /etc/cloud-nic.rules /etc/udev/rules.d/cloud-nic.rules
+  echo "" > /etc/dnsmasq.d/dhcphosts.txt
+  echo "dhcp-hostsfile=/etc/dhcphosts.txt" > /etc/dnsmasq.d/cloud.conf
+}
+
+
 
 setup_dhcpsrvr() {
   log_it "Setting up dhcp server system vm"
@@ -580,24 +693,18 @@ setup_dhcpsrvr() {
   sed -i  /gateway/d /etc/hosts
   echo "$ETH0_IP $NAME" >> /etc/hosts
 
-  if [ "$SSHONGUEST" == "true" ]
-  then
-    setup_sshd $ETH0_IP
-  else
-    setup_sshd $ETH1_IP
-  fi
-
   enable_svc dnsmasq 1
   enable_svc haproxy 0
   enable_svc cloud-passwd-srvr 1
   enable_svc cloud 0
   enable_fwding 0
   chkconfig nfs-common off
+  cp /etc/iptables/iptables-router /etc/iptables/rules
   if [ "$SSHONGUEST" == "true" ]
   then
-    sed '/3922/i -A INPUT -i eth0 -p tcp -m state --state NEW --dport 3922 -j ACCEPT' /etc/iptables/iptables-router > /etc/iptables/rules
+    setup_sshd $ETH0_IP "eth0"
   else
-    cp /etc/iptables/iptables-router /etc/iptables/rules
+    setup_sshd $ETH1_IP "eth1"
   fi
 }
 
@@ -629,9 +736,9 @@ setup_secstorage() {
 
   cp /etc/iptables/iptables-secstorage /etc/iptables/rules
   if [ "$hyp" == "vmware" ]; then
-    setup_sshd $ETH1_IP
+    setup_sshd $ETH1_IP "eth1"
   else
-    setup_sshd $ETH0_IP
+    setup_sshd $ETH0_IP "eth0"
   fi
   setup_apache2 $ETH2_IP
 
@@ -653,9 +760,9 @@ setup_console_proxy() {
   echo "$public_ip $NAME" >> /etc/hosts
   cp /etc/iptables/iptables-consoleproxy /etc/iptables/rules
   if [ "$hyp" == "vmware" ]; then
-    setup_sshd $ETH1_IP
+    setup_sshd $ETH1_IP "eth1"
   else
-    setup_sshd $ETH0_IP
+    setup_sshd $ETH0_IP "eth0"
   fi
 
   disable_rpfilter
@@ -676,13 +783,12 @@ setup_elbvm() {
   [ "$ETH2_IP" == "0.0.0.0" ] || [ "$ETH2_IP" == "" ] && public_ip=$ETH0_IP
   echo "$public_ip $NAME" >> /etc/hosts
 
+  cp /etc/iptables/iptables-elbvm /etc/iptables/rules
   if [ "$SSHONGUEST" == "true" ]
   then
-    sed '/3922/s/eth1/eth0/'
-    setup_sshd $ETH0_IP
+    setup_sshd $ETH0_IP "eth0"
   else
-    cp /etc/iptables/iptables-elbvm /etc/iptables/rules
-    setup_sshd $ETH1_IP
+    setup_sshd $ETH1_IP "eth1"
   fi
   
   enable_fwding 0
@@ -699,6 +805,7 @@ setup_default() {
 auto lo
 iface lo inet loopback
 EOF
+  cp -f /etc/iptables/rt_tables_init /etc/iproute2/rt_tables
 }
 
 change_password() {
@@ -720,6 +827,10 @@ start() {
      router)
          [ "$NAME" == "" ] && NAME=router
          setup_router
+	  ;;
+     vpcrouter)
+         [ "$NAME" == "" ] && NAME=vpcrouter
+         setup_vpcrouter
 	  ;;
      dhcpsrvr)
          [ "$NAME" == "" ] && NAME=dhcpsrvr
@@ -873,6 +984,9 @@ for i in $CMDLINE
         ;;
       vmpassword)
         VM_PASSWORD=$VALUE
+        ;;
+      vpccidr)
+        VPCCIDR=$VALUE
         ;;
     esac
 done

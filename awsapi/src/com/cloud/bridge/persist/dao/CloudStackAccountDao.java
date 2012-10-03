@@ -16,20 +16,12 @@
 // under the License.
 package com.cloud.bridge.persist.dao;
 
-import org.apache.log4j.Logger;
+import com.cloud.bridge.model.CloudStackAccountVO;
+import com.cloud.utils.db.GenericDao;
 
-import com.cloud.bridge.persist.EntityDao;
-import com.cloud.stack.models.CloudStackAccount;
+public interface CloudStackAccountDao extends
+        GenericDao<CloudStackAccountVO, String> {
+    String getDefaultZoneId(String accountId);
+    
 
-public class CloudStackAccountDao extends EntityDao<CloudStackAccount> {
-    public static final Logger logger = Logger.getLogger(CloudStackAccountDao.class);
-
-    public CloudStackAccountDao() {
-        super(CloudStackAccount.class, true);
-    }
-
-    public CloudStackAccount getdefaultZoneId( String id ) {
-        return queryEntity("from CloudStackAccount where id=?", new Object[] {id});
-    }
 }
-

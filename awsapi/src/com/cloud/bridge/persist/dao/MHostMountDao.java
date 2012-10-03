@@ -16,18 +16,12 @@
 // under the License.
 package com.cloud.bridge.persist.dao;
 
-import com.cloud.bridge.model.MHostMount;
-import com.cloud.bridge.persist.EntityDao;
+import com.cloud.bridge.model.MHostMountVO;
+import com.cloud.utils.db.GenericDao;
 
-/**
- * @author Kelven Yang
- */
-public class MHostMountDao extends EntityDao<MHostMount> {
-	public MHostMountDao() {
-		super(MHostMount.class);
-	}
-	
-	public MHostMount getHostMount(long mHostId, long sHostId) {
-		return queryEntity("from MHostMount where mhost=? and shost=?", new Object[] { mHostId, sHostId } );
-	}
+public interface MHostMountDao extends GenericDao<MHostMountVO, Long> {
+
+    MHostMountVO getHostMount(long mHostId, long sHostId);
+    
+
 }

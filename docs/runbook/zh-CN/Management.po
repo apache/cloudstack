@@ -1,0 +1,235 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Runbook\n"
+"Report-Msgid-Bugs-To: http://bugs.cloudstack.org/\n"
+"POT-Creation-Date: 2012-07-10T15:13:22\n"
+"PO-Revision-Date: 2012-08-03 06:17+0000\n"
+"Last-Translator: micexia <mice1982@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Installation of the management server"
+msgstr "安装管理服务器"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Now it is time to start installing CloudStack's management server and some "
+"of the related components."
+msgstr "现在需要安装CloudStack管理服务器和相关的组件。"
+
+#. Tag: title
+#, no-c-format
+msgid "Database Installation and Configuration"
+msgstr "数据库安装和配置"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"We'll start out by installing <application>MySQL</application> and "
+"configuring some options to ensure CloudStack runs well."
+msgstr "首先安装<application>MySQL</application>，并对它进行配置，以确保CloudStack运行正常。"
+
+#. Tag: para
+#, no-c-format
+msgid "To install <application>MySQL</application> run the following command:"
+msgstr "运行以下命令，安装<application>MySQL</application> ："
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"<prompt># </prompt><userinput><command>yum</command> -y install mysql-"
+"server</userinput>"
+msgstr "<prompt># </prompt><userinput><command>yum</command> -y install mysql-server</userinput>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"With <application>MySQL</application> installed we need to make a few "
+"configuration changes to <filename>/etc/my.cnf</filename>. Specifically we "
+"need to add the following options to the [mysqld] section:"
+msgstr "<application>MySQL</application>安装完成后，需更改其配置文件<filename>/etc/my.cnf</filename>，在[mysqld]下添加如下内容："
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"\n"
+"innodb_rollback_on_timeout=1\n"
+"innodb_lock_wait_timeout=600\n"
+"max_connections=350\n"
+"log-bin=mysql-bin\n"
+"binlog-format = 'ROW' \n"
+"        "
+msgstr "\ninnodb_rollback_on_timeout=1\ninnodb_lock_wait_timeout=600\nmax_connections=350\nlog-bin=mysql-bin\nbinlog-format = 'ROW' \n        "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Now that <application>MySQL</application> is properly configured we can "
+"start it and configure it to start on boot as follows:"
+msgstr "配置<application>MySQL</application>完成后，启动它并配置为开机自启动："
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"\n"
+"          <prompt># </prompt><userinput><command>service</command> mysqld start</userinput>\n"
+"          <prompt># </prompt><userinput><command>chkconfig</command> mysqld on</userinput>\n"
+"        "
+msgstr "\n          <prompt># </prompt><userinput><command>service</command> mysqld start</userinput>\n          <prompt># </prompt><userinput><command>chkconfig</command> mysqld on</userinput>\n        "
+
+#. Tag: title
+#, no-c-format
+msgid "Extraction"
+msgstr "解压安装包"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The next step is to extract the contents of the CloudStack tarball "
+"(mentioned in <xref linkend=\"sect-Runbook-Overview-prereqs\" />) you "
+"downloaded previously. To extract the contents of this tarball use the "
+"following command:"
+msgstr "下一步是解压缩之前下载的CloudStack安装包(见<xref linkend=\"sect-Runbook-Overview-prereqs\" />)，通过以下命令进行解压缩："
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"\n"
+"      <prompt># </prompt><userinput><command>tar</command> -xzvf CloudStack-oss-3.0.2-1-rhel6.2.tar.gz</userinput>\n"
+"    "
+msgstr "\n      <prompt># </prompt><userinput><command>tar</command> -xzvf CloudStack-oss-3.0.2-1-rhel6.2.tar.gz</userinput>\n    "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For the next few sections you'll need to <command>cd</command> into the "
+"first level that was just created."
+msgstr "以下章节需要您<command>cd</command> 进入刚创建的目录中"
+
+#. Tag: title
+#, no-c-format
+msgid "Installation"
+msgstr "安装"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Now that you are in the directory created by extracting the tarball, it's "
+"now time to install. We'll run <filename>./install.sh</filename> and choose "
+"option <option>M</option>. This will install the management server and "
+"necessary dependencies."
+msgstr "当您进入解压缩后创建的目录中，下一步是安装。执行<filename>./install.sh</filename>并选择选项<option>M</option>后，管理服务器和相关依赖会自动安装。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"With the application itself installed we can now setup the database, we'll "
+"do that with the following command and options:"
+msgstr "平台系统本身安装后，需初始化数据库，通过以下命令和选项完成："
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"\n"
+"      <prompt># </prompt><userinput><command>cloud-setup-databases</command> cloud:<replaceable>password</replaceable>@localhost --deploy-as=root</userinput>\n"
+"    "
+msgstr "\n      <prompt># </prompt><userinput><command>cloud-setup-databases</command> cloud:<replaceable>password</replaceable>@localhost --deploy-as=root</userinput>\n    "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When this process is finished, you should see a message like \"CloudStack "
+"has successfully initialized the database.\""
+msgstr "当该过程结束后，您应该可以看到类似信息：\"CloudStack has successfully initialized the database.\""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Now that the database has been created, we can take the final step in "
+"setting up the management server by issuing the following command:"
+msgstr "数据库创建后，最后一步是配置管理服务器，通过如下命令执行："
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"\n"
+"      <prompt># </prompt><userinput><command>cloud-setup-mangament</command></userinput>\n"
+"    "
+msgstr "\n      <prompt># </prompt><userinput><command>cloud-setup-mangament</command></userinput>\n    "
+
+#. Tag: title
+#, no-c-format
+msgid "System Template Setup"
+msgstr "系统模板配置"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"CloudStack uses a number of system VMs to provide functionality for "
+"accessing the console of virtual machines, providing various networking "
+"services, and managing various aspects of storage. This step will acquire "
+"those system images ready for deployment when we bootstrap your cloud."
+msgstr "CloudStack通过一系列系统虚拟机提供功能，如访问虚拟机控制台，如提供各类网络服务，以及管理次要存储的中的各类资源。该步骤会获取系统虚拟机模板，用于云平台引导后系统虚拟机的部署。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The place we are going to download these images to is the secondary storage "
+"share that we setup earlier, so we'll need to mount that share with the "
+"<command>mount</command> command run on the management server:"
+msgstr "模板下载后存放的位置是之前配置的次要存储目录，需先使用<command>mount</command> 命令挂载二级存储，在管理服务器上运行如下命令："
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"\n"
+"      <prompt># </prompt><userinput><command>mount</command> -t nfs <replaceable>172.16.10.</replaceable>2:/secondary /mnt/secondary</userinput>\n"
+"    "
+msgstr "\n      <prompt># </prompt><userinput><command>mount</command> -t nfs <replaceable>172.16.10.</replaceable>2:/secondary /mnt/secondary</userinput>\n    "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Now we need to download the system VM template and deploy that to the share "
+"we just mounted. The management server includes a script to properly "
+"manipulate the system VMs images."
+msgstr "然后需要下载系统虚拟机模板，并把这些模板部署于刚才创建的次要存储中；管理服务器包含一个脚本可以正确的操作系统虚拟机模板："
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"\n"
+"      <prompt># </prompt><userinput><command>/usr/lib64/cloud/agent/scripts/storage/secondary/cloud-install-sys-tmplt</command> -m  /mnt/secondary -u http://download.cloud.com/templates/acton/acton-systemvm-02062012.qcow2.bz2 -h kvm -F</userinput>\n"
+"    "
+msgstr "\n      <prompt># </prompt><userinput><command>/usr/lib64/cloud/agent/scripts/storage/secondary/cloud-install-sys-tmplt</command> -m  /mnt/secondary -u http://download.cloud.com/templates/acton/acton-systemvm-02062012.qcow2.bz2 -h kvm -F</userinput>\n    "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"That concludes our setup of the management server. We still need to "
+"configure CloudStack, but we will do that after we get our hypervisor set "
+"up."
+msgstr "以上是管理服务器的安装和配置过程；在配置CloudStack之前，需启用hypervisor"

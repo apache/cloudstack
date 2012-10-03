@@ -82,7 +82,6 @@
         <include name="cloud-commons-collections-3.2.1.jar" />
         <include name="cloud-commons-codec-1.4.jar" />
         <include name="cloud-commons-pool-1.4.jar" />
-        <include name="cloud-libvirt-0.4.5.jar" />
         <include name="cloud-jna.jar" />
         <include name="cloud-cglib.jar" />
         <include name="jetty-6.1.26.jar" />
@@ -93,6 +92,7 @@
         <include name="${utils.jar}" />
         <include name="${core.jar}" />
         <include name="${api.jar}" />
+        <include name="${kvm.jar}" />
       </zipfileset>
 
       <zipfileset dir="${agent.dist.dir}" filemode="770">
@@ -112,7 +112,7 @@
   </target>
 
 
-  <target name="package-agent" depends="-init-package, package-oss-systemvm,  build-systemvm-patch, package-agent-common">
+  <target name="package-agent" depends="-init-package, package-oss-systemvm,  build-systemvm-patch, package-agent-common, build-kvm">
     <zip destfile="${dist.dir}/agent.zip" duplicate="preserve" update="true">
       <zipfileset dir="${dist.dir}" prefix="vms">
         <include name="patch.tgz" />
@@ -123,7 +123,7 @@
     </zip>
   </target>
 
-  <target name="package-oss-systemvm-iso" depends="-init-package, package-oss-systemvm,  build-systemvm-patch">
+  <target name="package-oss-systemvm-iso" depends="-init-package, package-oss-systemvm, update-oss-systemvm-with-vmware, build-systemvm-patch">
     <exec executable="${mkisofs}" dir="${dist.dir}">
       <arg value="-quiet"/>
       <arg value="-r"/>
@@ -156,7 +156,8 @@
     </zip>
   </target>
 
-  <target name="build-all" depends="build-opensource, build-plugins, build-ui, build-war-oss, compile-testclient, compile-usage, build-awsapi">
+  <!-- <target name="build-all" depends="build-opensource, build-plugins, build-ui, build-war-oss, compile-testclient, compile-usage, build-awsapi"> -->
+  <target name="build-all" depends="build-opensource, build-plugins, build-ui, build-war-oss, compile-usage, build-awsapi">
   </target>
 
   <target name="build-all-with-simulator" depends="build-all, compile-agent-simulator">
@@ -199,32 +200,29 @@
     <zip destfile="${dist.dir}/systemvm.zip" duplicate="preserve" update="true">
       <!-- Console proxy now includes an agent shell, therefore we need to package agent related distribution -->
       <zipfileset dir="${deps.dir}">
-        <include name="cloud-xmlrpc-client-3.1.3.jar" />
-        <include name="cloud-xmlrpc-common-3.1.3.jar" />
-        <include name="cloud-ws-commons-util-1.0.2.jar" />
-        <include name="cloud-log4j.jar" />
-        <include name="cloud-apache-log4j-extras-1.0.jar" />
-        <include name="cloud-google-gson-1.7.1.jar" />
-        <include name="cloud-commons-httpclient-3.1.jar" />
-        <include name="cloud-commons-logging-1.1.1.jar" />
-        <include name="cloud-commons-collections-3.2.1.jar" />
-        <include name="cloud-commons-codec-1.5.jar" />
-        <include name="cloud-commons-pool-1.5.6.jar" />
-        <include name="cloud-cglib.jar" />
-        <include name="cloud-axis.jar" />
-        <include name="cloud-commons-discovery.jar" />
-        <include name="cloud-wsdl4j.jar" />
-        <include name="vmware-apputils.jar" />
-        <include name="vmware-vim.jar" />
-        <include name="vmware-lib-jaxrpc.jar" />
-        <include name="vmware-vim25.jar" />
+        <include name="xmlrpc-client-3.1.3.jar" />
+        <include name="xmlrpc-common-3.1.3.jar" />
+        <include name="ws-commons-util-1.0.2.jar" />
+        <include name="log4j*.jar" />
+        <include name="asm-3.1.jar" />
+        <include name="apache-log4j-extras-1.1.jar" />
+        <include name="gson-1.7.1.jar" />
+        <include name="commons-httpclient-3.1.jar" />
+        <include name="commons-logging-1.1.1.jar" />
+        <include name="commons-collections-3.1.jar" />
+        <include name="commons-codec-1.6.jar" />
+        <include name="commons-pool-1.6.jar" />
+        <include name="cglib-*.jar" />
+        <include name="axis-*.jar" />
+        <include name="discovery-*.jar" />
+        <include name="wsdl4j-*.jar" />
+        <include name="ejb-api-3.0.jar" />
       </zipfileset>
       <zipfileset dir="${jar.dir}">
         <include name="${agent.jar}" />
         <include name="${utils.jar}" />
         <include name="${core.jar}" />
         <include name="${api.jar}" />
-        <include name="${vmware-base.jar}" />
       </zipfileset>
       <zipfileset dir="${console-proxy.dist.dir}" filemode="555"/>
       <zipfileset dir="${scripts.dir}/storage/secondary" prefix="scripts/storage/secondary" filemode="555">
@@ -233,6 +231,15 @@
       </zipfileset>
     </zip>
   </target>
+
+  <target name="update-oss-systemvm-with-vmware" depends="-init-package" if="ssvm.include.vmware.jar">
+    <zip destfile="${dist.dir}/systemvm.zip" duplicate="preserve" update="true">
+      <zipfileset dir="${jar.dir}" >
+        <include name="${vmware.jar}" />
+        <include name="${vmware-base.jar}" />
+      </zipfileset>
+    </zip>
+  </target>	
 
   <target name="package-docs" depends="-init-package">
     <delete file="${dist.dir}/docs.zip" />
@@ -265,31 +272,19 @@
     <tstamp>
       <format property="package.date" pattern="yyyy-MM-dd" />
     </tstamp>
-    <zip destfile="${publish.dir}/cloud-${company.major.version}.${company.minor.version}.${company.patch.version}.${build.number}-${package.date}.zip" duplicate="preserve">
-      <zipfileset dir="${dist.dir}" prefix="cloud-${company.major.version}.${company.minor.version}.${company.patch.version}.${build.number}-${package.date}" filemode="777">
-        <include name="deploy-agent.sh" />
-        <include name="deploy-server.sh" />
-      </zipfileset>
-      <zipfileset dir="${db.dist.dir}" prefix="cloud-${company.major.version}.${company.minor.version}.${company.patch.version}.${build.number}-${package.date}/db" filemode="777">
-        <include name="deploy-db.sh" />
-      </zipfileset>
-      <zipfileset dir="${db.dist.dir}" prefix="cloud-${company.major.version}.${company.minor.version}.${company.patch.version}.${build.number}-${package.date}/db">
-        <include name="log4j.properties" />
-        <include name="create-schema.sql" />
-        <include name="init-data.sql" />
-        <include name="create-index-fk.sql" />
-        <include name="server-setup.xml" />
-        <include name="create-database.sql" />
-        <include name="templates.sql" />
-      </zipfileset>
-      <zipfileset dir="${dist.dir}" prefix="cloud-${company.major.version}.${company.minor.version}.${company.patch.version}.${build.number}-${package.date}">
-        <include name="agent.zip" />
-        <include name="client.zip" />
-        <include name="docs.zip" />
-      </zipfileset>
-    </zip>
   </target>
 
+  <target name="package-kvm" depends="package-agent">
+    <zip destfile="${dist.dir}/agent.zip" update="true">
+    	<zipfileset dir="${jar.dir}">
+    	   <include name="cloud-plugin-hypervisor-kvm.jar"/>
+    	</zipfileset>
+    	<zipfileset dir="${deps.dir}">
+    	   <include name="libvirt-0.4.8.jar"/>
+    	</zipfileset>
+    </zip>
+  </target>
+	
   <target name="clean-zip">
     <delete dir="${dist.dir}">
       <include name="*.zip" />

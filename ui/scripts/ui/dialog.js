@@ -265,6 +265,15 @@
               }, 100);
             }
           }
+
+          // Setup on click event
+          if (field.onChange) {
+            $input.click(function() {
+              field.onChange({
+                $checkbox: $input
+              });
+            });
+          }
         } else if (field.dynamic) {
           // Generate a 'sub-create-form' -- append resulting fields
           $input = $('<div>').addClass('dynamic-input').appendTo($value);
@@ -336,8 +345,12 @@
 				if(field.validation != null)
           $input.data('validation-rules', field.validation);
 				else
-          $input.data('validation-rules', {});	
-					
+          $input.data('validation-rules', {});
+
+          var fieldLabel = field.label;
+          var inputId = $input.attr('id') ? $input.attr('id') : fieldLabel.replace(/\./g,'_');
+          $input.attr('id', inputId);
+          $name.find('label').attr('for', inputId);
       });
      
       var getFormValues = function() {

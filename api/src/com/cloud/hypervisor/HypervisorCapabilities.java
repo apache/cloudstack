@@ -43,5 +43,8 @@ public interface HypervisorCapabilities {
      */
     Long getMaxGuestsLimit();
 
-
+    /**
+     * @return the max. data volumes per VM supported by hypervisor
+     */
+    Integer getMaxDataVolumesLimit();
 }

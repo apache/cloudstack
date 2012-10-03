@@ -14,12 +14,26 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 (function($, cloudStack) { 
 
   var zoneObjs, podObjs, clusterObjs, domainObjs, networkOfferingObjs, physicalNetworkObjs;
   var selectedClusterObj, selectedZoneObj, selectedPublicNetworkObj, selectedManagementNetworkObj, selectedPhysicalNetworkObj, selectedGuestNetworkObj; 
   var nspMap = {}; //from listNetworkServiceProviders API 
 	var nspHardcodingArray = []; //for service providers listView (hardcoding, not from listNetworkServiceProviders API) 
+
+  // Add router type to virtual router
+  // -- can be either Project, VPC, or System (standard)
+  var mapRouterType = function(index, router) {
+    var routerType = _l('label.menu.system');
+
+    if (router.projectid) routerType = _l('label.project');
+    if (router.vpcid) routerType = 'VPC';
+
+    return $.extend(router, {
+      routerType: routerType
+    });
+  };
 	
   cloudStack.publicIpRangeAccount = {
     dialog: function(args) {      
@@ -106,7 +120,8 @@
 		  trafficType.kvmnetworklabel = dictionary['label.network.label.display.for.blank.value'];
 		if(trafficType.vmwarenetworklabel == null || trafficType.vmwarenetworklabel == 0)
 		  trafficType.vmwarenetworklabel = dictionary['label.network.label.display.for.blank.value'];
-		
+	        if(trafficType.ovmnetworklabel == null || trafficType.ovmnetworklabel == 0)
+                   trafficType.ovmnetworklabel = dictionary['label.network.label.display.for.blank.value'];	
     return trafficType;
   };
 
@@ -118,7 +133,8 @@
 		  array1.push("&kvmnetworklabel=" + labels.kvmnetworklabel);
 		if(labels.vmwarenetworklabel != dictionary['label.network.label.display.for.blank.value'])
 		  array1.push("&vmwarenetworklabel=" + labels.vmwarenetworklabel);
-				
+	        if(labels.ovmnetworklabel != dictionary['label.network.label.display.for.blank.value'])
+                  array1.push("&ovmnetworklabel=" + labels.ovmnetworklabel); 		
 		$.ajax({
       url: createURL('updateTrafficType' + array1.join("")),
       data: {
@@ -257,13 +273,22 @@
             $.ajax({
               url: createURL('listRouters'),
               data: {
-                listAll: true
+                projectid: -1
               },
               success: function(json) {
-                dataFns.capacity($.extend(data, {
-                  virtualRouterCount: json.listroutersresponse.count ?
-                    json.listroutersresponse.count : 0
-                }));
+                var total1 = json.listroutersresponse.count ? json.listroutersresponse.count : 0;								
+								$.ajax({
+								  url: createURL('listRouters'),
+									data: {
+									  listAll: true
+									},
+									success: function(json) {
+									  var total2 = json.listroutersresponse.count ? json.listroutersresponse.count : 0;		
+										dataFns.capacity($.extend(data, {
+											virtualRouterCount: (total1 + total2)
+										}));																	
+									}									
+								});										
               }
             });
           },
@@ -311,6 +336,11 @@
             data: data
           });
         };
+
+        //  re: CS-16413 -- Disable API calls
+        return args.response.success({
+          data: {}
+        });
 
         dataFns.zoneCount({});
       }
@@ -395,7 +425,8 @@
                   {
                     xennetworklabel: { label: 'label.xen.traffic.label', isEditable: true },
                     kvmnetworklabel: { label: 'label.kvm.traffic.label', isEditable: true },
-                    vmwarenetworklabel: { label: 'label.vmware.traffic.label', isEditable: true }
+                    vmwarenetworklabel: { label: 'label.vmware.traffic.label', isEditable: true },
+                    ovmnetworklabel: { label: 'OVM traffic label',isEditable: true }
                   }
                 ],
 
@@ -414,6 +445,7 @@
                       selectedPublicNetworkObj.xennetworklabel = trafficType.xennetworklabel;
                       selectedPublicNetworkObj.kvmnetworklabel = trafficType.kvmnetworklabel;
                       selectedPublicNetworkObj.vmwarenetworklabel = trafficType.vmwarenetworklabel;
+                      selectedPublicNetworkObj.ovmnetworklabel = trafficType.ovmnetworklabel;
 
                       args.response.success({data: selectedPublicNetworkObj});
                     }
@@ -566,7 +598,8 @@
                   {
                     xennetworklabel: { label: 'label.xen.traffic.label', isEditable: true },
                     kvmnetworklabel: { label: 'label.kvm.traffic.label', isEditable: true },
-                    vmwarenetworklabel: { label: 'label.vmware.traffic.label', isEditable: true }
+                    vmwarenetworklabel: { label: 'label.vmware.traffic.label', isEditable: true },
+                    ovmnetworklabel: { label: 'OVM traffic label', isEditable: true }
                   }
                 ],
 
@@ -583,6 +616,7 @@
                       selectedPublicNetworkObj.xennetworklabel = trafficType.xennetworklabel;
                       selectedPublicNetworkObj.kvmnetworklabel = trafficType.kvmnetworklabel;
                       selectedPublicNetworkObj.vmwarenetworklabel = trafficType.vmwarenetworklabel;
+                      selectedPublicNetworkObj.ovmnetworklabel = trafficType.ovmnetworklabel;
 
                       args.response.success({data: selectedPublicNetworkObj});
                     }
@@ -723,7 +757,8 @@
                   {
                     xennetworklabel: { label: 'label.xen.traffic.label', isEditable: true },
                     kvmnetworklabel: { label: 'label.kvm.traffic.label', isEditable: true },
-                    vmwarenetworklabel: { label: 'label.vmware.traffic.label', isEditable: true }
+                    vmwarenetworklabel: { label: 'label.vmware.traffic.label', isEditable: true },
+                    ovmnetworklabel: { label: 'OVM traffic label', isEditable: true } 
                   }
                 ],
                 dataProvider: function(args) {
@@ -738,7 +773,7 @@
                       selectedManagementNetworkObj.xennetworklabel = trafficType.xennetworklabel;
                       selectedManagementNetworkObj.kvmnetworklabel = trafficType.kvmnetworklabel;
                       selectedManagementNetworkObj.vmwarenetworklabel = trafficType.vmwarenetworklabel;
-
+                      selectedPublicNetworkObj.ovmnetworklabel = trafficType.ovmnetworklabel;
                       args.response.success({ data: selectedManagementNetworkObj });
                     }
                   });
@@ -855,7 +890,8 @@
                   { //updateTrafficType API
                     xennetworklabel: { label: 'label.xen.traffic.label', isEditable: true },
                     kvmnetworklabel: { label: 'label.kvm.traffic.label', isEditable: true },
-                    vmwarenetworklabel: { label: 'label.vmware.traffic.label', isEditable: true }
+                    vmwarenetworklabel: { label: 'label.vmware.traffic.label', isEditable: true },
+                    ovmnetworklabel: { label: 'OVM traffic label', isEditable: true }
                   }
                 ],
                 dataProvider: function(args) { //physical network + Guest traffic type       
@@ -890,6 +926,7 @@
 											selectedPhysicalNetworkObj["xennetworklabel"] = trafficType.xennetworklabel;
 											selectedPhysicalNetworkObj["kvmnetworklabel"] = trafficType.kvmnetworklabel;
 											selectedPhysicalNetworkObj["vmwarenetworklabel"] = trafficType.vmwarenetworklabel;
+                                                                                        selectedPhysicalNetworkObj["ovmnetworklabel"] = trafficType.ovmnetworklabel;
 
 											args.response.success({
 												actionFilter: function() {
@@ -1314,8 +1351,14 @@
 
                           guestGateway: { label: 'label.guest.gateway' },
                           guestNetmask: { label: 'label.guest.netmask' },
-                          guestStartIp: { label: 'label.guest.start.ip' },
-                          guestEndIp: { label: 'label.guest.end.ip' },
+                          guestStartIp: { 
+													  label: 'label.guest.start.ip', 
+														validation: { required: true } 
+													},
+                          guestEndIp: { 
+													  label: 'label.guest.end.ip', 
+														validation: { required: true } 
+													},
                           networkdomain: { label: 'label.network.domain' }
                         }
                       },
@@ -1417,8 +1460,9 @@
 
 										//need to make 2 listNetworks API call to get all guest networks from one physical network in Advanced zone
 										var items = [];
+										//"listNetworks&projectid=-1": list guest networks under all projects (no matter who the owner is)
 										$.ajax({
-                      url: createURL("listNetworks&listAll=true&trafficType=Guest&zoneId=" + selectedZoneObj.id + "&physicalnetworkid=" + selectedPhysicalNetworkObj.id + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
+                      url: createURL("listNetworks&projectid=-1&trafficType=Guest&zoneId=" + selectedZoneObj.id + "&physicalnetworkid=" + selectedPhysicalNetworkObj.id + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
                       dataType: "json",
 											async: false,
                       success: function(json) {
@@ -1432,8 +1476,9 @@
 										  networkCollectionMap[this.id] = this.name;
 										});
 
+										//"listNetworks&listAll=true: list guest networks that are not under any project (no matter who the owner is)
 										$.ajax({
-                      url: createURL("listNetworks&listAll=true&projectid=-1&trafficType=Guest&zoneId=" + selectedZoneObj.id + "&physicalnetworkid=" + selectedPhysicalNetworkObj.id + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
+                      url: createURL("listNetworks&listAll=true&trafficType=Guest&zoneId=" + selectedZoneObj.id + "&physicalnetworkid=" + selectedPhysicalNetworkObj.id + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
                       dataType: "json",
 											async: false,
                       success: function(json) {
@@ -1755,10 +1800,24 @@
 														project: { label: 'label.project' }
                           }
                         ],
-                        dataProvider: function(args) {			
+                        dataProvider: function(args) {	                         
+													var data = {
+													  id: args.context.networks[0].id
+													};
+													if(args.context.networks[0].projectid != null) {
+													  $.extend(data, {
+														  projectid: -1
+														});
+													}
+													else {
+													  $.extend(data, {
+														  listAll: true   //pass "&listAll=true" to "listNetworks&id=xxxxxxxx" for now before API gets fixed.
+														});
+													}
+												
 													$.ajax({
-														url: createURL("listNetworks&id=" + args.context.networks[0].id + "&listAll=true" + "&projectid=-1"), //pass "&listAll=true" to "listNetworks&id=xxxxxxxx" for now before API gets fixed.
-														dataType: "json",
+														url: createURL("listNetworks"), 
+														data: data,
 														async: false,
 														success: function(json) {														 
 															selectedGuestNetworkObj = json.listnetworksresponse.network[0];		
@@ -1913,26 +1972,13 @@
 										supportedServices: { label: 'label.supported.services' }
                   }
                 ],
-                dataProvider: function(args) { 					 
-									$.ajax({
-										url: createURL("listNetworkServiceProviders&id=" + nspMap["virtualRouter"].id),
-										dataType: "json",
-										async: true,
-										success: function(json) {										  
-											var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;											
-											for(var i = 0; i < items.length; i++) {
-												if(items[i].name == "VirtualRouter" ) {
-												  nspMap["virtualRouter"] = items[i];													
-													args.response.success({
-														actionFilter: virtualRouterProviderActionFilter,
-														data: $.extend(nspMap["virtualRouter"], {
-															supportedServices: nspMap["virtualRouter"].servicelist.join(', ')
-														})
-													});													
-													break;
-												}
-											}													
-										}
+                dataProvider: function(args) { 		
+                  refreshNspData("VirtualRouter"); 								  
+									args.response.success({
+										actionFilter: virtualRouterProviderActionFilter,
+										data: $.extend(nspMap["virtualRouter"], {
+											supportedServices: nspMap["virtualRouter"].servicelist.join(', ')
+										})
 									});		
                 }
               },
@@ -1945,6 +1991,9 @@
                   fields: {
                     name: { label: 'label.name' },
                     zonename: { label: 'label.zone' },
+                    routerType: {
+                      label: 'label.type'
+                    },
                     state: {
                       converter: function(str) {
                         // For localization
@@ -1971,29 +2020,38 @@
 											}
 										}
 
+                    var routers = [];
                     $.ajax({
                       url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
-                      dataType: 'json',
-                      async: true,
+                      data: {
+											  forvpc: false
+											},
                       success: function(json) {
-                        var items = json.listroutersresponse.router;
-                        args.response.success({
-                          actionFilter: routerActionfilter,
-                          data: items
-                        });
-                      }
-                    });
+                        var items = json.listroutersresponse.router ?
+                              json.listroutersresponse.router : [];
 
-                    // Get project routers
-                    $.ajax({
-                      url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
-                      dataType: 'json',
-                      async: true,
-                      success: function(json) {
-                        var items = json.listroutersresponse.router;
-                        args.response.success({
-                          actionFilter: routerActionfilter,
-                          data: items
+                        $(items).map(function(index, item) {
+                          routers.push(item); 
+                        });
+
+                        // Get project routers
+                        $.ajax({
+                          url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
+                          data: {
+														forvpc: false
+													},
+                          success: function(json) {
+                            var items = json.listroutersresponse.router ?
+                                  json.listroutersresponse.router : [];
+                            
+                            $(items).map(function(index, item) {
+                              routers.push(item); 
+                            });
+                            args.response.success({
+                              actionFilter: routerActionfilter,
+                              data: $(routers).map(mapRouterType)
+                            });
+                          }
                         });
                       }
                     });
@@ -2112,64 +2170,7 @@
 													poll: pollAsyncJobResult
 												}
 											},
-
-                      /*
-                      changeService: {
-                        label: 'label.change.service.offering',
-                        createForm: {
-                          title: 'label.change.service.offering',
-                          desc: '',
-                          fields: {
-                            serviceOfferingId: {
-                              label: 'label.compute.offering',
-                              select: function(args) {
-                                $.ajax({
-                                  url: createURL("listServiceOfferings&issystem=true&systemvmtype=domainrouter"),
-                                  dataType: "json",
-                                  async: true,
-                                  success: function(json) {
-                                    var serviceofferings = json.listserviceofferingsresponse.serviceoffering;
-                                    var items = [];
-                                    $(serviceofferings).each(function() {
-                                      if(this.id != args.context.routers[0].serviceofferingid) {
-                                        items.push({id: this.id, description: this.displaytext});
-                                      }
-                                    });
-                                    args.response.success({data: items});
-                                  }
-                                });
-                              }
-                            }
-                          }
-                        },
-												messages: {
-                          notification: function(args) {
-                            return 'label.change.service.offering';
-                          }
-                        },
-                        action: function(args) {
-                          $.ajax({
-                            url: createURL("changeServiceForRouter&id=" + args.context.routers[0].id + "&serviceofferingid=" + args.data.serviceOfferingId),
-                            dataType: "json",
-                            async: true,
-                            success: function(json) {
-                              var jsonObj = json.changeserviceforrouterresponse.domainrouter;
-                              args.response.success({data: jsonObj});
-                            },
-                            error: function(XMLHttpResponse) {
-                              var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                              args.response.error(errorMsg);
-                            }
-                          });
-                        },
-                        notification: {
-                          poll: function(args) {
-                            args.complete();
-                          }
-                        }
-                      },
-											*/
-
+                      
                       migrate: {
                         label: 'label.action.migrate.router',
                         createForm: {
@@ -2189,7 +2190,8 @@
                                     var hostObjs = json.listhostsresponse.host;
                                     var items = [];
                                     $(hostObjs).each(function() {
-                                      items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))});
+                                      //items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))}); //listHosts API no longer returns hasEnoughCapacity proprety
+																			items.push({id: this.id, description: this.name});
                                     });
                                     args.response.success({data: items});
                                   }
@@ -2283,6 +2285,7 @@
                             id: { label: 'label.id' },
                             projectid: { label: 'label.project.id' },
                             state: { label: 'label.state' },
+                            guestnetworkid: { label: 'label.network.id' },
                             publicip: { label: 'label.public.ip' },
                             guestipaddress: { label: 'label.guest.ip' },
                             linklocalip: { label: 'label.linklocal.ip' },
@@ -2313,6 +2316,47 @@
 															});
 														}
 													});		
+                        }
+                      },
+                      nics: {
+                        title: 'label.nics',
+                        multiple: true,
+                        fields: [
+                          {
+                            name: { label: 'label.name', header: true },
+                            type: { label: 'label.type' },
+                            traffictype: { label: 'label.traffic.type' },
+                            networkname: { label: 'label.network.name' },
+                            netmask: { label: 'label.netmask' },
+                            ipaddress: { label: 'label.ip.address' },
+                            id: { label: 'label.id' },
+                            networkid: { label: 'label.network.id' },
+                            isolationuri: { label: 'label.isolation.uri' },
+                            broadcasturi: { label: 'label.broadcast.uri' }
+                          }
+                        ],
+                        dataProvider: function(args) {
+                          $.ajax({
+                            url: createURL("listRouters&id=" + args.context.routers[0].id),
+                            dataType: 'json',
+                            async: true,
+                            success: function(json) {
+                              var jsonObj = json.listroutersresponse.router[0].nic;
+
+                              args.response.success({
+                                actionFilter: routerActionfilter,
+                                data: $.map(jsonObj, function(nic, index) {
+                                  var name = 'NIC ' + (index + 1);                    
+                                  if (nic.isdefault) {
+                                    name += ' (' + _l('label.default') + ')';
+                                  }
+                                  return $.extend(nic, {
+                                    name: name
+                                  });
+                                })
+                              });
+                            }
+                          });
                         }
                       }
                     }
@@ -2385,7 +2429,542 @@
               }
             }
           },
+			
+					vpcVirtualRouter: {
+            id: 'vpcVirtualRouterProviders',
+            label: 'VPC Virtual Router',
+            isMaximized: true,
+            type: 'detailView',
+            fields: {
+              name: { label: 'label.name' },
+              ipaddress: { label: 'label.ip.address' },
+              state: { label: 'label.status', indicator: { 'Enabled': 'on' } }
+            },
+            tabs: {
+              network: {
+                title: 'label.network',
+                fields: [
+                  {
+                    name: { label: 'label.name' }
+                  },
+                  {
+                    id: { label: 'label.id' },
+                    state: { label: 'label.state' },
+                    physicalnetworkid: { label: 'label.physical.network.ID' },
+                    destinationphysicalnetworkid: { label: 'label.destination.physical.network.id' },
+										supportedServices: { label: 'label.supported.services' }
+                  }
+                ],
+                dataProvider: function(args) { 			
+									refreshNspData("VpcVirtualRouter"); 								  
+									args.response.success({
+										actionFilter: virtualRouterProviderActionFilter,
+										data: $.extend(nspMap["vpcVirtualRouter"], {
+											supportedServices: nspMap["vpcVirtualRouter"].servicelist.join(', ')
+										})
+									});											
+                }
+              },
 
+              instances: {
+                title: 'label.instances',
+                listView: {
+                  label: 'label.virtual.appliances',
+                  id: 'routers',
+                  fields: {
+                    name: { label: 'label.name' },
+                    zonename: { label: 'label.zone' },
+										routerType: {
+											label: 'label.type'
+										},
+                    state: {
+                      converter: function(str) {
+                        // For localization
+                        return str;
+                      },
+                      label: 'label.status',
+                      indicator: {
+                        'Running': 'on',
+                        'Stopped': 'off',
+                        'Error': 'off'
+                      }
+                    }
+                  },
+                  dataProvider: function(args) {
+									  var array1 = [];
+										if(args.filterBy != null) {
+											if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
+												switch(args.filterBy.search.by) {
+												case "name":
+													if(args.filterBy.search.value.length > 0)
+														array1.push("&keyword=" + args.filterBy.search.value);
+													break;
+												}
+											}
+										}
+
+										var routers = [];
+                    $.ajax({
+                      url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
+                      dataType: 'json',
+											data: {
+											  forvpc: true
+											},
+                      async: true,
+                      success: function(json) {
+                        var items = json.listroutersresponse.router;												
+												$(items).map(function(index, item) {
+													routers.push(item); 
+												});
+												
+												// Get project routers
+												$.ajax({
+													url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
+													dataType: 'json',
+													data: {
+														forvpc: true
+													},
+													async: true,
+													success: function(json) {
+														var items = json.listroutersresponse.router;														
+														$(items).map(function(index, item) {
+															routers.push(item); 
+														});														
+														args.response.success({
+															actionFilter: routerActionfilter,
+															data: $(routers).map(mapRouterType)
+														});
+													}
+												});												                    
+                      }
+                    });
+                  },
+                  detailView: {
+                    name: 'Virtual applicance details',
+                    actions: {
+                      start: {
+                        label: 'label.action.start.router',
+                        messages: {
+                          confirm: function(args) {
+                            return 'message.action.start.router';
+                          },
+                          notification: function(args) {
+                            return 'label.action.start.router';
+                          }
+                        },
+                        action: function(args) {
+                          $.ajax({
+                            url: createURL('startRouter&id=' + args.context.routers[0].id),
+                            dataType: 'json',
+                            async: true,
+                            success: function(json) {
+                              var jid = json.startrouterresponse.jobid;
+                              args.response.success({
+                                _custom: {
+                                  jobId: jid,
+                                  getUpdatedItem: function(json) {
+                                    return json.queryasyncjobresultresponse.jobresult.domainrouter;
+                                  },
+                                  getActionFilter: function() {
+                                    return routerActionfilter;
+                                  }
+                                }
+                              });
+                            }
+                          });
+                        },
+                        notification: {
+                          poll: pollAsyncJobResult
+                        }
+                      },
+
+                      stop: {
+                        label: 'label.action.stop.router',
+												createForm: {
+													title: 'label.action.stop.router',
+													desc: 'message.action.stop.router',
+													fields: {
+														forced: {
+															label: 'force.stop',
+															isBoolean: true,
+															isChecked: false
+														}
+													}
+												},
+                        messages: {
+                          notification: function(args) {
+                            return 'label.action.stop.router';
+                          }
+                        },
+                        action: function(args) {
+												  var array1 = [];
+													array1.push("&forced=" + (args.data.forced == "on"));
+                          $.ajax({
+                            url: createURL('stopRouter&id=' + args.context.routers[0].id + array1.join("")),
+                            dataType: 'json',
+                            async: true,
+                            success: function(json) {
+                              var jid = json.stoprouterresponse.jobid;
+                              args.response.success({
+                                _custom: {
+                                  jobId: jid,
+                                  getUpdatedItem: function(json) {
+                                    return json.queryasyncjobresultresponse.jobresult.domainrouter;
+                                  },
+                                  getActionFilter: function() {
+                                    return routerActionfilter;
+                                  }
+                                }
+                              });
+                            }
+                          });
+                        },
+                        notification: {
+                          poll: pollAsyncJobResult
+                        }
+                      },																			  
+											
+											restart: {
+												label: 'label.action.reboot.router',
+												messages: {
+													confirm: function(args) {
+														return 'message.action.reboot.router';
+													},
+													notification: function(args) {
+														return 'label.action.reboot.router';
+													}
+												},
+												action: function(args) {
+													$.ajax({
+														url: createURL('rebootRouter&id=' + args.context.routers[0].id),
+														dataType: 'json',
+														async: true,
+														success: function(json) {
+															var jid = json.rebootrouterresponse.jobid;
+															args.response.success({
+																_custom: {
+																	jobId: jid,
+																	getUpdatedItem: function(json) {
+																		return json.queryasyncjobresultresponse.jobresult.domainrouter;
+																	},
+																	getActionFilter: function() {
+																		return routerActionfilter;
+																	}
+																}
+															});
+														}
+													});
+												},
+												notification: {
+													poll: pollAsyncJobResult
+												}
+											},							        																
+										
+											changeService: {
+												label: 'label.change.service.offering',
+												createForm: {
+													title: 'label.change.service.offering',
+													desc: '',
+													fields: {
+														serviceOfferingId: {
+															label: 'label.compute.offering',
+															select: function(args) {																															
+																$.ajax({
+																	url: createURL('listServiceOfferings'),
+																	data: {
+																	  issystem: true,
+																	  systemvmtype: 'domainrouter'
+																	},
+																	success: function(json) {																	 
+																		var serviceofferings = json.listserviceofferingsresponse.serviceoffering;
+																		var items = [];
+																		$(serviceofferings).each(function() {		
+																			if(this.id != args.context.routers[0].serviceofferingid) {
+																				items.push({id: this.id, description: this.name});  //default one (i.e. "System Offering For Software Router") doesn't have displaytext property. So, got to use name property instead.
+																			}
+																		});																	
+																		args.response.success({data: items});
+																	}
+																});
+															}
+														}
+													}
+												},
+												messages: {
+													notification: function(args) {
+														return 'label.change.service.offering';
+													}
+												},
+												action: function(args) {												  
+													$.ajax({
+														url: createURL("changeServiceForRouter&id=" + args.context.routers[0].id + "&serviceofferingid=" + args.data.serviceOfferingId),
+														dataType: "json",
+														async: true,
+														success: function(json) {
+															var jsonObj = json.changeserviceforrouterresponse.domainrouter;
+															args.response.success({data: jsonObj});
+														},
+														error: function(XMLHttpResponse) {
+															var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+															args.response.error(errorMsg);
+														}
+													});
+												},
+												notification: {
+													poll: function(args) {
+														args.complete();
+													}
+												}
+											},											
+											
+											'remove': {
+												label: 'label.destroy.router',
+												messages: {
+													confirm: function(args) {
+														return 'message.confirm.destroy.router';
+													},
+													notification: function(args) {
+														return 'label.destroy.router';
+													}
+												},
+												action: function(args) {
+													$.ajax({
+														url: createURL("destroyRouter&id=" + args.context.routers[0].id),
+														dataType: "json",
+														async: true,
+														success: function(json) {
+															var jid = json.destroyrouterresponse.jobid;
+															args.response.success({
+																_custom: {
+																	jobId: jid
+																}
+															});
+														}
+													});
+												},
+												notification: {
+													poll: pollAsyncJobResult
+												}
+											},
+                      
+                      migrate: {
+                        label: 'label.action.migrate.router',
+                        createForm: {
+                          title: 'label.action.migrate.router',
+                          desc: '',
+                          fields: {
+                            hostId: {
+                              label: 'label.host',
+                              validation: { required: true },
+                              select: function(args) {
+                                $.ajax({
+                                  url: createURL("listHosts&VirtualMachineId=" + args.context.routers[0].id),
+                                  //url: createURL("listHosts"),	//for testing only, comment it out before checking in.
+                                  dataType: "json",
+                                  async: true,
+                                  success: function(json) {
+                                    var hostObjs = json.listhostsresponse.host;
+                                    var items = [];
+                                    $(hostObjs).each(function() {
+                                      //items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))}); //listHosts API no longer returns hasEnoughCapacity proprety
+																			items.push({id: this.id, description: this.name});
+                                    });
+                                    args.response.success({data: items});
+                                  }
+                                });
+                              },
+                              error: function(XMLHttpResponse) {
+                                var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                args.response.error(errorMsg);
+                              }
+                            }
+                          }
+                        },
+												messages: {
+                          notification: function(args) {
+                            return 'label.action.migrate.router';
+                          }
+                        },
+                        action: function(args) {
+                          $.ajax({
+                            url: createURL("migrateSystemVm&hostid=" + args.data.hostId + "&virtualmachineid=" + args.context.routers[0].id),
+                            dataType: "json",
+                            async: true,
+                            success: function(json) {
+                              var jid = json.migratesystemvmresponse.jobid;
+                              args.response.success({
+                                _custom: {
+                                  jobId: jid,
+                                  getUpdatedItem: function(json) {
+                                    //return json.queryasyncjobresultresponse.jobresult.systemvminstance;    //not all properties returned in systemvminstance
+                                    $.ajax({
+                                      url: createURL("listRouters&id=" + json.queryasyncjobresultresponse.jobresult.systemvminstance.id),
+                                      dataType: "json",
+                                      async: false,
+                                      success: function(json) {
+                                        var items = json.listroutersresponse.router;
+                                        if(items != null && items.length > 0) {
+                                          return items[0];
+                                        }
+                                      }
+                                    });
+                                  },
+                                  getActionFilter: function() {
+                                    return routerActionfilter;
+                                  }
+                                }
+                              });
+                            }
+                          });
+                        },
+                        notification: {
+                          poll: pollAsyncJobResult
+                        }
+                      },
+
+                      viewConsole: {
+                        label: 'label.view.console',
+                        action: {
+                          externalLink: {
+                            url: function(args) {
+                              return clientConsoleUrl + '?cmd=access&vm=' + args.context.routers[0].id;
+                            },
+                            title: function(args) {
+															return args.context.routers[0].id.substr(0,8);  //title in window.open() can't have space nor longer than 8 characters. Otherwise, IE browser will have error.
+														},
+                            width: 820,
+                            height: 640
+                          }
+                        }
+                      }
+                    },
+                    tabs: {
+                      details: {
+                        title: 'label.details',
+                        preFilter: function(args) {
+												  var hiddenFields = [];
+                          if (!args.context.routers[0].project) {
+													  hiddenFields.push('project');
+														hiddenFields.push('projectid');
+                          }
+													if(selectedZoneObj.networktype == 'Basic') {
+													  hiddenFields.push('publicip'); //In Basic zone, guest IP is public IP. So, publicip is not returned by listRouters API. Only guestipaddress is returned by listRouters API.
+											    }
+                          return hiddenFields;
+                        },
+                        fields: [
+                          {
+                            name: { label: 'label.name' },
+                            project: { label: 'label.project' }
+                          },
+                          {
+                            id: { label: 'label.id' },														
+                            projectid: { label: 'label.project.id' },
+                            state: { label: 'label.state' },
+                            publicip: { label: 'label.public.ip' },
+                            guestipaddress: { label: 'label.guest.ip' },
+                            linklocalip: { label: 'label.linklocal.ip' },
+                            hostname: { label: 'label.host' },
+                            serviceofferingname: { label: 'label.compute.offering' },
+                            networkdomain: { label: 'label.network.domain' },
+                            domain: { label: 'label.domain' },
+                            account: { label: 'label.account' },
+                            created: { label: 'label.created', converter: cloudStack.converters.toLocalDate },
+                            isredundantrouter: {
+                              label: 'label.redundant.router',
+                              converter: cloudStack.converters.toBooleanText
+                            },
+                            redundantRouterState: { label: 'label.redundant.state' },
+														vpcid: { label: 'VPC ID' }
+                          }
+                        ],
+                        dataProvider: function(args) {												  
+													$.ajax({
+														url: createURL("listRouters&id=" + args.context.routers[0].id),
+														dataType: 'json',
+														async: true,
+														success: function(json) {
+															var jsonObj = json.listroutersresponse.router[0];													
+															addExtraPropertiesToRouterInstanceObject(jsonObj);															
+															args.response.success({
+																actionFilter: routerActionfilter,
+																data: jsonObj
+															});
+														}
+													});		
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            actions: {
+              enable: {
+                label: 'label.enable.provider',
+                action: function(args) {
+                  $.ajax({
+                    url: createURL("updateNetworkServiceProvider&id=" + nspMap["vpcVirtualRouter"].id + "&state=Enabled"),
+                    dataType: "json",
+                    success: function(json) {
+                      var jid = json.updatenetworkserviceproviderresponse.jobid;
+											args.response.success(
+                        {_custom:
+                          {
+                            jobId: jid,
+														getUpdatedItem: function(json) {
+															$(window).trigger('cloudStack.fullRefresh');
+														}
+                          }
+                        }
+                      );
+                    }
+                  });
+                },
+                messages: {
+								  confirm: function(args) {
+									  return 'message.confirm.enable.provider';
+									},
+                  notification: function() {
+									  return 'label.enable.provider';
+									}
+                },
+                notification: { poll: pollAsyncJobResult }
+              },
+              disable: {
+                label: 'label.disable.provider',
+                action: function(args) {
+                  $.ajax({
+                    url: createURL("updateNetworkServiceProvider&id=" + nspMap["vpcVirtualRouter"].id + "&state=Disabled"),
+                    dataType: "json",
+                    success: function(json) {
+                      var jid = json.updatenetworkserviceproviderresponse.jobid;
+											args.response.success(
+                        {_custom:
+                          {
+                            jobId: jid,
+														getUpdatedItem: function(json) {
+															$(window).trigger('cloudStack.fullRefresh');
+														}
+                          }
+                        }
+                      );
+                    }
+                  });
+                },
+                messages: {
+								  confirm: function(args) {
+									  return 'message.confirm.disable.provider';
+									},
+                  notification: function() {
+									  return 'label.disable.provider';
+									}
+                },
+                notification: { poll: pollAsyncJobResult }
+              }
+            }
+          },
+										
           // NetScaler provider detail view
           netscaler: {
             type: 'detailView',
@@ -3466,6 +4045,7 @@
                       array1.push("&internaldns1=" + todb(args.data.internaldns1));
                       array1.push("&internaldns2=" + todb(args.data.internaldns2));  //internaldns2 can be empty ("") when passed to API
                       array1.push("&domain=" + todb(args.data.domain));
+                      array1.push("&localstorageenabled=" + (args.data.localstorageenabled == 'on'));
                       $.ajax({
                         url: createURL("updateZone&id=" + args.context.physicalResources[0].id + array1.join("")),
                         dataType: "json",
@@ -3494,14 +4074,14 @@
 
                     fields: [
                       {
-                        name: { label: 'label.zone', isEditable: true }
+                        name: { label: 'label.zone', isEditable: true, validation: { required: true } }
                       },
                       {
                         id: { label: 'label.id' },
                         allocationstate: { label: 'label.allocation.state' },
-                        dns1: { label: 'label.dns.1', isEditable: true },
+                        dns1: { label: 'label.dns.1', isEditable: true, validation: { required: true } },
                         dns2: { label: 'label.dns.2', isEditable: true },
-                        internaldns1: { label: 'label.internal.dns.1', isEditable: true },
+                        internaldns1: { label: 'label.internal.dns.1', isEditable: true, validation: { required: true } },
                         internaldns2: { label: 'label.internal.dns.2', isEditable: true },
                         domainname: { label: 'label.domain' },
                         networktype: { label: 'label.network.type' },
@@ -3509,6 +4089,12 @@
                         domain: {
                           label: 'label.network.domain',
                           isEditable: true
+                        },
+                        localstorageenabled: {
+                          label: 'label.local.storage.enabled',
+                          isBoolean: true,
+													isEditable: true,
+													converter:cloudStack.converters.toBooleanText
                         }
                       }
                     ],
@@ -3828,7 +4414,8 @@
                                         var hostObjs = json.listhostsresponse.host;
                                         var items = [];
                                         $(hostObjs).each(function() {
-                                          items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))});
+                                          //items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))}); //listHosts API no longer returns hasEnoughCapacity proprety
+																					items.push({id: this.id, description: this.name});
                                         });
                                         args.response.success({data: items});
                                       }
@@ -4204,14 +4791,37 @@
                   var searchByArgs = args.filterBy.search.value.length ?
                     '&name=' + args.filterBy.search.value : '';
 
+                  var routers = [];
                   $.ajax({
-                    url: createURL('listRouters' + searchByArgs),
-                    data: { page: args.page, pageSize: pageSize, listAll: true },
-                    success: function (json) {
-                      args.response.success({ data: json.listroutersresponse.router });
-                    },
-                    error: function (json) {
-                      args.response.error(parseXMLHttpResponse(json));
+                    url: createURL("listRouters&listAll=true&page=" + args.page + "&pagesize=" + pageSize + searchByArgs),
+                    dataType: 'json',
+                    async: true,
+                    success: function(json) {
+                      var items = json.listroutersresponse.router ?
+                            json.listroutersresponse.router : [];
+
+                      $(items).map(function(index, item) {
+                        routers.push(item); 
+                      });
+                      
+                      // Get project routers
+                      $.ajax({
+                        url: createURL("listRouters&listAll=true&page=" + args.page + "&pagesize=" + pageSize + "&projectid=-1"),
+                        dataType: 'json',
+                        async: true,
+                        success: function(json) {
+                          var items = json.listroutersresponse.router ?
+                                json.listroutersresponse.router : [];
+                          
+                          $(items).map(function(index, item) {
+                            routers.push(item); 
+                          });
+                          args.response.success({
+                            actionFilter: routerActionfilter,
+                            data: $(routers).map(mapRouterType)
+                          });
+                        }
+                      });
                     }
                   });
                 },
@@ -4252,6 +4862,9 @@
           fields: {
             name: { label: 'label.name' },
             zonename: { label: 'label.zone' },
+            routerType: {
+              label: 'label.type'
+            },
             state: {
               converter: function(str) {
                 // For localization
@@ -4278,29 +4891,37 @@
               }
             }
 
+            var routers = [];
             $.ajax({
               url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
-              dataType: 'json',
-              async: true,
+              data: {
+							  forvpc: false
+							},
               success: function(json) {
-                var items = json.listroutersresponse.router;
-                args.response.success({
-                  actionFilter: routerActionfilter,
-                  data: items
-                });
-              }
-            });
+                var items = json.listroutersresponse.router ?
+                      json.listroutersresponse.router : [];
 
-            // Get project routers
-            $.ajax({
-              url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
-              dataType: 'json',
-              async: true,
-              success: function(json) {
-                var items = json.listroutersresponse.router;
-                args.response.success({
-                  actionFilter: routerActionfilter,
-                  data: items
+                $(items).map(function(index, item) {
+                  routers.push(item); 
+                });
+                // Get project routers
+                $.ajax({
+                  url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
+                  data: {
+										forvpc: false
+									},
+                  success: function(json) {
+                    var items = json.listroutersresponse.router ?
+                          json.listroutersresponse.router : [];
+                    
+                    $(items).map(function(index, item) {
+                      routers.push(item); 
+                    });
+                    args.response.success({
+                      actionFilter: routerActionfilter,
+                      data: $(routers).map(mapRouterType)
+                    });
+                  }
                 });
               }
             });
@@ -4419,63 +5040,99 @@
                   poll: pollAsyncJobResult
                 }
               },
-
-              /*
-               changeService: {
-               label: 'label.change.service.offering',
-               createForm: {
-               title: 'label.change.service.offering',
-               desc: '',
-               fields: {
-               serviceOfferingId: {
-               label: 'label.compute.offering',
-               select: function(args) {
-               $.ajax({
-               url: createURL("listServiceOfferings&issystem=true&systemvmtype=domainrouter"),
-               dataType: "json",
-               async: true,
-               success: function(json) {
-               var serviceofferings = json.listserviceofferingsresponse.serviceoffering;
-               var items = [];
-               $(serviceofferings).each(function() {
-               if(this.id != args.context.routers[0].serviceofferingid) {
-               items.push({id: this.id, description: this.displaytext});
-               }
-               });
-               args.response.success({data: items});
-               }
-               });
-               }
-               }
-               }
-               },
-               messages: {
-               notification: function(args) {
-               return 'label.change.service.offering';
-               }
-               },
-               action: function(args) {
-               $.ajax({
-               url: createURL("changeServiceForRouter&id=" + args.context.routers[0].id + "&serviceofferingid=" + args.data.serviceOfferingId),
-               dataType: "json",
-               async: true,
-               success: function(json) {
-               var jsonObj = json.changeserviceforrouterresponse.domainrouter;
-               args.response.success({data: jsonObj});
-               },
-               error: function(XMLHttpResponse) {
-               var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-               args.response.error(errorMsg);
-               }
-               });
-               },
-               notification: {
-               poll: function(args) {
-               args.complete();
-               }
-               }
-               },
-               */
+							
+							restart: {
+								label: 'label.action.reboot.router',
+								messages: {
+									confirm: function(args) {
+										return 'message.action.reboot.router';
+									},
+									notification: function(args) {
+										return 'label.action.reboot.router';
+									}
+								},
+								action: function(args) {
+									$.ajax({
+										url: createURL('rebootRouter&id=' + args.context.routers[0].id),
+										dataType: 'json',
+										async: true,
+										success: function(json) {
+											var jid = json.rebootrouterresponse.jobid;
+											args.response.success({
+												_custom: {
+													jobId: jid,
+													getUpdatedItem: function(json) {
+														return json.queryasyncjobresultresponse.jobresult.domainrouter;
+													},
+													getActionFilter: function() {
+														return routerActionfilter;
+													}
+												}
+											});
+										}
+									});
+								},
+								notification: {
+									poll: pollAsyncJobResult
+								}
+							},              							
+									
+							changeService: {
+								label: 'label.change.service.offering',
+								createForm: {
+									title: 'label.change.service.offering',
+									desc: '',
+									fields: {
+										serviceOfferingId: {
+											label: 'label.compute.offering',
+											select: function(args) {																															
+												$.ajax({
+													url: createURL('listServiceOfferings'),
+													data: {
+														issystem: true,
+														systemvmtype: 'domainrouter'
+													},
+													success: function(json) {
+														var serviceofferings = json.listserviceofferingsresponse.serviceoffering;
+														var items = [];
+														$(serviceofferings).each(function() {																		
+															if(this.id != args.context.routers[0].serviceofferingid) {
+																items.push({id: this.id, description: this.name});  //default one (i.e. "System Offering For Software Router") doesn't have displaytext property. So, got to use name property instead.
+															}
+														});
+														args.response.success({data: items});
+													}
+												});
+											}
+										}
+									}
+								},
+								messages: {
+									notification: function(args) {
+										return 'label.change.service.offering';
+									}
+								},
+								action: function(args) {												  
+									$.ajax({
+										url: createURL("changeServiceForRouter&id=" + args.context.routers[0].id + "&serviceofferingid=" + args.data.serviceOfferingId),
+										dataType: "json",
+										async: true,
+										success: function(json) {
+											var jsonObj = json.changeserviceforrouterresponse.domainrouter;
+											args.response.success({data: jsonObj});
+										},
+										error: function(XMLHttpResponse) {
+											var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+											args.response.error(errorMsg);
+										}
+									});
+								},
+								notification: {
+									poll: function(args) {
+										args.complete();
+									}
+								}
+							},							  
 
               migrate: {
                 label: 'label.action.migrate.router',
@@ -4496,7 +5153,8 @@
                             var hostObjs = json.listhostsresponse.host;
                             var items = [];
                             $(hostObjs).each(function() {
-                              items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))});
+                              //items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))}); //listHosts API no longer returns hasEnoughCapacity proprety
+															items.push({id: this.id, description: this.name});
                             });
                             args.response.success({data: items});
                           }
@@ -4590,6 +5248,7 @@
                     id: { label: 'label.id' },
                     projectid: { label: 'label.project.id' },
                     state: { label: 'label.state' },
+                    guestnetworkid: { label: 'label.network.id' },
                     publicip: { label: 'label.public.ip' },
                     guestipaddress: { label: 'label.guest.ip' },
                     linklocalip: { label: 'label.linklocal.ip' },
@@ -4603,7 +5262,8 @@
                       label: 'label.redundant.router',
                       converter: cloudStack.converters.toBooleanText
                     },
-                    redundantRouterState: { label: 'label.redundant.state' }
+                    redundantRouterState: { label: 'label.redundant.state' },
+										vpcid: { label: 'VPC ID' }
                   }
                 ],
                 dataProvider: function(args) {
@@ -4617,6 +5277,47 @@
                       args.response.success({
                         actionFilter: routerActionfilter,
                         data: jsonObj
+                      });
+                    }
+                  });
+                }
+              },
+              nics: {
+                title: 'label.nics',
+                multiple: true,
+                fields: [
+                  {
+                    name: { label: 'label.name', header: true },
+                    type: { label: 'label.type' },
+                    traffictype: { label: 'label.traffic.type' },
+                    networkname: { label: 'label.network.name' },
+                    netmask: { label: 'label.netmask' },
+                    ipaddress: { label: 'label.ip.address' },
+                    id: { label: 'label.id' },
+                    networkid: { label: 'label.network.id' },
+                    isolationuri: { label: 'label.isolation.uri' },
+                    broadcasturi: { label: 'label.broadcast.uri' }
+                  }
+                ],
+                dataProvider: function(args) {
+                  $.ajax({
+                    url: createURL("listRouters&id=" + args.context.routers[0].id),
+                    dataType: 'json',
+                    async: true,
+                    success: function(json) {
+                      var jsonObj = json.listroutersresponse.router[0].nic;
+
+                      args.response.success({
+                        actionFilter: routerActionfilter,
+                        data: $.map(jsonObj, function(nic, index) {
+                          var name = 'NIC ' + (index + 1);                    
+                          if (nic.isdefault) {
+                            name += ' (' + _l('label.default') + ')';
+                          }
+                          return $.extend(nic, {
+                            name: name
+                          });
+                        })
                       });
                     }
                   });
@@ -4914,7 +5615,8 @@
                             var hostObjs = json.listhostsresponse.host;
                             var items = [];
                             $(hostObjs).each(function() {
-                              items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))});
+                              //items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))}); //listHosts API no longer returns hasEnoughCapacity proprety
+															items.push({id: this.id, description: this.name});
                             });
                             args.response.success({data: items});
                           }
@@ -5922,14 +6624,14 @@
                 title: 'label.details',
                 fields: [
                   {
-                    name: { label: 'label.name', isEditable: true }
+                    name: { label: 'label.name', isEditable: true, validation: { required: true } }
                   },
                   {
                     id: { label: 'label.id' },
-                    netmask: { label: 'label.netmask', isEditable: true },
-                    startip: { label: 'label.start.IP', isEditable: true },
+                    netmask: { label: 'label.netmask', isEditable: true, validation: { required: true } },
+                    startip: { label: 'label.start.IP', isEditable: true, validation: { required: true } },
                     endip: { label: 'label.end.IP', isEditable: true },
-                    gateway: { label: 'label.gateway', isEditable: true },
+                    gateway: { label: 'label.gateway', isEditable: true, validation: { required: true } },
                     allocationstate: {
                       converter: function(str) {
                         // For localization
@@ -7054,7 +7756,7 @@
                   var array1 = [];
                   array1.push("&hosttags=" + todb(args.data.hosttags));
 
-                  if (args.data.oscategoryid != null && args.data.oscategoryid != 'None')
+                  if (args.data.oscategoryid != null)
                     array1.push("&osCategoryId=" + args.data.oscategoryid);
 
                   $.ajax({
@@ -7271,11 +7973,12 @@
                           async: true,
                           success: function(json) {
                             var oscategoryObjs = json.listoscategoriesresponse.oscategory;
-                            var items = [
-                              { id: null, description: _l('label.none') }
-                            ];
+                            var items = [];
                             $(oscategoryObjs).each(function() {
-                              items.push({id: this.id, description: this.name});
+                              if(this.name == 'None')
+                                items.unshift({ id: this.id, description: _l('label.none') });
+                              else
+                                items.push({id: this.id, description: this.name});
                             });
                             args.response.success({data: items});
                           }
@@ -7494,6 +8197,8 @@
                         var items = [];
                         items.push({id: "nfs", description: "nfs"});
                         items.push({id: "SharedMountPoint", description: "SharedMountPoint"});
+                        items.push({id: "rbd", description: "RBD"});
+                        items.push({id: "clvm", description: "CLVM"});
                         args.response.success({data: items});
                       }
                       else if(selectedClusterObj.hypervisortype == "XenServer") {
@@ -7677,6 +8382,27 @@
                           $form.find('.form-item[rel=vCenterDataCenter]').hide();
                           $form.find('.form-item[rel=vCenterDataStore]').hide();
                         }
+                        else if(protocol == "rbd") {
+                          $form.find('.form-item[rel=rbdmonitor]').css('display', 'inline-block');
+                          $form.find('.form-item[rel=rbdmonitor]').find(".name").find("label").text("RADOS Monitor:");
+
+                          $form.find('.form-item[rel=rbdpool]').css('display', 'inline-block');
+                          $form.find('.form-item[rel=rbdpool]').find(".name").find("label").text("RADOS Pool:");
+
+                          $form.find('.form-item[rel=rbdid]').css('display', 'inline-block');
+                          $form.find('.form-item[rel=rbdid]').find(".name").find("label").text("RADOS User:");
+
+                          $form.find('.form-item[rel=rbdsecret]').css('display', 'inline-block');
+                          $form.find('.form-item[rel=rbdsecret]').find(".name").find("label").text("RADOS Secret:");
+
+                          $form.find('.form-item[rel=server]').hide();
+                          $form.find('.form-item[rel=iqn]').hide();
+                          $form.find('.form-item[rel=lun]').hide();
+                          $form.find('.form-item[rel=volumegroup]').hide();
+                          $form.find('.form-item[rel=path]').hide();
+                          $form.find('.form-item[rel=vCenterDataCenter]').hide();
+                          $form.find('.form-item[rel=vCenterDataStore]').hide();
+                        }
                         else {
                           //$dialogAddPool.find("#add_pool_server_container").show();
                           $form.find('.form-item[rel=server]').css('display', 'inline-block');
@@ -7745,6 +8471,28 @@
                     isHidden: true
                   },
 
+                  // RBD
+                  rbdmonitor: {
+                    label: 'label.rbd.monitor',
+                    validation: { required: true },
+                    isHidden: true
+                  },
+                  rbdpool: {
+                    label: 'label.rbd.pool',
+                    validation: { required: true },
+                    isHidden: true
+                  },
+                   rbdid: {
+                    label: 'label.rbd.id',
+                    validation: { required: false },
+                    isHidden: true
+                  },
+                   rbdsecret: {
+                    label: 'label.rbd.secret',
+                    validation: { required: false },
+                    isHidden: true
+                  },
+
                   //always appear (begin)
                   storageTags: {
                     label: 'label.storage.tags',
@@ -7803,6 +8551,14 @@
                     vg = "/" + vg;
 									url = clvmURL(vg);
 								}
+                else if (args.data.protocol == "rbd") {
+                  var rbdmonitor = args.data.rbdmonitor;
+                  var rbdpool = args.data.rbdpool;
+                  var rbdid = args.data.rbdid;
+                  var rbdsecret = args.data.rbdsecret;
+
+                  url = rbdURL(rbdmonitor, rbdpool, rbdid, rbdsecret);
+                }
                 else if (args.data.protocol == "vmfs") {
                   //var path = trim($thisDialog.find("#add_pool_vmfs_dc").val());
                   var path = args.data.vCenterDataCenter;
@@ -8215,6 +8971,7 @@
                   },
                   {
                     id: { label: 'label.id' },
+                    zonename: { label: 'label.zone' },
                     created: { label: 'label.created', converter: cloudStack.converters.toLocalDate }
                   }
                 ],
@@ -9063,8 +9820,10 @@
 
     if (jsonObj.state == 'Running') {
       allowedActions.push("stop");
-      allowedActions.push("restart");
-      //allowedActions.push("changeService");
+      			
+		//	if(jsonObj.vpcid != null) 
+        allowedActions.push("restart");
+				
       allowedActions.push("viewConsole");
       if (isAdmin())
         allowedActions.push("migrate");
@@ -9072,7 +9831,9 @@
     else if (jsonObj.state == 'Stopped') {
       allowedActions.push("start");
 	    allowedActions.push("remove");
-      //allowedActions.push("changeService");
+			
+      if(jsonObj.vpcid != null)
+        allowedActions.push("changeService");
     }
     return allowedActions;
   }
@@ -9178,6 +9939,9 @@
 							case "VirtualRouter":
 								nspMap["virtualRouter"] = items[i];
 								break;
+							case "VpcVirtualRouter":
+							  nspMap["vpcVirtualRouter"] = items[i];
+							  break;
 							case "Netscaler":
 								nspMap["netscaler"] = items[i];
 								break;
@@ -9219,6 +9983,13 @@
 			);
 		}
 		else if(selectedZoneObj.networktype == "Advanced"){
+		  nspHardcodingArray.push(
+				{
+					id: 'vpcVirtualRouter',
+					name: 'VPC Virtual Router',
+					state: nspMap.vpcVirtualRouter ? nspMap.vpcVirtualRouter.state : 'Disabled'
+				}
+			);		
 			nspHardcodingArray.push(
 				{
 					id: 'f5',

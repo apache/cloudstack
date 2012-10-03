@@ -16,11 +16,9 @@
 // under the License.
 package com.cloud.storage;
 
-/**
- * @author ahuang
- * 
- */
 public interface GuestOsCategory {
+    // Used by OS preference, 'None' for no OS preference
+    public static final String CATEGORY_NONE ="None";
     long getId();
 
     String getName();

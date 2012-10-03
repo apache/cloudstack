@@ -205,8 +205,7 @@ public class DatabaseConfig {
         s_configurationDescriptions.put("expunge.interval", "the interval to wait before running the expunge thread");
         s_configurationDescriptions.put("network.throttling.rate", "default data transfer rate in megabits per second allowed per user");
         s_configurationDescriptions.put("multicast.throttling.rate", "default multicast rate in megabits per second allowed");
-        s_configurationDescriptions.put("use.local.storage", "Indicates whether to use local storage pools or shared storage pools for user VMs");
-        s_configurationDescriptions.put("use.local.storage", "Indicates whether to use local storage pools or shared storage pools for system VMs.");
+        s_configurationDescriptions.put("system.vm.use.local.storage", "Indicates whether to use local storage pools or shared storage pools for system VMs.");
         s_configurationDescriptions.put("snapshot.poll.interval", "The time interval in seconds when the management server polls for snapshots to be scheduled.");
         s_configurationDescriptions.put("snapshot.max.hourly", "Maximum hourly snapshots for a volume");
         s_configurationDescriptions.put("snapshot.max.daily", "Maximum daily snapshots for a volume");
@@ -247,6 +246,7 @@ public class DatabaseConfig {
         s_configurationComponents.put("capacity.check.period", "management-server");
         s_configurationComponents.put("network.throttling.rate", "management-server");
         s_configurationComponents.put("multicast.throttling.rate", "management-server");
+        s_configurationComponents.put("event.purge.interval", "management-server");
         s_configurationComponents.put("account.cleanup.interval", "management-server");
         s_configurationComponents.put("expunge.delay", "UserVmManager");
         s_configurationComponents.put("expunge.interval", "UserVmManager");
@@ -279,7 +279,6 @@ public class DatabaseConfig {
         s_configurationComponents.put("storage.overwrite.provisioning", "UserVmManager");
         s_configurationComponents.put("init", "none");
         s_configurationComponents.put("system.vm.use.local.storage", "ManagementServer");
-        s_configurationComponents.put("use.local.storage", "ManagementServer");
         s_configurationComponents.put("snapshot.poll.interval", "SnapshotManager");
         s_configurationComponents.put("snapshot.max.hourly", "SnapshotManager");
         s_configurationComponents.put("snapshot.max.daily", "SnapshotManager");
@@ -330,9 +329,9 @@ public class DatabaseConfig {
         s_defaultConfigurationValues.put("restart.retry.interval", "600");
         s_defaultConfigurationValues.put("investigate.retry.interval", "60");
         s_defaultConfigurationValues.put("migrate.retry.interval", "120");
+        s_defaultConfigurationValues.put("event.purge.interval", "86400");
         s_defaultConfigurationValues.put("account.cleanup.interval", "86400");
         s_defaultConfigurationValues.put("system.vm.use.local.storage", "false");
-        s_defaultConfigurationValues.put("use.local.storage", "false");
         s_defaultConfigurationValues.put("init", "false");
         s_defaultConfigurationValues.put("cpu.overprovisioning.factor", "1");
         s_defaultConfigurationValues.put("mem.overprovisioning.factor", "1");

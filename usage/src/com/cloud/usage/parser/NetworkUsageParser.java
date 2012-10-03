@@ -37,18 +37,18 @@ import com.cloud.utils.db.SearchCriteria;
 public class NetworkUsageParser {
 public static final Logger s_logger = Logger.getLogger(NetworkUsageParser.class.getName());
 
-	private static ComponentLocator _locator = ComponentLocator.getLocator(UsageServer.Name, "usage-components.xml", "log4j-cloud_usage");
-	private static UsageDao m_usageDao = _locator.getDao(UsageDao.class);
-	private static UsageNetworkDao m_usageNetworkDao = _locator.getDao(UsageNetworkDao.class);
+    private static ComponentLocator _locator = ComponentLocator.getLocator(UsageServer.Name, "usage-components.xml", "log4j-cloud_usage");
+    private static UsageDao m_usageDao = _locator.getDao(UsageDao.class);
+    private static UsageNetworkDao m_usageNetworkDao = _locator.getDao(UsageNetworkDao.class);
 
-	public static boolean parse(AccountVO account, Date startDate, Date endDate) {
-	    if (s_logger.isDebugEnabled()) {
-	        s_logger.debug("Parsing all Network usage events for account: " + account.getId());
-	    }
+    public static boolean parse(AccountVO account, Date startDate, Date endDate) {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Parsing all Network usage events for account: " + account.getId());
+        }
 
-		if ((endDate == null) || endDate.after(new Date())) {
-		    endDate = new Date();
-		}
+        if ((endDate == null) || endDate.after(new Date())) {
+            endDate = new Date();
+        }
 
         // - query usage_network table for all entries for userId with
         // event_date in the given range
@@ -117,10 +117,10 @@ public static final Logger s_logger = Logger.getLogger(NetworkUsageParser.class.
             }
         }
 
-		return true;
-	}
-	
-	private static class NetworkInfo {
+        return true;
+    }
+    
+    private static class NetworkInfo {
         private long zoneId;
         private long hostId;
         private String hostType;

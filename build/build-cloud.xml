@@ -61,7 +61,6 @@
   <import file="${build.dir}/build-common.xml" />
 
   <!-- In case these didn't get defined in the build-cloud.properties -->
-  <property name="branding.name" value="default" />
   <property name="tomcat.home" value="${env.CATALINA_HOME}" />
   <property name="deprecation" value="off" />
   <property name="target.compat.version" value="1.6" />
@@ -78,7 +77,7 @@
   <property name="build.log" location="${target.dir}/ant_verbose.txt" />
 
   <property name="deps.dir" location="${base.dir}/deps" />
-  <property name="tools.jar.dir" location="${base.dir}/tools/tooljars" />
+  <property name="xenapi.dir" location="${deps.dir}/XenServerJava" />
 
   <!-- directories for client compilation-->
   <property name="client.dir" location="${base.dir}/client" />
@@ -113,16 +112,11 @@
 
   <property name="tools.dir" location="${base.dir}/tools" />
   <!--  <property name="antcontrib.dir" location="${tools.dir}/tools/ant/apache-ant-1.8.0/lib" />-->
-  <property name="deploy.dir" location="${build.dir}/deploy" />
-  <property name="production.dir" location="${deploy.dir}/production" />
   <property name="meld.home" location="/usr/local/bin" />
   <property name="assertion" value="-da" />
 
   <!-- directory for vmware-base library -->
   <property name="vmware-base.dir" location="${base.dir}/vmware-base" />
-
-  <!-- directories for branding -->
-  <property name="branding.dir" location="${build.dir}/deploy/branding/${branding.name}" />
 
   <property name="core.jar" value="cloud-core.jar" />
   <property name="utils.jar" value="cloud-utils.jar" />
@@ -130,7 +124,9 @@
   <property name="agent.jar" value="cloud-agent.jar" />
   <property name="console-proxy.jar" value="cloud-console-proxy.jar" />
   <property name="api.jar" value="cloud-api.jar"/>
+  <property name="xenapi.jar" value="cloud-xenapi.jar" />
   <property name="vmware-base.jar" value="cloud-vmware-base.jar" />
+  <property name="vmware.jar" value="cloud-vmware.jar" />
 
   <!--
 		Import information about the build version and company information
@@ -149,9 +145,6 @@
   </path>
 
   <path id="compile.deps.classpath">
-      <fileset dir="${tools.jar.dir}" erroronmissingdir="true">
-          <include name="*.jar" />
-      </fileset>
   </path>
 
   <path id="deps.classpath">
@@ -207,7 +200,7 @@
     <path refid="deps.classpath" />
     <path refid="dist.classpath" />
   </path>
-  <target name="compile-core" depends="-init, compile-utils, compile-api, compile-vmware-base" description="Compile the core business logic.">
+  <target name="compile-core" depends="-init, compile-utils, compile-api" description="Compile the core business logic.">
     <compile-java jar.name="${core.jar}" top.dir="${core.dir}" classpath="core.classpath" />
   </target>
 
@@ -218,7 +211,15 @@
   <target name="compile-vmware-base" depends="-init, compile-utils" description="Compile the VMware support library">
     <compile-java jar.name="${vmware-base.jar}" top.dir="${vmware-base.dir}" classpath="vmware-base.classpath" />
   </target>
-	
+
+  <path id="xenapi.classpath">
+    <path refid="deps.classpath" />
+    <path refid="dist.classpath" />
+  </path>
+  <target name="compile-xenapi" depends="-init" description="Compile XenServer java sdk.">
+    <compile-java jar.name="${xenapi.jar}" top.dir="${xenapi.dir}" classpath="xenapi.classpath" />
+  </target>
+
   <path id="server.classpath">
     <path refid="deps.classpath" />
     <path refid="dist.classpath" />
@@ -367,7 +368,7 @@
       </fileset>
     </copy>
     <copy todir="${copyto.dir}/conf">
-      <fileset dir="${production.dir}/consoleproxy/conf">
+      <fileset dir="${console-proxy.dir}/conf">
         <include name="log4j-cloud.xml" />
         <include name="consoleproxy.properties" />
       </fileset>
@@ -479,18 +480,10 @@
 
   <target name="build-servers" depends="-init, build-server" />
 
-  <target name="build-opensource" depends="-init, build-server, build-agent, build-scripts, build-ui, build-console-proxy, build-ovm, package-oss-systemvm-iso, build-netscaler, build-f5, build-srx, build-dp-user-dispersing, build-dp-user-concentrated-pod, build-host-allocator-random, build-user-authenticator-ldap">
-    <copy overwrite="true" todir="${dist.dir}">
-      <fileset dir="${base.dir}/build/deploy/">
-        <include name="deploy-agent.sh" />
-        <include name="deploy-server.sh" />
-        <include name="deploy-console-proxy.sh" />
-        <include name="install.sh" />
-      </fileset>
+  <target name="build-opensource" depends="-init, build-server, build-agent, build-scripts, build-ui, build-console-proxy, package-oss-systemvm-iso">
       <fileset dir="${base.dir}/client">
         <include name="setup/**/*" />
       </fileset>
-    </copy>
     
     <copy overwrite="true" todir="${jar.dir}">
       <fileset dir="${deps.dir}">
@@ -498,8 +491,6 @@
       </fileset>
     </copy>
     
-    <chmod file="${dist.dir}/deploy-agent.sh" perm="uog+xr" />
-    <chmod file="${dist.dir}/deploy-server.sh" perm="uog+xr" />
   </target>
 
 
@@ -575,6 +566,17 @@
     <mkdir dir="${jar.dir}" />
     <mkdir dir="${docs.dir}" />
     <mkdir dir="${dep.cache.dir}" />
+
+    <condition property="mvn" value="mvn.bat" else="mvn">
+      <os family="Windows"/>
+    </condition>
+    <!-- Download all dependencies using maven -->
+    <exec executable="${mvn}" resolveexecutable="true" searchpath="true" failifexecutionfails="false">
+      <arg value="-P"/>
+      <arg value="deps"/>
+      <arg value="-pl"/>
+      <arg value="deps"/>
+    </exec>
     <record name="${build.log}" action="stop" />
   </target>
 

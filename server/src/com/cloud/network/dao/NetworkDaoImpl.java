@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-//
+// 
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -36,8 +36,11 @@ import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDaoImpl;
+import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
@@ -61,15 +64,17 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     final SearchBuilder<NetworkVO> AccountNetworkSearch;
     final SearchBuilder<NetworkVO> ZoneBroadcastUriSearch;
     final SearchBuilder<NetworkVO> ZoneSecurityGroupSearch;
-    final GenericSearchBuilder<NetworkVO, Long> CountByOfferingId;
+    final GenericSearchBuilder<NetworkVO, Integer> CountBy;
     final SearchBuilder<NetworkVO> PhysicalNetworkSearch;
     final SearchBuilder<NetworkVO> SecurityGroupSearch;
     final GenericSearchBuilder<NetworkVO, Long> NetworksRegularUserCanCreateSearch;
     private final GenericSearchBuilder<NetworkVO, Integer> NetworksCount;
     final SearchBuilder<NetworkVO> SourceNATSearch;
     final GenericSearchBuilder<NetworkVO, Long>  CountByZoneAndURI;
-
-
+    final GenericSearchBuilder<NetworkVO, Long> VpcNetworksCount;
+    
+    
+    ResourceTagsDaoImpl _tagsDao = ComponentLocator.inject(ResourceTagsDaoImpl.class);
     NetworkAccountDaoImpl _accountsDao = ComponentLocator.inject(NetworkAccountDaoImpl.class);
     NetworkDomainDaoImpl _domainsDao = ComponentLocator.inject(NetworkDomainDaoImpl.class);
     NetworkOpDaoImpl _opDao = ComponentLocator.inject(NetworkOpDaoImpl.class);
@@ -94,6 +99,11 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         AllFieldsSearch.and("related", AllFieldsSearch.entity().getRelated(), Op.EQ);
         AllFieldsSearch.and("guestType", AllFieldsSearch.entity().getGuestType(), Op.EQ);
         AllFieldsSearch.and("physicalNetwork", AllFieldsSearch.entity().getPhysicalNetworkId(), Op.EQ);
+        AllFieldsSearch.and("broadcastUri", AllFieldsSearch.entity().getBroadcastUri(), Op.EQ);
+        AllFieldsSearch.and("vpcId", AllFieldsSearch.entity().getVpcId(), Op.EQ);
+        SearchBuilder<NetworkOfferingVO> join1 = _ntwkOffDao.createSearchBuilder();
+        join1.and("isSystem", join1.entity().isSystemOnly(), Op.EQ);
+        AllFieldsSearch.join("offerings", join1, AllFieldsSearch.entity().getNetworkOfferingId(), join1.entity().getId(), JoinBuilder.JoinType.INNER);
         AllFieldsSearch.done();
 
         AccountSearch = createSearchBuilder();
@@ -103,6 +113,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         AccountSearch.join("accounts", join, AccountSearch.entity().getId(), join.entity().getNetworkId(), JoinBuilder.JoinType.INNER);
         AccountSearch.and("datacenter", AccountSearch.entity().getDataCenterId(), Op.EQ);
         AccountSearch.and("cidr", AccountSearch.entity().getCidr(), Op.EQ);
+        AccountSearch.and("vpcId", AccountSearch.entity().getVpcId(), Op.EQ);
         AccountSearch.done();
 
         RelatedConfigSearch = createSearchBuilder();
@@ -125,7 +136,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         ZoneBroadcastUriSearch.and("broadcastUri", ZoneBroadcastUriSearch.entity().getBroadcastUri(), Op.EQ);
         ZoneBroadcastUriSearch.and("guestType", ZoneBroadcastUriSearch.entity().getGuestType(), Op.EQ);
         ZoneBroadcastUriSearch.done();
-        
+
         CountByZoneAndURI = createSearchBuilder(Long.class);
         CountByZoneAndURI.select(null, Func.COUNT, null);
         CountByZoneAndURI.and("dataCenterId", CountByZoneAndURI.entity().getDataCenterId(), Op.EQ);
@@ -134,19 +145,19 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
 
         CountByZoneAndURI.done();
         
-
         ZoneSecurityGroupSearch = createSearchBuilder();
         ZoneSecurityGroupSearch.and("dataCenterId", ZoneSecurityGroupSearch.entity().getDataCenterId(), Op.EQ);
-        SearchBuilder<NetworkServiceMapVO> join1 = _ntwkSvcMap.createSearchBuilder();
-        join1.and("service", join1.entity().getService(), Op.EQ);
-        ZoneSecurityGroupSearch.join("services", join1, ZoneSecurityGroupSearch.entity().getId(), join1.entity().getNetworkId(), JoinBuilder.JoinType.INNER);
+        SearchBuilder<NetworkServiceMapVO> offJoin = _ntwkSvcMap.createSearchBuilder();
+        offJoin.and("service", offJoin.entity().getService(), Op.EQ);
+        ZoneSecurityGroupSearch.join("services", offJoin, ZoneSecurityGroupSearch.entity().getId(), offJoin.entity().getNetworkId(), JoinBuilder.JoinType.INNER);
         ZoneSecurityGroupSearch.done();
 
-        CountByOfferingId = createSearchBuilder(Long.class);
-        CountByOfferingId.select(null, Func.COUNT, CountByOfferingId.entity().getId());
-        CountByOfferingId.and("offeringId", CountByOfferingId.entity().getNetworkOfferingId(), Op.EQ);
-        CountByOfferingId.and("removed", CountByOfferingId.entity().getRemoved(), Op.NULL);
-        CountByOfferingId.done();
+        CountBy = createSearchBuilder(Integer.class);
+        CountBy.select(null, Func.COUNT, CountBy.entity().getId());
+        CountBy.and("offeringId", CountBy.entity().getNetworkOfferingId(), Op.EQ);
+        CountBy.and("vpcId", CountBy.entity().getVpcId(), Op.EQ);
+        CountBy.and("removed", CountBy.entity().getRemoved(), Op.NULL);
+        CountBy.done();
 
         PhysicalNetworkSearch = createSearchBuilder();
         PhysicalNetworkSearch.and("physicalNetworkId", PhysicalNetworkSearch.entity().getPhysicalNetworkId(), Op.EQ);
@@ -185,17 +196,27 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         join6.and("service", join6.entity().getService(), Op.EQ);
         SourceNATSearch.join("services", join6, SourceNATSearch.entity().getId(), join6.entity().getNetworkId(), JoinBuilder.JoinType.INNER);
         SourceNATSearch.done();
+        
+        VpcNetworksCount = createSearchBuilder(Long.class);
+        VpcNetworksCount.and("vpcId", VpcNetworksCount.entity().getVpcId(), Op.EQ);
+        VpcNetworksCount.select(null, Func.COUNT, VpcNetworksCount.entity().getId());
+        VpcNetworksCount.done();
 
     }
 
     @Override
-    public List<NetworkVO> listBy(long accountId, long dataCenterId, Network.GuestType type) {
+    public List<NetworkVO> listByZoneAndGuestType(long accountId, long dataCenterId, Network.GuestType type, Boolean isSystem) {
         SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
         sc.setParameters("datacenter", dataCenterId);
         sc.setParameters("account", accountId);
         if (type != null) {
             sc.setParameters("guestType", type);
         }
+        
+        if (isSystem != null) {
+            sc.setJoinParameters("offerings", "isSystem", isSystem);
+        }
+        
         return listBy(sc, null);
     }
 
@@ -220,11 +241,14 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     }
 
     @Override
-    public List<NetworkVO> listBy(long accountId, long dataCenterId, String cidr) {
+    public List<NetworkVO> listBy(long accountId, long dataCenterId, String cidr, boolean skipVpc) {
         SearchCriteria<NetworkVO> sc = AccountSearch.create();
         sc.setJoinParameters("accounts", "account", accountId);
         sc.setParameters("datacenter", dataCenterId);
         sc.setParameters("cidr", cidr);
+        if (skipVpc) {
+            sc.setParameters("vpcId", (Object)null);
+        }
 
         return listBy(sc);
     }
@@ -329,7 +353,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         sc.setParameters("dataCenterId", zoneId);
         return search(sc, null);
     }
-    
+
     @Override
     public long countByZoneUriAndGuestType(long zoneId, String broadcastUri, GuestType guestType) {
         SearchCriteria<Long> sc = CountByZoneAndURI.create();
@@ -390,14 +414,16 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         NetworkDomainVO domain = new NetworkDomainVO(networkId, domainId, subdomainAccess);
         _domainsDao.persist(domain);
     }
-
+    
+    
     @Override
-    public Long getNetworkCountByOfferingId(long offeringId) {
-        SearchCriteria<Long> sc = CountByOfferingId.create();
-        sc.setParameters("offeringId", offeringId);
-        List<Long> results = customSearch(sc, null);
+    public int getNetworkCountByVpcId(long vpcId) {
+        SearchCriteria<Integer> sc = CountBy.create();
+        sc.setParameters("vpcId", vpcId);
+        List<Integer> results = customSearch(sc, null);
         return results.get(0);
     }
+    
 
     @Override
     public List<NetworkVO> listSecurityGroupEnabledNetworks() {
@@ -485,5 +511,44 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         sc.setJoinParameters("services", "service", Service.SourceNat.getName());
         return listBy(sc);
     }
+    
+    @Override
+    public List<NetworkVO> listByVpc(long vpcId) {
+        SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
+        sc.setParameters("vpcId", vpcId);
 
+        return listBy(sc, null);
+    }
+
+
+    @Override
+    public NetworkVO getPrivateNetwork(String broadcastUri, String cidr, long accountId, long zoneId) {
+        SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
+        sc.setParameters("datacenter", zoneId);
+        sc.setParameters("broadcastUri", broadcastUri);
+        sc.setParameters("cidr", cidr);
+        sc.setParameters("account", accountId);
+        sc.setParameters("offering", _ntwkOffDao.findByUniqueName(NetworkOffering.SystemPrivateGatewayNetworkOffering).getId());
+        return findOneBy(sc);
+    }
+
+    @DB
+    public boolean remove(Long id) {
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        NetworkVO entry = findById(id);
+        if (entry != null) {
+            _tagsDao.removeByIdAndType(id, TaggedResourceType.Network);
+        }
+        boolean result = super.remove(id);
+        txn.commit();
+        return result;
+    }
+
+    @Override
+    public long countVpcNetworks(long vpcId) {
+        SearchCriteria<Long> sc = VpcNetworksCount.create();
+        sc.setParameters("vpcId", vpcId);
+        return customSearch(sc, null).get(0);
+    }
 }

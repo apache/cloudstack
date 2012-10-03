@@ -14,7 +14,12 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 (function($, cloudStack) {
+  var getMultiData = function($multi) {
+    return cloudStack.serializeForm($multi.find('form'));
+  };
+
   var _medit = cloudStack.ui.widgets.multiEdit = {
     /**
      * Append item to list
@@ -134,6 +139,8 @@
           } else if (field.addButton && !options.noSelect) {
             if (options.multipleAdd) {
               $addButton.click(function() {
+                if ($td.hasClass('disabled')) return false;
+                
                 _medit.vmList($multi,
                               options.listView,
                               options.context,
@@ -142,6 +149,8 @@
                               {
                                 multiRule: multiRule
                               });
+
+                return true;
               });
               $td.append($addButton);
             } else {
@@ -168,6 +177,8 @@
             $button.html(data && data[fieldName] && data[fieldName]['_buttonLabel'] ?
                          _l(data[fieldName]['_buttonLabel']) : _l(field.custom.buttonLabel));
             $button.click(function() {
+              if ($td.hasClass('disabled')) return false;
+              
               var $button = $(this);
 
               field.custom.action({
@@ -183,6 +194,8 @@
                   }
                 }
               });
+
+              return true;
             });
             $button.appendTo($td);
           }
@@ -196,6 +209,11 @@
         // Align width to main header
         var targetWidth = $multi.find('th.' + fieldName).width() + 5;
         $td.width(targetWidth);
+
+        if (data._hideFields &&
+            $.inArray(fieldName, data._hideFields) > -1) {
+          $td.addClass('disabled');
+        }
 
         return true;
       });
@@ -328,7 +346,7 @@
                   after: function(args) {
                     var $loading = $('<div>').addClass('loading-overlay').prependTo($dataItem);
                     performAction({ data: args.data, complete: function() {
-                      $multi.multiEdit('refresh');
+                      $multi.trigger('refresh');
                     } });
                   }
                 });
@@ -336,6 +354,46 @@
             })
         );
       });
+
+      // Add tagger action
+      if (options.tags) {
+        $actions.prepend(
+          $('<div></div>')
+            .addClass('action editTags')
+            .attr('title', _l('label.edit.tags'))
+            .append($('<span></span>').addClass('icon'))
+            .click(function() {
+              $('<div>')
+                .dialog({
+                  dialogClass: 'editTags',
+                  title: _l('label.edit.tags'),
+                  width: 400,
+                  buttons: [
+                    {
+                      text: _l('label.done'),
+                      'class': 'ok',
+                      click: function() {
+                        $(this).dialog('destroy');
+                        $('div.overlay:last').remove();
+
+                        return true;
+                      }
+                    }
+                  ]
+                })
+                .append(
+                  $('<div></div>').addClass('multi-edit-tags').tagger($.extend(true, {}, options.tags, {
+                    context: $.extend(true, {}, options.context, {
+                      multiRule: [multiRule]
+                    })
+                  }))
+                )
+                .closest('.ui-dialog').overlay();
+
+              return false;
+            })
+        )
+      }
 
       // Add expandable listing, for multiple-item
       if (options.multipleAdd) {
@@ -362,6 +420,7 @@
       var $listView;
       var instances = $.extend(true, {}, listView, {
         context: $.extend(true, {}, context, {
+          multiData: getMultiData($multi),
           multiRule: options.multiRule ? [options.multiRule] : null
         }),
         uiCustom: true
@@ -551,7 +610,6 @@
           });
         });
 
-
         if (itemActions) {
           var $itemActions = $('<td>').addClass('actions item-actions');
 
@@ -647,6 +705,7 @@
   $.fn.multiEdit = function(args) {
     var dataProvider = args.dataProvider;
     var multipleAdd = args.multipleAdd;
+    var tags = args.tags;
     var $multi = $('<div>').addClass('multi-edit').appendTo(this);
     var $multiForm = $('<form>').appendTo($multi);
     var $inputTable = $('<table>').addClass('multi-edit').appendTo($multiForm);
@@ -659,6 +718,7 @@
     var context = args.context;
     var ignoreEmptyFields = args.ignoreEmptyFields;
     var actionPreFilter = args.actionPreFilter;
+    var readOnlyCheck = args.readOnlyCheck;
 
     var $thead = $('<tr>').appendTo(
       $('<thead>').appendTo($inputTable)
@@ -690,6 +750,7 @@
         });
         $select.appendTo($td);
         field.select({
+          context: context,
           $select: $select,
           $form: $multiForm,
           response: {
@@ -721,6 +782,11 @@
                   );
 
             if (field.isDisabled) $input.hide();
+
+            if (field.defaultValue) {
+              $input.val(field.defaultValue);
+              $input.data('multi-default-value', field.defaultValue);
+            }
           });
         } else {
           var $input = $('<input>')
@@ -733,11 +799,20 @@
                 .appendTo($td);
 
           if (field.isDisabled) $input.hide();
+          if (field.defaultValue) {
+            $input.val(field.defaultValue);
+            $input.data('multi-default-value', field.defaultValue);
+          }
         }
       } else if (field.custom) {
         $('<div>').addClass('button add-vm custom-action')
           .html(_l(field.custom.buttonLabel))
           .click(function() {
+            if (field.custom.requireValidation &&
+                !$multiForm.valid()) return false;
+            
+            var formData = getMultiData($multi);
+            
             field.custom.action({
               context: context,
               data: $td.data('multi-custom-data'),
@@ -747,13 +822,36 @@
                 }
               }
             });
+
+            return false;
           }).appendTo($td);
       } else if (field.addButton) {
         $addVM = $('<div>').addClass('button add-vm').html(
-          _l(args.add.label)
+          _l('label.add')
         ).appendTo($td);
       }
+
+      if (field.desc) $input.attr('title', field.desc);
     });
+
+    // Setup header fields
+    var showHeaderFields = args.headerFields ? true : false;
+    var headerForm = showHeaderFields ? cloudStack.dialog.createForm({
+      context: context,
+      noDialog: true,
+      form: {
+        fields: args.headerFields
+      },
+      after: function(args) {
+        // Form fields are handled by main 'add' action
+      }
+    }) : null;
+    var $headerFields = $('<div>').addClass('header-fields').hide(); //make headerFields hidden as default
+		
+    if (headerForm) {
+      $headerFields.append(headerForm.$formContainer)
+        .prependTo($multi);
+    }
 
     if (args.actions && !args.noHeaderActionsColumn) {
       $thead.append($('<th></th>').html(_l('label.actions')).addClass('multi-actions'));
@@ -772,7 +870,7 @@
       var addItem = function(itemData) {
         var data = {};
 
-        $.each(cloudStack.serializeForm($multiForm), function(key, value) {
+        $.each(getMultiData($multi), function(key, value) {
           if (value != '') {
             data[key] = value;
           }
@@ -796,7 +894,15 @@
         $dataBody.prepend($loading);
 
         // Clear out fields
-        $multi.find('input').val('');
+        $multi.find('input').each(function() {
+          var $input = $(this);
+
+          if ($input.data('multi-default-value')) {
+            $input.val($input.data('multi-default-value'));
+          } else {
+            $input.val('');
+          }
+        });
         $multi.find('tbody td').each(function() {
           var $item = $(this);
 
@@ -810,6 +916,7 @@
           context: context,
           data: data,
           itemData: itemData,
+          $multi: $multi,
           response: {
             success: function(successArgs) {
               var notification = successArgs ? successArgs.notification : null;
@@ -873,6 +980,7 @@
     var getData = function() {
       dataProvider({
         context: context,
+        $multi: $multi,
         response: {
           success: function(args) {
             $multi.find('.data-item').remove();
@@ -893,10 +1001,16 @@
                   context: $.extend(true, {}, context, this._context),
                   ignoreEmptyFields: ignoreEmptyFields,
                   preFilter: actionPreFilter,
-                  listView: listView
+                  listView: listView,
+                  tags: tags
                 }
               ).appendTo($dataBody);
             });
+
+            if (readOnlyCheck && !readOnlyCheck(args)) {
+                $multi.find('th.add-user, td.add-user').detach();
+                $multiForm.find('tbody').detach();
+            }
 
             _medit.refreshItemWidths($multi);
           },

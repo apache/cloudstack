@@ -1,4 +1,20 @@
 #!/usr/bin/env python
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 
 """builds the entire stack"""
 #For every matching build change here, that produces new installable
@@ -10,6 +26,7 @@ import Utils,Node,Options,Logs,Scripting,Environment,Build,Configure
 from os import unlink as _unlink, makedirs as _makedirs, getcwd as _getcwd, chdir as _chdir
 from os.path import abspath as _abspath, basename as _basename, dirname as _dirname, exists as _exists, isdir as _isdir, split as _split, join as _join, sep, pathsep, pardir, curdir
 from glob import glob as _glob
+from subprocess import Popen as _Popen,PIPE
 try: set([1,2,3])
 except Exception: from Sets import set
 import re
@@ -31,7 +48,49 @@ filelist = bld.path.ant_glob
 distdir = Utils.relpath(_join(sourcedir,"dist"))
 targetdir = Utils.relpath(_join(sourcedir,"target"))
 
+def gitinfo(dir=None):
+	if dir and not _isdir(dir): return ''
+	try: p = _Popen(['git','remote','show','-n','origin'],stdin=PIPE,stdout=PIPE,stderr=PIPE,cwd=dir)
+	except OSError,e:
+		if e.errno == 2: return '' # svn command is not installed
+		raise
+	stdout,stderr = p.communicate('')
+	retcode = p.wait()
+	# If the guess fails, just return nothing.
+	if retcode: return
+	stdout = [ s.strip() for s in stdout.splitlines() ]
+	try: url = [ s[11:] for s in stdout if s.startswith("Fetch URL") ][0]
+	except IndexError: url = [ s[5:] for s in stdout if s.startswith("URL") ][0]
+	assert url
+	
+	p = _Popen(['git','log','-1'],stdin=PIPE,stdout=PIPE,stderr=PIPE,cwd=dir)
+	stdout,stderr = p.communicate('')
+	retcode = p.wait()
+	if retcode: return
+	# If the guess fails, just return nothing.
+	stdout = [ s.strip() for s in stdout.splitlines() ]
+	commitid = [ s.split()[1] for s in stdout if s.startswith("commit") ][0]
+	assert commitid
+	
+	return "Git Revision: %s"%commitid + "\n" + "Git URL: %s"%url + "\n"
+
 def build_utils_docs ():
+	stdout = gitinfo()
+	if stdout:
+		f = file("sccs-info","w")
+		f.write(stdout)
+		f.flush()
+		f.close()
+	else:
+		if _exists("sccs-info"):
+			# If the file already existed, we preserve it
+			return
+		else:
+			f = file("sccs-info","w")
+			f.write("No revision control information could be detected when the source distribution was built.")
+			f.flush()
+			f.close()
+
 	sccsinfo = _join(sourcedir,"sccs-info")
 	if _exists(sccsinfo): bld.install_files("${DOCDIR}","sccs-info")
 
@@ -88,19 +147,6 @@ def build_jars ():
 	bld.install_files ('${JAVADIR}', ant_jars)
 
 
-#def build_python_and_daemonize ():
-#	obj = bld(features = 'py',name='pythonmodules')
-#	obj.find_sources_in_dirs('python/lib', exts=['.py'])
-#
-#	if bld.env.DISTRO not in ['Windows','Mac']:
-#		# build / install declarations of the daemonization utility - except for Windows
-#		bld(
-#			name='daemonize',
-#			features='cc cprogram',
-#			source='daemonize/daemonize.c',
-#			target='daemonize/cloud-daemonize'
-#		   )
-
 def build_premium ():
 	if buildpremium: bld.recurse(["cloudstack-proprietary/"],'build')
 
@@ -115,10 +161,10 @@ def build_dependences ():
 				"cloud-commons-collections-3.2.1.jar", "cloud-wsdl4j.jar"]
 
 	start_path = bld.path.find_dir ("deps")
-	bld.install_files('${JAVADIR}',start_path.ant_glob("*.jar", excl = excludes), cwd=start_path)
-	if buildpremium:
-		start_path = bld.path.find_dir ("cloudstack-proprietary/premium/deps")
-		bld.install_files('${JAVADIR}',start_path.ant_glob("*.jar", excl = excludes), cwd=start_path)
+
+        bld.install_files('${JAVADIR}',start_path.ant_glob(["CAStorSDK-*.jar", "javax.persistence-2.0.0.jar", "apache-log4j-extras-1.1.jar", "libvirt-0.4.9.jar", "axis2-1.5.1.jar", "jstl-1.2.jar", "commons-discovery-0.5.jar", "commons-codec-1.6.jar", "ejb-api-3.0.jar", "xmlrpc-client-3.1.3.jar", "commons-dbcp-1.4.jar", "commons-pool-1.6.jar", "gson-1.7.1.jar", 
+         "netscaler-1.0.jar", "netscaler-sdx-1.0.jar", "backport-util-concurrent-3.1.jar", "ehcache-1.5.0.jar", "httpcore-4.0.jar", "log4j-1.2.16.jar", "trilead-ssh2-build213-svnkit-1.3-patch.jar", "cglib-nodep-2.2.2.jar", "xmlrpc-common-3.*.jar", 
+         "xmlrpc-client-3.*.jar", "wsdl4j-1.6.2.jar", "bcprov-jdk16-1.45.jar", "jsch-0.1.42.jar", "jasypt-1.9.0.jar", "commons-configuration-1.8.jar", "mail-1.4.jar", "activation-1.1.jar",  "xapi-5.6.100-1-SNAPSHOT.jar"], excl = excludes), cwd=start_path)
 
 #def build_console_proxy ():
 	# binary unsubstitutable files:
@@ -155,9 +201,9 @@ def build_patches ():
 def build_systemvm_patch ():
 	if bld.env.DISTRO not in ["Windows","Mac"]:
 		# patch creation
-		bld.install_files ("${AGENTLIBDIR}/vms", "%s/systemvm.zip" % distdir)
+		bld.install_files ("${COMMONLIBDIR}/vms", "%s/systemvm.zip" % distdir)
 		# ISO creation
-		bld.install_as("${AGENTLIBDIR}/vms/systemvm.iso", "%s/systemvm.iso" % distdir)
+		bld.install_as("${COMMONLIBDIR}/vms/systemvm.iso", "%s/systemvm.iso" % distdir)
 
 def build_systemvm_iso ():
 	if buildpremium:
@@ -217,7 +263,7 @@ def build_dirs_symlinks ():
 
 def build_scripts ():
 	start_path = bld.path.find_dir ("scripts")
-	bld.substitute('**',"${AGENTLIBDIR}/scripts",chmod=0755, cwd=start_path)
+	bld.substitute('**',"${COMMONLIBDIR}/scripts",chmod=0755, cwd=start_path)
 
 def build_bin_exec_dirs ():
 	#bld.install_files_filtered("${LIBEXECDIR}","*/libexec/* cloudstack-proprietary/*/libexec/*",chmod=0755)
@@ -358,7 +404,7 @@ def build_xml_api_description ():
 
 def build_ovm():
 	start_path = bld.path.find_dir("plugins/hypervisors/ovm/scripts")
-	bld.substitute('**',"${AGENTLIBDIR}/scripts",chmod=0755, cwd=start_path)
+	bld.substitute('**',"${COMMONLIBDIR}/scripts",chmod=0755, cwd=start_path)
 
 def build_test():
 	start_path = bld.path.find_dir("test/scripts")
@@ -384,11 +430,9 @@ def build_usage_dir ():
 	Utils.pprint ("GREEN", "Installed files of usage/")
 
 
-
 # Get started to execute here
 build_utils_docs ()
 build_jars ()
-#build_python_and_daemonize ()
 build_premium ()
 #build_thirdparty_dir()
 build_dependences ()

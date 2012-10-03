@@ -20,8 +20,8 @@ import java.util.Date;
 import java.util.List;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
+import com.cloud.utils.IdentityProxy;
 import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
@@ -154,6 +154,12 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     
     @SerializedName(ApiConstants.INSTANCE_NAME) @Param(description="instance name of the user vm; this parameter is returned to the ROOT admin only", since="3.0.1")
     private String instanceName;
+    
+    @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with vm", responseObject = ResourceTagResponse.class)
+    private List<ResourceTagResponse> tags;
+
+    @SerializedName(ApiConstants.SSH_KEYPAIR) @Param(description="ssh key-pair")
+    private String keyPairName;
 
 	public void setHypervisor(String hypervisor) {
 		this.hypervisor = hypervisor;
@@ -340,5 +346,13 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
 
     public void setInstanceName(String instanceName) {
         this.instanceName = instanceName;
+    }
+
+    public void setTags(List<ResourceTagResponse> tags) {
+        this.tags = tags;
+    }
+
+    public void setKeyPairName(String keyPairName) {
+        this.keyPairName = keyPairName;
     }
 }

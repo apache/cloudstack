@@ -200,6 +200,14 @@ public class EventTypes {
     public static final String EVENT_REMOTE_ACCESS_VPN_DESTROY = "VPN.REMOTE.ACCESS.DESTROY";
     public static final String EVENT_VPN_USER_ADD = "VPN.USER.ADD";
     public static final String EVENT_VPN_USER_REMOVE = "VPN.USER.REMOVE";
+    public static final String EVENT_S2S_VPN_GATEWAY_CREATE = "VPN.S2S.VPN.GATEWAY.CREATE";
+    public static final String EVENT_S2S_VPN_GATEWAY_DELETE = "VPN.S2S.VPN.GATEWAY.DELETE";
+    public static final String EVENT_S2S_VPN_CUSTOMER_GATEWAY_CREATE = "VPN.S2S.CUSTOMER.GATEWAY.CREATE";
+    public static final String EVENT_S2S_VPN_CUSTOMER_GATEWAY_DELETE = "VPN.S2S.CUSTOMER.GATEWAY.DELETE";
+    public static final String EVENT_S2S_VPN_CUSTOMER_GATEWAY_UPDATE = "VPN.S2S.CUSTOMER.GATEWAY.UPDATE";
+    public static final String EVENT_S2S_VPN_CONNECTION_CREATE = "VPN.S2S.CONNECTION.CREATE";
+    public static final String EVENT_S2S_VPN_CONNECTION_DELETE = "VPN.S2S.CONNECTION.DELETE";
+    public static final String EVENT_S2S_VPN_CONNECTION_RESET = "VPN.S2S.CONNECTION.RESET";
 
     // Network
     public static final String EVENT_NETWORK_RESTART = "NETWORK.RESTART";
@@ -259,6 +267,25 @@ public class EventTypes {
     public static final String EVENT_EXTERNAL_FIREWALL_DEVICE_ADD = "PHYSICAL.FIREWALL.ADD";
     public static final String EVENT_EXTERNAL_FIREWALL_DEVICE_DELETE = "PHYSICAL.FIREWALL.DELETE";
     public static final String EVENT_EXTERNAL_FIREWALL_DEVICE_CONFIGURE = "PHYSICAL.FIREWALL.CONFIGURE";
+    
+    // VPC
+    public static final String EVENT_VPC_CREATE = "VPC.CREATE";
+    public static final String EVENT_VPC_UPDATE = "VPC.UPDATE";
+    public static final String EVENT_VPC_DELETE = "VPC.DELETE";
+    public static final String EVENT_VPC_RESTART = "VPC.RESTART";
+    
+    // VPC offerings
+    public static final String EVENT_VPC_OFFERING_CREATE = "VPC.OFFERING.CREATE";
+    public static final String EVENT_VPC_OFFERING_UPDATE = "VPC.OFFERING.UPDATE";
+    public static final String EVENT_VPC_OFFERING_DELETE = "VPC.OFFERING.DELETE";
+    
+    // Private gateway
+    public static final String EVENT_PRIVATE_GATEWAY_CREATE = "PRIVATE.GATEWAY.CREATE";
+    public static final String EVENT_PRIVATE_GATEWAY_DELETE = "PRIVATE.GATEWAY.DELETE";
+    
+    // Static routes
+    public static final String EVENT_STATIC_ROUTE_CREATE = "STATIC.ROUTE.CREATE";
+    public static final String EVENT_STATIC_ROUTE_DELETE = "STATIC.ROUTE.DELETE";
     
     // tag related events
     public static final String EVENT_TAGS_CREATE = "CREATE_TAGS";

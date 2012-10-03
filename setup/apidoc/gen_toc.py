@@ -85,6 +85,7 @@ known_categories = {
     'Pod': 'Pod',
     'Zone': 'Zone',
     'NetworkOffering': 'Network Offering',
+    'NetworkACL': 'Network ACL',
     'Network': 'Network',
     'CiscoNexus': 'Network',
     'Vpn': 'VPN',
@@ -119,6 +120,9 @@ known_categories = {
     'Project': 'Project',
     'Lun': 'Storage',
     'Pool': 'Pool',
+    'VPC': 'VPC', 
+    'PrivateGateway': 'VPC',
+    'StaticRoute': 'VPC',
     'Tags': 'Resource tags',
     }
 
@@ -132,6 +136,7 @@ def choose_category(fn):
             return v
     raise Exception('Need to add a category for %s to %s:known_categories' %
                     (fn, __file__))
+    sys.exit(1)
 
 
 for f in sys.argv:

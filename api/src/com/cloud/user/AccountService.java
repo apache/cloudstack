@@ -196,6 +196,8 @@ public interface AccountService {
     List<? extends UserAccount> searchForUsers(ListUsersCmd cmd)
             throws PermissionDeniedException;
 
+    UserAccount getUserByApiKey(String apiKey);
+    
     void checkAccess(Account account, Domain domain) throws PermissionDeniedException;
 
     void checkAccess(Account account, AccessType accessType, boolean sameOwner, ControlledEntity... entities) throws PermissionDeniedException;

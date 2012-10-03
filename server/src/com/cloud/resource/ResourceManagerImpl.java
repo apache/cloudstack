@@ -98,7 +98,7 @@ import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.host.dao.HostTagsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.hypervisor.kvm.resource.KvmDummyResourceBase;
+import com.cloud.hypervisor.kvm.discoverer.KvmDummyResourceBase;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.org.Cluster;
@@ -1007,12 +1007,12 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                             umanageHost(host.getId());
                         }
                     }
-                    int retry = 10;
+                    int retry = 40;
                     boolean lsuccess = true;
                     for ( int i = 0; i < retry; i++) {
                         lsuccess = true;
                         try {
-                            Thread.sleep(20 * 1000);
+                            Thread.sleep(5 * 1000);
                         } catch (Exception e) {
                         }
                         hosts = listAllUpAndEnabledHosts(Host.Type.Routing, cluster.getId(), cluster.getPodId(), cluster.getDataCenterId()); 
@@ -1211,7 +1211,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             GuestOSCategoryVO guestOSCategory = _guestOSCategoryDao.findById(guestOSCategoryId);
             Map<String, String> hostDetails = _hostDetailsDao.findDetails(hostId);
 
-            if (guestOSCategory != null) {
+            if (guestOSCategory != null && !GuestOSCategoryVO.CATEGORY_NONE.equalsIgnoreCase(guestOSCategory.getName())) {
                 // Save a new entry for guest.os.category.id
                 hostDetails.put("guest.os.category.id", String.valueOf(guestOSCategory.getId()));
             } else {
@@ -1601,6 +1601,15 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                 return null;
             }
 
+            /* Generate a random version in a dev setup situation */
+            if ( this.getClass().getPackage().getImplementationVersion() == null ) {
+                for ( StartupCommand cmd : cmds ) {
+                    if ( cmd.getVersion() == null ) {
+                        cmd.setVersion(Long.toString(System.currentTimeMillis()));
+                    }
+                }
+            }
+            
             if (s_logger.isDebugEnabled()) {
                 new Request(-1l, -1l, cmds, true, false).logD("Startup request from directly connected host: ", true);
             }
@@ -1630,10 +1639,21 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                 if (cmds != null) {
                     resource.disconnected();
                 }
-
-                if (host != null) {
+                //In case of some db errors, we may land with the sitaution that host is null. We need to reload host from db and call disconnect on it so that it will be loaded for reconnection next time
+                HostVO tempHost = host;
+                if(tempHost == null){
+                    if (cmds != null) {
+                        StartupCommand firstCmd = cmds[0];
+                        tempHost = findHostByGuid(firstCmd.getGuid());
+                        if (tempHost == null) {
+                            tempHost = findHostByGuid(firstCmd.getGuidWithoutResource());
+                        }
+                    }
+                }
+                
+                if (tempHost != null) {
                     /* Change agent status to Alert */
-                    _agentMgr.agentStatusTransitTo(host, Status.Event.AgentDisconnected, _nodeId);
+                    _agentMgr.agentStatusTransitTo(tempHost, Status.Event.AgentDisconnected, _nodeId);
                     /* Don't change resource state here since HostVO is already in database, which means resource state has had an appropriate value*/
                 }
             }

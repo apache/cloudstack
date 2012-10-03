@@ -1,2 +1,0 @@
-To generate the Java AXIS2 classes from the Amazon EC2 wsdl use the following command line:
-C:\axis2-1.5.1\bin>wsdl2java.bat -ss -sd -ssi -g -p com.amazon.ec2 -ns2p "http://ec2.amazonaws.com/doc/2010-08-31/"=com.amazon.ec2 -uri ec2.wsdl

@@ -67,11 +67,13 @@ public class MockComponentLocator extends ComponentLocator {
         _managerMap = new LinkedHashMap<String, ComponentInfo<Manager>>();
         _checkerMap = new LinkedHashMap<String, ComponentInfo<SystemIntegrityChecker>>();
         _adapterMap = new HashMap<String, Adapters<? extends Adapter>>();
+        _pluginsMap = new HashMap<String, ComponentInfo<PluggableService>>();
         _factories = new HashMap<Class<?>, Class<?>>();
         _daoMap.putAll(_library.getDaos());
         _managerMap.putAll(_library.getManagers());
         result.second().putAll(_library.getAdapters());
         _factories.putAll(_library.getFactories());
+        _pluginsMap.putAll(_library.getPluggableServices());
         return result;
     } 
 

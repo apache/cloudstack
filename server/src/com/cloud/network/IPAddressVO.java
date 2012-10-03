@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-//
+// 
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -104,6 +104,9 @@ public class IPAddressVO implements IpAddress, Identity {
 	@Transient
     @Column(name="domain_id")
     private Long domainId = null;
+	
+    @Column(name="vpc_id")
+    private Long vpcId;
 
 	protected IPAddressVO() {
 		this.uuid = UUID.randomUUID().toString();
@@ -275,4 +278,14 @@ public class IPAddressVO implements IpAddress, Identity {
 	public void setSystem(boolean isSystem) {
 		this.system = isSystem;
 	}
+
+	@Override
+    public Long getVpcId() {
+        return vpcId;
+    }
+
+	@Override
+    public void setVpcId(Long vpcId) {
+        this.vpcId = vpcId;
+    }
 }

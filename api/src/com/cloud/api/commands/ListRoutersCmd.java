@@ -22,7 +22,6 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.BaseListProjectAndAccountResourcesCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
@@ -67,6 +66,13 @@ public class ListRoutersCmd extends BaseListProjectAndAccountResourcesCmd {
     @IdentityMapper(entityTableName="networks")
     @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, description="list by network id")
     private Long networkId;
+    
+    @IdentityMapper(entityTableName="vpc")
+    @Parameter(name=ApiConstants.VPC_ID, type=CommandType.LONG, description="List networks by VPC")
+    private Long vpcId;
+    
+    @Parameter(name=ApiConstants.FOR_VPC, type=CommandType.BOOLEAN, description="if true is passed for this parameter, list only VPC routers")
+    private Boolean forVpc;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -98,6 +104,14 @@ public class ListRoutersCmd extends BaseListProjectAndAccountResourcesCmd {
     
     public Long getNetworkId() {
         return networkId;
+    }
+    
+    public Long getVpcId() {
+        return vpcId;
+    }
+    
+    public Boolean getForVpc() {
+        return forVpc;
     }
 
     /////////////////////////////////////////////////////
