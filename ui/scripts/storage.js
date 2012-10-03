@@ -976,7 +976,7 @@
 											pollAgainIfValueIsIn: { 
 											  'UploadNotStarted': 1
 											},
-											pollAgainFn: function(context) {  //???											 
+											pollAgainFn: function(context) {  								 
 												var toClearInterval = false; 				
 												$.ajax({
 													url: createURL("listVolumes&id=" + context.volumes[0].id),
@@ -1072,30 +1072,27 @@
             }
           },
 
-          dataProvider: function(args) {
-            var array1 = [];
-            if(args.filterBy != null) {
-              if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
-                switch(args.filterBy.search.by) {
-                case "name":
-                  if(args.filterBy.search.value.length > 0)
-                    array1.push("&keyword=" + args.filterBy.search.value);
-                  break;
-                }
-              }
-            }
-
-            var apiCmd = "listSnapshots&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("");
+					advSearchFields: {
+					  name: { label: 'Name' },							
+						tagKey: { label: 'Tag Key' },
+						tagValue: { label: 'Tag Value' }						
+					},
+					
+          dataProvider: function(args) {					  
+						var data = {};
+						listViewDataProvider(args, data);		
+            
             if(args.context != null) {
               if("volumes" in args.context) {
-                apiCmd += "&volumeid=" + args.context.volumes[0].id;
+							  $.extend(data, {
+								  volumeid: args.context.volumes[0].id
+								});                
               }
             }
 
             $.ajax({
-              url: createURL(apiCmd),
-              dataType: "json",
-              async: true,
+              url: createURL('listSnapshots'),
+              data: data,              
               success: function(json) {
                 var items = json.listsnapshotsresponse.snapshot;
                 args.response.success({
