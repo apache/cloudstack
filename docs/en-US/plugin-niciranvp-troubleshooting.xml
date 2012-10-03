@@ -20,9 +20,9 @@
  specific language governing permissions and limitations
  under the License.
 -->
-<chapter id="Troubleshooting-the-Nicira-NVP-Plugin" xmlns:xi="http://www.w3.org/2001/XInclude">
+<chapter id="Troubleshooting-the-Nicira-NVP-Plugin" >
     <title>Troubleshooting the Nicira NVP Plugin</title>
     
-    <xi:include href="plugin-niciranvp-uuidreferences.xml" ></xi:include>
-    <xi:include href="plugin-niciranvp-tables.xml" ></xi:include>
+    <xi:include href="plugin-niciranvp-uuidreferences.xml" xmlns:xi="http://www.w3.org/2001/XInclude"></xi:include>
+    <xi:include href="plugin-niciranvp-tables.xml" xmlns:xi="http://www.w3.org/2001/XInclude"></xi:include>
 </chapter>

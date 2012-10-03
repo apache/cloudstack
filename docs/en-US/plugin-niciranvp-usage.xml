@@ -20,10 +20,10 @@
  specific language governing permissions and limitations
  under the License.
 -->
-<chapter id="Using-the-Nicira-NVP-Plugin" xmlns:xi="http://www.w3.org/2001/XInclude">
+<chapter id="Using-the-Nicira-NVP-Plugin" >
     <title>Using the Nicira NVP Plugin</title>
     
-    <xi:include href="plugin-niciranvp-preparations.xml"></xi:include>
-    <xi:include href="plugin-niciranvp-provider.xml"></xi:include>
-    <xi:include href="plugin-niciranvp-devicemanagement.xml"></xi:include>
+    <xi:include href="plugin-niciranvp-preparations.xml" xmlns:xi="http://www.w3.org/2001/XInclude"></xi:include>
+    <xi:include href="plugin-niciranvp-provider.xml" xmlns:xi="http://www.w3.org/2001/XInclude"></xi:include>
+    <xi:include href="plugin-niciranvp-devicemanagement.xml" xmlns:xi="http://www.w3.org/2001/XInclude"></xi:include>
 </chapter>
