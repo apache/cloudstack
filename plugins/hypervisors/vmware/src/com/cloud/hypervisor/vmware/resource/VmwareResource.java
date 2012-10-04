@@ -4558,12 +4558,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         try {
             if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Executing /root/netusage.sh " + args + " on DomR " + privateIpAddress);
+                s_logger.trace("Executing /opt/cloud/bin/netusage.sh " + args + " on DomR " + privateIpAddress);
             }
 
             VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
 
-            Pair<Boolean, String> result = SshHelper.sshExecute(privateIpAddress, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null, "/root/netusage.sh " + args);
+            Pair<Boolean, String> result = SshHelper.sshExecute(privateIpAddress, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/netusage.sh " + args);
 
             if (!result.first()) {
                 return null;
