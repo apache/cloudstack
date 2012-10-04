@@ -50,35 +50,6 @@
 						*/
           },
 					
-					advSearchFields: {
-					  name: { label: 'Name' },
-						zoneid: { 
-						  label: 'Zone',							
-              select: function(args) {							  					
-								$.ajax({
-									url: createURL('listZones'),
-									data: {
-									  listAll: true
-									},
-									success: function(json) {									  
-										var zones = json.listzonesresponse.zone;
-
-										args.response.success({
-											data: $.map(zones, function(zone) {
-												return {
-													id: zone.id,
-													description: zone.name
-												};
-											})
-										});
-									}
-								});
-							}						
-						},									
-						tagKey: { label: 'Tag Key' },
-						tagValue: { label: 'Tag Value' }						
-					},
-
           // List view actions
           actions: {
             // Add volume
@@ -294,10 +265,79 @@
               notification: {
                 poll: pollAsyncJobResult
               }
-            }
-							
+            }							
           },
+					
+					advSearchFields: {
+					  name: { label: 'Name' },
+						zoneid: { 
+						  label: 'Zone',							
+              select: function(args) {							  					
+								$.ajax({
+									url: createURL('listZones'),
+									data: {
+									  listAll: true
+									},
+									success: function(json) {									  
+										var zones = json.listzonesresponse.zone;
 
+										args.response.success({
+											data: $.map(zones, function(zone) {
+												return {
+													id: zone.id,
+													description: zone.name
+												};
+											})
+										});
+									}
+								});
+							}						
+						},		
+
+						domainid: {					
+							label: 'Domain',					
+							select: function(args) {
+								$.ajax({
+									url: createURL('listDomains'),
+									data: { 
+										listAll: true,
+										details: 'min'
+									},
+									success: function(json) {
+										var array1 = [{id: '', description: ''}];
+										var domains = json.listdomainsresponse.domain;
+										if(domains != null && domains.length > 0) {
+											for(var i = 0; i < domains.length; i++) {
+												array1.push({id: domains[i].id, description: domains[i].path});
+											}
+										}
+										args.response.success({
+											data: array1
+										});
+									}
+								});
+							},
+							isHidden: function(args) {
+								if(isAdmin() || isDomainAdmin())
+									return false;
+								else
+									return true;
+							}
+						},		
+						account: { 
+							label: 'Account',
+							isHidden: function(args) {
+								if(isAdmin() || isDomainAdmin())
+									return false;
+								else
+									return true;
+							}			
+						},
+						
+						tagKey: { label: 'Tag Key' },
+						tagValue: { label: 'Tag Value' }						
+					},
+					
           dataProvider: function(args) {
 					  var data = {};
 						listViewDataProvider(args, data);						
