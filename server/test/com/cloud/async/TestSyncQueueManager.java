@@ -50,9 +50,9 @@ public class TestSyncQueueManager extends ComponentTestCase {
 			SyncQueueManager.class);
 		
 		final int totalRuns = 5000;
-		final SyncQueueVO queue = mgr.queue("vm_instance", 1L, "Async-job", 1);
+		final SyncQueueVO queue = mgr.queue("vm_instance", 1L, "Async-job", 1, 1);
 		for(int i = 1; i < totalRuns; i++)
-			mgr.queue("vm_instance", 1L, "Async-job", i+1);
+			mgr.queue("vm_instance", 1L, "Async-job", i+1, 1);
 		
 		count = 0;
 		expectingCurrent = 1;
@@ -124,7 +124,7 @@ public class TestSyncQueueManager extends ComponentTestCase {
 		final int itemsPerRun = 20;
 		for(int q = 1; q <= queues; q++)
 			for(int i = 0; i < totalRuns; i++)
-				mgr.queue("vm_instance", q, "Async-job", i+1);
+				mgr.queue("vm_instance", q, "Async-job", i+1, 1);
 		
 		count = 0;
 		Thread thread1 = new Thread(new Runnable() {
@@ -194,16 +194,16 @@ public class TestSyncQueueManager extends ComponentTestCase {
 				SyncQueueManager.class);
 		for(int q = 1; q <= queues; q++)
 			for(int i = 0; i < totalRuns; i++)
-				mgr.queue("vm_instance", q, "Async-job", i+1);
+				mgr.queue("vm_instance", q, "Async-job", i+1, 1);
 	}
     
     public void testSyncQueue() {
         final SyncQueueManager mgr = ComponentLocator.getCurrentLocator().getManager(
                 SyncQueueManager.class);
 
-        mgr.queue("vm_instance", 1, "Async-job", 1);
-        mgr.queue("vm_instance", 1, "Async-job", 2);
-        mgr.queue("vm_instance", 1, "Async-job", 3);
+        mgr.queue("vm_instance", 1, "Async-job", 1, 1);
+        mgr.queue("vm_instance", 1, "Async-job", 2, 1);
+        mgr.queue("vm_instance", 1, "Async-job", 3, 1);
         mgr.dequeueFromAny(100L, 1);
         
         List<SyncQueueItemVO> l = mgr.getBlockedQueueItems(100000, false);

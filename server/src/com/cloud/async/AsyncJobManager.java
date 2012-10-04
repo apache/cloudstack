@@ -25,8 +25,9 @@ public interface AsyncJobManager extends Manager {
     
 	public AsyncJobExecutorContext getExecutorContext();
 	
-	public AsyncJobVO getAsyncJob(long jobId);
-	public AsyncJobVO findInstancePendingAsyncJob(String instanceType, long instanceId);	
+	   public AsyncJobVO getAsyncJob(long jobId);
+	    public AsyncJobVO findInstancePendingAsyncJob(String instanceType, long instanceId);
+	
 	public List<? extends AsyncJob> findInstancePendingAsyncJobs(AsyncJob.Type instanceType, Long accountId);
 	
 	public long submitAsyncJob(AsyncJobVO job);
@@ -39,7 +40,7 @@ public interface AsyncJobManager extends Manager {
    
     public void releaseSyncSource(AsyncJobExecutor executor);
     
-    public void syncAsyncJobExecution(AsyncJob job, String syncObjType, long syncObjId);
+    public void syncAsyncJobExecution(AsyncJob job, String syncObjType, long syncObjId, long queueSizeLimit);
     
     /**
      * Queries for the status or final result of an async job.

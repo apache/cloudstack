@@ -26,6 +26,7 @@ import com.cloud.api.commands.ListSnapshotsCmd;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.Snapshot;
+import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 
 public interface SnapshotService {
@@ -97,4 +98,10 @@ public interface SnapshotService {
      * @return the Snapshot that was created
      */
     Snapshot createSnapshot(Long volumeId, Long policyId, Long snapshotId, Account snapshotOwner);
+
+    /**
+     * @param vol
+     * @return
+     */
+    Long getHostIdForSnapshotOperation(Volume vol);
 }

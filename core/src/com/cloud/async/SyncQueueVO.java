@@ -18,7 +18,6 @@
 package com.cloud.async;
 
 import java.util.Date;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -40,34 +39,29 @@ public class SyncQueueVO {
     @Column(name="sync_objtype")
 
     private String syncObjType;
-    
+
     @Column(name="sync_objid")
     private Long syncObjId;
-    
+
     @Column(name="queue_proc_number")
     private Long lastProcessNumber;
-    
-    @Column(name="queue_proc_time")
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date lastProcessTime;
-    
-    @Column(name="queue_proc_msid")
-    private Long lastProcessMsid;
-    
+
     @Column(name="created")
     @Temporal(TemporalType.TIMESTAMP)
     private Date created;
-    
+
     @Column(name="last_updated")
     @Temporal(TemporalType.TIMESTAMP)
     private Date lastUpdated;
-    
+
+    @Column(name="queue_size")
+    private long queueSize = 0;
+
+    @Column(name="queue_size_limit")
+    private long queueSizeLimit = 0;
+
     public Long getId() {
         return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 
     public String getSyncObjType() {
@@ -94,22 +88,6 @@ public class SyncQueueVO {
         lastProcessNumber = number;
     }
 
-    public Date getLastProcessTime() {
-        return lastProcessTime;
-    }
-
-    public void setLastProcessTime(Date lastProcessTime) {
-        this.lastProcessTime = lastProcessTime;
-    }
-
-    public Long getLastProcessMsid() {
-        return lastProcessMsid;
-    }
-
-    public void setLastProcessMsid(Long lastProcessMsid) {
-        this.lastProcessMsid = lastProcessMsid;
-    }
-
     public Date getCreated() {
         return created;
     }
@@ -125,18 +103,33 @@ public class SyncQueueVO {
     public void setLastUpdated(Date lastUpdated) {
         this.lastUpdated = lastUpdated;
     }
-    
+
     public String toString() {
         StringBuffer sb = new StringBuffer();
         sb.append("SyncQueueVO {id:").append(getId());
         sb.append(", syncObjType: ").append(getSyncObjType());
         sb.append(", syncObjId: ").append(getSyncObjId());
-        sb.append(", lastProcessMsid: ").append(getLastProcessMsid());
         sb.append(", lastProcessNumber: ").append(getLastProcessNumber());
-        sb.append(", lastProcessTime: ").append(getLastProcessTime());
         sb.append(", lastUpdated: ").append(getLastUpdated());
         sb.append(", created: ").append(getCreated());
+        sb.append(", count: ").append(getQueueSize());
         sb.append("}");
         return sb.toString();
+    }
+
+    public long getQueueSize() {
+        return queueSize;
+    }
+
+    public void setQueueSize(long queueSize) {
+        this.queueSize = queueSize;
+    }
+
+    public long getQueueSizeLimit() {
+        return queueSizeLimit;
+    }
+
+    public void setQueueSizeLimit(long queueSizeLimit) {
+        this.queueSizeLimit = queueSizeLimit;
     }
 }

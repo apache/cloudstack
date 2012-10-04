@@ -1362,16 +1362,15 @@ CREATE TABLE `cloud`.`sync_queue` (
   `id` bigint unsigned NOT NULL auto_increment,
   `sync_objtype` varchar(64) NOT NULL, 
   `sync_objid` bigint unsigned NOT NULL,
-  `queue_proc_msid` bigint,
   `queue_proc_number` bigint COMMENT 'process number, increase 1 for each iteration',
-  `queue_proc_time` datetime COMMENT 'last time to process the queue',
   `created` datetime COMMENT 'date created',
   `last_updated` datetime COMMENT 'date created',
+  `queue_size` smallint DEFAULT 0 COMMENT 'number of items being processed by the queue',
+  `queue_size_limit` smallint DEFAULT 1 COMMENT 'max number of items the queue can process concurrently',
   PRIMARY KEY  (`id`),
   UNIQUE `i_sync_queue__objtype__objid`(`sync_objtype`, `sync_objid`),
   INDEX `i_sync_queue__created`(`created`),
-  INDEX `i_sync_queue__last_updated`(`last_updated`),
-  INDEX `i_sync_queue__queue_proc_time`(`queue_proc_time`)
+  INDEX `i_sync_queue__last_updated`(`last_updated`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`stack_maid` (
@@ -1392,13 +1391,15 @@ CREATE TABLE `cloud`.`sync_queue_item` (
   `content_id` bigint,
   `queue_proc_msid` bigint COMMENT 'owner msid when the queue item is being processed',
   `queue_proc_number` bigint COMMENT 'used to distinguish raw items and items being in process',
+  `queue_proc_time` datetime COMMENT 'when processing started for the item',
   `created` datetime COMMENT 'time created',
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_sync_queue_item__queue_id` FOREIGN KEY `fk_sync_queue_item__queue_id` (`queue_id`) REFERENCES `sync_queue` (`id`) ON DELETE CASCADE,
   INDEX `i_sync_queue_item__queue_id`(`queue_id`),
   INDEX `i_sync_queue_item__created`(`created`),
   INDEX `i_sync_queue_item__queue_proc_number`(`queue_proc_number`),
-  INDEX `i_sync_queue_item__queue_proc_msid`(`queue_proc_msid`)
+  INDEX `i_sync_queue_item__queue_proc_msid`(`queue_proc_msid`),
+  INDEX `i_sync_queue__queue_proc_time`(`queue_proc_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`disk_offering` (
@@ -2371,4 +2372,3 @@ CREATE TABLE `cloud`.`nicira_nvp_nic_map` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET foreign_key_checks = 1;
-

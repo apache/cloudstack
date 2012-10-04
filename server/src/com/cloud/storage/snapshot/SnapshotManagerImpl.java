@@ -195,15 +195,13 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     
     protected Answer sendToPool(Volume vol, Command cmd) {
         StoragePool pool = _storagePoolDao.findById(vol.getPoolId());
-        VMInstanceVO vm = _vmDao.findById(vol.getInstanceId());
-
+        
         long[] hostIdsToTryFirst = null;
-        if (vm != null) {
-            if(vm.getHostId() != null) {
-                hostIdsToTryFirst = new long[] { vm.getHostId() };
-            } else if(vm.getLastHostId() != null) {
-                hostIdsToTryFirst = new long[] { vm.getLastHostId() };
-            }
+        
+        Long vmHostId = getHostIdForSnapshotOperation(vol);
+                
+        if (vmHostId != null) {
+            hostIdsToTryFirst = new long[] { vmHostId };
         }
 
         List<Long> hostIdsToAvoid = new ArrayList<Long>();
@@ -232,6 +230,19 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
 
         s_logger.warn("After " + _totalRetries + " retries, the command " + cmd.getClass().getName() + " did not succeed.");
 
+        return null;
+    }
+
+    @Override
+    public Long getHostIdForSnapshotOperation(Volume vol) {
+        VMInstanceVO vm = _vmDao.findById(vol.getInstanceId());
+        if (vm != null) {
+            if(vm.getHostId() != null) {
+                return vm.getHostId();
+            } else if(vm.getLastHostId() != null) {
+                return vm.getLastHostId();
+            }
+        }
         return null;
     }
 

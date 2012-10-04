@@ -25,10 +25,11 @@ import com.cloud.user.UserContext;
  * queryAsyncJobResult API command.
  */
 public abstract class BaseAsyncCmd extends BaseCmd {
+    
     public static final String ipAddressSyncObject = "ipaddress";
     public static final String networkSyncObject = "network";
     public static final String vpcSyncObject = "vpc";
-
+    public static final String snapshotHostSyncObject = "snapshothost";
 
     private AsyncJob job;
 

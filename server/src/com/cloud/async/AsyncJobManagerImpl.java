@@ -91,29 +91,30 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
     private AccountManager _accountMgr;
     private AccountDao _accountDao;
     private AsyncJobDao _jobDao;
-    private long _jobExpireSeconds = 86400;						// 1 day
-    private long _jobCancelThresholdSeconds = 3600;             // 1 hour
+    private long _jobExpireSeconds = 86400;                 // 1 day
+    private long _jobCancelThresholdSeconds = 3600;         // 1 hour (for cancelling the jobs blocking other jobs)
+    
     private ApiDispatcher _dispatcher;
 
     private final ScheduledExecutorService _heartbeatScheduler =
-        Executors.newScheduledThreadPool(1, new NamedThreadFactory("AsyncJobMgr-Heartbeat"));
+            Executors.newScheduledThreadPool(1, new NamedThreadFactory("AsyncJobMgr-Heartbeat"));
     private ExecutorService _executor;
 
     @Override
-	public AsyncJobExecutorContext getExecutorContext() {
-		return _context;
-	}
-    	
-    @Override
-	public AsyncJobVO getAsyncJob(long jobId) {
-    	return _jobDao.findById(jobId);
+    public AsyncJobExecutorContext getExecutorContext() {
+        return _context;
     }
     
     @Override
-	public AsyncJobVO findInstancePendingAsyncJob(String instanceType, long instanceId) {
-    	return _jobDao.findInstancePendingAsyncJob(instanceType, instanceId);
+    public AsyncJobVO getAsyncJob(long jobId) {
+        return _jobDao.findById(jobId);
     }
-    
+
+    @Override
+    public AsyncJobVO findInstancePendingAsyncJob(String instanceType, long instanceId) {
+        return _jobDao.findInstancePendingAsyncJob(instanceType, instanceId);
+    }
+
     @Override
     public List<AsyncJobVO> findInstancePendingAsyncJobs(AsyncJob.Type instanceType, Long accountId) {
     	return _jobDao.findInstancePendingAsyncJobs(instanceType, accountId);
@@ -214,46 +215,46 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
     		if(resultObject != null) {
                 job.setResult(ApiSerializerHelper.toSerializedStringOld(resultObject));
             }
-    		job.setLastUpdated(DateUtil.currentGMTTime());
-    		_jobDao.update(jobId, job);
-    		txt.commit();
-    	} catch(Exception e) {
-    		s_logger.error("Unexpected exception while updating async job-" + jobId + " status: ", e);
-    		txt.rollback();
-    	}
+            job.setLastUpdated(DateUtil.currentGMTTime());
+            _jobDao.update(jobId, job);
+            txt.commit();
+        } catch(Exception e) {
+            s_logger.error("Unexpected exception while updating async job-" + jobId + " status: ", e);
+            txt.rollback();
+        }
     }
 
     @Override @DB
     public void updateAsyncJobAttachment(long jobId, String instanceType, Long instanceId) {
-    	if(s_logger.isDebugEnabled()) {
+        if(s_logger.isDebugEnabled()) {
             s_logger.debug("Update async-job attachment, job-" + jobId + ", instanceType: " + instanceType +
-    			", instanceId: " + instanceId);
+                    ", instanceId: " + instanceId);
         }
-    	
-    	Transaction txt = Transaction.currentTxn();
-    	try {
-    		txt.start();
 
-	    	AsyncJobVO job = _jobDao.createForUpdate();
-	    	//job.setInstanceType(instanceType);
-	    	job.setInstanceId(instanceId);
-			job.setLastUpdated(DateUtil.currentGMTTime());
-			_jobDao.update(jobId, job);
+        Transaction txt = Transaction.currentTxn();
+        try {
+            txt.start();
 
-    		txt.commit();
-    	} catch(Exception e) {
-    		s_logger.error("Unexpected exception while updating async job-" + jobId + " attachment: ", e);
-    		txt.rollback();
-    	}
+            AsyncJobVO job = _jobDao.createForUpdate();
+            //job.setInstanceType(instanceType);
+            job.setInstanceId(instanceId);
+            job.setLastUpdated(DateUtil.currentGMTTime());
+            _jobDao.update(jobId, job);
+
+            txt.commit();
+        } catch(Exception e) {
+            s_logger.error("Unexpected exception while updating async job-" + jobId + " attachment: ", e);
+            txt.rollback();
+        }
     }
 
     @Override
-    public void syncAsyncJobExecution(AsyncJob job, String syncObjType, long syncObjId) {
-    	// This method is re-entrant.  If an API developer wants to synchronized on an object, e.g. the router,
-    	// when executing business logic, they will call this method (actually a method in BaseAsyncCmd that calls this).
-    	// This method will get called every time their business logic executes.  The first time it exectues for a job
-    	// there will be no sync source, but on subsequent execution there will be a sync souce.  If this is the first
-    	// time the job executes we queue the job, otherwise we just return so that the business logic can execute.
+    public void syncAsyncJobExecution(AsyncJob job, String syncObjType, long syncObjId, long queueSizeLimit) {
+        // This method is re-entrant.  If an API developer wants to synchronized on an object, e.g. the router,
+        // when executing business logic, they will call this method (actually a method in BaseAsyncCmd that calls this).
+        // This method will get called every time their business logic executes.  The first time it exectues for a job
+        // there will be no sync source, but on subsequent execution there will be a sync souce.  If this is the first
+        // time the job executes we queue the job, otherwise we just return so that the business logic can execute.
         if (job.getSyncSource() != null) {
             return;
         }
@@ -268,9 +269,9 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
     	// we retry five times until we throw an exception
 		Random random = new Random();
 
-    	for(int i = 0; i < 5; i++) {
-    		queue = _queueMgr.queue(syncObjType, syncObjId, "AsyncJob", job.getId());
-    		if(queue != null) {
+        for(int i = 0; i < 5; i++) {
+            queue = _queueMgr.queue(syncObjType, syncObjId, "AsyncJob", job.getId(), queueSizeLimit);
+            if(queue != null) {
                 break;
             }
 
@@ -663,41 +664,41 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
 				if(s_logger.isInfoEnabled()) {
                     s_logger.info("Discard left-over queue item: " + item.toString());
                 }
-				
-				String contentType = item.getContentType();
-				if(contentType != null && contentType.equals("AsyncJob")) {
-					Long jobId = item.getContentId();
-					if(jobId != null) {
-						s_logger.warn("Mark job as failed as its correspoding queue-item has been discarded. job id: " + jobId);
-						completeAsyncJob(jobId, AsyncJobResult.STATUS_FAILED, 0, getResetResultResponse("Execution was cancelled because of server shutdown"));
-					}
-				}
-				_queueMgr.purgeItem(item.getId());
-			}
-		}
-	}
-    
+
+                String contentType = item.getContentType();
+                if(contentType != null && contentType.equals("AsyncJob")) {
+                    Long jobId = item.getContentId();
+                    if(jobId != null) {
+                        s_logger.warn("Mark job as failed as its correspoding queue-item has been discarded. job id: " + jobId);
+                        completeAsyncJob(jobId, AsyncJobResult.STATUS_FAILED, 0, getResetResultResponse("Execution was cancelled because of server shutdown"));
+                    }
+                }
+                _queueMgr.purgeItem(item.getId());
+            }
+        }
+    }
+
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-    	_name = name;
-    
-		ComponentLocator locator = ComponentLocator.getCurrentLocator();
-		
-		ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
-		if (configDao == null) {
-			throw new ConfigurationException("Unable to get the configuration dao.");
-		}
+        _name = name;
 
-		int expireMinutes = NumbersUtil.parseInt(
-		       configDao.getValue(Config.JobExpireMinutes.key()), 24*60);
-		_jobExpireSeconds = (long)expireMinutes*60;
-		
-		_jobCancelThresholdSeconds = NumbersUtil.parseInt(
-		       configDao.getValue(Config.JobCancelThresholdMinutes.key()), 60);
-		_jobCancelThresholdSeconds *= 60;
+        ComponentLocator locator = ComponentLocator.getCurrentLocator();
 
-		_accountDao = locator.getDao(AccountDao.class);
-		if (_accountDao == null) {
+        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
+        if (configDao == null) {
+            throw new ConfigurationException("Unable to get the configuration dao.");
+        }
+        
+        int expireMinutes = NumbersUtil.parseInt(
+                configDao.getValue(Config.JobExpireMinutes.key()), 24*60);
+        _jobExpireSeconds = (long)expireMinutes*60;
+
+        _jobCancelThresholdSeconds = NumbersUtil.parseInt(
+                configDao.getValue(Config.JobCancelThresholdMinutes.key()), 60);
+        _jobCancelThresholdSeconds *= 60;
+
+        _accountDao = locator.getDao(AccountDao.class);
+        if (_accountDao == null) {
             throw new ConfigurationException("Unable to get " + AccountDao.class.getName());
 		}
 		_jobDao = locator.getDao(AsyncJobDao.class);
@@ -748,23 +749,22 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
     }
     
     @Override
-	public void onManagementNodeLeft(List<ManagementServerHostVO> nodeList, long selfNodeId) {
-    	for(ManagementServerHostVO msHost : nodeList) {
-    		Transaction txn = Transaction.open(Transaction.CLOUD_DB);
-    		try {
-    			txn.start();
-    			List<SyncQueueItemVO> items = _queueMgr.getActiveQueueItems(msHost.getId(), true);
-    			cleanupPendingJobs(items);
-        		_queueMgr.resetQueueProcess(msHost.getId());
-        		_jobDao.resetJobProcess(msHost.getId(), BaseCmd.INTERNAL_ERROR, getSerializedErrorMessage("job cancelled because of management server restart"));
-    			txn.commit();
-    		} catch(Throwable e) {
-    			s_logger.warn("Unexpected exception ", e);
-    			txn.rollback();
-    		} finally {
-    			txn.close();
-    		}
-    	}
+    public void onManagementNodeLeft(List<ManagementServerHostVO> nodeList, long selfNodeId) {
+        for(ManagementServerHostVO msHost : nodeList) {
+            Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+            try {
+                txn.start();
+                List<SyncQueueItemVO> items = _queueMgr.getActiveQueueItems(msHost.getId(), true);
+                cleanupPendingJobs(items);
+                _jobDao.resetJobProcess(msHost.getId(), BaseCmd.INTERNAL_ERROR, getSerializedErrorMessage("job cancelled because of management server restart"));
+                txn.commit();
+            } catch(Throwable e) {
+                s_logger.warn("Unexpected exception ", e);
+                txn.rollback();
+            } finally {
+                txn.close();
+            }
+        }
     }
     
     @Override
@@ -773,20 +773,19 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
 
     @Override
     public boolean start() {
-    	try {
-    		List<SyncQueueItemVO> l = _queueMgr.getActiveQueueItems(getMsid(), false);
-    		cleanupPendingJobs(l);
-    		_queueMgr.resetQueueProcess(getMsid());
-    		_jobDao.resetJobProcess(getMsid(), BaseCmd.INTERNAL_ERROR, getSerializedErrorMessage("job cancelled because of management server restart"));
-    	} catch(Throwable e) {
-    		s_logger.error("Unexpected exception " + e.getMessage(), e);
-    	}
-    	
-    	_heartbeatScheduler.scheduleAtFixedRate(getHeartbeatTask(), HEARTBEAT_INTERVAL,
-			HEARTBEAT_INTERVAL, TimeUnit.MILLISECONDS);
-    	_heartbeatScheduler.scheduleAtFixedRate(getGCTask(), GC_INTERVAL,
-			GC_INTERVAL, TimeUnit.MILLISECONDS);
-    	
+        try {
+            List<SyncQueueItemVO> l = _queueMgr.getActiveQueueItems(getMsid(), false);
+            cleanupPendingJobs(l);
+            _jobDao.resetJobProcess(getMsid(), BaseCmd.INTERNAL_ERROR, getSerializedErrorMessage("job cancelled because of management server restart"));
+        } catch(Throwable e) {
+            s_logger.error("Unexpected exception " + e.getMessage(), e);
+        }
+
+        _heartbeatScheduler.scheduleAtFixedRate(getHeartbeatTask(), HEARTBEAT_INTERVAL,
+                HEARTBEAT_INTERVAL, TimeUnit.MILLISECONDS);
+        _heartbeatScheduler.scheduleAtFixedRate(getGCTask(), GC_INTERVAL,
+                GC_INTERVAL, TimeUnit.MILLISECONDS);
+
         return true;
     }
     

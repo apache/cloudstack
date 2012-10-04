@@ -24,6 +24,8 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 
 @Entity
 @Table(name="sync_queue_item")
@@ -48,6 +50,10 @@ public class SyncQueueItemVO implements SyncQueueItem{
 
     @Column(name="queue_proc_number")
     private Long lastProcessNumber;
+    
+    @Column(name="queue_proc_time")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date lastProcessTime;
     
     @Column(name="created")
     private Date created;
@@ -93,7 +99,7 @@ public class SyncQueueItemVO implements SyncQueueItem{
     public void setLastProcessMsid(Long lastProcessMsid) {
         this.lastProcessMsid = lastProcessMsid;
     }
-    
+
     public Long getLastProcessNumber() {
         return lastProcessNumber;
     }
@@ -109,7 +115,7 @@ public class SyncQueueItemVO implements SyncQueueItem{
     public void setCreated(Date created) {
         this.created = created;
     }
-    
+
     public String toString() {
         StringBuffer sb = new StringBuffer();
         sb.append("SyncQueueItemVO {id:").append(getId()).append(", queueId: ").append(getQueueId());
@@ -117,8 +123,17 @@ public class SyncQueueItemVO implements SyncQueueItem{
         sb.append(", contentId: ").append(getContentId());
         sb.append(", lastProcessMsid: ").append(getLastProcessMsid());
         sb.append(", lastprocessNumber: ").append(getLastProcessNumber());
+        sb.append(", lastProcessTime: ").append(getLastProcessTime());
         sb.append(", created: ").append(getCreated());
         sb.append("}");
         return sb.toString();
     }
+
+       public Date getLastProcessTime() {
+            return lastProcessTime;
+        }
+
+        public void setLastProcessTime(Date lastProcessTime) {
+            this.lastProcessTime = lastProcessTime;
+        }
 }
