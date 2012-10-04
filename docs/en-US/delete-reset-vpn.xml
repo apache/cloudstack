@@ -1,0 +1,89 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+<section id="delete-reset-vpn">
+  <title>Restarting and Removing a VPN Connection</title>
+  <orderedlist>
+    <listitem>
+      <para>Log in to the &PRODUCT; UI as an administrator or end user.</para>
+    </listitem>
+    <listitem>
+      <para>In the left navigation, choose Network.</para>
+    </listitem>
+    <listitem>
+      <para>In the Select view, select VPC.</para>
+      <para>All the VPCs that you have created for the account is listed in the page.</para>
+    </listitem>
+    <listitem>
+      <para>Click the Configure button of the VPC to which you want to deploy the VMs.</para>
+      <para>The VPC page is displayed where all the tiers you created are listed in a
+        diagram.</para>
+    </listitem>
+    <listitem>
+      <para>Click the Settings icon.</para>
+      <para>The following options are displayed.</para>
+      <itemizedlist>
+        <listitem>
+          <para>IP Addresses</para>
+        </listitem>
+        <listitem>
+          <para>Gateways</para>
+        </listitem>
+        <listitem>
+          <para>Site-to-Site VPN</para>
+        </listitem>
+        <listitem>
+          <para>Network ASLs</para>
+        </listitem>
+      </itemizedlist>
+    </listitem>
+    <listitem>
+      <para>Select Site-to-Site VPN.</para>
+      <para>The Site-to-Site VPN page is displayed.</para>
+    </listitem>
+    <listitem>
+      <para>From the Select View drop-down, ensure that VPN Connection is selected.</para>
+      <para>All the VPN connections you created are displayed.</para>
+    </listitem>
+    <listitem>
+      <para>Select the VPN connection you want to work with.</para>
+      <para> The Details tab is displayed.</para>
+    </listitem>
+    <listitem>
+      <para>To remove a VPN connection, click the Delete VPN connection button<inlinemediaobject>
+          <imageobject>
+            <imagedata fileref="./images/remove-vpn.png"/>
+          </imageobject>
+          <textobject>
+            <phrase>remove-vpn.png: button to remove a VPN connection</phrase>
+          </textobject>
+        </inlinemediaobject></para>
+      <para>To restart a VPN connection, click the Reset VPN connection button present in the
+        Details tab.<inlinemediaobject>
+          <imageobject>
+            <imagedata fileref="./images/reset-vpn.png"/>
+          </imageobject>
+          <textobject>
+            <phrase>reset-vpn.png: button to reset a VPN connection</phrase>
+          </textobject>
+        </inlinemediaobject></para>
+    </listitem>
+  </orderedlist>
+</section>

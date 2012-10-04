@@ -1,0 +1,55 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+<section id="remove-tier">
+  <title>Removing Tiers</title>
+  <para>You can remove a tier from a VPC. A removed tier cannot be revoked. When a tier is removed,
+    only the resources of the tier are expunged. All the network rules (port forwarding, load
+    balancing and staticNAT) and the IP addresses associated to the tier are removed. The IP address
+    still be belonging to the same VPC.</para>
+  <orderedlist>
+    <listitem>
+      <para>Log in to the &PRODUCT; UI as an administrator or end user.</para>
+    </listitem>
+    <listitem>
+      <para>In the left navigation, choose Network.</para>
+    </listitem>
+    <listitem>
+      <para>In the Select view, select VPC.</para>
+      <para>All the VPC that you have created for the account is listed in the page.</para>
+    </listitem>
+    <listitem>
+      <para>Click the Configure button of the VPC for which you want to set up tiers.</para>
+      <para>The Configure VPC page is displayed. Locate the tier you want to work with.</para>
+    </listitem>
+    <listitem>
+      <para>Click the Remove VPC button:</para>
+      <mediaobject>
+        <imageobject>
+          <imagedata fileref="./images/remove-tier.png"/>
+        </imageobject>
+        <textobject>
+          <phrase>remove-tier.png: removing a tier from a vpc.</phrase>
+        </textobject>
+      </mediaobject>
+      <para>Wait for some time for the tier to be removed.</para>
+    </listitem>
+  </orderedlist>
+</section>
