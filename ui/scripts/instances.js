@@ -88,15 +88,20 @@
 					select: function(args) {
 						$.ajax({
 							url: createURL('listDomains'),
-							data: { listAll: true },
+							data: { 
+							  listAll: true,
+								details: 'min'
+							},
 							success: function(json) {
+							  var array1 = [{id: '', description: ''}];
+								var domains = json.listdomainsresponse.domain;
+								if(domains != null && domains.length > 0) {
+								  for(var i = 0; i < domains.length; i++) {
+									  array1.push({id: domains[i].id, description: domains[i].path});
+									}
+								}
 								args.response.success({
-									data: $.map(json.listdomainsresponse.domain, function(domain) {
-										return {
-											id: domain.id,
-											description: domain.path
-										};
-									})
+									data: array1
 								});
 							}
 						});
