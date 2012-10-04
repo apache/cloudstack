@@ -1,0 +1,268 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+  http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+<section id="changed-apicommands-4.0">
+  <title>Changed API Commands in 4.0</title>
+  <informaltable>
+    <tgroup cols="2" align="left" colsep="1" rowsep="1">
+      <colspec colwidth="1" colname="1" colnum="1"/>
+      <colspec colwidth="2*" colname="2" colnum="2"/>
+      <thead>
+        <row>
+          <entry><para>API Commands</para></entry>
+          <entry><para>Description</para></entry>
+        </row>
+      </thead>
+      <tbody>
+        <row>
+          <entry>
+            <para>copyTemplate</para>
+            <para>prepareTemplate</para>
+            <para>registerTemplate</para>
+            <para>updateTemplate</para>
+            <para>createProject</para>
+            <para>activateProject</para>
+            <para>suspendProject</para>
+            <para>updateProject</para>
+            <para>listProjectAccounts</para>
+            <para>createVolume</para>
+            <para>migrateVolume</para>
+            <para>attachVolume</para>
+            <para>detachVolume</para>
+            <para>uploadVolume</para>
+            <para>createSecurityGroup</para>
+            <para>registerIso</para>
+            <para>copyIso</para>
+            <para>updateIso</para>
+            <para>createIpForwardingRule</para>
+            <para>listIpForwardingRules</para>
+            <para>createLoadBalancerRule</para>
+            <para>updateLoadBalancerRule</para>
+            <para>createSnapshot</para>
+          </entry>
+          <entry>
+            <para>The commands in this list have a single new response parameter, and no other
+              changes.</para>
+            <para>New response parameter: tags(*)</para>
+            <note>
+              <para>Many other commands also have the new tags(*) parameter in addition to other
+                changes; those commands are listed separately.</para>
+            </note></entry>
+        </row>
+        <row>
+          <entry>
+            <para>rebootVirtualMachine</para>
+            <para>attachIso</para>
+            <para>detachIso</para>
+            <para>listLoadBalancerRuleInstances</para>
+            <para>resetPasswordForVirtualMachine</para>
+            <para>changeServiceForVirtualMachine</para>
+            <para>recoverVirtualMachine</para>
+            <para>startVirtualMachine</para>
+            <para>migrateVirtualMachine</para>
+            <para>deployVirtualMachine</para>
+            <para>assignVirtualMachine</para>
+            <para>updateVirtualMachine</para>
+            <para>restoreVirtualMachine</para>
+            <para>stopVirtualMachine</para>
+            <para>destroyVirtualMachine</para>
+          </entry>
+          <entry>
+            <para>The commands in this list have two new response parameters, and no other
+              changes.</para>
+            <para>New response parameters: keypair, tags(*)</para>
+          </entry>
+        </row>
+        <row>
+          <entry>
+            <para>listSecurityGroups</para>
+            <para>listFirewallRules</para>
+            <para>listPortForwardingRules</para>
+            <para>listSnapshots</para>
+            <para>listIsos</para>
+            <para>listProjects</para>
+            <para>listTemplates</para>
+            <para>listLoadBalancerRules</para>
+          </entry>
+          <entry><para>The commands in this list have the following new parameters, and no other
+              changes.</para>
+            <para>New request parameter: tags (optional)</para>
+            <para>New response parameter: tags(*)</para>
+          </entry>
+        </row>
+        <row>
+          <entry>
+            <para>listF5LoadBalancerNetworks</para>
+            <para>listNetscalerLoadBalancerNetworks</para>
+            <para>listSrxFirewallNetworks</para>
+            <para>updateNetwork</para>
+          </entry>
+          <entry>
+            <para>The commands in this list have three new response parameters, and no other
+              changes.</para>
+            <para>New response parameters: canusefordeploy, vpcid, tags(*)</para>
+          </entry>
+        </row>
+        <row>
+          <entry>
+            <para>createZone</para>
+            <para>updateZone</para>
+          </entry>
+          <entry><para>The commands in this list have the following new parameters, and no other
+              changes.</para>
+            <para>New request parameter: localstorageenabled (optional)</para>
+            <para>New response parameter: localstorageenabled</para>
+          </entry>
+        </row>
+        <row>
+          <entry><para>listZones</para></entry>
+          <entry><para>New response parameter: localstorageenabled</para></entry>
+        </row>
+        <row>
+          <entry>
+            <para>rebootRouter</para>
+            <para>changeServiceForRouter</para>
+            <para>startRouter</para>
+            <para>destroyRouter</para>
+            <para>stopRouter</para>
+          </entry>
+          <entry><para>The commands in this list have two new response parameters, and no other
+              changes.</para>
+            <para>New response parameters: vpcid, nic(*)</para></entry>
+        </row>
+        <row>
+          <entry>
+            <para>updateAccount</para>
+            <para>disableAccount</para>
+            <para>listAccounts</para>
+            <para>markDefaultZoneForAccount</para>
+            <para>enableAccount</para>
+          </entry>
+          <entry><para>The commands in this list have three new response parameters, and no other
+              changes.</para>
+            <para>New response parameters: vpcavailable, vpclimit, vpctotal</para></entry>
+        </row>
+        <row>
+          <entry><para>listRouters</para></entry>
+          <entry>
+            <para>New request parameters: forvpc (optional), vpcid (optional)</para>
+            <para>New response parameters: vpcid, nic(*)</para>
+          </entry>
+        </row>
+        <row>
+          <entry><para>listNetworkOfferings</para></entry>
+          <entry>
+            <para>New request parameters: forvpc (optional)</para>
+            <para>New response parameters: forvpc </para>
+          </entry>
+        </row>
+        <row>
+          <entry><para>listVolumes</para></entry>
+          <entry>
+            <para>New request parameters: details (optional), tags (optional)</para>
+            <para>New response parameters: tags(*)</para>
+          </entry>
+        </row>
+        <row>
+          <entry><para>addTrafficMonitor</para></entry>
+          <entry>
+            <para>New request parameters: excludezones (optional), includezones (optional)</para>
+          </entry>
+        </row>
+        <row>
+          <entry><para>createNetwork</para></entry>
+          <entry>
+            <para>New request parameters: vpcid (optional)</para>
+            <para>New response parameters: canusefordeploy, vpcid, tags(*)</para>
+          </entry>
+        </row>
+        <row>
+          <entry><para>listPublicIpAddresses</para></entry>
+          <entry>
+            <para>New request parameters: tags (optional), vpcid (optional)</para>
+            <para>New response parameters: vpcid, tags(*)</para>
+          </entry>
+        </row>
+        <row>
+          <entry><para>listNetworks</para></entry>
+          <entry>
+            <para>New request parameters: canusefordeploy (optional), forvpc (optional), tags
+              (optional), vpcid (optional)</para>
+            <para>New response parameters: canusefordeploy, vpcid, tags(*)</para>
+          </entry>
+        </row>
+        <row>
+          <entry><para>restartNetwork</para></entry>
+          <entry>
+            <para>New response parameters: vpcid, tags(*)</para>
+          </entry>
+        </row>
+        <row>
+          <entry><para>enableStaticNat</para></entry>
+          <entry>
+            <para>New request parameter: networkid (optional)</para>
+          </entry>
+        </row>
+        <row>
+          <entry><para>createDiskOffering</para></entry>
+          <entry>
+            <para>New request parameter: storagetype (optional)</para>
+            <para>New response parameter: storagetype</para>
+          </entry>
+        </row>
+        <row>
+          <entry><para>listDiskOfferings</para></entry>
+          <entry>
+            <para>New response parameter: storagetype</para>
+          </entry>
+        </row>
+        <row>
+          <entry><para>updateDiskOffering</para></entry>
+          <entry>
+            <para>New response parameter: storagetype</para>
+          </entry>
+        </row>
+        <row>
+          <entry><para>createFirewallRule</para></entry>
+          <entry>
+            <para>Changed request parameters: ipaddressid (old version - optional, new version -
+              required)</para>
+            <para>New response parameter: tags(*)</para>
+          </entry>
+        </row>
+        <row>
+          <entry><para>listVirtualMachines</para></entry>
+          <entry>
+            <para>New request parameters: isoid (optional), tags (optional), templateid
+              (optional)</para>
+            <para>New response parameters: keypair, tags(*)</para>
+          </entry>
+        </row>
+        <row>
+          <entry><para>updateStorageNetworkIpRange</para></entry>
+          <entry>
+            <para>New response parameters: id, endip, gateway, netmask, networkid, podid, startip,
+              vlan, zoneid</para>
+          </entry>
+        </row>
+      </tbody>
+    </tgroup>
+  </informaltable>
+</section>

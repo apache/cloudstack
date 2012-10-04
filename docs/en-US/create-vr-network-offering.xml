@@ -1,0 +1,108 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+  http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+<section id="create-vr-network-offering">
+  <title>Creating and Changing a Virtual Router Network Offering</title>
+  <para>To create the network offering in association with a virtual router system service
+    offering:</para>
+  <orderedlist>
+    <listitem>
+      <para>Log in to the &PRODUCT; UI as a user or admin.</para>
+    </listitem>
+    <listitem>
+      <para>First, create a system service offering, for example: VRsystemofferingHA.</para>
+      <para>For more information on creating a system service offering, see <xref
+          linkend="creating-system-service-offerings"/>.</para>
+    </listitem>
+    <listitem>
+      <para>From the Select Offering drop-down, choose Network Offering.</para>
+    </listitem>
+    <listitem>
+      <para>Click Add Network Offering.</para>
+    </listitem>
+    <listitem>
+      <para>In the dialog, make the following choices:</para>
+      <itemizedlist>
+        <listitem>
+          <para><emphasis role="bold">Name</emphasis>. Any desired name for the network
+            offering.</para>
+        </listitem>
+        <listitem>
+          <para><emphasis role="bold">Description</emphasis>. A short description of the offering
+            that can be displayed to users.</para>
+        </listitem>
+        <listitem>
+          <para><emphasis role="bold">Network Rate</emphasis>. Allowed data transfer rate in MB per
+            second.</para>
+        </listitem>
+        <listitem>
+          <para><emphasis role="bold">Traffic Type</emphasis>. The type of network traffic that will
+            be carried on the network.</para>
+        </listitem>
+        <listitem>
+          <para><emphasis role="bold">Guest Type</emphasis>. Choose whether the guest network is
+            isolated or shared. For a description of these terms, see <xref
+              linkend="about-virtual-networks"/>.</para>
+        </listitem>
+        <listitem>
+          <para><emphasis role="bold">Specify VLAN</emphasis>. (Isolated guest networks only)
+            Indicate whether a VLAN should be specified when this offering is used.</para>
+        </listitem>
+        <listitem>
+          <para><emphasis role="bold">Supported Services</emphasis>. Select one or more of the
+            possible network services. For some services, you must also choose the service provider;
+            for example, if you select Load Balancer, you can choose the &PRODUCT; virtual router or
+            any other load balancers that have been configured in the cloud. Depending on which
+            services you choose, additional fields may appear in the rest of the dialog box. For
+            more information, see <xref linkend="creating-network-offerings"/></para>
+        </listitem>
+        <listitem>
+          <para><emphasis role="bold">System Offering</emphasis>. Choose the system service offering
+            that you want virtual routers to use in this network. In this case, the default “System
+            Offering For Software Router” and the custom “VRsystemofferingHA” are available and
+            displayed.</para>
+        </listitem>
+      </itemizedlist>
+    </listitem>
+    <listitem>
+      <para>Click OK and the network offering is created.</para>
+    </listitem>
+  </orderedlist>
+  <para>To change the network offering of a guest network to the virtual router service
+    offering:</para>
+  <orderedlist>
+    <listitem>
+      <para>Select Network from the left navigation pane.</para>
+    </listitem>
+    <listitem>
+      <para>Select the guest network that you want to offer this network service to.</para>
+    </listitem>
+    <listitem>
+      <para>Click the Edit button.</para>
+    </listitem>
+    <listitem>
+      <para>From the Network Offering drop-down, select the virtual router network offering you have
+        just created.</para>
+    </listitem>
+    <listitem>
+      <para>Click OK.</para>
+    </listitem>
+  </orderedlist>
+</section>

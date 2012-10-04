@@ -24,11 +24,10 @@
 
 <book>
     <bookinfo id="book-release-notes-3.0.4">
-        <title>&PRODUCT; Guide</title>
-        <subtitle>Revised August 9, 2012 10:48 pm Pacific</subtitle>
+        <title>&PRODUCT; API Developers Guide</title>
         <productname>Apache CloudStack</productname>
         <productnumber>4.0</productnumber>
-        <edition>1</edition>
+        <edition></edition>
         <pubsnumber></pubsnumber>
         <abstract>
             <para>

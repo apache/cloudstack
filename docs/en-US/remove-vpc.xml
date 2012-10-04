@@ -1,0 +1,68 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+<section id="remove-vpc">
+  <title>Editing, Restarting, and Removing a Virtual Private Cloud</title>
+  <note>
+    <para>Ensure that all the tiers are removed before you remove a VPC.</para>
+  </note>
+  <orderedlist>
+    <listitem>
+      <para>Log in to the &PRODUCT; UI as an administrator or end user. </para>
+    </listitem>
+    <listitem>
+      <para>In the left navigation, choose Network.</para>
+    </listitem>
+    <listitem>
+      <para>In the Select view, select VPC.</para>
+      <para>All the VPCs that you have created for the account is listed in the page.</para>
+    </listitem>
+    <listitem>
+      <para>Select the VPC you want to work with.</para>
+    </listitem>
+    <listitem>
+      <para>To remove, click the Remove VPC button<inlinemediaobject>
+          <imageobject>
+            <imagedata fileref="./images/remove-vpc.png"/>
+          </imageobject>
+          <textobject>
+            <phrase>remove-vpc.png: button to remove a VPC</phrase>
+          </textobject>
+        </inlinemediaobject></para>
+      <para>You can edit the name and description of a VPC. To do that, select the VPC, then click
+        the Edit button. <inlinemediaobject>
+          <imageobject>
+            <imagedata fileref="./images/edit-icon.png"/>
+          </imageobject>
+          <textobject>
+            <phrase>edit-icon.png: button to edit a VPC</phrase>
+          </textobject>
+        </inlinemediaobject></para>
+      <para>To restart a VPC, select the VPC, then click the Restart button.<inlinemediaobject>
+          <imageobject>
+            <imagedata fileref="./images/restart-vpc.png"/>
+          </imageobject>
+          <textobject>
+            <phrase>restart-vpc.png: button to restart a VPC</phrase>
+          </textobject>
+        </inlinemediaobject></para>
+    </listitem>
+  </orderedlist>
+</section>

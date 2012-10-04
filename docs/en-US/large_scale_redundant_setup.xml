@@ -1,0 +1,42 @@
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ http://www.apache.org/licenses/LICENSE-2.0.
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
+<section id="large_scale_redundant_setup">
+    <title>Large-Scale Redundant Setup</title>
+    <mediaobject>
+        <imageobject>
+            <imagedata fileref="./images/large_scale_redundant_setup.png" />
+        </imageobject>
+        <textobject><phrase>Large-Scale Redundant Setup</phrase></textobject>
+    </mediaobject>
+    <para>This diagram illustrates the network architecture of a large-scale &PRODUCT; deployment.</para>
+    <itemizedlist>
+        <listitem><para>A layer-3 switching layer is at the core of the data center. A router redundancy protocol like VRRP should be deployed. Typically high-end core switches also include firewall modules. Separate firewall appliances may also be used if the layer-3 switch does not have integrated firewall capabilities. The firewalls are configured in NAT mode. The firewalls provide the following functions:</para>
+            <itemizedlist>		
+	        <listitem><para>Forwards HTTP requests and API calls from the Internet to the Management Server. The Management Server resides on the management network.</para></listitem>
+	        <listitem><para>When the cloud spans multiple zones, the firewalls should enable site-to-site VPN such that servers in different zones can directly reach each other.</para></listitem>
+            </itemizedlist>
+        </listitem>
+        <listitem><para>A layer-2 access switch layer is established for each pod. Multiple switches can be stacked to increase port count. In either case, redundant pairs of layer-2 switches should be deployed.</para></listitem>
+        <listitem><para>The Management Server cluster (including front-end load balancers, Management Server nodes, and the MySQL database) is connected to the management network through a pair of load balancers.</para></listitem>
+        <listitem><para>Secondary storage servers are connected to the management network.</para></listitem>
+        <listitem><para>Each pod contains storage and computing servers. Each storage and computing server should have redundant NICs connected to separate layer-2 access switches.</para></listitem>
+    </itemizedlist>
+</section>
