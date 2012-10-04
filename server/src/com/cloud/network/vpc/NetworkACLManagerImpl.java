@@ -137,8 +137,11 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
         Vpc vpc = _vpcMgr.getVpc(network.getVpcId());
         Account aclOwner = _accountMgr.getAccount(vpc.getAccountId());
         
-        _accountMgr.checkAccess(caller, AccessType.UseNetwork, false, network);
+        //check if the caller can access vpc
+        _accountMgr.checkAccess(caller, null, false, vpc);
 
+        //check if the acl can be created for this network
+        _accountMgr.checkAccess(aclOwner, AccessType.UseNetwork, false, network);
         
         if (!_networkMgr.areServicesSupportedInNetwork(networkId, Service.NetworkACL)) {
             throw new InvalidParameterValueException("Service " + Service.NetworkACL + " is not supported in network " + network);

@@ -1142,7 +1142,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         
         Network network = _networksDao.findById(networkId);
         if (network != null) {
-            _accountMgr.checkAccess(caller, AccessType.UseNetwork, false, network);
+            _accountMgr.checkAccess(owner, AccessType.UseNetwork, false, network);
         } else {
             s_logger.debug("Unable to find ip address by id: " + ipId);
             return null;
