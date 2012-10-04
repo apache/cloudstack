@@ -81,7 +81,43 @@
 							}
 						});
 					}						
-				},									
+				},	
+				
+				domainid: {					
+				  label: 'Domain',					
+					select: function(args) {
+						$.ajax({
+							url: createURL('listDomains'),
+							data: { listAll: true },
+							success: function(json) {
+								args.response.success({
+									data: $.map(json.listdomainsresponse.domain, function(domain) {
+										return {
+											id: domain.id,
+											description: domain.path
+										};
+									})
+								});
+							}
+						});
+					},
+					isHidden: function(args) {
+					  if(isAdmin() || isDomainAdmin())
+						  return false;
+						else
+						  return true;
+					}
+				},		
+        account: { 
+				  label: 'Account',
+          isHidden: function(args) {
+					  if(isAdmin() || isDomainAdmin())
+						  return false;
+						else
+						  return true;
+					}			
+				},
+				
 				tagKey: { label: 'Tag Key' },
 				tagValue: { label: 'Tag Value' }						
 			},						
