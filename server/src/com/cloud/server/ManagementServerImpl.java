@@ -1260,7 +1260,13 @@ public class ManagementServerImpl implements ManagementServer {
         Account caller = UserContext.current().getCaller();
         Map<String, String> tags = cmd.getTags();
 
-        boolean listAll = (caller.getType() != Account.ACCOUNT_TYPE_NORMAL && (isoFilter != null && isoFilter == TemplateFilter.all));
+        boolean listAll = false;
+        if (isoFilter != null && isoFilter == TemplateFilter.all) {
+            if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+                throw new InvalidParameterValueException("Filter " + TemplateFilter.all + " can be specified by admin only", null);
+            }
+            listAll = true;
+        }
         List<Long> permittedAccountIds = new ArrayList<Long>();
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
         _accountMgr.buildACLSearchParameters(caller, cmd.getId(), cmd.getAccountName(), cmd.getProjectId(), permittedAccountIds, domainIdRecursiveListProject, listAll, false);
@@ -1282,8 +1288,15 @@ public class ManagementServerImpl implements ManagementServer {
         Long id = cmd.getId();
         Map<String, String> tags = cmd.getTags();
         Account caller = UserContext.current().getCaller();
-
-        boolean listAll = (caller.getType() != Account.ACCOUNT_TYPE_NORMAL && (templateFilter != null && templateFilter == TemplateFilter.all));
+        
+        boolean listAll = false;
+        if (templateFilter != null && templateFilter == TemplateFilter.all) {
+            if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+                throw new InvalidParameterValueException("Filter " + TemplateFilter.all + " can be specified by admin only", null);
+            }
+            listAll = true;
+        }
+        
         List<Long> permittedAccountIds = new ArrayList<Long>();
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
         _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccountIds, domainIdRecursiveListProject, listAll, false);
