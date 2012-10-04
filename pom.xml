@@ -187,18 +187,24 @@
             <excludeSubProjects>false</excludeSubProjects>
             <excludes>
               <exclude>INSTALL.md</exclude>
+              <exclude>**/.classpath</exclude>
+              <exclude>**/.project</exclude>
+              <exclude>**/.settings/**</exclude>
+              <exclude>.metadata/**</exclude>
               <exclude>.git/**</exclude>
               <exclude>.gitignore</exclude>
               <exclude>**/*.crt</exclude>
               <exclude>**/*.csr</exclude>
               <exclude>**/*.key</exclude>
               <exclude>**/authorized_keys</exclude>
+              <exclude>**/*.war</exclude>
               <exclude>**/*.mar</exclude>
               <exclude>**/*.jar</exclude>
               <exclude>**/*.iso</exclude>
               <exclude>**/*.tgz</exclude>
               <exclude>**/*.zip</exclude>
               <exclude>**/target/**</exclude>
+              <exclude>**/.vagrant</exclude>
               <exclude>build/build.number</exclude>
               <exclude>console-proxy/js/jquery.js</exclude>
               <exclude>debian/compat</exclude>
