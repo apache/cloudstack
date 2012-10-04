@@ -18,10 +18,8 @@
   specific language governing permissions and limitations
   under the License.
 -->
-<section id="set-projects-creator-permissions">
-  <title>Setting Project Creator Permissions</title>
-  <para>You can configure &PRODUCT; to allow any user to create a new project, or you can restrict
-    that ability to just &PRODUCT; administrators.</para>
+<section id="set-global-project-resource-limits">
+  <title>Setting the Global Project Resource Limits</title>
   <orderedlist>
     <listitem>
       <para>Log in as administrator to the &PRODUCT; UI.</para>
@@ -30,10 +28,13 @@
       <para>In the left navigation, click Global Settings.</para>
     </listitem>
     <listitem>
-      <para>In the search box, type allow.user.create.projects.</para>
+      <para>In the search box, type max.projects and click the search button.</para>
     </listitem>
     <listitem>
-      <para>Click the edit button to set the parameter.<inlinemediaobject>
+      <para>In the search results, you will see the parameters you can use to set per-project
+        maximum resource amounts that apply to all projects in the cloud. No project can have more
+        resources, but an individual project can have lower limits. Click the edit button to set
+        each parameter. <inlinemediaobject>
           <imageobject>
             <imagedata fileref="./images/edit-icon.png"/>
           </imageobject>
@@ -45,10 +46,29 @@
         <tgroup cols="2" align="left" colsep="1" rowsep="1">
           <tbody>
             <row>
-              <entry><para>allow.user.create.projects</para></entry>
-              <entry><para>Set to true to allow end users to create projects. Set to false if you
-                  want only the &PRODUCT; root administrator and domain administrators to create
-                  projects.</para></entry>
+              <entry><para>max.project.public.ips</para></entry>
+              <entry><para>Maximum number of public IP addresses that can be owned by any project in
+                  the cloud. See About Public IP Addresses.</para></entry>
+            </row>
+            <row>
+              <entry><para>max.project.snapshots</para></entry>
+              <entry><para>Maximum number of snapshots that can be owned by any project in the
+                  cloud. See Working with Snapshots.</para></entry>
+            </row>
+            <row>
+              <entry><para>max.project.templates</para></entry>
+              <entry><para>Maximum number of templates that can be owned by any project in the
+                  cloud. See Working with Templates.</para></entry>
+            </row>
+            <row>
+              <entry><para>max.project.uservms</para></entry>
+              <entry><para>Maximum number of guest virtual machines that can be owned by any project
+                  in the cloud. See Working With Virtual Machines.</para></entry>
+            </row>
+            <row>
+              <entry><para>max.project.volumes</para></entry>
+              <entry><para>Maximum number of data volumes that can be owned by any project in the
+                  cloud. See Working with Volumes.</para></entry>
             </row>
           </tbody>
         </tgroup>
