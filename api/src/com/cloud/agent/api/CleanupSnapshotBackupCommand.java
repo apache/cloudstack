@@ -19,11 +19,14 @@ package com.cloud.agent.api;
 
 import java.util.List;
 
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+
 public class CleanupSnapshotBackupCommand extends Command {
         private String secondaryStoragePoolURL;
         private Long   dcId;
         private Long   accountId;
         private Long   volumeId;
+        private HypervisorType type;
         private List<String> validBackupUUIDs;
 
     protected CleanupSnapshotBackupCommand() {
@@ -40,12 +43,14 @@ public class CleanupSnapshotBackupCommand extends Command {
                                        Long   dcId,
                                        Long   accountId,
                                        Long   volumeId,
+                                       HypervisorType type,
                                        List<String> validBackupUUIDs) 
     {
         this.secondaryStoragePoolURL = secondaryStoragePoolURL;
         this.dcId = dcId;
         this.accountId = accountId;
         this.volumeId = volumeId;
+        this.type = type;
         this.validBackupUUIDs = validBackupUUIDs;
     }
 
@@ -55,6 +60,10 @@ public class CleanupSnapshotBackupCommand extends Command {
 
     public Long getDcId() {
         return dcId;
+    }
+
+    public HypervisorType getType() {
+        return type;
     }
 
     public Long getAccountId() {

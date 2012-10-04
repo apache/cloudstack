@@ -1063,9 +1063,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     @Override
     public boolean start() {
         if (_storageCleanupEnabled) {
-            Random generator = new Random();
-            int initialDelay = generator.nextInt(_storageCleanupInterval);
-            _executor.scheduleWithFixedDelay(new StorageGarbageCollector(), initialDelay, _storageCleanupInterval, TimeUnit.SECONDS);
+            _executor.scheduleWithFixedDelay(new StorageGarbageCollector(), _storageCleanupInterval, _storageCleanupInterval, TimeUnit.SECONDS);
         } else {
             s_logger.debug("Storage cleanup is not enabled, so the storage cleanup thread is not being scheduled.");
         }
@@ -2130,8 +2128,11 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                             if (snapshots == null) {
                                 continue;
                             }
+
+                            HypervisorType type = _clusterDao.findById(_storagePoolDao.findById(volume.getPoolId()).getClusterId()).getHypervisorType();
+                            
                             CleanupSnapshotBackupCommand cmd = new CleanupSnapshotBackupCommand(secondaryStorageHost.getStorageUrl(), secondaryStorageHost.getDataCenterId(), volume.getAccountId(),
-                                    volumeId, snapshots);
+                                    volumeId, type, snapshots);
 
                             Answer answer = _agentMgr.sendToSecStorage(secondaryStorageHost, cmd);
                             if ((answer == null) || !answer.getResult()) {

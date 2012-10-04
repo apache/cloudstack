@@ -17,6 +17,7 @@
  */
 package com.cloud.storage.resource;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
@@ -30,6 +31,7 @@ import java.security.NoSuchAlgorithmException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -70,6 +72,7 @@ import com.cloud.agent.api.storage.DownloadProgressCommand;
 import com.cloud.agent.api.storage.UploadCommand;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.template.DownloadManager;
@@ -83,6 +86,7 @@ import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.net.NfsUtils;
+import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.SecondaryStorageVm;
 
@@ -405,6 +409,44 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         return new Answer(cmd, true, null);
     }
     
+    public static class VhdChainParser extends OutputInterpreter {
+        private List<List<String>> vhdchains = new ArrayList<List<String>>();
+
+ 
+        public VhdChainParser() {
+        }
+
+        @Override
+        public String interpret(BufferedReader reader) throws IOException {
+            String line = null;
+            List<String> vhdchain = new ArrayList<String>();
+            while ((line = reader.readLine()) != null) {
+				s_logger.trace("VHD " + line);
+            	if(line.startsWith("vhd=") && !vhdchain.isEmpty()) {
+            		vhdchains.add(vhdchain);
+        			s_logger.trace("VHD CHAINS " + vhdchains);
+            		vhdchain = new ArrayList<String>();
+            	}
+                vhdchain.add(line.trim().substring(4, 40));
+				s_logger.trace("VHD CHAIN " + vhdchain);
+            }
+            if (!vhdchain.isEmpty()) {
+        		vhdchains.add(vhdchain);
+            }
+			s_logger.trace("VHD CHAINS " + vhdchains);
+            return null;
+        }
+
+        public List<List<String>> getVhdChains() {
+            return vhdchains;
+        }
+
+        @Override
+        public boolean drain() {
+            return true;
+        }
+    }
+    
     Answer execute(CleanupSnapshotBackupCommand cmd) {
         String parent = getRootDir(cmd.getSecondaryStoragePoolURL());
         if (!parent.endsWith(File.separator)) {
@@ -413,22 +455,64 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         String absoluteSnapsthotDir = parent + File.separator + "snapshots" + File.separator + cmd.getAccountId() + File.separator + cmd.getVolumeId();
         File ssParent = new File(absoluteSnapsthotDir);
         if (ssParent.exists() && ssParent.isDirectory()) {
-            File[] files = ssParent.listFiles();
-            for (File file : files) {
-                boolean found = false;
-                String filename = file.getName();
-                for (String uuid : cmd.getValidBackupUUIDs()) {
-                    if (filename.startsWith(uuid)) {
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    file.delete();
-                    String msg = "snapshot " + filename + " is not recorded in DB, remove it";
-                    s_logger.warn(msg);
-                }
-            }
+	        if (cmd.getType() == HypervisorType.XenServer ) {
+	        	Script command = new Script("/bin/bash", s_logger);
+	        	command.add("-c");
+	        	command.add("/bin/vhd-util scan -p " + absoluteSnapsthotDir + "/*.vhd");
+	        	VhdChainParser vhdChainParser = new VhdChainParser();
+	        	String result = command.execute(vhdChainParser);
+	        	if (result != null) {
+	        		s_logger.warn("Can not parser VHD chain for snapshots of volume " + cmd.getVolumeId() );
+				} else {				
+					List<List<String>> vhdChains = vhdChainParser.getVhdChains();
+					s_logger.trace("VHD CHAINS " + vhdChains);
+					for (String uuid : cmd.getValidBackupUUIDs()) {
+						Iterator<List<String>> it = vhdChains.iterator();
+			            while (it.hasNext()) {
+			            	List<String> vhdchain = it.next();
+							s_logger.trace("VHD CHAIN " + vhdchain);
+							if (vhdchain == null || vhdchain.isEmpty()) {
+								continue;
+							}
+							if (vhdchain.contains(uuid)) {
+								s_logger.trace("VHD keep vhd chain " + vhdchain);
+								it.remove();
+							}
+						}
+					}
+					s_logger.trace("VHD CHAINS " + vhdChains);
+					for (List<String> vhdchain : vhdChains) {
+						if (vhdchain == null || vhdchain.isEmpty()) {
+							continue;
+						}
+						for (String uuid : vhdchain) {
+							File file = new File(absoluteSnapsthotDir + "/"
+									+ uuid + ".vhd");
+							file.delete();
+							String msg = "snapshot " + file.getName() + " is removed";
+							s_logger.warn(msg);
+						}
+					}
+
+				}
+			} else {
+	            File[] files = ssParent.listFiles();
+	            for (File file : files) {
+	                boolean found = false;
+	                String filename = file.getName();
+	                for (String uuid : cmd.getValidBackupUUIDs()) {
+	                    if (filename.startsWith(uuid)) {
+	                        found = true;
+	                        break;
+	                    }
+	                }
+	                if (!found) {
+	                    file.delete();
+	                    String msg = "snapshot " + filename + " is not recorded in DB, remove it";
+	                    s_logger.warn(msg);
+	                }
+	            }
+        	}
         }
         return new Answer(cmd, true, null);
     }
