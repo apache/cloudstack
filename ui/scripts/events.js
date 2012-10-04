@@ -36,27 +36,74 @@
           label: 'label.menu.events',
           fields: {            
             description: { label: 'label.description' },
+						level: { label: 'label.level' },
             domain: { label: 'label.domain' },
 						account: { label: 'label.account' },
             created: { label: 'label.date', converter: cloudStack.converters.toLocalDate }
           },
-          dataProvider: function(args) {					  
-						var array1 = [];  
-						if(args.filterBy != null) {          
-							if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
-								switch(args.filterBy.search.by) {
-								case "name":
-									if(args.filterBy.search.value.length > 0)
-										array1.push("&keyword=" + args.filterBy.search.value);
-									break;
-								}
+										
+					advSearchFields: {	
+            level: {
+						  label: 'label.level',
+							select: function(args) {
+							  args.response.success({
+									data: [
+									  {id: '', description: ''}, 
+									  {id: 'INFO', description: 'INFO'}, 
+										{id: 'WARN', description: 'WARN'}, 
+										{id: 'ERROR', description: 'ERROR'}
+									]
+								});
 							}
-						}
+						},					
+						domainid: {					
+							label: 'Domain',					
+							select: function(args) {
+								$.ajax({
+									url: createURL('listDomains'),
+									data: { 
+										listAll: true,
+										details: 'min'
+									},
+									success: function(json) {
+										var array1 = [{id: '', description: ''}];
+										var domains = json.listdomainsresponse.domain;
+										if(domains != null && domains.length > 0) {
+											for(var i = 0; i < domains.length; i++) {
+												array1.push({id: domains[i].id, description: domains[i].path});
+											}
+										}
+										args.response.success({
+											data: array1
+										});
+									}
+								});
+							},
+							isHidden: function(args) {
+								if(isAdmin() || isDomainAdmin())
+									return false;
+								else
+									return true;
+							}
+						},		
+						account: { 
+							label: 'Account',
+							isHidden: function(args) {
+								if(isAdmin() || isDomainAdmin())
+									return false;
+								else
+									return true;
+							}			
+						}											
+					},						
+					
+          dataProvider: function(args) {					  
+						var data = {};
+						listViewDataProvider(args, data);						
 						
             $.ajax({
-              url: createURL("listEvents&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
-              dataType: "json",
-              async: true,
+              url: createURL('listEvents'),
+              data: data,              
               success: function(json) {
                 var items = json.listeventsresponse.event;
                 args.response.success({data:items});
