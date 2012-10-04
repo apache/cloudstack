@@ -1,0 +1,121 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+  http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+<section id="add-clusters-vsphere">
+  <title>Add Cluster: vSphere</title>
+  <para>Host management for vSphere is done through a combination of vCenter and the &PRODUCT; admin
+    UI. &PRODUCT; requires that all hosts be in a &PRODUCT; cluster, but the cluster may consist of
+    a single host. As an administrator you must decide if you would like to use clusters of one host
+    or of multiple hosts. Clusters of multiple hosts allow for features like live migration.
+    Clusters also require shared storage such as NFS or iSCSI.</para>
+  <para>For vSphere servers, we recommend creating the cluster of hosts in vCenter and then adding
+    the entire cluster to &PRODUCT;. Follow these requirements:</para>
+  <itemizedlist>
+    <listitem>
+      <para>Do not put more than 8 hosts in a vSphere cluster</para>
+    </listitem>
+    <listitem>
+      <para>Make sure the hypervisor hosts do not have any VMs already running before you add them
+        to &PRODUCT;.</para>
+    </listitem>
+  </itemizedlist>
+  <para>To add a vSphere cluster to &PRODUCT;:</para>
+  <orderedlist>
+    <listitem>
+      <para>Create the cluster of hosts in vCenter. Follow the vCenter instructions to do this. You
+        will create a cluster that looks something like this in vCenter.</para>
+      <mediaobject>
+        <imageobject>
+          <imagedata fileref="./images/vsphere-client.png"/>
+        </imageobject>
+        <textobject>
+          <phrase>vsphereclient.png: vSphere client</phrase>
+        </textobject>
+      </mediaobject>
+    </listitem>
+    <listitem>
+      <para>Log in to the UI.</para>
+    </listitem>
+    <listitem>
+      <para>In the left navigation, choose Infrastructure. In Zones, click View More, then click the
+        zone in which you want to add the cluster.</para>
+    </listitem>
+    <listitem>
+      <para>Click the Compute tab, and click View All on Pods. Choose the pod to which you want to
+        add the cluster.</para>
+    </listitem>
+    <listitem>
+      <para>Click View Clusters.</para>
+    </listitem>
+    <listitem>
+      <para>Click Add Cluster.</para>
+    </listitem>
+    <listitem>
+      <para>In Hypervisor, choose VMware.</para>
+    </listitem>
+    <listitem>
+      <para>Provide the following information in the dialog. The fields below make reference to
+        values from vCenter.</para>
+      <itemizedlist>
+        <listitem>
+          <para>Cluster Name. Enter the name of the cluster you created in vCenter. For example,
+            "cloud.cluster.2.2.1"</para>
+        </listitem>
+        <listitem>
+          <para>vCenter Host. Enter the hostname or IP address of the vCenter server. </para>
+        </listitem>
+        <listitem>
+          <para>vCenter Username. Enter the username that &PRODUCT; should use to connect to
+            vCenter. This user must have all administrative privileges.</para>
+        </listitem>
+        <listitem>
+          <para>vCenter Password. Enter the password for the user named above</para>
+        </listitem>
+        <listitem>
+          <para>vCenter Datacenter. Enter the vCenter datacenter that the cluster is in. For
+            example, "cloud.dc.VM".</para>
+          <para>If you have enabled Nexus dvSwitch in the environment, the following parameters for
+            dvSwitch configuration are displayed:</para>
+        </listitem>
+        <listitem>
+          <para>Nexus dvSwitch IP Address: The IP address of the Nexus VSM appliance.</para>
+        </listitem>
+        <listitem>
+          <para>Nexus dvSwitch Username: The username required to access the Nexus VSM
+            applicance.</para>
+        </listitem>
+        <listitem>
+          <para>Nexus dvSwitch Password: The password associated with the username specified
+            above.</para>
+          <mediaobject>
+            <imageobject>
+              <imagedata fileref="./images/add-cluster.png"/>
+            </imageobject>
+            <textobject>
+              <phrase>addcluster.png: add cluster</phrase>
+            </textobject>
+          </mediaobject>
+          <para>There might be a slight delay while the cluster is provisioned. It will
+            automatically display in the UI</para>
+        </listitem>
+      </itemizedlist>
+    </listitem>
+  </orderedlist>
+</section>
