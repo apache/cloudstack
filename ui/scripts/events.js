@@ -34,10 +34,10 @@
         listView: {
           id: 'events',
           label: 'label.menu.events',
-          fields: {
-            type: { label: 'label.type' },
+          fields: {            
             description: { label: 'label.description' },
-            username: { label: 'label.initiated.by' },
+            domain: { label: 'label.domain' },
+						account: { label: 'label.account' },
             created: { label: 'label.date', converter: cloudStack.converters.toLocalDate }
           },
           dataProvider: function(args) {					  
@@ -70,9 +70,15 @@
                 title: 'label.details',
                 fields: [
                   {
-                    type: { label: 'label.type' },
-                    description: { label: 'label.description' },
-                    created: { label: 'label.date', converter: cloudStack.converters.toLocalDate }
+									  description: { label: 'label.description' },
+										state: { label: 'label.state' },
+									  level: { label: 'label.level' },
+                    type: { label: 'label.type' },										                
+										domain: { label: 'label.domain' },
+										account: { label: 'label.account' },
+										username: { label: 'label.initiated.by' },
+                    created: { label: 'label.date', converter: cloudStack.converters.toLocalDate },
+										id: { label: 'label.id' }
                   }
                 ],
                 dataProvider: function(args) {								  
