@@ -95,6 +95,7 @@ Requires: nfs-utils
 Requires: wget
 # there is a fsimage.so in the source code, which adds xen-libs as a dependence, needs to supress it, as rhel doesn't have this pacakge
 AutoReqProv: no
+Provides: cloud-agent-scripts = %{version}-%{release}
 Obsoletes: cloud-agent-scripts < %{version}-%{release}
 Group:     System Environment/Libraries
 %description scripts
@@ -392,11 +393,19 @@ if [ -x /etc/sysconfig/modules/kvm.modules ] ; then
 fi
 
 %post scripts
-rm -fr %{_libdir}/%{name}/agent
-ln -f -s %{_libdir}/%{name}/common %{_libdir}/%{name}/agent
+if [ -d %{_libdir}/%{name}/agent ]; then
+  rm -fr %{_libdir}/%{name}/agent
+fi
+# Symlink for backwards compatibility
+if [ ! -h %{_libdir}/%{name}/agent ]; then
+  ln -s %{_libdir}/%{name}/common %{_libdir}/%{name}/agent
+fi
 
 %postun scripts
-rm -fr %{_libdir}/%{name}/agent
+# For uninstallation, remove symlink
+if [ "$1" == "0" ]; then
+  rm -f %{_libdir}/%{name}/agent
+fi
 
 %post client
 if [ "$1" == "1" ] ; then
