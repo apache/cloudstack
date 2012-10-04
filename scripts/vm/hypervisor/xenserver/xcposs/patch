@@ -64,4 +64,4 @@ cloud-prepare-upgrade.sh=..,0755,/usr/lib/xcp/bin
 getRouterStatus.sh=../../../../network/domr/,0755,/usr/lib/xcp/bin
 bumpUpPriority.sh=../../../../network/domr/,0755,/usr/lib/xcp/bin
 getDomRVersion.sh=../../../../network/domr/,0755,/usr/lib/xcp/bin
-router_proxy.sh=../../../../network/domr/,0755,/opt/xensource/bin
+router_proxy.sh=../../../../network/domr/,0755,/usr/lib/xcp/bin
