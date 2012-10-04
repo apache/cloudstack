@@ -1516,6 +1516,22 @@ def createISOVHD(session, args):
     return vdi_uuid
 
 @echo
+def routerProxy(session, args):
+    sargs = args['args']
+    cmd = sargs.split(' ')
+    cmd.insert(0, "/usr/lib/xcp/bin/router_proxy.sh")
+    cmd.insert(0, "/bin/bash")
+    try:
+        txt = util.pread2(cmd)
+        if txt is None or len(txt) == 0 :
+            txt = 'success'
+    except:
+        util.SMlog("routerProxy command " + sargs + " failed "  )
+        txt = ''
+
+    return txt
+
+@echo
 def getDomRVersion(session, args):
     sargs = args['args']
     cmd = sargs.split(' ')
@@ -1546,4 +1562,5 @@ if __name__ == "__main__":
                             "bumpUpPriority":bumpUpPriority, "getDomRVersion":getDomRVersion,
                             "kill_copy_process":kill_copy_process,
                             "createISOVHD":createISOVHD,
+                            "routerProxy":routerProxy,
                             "setDNATRule":setDNATRule})
