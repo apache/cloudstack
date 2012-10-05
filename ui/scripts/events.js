@@ -103,7 +103,18 @@
 								else
 									return true;
 							}			
-						}											
+						}
+            /*
+						,
+            startdate: {
+              label: 'Start Date',
+							isDatepicker: true
+            },
+            enddate: {
+              label: 'End Date',
+							isDatepicker: true
+            }				
+            */						
 					},						
 					
           dataProvider: function(args) {					  
