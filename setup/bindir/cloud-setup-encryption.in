@@ -184,7 +184,7 @@ for example:
                         
     def processEncryptionStuff(self):
         def encrypt(input):
-            cmd = ['java','-classpath',self.encryptionJarPath,'org.jasypt.intf.cli.JasyptPBEStringEncryptionCLI', 'encrypt.sh', 'input=%s'%input, 'password=%s'%self.mgmtsecretkey,'verbose=false']
+            cmd = ['java','-classpath',self.encryptionJarPath,'org.jasypt.intf.cli.JasyptPBEStringEncryptionCLI', 'encrypt.sh', 'input=\'%s\''%input, 'password=%s'%self.mgmtsecretkey,'verbose=false']
             return runCmd(cmd).strip('\n')
         
         def saveMgmtServerSecretKey():
