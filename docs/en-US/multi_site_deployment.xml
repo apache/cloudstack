@@ -23,14 +23,14 @@
     <para>The &PRODUCT; platform scales well into multiple sites through the use of zones. The following diagram shows an example of a multi-site deployment.</para>
     <mediaobject>
         <imageobject>
-            <imagedata fileref="./images/example_of_a_multi_site_deployment.png" />
+            <imagedata fileref="./images/multi-site-deployment.png" />
         </imageobject>
         <textobject><phrase>Example Of A Multi-Site Deployment</phrase></textobject>
     </mediaobject>
     <para>Data Center 1 houses the primary Management Server as well as zone 1. The MySQL database is replicated in real time to the secondary Management Server installation in Data Center 2.</para>
     <mediaobject>
         <imageobject>
-            <imagedata fileref="./images/separate_storage_network.png" />
+            <imagedata fileref="./images/separate-storage-network.png" />
         </imageobject>
         <textobject><phrase>Separate Storage Network</phrase></textobject>
     </mediaobject>
@@ -42,7 +42,7 @@
     </itemizedlist>
     <mediaobject>
         <imageobject>
-            <imagedata fileref="./images/NIC_bonding_and_multipath_IO.png" />
+            <imagedata fileref="./images/nic-bonding-and-multipath-io.png" />
         </imageobject>
         <textobject><phrase>NIC Bonding And Multipath I/O</phrase></textobject>
     </mediaobject>

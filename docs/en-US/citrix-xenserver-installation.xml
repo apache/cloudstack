@@ -100,11 +100,11 @@
   <orderedlist>
       <listitem>
     <para>Install NTP.</para>
-    <programlisting language="Bash"># yum install ntp</programlisting>
+    <programlisting># yum install ntp</programlisting>
       </listitem>
       <listitem>
     <para>Edit the NTP configuration file to point to your NTP server.</para>
-    <programlisting language="Bash"># vi /etc/ntp.conf</programlisting>
+    <programlisting># vi /etc/ntp.conf</programlisting>
     <para>Add one or more server lines in this file with the names of the NTP servers you want to use. For example:</para>
     <programlisting>
 server 0.xenserver.pool.ntp.org
@@ -115,11 +115,11 @@ server 3.xenserver.pool.ntp.org
       </listitem>
       <listitem>
     <para>Restart the NTP client.</para>
-    <programlisting language="Bash"># service ntpd restart</programlisting>
+    <programlisting># service ntpd restart</programlisting>
       </listitem>
       <listitem>
     <para>Make sure NTP will start again upon reboot.</para>
-    <programlisting language="Bash"># chkconfig ntpd on</programlisting>
+    <programlisting># chkconfig ntpd on</programlisting>
       </listitem>
   </orderedlist>
     </section>
@@ -153,15 +153,15 @@ server 3.xenserver.pool.ntp.org
       </listitem>
       <listitem>
     <para>Extract the file:</para>
-    <programlisting language="Bash"># tar xf xenserver-cloud-supp.tgz</programlisting>
+    <programlisting># tar xf xenserver-cloud-supp.tgz</programlisting>
       </listitem>
       <listitem>
     <para>Run the following script:</para>
-    <programlisting language="Bash"># xe-install-supplemental-pack xenserver-cloud-supp.iso</programlisting>
+    <programlisting># xe-install-supplemental-pack xenserver-cloud-supp.iso</programlisting>
       </listitem>
       <listitem>
     <para>If the XenServer host is part of a zone that uses basic networking, disable Open vSwitch (OVS):</para>
-    <programlisting language="Bash"># xe-switch-network-backend  bridge</programlisting>
+    <programlisting># xe-switch-network-backend  bridge</programlisting>
     <para>Restart  the host machine when prompted.</para>
       </listitem>
   </orderedlist>
@@ -175,12 +175,12 @@ server 3.xenserver.pool.ntp.org
       <listitem><para>Connect FiberChannel cable to all hosts in the cluster and to the FiberChannel storage host.</para></listitem>
       <listitem>
     <para>Rescan the SCSI bus. Either use the following command or use XenCenter to perform an HBA rescan.</para>
-    <programlisting language="Bash"># scsi-rescan</programlisting>
+    <programlisting># scsi-rescan</programlisting>
       </listitem>
       <listitem><para>Repeat step 2 on every host.</para></listitem>
       <listitem>
     <para>Check to be sure you see the new SCSI disk.</para>
-    <programlisting language="Bash"># ls /dev/disk/by-id/scsi-360a98000503365344e6f6177615a516b -l</programlisting>
+    <programlisting># ls /dev/disk/by-id/scsi-360a98000503365344e6f6177615a516b -l</programlisting>
     <para>The output should look like this, although the specific file name will be different (scsi-&lt;scsiID&gt;):</para>
     <programlisting>
 lrwxrwxrwx 1 root root 9 Mar 16 13:47
@@ -190,9 +190,9 @@ lrwxrwxrwx 1 root root 9 Mar 16 13:47
       <listitem><para>Repeat step 4 on every host.</para></listitem>
       <listitem>
     <para>On the storage server, run this command to get a unique ID for the new SR.</para>
-    <programlisting language="Bash"># uuidgen</programlisting>
+    <programlisting># uuidgen</programlisting>
     <para>The output should look like this, although the specific ID will be different:</para>
-    <programlisting language="Bash">e6849e96-86c3-4f2c-8fcc-350cc711be3d</programlisting>
+    <programlisting>e6849e96-86c3-4f2c-8fcc-350cc711be3d</programlisting>
       </listitem>
       <listitem>
     <para>Create the FiberChannel SR. In name-label, use the unique ID you just generated.</para>
@@ -202,11 +202,11 @@ device-config:SCSIid=360a98000503365344e6f6177615a516b
 name-label=&quot;e6849e96-86c3-4f2c-8fcc-350cc711be3d&quot;
     </programlisting>
     <para>This command returns a unique ID for the SR, like the following example (your ID will be different):</para>
-    <programlisting language="Bash">7a143820-e893-6c6a-236e-472da6ee66bf</programlisting>
+    <programlisting>7a143820-e893-6c6a-236e-472da6ee66bf</programlisting>
       </listitem>
       <listitem>
     <para>To create a human-readable description for the SR, use the following command. In uuid, use the SR ID returned by the previous command. In name-description, set whatever friendly text you prefer.</para>
-    <programlisting language="Bash"># xe sr-param-set uuid=7a143820-e893-6c6a-236e-472da6ee66bf name-description=&quot;Fiber Channel storage repository&quot;</programlisting>
+    <programlisting># xe sr-param-set uuid=7a143820-e893-6c6a-236e-472da6ee66bf name-description=&quot;Fiber Channel storage repository&quot;</programlisting>
     <para>Make note of the values you will need when you add this storage to &PRODUCT; later (see <xref linkend="primary-storage-add" />). In the Add Primary Storage dialog, in Protocol, you will choose PreSetup. In SR Name-Label, you will enter the name-label you set earlier (in this example, e6849e96-86c3-4f2c-8fcc-350cc711be3d).</para>
       </listitem>
       <listitem><para>(Optional) If you want to enable multipath I/O on a FiberChannel SAN, refer to the documentation provided by the SAN vendor.</para></listitem>
@@ -238,7 +238,7 @@ name-label=&quot;e6849e96-86c3-4f2c-8fcc-350cc711be3d&quot;
     <listitem><para>Run xe network-list and find the public network. This is usually attached to the NIC that is public. Once you find the network make note of its UUID. Call this &lt;UUID-Public&gt;.</para></listitem>
     <listitem>
         <para>Run the following command.</para>
-        <programlisting language="Bash"># xe network-param-set name-label=cloud-public uuid=&lt;UUID-Public&gt;</programlisting>
+        <programlisting># xe network-param-set name-label=cloud-public uuid=&lt;UUID-Public&gt;</programlisting>
     </listitem>
       </orderedlist>
   </section>
@@ -250,7 +250,7 @@ name-label=&quot;e6849e96-86c3-4f2c-8fcc-350cc711be3d&quot;
     <listitem><para>Run xe network-list and find one of the guest networks. Once you find the network make note of its UUID. Call this &lt;UUID-Guest&gt;.</para></listitem>
     <listitem>
         <para>Run the following command, substituting your own name-label and uuid values.</para>
-        <programlisting language="Bash"># xe network-param-set name-label=&lt;cloud-guestN&gt; uuid=&lt;UUID-Guest&gt;</programlisting>
+        <programlisting># xe network-param-set name-label=&lt;cloud-guestN&gt; uuid=&lt;UUID-Guest&gt;</programlisting>
     </listitem>
     <listitem><para>Repeat these steps for each additional guest network, using a different name-label and uuid each time.</para></listitem>
       </orderedlist>
@@ -350,7 +350,7 @@ master-password=[your password]</programlisting>
         <listitem><para>Copy the script from the Management Server in /usr/lib64/cloud/agent/scripts/vm/hypervisor/xenserver/cloud-setup-bonding.sh to the master host and ensure it is executable.</para></listitem>
         <listitem>
       <para>Run the script:</para>
-      <programlisting language="Bash"># ./cloud-setup-bonding.sh</programlisting>
+      <programlisting># ./cloud-setup-bonding.sh</programlisting>
         </listitem>
     </orderedlist>
     <para>Now the bonds are set up and configured properly across the cluster.</para>
@@ -398,11 +398,11 @@ master-password=[your password]</programlisting>
       </listitem>
       <listitem>
     <para>Log in to one of the hosts in the cluster, and run this command to clean up the VLAN:</para>
-    <programlisting language="Bash"># . /opt/xensource/bin/cloud-clean-vlan.sh</programlisting>
+    <programlisting># . /opt/xensource/bin/cloud-clean-vlan.sh</programlisting>
       </listitem>
       <listitem>
     <para>Still logged in to the host, run the upgrade preparation script:</para>
-    <programlisting language="Bash"># /opt/xensource/bin/cloud-prepare-upgrade.sh</programlisting>
+    <programlisting># /opt/xensource/bin/cloud-prepare-upgrade.sh</programlisting>
     <para>Troubleshooting: If you see the error &quot;can&apos;t eject CD,&quot; log in to the VM and umount the CD, then run the script again.</para>
       </listitem>
       <listitem>
@@ -416,7 +416,7 @@ master-password=[your password]</programlisting>
 You attempted an operation on a VM which requires PV drivers to be installed but the drivers were not detected.
 vm: b6cf79c8-02ee-050b-922f-49583d9f1a14 (i-2-8-VM)</programlisting>
       <para>To solve this issue, run the following:</para>
-      <programlisting language="Bash"># /opt/xensource/bin/make_migratable.sh  b6cf79c8-02ee-050b-922f-49583d9f1a14</programlisting>
+      <programlisting># /opt/xensource/bin/make_migratable.sh  b6cf79c8-02ee-050b-922f-49583d9f1a14</programlisting>
         </listitem>
         <listitem><para>Reboot the host.</para></listitem>
         <listitem><para>Upgrade to the newer version of XenServer. Use the steps in XenServer documentation.</para></listitem>
@@ -455,13 +455,13 @@ vm: b6cf79c8-02ee-050b-922f-49583d9f1a14 (i-2-8-VM)</programlisting>
         </listitem>
         <listitem>
       <para>Run the following script:</para>
-      <programlisting language="Bash"># /opt/xensource/bin/setupxenserver.sh</programlisting>
+      <programlisting># /opt/xensource/bin/setupxenserver.sh</programlisting>
       <para>Troubleshooting: If you see the following error message, you can safely ignore it.</para>
-      <programlisting language="Bash">mv: cannot stat `/etc/cron.daily/logrotate&apos;: No such file or directory</programlisting>
+      <programlisting>mv: cannot stat `/etc/cron.daily/logrotate&apos;: No such file or directory</programlisting>
         </listitem>
         <listitem>
       <para>Plug in the storage repositories (physical block devices) to the XenServer host:</para>
-      <programlisting language="Bash"># for pbd in `xe pbd-list currently-attached=false| grep ^uuid | awk &apos;{print $NF}&apos;`; do xe pbd-plug uuid=$pbd ; done</programlisting>
+      <programlisting># for pbd in `xe pbd-list currently-attached=false| grep ^uuid | awk &apos;{print $NF}&apos;`; do xe pbd-plug uuid=$pbd ; done</programlisting>
       <para>Note: If you add a host to this XenServer pool, you need to migrate all VMs on this host to other hosts, and eject this host from XenServer pool.</para>
         </listitem>
     </orderedlist>
@@ -469,7 +469,7 @@ vm: b6cf79c8-02ee-050b-922f-49583d9f1a14 (i-2-8-VM)</programlisting>
       <listitem><para>Repeat these steps to upgrade every host in the cluster to the same version of XenServer.</para></listitem>
       <listitem>
     <para>Run the following command on one host in the XenServer cluster to clean up the host tags:</para>
-    <programlisting language="Bash"># for host in $(xe host-list | grep ^uuid | awk &apos;{print $NF}&apos;) ; do xe host-param-clear uuid=$host param-name=tags; done;</programlisting>
+    <programlisting># for host in $(xe host-list | grep ^uuid | awk &apos;{print $NF}&apos;) ; do xe host-param-clear uuid=$host param-name=tags; done;</programlisting>
     <note><para>When copying and pasting a command, be sure the command has pasted as a single line before executing. Some document viewers may introduce unwanted line breaks in copied text.</para></note>
       </listitem>
       <listitem>
@@ -482,7 +482,7 @@ vm: b6cf79c8-02ee-050b-922f-49583d9f1a14 (i-2-8-VM)</programlisting>
       </listitem>
       <listitem>
     <para>After all hosts are up, run the following on one host in the cluster:</para>
-    <programlisting language="Bash"># /opt/xensource/bin/cloud-clean-vlan.sh</programlisting>
+    <programlisting># /opt/xensource/bin/cloud-clean-vlan.sh</programlisting>
       </listitem>
   </orderedlist>
     </section>

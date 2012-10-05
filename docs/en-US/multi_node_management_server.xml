@@ -23,7 +23,7 @@
     <para>The &PRODUCT; Management Server is deployed on one or more front-end servers connected to a single MySQL database. Optionally a pair of hardware load balancers distributes requests from the web. A backup management server set may be deployed using MySQL replication at a remote site to add DR capabilities.</para>
     <mediaobject>
         <imageobject>
-            <imagedata fileref="./images/multi_node_management_server.png" />
+            <imagedata fileref="./images/multi-node-management-server.png" />
         </imageobject>
         <textobject><phrase>Multi-Node Management Server</phrase></textobject>
     </mediaobject>

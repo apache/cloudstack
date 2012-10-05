@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="add-clusters-ovm">
+    <title>Add Cluster: OVM</title>
+    <para>To add a Cluster of hosts that run Oracle VM (OVM):</para>
+    <orderedlist>
+        <listitem><para>Add a companion non-OVM cluster to the Pod. This cluster provides an environment where the CloudPlatform System VMs can run. You should have already installed a non-OVM hypervisor on at least one Host to prepare for this step. Depending on which hypervisor you used:</para>
+        <itemizedlist>
+            <listitem><para>For VMWare, follow the steps in Add Cluster: vSphere. When finished, return here and continue with the next step.</para></listitem>
+            <listitem><para>For KVM or XenServer, follow the steps in <xref linkend="add-clusters-kvm-xenserver"/>. When finished, return here and continue with the next step</para></listitem>
+        </itemizedlist>
+        </listitem>
+        <listitem><para>In the left navigation, choose Infrastructure. In Zones, click View More, then click the zone in which you want to add the cluster.</para></listitem>
+        <listitem><para>Click the Compute tab. In the Pods node, click View All. Select the same pod you used in step 1.</para></listitem>
+        <listitem><para>Click View Clusters, then click Add Cluster.</para>
+            <para>The Add Cluster dialog is displayed.</para></listitem>
+        <listitem><para>In Hypervisor, choose OVM.</para></listitem>
+        <listitem><para>In Cluster, enter a name for the cluster.</para></listitem>
+        <listitem><para>Click Add.</para></listitem>
+    </orderedlist>   
+</section>
