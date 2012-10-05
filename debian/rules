@@ -94,7 +94,7 @@ binary-common:
 	dh_installdocs LICENSE
 	dh_installdocs DISCLAIMER
 	dh_installdocs NOTICE
-	dh_installdocs INSTALL.txt
+	dh_installdocs INSTALL.md
 #	dh_installexamples
 #	dh_installmenu
 #	dh_installdebconf
