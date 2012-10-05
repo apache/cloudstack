@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -344,14 +346,23 @@ public class Script implements Callable<String> {
             return file.getAbsolutePath();
         }
 
-/*        url = Script.class.getClassLoader().getResource(path);
- *        s_logger.debug("Classpath resource: " + url);
- *        if (url != null) {
- *            file = new File(url.getFile());
- *            s_logger.debug("Absolute path =  " + file.getAbsolutePath());
- *            return file.getAbsolutePath();
- *        }
- */        
+        /**
+         * Look in WEB-INF/classes of the webapp
+         * URI workaround the URL encoding of url.getFile
+         */
+        url = Script.class.getClassLoader().getResource(path + script);
+        s_logger.debug("Classpath resource: " + url);
+        if (url != null) {
+       	    try {
+                file = new File(new URI(url.toString()).getPath());
+                s_logger.debug("Absolute path =  " + file.getAbsolutePath());
+                return file.getAbsolutePath();
+            }
+            catch (URISyntaxException e) {
+                s_logger.warn("Unable to convert " + url.toString() + " to a URI");
+            }
+        }       
+
         if (path.endsWith(File.separator)) {
             path = path.substring(0, path.lastIndexOf(File.separator));
         }
