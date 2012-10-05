@@ -22,12 +22,8 @@
  under the License.
 -->
 
-<chapter id="installation">
-    <title>Installation</title>
-    <xi:include href="who-should-read-installation.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-    <xi:include href="installation-steps-overview.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-    <xi:include href="minimum-system-requirements.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-    <xi:include href="configure-package-repository.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="management-server-install-flow.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-    <xi:include href="global-config.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+<chapter id="hypervisor-installation">
+    <title>Hypervisor Installation</title>
+    <xi:include href="hypervisor-kvm-install-flow.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+    <xi:include href="citrix-xenserver-installation.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
 </chapter>

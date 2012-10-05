@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8' ?>
-<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!DOCTYPE bookinfo PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
 <!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
 %BOOK_ENTITIES;
 ]>
@@ -22,10 +22,7 @@
     under the License.
 -->
 
-<section id="cluster-add">
-	<title>Adding a Cluster</title>
-    <para>You need to tell &PRODUCT; about the hosts that it will manage. Hosts exist inside clusters, so before you begin adding hosts to the cloud, you must add at least one cluster.</para>
-    <xi:include href="add-clusters-kvm-xenserver.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="add-clusters-ovm.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="add-clusters-vsphere.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />  
+<section id="host-add-vsphere">
+	<title>Adding a Host (vSphere)</title>
+    <para>For vSphere servers, we recommend creating the cluster of hosts in vCenter and then adding the entire cluster to &PRODUCT;. See Add Cluster: vSphere.</para>
 </section>
