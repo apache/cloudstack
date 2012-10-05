@@ -22,15 +22,15 @@ package com.cloud.network.nicira;
 public class Match {
 	private Integer protocol;
 	private String source_ip_addresses;
-	private boolean source_ip_addresses_not;
+	private Boolean source_ip_addresses_not;
 	private String destination_ip_addresses;
-	private boolean destination_ip_addresses_not;
+	private Boolean destination_ip_addresses_not;
 	private Integer source_port_min;
 	private Integer source_port_max;
-	private boolean source_port_not;
+	private Boolean source_port_not;
 	private Integer destination_port_min;
 	private Integer destination_port_max;
-	private boolean destination_port_not;
+	private Boolean destination_port_not;
 	private String ethertype = "IPv4";
 	
 	public Integer getProtocol() {
@@ -57,11 +57,11 @@ public class Match {
 		this.source_port_max = source_port_max;
 	}
 	
-	public boolean isSourcePortNot() {
+	public Boolean isSourcePortNot() {
 		return source_port_not;
 	}
 
-	public void setSourcePortNot(boolean source_port_not) {
+	public void setSourcePortNot(Boolean source_port_not) {
 		this.source_port_not = source_port_not;
 	}
 
@@ -81,11 +81,11 @@ public class Match {
 		this.destination_port_max = destination_port_max;
 	}
 	
-	public boolean isDestinationPortNot() {
+	public Boolean isDestinationPortNot() {
 		return destination_port_not;
 	}
 
-	public void setDestinationPortNot(boolean destination_port_not) {
+	public void setDestinationPortNot(Boolean destination_port_not) {
 		this.destination_port_not = destination_port_not;
 	}
 
@@ -121,11 +121,11 @@ public class Match {
 		this.destination_ip_addresses = destination_ip_addresses;
 	}
 
-	public boolean isDestinationIpAddressesNot() {
+	public Boolean isDestinationIpAddressesNot() {
 		return destination_ip_addresses_not;
 	}
 
-	public void setDestinationIpAddressesNot(boolean destination_ip_addresses_not) {
+	public void setDestinationIpAddressesNot(Boolean destination_ip_addresses_not) {
 		this.destination_ip_addresses_not = destination_ip_addresses_not;
 	}
 	
