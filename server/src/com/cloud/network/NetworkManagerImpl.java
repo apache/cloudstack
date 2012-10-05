@@ -5423,8 +5423,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     protected void checkGuestVnetsConflicts(long zoneId, int newStartVnet, int newEndVnet, Long pNtwkIdToSkip) {
         List<? extends PhysicalNetwork> pNtwks = _physicalNetworkDao.listByZone(zoneId);
         for (PhysicalNetwork pNtwk : pNtwks) {
-            // skip my own network
-            if (pNtwkIdToSkip != null && pNtwkIdToSkip == pNtwk.getId()) {
+            // skip my own network and networks that don't have vnet range set
+            if ((pNtwk.getVnet() == null || pNtwk.getVnet().isEmpty()) || (pNtwkIdToSkip != null && pNtwkIdToSkip == pNtwk.getId())) {
                 continue;
             }
             String[] existingRange = pNtwk.getVnet().split("-");
