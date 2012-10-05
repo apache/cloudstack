@@ -52,7 +52,7 @@
     <para>Add more clusters (optional). See <xref linkend="cluster-add"/></para>
     </listitem>
     <listitem>
-        <para>Add more hosts (optional). See <xref linkend="host-add>"/></para>
+        <para>Add more hosts (optional). See <xref linkend="host-add"/></para>
     </listitem>
     <listitem>
     <para>Add more primary storage (optional). See <xref linkend="primary-storage-add"/></para>
