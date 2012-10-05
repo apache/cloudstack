@@ -56,4 +56,6 @@ public interface UserAccount {
     String getRegistrationToken();
 
     boolean isRegistered();
+
+    int getLoginAttempts();
 }

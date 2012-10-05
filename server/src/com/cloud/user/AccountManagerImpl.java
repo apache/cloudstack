@@ -1862,24 +1862,25 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             }
 
             UserAccount userAccount = _userAccountDao.getUserAccount(username, domainId);
-            UserAccountVO user = _userAccountDao.findById(userAccount.getId());
-            if (user != null) {
-                if ((user.getState().toString()).equals("enabled")) {
-                    if (!isInternalAccount(user.getType())) {
+            if (userAccount != null) {
+                if (userAccount.getState().equalsIgnoreCase(Account.State.enabled.toString())) {
+                    if (!isInternalAccount(userAccount.getType())) {
                         //Internal accounts are not disabled
-                        int attemptsMade = user.getLoginAttempts() + 1;
+                        int attemptsMade = userAccount.getLoginAttempts() + 1;
                         if (attemptsMade < _allowedLoginAttempts) {
                             updateLoginAttempts(userAccount.getId(), attemptsMade, false);
                             s_logger.warn("Login attempt failed. You have " + ( _allowedLoginAttempts - attemptsMade ) + " attempt(s) remaining");
                         } else {
                             updateLoginAttempts(userAccount.getId(), _allowedLoginAttempts, true);
-                            s_logger.warn("User " + user.getUsername() + " has been disabled due to multiple failed login attempts." +
+                            s_logger.warn("User " + userAccount.getUsername() + " has been disabled due to multiple failed login attempts." +
                                     " Please contact admin.");
                         }
                     }
                 } else {
-                    s_logger.info("User " + user.getUsername() + " is disabled/locked");
+                    s_logger.info("User " + userAccount.getUsername() + " is disabled/locked");
                 }
+            } else {
+                s_logger.warn("Authentication failure: No user with name " + username + " for domainId " + domainId);
             }
             return null;
         }
