@@ -392,21 +392,6 @@ if [ -x /etc/sysconfig/modules/kvm.modules ] ; then
     /bin/sh /etc/sysconfig/modules/kvm.modules
 fi
 
-%post scripts
-if [ -d %{_libdir}/%{name}/agent ]; then
-  rm -fr %{_libdir}/%{name}/agent
-fi
-# Symlink for backwards compatibility
-if [ ! -h %{_libdir}/%{name}/agent ]; then
-  ln -s %{_libdir}/%{name}/common %{_libdir}/%{name}/agent
-fi
-
-%postun scripts
-# For uninstallation, remove symlink
-if [ "$1" == "0" ]; then
-  rm -f %{_libdir}/%{name}/agent
-fi
-
 %post client
 if [ "$1" == "1" ] ; then
     /sbin/chkconfig --add %{name}-management > /dev/null 2>&1 || true
