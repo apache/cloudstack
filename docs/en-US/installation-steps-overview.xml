@@ -34,34 +34,49 @@
     </itemizedlist>
     <orderedlist>
     <listitem>
-    <para>Make sure you have the required hardware ready. See <xref linkend="minimum-system-requirements"/></para>
+    <para>
+        <emphasis role="bold">Prepare</emphasis>
+    </para>
+    <para>Make sure you have the required hardware ready</para>
     </listitem>
     <listitem>
-    <para>Install the Management Server (choose single-node or multi-node). See <xref linkend="management-server-install-flow"/></para>
+    <para>(Optional) Fill out the preparation checklists</para>
     </listitem>
     <listitem>
-    <para>Log in to the UI. See <xref linkend="ui"/></para>
+    <para><emphasis role="bold">Install the &PRODUCT; software</emphasis></para>
     </listitem>
     <listitem>
-    <para>Add a zone. Includes the first pod, cluster, and host. See <xref linkend="zone-add"/></para>
+    <para>Install the Management Server (choose single-node or multi-node)</para>
     </listitem>
     <listitem>
-    <para>Add more pods (optional). See <xref linkend="pod-add"/></para>
+    <para>Log in to the UI</para>
     </listitem>
     <listitem>
-    <para>Add more clusters (optional). See <xref linkend="cluster-add"/></para>
+    <para><emphasis role="bold">Provision your cloud infrastructure</emphasis></para>
     </listitem>
     <listitem>
-        <para>Add more hosts (optional). See <xref linkend="host-add>"/></para>
+    <para>Add a zone. Includes the first pod, cluster, and host</para>
     </listitem>
     <listitem>
-    <para>Add more primary storage (optional). See <xref linkend="primary-storage-add"/></para>
+    <para>Add more pods</para>
     </listitem>
     <listitem>
-    <para>Add more secondary storage (optional). See <xref linkend="secondary-storage-add"/></para>
+    <para>Add more clusters</para>
     </listitem>
     <listitem>
-    <para>Try using the cloud. See <xref linkend="initialize-and-test"/></para>
+    <para>Add more hosts</para>
+    </listitem>
+    <listitem>
+    <para>Add more primary storage</para>
+    </listitem>
+    <listitem>
+    <para>Add more secondary storage</para>
+    </listitem>
+    <listitem>
+    <para><emphasis role="bold">Try using the cloud</emphasis></para>
+    </listitem>
+    <listitem>
+    <para>Initialization and testing</para>
     </listitem>
     </orderedlist>
 </section>
