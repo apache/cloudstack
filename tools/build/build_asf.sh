@@ -23,7 +23,6 @@ branch='master'
 tag='no'
 certid='X'
 
-
 usage(){
     echo "usage: $0 -v version [-b branch] [-s source dir] [-o output dir] [-t [-u]] [-h]"
     echo "  -v sets the version"
@@ -31,11 +30,12 @@ usage(){
     echo "  -s sets the source directory (defaults to $sourcedir)"
     echo "  -o sets the output directory (defaults to $outputdir)"
     echo "  -t tags the git repo with the version"
-    echo "     -u sets the certificate ID to sign the tag with (if not provided, the default key is attempted)"
+    echo "  -u sets the certificate ID to sign the tag with (if not provided, the default key is attempted)"
+    echo "  -k sets the key to sign the tarball with"
     echo "  -h"
 }
 
-while getopts v:s:o:b:tu:h opt
+while getopts v:s:o:b:tu:k:h opt
 do
     case "$opt" in
       v)  version="$OPTARG";;
@@ -44,9 +44,10 @@ do
       b)  branch="$OPTARG";;
       t)  tag='yes';;
       u)  certid="$OPTARG";;
+      k)  keyid="--default-key $OPTARG";;
       h)  usage
           exit 0;;
-      \?)       # unknown flag
+      /?)       # unknown flag
           usage
           exit 1;;
     esac
@@ -73,11 +74,10 @@ else
 fi
 
 if [ -d "$outputdir" ]; then
-    rm $outputdir/*
+    rm -r $outputdir/*
 else
     mkdir $outputdir
 fi
-
 cp $sourcedir/KEYS $outputdir/KEYS
 
 cd $sourcedir
@@ -87,8 +87,8 @@ git archive --format=zip --prefix=apache-cloudstack-$version-incubating-src/ $br
 
 cd $outputdir
 echo 'armor'
-gpg -v --armor --output apache-cloudstack-$version-incubating-src.tar.gz.asc --detach-sig apache-cloudstack-$version-incubating-src.tar.gz
-gpg -v --armor --output apache-cloudstack-$version-incubating-src.zip.asc --detach-sig apache-cloudstack-$version-incubating-src.zip
+gpg -v $keyid --armor --output apache-cloudstack-$version-incubating-src.tar.gz.asc --detach-sig apache-cloudstack-$version-incubating-src.tar.gz
+gpg -v $keyid --armor --output apache-cloudstack-$version-incubating-src.zip.asc --detach-sig apache-cloudstack-$version-incubating-src.zip
 
 echo 'md5'
 gpg -v --print-md MD5 apache-cloudstack-$version-incubating-src.tar.gz > apache-cloudstack-$version-incubating-src.tar.gz.md5
