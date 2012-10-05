@@ -46,6 +46,7 @@ function doinstall() {
     
 function doupdate() {
     yum update --enablerepo='cloud-temp' 'cloud-*' || return $?
+    rpm -Uvh --force cloud-scripts-*.rpm
 }
     
 function doremove() {
