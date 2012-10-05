@@ -56,28 +56,36 @@
 								});
 							}
 						},					
+						
 						domainid: {					
 							label: 'Domain',					
 							select: function(args) {
-								$.ajax({
-									url: createURL('listDomains'),
-									data: { 
-										listAll: true,
-										details: 'min'
-									},
-									success: function(json) {
-										var array1 = [{id: '', description: ''}];
-										var domains = json.listdomainsresponse.domain;
-										if(domains != null && domains.length > 0) {
-											for(var i = 0; i < domains.length; i++) {
-												array1.push({id: domains[i].id, description: domains[i].path});
+								if(isAdmin() || isDomainAdmin()) {
+									$.ajax({
+										url: createURL('listDomains'),
+										data: { 
+											listAll: true,
+											details: 'min'
+										},
+										success: function(json) {
+											var array1 = [{id: '', description: ''}];
+											var domains = json.listdomainsresponse.domain;
+											if(domains != null && domains.length > 0) {
+												for(var i = 0; i < domains.length; i++) {
+													array1.push({id: domains[i].id, description: domains[i].path});
+												}
 											}
+											args.response.success({
+												data: array1
+											});
 										}
-										args.response.success({
-											data: array1
-										});
-									}
-								});
+									});
+								}
+								else {
+									args.response.success({
+										data: null
+									});
+								}
 							},
 							isHidden: function(args) {
 								if(isAdmin() || isDomainAdmin())
@@ -86,6 +94,7 @@
 									return true;
 							}
 						},		
+						
 						account: { 
 							label: 'Account',
 							isHidden: function(args) {
