@@ -2746,7 +2746,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 regularAccounts.add(accountName);
             } else {
                 // convert account to projectIds
-                Project project = ApiDBUtils.findProjectByProjectAccountId(account.getId());
+                Project project = ApiDBUtils.findProjectByProjectAccountIdIncludingRemoved(account.getId());
 
                 if (project.getUuid() != null && !project.getUuid().isEmpty())
                     projectIds.add(project.getUuid());
@@ -3343,7 +3343,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
             // find the project
-            Project project = ApiDBUtils.findProjectByProjectAccountId(account.getId());
+            Project project = ApiDBUtils.findProjectByProjectAccountIdIncludingRemoved(account.getId());
             response.setProjectId(project.getId());
             response.setProjectName(project.getName());
         } else {
@@ -3359,7 +3359,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         Account account = ApiDBUtils.findAccountByIdIncludingRemoved(accountId);
         if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
             // find the project
-            Project project = ApiDBUtils.findProjectByProjectAccountId(account.getId());
+            Project project = ApiDBUtils.findProjectByProjectAccountIdIncludingRemoved(account.getId());
             response.setProjectId(project.getId());
             response.setProjectName(project.getName());
         } else {
@@ -3670,7 +3670,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
             if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
                 // find the project
-                Project project = ApiDBUtils.findProjectByProjectAccountId(account.getId());
+                Project project = ApiDBUtils.findProjectByProjectAccountIdIncludingRemoved(account.getId());
                 response.setProjectId(project.getId());
                 response.setProjectName(project.getName());
             } else {

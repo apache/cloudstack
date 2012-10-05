@@ -108,4 +108,12 @@ public class ProjectDaoImpl extends GenericDaoBase<ProjectVO, Long> implements P
         sc.setParameters("state", state);
         return listBy(sc);
     }
+    
+    @Override
+    public ProjectVO findByProjectAccountIdIncludingRemoved(long projectAccountId) {
+        SearchCriteria<ProjectVO> sc = AllFieldsSearch.create();
+        sc.setParameters("projectAccountId", projectAccountId);
+
+        return findOneIncludingRemovedBy(sc);
+    }
 }

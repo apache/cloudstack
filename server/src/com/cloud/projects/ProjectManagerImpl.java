@@ -516,6 +516,11 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
     }
     
     @Override
+    public ProjectVO findByProjectAccountIdIncludingRemoved(long projectAccountId) {
+        return _projectDao.findByProjectAccountIdIncludingRemoved(projectAccountId);
+    }
+    
+    @Override
     public Project findByNameAndDomainId(String name, long domainId) {
         return _projectDao.findByNameAndDomain(name, domainId);
     }
