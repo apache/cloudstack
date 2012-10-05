@@ -1408,6 +1408,11 @@ dictionary = {
 'label.add.network.ACL': '<fmt:message key="label.add.network.ACL" />',
 'label.private.Gateway': '<fmt:message key="label.private.Gateway" />',
 'label.VPC.router.details': '<fmt:message key="label.VPC.router.details" />',
-'label.VMs.in.tier': '<fmt:message key="label.VMs.in.tier" />'
+'label.VMs.in.tier': '<fmt:message key="label.VMs.in.tier" />',
+'label.add.NiciraNvp.device': '<fmt:message key="label.add.NiciraNvp.device" />',
+'label.delete.NiciraNvp': '<fmt:message key="label.delete.NiciraNvp" />',
+'label.nicira.controller.address': '<fmt:message key="label.nicira.controller.address" />',
+'label.nicira.transportzoneuuid': '<fmt:message key="label.nicira.transportzoneuuid" />',
+'label.nicira.l3gatewayserviceuuid': '<fmt:message key="label.nicira.l3gatewayserviceuuid" />'
 };
 </script>
