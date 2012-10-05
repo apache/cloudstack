@@ -383,7 +383,9 @@
 					  hostid: args.context.hosts[0].id
 					});
 				}
-
+							
+        delete data.details;	//remove "details: 'min'" from data	
+								
         $.ajax({
           url: createURL('listVirtualMachines'),
           data: data,          
