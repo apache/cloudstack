@@ -763,3 +763,4 @@ UPDATE `cloud`.`configuration` SET category='Alert' WHERE name='capacity.check.p
 UPDATE `cloud`.`vm_instance` SET vnc_password = '' where removed is not null;
 DELETE FROM `cloud`.`host_details` where name in ('storage.network.device1', 'storage.network.device2');
 UPDATE `cloud`.`configuration` SET category = 'Hidden' where name in ('secondary.storage.vm', 'xen.create.pools.in.pod', 'cloud.identifier', 'security.hash.key', 'router.ram.size');
+DELETE FROM `cloud`.`host_details` where name in ('storage.network.device1', 'storage.network.device2');
