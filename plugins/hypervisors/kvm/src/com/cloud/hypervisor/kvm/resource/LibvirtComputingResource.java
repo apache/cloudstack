@@ -4304,7 +4304,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 
     /* online snapshot supported by enhanced qemu-kvm */
     private boolean isSnapshotSupported() {
-        String result = executeBashScript("qemu-img --help|grep convert |grep snapshot");
+        String result = executeBashScript("qemu-img --help|grep convert");
         if (result != null) {
             return false;
         } else {
