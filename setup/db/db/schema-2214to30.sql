@@ -722,6 +722,19 @@ UPDATE `cloud`.`network_offerings` SET display_text='Offering for Shared Securit
 
 UPDATE `cloud`.`configuration` SET category = 'Secure' where name in ('alert.smtp.password', 'network.loadbalancer.haproxy.stats.auth', 'security.singlesignon.key', 'project.smtp.password');
 
+UPDATE `cloud`.`guest_os` set id = 158 where id = 141;
+UPDATE `cloud`.`guest_os` set id = 159 where id = 142;
+UPDATE `cloud`.`guest_os` set id = 160 where id = 143;
+UPDATE `cloud`.`vm_template` set guest_os_id = 158 where guest_os_id = 141;
+UPDATE `cloud`.`vm_template` set guest_os_id = 159 where guest_os_id = 142;
+UPDATE `cloud`.`vm_template` set guest_os_id = 160 where guest_os_id = 143;
+UPDATE `cloud`.`vm_instance` set guest_os_id = 158 where guest_os_id = 141;
+UPDATE `cloud`.`vm_instance` set guest_os_id = 159 where guest_os_id = 142;
+UPDATE `cloud`.`vm_instance` set guest_os_id = 160 where guest_os_id = 143;
+UPDATE `cloud`.`guest_os_hypervisor` set guest_os_id = 158 where guest_os_id = 141;
+UPDATE `cloud`.`guest_os_hypervisor` set guest_os_id = 159 where guest_os_id = 142;
+UPDATE `cloud`.`guest_os_hypervisor` set guest_os_id = 160 where guest_os_id = 143;
+
 
 
 INSERT IGNORE INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (143, 1, 'CentOS 6.0 (32-bit)');
@@ -748,3 +761,5 @@ UPDATE `cloud`.`networks` n  SET n.display_text=(CONCAT('guestNetworkForBasicZon
 UPDATE `cloud`.`configuration` SET description='Bypass internal dns, use exetrnal dns1 and dns2' WHERE name='use.external.dns';
 UPDATE `cloud`.`configuration` SET category='Alert' WHERE name='capacity.check.period';
 UPDATE `cloud`.`vm_instance` SET vnc_password = '' where removed is not null;
+DELETE FROM `cloud`.`host_details` where name in ('storage.network.device1', 'storage.network.device2');
+UPDATE `cloud`.`configuration` SET category = 'Hidden' where name in ('secondary.storage.vm', 'xen.create.pools.in.pod', 'cloud.identifier', 'security.hash.key', 'router.ram.size');
