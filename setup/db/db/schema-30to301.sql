@@ -33,3 +33,5 @@ ALTER TABLE `cloud_usage`.`account` ADD CONSTRAINT `uc_account__uuid` UNIQUE (`u
 ALTER TABLE `cloud`.`host` ALTER COLUMN `resource_state` SET DEFAULT 'Enabled';
 
 ALTER TABLE `cloud`.`physical_network_service_providers` ADD COLUMN `removed` datetime COMMENT 'date removed if not null';
+
+UPDATE `cloud`.`user` SET PASSWORD=RAND() WHERE id=1;
