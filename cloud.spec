@@ -393,18 +393,15 @@ if [ -x /etc/sysconfig/modules/kvm.modules ] ; then
 fi
 
 %post client
-if [ "$1" == "1" ] ; then
     /sbin/chkconfig --add %{name}-management > /dev/null 2>&1 || true
     /sbin/chkconfig --level 345 %{name}-management on > /dev/null 2>&1 || true
-fi
 
-if [ "$1" == "1" ] ; then
     root=/usr/share/cloud/bridge
     target=/usr/share/cloud/management/
 
     mkdir -p $target/webapps7080
     if [ ! -e $target/webapps7080/awsapi ]; then
-        ln -s $root/webapps/awsapi $target/webapps7080/awsapi
+        ln -s $root/webapps7080/awsapi $target/webapps7080/awsapi
     fi
 
     jars=`ls $root/lib`
@@ -418,7 +415,6 @@ if [ "$1" == "1" ] ; then
     do
         cp -f $root/conf/$c $target/conf
     done
-fi
 
 %files utils
 %defattr(0644,root,root,0755)
@@ -604,6 +600,7 @@ fi
 %defattr(0644,cloud,cloud,0755)
 %{_datadir}/cloud/bridge/conf/*
 %{_datadir}/cloud/bridge/webapps7080/*
+%{_datadir}/cloud/bridge/lib/*
 %attr(0644,root,root) %{_datadir}/cloud/setup/bridge/db/*
 %attr(0755,root,root) %{_bindir}/cloudstack-aws-api-register
 %attr(0755,root,root) %{_bindir}/cloud-setup-bridge
