@@ -664,9 +664,9 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
         File file = new File(url.getFile());
         File isoFile = new File(file.getParent() + "/vms/systemvm.iso");
         if (!isoFile.exists()) {
-            isoFile = new File("/usr/lib64/cloud/agent/" + "/vms/systemvm.iso");
+            isoFile = new File("/usr/lib64/cloud/common/" + "/vms/systemvm.iso");
             if (!isoFile.exists()) {
-                isoFile = new File("/usr/lib/cloud/agent/" + "/vms/systemvm.iso");
+                isoFile = new File("/usr/lib/cloud/common/" + "/vms/systemvm.iso");
             }
         }
         return isoFile;
@@ -679,9 +679,9 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
 
         File keyFile = new File(file.getParent(), "/scripts/vm/systemvm/id_rsa.cloud");
         if (!keyFile.exists()) {
-            keyFile = new File("/usr/lib64/cloud/agent" + "/scripts/vm/systemvm/id_rsa.cloud");
+            keyFile = new File("/usr/lib64/cloud/common" + "/scripts/vm/systemvm/id_rsa.cloud");
             if (!keyFile.exists()) {
-                keyFile = new File("/usr/lib/cloud/agent" + "/scripts/vm/systemvm/id_rsa.cloud");
+                keyFile = new File("/usr/lib/cloud/common" + "/scripts/vm/systemvm/id_rsa.cloud");
             }
         }
         return keyFile;
