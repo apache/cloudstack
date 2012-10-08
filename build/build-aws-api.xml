@@ -225,7 +225,7 @@
 		<copy todir="${server.deploy.to.dir}/webapps7080/awsapi/WEB-INF/lib">
 			<fileset dir="${jar.dir}">
 				<include name="cloud-awsapi.jar" />
-				<include name="cloud-jasypt-1.9.jar" />
+				<include name="jasypt-1.9.0.jar" />
                                 <include name="cloud-utils.jar" />
 			</fileset>
 		</copy>
@@ -299,7 +299,7 @@
 			</fileset>
 			<fileset dir="${jar.dir}">
 				<include name="cloud-awsapi.jar" />
-				<include name="cloud-jasypt-1.9.jar" />
+				<include name="jasypt-1.9.0.jar" />
 			</fileset>
 		</copy>
 		<copy todir="${debian.tomcat.dir}/lib">
@@ -374,7 +374,7 @@
 			</fileset> -->
 			<fileset dir="${jar.dir}">
 				<include name="cloud-awsapi.jar" />
-				<include name="cloud-jasypt-1.9.jar" />
+				<include name="jasypt-1.9.0.jar" />
 			</fileset>
 		</copy>
 		<copy todir="${rpm.tomcat.dir}/lib">
