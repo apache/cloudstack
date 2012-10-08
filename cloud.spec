@@ -288,11 +288,9 @@ Requires: java >= 1.6.0
 Requires: tomcat6
 %if 0%{?fedora} > 15
 Requires: apache-commons-lang
-Requires: %{name}-utils = %{version}
 %endif
 %if 0%{?rhel} >= 5
 Requires: jakarta-commons-lang
-Requires: %{name}-utils = %{version}
 %endif
 Obsoletes: cloud-bridge < %{version}-%{release}
 %description aws-api
@@ -406,11 +404,11 @@ fi
         ln -sf $root/webapps7080/awsapi $target/webapps7080/awsapi
     fi
 
-    jars=`ls $root/lib`
-    for j in $jars
-    do
-        cp -f $root/lib/$j $root/webapps7080/awsapi/WEB-INF/lib/
-    done
+#    jars=`ls $root/lib`
+#    for j in $jars
+#    do
+#        cp -f $root/lib/$j $root/webapps/awsapi/WEB-INF/lib/
+#    done
 
     confs="cloud-bridge.properties ec2-service.properties"
     for c in $confs
@@ -601,7 +599,6 @@ fi
 %files aws-api
 %defattr(0644,cloud,cloud,0755)
 %{_datadir}/cloud/bridge/conf/*
-%{_datadir}/cloud/bridge/lib/*
 %{_datadir}/cloud/bridge/webapps7080/*
 %attr(0644,root,root) %{_datadir}/cloud/setup/bridge/db/*
 %attr(0755,root,root) %{_bindir}/cloudstack-aws-api-register
