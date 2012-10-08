@@ -401,7 +401,7 @@ fi
 
     mkdir -p $target/webapps7080
     if [ ! -e $target/webapps7080/awsapi ]; then
-        ln -s $root/webapps7080/awsapi $target/webapps7080/awsapi
+        ln -s $root/webapps/awsapi $target/webapps7080/awsapi
     fi
 
     jars=`ls $root/lib`
