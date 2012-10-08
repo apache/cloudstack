@@ -1995,7 +1995,10 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             }
             if (vm.getHostId() == null || hostId != vm.getHostId()) {
                 try {
-                    stateTransitTo(vm, VirtualMachine.Event.AgentReportMigrated, hostId);
+                    ItWorkVO workItem = _workDao.findByOutstandingWork(vm.getId(), State.Migrating);
+                    if(workItem == null){
+                        stateTransitTo(vm, VirtualMachine.Event.AgentReportMigrated, hostId);
+                    }
                 } catch (NoTransitionException e) {
                 }
             }
