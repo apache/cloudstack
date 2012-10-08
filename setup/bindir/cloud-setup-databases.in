@@ -1,24 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-# 
-#   http://www.apache.org/licenses/LICENSE-2.0
-# 
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
-
-
 import os
 import sys
 import subprocess
@@ -69,7 +51,7 @@ class DBDeployer(object):
     dbDotProperties = {}
     dbDotPropertiesIndex = 0
     encryptionKeyFile = '@MSCONF@/key'
-    encryptionJarPath = '@JAVADIR@/jasypt-1.9.0.jar'
+    encryptionJarPath = '@JAVADIR@/cloud-jasypt-1.8.jar'
     success = False
     magicString = 'This_is_a_magic_string_i_think_no_one_will_duplicate'
     tmpMysqlFile = os.path.join(os.path.expanduser('~/'), 'cloudstackmysql.tmp.sql')
@@ -149,6 +131,7 @@ class DBDeployer(object):
             mysqlCmds.append('<')
             mysqlCmds.append(self.tmpMysqlFile)
             runCmd(mysqlCmds)
+            
         except Exception, e:
             err = '''Encountering an error when executing mysql script
 ----------------------------------------------------------------------
@@ -257,6 +240,26 @@ for full help
             self.info("Applying %s"%p)
             self.runMysql(text, p, True)
             self.info(None, True)
+            
+        awsApiDbDir = '/usr/share/cloud/setup/bridge/db'
+        for f in ["cloudbridge_db.sql"]:
+            p = os.path.join(awsApiDbDir,f)
+            if not os.path.exists(p): continue
+            text = file(p).read()
+            for t, r in replacements: text = text.replace(t,r)
+            self.info("Applying %s"%p)
+            self.runMysql(text, p, True)
+            self.info(None, True)
+
+        for f in ["cloudbridge_schema", "cloudbridge_multipart", "cloudbridge_index", "cloudbridge_multipart_alter", "cloudbridge_bucketpolicy", "cloudbridge_policy_alter",
+            "cloudbridge_offering", "cloudbridge_offering_alter"]:
+            if os.path.isfile(p):
+                p = os.path.join(awsApiDbDir,"%s.sql"%f)
+                if not os.path.exists(p): continue
+                text = file(p).read()
+                self.info("Applying %s"%p)
+                self.runMysql(text, p, True)
+                self.info(None, True)
                
     def prepareDBFiles(self):
         def prepareDBDotProperties():
@@ -475,15 +478,8 @@ for example:
                 self.errorAndExit("There are more than one parameters for user:password@hostname (%s)"%self.args)
             
             arg = self.args[0]
-            try:
-                splitIndex = arg.rindex('@')
-            except ValueError:
-                # If it failed to find @, use host=localhost
-                splitIndex = len(arg)
-                arg += "@localhost"
-            finally:
-                stuff = [arg[:splitIndex], arg[splitIndex+1:]]
-
+            stuff = arg.split("@", 1)
+            if len(stuff) == 1: stuff.append("localhost")
             self.user,self.password = parseUserAndPassword(stuff[0])
             self.host,self.port = parseHostInfo(stuff[1])
             
