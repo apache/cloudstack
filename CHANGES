@@ -6,6 +6,8 @@ Full release notes for each release are located in the project's documentation w
 Version 4.0.0
 -------------
 
+This is the first release of CloudStack from within the Apache Software Foundation.
+
 Build Tool Changes:
 
  * The project now uses a combination of maven3 and ant for building
