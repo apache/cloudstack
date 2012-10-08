@@ -401,14 +401,14 @@ fi
 
     mkdir -p $target/webapps7080
     if [ ! -e $target/webapps7080/awsapi ]; then
-        ln -s $root/webapps/awsapi $target/webapps7080/awsapi
+        ln -s $root/webapps7080/awsapi $target/webapps7080/awsapi
     fi
 
-    jars=`ls $root/lib`
-    for j in $jars
-    do
-        cp -f $root/lib/$j $root/webapps/awsapi/WEB-INF/lib/
-    done
+#    jars=`ls $root/lib`
+#    for j in $jars
+#    do
+#        cp -f $root/lib/$j $root/webapps/awsapi/WEB-INF/lib/
+#    done
 
     confs="cloud-bridge.properties ec2-service.properties"
     for c in $confs
