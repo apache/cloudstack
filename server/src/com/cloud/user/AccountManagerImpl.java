@@ -74,15 +74,10 @@ import com.cloud.network.IpAddress;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.RemoteAccessVpnVO;
-import com.cloud.network.Site2SiteCustomerGatewayVO;
-import com.cloud.network.Site2SiteVpnConnectionVO;
 import com.cloud.network.VpnUserVO;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
-import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
-import com.cloud.network.dao.Site2SiteVpnConnectionDao;
-import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.dao.SecurityGroupDao;
@@ -881,6 +876,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             throw new InvalidParameterValueException("unable to find user by id");
         }
 
+        //don't allow updating system account
         if (account != null && (account.getId() == Account.ACCOUNT_ID_SYSTEM)) {
             throw new PermissionDeniedException("user id : " + id + " is system account, update is not allowed");
         }
@@ -1713,7 +1709,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             String singleSignOnTolerance = _configDao.getValue("security.singlesignon.tolerance.millis");
             if (singleSignOnTolerance == null) {
                 // the SSO tolerance is gone (how much time before/after system time we'll allow the login request to be
-// valid),
+                // valid),
                 // don't authenticate
                 return null;
             }
@@ -1798,6 +1794,12 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         }
 
         if (user != null) {
+            //don't allow to authenticate system user
+            if (user.getId() == User.UID_SYSTEM) {
+                s_logger.error("Failed to authenticate user: " + username + " in domain " + domainId);
+                return null;
+            }
+            
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("User: " + username + " in domain " + domainId + " has successfully logged in");
             }
@@ -1895,8 +1897,14 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     public String[] createApiKeyAndSecretKey(RegisterCmd cmd) {
         Long userId = cmd.getId();
 
-        if (getUserIncludingRemoved(userId) == null) {
-            throw new InvalidParameterValueException("unable to find user for id : " + userId);
+        User user = getUserIncludingRemoved(userId);
+        if (user == null) {            
+            throw new InvalidParameterValueException("unable to find user by id");
+        }
+        
+        //don't allow updating system user
+        if (user.getId() == User.UID_SYSTEM) {
+            throw new PermissionDeniedException("user id : " + user.getId() + " is system account, update is not allowed");
         }
 
         // generate both an api key and a secret key, update the user table with the keys, return the keys to the user
