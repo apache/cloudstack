@@ -124,6 +124,7 @@ known_categories = {
     'PrivateGateway': 'VPC',
     'StaticRoute': 'VPC',
     'Tags': 'Resource tags',
+    'NiciraNvpDevice': 'Nicira NVP'
     }
 
 
