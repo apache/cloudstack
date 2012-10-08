@@ -331,7 +331,7 @@ if [ "$1" == "0" ] ; then
     /sbin/service %{name}-management stop > /dev/null 2>&1 || true
 fi
 
-%pre client
+%pre aws-api
 id %{name} > /dev/null 2>&1 || /usr/sbin/useradd -M -c "CloudStack unprivileged user" \
      -r -s /bin/sh -d %{_sharedstatedir}/%{name}/management %{name}|| true
 
