@@ -369,9 +369,9 @@
 			</fileset>
 		</copy>
 		<copy todir="${rpm.tomcat.dir}/webapps7080/awsapi/WEB-INF/lib">
-<!--          <fileset dir="${base.dir}/deps/awsapi-lib/rampart-lib">
+            <fileset dir="${base.dir}/deps/awsapi-lib/rampart-lib">
 				<include name="*.jar" />
-			</fileset> -->
+			</fileset>
 			<fileset dir="${jar.dir}">
 				<include name="cloud-awsapi.jar" />
 				<include name="jasypt-1.9.0.jar" />
