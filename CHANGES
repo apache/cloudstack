@@ -24,7 +24,7 @@ New Features:
  * Added the ability to create a VM without immediately starting it (via API)
  * Upload an Existing Volume to a Virtual Machine
  * Dedicated High-Availability Hosts
- * Support for Amazon Web Services API (The Citrix CloudBridge product is now part of Apache CloudStack)
+ * Support for Amazon Web Services API (formerly a separate package)
  * AWS API Extensions to include Tagging
  * Cisco Nexus 1000v Virtual Switch for ESX
  * Support for Nicira NVP (L2)
