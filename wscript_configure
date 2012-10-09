@@ -100,6 +100,7 @@ systemjars = {
 		"jetty-start.jar",
 		"jna.jar",
 		"log4j-1.2.jar",
+		"catalina-tribes.jar",
 	),
 	'Windows':
 	(
