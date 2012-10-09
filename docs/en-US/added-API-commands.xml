@@ -149,19 +149,6 @@
     <listitem>
       <para>listVpnConnections (Lists site to site vpn connection gateways)</para>
     </listitem>
-    <listitem>
-      <para>enableCiscoNexusVSM (Enables Nexus 1000v dvSwitch in &PRODUCT;.)</para>
-    </listitem>
-    <listitem>
-      <para>disableCiscoNexusVSM (Disables Nexus 1000v dvSwitch in &PRODUCT;.)</para>
-    </listitem>
-    <listitem>
-      <para>deleteCiscoNexusVSM (Deletes Nexus 1000v dvSwitch in &PRODUCT;.)</para>
-    </listitem>
-    <listitem>
-      <para>listCiscoNexusVSMs (Lists the control VLAN ID, packet VLAN ID, and data VLAN ID, as well
-        as the IP address of the Nexus 1000v dvSwitch.)</para>
-    </listitem>
   </itemizedlist>
   </section>
   <section id="added-api-commands-3.0.2">

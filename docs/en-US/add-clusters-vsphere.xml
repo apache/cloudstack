@@ -91,19 +91,8 @@
         <listitem>
           <para>vCenter Datacenter. Enter the vCenter datacenter that the cluster is in. For
             example, "cloud.dc.VM".</para>
-          <para>If you have enabled Nexus dvSwitch in the environment, the following parameters for
-            dvSwitch configuration are displayed:</para>
         </listitem>
         <listitem>
-          <para>Nexus dvSwitch IP Address: The IP address of the Nexus VSM appliance.</para>
-        </listitem>
-        <listitem>
-          <para>Nexus dvSwitch Username: The username required to access the Nexus VSM
-            applicance.</para>
-        </listitem>
-        <listitem>
-          <para>Nexus dvSwitch Password: The password associated with the username specified
-            above.</para>
           <mediaobject>
             <imageobject>
               <imagedata fileref="./images/add-cluster.png"/>
