@@ -30,4 +30,8 @@
     <listitem><para><emphasis role="bold">Road Warrior / Remote Access</emphasis>. Users want to be able to connect securely from a home or office to a private network in the cloud. Typically, the IP address of the connecting client is dynamic and cannot be preconfigured on the VPN server.</para></listitem>
     <listitem><para><emphasis role="bold">Site to Site</emphasis>. In this scenario, two private subnets are connected over the public Internet with a secure VPN tunnel. The cloud user’s subnet (for example, an office network) is connected through a gateway to the network in the cloud. The address of the user’s gateway must be preconfigured on the VPN server in the cloud. Note that although L2TP-over-IPsec can be used to set up Site-to-Site VPNs, this is not the primary intent of this feature.</para></listitem>
     </itemizedlist>
+  <xi:include href="configure-vpn.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="using-vpn-with-windows.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="using-vpn-with-mac.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="site-to-site-vpn.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
 </section>

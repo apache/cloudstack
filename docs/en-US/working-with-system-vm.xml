@@ -22,7 +22,12 @@
  under the License.
 -->
 
-<section id="working-with-system-vm">
-    <title>Working with System Virtual Machines</title>
-    <para>&PRODUCT; uses several types of system virtual machines to perform tasks in the cloud. In general &PRODUCT; manages these system VMs and creates, starts, and stops them as needed based on scale and immediate needs. However, the administrator should be aware of them and their roles to assist in debugging issues.</para>
-</section>
+<chapter id="working-with-system-vm">
+  <title>Working with System Virtual Machines</title>
+  <para>&PRODUCT; uses several types of system virtual machines to perform tasks in the cloud. In general &PRODUCT; manages these system VMs and creates, starts, and stops them as needed based on scale and immediate needs. However, the administrator should be aware of them and their roles to assist in debugging issues.</para>
+  <xi:include href="system-vm-template.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="multiple-system-vm-vmware.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="console-proxy.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="virtual-router.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="secondary-storage-vm.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+</chapter>

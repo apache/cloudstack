@@ -24,7 +24,7 @@
 
 <book>
     <bookinfo id="cloudstack_admin">
-    <title>&PRODUCT; Admin Guide</title>
+    <title>&PRODUCT; Administrator's Guide</title>
     <productname>Apache CloudStack</productname>
     <productnumber>4.0</productnumber>
     <edition>1</edition>
@@ -45,7 +45,30 @@
     <xi:include href="Author_Group.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     </bookinfo>
     <xi:include href="concepts.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="admin-guide.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="cloud-infrastructure-concepts.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="accounts.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="user-services-overview.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="ui.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="projects.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="provisioning-steps.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="offerings.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="set-up-network-for-users.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="virtual-machines.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="working-with-hosts.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="working-with-templates.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="storage.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="work-with-usage.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="networks.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="working-with-system-vm.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="sys-reliability-and-ha.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="manage-cloud.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="global-config.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="api-overview.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="tuning.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="troubleshooting.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="time-zones.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="event-types.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="alerts.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="Revision_History.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
 </book>
 

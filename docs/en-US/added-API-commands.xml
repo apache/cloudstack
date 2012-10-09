@@ -20,7 +20,8 @@
 -->
 <section id="added-API-commands">
   <title>Added API commands</title>
-  <para>Added in 4.0</para>
+  <section id="added-API-commands-4.0">
+  <title>Added in 4.0</title>
   <itemizedlist>
     <listitem>
       <para>createCounter (Adds metric counter)</para>
@@ -149,7 +150,9 @@
       <para>listVpnConnections (Lists site to site vpn connection gateways)</para>
     </listitem>
   </itemizedlist>
-  <para>Added in 3.0.2:</para>
+  </section>
+  <section id="added-api-commands-3.0.2">
+  <title>Added in 3.0.2</title>
   <itemizedlist>
     <listitem>
       <para>changeServiceForSystemVm</para>
@@ -157,7 +160,9 @@
         system VM must be in a "Stopped" state for this command to take effect.</para>
     </listitem>
   </itemizedlist>
-  <para>Added in 3.0.1:</para>
+  </section>
+  <section id="added-api-commands-3.0.1">
+  <title>Added in 3.0.1</title>
   <itemizedlist>
     <listitem>
       <para>changeServiceForSystemVm</para>
@@ -165,7 +170,9 @@
         system VM must be in a "Stopped" state for this command to take effect.</para>
     </listitem>
   </itemizedlist>
-  <para>Added in 3.0.0:</para>
+  </section>
+  <section id="added-api-commands-3.0.0">
+  <title>Added in 3.0.0</title>
   <informaltable frame="all">
     <tgroup cols="3" align="left" colsep="1" rowsep="1">
       <colspec colname="c1"/>
@@ -315,4 +322,5 @@
       </tbody>
     </tgroup>
   </informaltable>
+  </section>
 </section>

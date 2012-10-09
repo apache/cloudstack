@@ -22,13 +22,20 @@
  under the License.
 -->
 
-<section id="whats-new">
-    <title>What's New in 3.0.x?</title>
-    <para>The following describes any new major features of each CloudPlatform version as it applies to API usage.</para>
-    <xi:include href="enabling-port-8096.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="stopped-vm.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="change-to-behavior-of-list-commands.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="removed-API-commands.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="added-API-commands.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="added-cloudPlatform-error-codes.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-</section>
+<chapter id="whats-new">
+    <title>What's New in the API?</title>
+    <para>The following describes any new major features of each &PRODUCT; version as it applies to API usage.</para>
+    <section id="whats-new-in-api-4.0">
+        <title>What's New in the API for 4.0</title>
+        <para>TODO</para>
+    </section>
+    <section id="whats-new-in-api-3.0">
+        <title>What's New in the API for 3.0</title>
+        <xi:include href="enabling-port-8096.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+        <xi:include href="stopped-vm.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+        <xi:include href="change-to-behavior-of-list-commands.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+        <xi:include href="removed-API-commands.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+        <xi:include href="added-API-commands.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+        <xi:include href="added-cloudPlatform-error-codes.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    </section>
+</chapter>

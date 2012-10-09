@@ -22,14 +22,10 @@
  under the License.
 -->
 
-<section id="set-up-network-for-users">
+<chapter id="set-up-network-for-users">
     <title>Setting Up Networking for Users</title>
-    <para>People using cloud infrastructure have a variety of needs and preferences when it comes to the networking services provided by the cloud. As a &PRODUCT; administrator, you can do the following things to set up networking for your users:</para>
-    <itemizedlist>
-        <listitem><para>Set up physical networks in zones</para></listitem>
-        <listitem><para>Set up several different providers for the same service on a single physical network (for example, both Cisco and Juniper firewalls)</para></listitem>
-        <listitem><para>Bundle different types of network services into network offerings, so users can choose the desired network services for any given virtual machine </para></listitem>
-        <listitem><para>Add new network offerings as time goes on so end users can upgrade to a better class of service on their network</para></listitem>
-        <listitem><para>Provide more ways for a network to be accessed by a user, such as through a project of which the user is a member </para></listitem>
-    </itemizedlist>
-</section>
+    <xi:include href="networks-for-users-overview.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="about-virtual-networks.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="network-service-providers.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="network-offerings.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+</chapter>

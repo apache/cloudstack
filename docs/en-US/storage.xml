@@ -22,9 +22,11 @@
  under the License.
 -->
 
-<section id="storage">
-    <title>Deleting VMs</title>
-    <para>&PRODUCT; defines two types of storage: primary and secondary. Primary storage can be accessed by either iSCSI or NFS. Additionally, direct attached storage may be used for primary storage. Secondary storage is always accessed using NFS.</para>
-    <para>There is no ephemeral storage in &PRODUCT;. All volumes on all nodes are persistent</para>    
-</section>
-
+<chapter id="storage">
+  <title>Working With Storage</title>
+  <xi:include href="storage-overview.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="primary-storage.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="secondary-storage.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="working-with-volumes.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="working-with-snapshots.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+</chapter>

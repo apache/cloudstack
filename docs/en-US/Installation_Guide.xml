@@ -49,6 +49,7 @@
     <xi:include href="installation.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="ui.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="provisioning-steps.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+    <xi:include href="global-config.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="hypervisor-installation.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="choosing-a-deployment-architecture.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="Revision_History_Install_Guide.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />

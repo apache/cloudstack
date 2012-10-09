@@ -22,18 +22,11 @@
  under the License.
 -->
 
-<chapter id="developer_guide">
-    <title>Developer Guide</title>
-    <xi:include href="introduction.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="whats-new.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+<chapter id="api-calls">
+    <title>Calling the &PRODUCT; API</title>
     <xi:include href="making-api-request.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="enabling-api-call-expiration.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="signing-api-requests.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="responses.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="asynchronous-commands.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="working-with-usage-data.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="event-types.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="alerts.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="time-zones.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="contacting-support.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
 </chapter>
