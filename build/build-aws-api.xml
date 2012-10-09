@@ -384,7 +384,6 @@
               <include name="xercesImpl*.jar"/>
               <include name="xml-apis*.jar"/>
               <include name="antlr*.jar"/>
-              <include name="c3p0-*.jar"/>
               <include name="dom4j*.jar"/>
               <include name="javassist*.jar"/>
             </fileset>
