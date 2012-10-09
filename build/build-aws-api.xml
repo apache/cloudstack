@@ -375,6 +375,17 @@
             <fileset dir="${base.dir}/deps">
               <include name="axiom-*.jar"/>
               <include name="jasypt-1.9.0.jar"/>
+              <include name="jasypt-1.9.0.jar"/>
+              <include name="axis2-*.jar"/>
+              <include name="XmlSchema-*.jar"/>
+              <include name="json-simple*.jar"/>
+              <include name="neethi*.jar"/>
+              <include name="woden-*.jar"/>
+              <include name="xercesImpl*.jar"/>
+              <include name="xml-apis*.jar"/>
+              <include name="antlr*.jar"/>
+              <include name="dom4j*.jar"/>
+              <include name="javassist*.jar"/>
             </fileset>
 			<fileset dir="${jar.dir}">
 				<include name="cloud-awsapi.jar" />

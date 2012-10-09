@@ -22,7 +22,7 @@
   under the License.
 -->
 
-<section id="user-services-overview">
+<chapter id="user-services-overview">
     <title>User Services Overview</title>
   <para>In addition to the physical and logical infrastructure of your cloud,
     and the &PRODUCT; software and servers, you also need a layer of user
@@ -69,4 +69,4 @@
       System Service Offerings.
     </para>
   </section>
-</section>
+</chapter>

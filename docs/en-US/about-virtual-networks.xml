@@ -24,8 +24,8 @@
 
 <section id="about-virtual-networks">
     <title>About Virtual Networks</title>
-    <para>A virtual network is a logical construct that enables multi-tenancy on a single physical network. In &PRODUCT;, a virtual network can be shared or isolated.</para>
-    <para><xref linkend="isolated-networks" />XenServer and Maintenance Mode</para>
-    <para><xref linkend="shared-networks" />Working with Usage</para>
-    <para><xref linkend="runtime-allocation-virtual-network-resources" />XenServer and Maintenance Mode</para>
-    </section>
+    <para>A virtual network is a logical construct that enables multi-tenancy on a single physical network. In &PRODUCT; a virtual network can be shared or isolated.</para>
+    <xi:include href="isolated-networks.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="shared-networks.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="runtime-allocation-virtual-network-resources.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+</section>

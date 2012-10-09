@@ -158,6 +158,7 @@
     <module>patches</module>
     <module>client</module>
     <module>test</module>
+    <module>tools/devcloud</module>
   </modules>
 
   <dependencies>

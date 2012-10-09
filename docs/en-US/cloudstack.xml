@@ -23,20 +23,40 @@
 -->
 
 <book>
-    <xi:include href="Book_Info_Build_All.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <bookinfo id="cloudstack_all">
+        <title>&PRODUCT; Complete Documentation</title>
+        <productname>Apache CloudStack</productname>
+        <productnumber>4.0</productnumber>
+        <edition>1</edition>
+        <pubsnumber></pubsnumber>
+        <abstract>
+            <para>
+                Complete documentation for &PRODUCT;.
+            </para>
+        </abstract>
+        <corpauthor>
+            <inlinemediaobject>
+                <imageobject>
+                    <imagedata fileref="Common_Content/images/title_logo.svg" format="SVG" />
+                </imageobject>
+            </inlinemediaobject>
+        </corpauthor>
+        <xi:include href="Common_Content/Legal_Notice.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+        <xi:include href="Author_Group.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    </bookinfo>
     <xi:include href="concepts.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="accounts.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="user-services-overview.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="cloud-infrastructure-concepts.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
     <xi:include href="installation.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="ui.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="cloud-infrastructure-concepts.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="provisioning-steps.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="set-up-network-for-users.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="offerings.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="xenserver-install.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="kvm-install.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="vmware-install.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="provisioning-steps.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+    <xi:include href="global-config.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="hypervisor-installation.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="choosing-a-deployment-architecture.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="accounts.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="user-services-overview.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="projects.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="offerings.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="set-up-network-for-users.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="virtual-machines.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="working-with-hosts.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="working-with-templates.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
@@ -49,7 +69,10 @@
     <xi:include href="api-overview.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="tuning.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="troubleshooting.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="developer-guide.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="developer-introduction.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="whats-new.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="api-calls.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="working-with-usage-data.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="time-zones.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="event-types.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="alerts.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
