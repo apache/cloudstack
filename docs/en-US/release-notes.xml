@@ -1259,14 +1259,6 @@ Done restarting router(s).
           easily enabled by setting the appropriate global configuration parameter and performing a
           few setup steps.</para>
       </section>
-      <section id="support-nexus-dvswitch">
-        <title>Support for Cisco Nexus 1000v Virtual Switch</title>
-        <para>In addition to standard vSwitch, Cisco Nexus 1000v is now supported for virtual
-          network configuration in VMware vSphere deployments. With this, guest traffic isolation
-          through VLANs is possible in VMware environment. Using Nexus virtual switch simplifies
-          configuring and monitoring virtual networks that span across a large number of hosts, and
-          facilitates live migration in VMWare-based cloud deployment.</para>
-      </section>
     </section>
     <section id="issues-fixed-4.0">
       <title>Issues Fixed in 4.0</title>
@@ -1465,11 +1457,6 @@ Done restarting router(s).
                   succeeds.</para></entry>
             </row>
             <row>
-              <entry><para>CS-15256</para></entry>
-              <entry><para>If adding a cluster fails the first time, now able to associate cluster
-                  with Nexus VSM upon retry.</para></entry>
-            </row>
-            <row>
               <entry><para>CS-15243</para></entry>
               <entry><para>Now check to be sure source NAT and VPN have same
                 provider.</para></entry>
@@ -1564,12 +1551,6 @@ Done restarting router(s).
               <entry><para>CS-14964</para></entry>
               <entry><para>Automatically starting the Console Proxy no longer fails due to its
                   missing volume on the primary storage</para></entry>
-            </row>
-            <row>
-              <entry><para>CS-14952</para></entry>
-              <entry><para>The vCenter IP Address and the datacenter information are now present in
-                  the "virtual_supervisor_module" table. The Nexus virtual switch credentials are
-                  now encrypted.</para></entry>
             </row>
             <row>
               <entry><para>CS-14907</para></entry>
@@ -1967,6 +1948,14 @@ Done restarting router(s).
           </thead>
           <tbody>
             <row>
+              <entry><para>CLOUDSTACK-301</para></entry>
+              <entry><para>Nexus 1000v DVS integration is not functional</para>
+                    <para>This source code release includes some partial functionality to
+                    support the Cisco Nexus 1000v Distributed Virtual Switch within a VMware
+                    hypervisor environment. The functionality is not complete at this time.</para>
+              </entry>
+            </row>
+            <row>
               <entry><para>CLOUDSTACK-279</para></entry>
               <entry><para>Deleting a project fails when executed by the regular user. This works as
                   expected for root/domain admin. To workaround, perform either of the
@@ -2106,32 +2095,10 @@ Done restarting router(s).
               </entry>
             </row>
             <row>
-              <entry><para>CS-15198</para></entry>
-              <entry><para>Peak bandwidth (PIR) and burst size shaping policies are not applied on
-                  Nexus 1000v virtual switch interface.</para></entry>
-            </row>
-            <row>
               <entry><para>CS-15163</para></entry>
               <entry><para>The minimum limit is not honored when there is not enough capacity to
                   deploy all the VMs and the ec2-run-instances command with the -n &gt;n1 -n2&gt;
                   option is used to deploy multiple VMs.</para></entry>
-            </row>
-            <row>
-              <entry><para>CS-15124</para></entry>
-              <entry><para>Mixed switch environment is not supported. The zone can either be
-                  deployed as Standard vSwitch based or Nexus virtual switch based.</para></entry>
-            </row>
-            <row>
-              <entry><para>CS-15118</para></entry>
-              <entry><para>In a deployment with Nexus 1000v virtual switch, zone VLAN range is not
-                  validated against the reserved list of VLANs for Nexus 1000v.</para></entry>
-            </row>
-            <row>
-              <entry><para>CS-15117</para></entry>
-              <entry><para>In a deployment with Nexus 1000v virtual switch, disable/enable operation
-                  of the Nexus virtual switch is not working as expected. The Nexus 1000v virtual
-                  switch continues to be used to create network or edit network operations even
-                  after disabling the switch.</para></entry>
             </row>
             <row>
               <entry><para>CS-15105</para></entry>
@@ -2376,32 +2343,10 @@ Done restarting router(s).
                   parameter is set to any port other than 8096.</para></entry>
             </row>
             <row>
-              <entry><para>CS-15117</para></entry>
-              <entry><para>In a deployment with Nexus 1000v virtual switch, disable/enable operation
-                  of the Nexus virtual switch is not working as expected. The Nexus 1000v virtual
-                  switch continues to be used to create network or edit network operations even
-                  after disabling the switch.</para></entry>
-            </row>
-            <row>
-              <entry><para>CS-15118</para></entry>
-              <entry><para>In a deployment with Nexus 1000v virtual switch, zone VLAN range is not
-                  validated against the reserved list of VLANs for Nexus 1000v.</para></entry>
-            </row>
-            <row>
-              <entry><para>CS-15124</para></entry>
-              <entry><para>Mixed switch environment is not supported. The zone can either be
-                  deployed as Standard vSwitch based or Nexus virtual switch based.</para></entry>
-            </row>
-            <row>
               <entry><para>CS-15163</para></entry>
               <entry><para>The minimum limit is not honored when there is not enough capacity to
                   deploy all the VMs and the ec2-run-instances command with the -n &gt;n1 -n2&gt;
                   option is used to deploy multiple VMs.</para></entry>
-            </row>
-            <row>
-              <entry><para>CS-15198</para></entry>
-              <entry><para>Peak bandwidth (PIR) and burst size shaping policies are not applied on
-                  Nexus 1000v virtual switch interface.</para></entry>
             </row>
           </tbody>
         </tgroup>
@@ -2538,20 +2483,6 @@ Done restarting router(s).
         </listitem>
         <listitem>
           <para>listVpnConnections (Lists site to site vpn connection gateways)</para>
-        </listitem>
-        <listitem>
-          <para>listCiscoNexusVSMs(Retrieves information of a Cisco Nexus 1000v virtual switch
-            associated with a cluster. It lists the control VLAN ID, packet VLAN ID, and data VLAN
-            ID, as well as the IP address of the Nexus virtual switch)</para>
-        </listitem>
-        <listitem>
-          <para>enableCiscoNexusVSM(Enables a Cisco Nexus VSM device)</para>
-        </listitem>
-        <listitem>
-          <para>disableCiscoNexusVSM (Disables a Cisco Nexus VSM device)</para>
-        </listitem>
-        <listitem>
-          <para>deleteCiscoNexusVSM (Deletes a Cisco Nexus VSM device)</para>
         </listitem>
         <listitem>
           <para>markDefaultZoneForAccount (Marks a default zone for the current account)</para>
