@@ -27,6 +27,8 @@ case "$1" in
     	do
         	cp -f /usr/share/cloud/bridge/conf/$c /usr/share/cloud/management/conf
     	done
+	chown cloud:cloud /usr/share/cloud/bridge/webapps7080/awsapi -R
+	chmod 755 /usr/share/cloud/bridge/webapps7080/awsapi -R
 esac
 
 #DEBHELPER#
