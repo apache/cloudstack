@@ -84,10 +84,6 @@
       <para>These traffic labels will be defined only for the hypervisor selected for the first
         cluster. For all other hypervisors, the labels can be configured after the zone is
         created.</para>
-      <para>(VMware only) If you have enabled Nexus dvSwitch in the environment, you must specify
-        the corresponding Ethernet port profile names as network traffic label for each traffic type
-        on the physical network. For more information on Nexus dvSwitch, see Configuring a vSphere
-        Cluster with Nexus 1000v Virtual Switch.</para>
     </listitem>
     <listitem>
       <para>Click Next.</para>
