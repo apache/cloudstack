@@ -22,12 +22,7 @@
  under the License.
 -->
 
-<chapter id="tuning">
-    <title>Tuning</title>
-    <para>This section provides tips on how to improve the performance of your cloud.</para>
-    <xi:include href="performance-monitoring.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="increase-management-server-max-memory.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="set-database-buffer-pool-size.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="set-monitor-total-vm-limits-per-host.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="configure-xenserver-dom0-memory.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-</chapter>
+<section id="change-database-config">
+    <title>Changing the Database Configuration</title>
+    <para>The &PRODUCT; Management Server stores database configuration information (e.g., hostname, port, credentials) in the file /etc/cloud/management/db.properties.  To effect a change, edit this file on each Management Server, then restart the Management Server.</para> 
+</section>

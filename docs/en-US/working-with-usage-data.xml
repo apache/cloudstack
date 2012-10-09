@@ -22,7 +22,7 @@
  under the License.
 -->
 
-<section id="working-with-usage-data">
+<chapter id="working-with-usage-data">
     <title>Working With Usage Data</title>
     <para>The Usage Server provides aggregated usage records which you can use to create billing integration for the &PRODUCT; platform. The Usage Server works by taking data from the events log and creating summary usage records that you can access using the listUsageRecords API call.</para>
     <para>The usage records show the amount of resources, such as VM run time or template storage space, consumed by guest instances. In the special case of bare metal instances, no template storage resources are consumed, but records showing zero usage are still included in the Usage Server's output.</para>
@@ -31,4 +31,4 @@
     <xi:include href="usage-types.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="example-response-from-listUsageRecords.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="dates-in-usage-record.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-</section>
+</chapter>
