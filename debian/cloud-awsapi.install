@@ -21,7 +21,7 @@
 /usr/share/cloud/bridge/webapps7080/*
 /usr/share/cloud/setup/bridge/db/*
 /usr/bin/cloudstack-aws-api-register
-/usr/bin/cloudstack-setup-bridge
+/usr/bin/cloud-setup-bridge
 /usr/share/java/axiom-*.jar
 /usr/share/java/axis2-*.jar
 /usr/share/java/antlr*.jar

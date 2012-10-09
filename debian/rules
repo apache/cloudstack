@@ -82,6 +82,7 @@ install-arch:
 	# debian/tmp.
 	# we put the build number again here, otherwise state checking will cause an almost-full recompile
 	./waf install --destdir=$(CURDIR)/debian/tmp install --nochown --build-number=$(BUILDNUMBER)
+        ant deploy-rpm-install -Drpm.install.dir=$(CURDIR)/debian/tmp
 
 	dh_install -s
 # Must not depend on anything. This is to be called by
