@@ -186,6 +186,7 @@
             <numUnapprovedLicenses>0</numUnapprovedLicenses>
             <excludeSubProjects>false</excludeSubProjects>
             <excludes>
+              <exclude>CHANGES</exclude>
               <exclude>INSTALL.md</exclude>
               <exclude>**/.classpath</exclude>
               <exclude>**/.project</exclude>
