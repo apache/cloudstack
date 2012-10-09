@@ -118,9 +118,14 @@
     </dependency>
     <!-- For vmware-base -->
     <dependency>
-      <groupId>org.apache.axis2</groupId>
-      <artifactId>axis2</artifactId>
-      <version>${cs.axis2.version}</version>
+      <groupId>org.apache.axis</groupId>
+      <artifactId>axis</artifactId>
+      <version>${cs.axis.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.axis</groupId>
+      <artifactId>axis-jaxrpc</artifactId>
+      <version>${cs.axis.version}</version>
     </dependency>
   </dependencies>
   <build>
