@@ -122,4 +122,4 @@ Provides: cloud-awsapi
 Architecture: any
 Depends: openjdk-6-jre, tomcat6, libcommons-lang-java
 Description: CloudStack AWS API wrapper
- The CloudStack aws wrapper 
+ The CloudStack Amazon Webservices API wrapper
