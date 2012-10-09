@@ -116,3 +116,10 @@ Architecture: any
 Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-deps (= ${source:Version}), cloud-server (= ${source:Version}), cloud-setup (= ${source:Version}), cloud-client (= ${source:Version})
 Description: CloudStack commandline tool
  The CloudStack commandline tool for invoking APi
+
+Package: cloud-awsapi
+Provides: cloud-awsapi
+Architecture: any
+Depends: openjdk-6-jre, tomcat6, libcommons-lang-java
+Description: CloudStack AWS API wrapper
+ The CloudStack aws wrapper 
