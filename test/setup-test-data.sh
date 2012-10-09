@@ -56,7 +56,7 @@ do
 done
 
 #Damn Small Linux ISO type
-ostypeid=$(mysql -ucloud -Dcloud pcloud -h$DB_SVR -s -N -r -e"select uuid from guest_os where display_name='CentOS 5.3 (64-bit)'")
+ostypeid=$(mysql -ucloud -Dcloud -pcloud -h$DB_SVR -s -N -r -e"select uuid from guest_os where display_name='CentOS 5.3 (64-bit)'")
 if [[ $ostypeid == "" ]]; then
     echo "Unable to contact DB server @ $DB_SVR"
     exit 2
