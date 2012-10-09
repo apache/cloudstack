@@ -74,6 +74,7 @@ body.install-wizard {
   display: none;
 }
 
+/*Table*/
 table {
   width: 740px;
   max-width: 777px;
@@ -140,10 +141,11 @@ table tbody td.loading {
   border-top: 1px solid #FBFBFB;
 }
 
+/** Actions table cell*/
 table tbody td.actions {
-  width: 155px;
-  max-width: 155px !important;
-  min-width: 155px !important;
+  width: 130px;
+  max-width: 130px !important;
+  min-width: 130px !important;
   vertical-align: middle;
 }
 
@@ -155,6 +157,44 @@ table tbody td.actions input {
   margin: 11px 0 0px;
 }
 
+/** Quick view table cell*/
+table tbody td.quick-view,
+table thead th.quick-view {
+  min-width: 58px;
+  max-width: 58px !important;
+  width: 58px !important;
+  height: 14px !important;
+  text-indent: 7px;
+}
+
+table tbody td.quick-view {
+  cursor: pointer;
+}
+
+table tbody td.quick-view .icon {
+  margin-left: 22px;
+  margin-top: 3px;
+  padding: 0px 0px 6px 12px;
+  background: url(../images/sprites.png) no-repeat -44px -62px;
+}
+
+table tbody td.quick-view:hover .icon {
+  background-position: -44px -644px;
+}
+
+table tbody tr.loading td.quick-view .icon {
+  display: none;
+}
+
+table tbody tr.loading td.quick-view {
+  cursor: default;
+}
+
+table tbody tr.loading td.quick-view .loading {
+  background-position: center center;
+}
+
+/** Row styling*/
 table tbody tr {
   border-left: 1px solid #C4C5C5;
   border-right: 1px solid #C4C5C5;
@@ -220,6 +260,7 @@ table th div.ui-resizable-handle {
   float: right;
 }
 
+/** Header, misc*/
 #header,
 #navigation {
   /*+text-shadow:0px -1px 1px #000000;*/
@@ -1229,7 +1270,9 @@ div.panel div.list-view div.fixed-header table {
 }
 
 div.list-view td.state {
-  width: 129px;
+  width: 120px;
+  min-width: 120px;
+  max-width: 120px;
 }
 
 div.list-view td.first {
@@ -1241,7 +1284,7 @@ div.list-view td.first:hover {
 }
 
 div.list-view td.state span {
-  padding: 0 0 0 26px;
+  padding: 1px 0 0 18px;
   text-align: center;
   width: 80px;
   /*+text-shadow:0px 1px 1px #FFFFFF;*/
@@ -1264,6 +1307,241 @@ div.list-view td.state.off span {
   background-repeat: no-repeat;
   color: #B90606;
   background-position: 1px -496px;
+}
+
+/** Quick view tooltip*/
+.quick-view-tooltip {
+  width: 400px;
+  display: inline-block;
+  margin-left: -359px;
+  padding-top: 50px;
+}
+
+.quick-view-tooltip > div.title {
+  width: 376px;
+  position: absolute;
+  top: 71px;
+  left: 10px;
+  color: #5A6977;
+  /*+text-shadow:0px 1px #EAEAEA;*/
+  -moz-text-shadow: 0px 1px #EAEAEA;
+  -webkit-text-shadow: 0px 1px #EAEAEA;
+  -o-text-shadow: 0px 1px #EAEAEA;
+  text-shadow: 0px 1px #EAEAEA;
+}
+
+.quick-view-tooltip > div.title .icon {
+  position: relative;
+  top: -3px;
+  background: url(../images/sprites.png) no-repeat -42px -67px;
+  float: right;
+  padding: 5px 21px 0 1px;
+}
+
+.quick-view-tooltip .loading-overlay {
+  top: 94px;
+  height: 57px;
+  left: 1px;
+  /*+opacity:35%;*/
+  filter: alpha(opacity=35);
+  -ms-filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=35);
+  -moz-opacity: 0.35;
+  opacity: 0.35;
+}
+
+.quick-view-tooltip > div.title span.title {
+}
+
+.quick-view-tooltip .container {
+  border: 1px solid #9EA2A5;
+  background: #CCCFD6;
+  width: 400px;
+  min-height: 100px;
+  height: auto;
+  overflow: auto;
+  display: inline-block;
+  /*+box-shadow:0px 7px 9px #676F76;*/
+  -moz-box-shadow: 0px 7px 9px #676F76;
+  -webkit-box-shadow: 0px 7px 9px #676F76;
+  -o-box-shadow: 0px 7px 9px #676F76;
+  box-shadow: 0px 7px 9px #676F76;
+}
+
+/*** Quick view detail view*/
+.quick-view-tooltip .detail-view {
+}
+
+.quick-view-tooltip .detail-view .main-groups {
+  width: 394px;
+  height: 132px;
+  position: absolute;
+  top: 55px;
+  padding-top: 7px;
+  border: 1px solid #808080;
+  border-left: none;
+  border-right: none;
+  overflow: hidden;
+  /*+box-shadow:0px 1px #E6E6E6;*/
+  -moz-box-shadow: 0px 1px #E6E6E6;
+  -webkit-box-shadow: 0px 1px #E6E6E6;
+  -o-box-shadow: 0px 1px #E6E6E6;
+  box-shadow: 0px 1px #E6E6E6;
+}
+
+.quick-view-tooltip .detail-view .actions {
+}
+
+.quick-view-tooltip .detail-view .tagger {
+  display: none;
+}
+
+.quick-view-tooltip .detail-view ul {
+  display: none !important;
+}
+
+.quick-view-tooltip .detail-view .ui-tabs-panel {
+  display: inline-block;
+  width: 100% !important;
+  float: left;
+  height: auto;
+  overflow: hidden;
+}
+
+.quick-view-tooltip .detail-view .details {
+  display: inline-block;
+  height: auto;
+  padding-bottom: 209px;
+}
+
+.quick-view-tooltip .detail-view .detail-group {
+  width: 365px;
+  margin: 0;
+  padding: 0;
+  left: -9px;
+  background: none;
+  border: none;
+}
+
+.quick-view-tooltip .detail-view .detail-group table {
+  margin: 0;
+  border: none;
+  background: none;
+}
+
+.quick-view-tooltip .detail-view .detail-group table tr {
+  background: none;
+}
+
+.quick-view-tooltip .detail-view .detail-group table td.name {
+  color: #3E5F7F !important;
+  padding: 0px 29px 0px 5px !important;
+  font-size: 13px;
+  /*+text-shadow:0px 1px #DBDBDB;*/
+  -moz-text-shadow: 0px 1px #DBDBDB;
+  -webkit-text-shadow: 0px 1px #DBDBDB;
+  -o-text-shadow: 0px 1px #DBDBDB;
+  text-shadow: 0px 1px #DBDBDB;
+}
+
+.quick-view-tooltip .detail-view .detail-group table td.value {
+  font-size: 12px;
+  /*+text-shadow:0px 1px #EAEAEA;*/
+  -moz-text-shadow: 0px 1px #EAEAEA;
+  -webkit-text-shadow: 0px 1px #EAEAEA;
+  -o-text-shadow: 0px 1px #EAEAEA;
+  text-shadow: 0px 1px #EAEAEA;
+}
+
+.quick-view-tooltip .detail-view .detail-group table td.value input[type=text] {
+  width: 258px;
+  height: 10px;
+  margin-left: 0px;
+}
+
+.quick-view-tooltip .detail-view .detail-group .main-groups table td.value span {
+  height: 15px;
+  top: 0px;
+}
+
+.quick-view-tooltip .detail-view .detail-group.actions {
+  position: relative;
+  top: 202px;
+  float: left;
+  width: 100%;
+  height: auto;
+}
+
+.quick-view-tooltip .detail-view .detail-group.actions .button {
+  top: 160px;
+}
+
+.quick-view-tooltip .detail-view .detail-group.actions .action.text {
+  width: 112px;
+  height: 41px;
+  background: none;
+  border: none;
+  float: left;
+  margin-left: 5px;
+  display: inline-block;
+}
+
+.quick-view-tooltip .detail-view .detail-group.actions .action.text:hover {
+  /*+box-shadow:none;*/
+  -moz-box-shadow: none;
+  -webkit-box-shadow: none;
+  -o-box-shadow: none;
+  box-shadow: none;
+}
+
+.quick-view-tooltip .detail-view .detail-group.actions .action.text .icon {
+  display: block;
+  float: left;
+  width: 4px;
+}
+
+.quick-view-tooltip .detail-view .detail-group.actions .action.text .label {
+  width: 81px;
+  display: block;
+  float: right;
+  font-size: 11px;
+  color: #454C53;
+  /*+text-shadow:0px 1px #FFFFFF;*/
+  -moz-text-shadow: 0px 1px #FFFFFF;
+  -webkit-text-shadow: 0px 1px #FFFFFF;
+  -o-text-shadow: 0px 1px #FFFFFF;
+  text-shadow: 0px 1px #FFFFFF;
+  text-indent: 0px;
+}
+
+.quick-view-tooltip .detail-view .detail-group.actions .action.text:hover .label {
+  color: #000000;
+}
+
+.quick-view-tooltip .detail-view .detail-group.actions .detail-actions {
+  width: 400px;
+  height: auto;
+  background: none;
+  vertical-align: top;
+  float: left;
+}
+
+.quick-view-tooltip .detail-view .detail-group.actions td.view-all {
+  position: relative;
+  left: 0px;
+  float: left;
+  width: 394px;
+  height: 22px;
+  border-top: 1px solid #808080;
+  /*+box-shadow:inset 0px 1px #FFFFFF;*/
+  -moz-box-shadow: inset 0px 1px #FFFFFF;
+  -webkit-box-shadow: inset 0px 1px #FFFFFF;
+  -o-box-shadow: inset 0px 1px #FFFFFF;
+  box-shadow: inset 0px 1px #FFFFFF;
+}
+
+.quick-view-tooltip .detail-view .detail-actions a {
+  background: none;
+  width: 30px;
 }
 
 /*Details page*/
@@ -2844,7 +3122,7 @@ table td.actions span {
 table td.actions .action span.icon {
   background-image: url(../images/sprites.png);
   cursor: pointer;
-  width: 28px;
+  width: 23px;
   height: 21px;
   float: left;
 }
@@ -10016,6 +10294,23 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   font-size: 16px;
   text-align: center;
   top: 31px;
+}
+
+/*List state BG colors*/
+.list-view .body td.item-state-on {
+  background: #C0FFC0;
+  border-bottom: 1px solid #09BC09;
+}
+
+.list-view .body td.item-state-off {
+  background: #FFD8CF;
+  border-bottom: 1px solid #FF9F9F;
+}
+
+.list-view .body tr.selected td.item-state-on,
+.list-view .body tr.selected td.item-state-off {
+  background-color: inherit;
+  border-color: inherit;
 }
 
 /*Action icons*/

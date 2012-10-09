@@ -3880,7 +3880,7 @@
             name: 'label.details',											
 						actions: {
               configureVpc: {
-                label: 'label.edit.vpc',
+                label: 'label.configure',
                 textLabel: 'label.configure',
                 action: {
                   custom: cloudStack.uiCustom.vpc(cloudStack.vpc)

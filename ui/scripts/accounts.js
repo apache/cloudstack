@@ -261,6 +261,7 @@
             actions: {
               edit: {
                 label: 'message.edit.account',
+                compactLabel: 'label.edit',
                 action: function(args) {
                   var errorMsg = "";
                   var accountObj = args.context.accounts[0];

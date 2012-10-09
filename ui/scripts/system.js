@@ -3828,6 +3828,34 @@
                   }
                 }
               },
+
+              dataProvider: function(args) {
+                var array1 = [];
+                if(args.filterBy != null) {
+                  if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
+                    switch(args.filterBy.search.by) {
+                      case "name":
+                        if(args.filterBy.search.value.length > 0)
+                          array1.push("&keyword=" + args.filterBy.search.value);
+                        break;
+                    }
+                  }
+                }
+
+                $.ajax({
+                  url: createURL("listZones&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
+                  dataType: "json",
+                  async: true,
+                  success: function(json) {
+                    zoneObjs = json.listzonesresponse.zone;
+                    args.response.success({
+                      actionFilter: zoneActionfilter,
+                      data:zoneObjs
+                    });
+                  }
+                });
+              },
+
               actions: {
                 add: {
                   label: 'label.add.zone',
@@ -3912,127 +3940,98 @@
                       }
                     });
                   }
-                },
-
-                enable: {
-                  label: 'label.action.enable.zone',
-                  messages: {
-                    confirm: function(args) {
-                      return 'message.action.enable.zone';
-                    },
-                    notification: function(args) {
-                      return 'label.action.enable.zone';
-                    }
-                  },
-                  action: function(args) {
-                    $.ajax({
-                      url: createURL("updateZone&id=" + args.context.physicalResources[0].id + "&allocationstate=Enabled"),  //embedded objects in listView is called physicalResources while embedded objects in detailView is called zones
-                      dataType: "json",
-                      async: true,
-                      success: function(json) {
-                        var item = json.updatezoneresponse.zone;
-                        args.response.success({
-                          actionFilter: zoneActionfilter,
-                          data:item
-                        });
-                      }
-                    });
-                  },
-                  notification: {
-                    poll: function(args) {
-                      args.complete();
-                    }
-                  }
-                },
-
-                disable: {
-                  label: 'label.action.disable.zone',
-                  messages: {
-                    confirm: function(args) {
-                      return 'message.action.disable.zone';
-                    },
-                    notification: function(args) {
-                      return 'label.action.disable.zone';
-                    }
-                  },
-                  action: function(args) {
-                    $.ajax({
-                      url: createURL("updateZone&id=" + args.context.physicalResources[0].id + "&allocationstate=Disabled"),  //embedded objects in listView is called physicalResources while embedded objects in detailView is called zones
-                      dataType: "json",
-                      async: true,
-                      success: function(json) {
-                        var item = json.updatezoneresponse.zone;
-                        args.response.success({
-                          actionFilter: zoneActionfilter,
-                          data:item
-                        });
-                      }
-                    });
-                  },
-                  notification: {
-                    poll: function(args) {
-                      args.complete();
-                    }
-                  }
-                },
-
-                'remove': {
-                  label: 'label.action.delete.zone',
-                  messages: {
-                    confirm: function(args) {
-                      return 'message.action.delete.zone';
-                    },
-                    notification: function(args) {
-                      return 'label.action.delete.zone';
-                    }
-                  },
-                  action: function(args) {
-                    $.ajax({
-                      url: createURL("deleteZone&id=" + args.context.physicalResources[0].id),  //embedded objects in listView is called physicalResources while embedded objects in detailView is called zones
-                      dataType: "json",
-                      async: true,
-                      success: function(json) {
-                        args.response.success({data:{}});
-                      }
-                    });
-                  },
-                  notification: {
-                    poll: function(args) { args.complete(); }
-                  }
                 }
-
-              },
-
-              dataProvider: function(args) {
-                var array1 = [];
-                if(args.filterBy != null) {
-                  if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
-                    switch(args.filterBy.search.by) {
-                      case "name":
-                        if(args.filterBy.search.value.length > 0)
-                          array1.push("&keyword=" + args.filterBy.search.value);
-                        break;
-                    }
-                  }
-                }
-
-                $.ajax({
-                  url: createURL("listZones&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
-                  dataType: "json",
-                  async: true,
-                  success: function(json) {
-                    zoneObjs = json.listzonesresponse.zone;
-                    args.response.success({
-                      actionFilter: zoneActionfilter,
-                      data:zoneObjs
-                    });
-                  }
-                });
               },
 
               detailView: {
                 isMaximized: true,
                 actions: {
+                  enable: {
+                    label: 'label.action.enable.zone',
+                    messages: {
+                      confirm: function(args) {
+                        return 'message.action.enable.zone';
+                      },
+                      notification: function(args) {
+                        return 'label.action.enable.zone';
+                      }
+                    },
+                    action: function(args) {
+                      $.ajax({
+                        url: createURL("updateZone&id=" + args.context.physicalResources[0].id + "&allocationstate=Enabled"),  //embedded objects in listView is called physicalResources while embedded objects in detailView is called zones
+                        dataType: "json",
+                        async: true,
+                        success: function(json) {
+                          var item = json.updatezoneresponse.zone;
+                          args.response.success({
+                            actionFilter: zoneActionfilter,
+                            data:item
+                          });
+                        }
+                      });
+                    },
+                    notification: {
+                      poll: function(args) {
+                        args.complete();
+                      }
+                    }
+                  },
+
+                  disable: {
+                    label: 'label.action.disable.zone',
+                    messages: {
+                      confirm: function(args) {
+                        return 'message.action.disable.zone';
+                      },
+                      notification: function(args) {
+                        return 'label.action.disable.zone';
+                      }
+                    },
+                    action: function(args) {
+                      $.ajax({
+                        url: createURL("updateZone&id=" + args.context.physicalResources[0].id + "&allocationstate=Disabled"),  //embedded objects in listView is called physicalResources while embedded objects in detailView is called zones
+                        dataType: "json",
+                        async: true,
+                        success: function(json) {
+                          var item = json.updatezoneresponse.zone;
+                          args.response.success({
+                            actionFilter: zoneActionfilter,
+                            data:item
+                          });
+                        }
+                      });
+                    },
+                    notification: {
+                      poll: function(args) {
+                        args.complete();
+                      }
+                    }
+                  },
+
+                  'remove': {
+                    label: 'label.action.delete.zone',
+                    messages: {
+                      confirm: function(args) {
+                        return 'message.action.delete.zone';
+                      },
+                      notification: function(args) {
+                        return 'label.action.delete.zone';
+                      }
+                    },
+                    action: function(args) {
+                      $.ajax({
+                        url: createURL("deleteZone&id=" + args.context.physicalResources[0].id),  //embedded objects in listView is called physicalResources while embedded objects in detailView is called zones
+                        dataType: "json",
+                        async: true,
+                        success: function(json) {
+                          args.response.success({data:{}});
+                        }
+                      });
+                    },
+                    notification: {
+                      poll: function(args) { args.complete(); }
+                    }
+                  },
                   edit: {
                     label: 'label.edit',
                     action: function(args) {
@@ -4106,7 +4105,10 @@
                         },
                         success: function(json) {
                           selectedZoneObj = json.listzonesresponse.zone[0];
-                          args.response.success({ data: json.listzonesresponse.zone[0] });
+                          args.response.success({
+                            data: json.listzonesresponse.zone[0],
+                            actionFilter: zoneActionfilter
+                          });
                         }
                       });
                     }
@@ -4187,6 +4189,7 @@
                       },
 
                       detailView: {
+                        noCompact: true,
                         name: 'System VM details',
                         actions: {
                           start: {

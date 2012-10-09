@@ -25,6 +25,12 @@ under the License.
 <% long now = System.currentTimeMillis(); %>
 <script language="javascript">
 dictionary = {
+'label.migrate.to.host': '<fmt:message key="label.migrate.to.host"/>',
+'label.migrate.to.storage': '<fmt:message key="label.migrate.to.storage"/>',
+'label.stop': '<fmt:message key="label.stop"/>',
+'label.reboot': '<fmt:message key="label.reboot"/>',
+'label.destroy': '<fmt:message key="label.destroy"/>',
+'label.restore': '<fmt:message key="label.restore"/>',
 'label.broadcast.uri': '<fmt:message key="label.broadcast.uri"/>',
 'label.isolation.uri': '<fmt:message key="label.isolation.uri"/>',
 'message.zoneWizard.enable.local.storage': '<fmt:message key="message.zoneWizard.enable.local.storage"/>',

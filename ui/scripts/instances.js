@@ -152,193 +152,6 @@
           notification: {
             poll: pollAsyncJobResult
           }
-        },
-        start: {
-          label: 'label.action.start.instance' ,
-          action: function(args) {
-            $.ajax({
-              url: createURL("startVirtualMachine&id=" + args.context.instances[0].id),
-              dataType: "json",
-              async: true,
-              success: function(json) {
-                var jid = json.startvirtualmachineresponse.jobid;
-                args.response.success(
-                  {_custom:
-                   {jobId: jid,
-                    getUpdatedItem: function(json) {
-                      return json.queryasyncjobresultresponse.jobresult.virtualmachine;
-                    },
-                    getActionFilter: function() {
-                      return vmActionfilter;
-                    }
-                   }
-                  }
-                );
-              }
-            });
-          },
-          messages: {
-            confirm: function(args) {
-              return 'message.action.start.instance';
-            },
-            notification: function(args) {
-              return 'label.action.start.instance';
-            },
-						complete: function(args) {						  
-							if(args.password != null) {
-								alert('Password of the VM is ' + args.password);
-							}
-							return 'label.action.start.instance';
-						}			
-          },
-          notification: {
-            poll: pollAsyncJobResult
-          }
-        },
-        stop: {
-          label: 'label.action.stop.instance',
-          addRow: 'false',
-          createForm: {
-            title: 'label.action.stop.instance',
-            desc: 'message.action.stop.instance',
-            fields: {
-              forced: {
-                label: 'force.stop',
-                isBoolean: true,
-                isChecked: false
-              }
-            }
-          },
-          action: function(args) {
-            var array1 = [];
-            array1.push("&forced=" + (args.data.forced == "on"));
-            $.ajax({
-              url: createURL("stopVirtualMachine&id=" + args.context.instances[0].id + array1.join("")),
-              dataType: "json",
-              async: true,
-              success: function(json) {
-                var jid = json.stopvirtualmachineresponse.jobid;
-                args.response.success(
-                  {_custom:
-                   {jobId: jid,
-                    getUpdatedItem: function(json) {
-                      return json.queryasyncjobresultresponse.jobresult.virtualmachine;
-                    },
-                    getActionFilter: function() {
-                      return vmActionfilter;
-                    }
-                   }
-                  }
-                );
-              }
-            });
-          },
-          messages: {
-            confirm: function(args) {
-              return 'message.action.stop.instance';
-            },
-
-            notification: function(args) {
-              return 'label.action.stop.instance';
-            }
-          },
-          notification: {
-            poll: pollAsyncJobResult
-          }
-        },
-        restart: {
-          label: 'instances.actions.reboot.label',
-          action: function(args) {
-            $.ajax({
-              url: createURL("rebootVirtualMachine&id=" + args.context.instances[0].id),
-              dataType: "json",
-              async: true,
-              success: function(json) {
-                var jid = json.rebootvirtualmachineresponse.jobid;
-                args.response.success(
-                  {_custom:
-                   {jobId: jid,
-                    getUpdatedItem: function(json) {
-                      return json.queryasyncjobresultresponse.jobresult.virtualmachine;
-                    },
-                    getActionFilter: function() {
-                      return vmActionfilter;
-                    }
-                   }
-                  }
-                );
-              }
-            });
-          },
-          messages: {
-            confirm: function(args) {
-              return 'message.action.reboot.instance';
-            },
-            notification: function(args) {
-              return 'instances.actions.reboot.label';
-            }
-          },
-          notification: {
-            poll: pollAsyncJobResult
-          }
-        },
-        destroy: {
-          label: 'label.action.destroy.instance',
-          messages: {
-            confirm: function(args) {
-              return 'message.action.destroy.instance';
-            },            
-            notification: function(args) {
-              return 'label.action.destroy.instance';
-            }
-          },
-          action: function(args) {
-            $.ajax({
-              url: createURL("destroyVirtualMachine&id=" + args.context.instances[0].id),
-              dataType: "json",
-              async: true,
-              success: function(json) {
-                var jid = json.destroyvirtualmachineresponse.jobid;
-                args.response.success(
-                  {_custom:
-                   {jobId: jid,
-                    getUpdatedItem: function(json) {
-                      return json.queryasyncjobresultresponse.jobresult.virtualmachine;
-                    },
-                    getActionFilter: function() {
-                      return vmActionfilter;
-                    }
-                   }
-                  }
-                );
-              }
-            });
-          },
-          notification: {
-            poll: pollAsyncJobResult
-          }
-        },
-        restore: {     
-					label: 'label.action.restore.instance',
-					messages: {
-						confirm: function(args) {
-							return 'message.action.restore.instance';
-						},
-						notification: function(args) {
-							return 'label.action.restore.instance';
-						}
-					},					
-          action: function(args) {
-            $.ajax({
-              url: createURL("recoverVirtualMachine&id=" + args.context.instances[0].id),
-              dataType: "json",
-              async: true,
-              success: function(json) {
-                var item = json.recovervirtualmachineresponse.virtualmachine;
-                args.response.success({data:item});
-              }
-            });
-          }
         }
       },
 
@@ -487,6 +300,7 @@
           },
           stop: {
             label: 'label.action.stop.instance',
+            compactLabel: 'label.stop',
             createForm: {
               title: 'Stop instance',
               desc: 'message.action.stop.instance',
@@ -536,6 +350,7 @@
           },
           restart: {
             label: 'label.action.reboot.instance',
+            compactLabel: 'label.reboot',
             action: function(args) {
               $.ajax({
                 url: createURL("rebootVirtualMachine&id=" + args.context.instances[0].id),
@@ -572,6 +387,7 @@
           },
           destroy: {
             label: 'label.action.destroy.instance',
+            compactLabel: 'label.destroy',
             messages: {
               confirm: function(args) {
                 return 'message.action.destroy.instance';
@@ -608,6 +424,7 @@
           },
           restore: {
             label: 'label.action.restore.instance',
+            compactLabel: 'label.restore',
             messages: {
               confirm: function(args) {
                 return 'message.action.restore.instance';
@@ -635,7 +452,7 @@
           },
 
           edit: {
-            label: 'Edit',
+            label: 'label.edit',
             action: function(args) {
               var array1 = [];							
 							if(args.data.displayname != args.context.instances[0].displayname)
@@ -982,6 +799,7 @@
 
           migrate: {
             label: 'label.migrate.instance.to.host',
+            compactLabel: 'label.migrate.to.host',
             messages: {
               confirm: function(args) {
                 return 'message.migrate.instance.to.host';
@@ -1060,6 +878,7 @@
 
           migrateToAnotherStorage: {
             label: 'label.migrate.instance.to.ps',
+            compactLabel: 'label.migrate.to.storage',
             messages: {
               confirm: function(args) {
                 return 'message.migrate.instance.to.ps';
