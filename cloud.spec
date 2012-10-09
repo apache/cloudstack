@@ -335,11 +335,6 @@ fi
 id %{name} > /dev/null 2>&1 || /usr/sbin/useradd -M -c "CloudStack unprivileged user" \
      -r -s /bin/sh -d %{_sharedstatedir}/%{name}/management %{name}|| true
 
-# set max file descriptors for cloud user to 4096
-sed -i /"cloud hard nofile"/d /etc/security/limits.conf
-sed -i /"cloud soft nofile"/d /etc/security/limits.conf
-echo "cloud hard nofile 4096" >> /etc/security/limits.conf
-echo "cloud soft nofile 4096" >> /etc/security/limits.conf
 rm -rf %{_localstatedir}/cache/%{name}
 # user harcoded here, also hardcoded on wscript
 
