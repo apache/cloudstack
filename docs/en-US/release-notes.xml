@@ -2105,7 +2105,6 @@ Done restarting router(s).
               <entry><para>Egress rules are not working in NetScaler loadbalancer.</para>
               </entry>
             </row>
-            <row/>
             <row>
               <entry><para>CS-15198</para></entry>
               <entry><para>Peak bandwidth (PIR) and burst size shaping policies are not applied on
@@ -2339,26 +2338,21 @@ Done restarting router(s).
               <entry><para>The UpdateVirtualMachine API call does not check whether the VM is
                   stopped. Therefore, stop the VM manually before issuing this call.</para></entry>
             </row>
-            <row/>
             <row>
               <entry><para>CS-15130</para></entry>
               <entry><para>Data disk volumes are not automatically copied from one cluster to
                   another.</para></entry>
             </row>
-            <row/>
             <row>
               <entry><para>CS-14780</para></entry>
               <entry><para>You are allowed to ping the elastic IP address of the VM even though no
                   ingress rule is set that allows the ICMP protocol.</para></entry>
             </row>
-            <row/>
-            <row/>
             <row>
               <entry><para>CS-14939</para></entry>
               <entry><para>Adding a VMware cluster is not supported when the Management Network is
                   migrated to the Distributed Virtual Switch environment.</para></entry>
             </row>
-            <row/>
             <row>
               <entry><para>CS-15009</para></entry>
               <entry><para>The port_profile table will not be populated with port profile
@@ -2393,7 +2387,6 @@ Done restarting router(s).
               <entry><para>In a deployment with Nexus 1000v virtual switch, zone VLAN range is not
                   validated against the reserved list of VLANs for Nexus 1000v.</para></entry>
             </row>
-            <row/>
             <row>
               <entry><para>CS-15124</para></entry>
               <entry><para>Mixed switch environment is not supported. The zone can either be
@@ -2405,7 +2398,6 @@ Done restarting router(s).
                   deploy all the VMs and the ec2-run-instances command with the -n &gt;n1 -n2&gt;
                   option is used to deploy multiple VMs.</para></entry>
             </row>
-            <row/>
             <row>
               <entry><para>CS-15198</para></entry>
               <entry><para>Peak bandwidth (PIR) and burst size shaping policies are not applied on
