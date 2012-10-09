@@ -286,6 +286,7 @@ Summary:   CloudStack CloudBridge
 Group:     System Environment/Libraries
 Requires: java >= 1.6.0
 Requires: tomcat6
+Requires: %{name}-deps = %{version}
 %if 0%{?fedora} > 15
 Requires: apache-commons-lang
 %endif
@@ -459,6 +460,17 @@ fi
 
 %files deps
 %defattr(0644,root,root,0755)
+%{_javadir}/axiom-*.jar
+%{_javadir}/axis2-*.jar
+%{_javadir}/antlr*.jar
+%{_javadir}/XmlSchema-*.jar
+%{_javadir}/json-simple*.jar
+%{_javadir}/neethi*.jar
+%{_javadir}/woden*.jar
+%{_javadir}/xercesImpl*.jar
+%{_javadir}/xml-apis*.jar
+%{_javadir}/dom4j*.jar
+%{_javadir}/javassist*.jar
 %{_javadir}/commons-codec-1.6.jar
 %{_javadir}/commons-dbcp-1.4.jar
 %{_javadir}/commons-pool-1.6.jar

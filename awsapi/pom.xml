@@ -50,6 +50,11 @@
       <version>${cs.axiom.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.apache.ws.commons.axiom</groupId>
+      <artifactId>axiom-impl</artifactId>
+      <version>${cs.axiom.version}</version>
+    </dependency>
+    <dependency>
       <groupId>log4j</groupId>
       <artifactId>log4j</artifactId>
       <version>${cs.log4j.version}</version>
