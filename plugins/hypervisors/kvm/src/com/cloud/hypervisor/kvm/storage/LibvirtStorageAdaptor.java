@@ -212,7 +212,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
             Secret s = null;
 
-            sd.setCephName(userInfoTemp[0]);
+            sd.setCephName(userInfoTemp[0] + "@" + host + ":" + port + "/" + path);
 
             try {
                 s_logger.debug(sd.toString());
