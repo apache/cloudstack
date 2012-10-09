@@ -62,9 +62,8 @@ body.install-wizard {
 
 #container {
   width: 1024px;
-  height: 768px;
+  height: 783px;
   margin: auto;
-  overflow: hidden;
   border: 1px solid #E2E2E2;
   border-top: none;
   position: relative;
@@ -1194,7 +1193,7 @@ div.notification.corner-alert:hover div.message span {
 div.panel div.list-view {
   overflow: auto;
   overflow-x: hidden;
-  height: 652px;
+  height: 668px;
   margin-top: 30px;
   border-bottom: 1px solid #E7E7E7;
 }
