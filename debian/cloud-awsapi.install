@@ -24,3 +24,4 @@
 /usr/bin/cloud-setup-bridge
 /usr/share/java/axis2-*.jar
 /usr/share/java/neethi*.jar
+/usr/share/java/CAStorSDK*.jar
