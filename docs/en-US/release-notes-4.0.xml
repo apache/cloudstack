@@ -1,0 +1,2921 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+  http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+<book>
+  <xi:include href="Book_Info_Release_Notes_4.0.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+  <chapter id="submitting-feedback">
+    <title>Submitting Feedback and Getting Help</title>
+    <para>You can post all comments, suggestions, and questions to the Apache CloudStack User
+      mailing list ( cloudstack-users@incubator.apache.org). The Apache CloudStack developers helps
+      you with your queries. If you identify a defect, and no answers on the list, file the defect
+      reports to the <ulink url="https://issues.apache.org/jira/secure/CreateIssue!default.jspa"
+        >Apache Defect Tracking System</ulink>.</para>
+  </chapter>
+  <chapter id="upgrade-instructions">
+    <title>Upgrade Instructions</title>
+        <section id="upgrade-from-3.0.2-to-4.0">
+      <title>Upgrade from 3.0.2 to 4.0</title>
+      <para>Perform the following to upgrade from version 3.0.2 to version 4.0.</para>
+      <orderedlist>
+        <listitem>
+           <para>Starting in 3.0.2, the usage record format for IP addresses is the same as the rest
+            of the usage types. See <ulink url="http://bugs.cloudstack.org/browse/CS-8222">bug
+              CS-8222</ulink>). Instead of a single record with the assignment and release dates,
+            separate records are generated per aggregation period with start and end dates. After
+            upgrading, any existing IP address usage records in the old format will no longer be
+            available.</para>
+        </listitem>
+        <listitem>
+          <para>(VMware only) In each zone that includes VMware hosts, you need to add a new system
+            VM template. </para>
+          <orderedlist numeration="loweralpha">
+            <listitem>
+              <para>While running the existing 3.0.2 system, log in to the UI as root
+                administrator.</para>
+            </listitem>
+            <listitem>
+              <para>In the left navigation bar, click Templates.</para>
+            </listitem>
+            <listitem>
+              <para>In Select view, click Templates.</para>
+            </listitem>
+            <listitem>
+              <para>Click Register template.</para>
+              <para>The Register template dialog box is displayed.</para>
+            </listitem>
+            <listitem>
+              <para>In the Register template dialog box, specify the following values (do not change
+                these):</para>
+              <informaltable>
+                <tgroup cols="2" align="left" colsep="1" rowsep="1">
+                  <colspec colwidth="1*" colname="1" colnum="1"/>
+                  <colspec colwidth="2*" colname="2" colnum="2"/>
+                  <thead>
+                    <row>
+                      <entry><para>Field</para></entry>
+                      <entry><para>Value</para></entry>
+                    </row>
+                  </thead>
+                  <tbody>
+                    <row>
+                      <entry><para>Name</para></entry>
+                      <entry><para>systemvm-vmware-3.0.5</para></entry>
+                    </row>
+                    <row>
+                      <entry><para>Description</para></entry>
+                      <entry><para>systemvm-vmware-3.0.5</para></entry>
+                    </row>
+                    <row>
+                      <entry><para>URL</para></entry>
+                      <entry><para>http://download.cloud.com/templates/burbank/burbank-systemvm-08012012.ova</para></entry>
+                    </row>
+                    <row>
+                      <entry><para>Zone</para></entry>
+                      <entry><para>Choose the zone where this hypervisor is used</para></entry>
+                    </row>
+                    <row>
+                      <entry><para>Hypervisor</para></entry>
+                      <entry><para>VMware</para></entry>
+                    </row>
+                    <row>
+                      <entry><para>Format</para></entry>
+                      <entry><para>OVA</para></entry>
+                    </row>
+                    <row>
+                      <entry><para>OS Type</para></entry>
+                      <entry><para>Debian GNU/Linux 5.0 (32-bit)</para></entry>
+                    </row>
+                    <row>
+                      <entry><para>Extractable</para></entry>
+                      <entry><para>no</para></entry>
+                    </row>
+                    <row>
+                      <entry><para>Password Enabled</para></entry>
+                      <entry><para>no</para></entry>
+                    </row>
+                    <row>
+                      <entry><para>Public</para></entry>
+                      <entry><para>no</para></entry>
+                    </row>
+                    <row>
+                      <entry><para>Featured</para></entry>
+                      <entry><para>no</para></entry>
+                    </row>
+                  </tbody>
+                </tgroup>
+              </informaltable>
+            </listitem>
+          </orderedlist>
+        </listitem>
+        <listitem>
+          <para>Watch the screen to be sure that the template downloads successfully and enters the
+            READY state. Do not proceed until this is successful.</para>
+        </listitem>
+        <listitem>
+          <para>Stop all Usage Servers if running. Run this on all Usage Server hosts.</para>
+          <programlisting># service cloud-usage stop</programlisting>
+        </listitem>
+        <listitem>
+          <para>Stop the Management Servers. Run this on all Management Server hosts.</para>
+          <programlisting># service cloud-management stop</programlisting>
+        </listitem>
+        <listitem>
+          <para>On the MySQL master, take a backup of the MySQL databases. We recommend performing
+            this step even in test upgrades. If there is an issue, this will assist with
+            debugging.</para>
+          <para>In the following commands, it is assumed that you have set the root password on the
+            database, which is a CloudStack recommended best practice. Substitute your own MySQL
+            root password.</para>
+          <programlisting># mysqldump -u root -p&lt;mysql_password&gt; cloud &gt;> cloud-backup.dmp
+# mysqldump -u root -p&lt;mysql_password&gt; cloud_usage &gt; cloud-usage-backup.dmp</programlisting>
+        </listitem>
+        <listitem>
+            <para>Download CloudStack 4.0 onto management server host where it will run. Get the
+              software from the following link:</para>
+            <para><ulink url="http://incubator.apache.org/cloudstack/downloads.html/"/>Apache
+              CloudStack.</para></listitem>
+        <listitem>
+          <para>Upgrade the CloudStack packages. You should have a file in the form of
+            “CloudStack-4.0-N-OSVERSION.tar.gz”. Untar the file, then run the install.sh script
+            inside it. Replace the file and directory names below with those you are using: </para>
+          <programlisting># tar xzf CloudStack-4.0-N-OSVERSION.tar.gz
+# cd CloudStack-4.0-N-OSVERSION
+# ./install.sh</programlisting>
+          <para>You should see a few messages as the installer prepares, followed by a list of
+            choices.</para>
+        </listitem>
+        <listitem>
+          <para>Choose "U" to upgrade the package</para>
+          <programlisting>&gt;U</programlisting>
+          <para>You should see some output as the upgrade proceeds, ending with a message like
+            "Complete! Done."</para>
+        </listitem>
+        <listitem>
+          <para>If you have made changes to your existing copy of the file components.xml in your
+            previous-version CloudStack installation, the changes will be preserved in the
+            upgrade. However, you need to do the following steps to place these changes in a new
+            version of the file which is compatible with version 4.0.</para>
+          <note>
+            <para>How will you know whether you need to do this? If the upgrade output in the
+              previous step included a message like the following, then some custom content was
+              found in your old components.xml, and you need to merge the two files:</para>
+          </note>
+          <programlisting>warning: /etc/cloud/management/components.xml created as /etc/cloud/management/components.xml.rpmnew </programlisting>
+          <orderedlist numeration="loweralpha">
+            <listitem>
+              <para>Make a backup copy of your /etc/cloud/management/components.xml file. For
+                example:</para>
+              <programlisting># mv /etc/cloud/management/components.xml /etc/cloud/management/components.xml-backup</programlisting>
+            </listitem>
+            <listitem>
+              <para>Copy /etc/cloud/management/components.xml.rpmnew to create a new
+                /etc/cloud/management/components.xml:</para>
+              <programlisting># cp -ap /etc/cloud/management/components.xml.rpmnew /etc/cloud/management/components.xml</programlisting>
+            </listitem>
+            <listitem>
+              <para>Merge your changes from the backup file into the new components.xml file.</para>
+              <programlisting># vi /etc/cloud/management/components.xml</programlisting>
+            </listitem>
+          </orderedlist>
+        </listitem>
+        <listitem>
+          <para>Repeat steps 7 - 10 on each management server node.</para>
+        </listitem>
+        <listitem>
+          <para>Start the first Management Server. Do not start any other Management Server nodes
+            yet.</para>
+          <programlisting># service cloud-management start</programlisting>
+          <para>Wait until the databases are upgraded. Ensure that the database upgrade is complete.
+            After confirmation, start the other Management Servers one at a time by running the same
+            command on each node.</para>
+          <note>
+            <para>Failing to restart the Management Server indicates a problem in the upgrade.
+              Having the Management Server restarted without any issues indicates that the upgrade
+              is successfully completed.</para>
+          </note>
+        </listitem>
+        <listitem>
+          <para>Start all Usage Servers (if they were running on your previous version). Perform
+            this on each Usage Server host.</para>
+          <programlisting># service cloud-usage start</programlisting>
+        </listitem>
+        <listitem>
+          <para>12. (KVM only) Additional steps are required for each KVM host. These steps will not
+            affect running guests in the cloud. These steps are required only for clouds using KVM
+            as hosts and only on the KVM hosts.</para>
+          <orderedlist numeration="loweralpha">
+            <listitem>
+              <para>Copy the CloudStack 4.0 tar file to the host, untar it, and change
+                directory to the resulting directory.</para>
+            </listitem>
+            <listitem>
+              <para>Stop the running agent.</para>
+              <programlisting># service cloud-agent stop</programlisting>
+            </listitem>
+            <listitem>
+              <para>Update the agent software.</para>
+              <programlisting># ./install.sh</programlisting>
+            </listitem>
+            <listitem>
+              <para>Choose "U" to update the packages.</para>
+            </listitem>
+            <listitem>
+              <para>Start the agent.</para>
+              <programlisting># service cloud-agent start</programlisting>
+            </listitem>
+            <listitem>
+              <para>Copy the contents of the agent.properties file to the new agent.properties file
+                by using the following command</para>
+              <programlisting>sed -i 's/com.cloud.agent.resource.computing.LibvirtComputingResource/com.cloud.hypervisor.kvm.resource.LibvirtComputingResource/g' /etc/cloud/agent/agent.properties</programlisting>
+            </listitem>
+            <listitem>
+              <para>Start the cloud agent and cloud management services.</para>
+            </listitem>
+            <listitem>
+              <para>When the Management Server is up and running, log in to the CloudStack UI and
+                restart the virtual router for proper functioning of all the features.</para>
+            </listitem>
+          </orderedlist>
+        </listitem>
+        <listitem>
+          <para>Log in to the CloudStack UI as administrator, and check the status of the hosts.
+            All hosts should come to Up state (except those that you know to be offline). You may
+            need to wait 20 or 30 minutes, depending on the number of hosts.</para>
+          <note>
+            <para>Troubleshooting: If login fails, clear your browser cache and reload the
+              page.</para>
+          </note>
+          <para/>
+          <para>Do not proceed to the next step until the hosts show in Up state. If the hosts do
+            not come to the Up state, contact support.</para>
+        </listitem>
+        <listitem>
+          <para>If you are upgrading from 3.0.2, perform the following:</para>
+          <orderedlist numeration="loweralpha">
+            <listitem>
+              <para>Ensure that the admin port is set to 8096 by using the "integration.api.port"
+                global parameter.</para>
+              <para>This port is used by the cloud-sysvmadm script at the end of the upgrade
+                procedure. For information about how to set this parameter, see “Edit the Global
+                Configuration Settings” in the Advanced Installation Guide.</para>
+            </listitem>
+            <listitem>
+              <para>Restart the Management Server.</para>
+              <note>
+                <para>If you don't want the admin port to remain open, you can set it to null after
+                  the upgrade is done and restart the management server</para>
+              </note>
+            </listitem>
+          </orderedlist>
+        </listitem>
+        <listitem>
+          <para>Run the following script to stop, then start, all Secondary Storage VMs, Console
+            Proxy VMs, and virtual routers. Run the script once on one management server. Substitute
+            your own IP address of the MySQL instance, the MySQL user to connect as, and the
+            password to use for that user. In addition to those parameters, provide the "-c" and
+            "-r" arguments. For example:</para>
+          <programlisting># nohup cloud-sysvmadm -d 192.168.1.5 -u cloud -p password -c -r > sysvm.log 2>&amp;1 &amp;
+# tail -f sysvm.log
+</programlisting>
+          <para>This might take up to an hour or more to run, depending on the number of accounts in
+            the system.</para>
+        </listitem>
+        <listitem>
+          <para>If needed, upgrade all Citrix XenServer hypervisor hosts in your cloud to a version
+            supported by CloudStack 4.0. The supported versions are XenServer 5.6 SP2 and
+            6.0.2. Instructions for upgrade can be found in the CloudStack 4.0 Advanced
+            Installation Guide.</para>
+        </listitem>
+        <listitem>
+          <para>Now apply the XenServer hotfix XS602E003 (and any other needed hotfixes) to
+            XenServer v6.0.2 hypervisor hosts.</para>
+          <orderedlist numeration="loweralpha">
+            <listitem>
+              <para>Disconnect the XenServer cluster from CloudStack.</para>
+              <para>In the left navigation bar of the CloudStack UI, select Infrastructure. Under
+                Clusters, click View All. Select the XenServer cluster and click Actions -
+                Unmanage.</para>
+              <para>This may fail if there are hosts not in one of the states Up, Down,
+                Disconnected, or Alert. You may need to fix that before unmanaging this
+                cluster.</para>
+              <para>Wait until the status of the cluster has reached Unmanaged. Use the
+                CloudStack UI to check on the status. When the cluster is in the unmanaged state,
+                there is no connection to the hosts in the cluster.</para>
+            </listitem>
+            <listitem>
+              <para>To clean up the VLAN, log in to one XenServer host and run:</para>
+              <programlisting>/opt/xensource/bin/cloud-clean-vlan.sh</programlisting>
+            </listitem>
+            <listitem>
+              <para>Now prepare the upgrade by running the following on one XenServer host:</para>
+              <programlisting>/opt/xensource/bin/cloud-prepare-upgrade.sh</programlisting>
+              <para>If you see a message like "can't eject CD", log in to the VM and umount the CD,
+                then run this script again.</para>
+            </listitem>
+            <listitem>
+              <para>Upload the hotfix to the XenServer hosts. Always start with the Xen pool master,
+                then the slaves. Using your favorite file copy utility (e.g. WinSCP), copy the
+                hotfixes to the host. Place them in a temporary folder such as /root or /tmp. </para>
+              <para>On the Xen pool master, upload the hotfix with this command:</para>
+              <programlisting>xe patch-upload file-name=XS602E003.xsupdate</programlisting>
+              <para>Make a note of the output from this command, which is a UUID for the hotfix
+                file. You'll need it in another step later.</para>
+              <note>
+                <para>(Optional) If you are applying other hotfixes as well, you can repeat the
+                  commands in this section with the appropriate hotfix number. For example,
+                  XS602E004.xsupdate.</para>
+              </note>
+            </listitem>
+            <listitem>
+              <para>Manually live migrate all VMs on this host to another host. First, get a list of
+                the VMs on this host:</para>
+              <programlisting># xe vm-list</programlisting>
+              <para>Then use this command to migrate each VM. Replace the example host name and VM
+                name with your own:</para>
+              <programlisting># xe vm-migrate live=true host=&lt;host-name&gt; vm=&lt;VM-name&gt;</programlisting>
+              <para><emphasis role="bold">Troubleshooting:</emphasis> If you see a message like "You
+                attempted an operation on a VM which requires PV drivers to be installed but the
+                drivers were not detected," run /opt/xensource/bin/make_migratable.sh
+                b6cf79c8-02ee-050b-922f-49583d9f1a14.</para>
+            </listitem>
+            <listitem>
+              <para>Apply the hotfix. First, get the UUID of this host:</para>
+              <programlisting># xe host-list</programlisting>
+              <para>Then use the following command to apply the hotfix. Replace the example host
+                UUID with the current host ID, and replace the hotfix UUID with the output from the
+                patch-upload command you ran on this machine earlier. You can also get the hotfix
+                UUID by running xe patch-list. </para>
+              <programlisting>xe patch-apply host-uuid=&lt;host-uuid&gt; uuid=&lt;hotfix-uuid&gt;</programlisting>
+            </listitem>
+            <listitem>
+              <para>Copy the following files from the CloudStack Management Server to the
+                host.</para>
+              <informaltable>
+                <tgroup cols="2" align="left" colsep="1" rowsep="1">
+                  <colspec colwidth="1*" colname="1" colnum="1"/>
+                  <colspec colwidth="2*" colname="2" colnum="2"/>
+                  <thead>
+                    <row>
+                      <entry><para>Copy from here...</para></entry>
+                      <entry><para>...to here</para></entry>
+                    </row>
+                  </thead>
+                  <tbody>
+                    <row>
+                      <entry><para>/usr/lib64/cloud/agent/scripts/vm/hypervisor/xenserver/xenserver60/NFSSR.py</para></entry>
+                      <entry><para>/opt/xensource/sm/NFSSR.py</para></entry>
+                    </row>
+                    <row>
+                      <entry><para>/usr/lib64/cloud/agent/scripts/vm/hypervisor/xenserver/setupxenserver.sh</para></entry>
+                      <entry><para>/opt/xensource/bin/setupxenserver.sh</para></entry>
+                    </row>
+                    <row>
+                      <entry><para>/usr/lib64/cloud/agent/scripts/vm/hypervisor/xenserver/make_migratable.sh</para></entry>
+                      <entry><para>/opt/xensource/bin/make_migratable.sh</para></entry>
+                    </row>
+                  </tbody>
+                </tgroup>
+              </informaltable>
+            </listitem>
+            <listitem>
+              <para>(Only for hotfixes XS602E005 and XS602E007) You need to apply a new Cloud
+                Support Pack.</para>
+              <itemizedlist>
+                <listitem>
+                  <para>Download the CSP software onto the XenServer host from one of the following
+                    links:</para>
+                  <para>For hotfix XS602E005: <ulink
+                      url="http://coltrane.eng.hq.xensource.com/release/XenServer-6.x/XS-6.0.2/hotfixes/XS602E005/56710/xe-phase-2/xenserver-cloud-supp.tgz"
+                      >http://coltrane.eng.hq.xensource.com/release/XenServer-6.x/XS-6.0.2/hotfixes/XS602E005/56710/xe-phase-2/xenserver-cloud-supp.tgz</ulink></para>
+                  <para>For hotfix XS602E007: <ulink
+                      url="http://coltrane.eng.hq.xensource.com/release/XenServer-6.x/XS-6.0.2/hotfixes/XS602E007/57824/xe-phase-2/xenserver-cloud-supp.tgz"
+                      >http://coltrane.eng.hq.xensource.com/release/XenServer-6.x/XS-6.0.2/hotfixes/XS602E007/57824/xe-phase-2/xenserver-cloud-supp.tgz</ulink></para>
+                </listitem>
+                <listitem>
+                  <para>Extract the file:</para>
+                  <programlisting># tar xf xenserver-cloud-supp.tgz</programlisting>
+                </listitem>
+                <listitem>
+                  <para>Run the following script:</para>
+                  <programlisting># xe-install-supplemental-pack xenserver-cloud-supp.iso</programlisting>
+                </listitem>
+                <listitem>
+                  <para>If the XenServer host is part of a zone that uses basic networking, disable
+                    Open vSwitch (OVS):</para>
+                  <programlisting># xe-switch-network-backend  bridge</programlisting>
+                </listitem>
+              </itemizedlist>
+            </listitem>
+            <listitem>
+              <para>Reboot this XenServer host.</para>
+            </listitem>
+            <listitem>
+              <para>Run the following:</para>
+              <programlisting>/opt/xensource/bin/setupxenserver.sh</programlisting>
+              <note>
+                <para>If the message "mv: cannot stat `/etc/cron.daily/logrotate': No such file or
+                  directory" appears, you can safely ignore it.</para>
+              </note>
+            </listitem>
+            <listitem>
+              <para>Run the following:</para>
+              <programlisting>for pbd in `xe pbd-list currently-attached=false| grep ^uuid | awk '{print $NF}'`; do xe pbd-plug uuid=$pbd ; </programlisting>
+            </listitem>
+            <listitem>
+              <para>On each slave host in the Xen pool, repeat these steps, starting from "manually
+                live migrate VMs."</para>
+            </listitem>
+          </orderedlist>
+        </listitem>
+      </orderedlist>
+      <note>
+        <para>Troubleshooting tip: If passwords which you know to be valid appear not to work after
+          upgrade, or other UI issues are seen, try clearing your browser cache and reloading the UI
+          page.</para>
+      </note>
+    </section>
+    <section id="upgrade-from-2.2.x-to-4.0">
+      <title>Upgrade from 2.2.14 to 4.0</title>
+      <orderedlist>
+        <listitem>
+          <para>Ensure that you query your IPaddress usage records and process them; for example,
+            issue invoices for any usage that you have not yet billed users for.</para>
+          <para>Starting in 3.0.2, the usage record format for IP addresses is the same as the rest
+            of the usage types. See <ulink url="http://bugs.cloudstack.org/browse/CS-8222"
+              >CS-8222</ulink>. Instead of a single record with the assignment and release dates,
+            separate records are generated per aggregation period with start and end dates. After
+            upgrading to 4.0, any existing IP address usage records in the old format will no longer
+            be available.</para>
+        </listitem>
+        <listitem>
+          <para>If you are using version 2.2.0 - 2.2.13, first upgrade to 2.2.14 by using the
+            instructions in the 2.2.14 Release Notes.</para>
+          <note>
+            <para>(KVM only) If KVM hypervisor is used in your cloud, be sure you completed the step
+              to insert a valid username and password into the host_details table on each KVM node
+              as described in the 2.2.14 Release Notes. This step is critical, as the database will
+              be encrypted after the upgrade to 4.0.</para>
+          </note>
+        </listitem>
+        <listitem>
+          <para>While running the 2.2.14 system, log in to the UI as root administrator.</para>
+        </listitem>
+        <listitem>
+          <para>Using the UI, add a new System VM template for each hypervisor type that is used in
+            your cloud. In each zone, add a system VM template for each hypervisor used in that
+            zone</para>
+          <orderedlist>
+            <listitem>
+              <para>In the left navigation bar, click Templates.</para>
+            </listitem>
+            <listitem>
+              <para>In Select view, click Templates.</para>
+            </listitem>
+            <listitem>
+              <para>Click Register template.</para>
+              <para>The Register template dialog box is displayed.</para>
+            </listitem>
+            <listitem>
+              <para>In the Register template dialog box, specify the following values depending on
+                the hypervisor type (do not change these):</para>
+              <informaltable>
+                <tgroup cols="2" align="left" colsep="1" rowsep="1">
+                  <colspec colwidth="1*" colname="1" colnum="1"/>
+                  <colspec colwidth="2*" colname="2" colnum="2"/>
+                  <thead>
+                    <row>
+                      <entry><para>Hypervisor</para></entry>
+                      <entry><para>Description</para></entry>
+                    </row>
+                  </thead>
+                  <tbody>
+                    <row>
+                      <entry><para>XenServer</para></entry>
+                      <entry><para>Name: systemvm-xenserver-3.0.0</para>
+                        <para>Description: systemvm-xenserver-3.0.0</para>
+                        <para>URL:
+                          http://download.cloud.com/templates/acton/acton-systemvm-02062012.vhd.bz2</para>
+                        <para>Zone: Choose the zone where this hypervisor is used</para>
+                        <para>Hypervisor: XenServer</para>
+                        <para>Format: VHD</para>
+                        <para>OS Type: Debian GNU/Linux 5.0 (32-bit)</para>
+                        <para>Extractable: no</para>
+                        <para>Password Enabled: no</para>
+                        <para>Public: no</para>
+                        <para>Featured: no</para>
+                      </entry>
+                    </row>
+                    <row>
+                      <entry><para>KVM</para></entry>
+                      <entry><para>Name: systemvm-kvm-3.0.0</para>
+                        <para>Description: systemvm-kvm-3.0.0</para>
+                        <para>URL:
+                          http://download.cloud.com/templates/acton/acton-systemvm-02062012.qcow2.bz2</para>
+                        <para>Zone: Choose the zone where this hypervisor is used</para>
+                        <para>Hypervisor: KVM</para>
+                        <para>Format: QCOW2</para>
+                        <para>OS Type: Debian GNU/Linux 5.0 (32-bit)</para>
+                        <para>Extractable: no</para>
+                        <para>Password Enabled: no</para>
+                        <para>Public: no</para>
+                        <para>Featured: no</para>
+                      </entry>
+                    </row>
+                    <row>
+                      <entry><para>VMware</para></entry>
+                      <entry><para>Name: systemvm-vmware-3.0.5</para>
+                        <para>Description: systemvm-vmware-3.0.5</para>
+                        <para>URL:
+                          http://download.cloud.com/templates/burbank/burbank-systemvm-08012012.ova</para>
+                        <para>Zone: Choose the zone where this hypervisor is used</para>
+                        <para>Hypervisor: VMware</para>
+                        <para>Format: OVA</para>
+                        <para>OS Type: Debian GNU/Linux 5.0 (32-bit)</para>
+                        <para>Extractable: no</para>
+                        <para>Password Enabled: no</para>
+                        <para>Public: no</para>
+                        <para>Featured: no</para>
+                      </entry>
+                    </row>
+                  </tbody>
+                </tgroup>
+              </informaltable>
+            </listitem>
+          </orderedlist>
+        </listitem>
+        <listitem>
+          <para>Watch the screen to be sure that the template downloads successfully and enters the
+            READY state. Do not proceed until this is successful</para>
+        </listitem>
+        <listitem>
+          <para><emphasis role="bold">WARNING</emphasis>: If you use more than one type of
+            hypervisor in your cloud, be sure you have repeated these steps to download the system
+            VM template for each hypervisor type. Otherwise, the upgrade will fail.</para>
+        </listitem>
+        <listitem>
+          <para>Stop all Usage Servers if running. Run this on all Usage Server hosts.</para>
+          <programlisting># service cloud-usage stop</programlisting>
+        </listitem>
+        <listitem>
+          <para>Stop the Management Servers. Run this on all Management Server hosts.</para>
+          <programlisting># service cloud-management stop</programlisting>
+        </listitem>
+        <listitem>
+          <para>On the MySQL master, take a backup of the MySQL databases. We recommend performing
+            this step even in test upgrades. If there is an issue, this will assist with
+            debugging.</para>
+          <para>In the following commands, it is assumed that you have set the root password on the
+            database, which is a CloudStack recommended best practice. Substitute your own MySQL
+            root password.</para>
+          <programlisting># mysqldump -u root -p&lt;mysql_password&gt; cloud &gt;> cloud-backup.dmp
+# mysqldump -u root -p&lt;mysql_password&gt; cloud_usage &gt; cloud-usage-backup.dmp
+</programlisting>
+        </listitem>
+        <listitem>
+          <para>Download CloudStack 4.0 onto management server host where it will run. Get the
+            software from the following link:</para>
+          <para><ulink url="http://incubator.apache.org/cloudstack/downloads.html/"/>Apache
+            CloudStack.</para>
+        </listitem>
+        <listitem>
+          <para>Upgrade the CloudStack packages. You should have a file in the form of
+            “CloudStack-4.0-N-OSVERSION.tar.gz”. Untar the file, then run the install.sh script
+            inside it. Replace the file and directory names below with those you are using: </para>
+          <programlisting># tar xzf CloudStack-4.0-N-OSVERSION.tar.gz
+# cd CloudStack-4.0-N-OSVERSION
+# ./install.sh
+</programlisting>
+          <para>You should see a few messages as the installer prepares, followed by a list of
+            choices.</para>
+        </listitem>
+        <listitem>
+          <para>Choose "U" to upgrade the package.</para>
+          <programlisting>&gt; U</programlisting>
+          <para>You should see some output as the upgrade proceeds, ending with a message like
+            "Complete! Done."</para>
+        </listitem>
+        <listitem>
+          <para>If you have made changes to your existing copy of the file components.xml in your
+            previous-version CloudStack installation, the changes will be preserved in the
+            upgrade. However, you need to do the following steps to place these changes in a new
+            version of the file which is compatible with version 4.0.</para>
+          <note>
+            <para>How will you know whether you need to do this? If the upgrade output in the
+              previous step included a message like the following, then some custom content was
+              found in your old components.xml, and you need to merge the two files:</para>
+          </note>
+          <programlisting>warning: /etc/cloud/management/components.xml created as /etc/cloud/management/components.xml.rpmnew </programlisting>
+          <orderedlist numeration="loweralpha">
+            <listitem>
+              <para>Make a backup copy of your /etc/cloud/management/components.xml file. For
+                example:</para>
+              <programlisting># mv /etc/cloud/management/components.xml /etc/cloud/management/components.xml-backup</programlisting>
+            </listitem>
+            <listitem>
+              <para>Copy /etc/cloud/management/components.xml.rpmnew to create a new
+                /etc/cloud/management/components.xml:</para>
+              <programlisting># cp -ap /etc/cloud/management/components.xml.rpmnew /etc/cloud/management/components.xml</programlisting>
+            </listitem>
+            <listitem>
+              <para>Merge your changes from the backup file into the new components.xml file.</para>
+              <programlisting># vi /etc/cloud/management/components.xml</programlisting>
+            </listitem>
+          </orderedlist>
+        </listitem>
+        <listitem>
+          <para>If you have made changes to your existing copy of the
+            /etc/cloud/management/db.properties file in your previous-version CloudStack
+            installation, the changes will be preserved in the upgrade. However, you need to do the
+            following steps to place these changes in a new version of the file which is compatible
+            with version 4.0.</para>
+          <orderedlist>
+            <listitem>
+              <para>Make a backup copy of your file /etc/cloud/management/db.properties. For
+                example:</para>
+              <programlisting># mv /etc/cloud/management/db.properties /etc/cloud/management/db.properties-backup</programlisting>
+            </listitem>
+            <listitem>
+              <para>Copy /etc/cloud/management/db.properties.rpmnew to create a new
+                /etc/cloud/management/db.properties:</para>
+              <programlisting># cp -ap /etc/cloud/management/db.properties.rpmnew etc/cloud/management/db.properties</programlisting>
+            </listitem>
+            <listitem>
+              <para>Merge your changes from the backup file into the new db.properties file.</para>
+              <programlisting># vi /etc/cloud/management/db.properties</programlisting>
+            </listitem>
+          </orderedlist>
+        </listitem>
+        <listitem>
+          <para>On the management server node, run the following command. It is recommended that you
+            use the command-line flags to provide your own encryption keys. See Password and Key
+            Encryption in the Installation Guide.</para>
+          <programlisting># cloud-setup-encryption -e &lt;encryption_type&gt; -m &lt;management_server_key&gt; -k &lt;database_key&gt;</programlisting>
+          <para>When used without arguments, as in the following example, the default encryption
+            type and keys will be used:</para>
+          <itemizedlist>
+            <listitem>
+              <para>(Optional) For encryption_type, use file or web to indicate the technique used
+                to pass in the database encryption password. Default: file.</para>
+            </listitem>
+            <listitem>
+              <para>(Optional) For management_server_key, substitute the default key that is used to
+                encrypt confidential parameters in the properties file. Default: password. It is
+                highly recommended that you replace this with a more secure value</para>
+            </listitem>
+            <listitem>
+              <para>(Optional) For database_key, substitute the default key that is used to encrypt
+                confidential parameters in the CloudStack database. Default: password. It is
+                highly recommended that you replace this with a more secure value.</para>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+        <listitem>
+          <para>Repeat steps 10 - 15 on every management server node. If you provided your own
+            encryption key in step 15, use the same key on all other management servers.</para>
+        </listitem>
+        <listitem>
+          <para>Start the first Management Server. Do not start any other Management Server nodes
+            yet.</para>
+          <programlisting># service cloud-management start</programlisting>
+          <para>Wait until the databases are upgraded. Ensure that the database upgrade is complete.
+            You should see a message like "Complete! Done." After confirmation, start the other
+            Management Servers one at a time by running the same command on each node.</para>
+        </listitem>
+        <listitem>
+          <para>Start all Usage Servers (if they were running on your previous version). Perform
+            this on each Usage Server host.</para>
+          <programlisting># service cloud-usage start</programlisting>
+        </listitem>
+        <listitem>
+          <para>(KVM only) Additional steps are required for each KVM host. These steps will not
+            affect running guests in the cloud. These steps are required only for clouds using KVM
+            as hosts and only on the KVM hosts.</para>
+           <orderedlist numeration="loweralpha">
+            <listitem>
+              <para>Copy the CloudStack 4.0 .tgz download to the host, untar it, and cd into the
+                resulting directory.</para>
+            </listitem>
+            <listitem>
+              <para>Stop the running agent.</para>
+              <programlisting># service cloud-agent stop</programlisting>
+            </listitem>
+            <listitem>
+              <para>Update the agent software.</para>
+              <programlisting># ./install.sh</programlisting>
+            </listitem>
+            <listitem>
+              <para>Choose "U" to update the packages.</para>
+            </listitem>
+            <listitem>
+              <para>Start the agent.</para>
+              <programlisting># service cloud-agent start</programlisting>
+            </listitem>
+            <listitem>
+              <para>Copy the contents of the agent.properties file to the new agent.properties file
+                by using the following command</para>
+              <programlisting>sed -i 's/com.cloud.agent.resource.computing.LibvirtComputingResource/com.cloud.hypervisor.kvm.resource.LibvirtComputingResource/g' /etc/cloud/agent/agent.properties</programlisting>
+            </listitem>
+            <listitem>
+              <para>Start the cloud agent and cloud management services.</para>
+            </listitem>
+            <listitem>
+              <para>When the Management Server is up and running, log in to the CloudStack UI and
+                restart the virtual router for proper functioning of all the features.</para>
+            </listitem>
+          </orderedlist>
+        </listitem>
+        <listitem>
+          <para>Log in to the CloudStack UI as admin, and check the status of the hosts. All
+            hosts should come to Up state (except those that you know to be offline). You may need
+            to wait 20 or 30 minutes, depending on the number of hosts.</para>
+          <para>Do not proceed to the next step until the hosts show in the Up state. If the hosts
+            do not come to the Up state, contact support.</para>
+        </listitem>
+        <listitem>
+          <para>Run the following script to stop, then start, all Secondary Storage VMs, Console
+            Proxy VMs, and virtual routers.</para>
+          <orderedlist numeration="loweralpha">
+            <listitem>
+              <para>Run the command once on one management server. Substitute your own IP address of
+                the MySQL instance, the MySQL user to connect as, and the password to use for that
+                user. In addition to those parameters, provide the "-c" and "-r" arguments. For
+                example:</para>
+              <programlisting># nohup cloud-sysvmadm -d 192.168.1.5 -u cloud -p password -c -r > sysvm.log 2>&amp;1 &amp;
+# tail -f sysvm.log</programlisting>
+              <para>This might take up to an hour or more to run, depending on the number of
+                accounts in the system.</para>
+            </listitem>
+            <listitem>
+              <para>After the script terminates, check the log to verify correct execution:</para>
+              <programlisting># tail -f sysvm.log</programlisting>
+              <para>The content should be like the following:</para>
+              <programlisting>
+Stopping and starting 1 secondary storage vm(s)...
+Done stopping and starting secondary storage vm(s)
+Stopping and starting 1 console proxy vm(s)...
+Done stopping and starting console proxy vm(s).
+Stopping and starting 4 running routing vm(s)...
+Done restarting router(s).
+						</programlisting>
+            </listitem>
+          </orderedlist>
+        </listitem>
+        <listitem>
+          <para>If you would like additional confirmation that the new system VM templates were
+            correctly applied when these system VMs were rebooted, SSH into the System VM and check
+            the version.</para>
+          <para>Use one of the following techniques, depending on the hypervisor.</para>
+          <formalpara>
+            <title>XenServer or KVM:</title>
+            <para>SSH in by using the link local IP address of the system VM. For example, in the
+              command below, substitute your own path to the private key used to log in to the
+              system VM and your own link local IP.</para>
+          </formalpara>
+          <para>Run the following commands on the XenServer or KVM host on which the system VM is
+            present:</para>
+          <programlisting># ssh -i &lt;private-key-path&gt; &lt;link-local-ip&gt; -p 3922
+# cat /etc/cloudstack-release</programlisting>
+          <para>The output should be like the following:</para>
+          <programlisting>Cloudstack Release 4.0 Mon Oct 9 15:10:04 PST 2012</programlisting>
+          <formalpara>
+            <title>ESXi</title>
+            <para>SSH in using the private IP address of the system VM. For example, in the command
+              below, substitute your own path to the private key used to log in to the system VM and
+              your own private IP.</para>
+          </formalpara>
+          <para>Run the following commands on the Management Server:</para>
+          <programlisting># ssh -i &lt;private-key-path&gt; &lt;private-ip&gt; -p 3922
+# cat /etc/cloudstack-release
+</programlisting>
+          <para>The output should be like the following:</para>
+          <programlisting>Cloudstack Release 4.0 Mon Oct 9 15:10:04 PST 2012</programlisting>
+        </listitem>
+        <listitem>
+          <para>If needed, upgrade all Citrix XenServer hypervisor hosts in your cloud to a version
+            supported by CloudStack 4.0. The supported versions are XenServer 5.6 SP2 and
+            6.0.2. Instructions for upgrade can be found in the CloudStack 4.0
+            Installation Guide.</para>
+        </listitem>
+        <listitem>
+          <para>Apply the XenServer hotfix XS602E003 (and any other needed hotfixes) to XenServer
+            v6.0.2 hypervisor hosts.</para>
+          <orderedlist numeration="loweralpha">
+            <listitem>
+              <para>Disconnect the XenServer cluster from CloudStack.</para>
+              <para>In the left navigation bar of the CloudStack UI, select Infrastructure. Under
+                Clusters, click View All. Select the XenServer cluster and click Actions -
+                Unmanage.</para>
+              <para>This may fail if there are hosts not in one of the states Up, Down,
+                Disconnected, or Alert. You may need to fix that before unmanaging this
+                cluster.</para>
+              <para>Wait until the status of the cluster has reached Unmanaged. Use the
+                CloudStack UI to check on the status. When the cluster is in the unmanaged state,
+                there is no connection to the hosts in the cluster.</para>
+            </listitem>
+            <listitem>
+              <para>To clean up the VLAN, log in to one XenServer host and run:</para>
+              <programlisting>/opt/xensource/bin/cloud-clean-vlan.sh</programlisting>
+            </listitem>
+            <listitem>
+              <para>Prepare the upgrade by running the following on one XenServer host:</para>
+              <programlisting>/opt/xensource/bin/cloud-prepare-upgrade.sh</programlisting>
+              <para>If you see a message like "can't eject CD", log in to the VM and umount the CD,
+                then run this script again.</para>
+            </listitem>
+            <listitem>
+              <para>Upload the hotfix to the XenServer hosts. Always start with the Xen pool master,
+                then the slaves. Using your favorite file copy utility (e.g. WinSCP), copy the
+                hotfixes to the host. Place them in a temporary folder such as /root or /tmp. </para>
+              <para>On the Xen pool master, upload the hotfix with this command:</para>
+              <programlisting>xe patch-upload file-name=XS602E003.xsupdate</programlisting>
+              <para>Make a note of the output from this command, which is a UUID for the hotfix
+                file. You'll need it in another step later.</para>
+              <note>
+                <para>(Optional) If you are applying other hotfixes as well, you can repeat the
+                  commands in this section with the appropriate hotfix number. For example,
+                  XS602E004.xsupdate.</para>
+              </note>
+            </listitem>
+            <listitem>
+              <para>Manually live migrate all VMs on this host to another host. First, get a list of
+                the VMs on this host:</para>
+              <programlisting># xe vm-list</programlisting>
+              <para>Then use this command to migrate each VM. Replace the example host name and VM
+                name with your own:</para>
+              <programlisting># xe vm-migrate live=true host=&lt;host-name&gt; vm=&lt;VM-name&gt;</programlisting>
+              <para><emphasis role="bold">Troubleshooting:</emphasis> If you see a message like "You
+                attempted an operation on a VM which requires PV drivers to be installed but the
+                drivers were not detected," run /opt/xensource/bin/make_migratable.sh
+                b6cf79c8-02ee-050b-922f-49583d9f1a14.</para>
+            </listitem>
+            <listitem>
+              <para>Apply the hotfix. First, get the UUID of this host:</para>
+              <programlisting># xe host-list</programlisting>
+              <para>Then use the following command to apply the hotfix. Replace the example host
+                UUID with the current host ID, and replace the hotfix UUID with the output from the
+                patch-upload command you ran on this machine earlier. You can also get the hotfix
+                UUID by running xe patch-list. </para>
+              <programlisting>xe patch-apply host-uuid=&lt;host-uuid&gt; uuid=&lt;hotfix-uuid&gt;</programlisting>
+            </listitem>
+            <listitem>
+              <para>Copy the following files from the CloudStack Management Server to the
+                host.</para>
+              <informaltable>
+                <tgroup cols="2" align="left" colsep="1" rowsep="1">
+                  <colspec colwidth="1*" colname="1" colnum="1"/>
+                  <colspec colwidth="2*" colname="2" colnum="2"/>
+                  <thead>
+                    <row>
+                      <entry><para>Copy from here...</para></entry>
+                      <entry><para>...to here</para></entry>
+                    </row>
+                  </thead>
+                  <tbody>
+                    <row>
+                      <entry><para>/usr/lib64/cloud/agent/scripts/vm/hypervisor/xenserver/xenserver60/NFSSR.py</para></entry>
+                      <entry><para>/opt/xensource/sm/NFSSR.py</para></entry>
+                    </row>
+                    <row>
+                      <entry><para>/usr/lib64/cloud/agent/scripts/vm/hypervisor/xenserver/setupxenserver.sh</para></entry>
+                      <entry><para>/opt/xensource/bin/setupxenserver.sh</para></entry>
+                    </row>
+                    <row>
+                      <entry><para>/usr/lib64/cloud/agent/scripts/vm/hypervisor/xenserver/make_migratable.sh</para></entry>
+                      <entry><para>/opt/xensource/bin/make_migratable.sh</para></entry>
+                    </row>
+                  </tbody>
+                </tgroup>
+              </informaltable>
+            </listitem>
+            <listitem>
+              <para>(Only for hotfixes XS602E005 and XS602E007) You need to apply a new Cloud
+                Support Pack.</para>
+              <itemizedlist>
+                <listitem>
+                  <para>Download the CSP software onto the XenServer host from one of the following
+                    links:</para>
+                  <para>For hotfix XS602E005: <ulink
+                      url="http://coltrane.eng.hq.xensource.com/release/XenServer-6.x/XS-6.0.2/hotfixes/XS602E005/56710/xe-phase-2/xenserver-cloud-supp.tgz"
+                      >http://coltrane.eng.hq.xensource.com/release/XenServer-6.x/XS-6.0.2/hotfixes/XS602E005/56710/xe-phase-2/xenserver-cloud-supp.tgz</ulink></para>
+                  <para>For hotfix XS602E007: <ulink
+                      url="http://coltrane.eng.hq.xensource.com/release/XenServer-6.x/XS-6.0.2/hotfixes/XS602E007/57824/xe-phase-2/xenserver-cloud-supp.tgz"
+                      >http://coltrane.eng.hq.xensource.com/release/XenServer-6.x/XS-6.0.2/hotfixes/XS602E007/57824/xe-phase-2/xenserver-cloud-supp.tgz</ulink></para>
+                </listitem>
+                <listitem>
+                  <para>Extract the file:</para>
+                  <programlisting># tar xf xenserver-cloud-supp.tgz</programlisting>
+                </listitem>
+                <listitem>
+                  <para>Run the following script:</para>
+                  <programlisting># xe-install-supplemental-pack xenserver-cloud-supp.iso</programlisting>
+                </listitem>
+                <listitem>
+                  <para>If the XenServer host is part of a zone that uses basic networking, disable
+                    Open vSwitch (OVS):</para>
+                  <programlisting># xe-switch-network-backend  bridge</programlisting>
+                </listitem>
+              </itemizedlist>
+            </listitem>
+            <listitem>
+              <para>Reboot this XenServer host.</para>
+            </listitem>
+            <listitem>
+              <para>Run the following:</para>
+              <programlisting>/opt/xensource/bin/setupxenserver.sh</programlisting>
+              <note>
+                <para>If the message "mv: cannot stat `/etc/cron.daily/logrotate': No such file or
+                  directory" appears, you can safely ignore it.</para>
+              </note>
+            </listitem>
+            <listitem>
+              <para>Run the following:</para>
+              <programlisting>for pbd in `xe pbd-list currently-attached=false| grep ^uuid | awk '{print $NF}'`; do xe pbd-plug uuid=$pbd ; </programlisting>
+            </listitem>
+            <listitem>
+              <para>On each slave host in the Xen pool, repeat these steps, starting from "manually
+                live migrate VMs."</para>
+            </listitem>
+          </orderedlist>
+        </listitem>
+      </orderedlist>
+    </section>
+    </chapter>
+  <chapter id="version-4.0">
+    <title>Version 4.0</title>
+    <section id="what-new-in-4.0">
+      <title>What’s New in 4.0</title>
+      <para>Apache CloudStack 4.0 includes the following new features:</para>
+      <section id="inter-vlan-routing">
+        <title>Inter-VLAN Routing</title>
+        <para>Inter-VLAN Routing is the capability to route network traffic between VLANs. This
+          feature enables you to set up Virtual Private Clouds (VPC) that can hold multi-tier
+          applications. These tiers are deployed on different VLANs that can communicate with each
+          other. You can provision VLANs to the tiers your create, and VMs can be deployed on
+          different tiers, such as Web, Application, or Database. The VLANs are connected to a
+          virtual router, which facilitates communication between the VMs. In effect, you can
+          segment VMs by means of VLANs into different networks that can host multi-tier
+          applications. Such segmentation by means of VLANs logically separate application VMs for
+          higher security and lower broadcasts, while remaining physically connected to the same
+          device.</para>
+        <para>This feature is supported on XenServer and VMware hypervisors.</para>
+      </section>
+      <section id="site-to-site-vpn">
+        <title>Site-to-Site VPN</title>
+        <para>A Site-to-Site VPN connection helps you establish a secure connection from an
+          enterprise datacenter to the cloud infrastructure. This allows users to access the guest
+          VMs by establishing a VPN connection to the virtual router of the account from a device in
+          the datacenter of the enterprise. Having this facility eliminates the need to establish
+          VPN connections to individual VMs.</para>
+        <para>The supported endpoints on the remote datacenters are:</para>
+        <itemizedlist>
+          <listitem>
+            <para>Cisco ISR with IOS 12.4 or later</para>
+          </listitem>
+          <listitem>
+            <para>Juniper J-Series routers with JunOS 9.5 or later</para>
+          </listitem>
+        </itemizedlist>
+      </section>
+      <section id="local-storage-support">
+        <title>Local Storage Support for Data Volumes</title>
+        <para>You can now create data volumes on local storage. The data volume is placed on the
+          same XenServer host as the VM instance that is attached to the data volume. These local
+          data volumes can be attached to virtual machines, detached, re-attached, and deleted just
+          as with the other types of data volume. In earlier releases of CloudStack, only the root
+          disk could be placed in local storage.</para>
+        <para>Local storage is ideal for scenarios where persistence of data volumes and HA is not
+          required. Some of the benefits include reduced disk I/O latency and cost reduction from
+          using inexpensive local disks.</para>
+        <para>In order for local volumes to be used, the feature must be enabled for the
+          zone.</para>
+        <para>You can create a data disk offering for local storage. When a user creates a new VM,
+          they can select this disk offering in order to cause the data disk volume to be placed in
+          local storage.</para>
+        <para>You can not migrate a VM that has a volume in local storage to a different host, nor
+          migrate the volume itself away to a different host. If you want to put a host into
+          maintenance mode, you must first stop any VMs with local data volumes on that host.</para>
+        <para>Local storage support for volumes is available for XenServer, KVM, and VMware
+          hypervisors.</para>
+      </section>
+      <section id="tags">
+        <title>Tags</title>
+        <para>A tag is a key-value pair that stores metadata about a resource in the cloud. Tags are
+          useful for categorizing resources. For example, you can tag a user VM with a value that
+          indicates the user's city of residence. In this case, the key would be "city" and the
+          value might be "Toronto" or "Tokyo." You can then request CloudStack to find all resources
+          that have a given tag; for example, VMs for users in a given city.</para>
+        <para>You can tag a user virtual machine, volume, snapshot, guest network, template, ISO,
+          firewall rule, port forwarding rule, public IP address, security group, load balancer
+          rule, project, VPC, network ACL, or static route. You can not tag a remote access
+          VPN.</para>
+        <para>You can work with tags through the UI or through the new API commands createTags,
+          deleteTags, and listTags. You can define multiple tags for each resource. There is no
+          limit on the number of tags you can define. Each tag can be up to 255 characters long.
+          Users can define tags on the resources they own, and administrators can define tags on any
+          resources in the cloud.</para>
+        <para>A new optional input parameter, "tags," has been added to many of the list* API
+          commands. The following example shows how to use this new parameter to find all the
+          volumes having tag region=canada OR tag city=Toronto:</para>
+        <programlisting>command=listVolumes
+				&amp;listAll=true
+				&amp;tags[0].key=region
+				&amp;tags[0].value=canada
+				&amp;tags[1].key=city
+				&amp;tags[1].value=Toronto</programlisting>
+        <para>The following API commands have the new "tags" input parameter:</para>
+        <itemizedlist>
+          <listitem>
+            <para>listVirtualMachines</para>
+          </listitem>
+          <listitem>
+            <para>listVolumes</para>
+          </listitem>
+          <listitem>
+            <para>listSnapshots</para>
+          </listitem>
+          <listitem>
+            <para>listNetworks</para>
+          </listitem>
+          <listitem>
+            <para>listTemplates</para>
+          </listitem>
+          <listitem>
+            <para>listIsos</para>
+          </listitem>
+          <listitem>
+            <para>listFirewallRules</para>
+          </listitem>
+          <listitem>
+            <para>listPortForwardingRules</para>
+          </listitem>
+          <listitem>
+            <para>listPublicIpAddresses</para>
+          </listitem>
+          <listitem>
+            <para>listSecurityGroups</para>
+          </listitem>
+          <listitem>
+            <para>listLoadBalancerRules</para>
+          </listitem>
+          <listitem>
+            <para>listProjects</para>
+          </listitem>
+          <listitem>
+            <para>listVPCs</para>
+          </listitem>
+          <listitem>
+            <para>listNetworkACLs</para>
+          </listitem>
+          <listitem>
+            <para>listStaticRoutes</para>
+          </listitem>
+        </itemizedlist>
+      </section>
+      <section id="aws-tags">
+        <title>AWS API Changes for Tags</title>
+        <para>Some changes have been made to the Amazon Web Services API compatibility support in
+          order to accommodate the new tagging feature.</para>
+        <para>New APIs:</para>
+        <informaltable>
+          <tgroup cols="2" align="left" colsep="1" rowsep="1">
+            <colspec colwidth="1.0*" colname="1" colnum="1"/>
+            <colspec colwidth="4.3*" colname="2" colnum="2"/>
+            <thead>
+              <row>
+                <entry>
+                  <para>New API</para>
+                </entry>
+                <entry>
+                  <para>Description</para>
+                </entry>
+              </row>
+            </thead>
+            <tbody>
+              <row>
+                <entry>
+                  <para> ec2-create-tags </para>
+                </entry>
+                <entry>
+                  <para>Add tags to one or more resources.</para>
+                </entry>
+              </row>
+              <row>
+                <entry>
+                  <para> ec2-delete-tags</para>
+                </entry>
+                <entry>
+                  <para>Remove tags from one or more resources.</para>
+                </entry>
+              </row>
+              <row>
+                <entry>ec2-describe-tags</entry>
+                <entry>
+                  <para>Show currently defined tags.</para>
+                </entry>
+              </row>
+            </tbody>
+          </tgroup>
+        </informaltable>
+        <para>Changed APIs:</para>
+        <informaltable>
+          <tgroup cols="2" align="left" colsep="1" rowsep="1">
+            <colspec colwidth="1" colname="1" colnum="1"/>
+            <colspec colwidth="2*" colname="2" colnum="2"/>
+            <thead>
+              <row>
+                <entry>
+                  <para>Changed API</para>
+                </entry>
+                <entry>
+                  <para>Description</para>
+                </entry>
+              </row>
+            </thead>
+            <tbody>
+              <row>
+                <entry>ec2-describe-images</entry>
+                <entry>
+                  <para>Output now shows tags defined for each image.</para>
+                </entry>
+              </row>
+              <row>
+                <entry>
+                  <para>ec2-describe-instances </para>
+                </entry>
+                <entry>
+                  <para>Output now shows tags defined for each image.</para>
+                  <para>The following filters can now be passed in to limit the output result set:
+                    tag-key, tag-value and tag:key</para>
+                </entry>
+              </row>
+              <row>
+                <entry>
+                  <para> ec2-describe-snapshots</para>
+                </entry>
+                <entry>
+                  <para>Output now shows tags defined for each image.</para>
+                  <para>The following filters can now be passed in to limit the output result set:
+                    tag-key, tag-value and tag:key</para>
+                </entry>
+              </row>
+              <row>
+                <entry>ec2-describe-volumes</entry>
+                <entry>
+                  <para>Output now shows tags defined for each image.</para>
+                  <para>The following filters can now be passed in to limit the output result set:
+                    tag-key, tag-value and tag:key</para>
+                </entry>
+              </row>
+            </tbody>
+          </tgroup>
+        </informaltable>
+      </section>
+      <section id="secure-console-access-on-xenserver">
+        <title>Secure Console Access on XenServer</title>
+        <para>With the addition of Secure Console feature, users can now securely access the VM
+          consoles on the XenServer hypervisor. You can either SSH or use the View Console option in
+          the Management Server to securely connect to the VMs on the XenServer host. The Management
+          Server uses the xapi API to stream the VM consoles. However, there is no change in the way
+          you can access the console of a VM. This feature is supported on XenServer 5.6 and 6.0
+          versions.</para>
+      </section>
+      <section id="release-note-stopped-vm">
+        <title>Stopped VM</title>
+        <para>This release supports creating VMs without starting them on the backend. You can
+          determine whether the VM needs to be started as part of the VM deployment. A VM can be
+          deployed in two ways: create and start a VM (the default method); create a VM and leave it
+          in the stopped state.</para>
+        <para>A new request parameter, startVM, is introduced in the deployVm API to support the
+          stopped VM feature. The possible values are:</para>
+        <itemizedlist>
+          <listitem>
+            <para>true - The VM starts as a part of the VM deployment</para>
+          </listitem>
+          <listitem>
+            <para>false - The VM is left in stopped state at the end of the VM deployment</para>
+          </listitem>
+        </itemizedlist>
+      </section>
+      <section id="release-note-upload-existing-volume-to-vm">
+        <title>Uploading an Existing Volume to a Virtual Machine</title>
+        <para>Existing data can now be made accessible to a virtual machine. This is called
+          uploading a volume to the VM. For example, this is useful to upload data from a local file
+          system and attach it to a VM. Root administrators, domain administrators, and end users
+          can all upload existing volumes to VMs. The upload is performed by using HTTP. The
+          uploaded volume is placed in the zone's secondary storage.</para>
+        <para>This functionality is supported for the following hypervisors:</para>
+        <itemizedlist>
+          <listitem>
+            <para>Hypervisor : Disk Image Format</para>
+          </listitem>
+          <listitem>
+            <para>XenServer : VHD</para>
+          </listitem>
+          <listitem>
+            <para>VMware : OVA</para>
+          </listitem>
+          <listitem>
+            <para>KVM : QCOW2</para>
+          </listitem>
+          <listitem>
+            <para>OVM : RAW</para>
+          </listitem>
+        </itemizedlist>
+      </section>
+      <section id="dedicated-ha-hosts">
+        <title>Dedicated High-Availability Hosts</title>
+        <para>One or more hosts can now be designated for use only by high-availability (HA) enabled
+          VMs that are restarted due to a host failure. Setting up a pool of such dedicated HA hosts
+          as the recovery destination for all HA-enabled VMs make it easier to determine which VMs
+          are restarted as part of the high-availability function. You can designate a host as a
+          dedicated-HA restart node only if the Dedicated HA Hosts feature is enabled by setting the
+          appropriate global configuration parameter.</para>
+      </section>
+      <section id="support-for-aws-api">
+        <title>Support for Amazon Web Services API</title>
+        <para>This release supports Amazon Web Services APIs, including Elastic Compute Cloud (EC2)
+          API. Fidelity with the EC2 API and the installation experience for this functionality are
+          both enhanced. In prior releases, users were required to install a separate component
+          called CloudBridge, in addition to installing the Management Server. For new installations
+          of CloudStack 4.0, this software is installed automatically along with CloudStack and runs
+          in a more closely integrated fashion. The feature is disabled by default, but can be
+          easily enabled by setting the appropriate global configuration parameter and performing a
+          few setup steps.</para>
+      </section>
+      <section id="support-nexus-dvswitch">
+        <title>Support for Cisco Nexus 1000v Virtual Switch</title>
+        <para>In addition to standard vSwitch, Cisco Nexus 1000v is now supported for virtual
+          network configuration in VMware vSphere deployments. With this, guest traffic isolation
+          through VLANs is possible in VMware environment. Using Nexus virtual switch simplifies
+          configuring and monitoring virtual networks that span across a large number of hosts, and
+          facilitates live migration in VMWare-based cloud deployment.</para>
+      </section>
+    </section>
+    <section id="issues-fixed-4.0">
+      <title>Issues Fixed in 4.0</title>
+      <informaltable>
+        <tgroup cols="2" align="left" colsep="1" rowsep="1">
+          <colspec colwidth="1*" colname="1" colnum="1"/>
+          <colspec colwidth="2*" colname="2" colnum="2"/>
+          <thead>
+            <row>
+              <entry>
+                <para>Defect</para>
+              </entry>
+              <entry>
+                <para>Description</para>
+              </entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry><para>Many</para></entry>
+              <entry><para>vSphere 5.0 now has GA support. Formerly only Beta support was
+                  provided.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-16135</para></entry>
+              <entry><para>Creating volumes after upgrading from snapshot taken in 2.2.14 no longer
+                  deletes the snapshot physically from the secondary storage.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-16122</para></entry>
+              <entry><para>In a site-to-site VPN setup, alerts are generated when the VPC virtual
+                  router is rebooted with multiple vpn connections.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-16022</para></entry>
+              <entry><para>If host connection fails due to a database error, host now disconnects
+                  and the Managerment Server id is removed.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-16011</para></entry>
+              <entry><para>Name of network offering is no longer truncated due to too-narrow field
+                  width in Add Guest Network dialog box. </para>
+              </entry>
+            </row>
+            <row>
+              <entry><para>CS-15978</para></entry>
+              <entry><para>When the virtual router and its host go down, the high availability
+                  mechanism now works for the virtual router.</para>
+              </entry>
+            </row>
+            <row>
+              <entry><para>CS-15921</para></entry>
+              <entry><para>The 2.2.x security group script now accounts for the VMs created in the
+                  version 2.1 timeframe.</para>
+              </entry>
+            </row>
+            <row>
+              <entry><para>CS-15919</para></entry>
+              <entry><para>A level parameter is added to the listVolumes command; therefore queries
+                  return the response more quickly.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15904</para></entry>
+              <entry><para>Upgrade from version 2.2.14 to CloudStack-3.0.5-0.2944-rhel5 works as
+                  expected. The upgrade script,
+                  /usr/share/cloud/setup/db/schema-2214to30-cleanup.sql, works as
+                expected.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15879</para></entry>
+              <entry><para>The database upgrade from version 3.0.4 to 3.0.5 works as
+                  expected.</para>
+              </entry>
+            </row>
+            <row>
+              <entry><para>CS-15807</para></entry>
+              <entry><para>Network label for OVM now available in UI.</para>
+              </entry>
+            </row>
+            <row>
+              <entry><para>CS-15779</para></entry>
+              <entry><para>When the thumbnail is requested, the console session will not be
+                  terminated.</para>
+              </entry>
+            </row>
+            <row>
+              <entry><para>CS-15778</para></entry>
+              <entry><para>Fetching a VM thumbnail now gets a thumbnail of appropriate visual
+                  dimensions.</para>
+              </entry>
+            </row>
+            <row>
+              <entry><para>CS-15734</para></entry>
+              <entry><para>KVM Snapshots no longer shows incorrect disk usage.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15733</para></entry>
+              <entry><para>The domainId parameter for the listNetworks command now lists the
+                  resources belonging to the domain specified.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15676</para></entry>
+              <entry><para>Stopping the router no longer fails with the null pointer
+                  exception.</para>
+              </entry>
+            </row>
+            <row>
+              <entry><para>CS-15648</para></entry>
+              <entry><para>If creating a volume from a snapshot fails, the error is reported on the
+                  UI but the volume is stuck in the creating state.</para>
+              </entry>
+            </row>
+            <row>
+              <entry><para>CS-15646</para></entry>
+              <entry><para>createFirewallRule API no longer causes null pointer
+                exception.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15628</para></entry>
+              <entry><para>In a KVM host, the high availability mechanism no longer takes a long
+                  time to migrate VMs to another KVM host if there are multiple storage
+                  pools.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15627</para></entry>
+              <entry><para>Metadata instance-id and vm-id for existing VMs stays the same after
+                  upgrade.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15621</para></entry>
+              <entry><para>Solved difficulty with allocating disk volumes when running multiple VM
+                  deployment in parallel.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15603</para></entry>
+              <entry><para>CloudStack now stop the VMs when destroyVM command is
+                called.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15586</para></entry>
+              <entry><para>Public Vlan for an account no longer fails if multiple physical networks
+                  are present.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15582</para></entry>
+              <entry><para>The dns-name filter is now supported for ec2-describe-instances in the
+                  Amazon Web Services API compatibility commands. The filter maps to the name of a
+                  user VM.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15503</para></entry>
+              <entry><para>An IP address which has static NAT rules can now be released.
+                  Subsequently, restarting this network after it was shutdown can
+                succeed.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15464</para></entry>
+              <entry><para>Can now delete static route whose state is set to Revoke.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15443</para></entry>
+              <entry><para>Creating a firewall rule no longer fails with an internal server
+                  error.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15398</para></entry>
+              <entry><para>Corrected technique for programming DNS on the user VMs.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15356</para></entry>
+              <entry><para>Internal DNS 2 entry now correctly shown in UI.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15335</para></entry>
+              <entry><para>The CloudBridge S3 Engine now connects to the database by using the
+                  deciphered password in the db.properties file.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15318</para></entry>
+              <entry><para>UI now correctly prevents the user from stopping a VM that is in the
+                  Starting state.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15307</para></entry>
+              <entry><para>Fixed Japanese localization of instance statuses in the Instances
+                  menu.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15278</para></entry>
+              <entry><para>The deployment planner no longer takes long time to locate a suitable
+                  host to deploy VMs when large number of clusters are present.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15274</para></entry>
+              <entry><para>Creating a VLAN range using Zone ID without network ID now
+                  succeeds.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15256</para></entry>
+              <entry><para>If adding a cluster fails the first time, now able to associate cluster
+                  with Nexus VSM upon retry.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15243</para></entry>
+              <entry><para>Now check to be sure source NAT and VPN have same
+                provider.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15232</para></entry>
+              <entry><para>Ensure that networks using external load balancer/firewall in 2.2.14 or
+                  earlier can properly upgrade.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15200</para></entry>
+              <entry><para>No exception when trying to attach the same volume while attaching the
+                  first volume is in progress.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15173</para></entry>
+              <entry><para>Additional cluster can no longer be added with same VSM IP address as
+                  another cluster.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15167</para></entry>
+              <entry><para>AWS API calls now honor the admin account's ability to view or act on the
+                  resources owned by the regular users.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15163</para></entry>
+              <entry><para>The minimum limit is not honored when there is not enough capacity to
+                  deploy all the VMs and the ec2-run-instances command with the -n &gt;n1 -n2&gt;
+                  option is used to deploy multiple VMs.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15157</para></entry>
+              <entry><para>Can now add/enable service providers for multiple physical networks
+                  through the UI.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15145</para></entry>
+              <entry><para>AWS API call ec2-register has better error handling for negative
+                  cases.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15122</para></entry>
+              <entry><para>Filters now supported for AWS API call
+                  ec2-describe-availability-zones.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15120</para></entry>
+              <entry><para>Actions column in UI of Volume page now shows action
+                links.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15099</para></entry>
+              <entry><para>Buttons no longer overlap text on Account Deletion confirmation page in
+                  UI.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15095</para></entry>
+              <entry><para>Ensures you can not create a VM with a CPU frequency greater than the
+                  host CPU frequency.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15094</para></entry>
+              <entry><para>CPU cap now set properly in VMware.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15077</para></entry>
+              <entry><para>NullPointerException is no longer observed while executing the command to
+                  list the public IP in a basic zone created with the default shared NetScaler EIP
+                  and ELB network offering.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15044</para></entry>
+              <entry><para>UI now provides option to view the list of instances which are part of
+                  the guest network.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15026</para></entry>
+              <entry><para>UI in Deploy VM dialog now lists only templates or ISOs depending on
+                  which is selected in previous dialog.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14989</para></entry>
+              <entry><para>In KVM, the Create Instance wizard now shows only templates from the
+                  current (KVM) zone.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14986, CS-14985</para></entry>
+              <entry><para>Listing filters works as expected in the ec2-describe-volumes and
+                  ec2-describe-snapshots commands.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14964</para></entry>
+              <entry><para>Automatically starting the Console Proxy no longer fails due to its
+                  missing volume on the primary storage</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14952</para></entry>
+              <entry><para>The vCenter IP Address and the datacenter information are now present in
+                  the "virtual_supervisor_module" table. The Nexus virtual switch credentials are
+                  now encrypted.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14907</para></entry>
+              <entry><para>User is now correctly prevented from trying to download an uploaded
+                  volume which has not yet been moved to primary storage.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14879</para></entry>
+              <entry><para>When a user VM is stopped or terminated, the static NAT associated with
+                  this VM is now disabled. This public IP address is no longer owned by this account
+                  and can be associated to any other user VM.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14854</para></entry>
+              <entry><para>Only the admin user can change the template permission to Public, so this
+                  option is removed from the UI for domain Admins and regular Users.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14817</para></entry>
+              <entry><para>While checking if network has any external provider, CloudStack will
+                  consider all providers in the network.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14796</para></entry>
+              <entry><para>When deploying a VM with ec2-run-instances, userdata is now
+                  encoded.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14770</para></entry>
+              <entry><para>The API returns the keypair information when a VM is deployed with
+                  sshkey. This affects the API commands related to virtual machines
+                  (deployVirtualMachine, listVirtualMachines, ... *VirtualMachine), as well as the
+                  corresponding AWS APIs.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14724</para></entry>
+              <entry><para>UI no longer displays the dropdown list of isolation method choices if
+                  sdn.ovs.controller is false.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14345</para></entry>
+              <entry><para>Logout API returns XML header.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14724</para></entry>
+              <entry><para>Host IPs now associated with appropriate IPs according to traffic
+                  type.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14253</para></entry>
+              <entry><para>Can now delete and re-create port forwarding rule on same
+                  firewall.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14724</para></entry>
+              <entry><para>UI no longer displays the dropdown list of isolation method choices if
+                  sdn.ovs.controller is false.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14452</para></entry>
+              <entry><para>Data disk volumes are now automatically copied from one cluster to
+                  another.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-13539</para></entry>
+              <entry><para>Windows VM can get IP after reboot.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-13537</para></entry>
+              <entry><para>When user tries to delete a domain that contains sub-domains, an error
+                  message is now sent to convey the reason for the delete failure.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-13153</para></entry>
+              <entry><para>System VMs support HTTP proxy.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-12642</para></entry>
+              <entry><para>Added Close button to Select Project list view popup in
+                UI.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-12510</para></entry>
+              <entry><para>Deleting and reinserting host_details no longer causes
+                deadlocks.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-12407</para></entry>
+              <entry><para>F5 and Netscaler - when dedicated is selected, capacity field is
+                  disabled.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-12111</para></entry>
+              <entry><para>Email validation for edit user form.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-10928</para></entry>
+              <entry><para>Network read/write values now always positive numbers.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15376, CS-15373</para></entry>
+              <entry><para>The AWS APIs (EC2 and S3) now listen on the 7080 port and send request to
+                  CloudStack on the 8080 port just as any other clients of
+                CloudStack.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-13944</para></entry>
+              <entry><para>The CloudStack 2.2.x to 3.0.x database upgrade for multiple physical
+                  networks is now supported.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15300</para></entry>
+              <entry><para>The admin accounts of a domain now honour the limits imposed on that
+                  domain just like the regular accounts do. A domain admin now is not allowed to
+                  create an unlimited number of instances, volumes, snapshots, and so
+                on.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15396</para></entry>
+              <entry><para>The CloudStack database now contain the UUD information after the 2.2.14
+                  to 3.0.4 upgrade.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15450</para></entry>
+              <entry><para>Upgrade from 2.2.14 to 3.0.4 no longer fails on a VMware
+                host.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15449</para></entry>
+              <entry><para>Running cloudstack-aws-api-register no longer fails with the "User
+                  registration failed with error: [Errno 113] No route to host"
+                error.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15455</para></entry>
+              <entry><para>The iptable rules are configured to open the awsapi port (7080) as part
+                  of the installation.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15429</para></entry>
+              <entry><para>While creating an instance with data volume, disk offering also is
+                  considered while checking the account limit on volume resources.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15414</para></entry>
+              <entry><para>After the 2.2.14 to 3.0.4 upgrade, the value of the global parameter
+                  xen.guest.network.device is now decrypted before setting the traffic
+                label.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15382</para></entry>
+              <entry><para>During 2.2.14 to 3.0.4 upgrade, the hosts no longer go to the Alert state
+                  if destroyed networks existed with non-existent tags prior to
+                upgrade.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15323</para></entry>
+              <entry><para>CloudStack supports the following Citrix XenServer hotfixes: XS602E003,
+                  XS602E004, and XS602E005.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15430</para></entry>
+              <entry><para>Create snapshot now fails if creating a snapshot exceeds the snapshot
+                  resource limit for a domain admin or a user account.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14256</para></entry>
+              <entry><para>Virtual Router no longer remains in starting state for subdomain or user
+                  on a KVM 3.0.1 prerlease host on RHEL 6.2.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-7495</para></entry>
+              <entry><para>Implemented a variety of Xen management host improvements.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-8105</para></entry>
+              <entry><para>NFS v4 for primary storage now works as expected on KVM
+                hosts.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-9989</para></entry>
+              <entry><para>The error messages returned during VM deployment failure will have much
+                  more details than before.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-12584</para></entry>
+              <entry><para>You can no longer add security groups not supported by the hypervisor in
+                  use.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-12705</para></entry>
+              <entry><para>When creating a Network offering by using SRX as the service provider for
+                  SourceNAT servcies, an option is given in the CloudStack UI now to set the
+                  source_nat type to "per Zone"/"per account". </para></entry>
+            </row>
+            <row>
+              <entry><para>CS-12782</para></entry>
+              <entry><para>Assigning a VM from Basic to Advanced zone no longer ignores the network
+                  ID. A warning message is displayed for VM movements across zones.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-12591</para></entry>
+              <entry><para>Broadcast Address on the Second Public IP NIC is now
+                corrected.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-13272</para></entry>
+              <entry><para>When a user is deleted, all the associated properties, such as IPs and
+                  virtual routers, are now deleted.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-13377</para></entry>
+              <entry><para>Creating template from a root disk of a stopped instance now provides an
+                  option to make it a "Featured template".</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-13500</para></entry>
+              <entry><para>Reaching the first guest VM by using its public IP from the second guest
+                  VM no longer fails.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-13853</para></entry>
+              <entry><para>The default gateway can no longer be 0.0.0.0 in the Secondary Storage VM
+                  (SSVM).</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-13863</para></entry>
+              <entry><para>The queryAsyncJobResult command in XML format now returns the correct
+                  UUIDs.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-13867</para></entry>
+              <entry><para>Corrected CSP xenserver-cloud-supp.tgz for XenServer 5.6 and
+                6.0.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-13904</para></entry>
+              <entry><para>Labels and values for the service offerings CPU and memory are now
+                  consistent. </para></entry>
+            </row>
+            <row>
+              <entry><para>CS-13998</para></entry>
+              <entry><para>The SSVM kernel panic issue is fixed on XenServer.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14090</para></entry>
+              <entry><para>The issue is fixed where running the VMware snapshots randomly fails with
+                  the ArrayIndexOutOfBoundsException error.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14021</para></entry>
+              <entry><para>The java.lang.OutOfMemoryError is fixed on the Management
+                Server.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14025</para></entry>
+              <entry><para>The Python Eggs are provided to easily package the test client for each
+                  branch of CloudStack.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14068</para></entry>
+              <entry><para>Resetting the VM password through the CloudStack UI no longer causes any
+                  error.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14156</para></entry>
+              <entry><para>The pod which has the administrator's virtual router is no longer
+                  selected while creating the virtual routers for guests.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14182</para></entry>
+              <entry><para>The users can now delete their ISOs as normal users.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14185</para></entry>
+              <entry><para>The listOSTypes API now filters out the types of operating system by
+                  using the keywords.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14204</para></entry>
+              <entry><para>The cloud-setup-bonding.sh command no longer generates the "command not
+                  found" error.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14214</para></entry>
+              <entry><para>The Specify VLAN option cannot be enabled now for an isolated Network
+                  offering with SourceNAT enabled.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14234</para></entry>
+              <entry><para>Sending project invite email to an account now requires SMTP configured
+                  in CloudStack.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14237</para></entry>
+              <entry><para>The garbage collector of the primary storage no longer fails when the
+                  first host in the cluster is not up.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14241</para></entry>
+              <entry><para>Custom Volume Disk Offering is now matching the Global configuration
+                  value.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14270</para></entry>
+              <entry><para>The listNetworks API no longer assumes that the broadcast type is always
+                  VLAN.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14319</para></entry>
+              <entry><para>The internal name of the VM is no longer present in the error message
+                  that is displayed to a domain administrator.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14321</para></entry>
+              <entry><para>The listVolumes API call now returns a valid value for the isExtractable
+                  parameter for the ISO-derived disk and data disk volumes.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14323</para></entry>
+              <entry><para>Invalid API calls will now give valid response in json/xml
+                format.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14339</para></entry>
+              <entry><para>Custom Disk Size will now allow values larger than 100GB.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14357</para></entry>
+              <entry><para>The ConsoleProxyLoadReportCommand is no longer fired
+                continuously.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14421</para></entry>
+              <entry><para>Fixed the issue of virtual router deployments. The DHCP entries can now
+                  be assigned to the router.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14555</para></entry>
+              <entry><para>Unzipped downloaded template MD5SUM will no longer override the zipped
+                  template MD5SUM in the database.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14598</para></entry>
+              <entry><para>The complete screen of the running VM is now displayed in the console
+                  proxy.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14600</para></entry>
+              <entry><para>Windows or Linux based consoles are no longer lost upon rebooting
+                  VMs.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14784</para></entry>
+              <entry><para>Multiple subnets with the same VLAN now work as expected.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-13303, 14874, 13897, 13944, 14088, 14190</para></entry>
+              <entry><para>A variety of upgrade issues have been fixed in release
+                3.0.3.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15080</para></entry>
+              <entry><para>Setting a private network on a VLAN for VMWare environment is now
+                  supported.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15168</para></entry>
+              <entry><para>The console proxy now works as expected and no exception is shown in the
+                  log after upgrading from version 2.2.14 to 3.0.2.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15172</para></entry>
+              <entry><para>Version 3.0.2 now accepts the valid public key.</para></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </section>
+    <section id="known-issues-4.0">
+      <title>Known Issues in 4.0</title>
+      <informaltable>
+        <tgroup cols="2" align="left" colsep="1" rowsep="1">
+          <colspec colwidth="1*" colname="1" colnum="1"/>
+          <colspec colwidth="2*" colname="2" colnum="2"/>
+          <thead>
+            <row>
+              <entry>
+                <para>Issue ID</para>
+              </entry>
+              <entry>
+                <para>Description</para>
+              </entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry><para>CLOUDSTACK-279</para></entry>
+              <entry><para>Deleting a project fails when executed by the regular user. This works as
+                  expected for root/domain admin. To workaround, perform either of the
+                  following:</para><itemizedlist>
+                  <listitem>
+                    <para>Use the account cleanup thread which will eventually complete the project
+                      deletion.</para>
+                  </listitem>
+                  <listitem>
+                    <para>Execute the call as the root/domain admin on behalf of the regular
+                      user.</para>
+                  </listitem>
+                </itemizedlist>
+              </entry>
+            </row>
+            <row>
+              <entry><para>CS-16067</para></entry>
+              <entry><para>The command=listTags&amp;key=city command does not work as expected. The
+                  command does not return tags for the resources of the account with the tag, city
+                </para>
+              </entry>
+            </row>
+            <row>
+              <entry><para>CS-16063</para></entry>
+              <entry><para>The current values of volumes and snapshots are incorrect when using KVM
+                  as a host. To fix this, the database upgrade codes, volumes.size and
+                  snapshots.size, should be changed to show the virtual sizes.</para>
+              </entry>
+            </row>
+            <row>
+              <entry><para>CS-16058</para></entry>
+              <entry><para>Null pointer Exception while deleting the host after moving the host to
+                  maintenance state.</para>
+              </entry>
+            </row>
+            <row>
+              <entry><para>CS-16045</para></entry>
+              <entry><para>Only the root administrator can handle the API keys. The domain
+                  administrators are not allowed to create, delete, or retrieve API keys for the
+                  users in their domain. </para>
+              </entry>
+            </row>
+            <row>
+              <entry><para>CS-16019</para></entry>
+              <entry><para>CIDR list in the Add VPN Customer Gateway dialog does not prompt the user
+                  that they can provide a comma separated CIDRs if multiple CIDRs have to be
+                  supplied.</para>
+              </entry>
+            </row>
+            <row>
+              <entry><para>CS-16015</para></entry>
+              <entry><para>Deleting a network is not supported when its network providers are
+                  disabled.</para>
+              </entry>
+            </row>
+            <row>
+              <entry><para>CS-16012</para></entry>
+              <entry><para>Unable to delete a zone in the UI because the necessary cleanup cannot be
+                  completed. When the hosts are removed, the expunge process fails to delete the
+                  volumes as no hosts are present to send the commands to. Therefore, the storage
+                  pool removal fails, and zone can't be cleaned and deleted.</para>
+              </entry>
+            </row>
+            <row>
+              <entry><para>CS-16011</para></entry>
+              <entry><para>Name of network offering might be truncated due to too-narrow field width
+                  in Add Guest Network dialog box.</para>
+              </entry>
+            </row>
+            <row>
+              <entry><para>CS-15789</para></entry>
+              <entry><para>Invalid global setting prevents management server to restart. For
+                  example, if you configure the "project.invite.timeout" parameter to
+                  "300&lt;space&gt; and attempt to restart management server, it fails without
+                  throwing a warning or setting the value to the default.</para>
+              </entry>
+            </row>
+            <row>
+              <entry><para>CS-15749</para></entry>
+              <entry><para>Restarting VPC is resulting in intermittent connection loss to the port
+                  forwarding and StaticNAT rules.</para>
+              </entry>
+            </row>
+            <row>
+              <entry><para>CS-15690</para></entry>
+              <entry><para>The IpAssoc command failed as a part of starting the virtual router, but
+                  the final start result is reported as succes.</para>
+              </entry>
+            </row>
+            <row>
+              <entry><para>CS-15672, CS-15635</para></entry>
+              <entry><para>The FQDN of the VM is not configured if it is deployed as a part of
+                  default shared network and isolated guest network
+                  (DefaultIsolatedNetworkOfferingWithSourceNatService).</para>
+              </entry>
+            </row>
+            <row>
+              <entry><para>CS-15664</para></entry>
+              <entry><para>A typo in the component.xml file that blocks Nicira NVP
+                  integration:</para><screen>&lt;pluggableservice name="NiciraNvpElementService" key="com.coud.network.element.NiciraNvpElementService" class="com.cloud.network.element.NiciraNvpElement"/&gt; </screen>
+                <para>The line should
+                be:</para><screen>&lt;pluggableservice name="NiciraNvpElementService" key="com.cloud.network.element.NiciraNvpElementService" class="com.cloud.network.element.NiciraNvpElement"/&gt;</screen></entry>
+            </row>
+            <row>
+              <entry><para>CS-15634</para></entry>
+              <entry><para>The FQDN of a VM that is deployed as a part of both a shared network and
+                  default isolated guest network has the suffix of the shared network instead of the
+                  default isolated guest network.</para>
+              </entry>
+            </row>
+            <row>
+              <entry><para>CS-15576</para></entry>
+              <entry><para>Stopping a VM on XenServer creates a backlog of API commands. For
+                  example, the Attach volume calls become delayed while waiting for the
+                  stopVirtualMachine command to be executed.</para>
+              </entry>
+            </row>
+            <row>
+              <entry><para>CS-15569</para></entry>
+              <entry><para>Misleading error message in the exception when creating a StaticNAT rule
+                  fails in a VPC.</para>
+              </entry>
+            </row>
+            <row>
+              <entry><para>CS-15566</para></entry>
+              <entry><para>External device such as Netscaler is not supported in VPC.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15557</para></entry>
+              <entry><para>Intermittent traffic loss in the VPN connection if Juniper is the remote
+                  router and the life time is 300 seconds.</para>
+              </entry>
+            </row>
+            <row>
+              <entry><para>CS-15361</para></entry>
+              <entry><para>Egress rules are not working in NetScaler loadbalancer.</para>
+              </entry>
+            </row>
+            <row/>
+            <row>
+              <entry><para>CS-15198</para></entry>
+              <entry><para>Peak bandwidth (PIR) and burst size shaping policies are not applied on
+                  Nexus 1000v virtual switch interface.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15163</para></entry>
+              <entry><para>The minimum limit is not honored when there is not enough capacity to
+                  deploy all the VMs and the ec2-run-instances command with the -n &gt;n1 -n2&gt;
+                  option is used to deploy multiple VMs.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15124</para></entry>
+              <entry><para>Mixed switch environment is not supported. The zone can either be
+                  deployed as Standard vSwitch based or Nexus virtual switch based.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15118</para></entry>
+              <entry><para>In a deployment with Nexus 1000v virtual switch, zone VLAN range is not
+                  validated against the reserved list of VLANs for Nexus 1000v.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15117</para></entry>
+              <entry><para>In a deployment with Nexus 1000v virtual switch, disable/enable operation
+                  of the Nexus virtual switch is not working as expected. The Nexus 1000v virtual
+                  switch continues to be used to create network or edit network operations even
+                  after disabling the switch.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15105</para></entry>
+              <entry><para>The cloud-sysvmadm script does not work if the integration.api.port
+                  parameter is set to any port other than 8096.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15092</para></entry>
+              <entry><para>Connecting to the guest VMs through SSH is extremely slow, and it results
+                  in connection timeout.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15037</para></entry>
+              <entry><para>Hairpin NAT is not supported when NetScaler is used for
+                EIP.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15009</para></entry>
+              <entry><para>The port_profile table will not be populated with port profile
+                  information. In this release, CloudStack directly connects to the VSM for all the
+                  port profile operations; therefore, no port profile information is
+                cached.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14939</para></entry>
+              <entry><para>Adding a VMware cluster is not supported when the Management Network is
+                  migrated to the Distributed Virtual Switch environment.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14780</para></entry>
+              <entry><para>You are allowed to ping the elastic IP address of the VM even though no
+                  ingress rule is set that allows the ICMP protocol.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14756</para></entry>
+              <entry><para>Installing KVM on RHEL 6.2 will result in unreliable network performance.
+                  Workaround: blacklist vhost-net. Edit /etc/modprobe.d/blacklist-kvm.conf and
+                  include vhost-net.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14346</para></entry>
+              <entry><para>The UpdateVirtualMachine API call does not check whether the VM is
+                  stopped. Therefore, stop the VM manually before issuing this call.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14303 (was 14537)</para></entry>
+              <entry><para>The IP addresses for a shared network are still being consumed even if no
+                  services are defined for that network.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14296 (was 14530)</para></entry>
+              <entry><para>OVM: Network traffic labels are not supported.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14291 (was 14523)</para></entry>
+              <entry><para>The EIP/ELB network offering for basic zones does not support multiple
+                  NetScalers.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14275 (was 14506)</para></entry>
+              <entry><para>F5: Unable to properly remove a F5 device.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-14201 (was 14430)</para></entry>
+              <entry><para>VMWare: Template sizes are being reported different depending on whether
+                  the primary storage is using ISCSI or NFS.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-13758 (was 13963)</para></entry>
+              <entry><para>vSphere: template download from templates created off of the root volume
+                  does not work properly.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-13733 (was 13935)</para></entry>
+              <entry><para>vSphere: detaching an ISO from a restored VM instance
+                fails.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-13682 (was 13883)</para></entry>
+              <entry><para>Multiple NetScalers are not supported in Basic Networking.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-13599 (was 13359)</para></entry>
+              <entry><para>Programming F5/NetScaler rules can be better optimized.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-13337 (was 13518)</para></entry>
+              <entry><para>Security Groups are not supported in Advanced Networking</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-13173 (was 13336)</para></entry>
+              <entry><para>vSphere: cross cluster volume migration does not work
+                properly.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-12714 (was 12840)</para></entry>
+              <entry><para>Capacity view is not available for pods or clusters.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-12624 (was 12741)</para></entry>
+              <entry><para>vSphere: maintenance mode will not live migrate system VM to another
+                  host.</para></entry>
+            </row>
+            <row>
+              <entry>
+                <para>CS-15476</para>
+              </entry>
+              <entry>
+                <para>The 2.2.14 to 4.0 upgrade fails if multiple untagged physical networks exist
+                  before the upgrade.</para>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <para>CS-15407</para>
+              </entry>
+              <entry>
+                <para>After the 2.2.14 to 4.0 upgrade, VLAN allocation on multiple physical networks
+                  does not happen as expected.</para>
+                <para>To workaround this issue, follow the instructions given below:</para>
+                <orderedlist>
+                  <listitem>
+                    <para>Revert to your 2.2.14 setup.</para>
+                  </listitem>
+                  <listitem>
+                    <para>Stop all the VMs with the isolated virtual networks in your cloud
+                      setup.</para>
+                  </listitem>
+                  <listitem>
+                    <para> Run following query to find if any networks still have the NICs
+                      allocated:</para>
+                    <orderedlist numeration="loweralpha">
+                      <listitem>
+                        <para>Check if any virtual guest networks have the NICs allocated:</para>
+                        <programlisting>#SELECT DISTINCT op.id from `cloud`.`op_networks` op JOIN `cloud`.`networks` n on op.id=n.id WHERE nics_count != 0 AND guest_type = 'Virtual'; </programlisting>
+                      </listitem>
+                      <listitem>
+                        <para>If this returns any network IDs, then ensure the following:</para>
+                        <orderedlist numeration="lowerroman">
+                          <listitem>
+                            <para>All the VMs are stopped.</para>
+                          </listitem>
+                          <listitem>
+                            <para>No new VM is started.</para>
+                          </listitem>
+                          <listitem>
+                            <para>Shutdown the Management Server.</para>
+                          </listitem>
+                        </orderedlist>
+                      </listitem>
+                      <listitem>
+                        <para>Remove the NICs count for the virtual network IDs returned in step
+                          (a), and set the NIC count to 0:</para>
+                        <programlisting>UPDATE `cloud`.`op_networks` SET nics_count = 0 WHERE id = &lt;enter id of virtual network&gt;</programlisting>
+                      </listitem>
+                      <listitem>
+                        <para>Restart the Management Server, and wait for all the networks to shut
+                          down.</para>
+                        <note>
+                          <para>Networks shutdown is determined by the network.gc.interval and
+                            network.gc.wait parameters.</para>
+                        </note>
+                      </listitem>
+                    </orderedlist>
+                  </listitem>
+                  <listitem>
+                    <para>Ensure that all the networks are shut down and all the guest VNETs are
+                      free.</para>
+                  </listitem>
+                  <listitem>
+                    <para>Run the upgrade script.</para>
+                    <para>This allocates all your guest VNET ranges to the first physical
+                      network.</para>
+                  </listitem>
+                  <listitem>
+                    <para>By using the updatePhysicalNetwork API, reconfigure the VNET ranges for
+                      each physical network as desired.</para>
+                  </listitem>
+                  <listitem>
+                    <para>Start all the VMs.</para>
+                  </listitem>
+                </orderedlist>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <para>CS-14680</para>
+              </entry>
+              <entry>
+                <para>CloudStack and LDAP user validation cannot happen simultaneously because the
+                  user password is hashed and stored in the database, and LDAP requires the
+                  passwords in plain text.</para>
+                <para>To work with the LDAP user, the MD5 hash should be disabled in the login
+                  process by commenting the following variable in sharedFunctions.js file available
+                  at /usr/share/cloud/management/webapps/client/scripts, and restart the
+                  cloud-management service.</para>
+                <programlisting>var md5HashedLogin = false;</programlisting>
+                <para>However, if md5HashedLogin is set to false, the end user can login with the
+                  LDAP credentials but not with the CloudStack user credentials.</para>
+              </entry>
+            </row>
+            <row>
+              <entry><para>CS-14346</para></entry>
+              <entry><para>The UpdateVirtualMachine API call does not check whether the VM is
+                  stopped. Therefore, stop the VM manually before issuing this call.</para></entry>
+            </row>
+            <row/>
+            <row>
+              <entry><para>CS-15130</para></entry>
+              <entry><para>Data disk volumes are not automatically copied from one cluster to
+                  another.</para></entry>
+            </row>
+            <row/>
+            <row>
+              <entry><para>CS-14780</para></entry>
+              <entry><para>You are allowed to ping the elastic IP address of the VM even though no
+                  ingress rule is set that allows the ICMP protocol.</para></entry>
+            </row>
+            <row/>
+            <row/>
+            <row>
+              <entry><para>CS-14939</para></entry>
+              <entry><para>Adding a VMware cluster is not supported when the Management Network is
+                  migrated to the Distributed Virtual Switch environment.</para></entry>
+            </row>
+            <row/>
+            <row>
+              <entry><para>CS-15009</para></entry>
+              <entry><para>The port_profile table will not be populated with port profile
+                  information. In this release, CloudStack directly connects to the VSM for all the
+                  port profile operations; therefore, no port profile information is
+                cached.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15037</para></entry>
+              <entry><para>Hairpin NAT is not supported when NetScaler is used for
+                EIP.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15092</para></entry>
+              <entry><para>Connecting to the guest VMs through SSH is extremely slow, and it results
+                  in connection timeout.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15105</para></entry>
+              <entry><para>The cloud-sysvmadm script does not work if the integration.api.port
+                  parameter is set to any port other than 8096.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15117</para></entry>
+              <entry><para>In a deployment with Nexus 1000v virtual switch, disable/enable operation
+                  of the Nexus virtual switch is not working as expected. The Nexus 1000v virtual
+                  switch continues to be used to create network or edit network operations even
+                  after disabling the switch.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15118</para></entry>
+              <entry><para>In a deployment with Nexus 1000v virtual switch, zone VLAN range is not
+                  validated against the reserved list of VLANs for Nexus 1000v.</para></entry>
+            </row>
+            <row/>
+            <row>
+              <entry><para>CS-15124</para></entry>
+              <entry><para>Mixed switch environment is not supported. The zone can either be
+                  deployed as Standard vSwitch based or Nexus virtual switch based.</para></entry>
+            </row>
+            <row>
+              <entry><para>CS-15163</para></entry>
+              <entry><para>The minimum limit is not honored when there is not enough capacity to
+                  deploy all the VMs and the ec2-run-instances command with the -n &gt;n1 -n2&gt;
+                  option is used to deploy multiple VMs.</para></entry>
+            </row>
+            <row/>
+            <row>
+              <entry><para>CS-15198</para></entry>
+              <entry><para>Peak bandwidth (PIR) and burst size shaping policies are not applied on
+                  Nexus 1000v virtual switch interface.</para></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </section>
+  </chapter>
+  <chapter id="api-changes-4.0">
+    <title>API Changes from 3.0.2 to 4.0</title>
+    <section id="new-api-commands-4.0">
+      <title>New API Commands in 4.0</title>
+      <itemizedlist>
+        <listitem>
+          <para>createCounter (Adds metric counter)</para>
+        </listitem>
+        <listitem>
+          <para>deleteCounter (Deletes a counter)</para>
+        </listitem>
+        <listitem>
+          <para>listCounters (List the counters)</para>
+        </listitem>
+        <listitem>
+          <para>createCondition (Creates a condition)</para>
+        </listitem>
+        <listitem>
+          <para>deleteCondition (Removes a condition)</para>
+        </listitem>
+        <listitem>
+          <para>listConditions (List Conditions for the specific user)</para>
+        </listitem>
+        <listitem>
+          <para>createTags. Add tags to one or more resources. Example:
+            <programlisting>command=createTags
+&amp;resourceIds=1,10,12
+&amp;resourceType=userVm
+&amp;tags[0].key=region
+&amp;tags[0].value=canada
+&amp;tags[1].key=city
+&amp;tags[1].value=Toronto				</programlisting></para>
+        </listitem>
+        <listitem>
+          <para>deleteTags. Remove tags from one or more resources. Example:
+            <programlisting>command=deleteTags
+&amp;resourceIds=1,12
+&amp;resourceType=Snapshot
+&amp;tags[0].key=city								</programlisting></para>
+        </listitem>
+        <listitem>
+          <para>listTags (Show currently defined resource tags)</para>
+        </listitem>
+        <listitem>
+          <para>createVPC (Creates a VPC)</para>
+        </listitem>
+        <listitem>
+          <para>listVPCs (Lists VPCs)</para>
+        </listitem>
+        <listitem>
+          <para>deleteVPC (Deletes a VPC)</para>
+        </listitem>
+        <listitem>
+          <para>updateVPC (Updates a VPC)</para>
+        </listitem>
+        <listitem>
+          <para>restartVPC (Restarts a VPC)</para>
+        </listitem>
+        <listitem>
+          <para>createVPCOffering (Creates VPC offering)</para>
+        </listitem>
+        <listitem>
+          <para>updateVPCOffering (Updates VPC offering)</para>
+        </listitem>
+        <listitem>
+          <para>deleteVPCOffering (Deletes VPC offering)</para>
+        </listitem>
+        <listitem>
+          <para>listVPCOfferings (Lists VPC offerings)</para>
+        </listitem>
+        <listitem>
+          <para>createPrivateGateway (Creates a private gateway)</para>
+        </listitem>
+        <listitem>
+          <para>listPrivateGateways (List private gateways)</para>
+        </listitem>
+        <listitem>
+          <para>deletePrivateGateway (Deletes a Private gateway)</para>
+        </listitem>
+        <listitem>
+          <para>createNetworkACL (Creates a ACL rule the given network (the network has to belong to
+            VPC))</para>
+        </listitem>
+        <listitem>
+          <para>deleteNetworkACL (Deletes a Network ACL)</para>
+        </listitem>
+        <listitem>
+          <para>listNetworkACLs (Lists all network ACLs)</para>
+        </listitem>
+        <listitem>
+          <para>createStaticRoute (Creates a static route)</para>
+        </listitem>
+        <listitem>
+          <para>deleteStaticRoute (Deletes a static route)</para>
+        </listitem>
+        <listitem>
+          <para>listStaticRoutes (Lists all static routes)</para>
+        </listitem>
+        <listitem>
+          <para>createVpnCustomerGateway (Creates site to site vpn customer gateway)</para>
+        </listitem>
+        <listitem>
+          <para>createVpnGateway (Creates site to site vpn local gateway)</para>
+        </listitem>
+        <listitem>
+          <para>createVpnConnection (Create site to site vpn connection)</para>
+        </listitem>
+        <listitem>
+          <para>deleteVpnCustomerGateway (Delete site to site vpn customer gateway)</para>
+        </listitem>
+        <listitem>
+          <para>deleteVpnGateway (Delete site to site vpn gateway)</para>
+        </listitem>
+        <listitem>
+          <para>deleteVpnConnection (Delete site to site vpn connection)</para>
+        </listitem>
+        <listitem>
+          <para>updateVpnCustomerGateway (Update site to site vpn customer gateway)</para>
+        </listitem>
+        <listitem>
+          <para>resetVpnConnection (Reset site to site vpn connection)</para>
+        </listitem>
+        <listitem>
+          <para>listVpnCustomerGateways (Lists site to site vpn customer gateways)</para>
+        </listitem>
+        <listitem>
+          <para>listVpnGateways (Lists site 2 site vpn gateways)</para>
+        </listitem>
+        <listitem>
+          <para>listVpnConnections (Lists site to site vpn connection gateways)</para>
+        </listitem>
+        <listitem>
+          <para>listCiscoNexusVSMs(Retrieves information of a Cisco Nexus 1000v virtual switch
+            associated with a cluster. It lists the control VLAN ID, packet VLAN ID, and data VLAN
+            ID, as well as the IP address of the Nexus virtual switch)</para>
+        </listitem>
+        <listitem>
+          <para>enableCiscoNexusVSM(Enables a Cisco Nexus VSM device)</para>
+        </listitem>
+        <listitem>
+          <para>disableCiscoNexusVSM (Disables a Cisco Nexus VSM device)</para>
+        </listitem>
+        <listitem>
+          <para>deleteCiscoNexusVSM (Deletes a Cisco Nexus VSM device)</para>
+        </listitem>
+        <listitem>
+          <para>markDefaultZoneForAccount (Marks a default zone for the current account)</para>
+        </listitem>
+        <listitem>
+          <para>uploadVolume (Uploads a data disk)</para>
+        </listitem>
+      </itemizedlist>
+    </section>
+    <section id="changed-api-commands-4.0">
+      <title>Changed API Commands in 4.0</title>
+      <informaltable>
+        <tgroup cols="2" align="left" colsep="1" rowsep="1">
+          <colspec colwidth="1.0*" colname="1" colnum="1"/>
+          <colspec colwidth="2.28*" colname="2" colnum="2"/>
+          <thead>
+            <row>
+              <entry><para>API Commands</para></entry>
+              <entry><para>Description</para></entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry>
+                <para>copyTemplate</para>
+                <para>prepareTemplate</para>
+                <para>registerTemplate</para>
+                <para>updateTemplate</para>
+                <para>createProject</para>
+                <para>activateProject</para>
+                <para>suspendProject</para>
+                <para>updateProject</para>
+                <para>listProjectAccounts</para>
+                <para>createVolume</para>
+                <para>migrateVolume</para>
+                <para>attachVolume</para>
+                <para>detachVolume</para>
+                <para>uploadVolume</para>
+                <para>createSecurityGroup</para>
+                <para>registerIso</para>
+                <para>copyIso</para>
+                <para>updateIso</para>
+                <para>createIpForwardingRule</para>
+                <para>listIpForwardingRules</para>
+                <para>createLoadBalancerRule</para>
+                <para>updateLoadBalancerRule</para>
+                <para>createSnapshot</para>
+              </entry>
+              <entry>
+                <para>The commands in this list have a single new response parameter, and no other
+                  changes.</para>
+                <para>New response parameter: tags(*)</para>
+                <note>
+                  <para>Many other commands also have the new tags(*) parameter in addition to other
+                    changes; those commands are listed separately.</para>
+                </note></entry>
+            </row>
+            <row>
+              <entry>
+                <para>rebootVirtualMachine</para>
+                <para>attachIso</para>
+                <para>detachIso</para>
+                <para>listLoadBalancerRuleInstances</para>
+                <para>resetPasswordForVirtualMachine</para>
+                <para>changeServiceForVirtualMachine</para>
+                <para>recoverVirtualMachine</para>
+                <para>startVirtualMachine</para>
+                <para>migrateVirtualMachine</para>
+                <para>deployVirtualMachine</para>
+                <para>assignVirtualMachine</para>
+                <para>updateVirtualMachine</para>
+                <para>restoreVirtualMachine</para>
+                <para>stopVirtualMachine</para>
+                <para>destroyVirtualMachine</para>
+              </entry>
+              <entry>
+                <para>The commands in this list have two new response parameters, and no other
+                  changes.</para>
+                <para>New response parameters: keypair, tags(*)</para>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <para>listSecurityGroups</para>
+                <para>listFirewallRules</para>
+                <para>listPortForwardingRules</para>
+                <para>listSnapshots</para>
+                <para>listIsos</para>
+                <para>listProjects</para>
+                <para>listTemplates</para>
+                <para>listLoadBalancerRules</para>
+              </entry>
+              <entry><para>The commands in this list have the following new parameters, and no other
+                  changes.</para>
+                <para>New request parameter: tags (optional)</para>
+                <para>New response parameter: tags(*)</para>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <para>listF5LoadBalancerNetworks</para>
+                <para>listNetscalerLoadBalancerNetworks</para>
+                <para>listSrxFirewallNetworks</para>
+                <para>updateNetwork</para>
+              </entry>
+              <entry>
+                <para>The commands in this list have three new response parameters, and no other
+                  changes.</para>
+                <para>New response parameters: canusefordeploy, vpcid, tags(*)</para>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <para>createZone</para>
+                <para>updateZone</para>
+              </entry>
+              <entry><para>The commands in this list have the following new parameters, and no other
+                  changes.</para>
+                <para>New request parameter: localstorageenabled (optional)</para>
+                <para>New response parameter: localstorageenabled</para>
+              </entry>
+            </row>
+            <row>
+              <entry><para>listZones</para></entry>
+              <entry><para>New response parameter: localstorageenabled</para></entry>
+            </row>
+            <row>
+              <entry>
+                <para>rebootRouter</para>
+                <para>changeServiceForRouter</para>
+                <para>startRouter</para>
+                <para>destroyRouter</para>
+                <para>stopRouter</para>
+              </entry>
+              <entry><para>The commands in this list have two new response parameters, and no other
+                  changes.</para>
+                <para>New response parameters: vpcid, nic(*)</para></entry>
+            </row>
+            <row>
+              <entry>
+                <para>updateAccount</para>
+                <para>disableAccount</para>
+                <para>listAccounts</para>
+                <para>markDefaultZoneForAccount</para>
+                <para>enableAccount</para>
+              </entry>
+              <entry><para>The commands in this list have three new response parameters, and no
+                  other changes.</para>
+                <para>New response parameters: vpcavailable, vpclimit, vpctotal</para></entry>
+            </row>
+            <row>
+              <entry><para>listRouters</para></entry>
+              <entry>
+                <para>New request parameters: forvpc (optional), vpcid (optional)</para>
+                <para>New response parameters: vpcid, nic(*)</para>
+              </entry>
+            </row>
+            <row>
+              <entry><para>listNetworkOfferings</para></entry>
+              <entry>
+                <para>New request parameters: forvpc (optional)</para>
+                <para>New response parameters: forvpc </para>
+              </entry>
+            </row>
+            <row>
+              <entry><para>listVolumes</para></entry>
+              <entry>
+                <para>New request parameters: details (optional), tags (optional)</para>
+                <para>New response parameters: tags(*)</para>
+              </entry>
+            </row>
+            <row>
+              <entry><para>addTrafficMonitor</para></entry>
+              <entry>
+                <para>New request parameters: excludezones (optional), includezones
+                  (optional)</para>
+              </entry>
+            </row>
+            <row>
+              <entry><para>createNetwork</para></entry>
+              <entry>
+                <para>New request parameters: vpcid (optional)</para>
+                <para>New response parameters: canusefordeploy, vpcid, tags(*)</para>
+              </entry>
+            </row>
+            <row>
+              <entry><para>listPublicIpAddresses</para></entry>
+              <entry>
+                <para>New request parameters: tags (optional), vpcid (optional)</para>
+                <para>New response parameters: vpcid, tags(*)</para>
+              </entry>
+            </row>
+            <row>
+              <entry><para>listNetworks</para></entry>
+              <entry>
+                <para>New request parameters: canusefordeploy (optional), forvpc (optional), tags
+                  (optional), vpcid (optional)</para>
+                <para>New response parameters: canusefordeploy, vpcid, tags(*)</para>
+              </entry>
+            </row>
+            <row>
+              <entry><para>restartNetwork</para></entry>
+              <entry>
+                <para>New response parameters: vpcid, tags(*)</para>
+              </entry>
+            </row>
+            <row>
+              <entry><para>enableStaticNat</para></entry>
+              <entry>
+                <para>New request parameter: networkid (optional)</para>
+              </entry>
+            </row>
+            <row>
+              <entry><para>createDiskOffering</para></entry>
+              <entry>
+                <para>New request parameter: storagetype (optional)</para>
+                <para>New response parameter: storagetype</para>
+              </entry>
+            </row>
+            <row>
+              <entry><para>listDiskOfferings</para></entry>
+              <entry>
+                <para>New response parameter: storagetype</para>
+              </entry>
+            </row>
+            <row>
+              <entry><para>updateDiskOffering</para></entry>
+              <entry>
+                <para>New response parameter: storagetype</para>
+              </entry>
+            </row>
+            <row>
+              <entry><para>createFirewallRule</para></entry>
+              <entry>
+                <para>Changed request parameters: ipaddressid (old version - optional, new version -
+                  required)</para>
+                <para>New response parameter: tags(*)</para>
+              </entry>
+            </row>
+            <row>
+              <entry><para>listVirtualMachines</para></entry>
+              <entry>
+                <para>New request parameters: isoid (optional), tags (optional), templateid
+                  (optional)</para>
+                <para>New response parameters: keypair, tags(*)</para>
+              </entry>
+            </row>
+            <row>
+              <entry><para>updateStorageNetworkIpRange</para></entry>
+              <entry>
+                <para>New response parameters: id, endip, gateway, netmask, networkid, podid,
+                  startip, vlan, zoneid</para>
+              </entry>
+            </row>
+            <row>
+              <entry><para>reconnectHost</para></entry>
+              <entry><para>A new response parameter is added: hahost.</para></entry>
+            </row>
+            <row>
+              <entry><para>addCluster</para></entry>
+              <entry><para>The following request parameters are added:</para>
+                <itemizedlist>
+                  <listitem><para>vsmipaddress (optional)</para></listitem>
+                  <listitem><para>vsmpassword (optional)</para></listitem>
+                  <listitem><para>vsmusername (optional)</para></listitem>
+                </itemizedlist>
+                <para>The following parameter is made mandatory: podid</para>
+              </entry>
+            </row>
+            <row>
+              <entry><para>listVolumes</para></entry>
+              <entry><para>A new response parameter is added: status</para></entry>
+            </row>
+            <row>
+              <entry><para>migrateVolume</para></entry>
+              <entry><para>A new response parameter is added: status</para></entry>
+            </row>
+            <row>
+              <entry><para>prepareHostForMaintenance</para></entry>
+              <entry><para>A new response parameter is added: hahost.</para></entry>
+            </row>
+            <row>
+              <entry><para>addSecondaryStorage</para></entry>
+              <entry><para>A new response parameter is added: hahost.</para></entry>
+            </row>
+            <row>
+              <entry><para>enableAccount</para></entry>
+              <entry><para>A new response parameter is added: defaultzoneid</para></entry>
+            </row>
+            <row>
+              <entry><para>attachVolume</para></entry>
+              <entry><para>A new response parameter is added: status</para></entry>
+            </row>
+            <row>
+              <entry><para>cancelHostMaintenance</para></entry>
+              <entry><para>A new response parameter is added: hahost</para></entry>
+            </row>
+            <row>
+              <entry><para>addSwift</para></entry>
+              <entry><para>A new response parameter is added: hahost</para></entry>
+            </row>
+            <row>
+              <entry><para>listSwifts</para></entry>
+              <entry><para>A new response parameter is added: hahost</para></entry>
+            </row>
+            <row>
+              <entry><para>listExternalLoadBalancers</para></entry>
+              <entry><para>A new response parameter is added: hahost</para></entry>
+            </row>
+            <row>
+              <entry><para>createVolume</para></entry>
+              <entry><para>A new response parameter is added: status</para></entry>
+            </row>
+            <row>
+              <entry><para>listCapabilities</para></entry>
+              <entry><para>A new response parameter is added: customdiskofferingmaxsize</para></entry>
+            </row>
+            <row>
+              <entry><para>disableAccount</para></entry>
+              <entry><para>A new response parameter is added: defaultzoneid </para></entry>
+            </row>
+            <row>
+              <entry><para>deployVirtualMachine</para></entry>
+              <entry><para>A new request parameter is added: startvm (optional)</para></entry>
+            </row>
+            <row>
+              <entry><para>deleteStoragePool</para></entry>
+              <entry><para>A new request parameter is added: forced (optional)</para></entry>
+            </row>
+            <row>
+              <entry><para>updateAccount</para></entry>
+              <entry><para>A new response parameter is added: defaultzoneid</para></entry>
+            </row>
+            <row>
+              <entry><para>addHost</para></entry>
+              <entry><para>A new response parameter is added: hahost</para></entry>
+            </row>
+            <row>
+              <entry><para>updateHost</para></entry>
+              <entry><para>A new response parameter is added: hahost</para></entry>
+            </row>
+            <row>
+              <entry><para>detachVolume</para></entry>
+              <entry><para>A new response parameter is added: status</para></entry>
+            </row>
+            <row>
+              <entry><para>listAccounts</para></entry>
+              <entry><para>A new response parameter is added: defaultzoneid</para></entry>
+            </row>
+            <row>
+              <entry><para>listHosts</para></entry>
+              <entry><para>A new response parameter is added: hahost</para><para>A new request parameter is added: hahost (optional)</para></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </section>
+  </chapter>
+</book>
