@@ -22,7 +22,7 @@
 	under the License.
 -->
 
-<chapter id="user-services-overview">
+<section id="user-services-overview">
 		<title>User Services Overview</title>
 	<para>In addition to the physical and logical infrastructure of your cloud, and the &PRODUCT; software and servers, you also need a layer of user services so that people can actually make use of the cloud. This means not just a user UI, but a set of options and resources that users can choose from, such as templates for creating virtual machines, disk storage, and more. If you are running a commercial service, you will be keeping track of what services and resources users are consuming and charging them for that usage. Even if you do not charge anything for people to use your cloud – say, if the users are strictly internal to your organization, or just friends who are sharing your cloud – you can still keep track of what services they use and how much of them.</para>
 	<section id="offerings-and-templates">
@@ -36,4 +36,4 @@
 		</itemizedlist>
 		<para>In addition to these choices that are provided for users, there is another type of service offering which is available only to the &PRODUCT; root administrator, and is used for configuring virtual infrastructure resources. For more information, see Upgrading a Virtual Router with System Service Offerings.</para>
 	</section>
-</chapter>
+</section>
