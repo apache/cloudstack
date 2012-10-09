@@ -31,3 +31,8 @@ New Features:
  * Ceph RBD Support for KVM
  * Support for Caringo as Secondary Storage
  * KVM Hypervisor support upgraded to work with Ubuntu 12.04 and RHEL 6.3
+
+Security Fixes:
+
+ * CVE-2012-4501: Apache CloudStack configuration vulnerability
+
