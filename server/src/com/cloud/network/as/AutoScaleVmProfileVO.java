@@ -16,7 +16,12 @@
 // under the License.
 package com.cloud.network.as;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import javax.persistence.Column;
@@ -29,6 +34,7 @@ import javax.persistence.InheritanceType;
 import javax.persistence.Table;
 
 import com.cloud.api.Identity;
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.NetUtils;
 
@@ -69,11 +75,8 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity {
     @Column(name = "destroy_vm_grace_period", updatable = true)
     private Integer destroyVmGraceperiod = NetUtils.DEFAULT_AUTOSCALE_VM_DESTROY_TIME;
 
-    @Column(name = "snmp_community", updatable = true)
-    private String snmpCommunity = NetUtils.DEFAULT_SNMP_COMMUNITY;
-
-    @Column(name = "snmp_port", updatable = true)
-    private Integer snmpPort = NetUtils.DEFAULT_SNMP_PORT;
+    @Column(name = "counter_params", updatable = true)
+    private String counterParams;
 
     @Column(name = GenericDao.REMOVED_COLUMN)
     protected Date removed;
@@ -84,7 +87,7 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity {
     public AutoScaleVmProfileVO() {
     }
 
-    public AutoScaleVmProfileVO(long zoneId, long domainId, long accountId, long serviceOfferingId, long templateId, String otherDeployParams, String snmpCommunity, Integer snmpPort, Integer destroyVmGraceperiod,
+    public AutoScaleVmProfileVO(long zoneId, long domainId, long accountId, long serviceOfferingId, long templateId, String otherDeployParams, Map counterParamList, Integer destroyVmGraceperiod,
             long autoscaleUserId) {
         this.uuid = UUID.randomUUID().toString();
         this.zoneId = zoneId;
@@ -97,12 +100,7 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity {
         if (destroyVmGraceperiod != null) {
             this.destroyVmGraceperiod = destroyVmGraceperiod;
         }
-        if (snmpCommunity != null) {
-            this.snmpCommunity = snmpCommunity;
-        }
-        if (snmpPort != null) {
-            this.snmpPort = snmpPort;
-        }
+        setCounterParamsForUpdate(counterParamList);
     }
 
     @Override
@@ -134,21 +132,44 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity {
     }
 
     @Override
-    public String getSnmpCommunity() {
-        return snmpCommunity;
+    public List<Pair<String, String>> getCounterParams() {
+        List<Pair<String, String>> paramsList = new ArrayList<Pair<String, String>>();
+        if (counterParams != null) {
+            String[] params = counterParams.split("[=&]");
+            for (int i = 0; i < (params.length - 1); i = i + 2) {
+                paramsList.add(new Pair<String, String>(params[i], params[i + 1]));
+            }
+        }
+        return paramsList;
     }
 
-    public void setSnmpCommunity(String snmpCommunity) {
-        this.snmpCommunity = snmpCommunity;
+    public void setCounterParams(String counterParam) {
+        this.counterParams = counterParam;
     }
 
-    @Override
-    public Integer getSnmpPort() {
-        return snmpPort;
-    }
-
-    public void setSnmpPort(Integer snmpPort) {
-        this.snmpPort = snmpPort;
+    public void setCounterParamsForUpdate(Map counterParamList) {
+        StringBuilder sb = new StringBuilder("");
+        boolean isFirstParam = true;
+        if (counterParamList != null) {
+            Iterator<HashMap<String, String>> iter = counterParamList.values().iterator();
+            while (iter.hasNext()) {
+                HashMap<String, String> paramKVpair = iter.next();
+                if (!isFirstParam) {
+                    sb.append("&");
+                }
+                String paramName = paramKVpair.get("name");
+                String paramValue = paramKVpair.get("value");
+                sb.append(paramName + "=" + paramValue);
+                isFirstParam = false;
+            }
+        }
+        /*
+         * setCounterParams(String counterParam)'s String param is caught by UpdateBuilder and stored in an internal
+         * list.
+         * Which is used later to update the db. The variables in a VO object is not used to update the db.
+         * Hence calling the function which is intercepted.
+         */
+        setCounterParams(sb.toString());
     }
 
     @Override

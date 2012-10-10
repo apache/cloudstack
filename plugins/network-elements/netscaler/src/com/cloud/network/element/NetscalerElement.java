@@ -79,6 +79,8 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PhysicalNetworkVO;
 import com.cloud.network.PublicIpAddress;
+import com.cloud.network.as.AutoScaleCounter;
+import com.cloud.network.as.AutoScaleCounter.AutoScaleCounterType;
 import com.cloud.network.dao.ExternalLoadBalancerDeviceDao;
 import com.cloud.network.dao.NetScalerPodDao;
 import com.cloud.network.dao.NetworkDao;
@@ -94,7 +96,6 @@ import com.cloud.network.rules.LbStickinessMethod;
 import com.cloud.network.rules.LbStickinessMethod.StickinessMethodType;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.resource.ServerResource;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
@@ -112,6 +113,8 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
 StaticNatServiceProvider {
 
     private static final Logger s_logger = Logger.getLogger(NetscalerElement.class);
+    public static final AutoScaleCounterType AutoScaleCounterSnmp = new AutoScaleCounterType("snmp");
+    public static final AutoScaleCounterType AutoScaleCounterNetscaler = new AutoScaleCounterType("netscaler");
 
     @Inject
     NetworkManager _networkManager;
@@ -253,8 +256,20 @@ StaticNatServiceProvider {
         // Specifies that load balancing rules can only be made with public IPs that aren't source NAT IPs
         lbCapabilities.put(Capability.LoadBalancingSupportedIps, "additional");
 
-        // Specifies that load balancing rules can support autoscaling
-        lbCapabilities.put(Capability.AutoScaleCounters, "snmp,netscaler");
+        // Specifies that load balancing rules can support autoscaling and the list of counters it supports
+        AutoScaleCounter counter;
+        List<AutoScaleCounter> counterList = new ArrayList<AutoScaleCounter>();
+        counter = new AutoScaleCounter(AutoScaleCounterSnmp);
+        counterList.add(counter);
+        counter.addParam("snmpcommunity", true, "the community string that has to be used to do a SNMP GET on the AutoScaled Vm", false);
+        counter.addParam("snmpport", false, "the port at which SNMP agent is running on the AutoScaled Vm", false);
+
+        counter = new AutoScaleCounter(AutoScaleCounterNetscaler);
+        counterList.add(counter);
+
+        Gson gson = new Gson();
+        String autoScaleCounterList = gson.toJson(counterList);
+        lbCapabilities.put(Capability.AutoScaleCounters, autoScaleCounterList);
 
         LbStickinessMethod method;
         List<LbStickinessMethod> methodList = new ArrayList<LbStickinessMethod>();
@@ -270,7 +285,6 @@ StaticNatServiceProvider {
         methodList.add(method);
         method.addParam("holdtime", false, "time period for which persistence is in effect.", false);
 
-        Gson gson = new Gson();
         String stickyMethodList = gson.toJson(methodList);
         lbCapabilities.put(Capability.SupportedStickinessMethods, stickyMethodList);
 
@@ -371,7 +385,7 @@ StaticNatServiceProvider {
                 HostPodVO pod = _podDao.findById(podId);
                 if (pod == null) {
                     throw new InvalidParameterValueException("Can't find pod by id " + podId);
-        }
+                }
             }
 
             for (Long podId: newPodsConfig) {
@@ -676,7 +690,7 @@ StaticNatServiceProvider {
 
             if ((destinations != null && !destinations.isEmpty()) || rule.isAutoScaleConfig()) {
                 LoadBalancerTO loadBalancer = new LoadBalancerTO(lbUuid, srcIp, srcPort, protocol, algorithm, revoked, false, destinations, rule.getStickinessPolicies());
-                if(rule.isAutoScaleConfig()) {
+                if (rule.isAutoScaleConfig()) {
                     loadBalancer.setAutoScaleVmGroup(rule.getAutoScaleVmGroup());
                 }
                 loadBalancersToApply.add(loadBalancer);
@@ -712,41 +726,41 @@ StaticNatServiceProvider {
 
         try {
             if (!multiNetScalerDeployment) {
-        String errMsg;
-        ExternalLoadBalancerDeviceVO lbDevice = getExternalLoadBalancerForNetwork(config);
-        if (lbDevice == null) {
-            try {
-                lbDevice = allocateLoadBalancerForNetwork(config);
-            } catch (Exception e) {
-                errMsg = "Could not allocate a NetSclaer load balancer for configuring static NAT rules due to" + e.getMessage();
-                s_logger.error(errMsg);
-                throw new ResourceUnavailableException(errMsg, this.getClass(), 0);
-            }
-        }
-
-        if (!isNetscalerDevice(lbDevice.getDeviceName())) {
-            errMsg = "There are no NetScaler load balancer assigned for this network. So NetScaler element will not be handling the static nat rules.";
-            s_logger.error(errMsg);
-            throw new ResourceUnavailableException(errMsg, this.getClass(), 0);
-        }
-        SetStaticNatRulesAnswer answer = null;
-            List<StaticNatRuleTO> rulesTO = null;
-            if (rules != null) {
-                rulesTO = new ArrayList<StaticNatRuleTO>();
-                for (StaticNat rule : rules) {
-                    IpAddress sourceIp = _networkMgr.getIp(rule.getSourceIpAddressId());
-                    StaticNatRuleTO ruleTO = new StaticNatRuleTO(0, sourceIp.getAddress().addr(), null, null, rule.getDestIpAddress(), null, null, null, rule.isForRevoke(), false);
-                    rulesTO.add(ruleTO);
+                String errMsg;
+                ExternalLoadBalancerDeviceVO lbDevice = getExternalLoadBalancerForNetwork(config);
+                if (lbDevice == null) {
+                    try {
+                        lbDevice = allocateLoadBalancerForNetwork(config);
+                    } catch (Exception e) {
+                        errMsg = "Could not allocate a NetSclaer load balancer for configuring static NAT rules due to" + e.getMessage();
+                        s_logger.error(errMsg);
+                        throw new ResourceUnavailableException(errMsg, this.getClass(), 0);
+                    }
                 }
-            }
 
-                SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(rulesTO, null);
-            answer = (SetStaticNatRulesAnswer) _agentMgr.send(lbDevice.getHostId(), cmd);
-            if (answer == null) {
-                return false;
-            } else {
-                return answer.getResult();
-            }
+                if (!isNetscalerDevice(lbDevice.getDeviceName())) {
+                    errMsg = "There are no NetScaler load balancer assigned for this network. So NetScaler element will not be handling the static nat rules.";
+                    s_logger.error(errMsg);
+                    throw new ResourceUnavailableException(errMsg, this.getClass(), 0);
+                }
+                SetStaticNatRulesAnswer answer = null;
+                List<StaticNatRuleTO> rulesTO = null;
+                if (rules != null) {
+                    rulesTO = new ArrayList<StaticNatRuleTO>();
+                    for (StaticNat rule : rules) {
+                        IpAddress sourceIp = _networkMgr.getIp(rule.getSourceIpAddressId());
+                        StaticNatRuleTO ruleTO = new StaticNatRuleTO(0, sourceIp.getAddress().addr(), null, null, rule.getDestIpAddress(), null, null, null, rule.isForRevoke(), false);
+                        rulesTO.add(ruleTO);
+                    }
+                }
+
+                SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(rulesTO);
+                answer = (SetStaticNatRulesAnswer) _agentMgr.send(lbDevice.getHostId(), cmd);
+                if (answer == null) {
+                    return false;
+                } else {
+                    return answer.getResult();
+                }
             } else {
                 if (rules != null) {
                     for (StaticNat rule : rules) {

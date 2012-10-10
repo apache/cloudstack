@@ -243,13 +243,13 @@ public class ApiConstants {
     public static final String PRIVATE_NETWORK_ID = "privatenetworkid";
     public static final String ALLOCATION_STATE = "allocationstate";
     public static final String MANAGED_STATE = "managedstate";
-    public static final String STORAGE_ID="storageid";
+    public static final String STORAGE_ID = "storageid";
     public static final String PING_STORAGE_SERVER_IP = "pingstorageserverip";
     public static final String PING_DIR = "pingdir";
     public static final String TFTP_DIR = "tftpdir";
     public static final String PING_CIFS_USERNAME = "pingcifsusername";
     public static final String PING_CIFS_PASSWORD = "pingcifspassword";
-    public static final String CHECKSUM="checksum";
+    public static final String CHECKSUM = "checksum";
     public static final String NETWORK_DEVICE_TYPE = "networkdevicetype";
     public static final String NETWORK_DEVICE_PARAMETER_LIST = "networkdeviceparameterlist";
     public static final String ZONE_TOKEN = "zonetoken";
@@ -265,8 +265,8 @@ public class ApiConstants {
     public static final String IP_NETWORK_LIST = "iptonetworklist";
     public static final String PARAM_LIST = "param";
     public static final String FOR_LOAD_BALANCING = "forloadbalancing";
-    public static final String KEYBOARD="keyboard";
-    public static final String OPEN_FIREWALL="openfirewall";
+    public static final String KEYBOARD = "keyboard";
+    public static final String OPEN_FIREWALL = "openfirewall";
     public static final String TEMPLATE_TAG = "templatetag";
     public static final String HYPERVISOR_VERSION = "hypervisorversion";
     public static final String MAX_GUESTS_LIMIT = "maxguestslimit";
@@ -303,8 +303,8 @@ public class ApiConstants {
     public static final String SERVICE_LIST = "servicelist";
     public static final String CAN_ENABLE_INDIVIDUAL_SERVICE = "canenableindividualservice";
     public static final String SUPPORTED_SERVICES = "supportedservices";
-    public static final String NSP_ID= "nspid";
-    public static final String ACL_TYPE= "acltype";
+    public static final String NSP_ID = "nspid";
+    public static final String ACL_TYPE = "acltype";
     public static final String SUBDOMAIN_ACCESS = "subdomainaccess";
     public static final String LOAD_BALANCER_DEVICE_ID = "lbdeviceid";
     public static final String LOAD_BALANCER_DEVICE_NAME = "lbdevicename";
@@ -391,8 +391,6 @@ public class ApiConstants {
     public static final String AGGR_VALUE = "aggrvalue";
     public static final String THRESHOLD = "threshold";
     public static final String RELATIONAL_OPERATOR = "relationaloperator";
-    public static final String SNMP_COMMUNITY = "snmpcommunity";
-    public static final String SNMP_PORT = "snmpport";
     public static final String OTHER_DEPLOY_PARAMS = "otherdeployparams";
     public static final String MIN_MEMBERS = "minmembers";
     public static final String MAX_MEMBERS = "maxmembers";
@@ -409,6 +407,7 @@ public class ApiConstants {
     public static final String ACTION = "action";
     public static final String CONDITION_ID = "conditionid";
     public static final String CONDITION_IDS = "conditionids";
+    public static final String COUNTERPARAM_LIST = "counterparam";
     public static final String AUTOSCALE_USER_ID = "autoscaleuserid";
 
     public enum HostDetails {
@@ -418,12 +417,12 @@ public class ApiConstants {
     public enum VMDetails {
         all, group, nics, stats, secgrp, tmpl, servoff, iso, volume, min;
     }
-
+    
     public enum LDAPParams {
         hostname, port, usessl, queryfilter, searchbase, dn, passwd, truststore, truststorepass;
 
         @Override
-        public String toString(){
+        public String toString() {
             return "ldap." + name();
         }
     }
