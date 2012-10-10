@@ -1,6 +1,6 @@
-cloud (4.0.0) unstable; urgency=low
+cloud (1:4.0.0-incubating) unstable; urgency=low
 
-  * Bumping the version to 4.0.0
+  * Bumping the version to 4.0.0-incubating
 
  -- Chip Childers <chipchilders@apache.org>  Fri, 5 Oct 2012 16:00:00 -0500
 

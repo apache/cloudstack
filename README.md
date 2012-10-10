@@ -1,4 +1,4 @@
-Apache CloudStack (Incubating) Version 4.0.0
+Apache CloudStack (Incubating) Version 4.0.0-incubating
 
 # About Apache CloudStack (Incubating)
 
