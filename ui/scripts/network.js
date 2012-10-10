@@ -3083,7 +3083,9 @@
                               url: createURL('removeVpnUser'),
                               data: {
                                 username: args.context.multiRule[0].username,
-                                id: args.context.multiRule[0].domainid
+                                id: args.context.multiRule[0].domainid,
+                                account: args.context.ipAddresses[0].account,
+                                domainid: args.context.ipAddresses[0].domainid
                               },
                               dataType: 'json',
                               async: true,
