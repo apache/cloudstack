@@ -22,7 +22,7 @@
  under the License.
 -->
 
-<section id="added-cloudPlatform-error-codes">
+<section id="added-error-codes">
         <title>Added &PRODUCT; Error Codes</title>
             <para>You can now find the &PRODUCT;-specific error code in the exception response for each type of exception. The following list of error codes is added to the new class named CSExceptionErrorCode.  These codes are applicable in &PRODUCT; 3.0.3 and later versions.</para>
     <informaltable frame="all">

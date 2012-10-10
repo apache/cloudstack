@@ -15,7 +15,7 @@
  specific language governing permissions and limitations
  under the License.
 -->
-<!ENTITY PRODUCT "CloudPlatform">
+<!ENTITY PRODUCT "CloudStack">
 <!ENTITY BOOKID "Technical Documentation">
 <!ENTITY YEAR "2012">
-<!ENTITY HOLDER "Citrix">
+<!ENTITY HOLDER "Apache Software Foundation">

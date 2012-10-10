@@ -105,5 +105,4 @@
   <para>The &PRODUCT; UI on a general view will display all resources that the logged-in user is
     authorized to see, except for project resources. To see the project resources, select the
     project view.</para>
-  <xi:include href="changed-apicommands-4.0.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
 </section>
