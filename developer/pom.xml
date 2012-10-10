@@ -56,6 +56,7 @@
                     <file>${project.parent.basedir}/utils/conf/db.properties</file>
                     <file>${project.parent.basedir}/utils/conf/db.properties.override</file>
                   </files>
+                  <quiet>true</quiet>
                 </configuration>
               </execution>
             </executions>
