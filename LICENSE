@@ -366,6 +366,7 @@ Within the deps/awsapi-lib directory
             rampart-lib  http://axis.apache.org/axis2/java/rampart/download/1.5/download.cgi             
             woden-api-1.0M8.jar  http://svn.apache.org/viewvc/webservices/woden/tags/1.0M8_20080423/             
             woden-impl-dom-1.0M8.jar  http://svn.apache.org/viewvc/webservices/woden/tags/1.0M8_20080423/             
+            wss4j-1.5.8.jar  http://ws.apache.org/wss4j/source-repository.html             
             xercesImpl.jar  http://xerces.apache.org/xerces2-j/source-repository.html             
             xml-apis.jar  http://repo1.maven.org/maven2/xml-apis/xml-apis/1.3.04/xml-apis-1.3.04-sources.jar             
 
