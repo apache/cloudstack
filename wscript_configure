@@ -47,6 +47,7 @@ systemjars = {
 		"commons-logging-api.jar",
 		"commons-pool.jar",
 		"commons-httpclient.jar",
+		"commons-fileupload.jar",
 		"ws-commons-util.jar",
 		"mysql-connector-java.jar",
 	),

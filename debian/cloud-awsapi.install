@@ -25,7 +25,6 @@
 /usr/share/java/axis2-*.jar
 /usr/share/java/neethi*.jar
 /usr/share/java/CAStorSDK*.jar
-/usr/share/java/commons-fileupload*.jar
 /usr/share/java/json-simple*.jar
 /usr/share/java/axiom-*.jar
 /usr/share/java/antlr*.jar
