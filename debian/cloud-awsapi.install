@@ -25,3 +25,13 @@
 /usr/share/java/axis2-*.jar
 /usr/share/java/neethi*.jar
 /usr/share/java/CAStorSDK*.jar
+/usr/share/java/commons-fileupload*.jar
+/usr/share/java/dom4j*.jar
+/usr/share/java/json-simple*.jar
+/usr/share/java/axiom-*.jar
+/usr/share/java/antlr*.jar
+/usr/share/java/XmlSchema-*.jar
+/usr/share/java/woden*.jar
+/usr/share/java/xercesImpl*.jar
+/usr/share/java/xml-apis*.jar
+/usr/share/java/javassist*.jar
