@@ -2250,7 +2250,17 @@ The Apache Software Foundation (http://www.apache.org/).
 
 Please read the different LICENSE files present in the lib directory of
 this distribution.
-           </notice>
+   		</notice>
+        <notice id='wss4j.notice'>
+Apache WebServices - WSS4J
+Copyright 2004-2011 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+This product includes software Copyright University of Southampton IT
+Innovation Centre, 2006 (http://www.it-innovation.soton.ac.uk).
+        </notice>
     </notices>
     <organisations>
         <organisation 
@@ -2848,6 +2858,7 @@ Copyright (c) 2004-2012 The Apache Software Foundation
                 <resource name="woden-impl-dom-1.0M8.jar" source='http://svn.apache.org/viewvc/webservices/woden/tags/1.0M8_20080423/' notice='woden.notice' />
                 <resource name='xercesImpl.jar' source='http://xerces.apache.org/xerces2-j/source-repository.html' notice='xerces.notice' />
                 <resource name='xml-apis.jar' source='http://repo1.maven.org/maven2/xml-apis/xml-apis/1.3.04/xml-apis-1.3.04-sources.jar' notice='xml-apis.notice' />
+                <resource name='wss4j-1.5.8.jar' source='http://ws.apache.org/wss4j/source-repository.html' notice='wss4j.notice' />
             </by-organisation>
         </with-license>
         <with-license id='ApacheLicenseVersion2'>
