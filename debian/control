@@ -120,6 +120,6 @@ Description: CloudStack commandline tool
 Package: cloud-awsapi
 Provides: cloud-awsapi
 Architecture: any
-Depends: openjdk-6-jre, tomcat6, libcommons-lang-java, libcommons-fileupload-java (>= 1.2), libdom4j-java (>= 1.6.1), libjson-simple-java (>= 1.1), libaxiom-java (>= 1.2.8)
+Depends: openjdk-6-jre, tomcat6, libcommons-lang-java 
 Description: CloudStack AWS API wrapper
  The CloudStack Amazon Webservices API wrapper
