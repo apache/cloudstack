@@ -2813,6 +2813,7 @@ Copyright (c) 2004-2012 The Apache Software Foundation
                 <resource name="axiom-api-1.2.8.jar" source="http://ws.apache.org/axiom/source-repository.html" notice="axiom.notice" />
                 <resource name="axiom-impl-1.2.8.jar" source="http://ws.apache.org/axiom/source-repository.html" notice="axiom.notice" />
                 <resource name="axis2-1.5.1.jar" source="http://axis.apache.org/axis/" notice='axis2.notice' />
+                <resource name="axis2-codegen-1.4.1.jar" source="http://axis.apache.org/axis/" notice='axis2.notice' />
                 <resource name="axis2-adb-1.5.1.jar" source="http://axis.apache.org/axis/" notice='axis2.notice' />
                 <resource name="axis2-ant-plugin-1.5.1.jar" source="http://axis.apache.org/axis/" notice='axis2.notice' />
                 <resource name="axis2-jaxbri-1.5.1.jar" source="http://axis.apache.org/axis/" notice='axis2.notice' />

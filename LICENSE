@@ -346,6 +346,7 @@ Within the deps/awsapi-lib directory
             axis2-1.5.1.jar  http://axis.apache.org/axis/             
             axis2-adb-1.5.1.jar  http://axis.apache.org/axis/             
             axis2-ant-plugin-1.5.1.jar  http://axis.apache.org/axis/             
+            axis2-codegen-1.4.1.jar  http://axis.apache.org/axis/             
             axis2-jaxbri-1.5.1.jar  http://axis.apache.org/axis/             
             axis2-jaxws-1.5.1.jar  http://axis.apache.org/axis/             
             axis2-jibx-1.5.1.jar  http://axis.apache.org/axis/             
