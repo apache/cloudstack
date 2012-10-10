@@ -27,7 +27,6 @@
 /usr/share/java/CAStorSDK*.jar
 /usr/share/java/json-simple*.jar
 /usr/share/java/axiom-*.jar
-/usr/share/java/antlr*.jar
 /usr/share/java/XmlSchema-*.jar
 /usr/share/java/woden*.jar
 /usr/share/java/xercesImpl*.jar
