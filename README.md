@@ -45,67 +45,7 @@ under the License.
 
 # Building CloudStack
 
-By default, CloudStack will only build with supporting packages
-that are appropved by the ASF as being compatible with the Apache
-Software License Version 2.
-
-## Default build
-
-To build the default build target, use maven3 and execute:
-
-mvn install
-
-## Including optional third party libraries in your build
-
-If you want to build this software against one of the optional 
-third party libraries, follow the instructions below:
-
-These third parties jars are non available in Maven central, and
-need to be located and downloaded by the developer themselves.
-The libraries to download are listed below, by the feature that
-they support.
-
-For F5 load balancing support:
-cloud-iControl.jar     
-
-For Netscaler support:
-cloud-netscaler.jar    
-cloud-netscaler-sdx.jar
-
-For NetApp Storage Support:
-cloud-manageontap.jar  
-
-For VMware Support:
-vmware-vim.jar         
-vmware-vim25.jar       
-vmware-apputils.jar    
-
-Once downloaded (and named the same as listed above), they can be 
-installed into your local maven repository with the following command: 
-
-cd deps&&sh ./install-non-oss.sh
-
-To perform the build, run the following command:
-
-mvn -Dnonoss install
-
-## Running a developer environment
-
-To run the webapp client:
-
-mvn org.apache.tomcat.maven:tomcat7-maven-plugin:2.0-beta-1:run -pl :cloud-client-ui -am -Pclient
-
-Then hit: http://localhost:8080/cloud-client-ui/
-
-or add in your ~/.m2/settings.xml
-  <pluginGroups>
-    <pluginGroup>org.apache.tomcat.maven</pluginGroup>
-  </pluginGroups>
-and save your fingers with mvn tomcat7:run -pl :cloud-client-ui -am -Pclient 
-
-Optionally add -Dnonoss to either of the commands above.
-
-If you want to use ide debug: replace mvn with mvnDebug and attach your ide debugger to port 8000
+See the INSTALL file.
 
 # Notice of Cryptographic Software
 
