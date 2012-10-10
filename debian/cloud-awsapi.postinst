@@ -18,17 +18,6 @@
 
 case "$1" in
     configure)
-    	mkdir -p /usr/share/cloud/management/webapps7080
-    	if [ ! -h /usr/share/cloud/management/webapps7080/awsapi ]; then
-        	ln -sf /usr/share/cloud/bridge/webapps7080/awsapi /usr/share/cloud/management/webapps7080/awsapi
-    	fi
-    	confs="cloud-bridge.properties ec2-service.properties"
-    	for c in $confs
-    	do
-        	cp -f /usr/share/cloud/bridge/conf/$c /usr/share/cloud/management/conf
-    	done
-	chown cloud:cloud /usr/share/cloud/bridge/webapps7080/awsapi -R
-	chmod 755 /usr/share/cloud/bridge/webapps7080/awsapi -R
+        chown cloud:cloud /usr/share/cloud/bridge/webapps7080/awsapi -R
+        chmod 755 /usr/share/cloud/bridge/webapps7080/awsapi -R
 esac
-
-#DEBHELPER#

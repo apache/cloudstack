@@ -84,6 +84,12 @@ install-arch:
 	./waf install --destdir=$(CURDIR)/debian/tmp install --nochown --build-number=$(BUILDNUMBER)
 	ant deploy-rpm-install -Drpm.install.dir=$(CURDIR)/debian/tmp
 
+	# Some stuff for AWS API so we don't have to do this in the postinst
+	mkdir $(CURDIR)/debian/tmp/usr/share/cloud/management/webapps7080
+	ln -s /usr/share/cloud/bridge/webapps7080/awsapi $(CURDIR)/debian/tmp/usr/share/cloud/management/webapps7080/awsapi
+	ln -s /usr/share/cloud/bridge/conf/cloud-bridge.properties $(CURDIR)/debian/tmp/etc/cloud/management/cloud-bridge.properties
+	ln -s /usr/share/cloud/bridge/conf/ec2-service.properties $(CURDIR)/debian/tmp/etc/cloud/management/ec2-service.properties
+
 	dh_install -s
 # Must not depend on anything. This is to be called by
 # binary-arch/binary-indep
