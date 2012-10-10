@@ -23,15 +23,15 @@
 -->
 
 <book>
-    <bookinfo id="book-release-notes-3.0.4">
-        <title>&PRODUCT; API Developers Guide</title>
+    <bookinfo id="cloudstack_developers">
+        <title>&PRODUCT; API Developer's Guide</title>
         <productname>Apache CloudStack</productname>
         <productnumber>4.0</productnumber>
         <edition></edition>
         <pubsnumber></pubsnumber>
         <abstract>
             <para>
-                Complete technical documentation of &PRODUCT;.
+                How to integrate with &PRODUCT; using the &PRODUCT; API.
             </para>
         </abstract>
         <corpauthor>
@@ -54,4 +54,3 @@
     <xi:include href="time-zones.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="Revision_History.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
 </book>
-
