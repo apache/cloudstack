@@ -67,7 +67,6 @@ systemjars = {
                 "tomcat6/jasper.jar",
                 "tomcat6/jasper-el.jar",
                 "tomcat6/jasper-jdt.jar",
-		"javassist.jar",
                 
 	),
 	'CentOS':
@@ -80,7 +79,6 @@ systemjars = {
                 "tomcat6/jasper.jar",
                 "tomcat6/jasper-el.jar",
                 "tomcat6/jasper-jdt.jar",
-		"javassist.jar",
 		#"tomcat6/catalina.jar", # all supported distros put the file there
 	),
 	'Ubuntu':
@@ -103,7 +101,6 @@ systemjars = {
 		"jna.jar",
 		"log4j-1.2.jar",
 		"catalina-tribes.jar",
-		"javassist.jar",
 	),
 	'Windows':
 	(

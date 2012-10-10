@@ -286,7 +286,6 @@ Summary:   CloudStack CloudBridge
 Group:     System Environment/Libraries
 Requires: java >= 1.6.0
 Requires: tomcat6
-Requires: javassist
 Requires: %{name}-deps = %{version}
 %if 0%{?fedora} > 15
 Requires: apache-commons-lang
@@ -471,6 +470,7 @@ fi
 %{_javadir}/xercesImpl*.jar
 %{_javadir}/xml-apis*.jar
 %{_javadir}/dom4j*.jar
+%{_javadir}/javassist*.jar
 %{_javadir}/commons-fileupload*.jar
 %{_javadir}/commons-codec-1.6.jar
 %{_javadir}/commons-dbcp-1.4.jar
