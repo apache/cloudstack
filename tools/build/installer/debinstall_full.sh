@@ -104,7 +104,7 @@ if [ "$installtype" == "q" -o "$installtype" == "Q" ] ; then
 elif [ "$installtype" == "m" -o "$installtype" == "M" ] ; then
 
     echo "Installing the Management Server..." >&2
-    doinstall cloud-client
+    doinstall cloud-client cloud-awsapi
     true
 
 elif [ "$installtype" == "a" -o "$installtype" == "A" ] ; then
