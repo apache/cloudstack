@@ -1436,6 +1436,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 } finally {
                     startRetry++;
                 }
+            } else {
+                //return stopped router
+                return router;
             }
         }
                 
@@ -1446,11 +1449,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     protected List<HypervisorType> getHypervisors(DeployDestination dest, DeploymentPlan plan, 
             List<HypervisorType> supportedHypervisors) throws InsufficientServerCapacityException {
         List<HypervisorType> hypervisors = new ArrayList<HypervisorType>();
-        HypervisorType defaults = _resourceMgr.getDefaultHypervisor(dest.getDataCenter().getId());
-        if (defaults != HypervisorType.None) {
-            hypervisors.add(defaults);
-        }
-
+        
         if (dest.getCluster() != null) {
             if (dest.getCluster().getHypervisorType() == HypervisorType.Ovm) {
                 hypervisors.add(getClusterToStartDomainRouterForOvm(dest.getCluster().getPodId()));
@@ -1458,8 +1457,14 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 hypervisors.add(dest.getCluster().getHypervisorType());
             }
         } else {
-            hypervisors = _resourceMgr.getSupportedHypervisorTypes(dest.getDataCenter().getId(), true,
-                    plan.getPodId());
+            HypervisorType defaults = _resourceMgr.getDefaultHypervisor(dest.getDataCenter().getId());
+            if (defaults != HypervisorType.None) {
+                hypervisors.add(defaults);
+            } else {
+                //if there is no default hypervisor, get it from the cluster
+                hypervisors = _resourceMgr.getSupportedHypervisorTypes(dest.getDataCenter().getId(), true,
+                        plan.getPodId());
+            }
         }
 
         //keep only elements defined in supported hypervisors
