@@ -36,19 +36,25 @@
       <groupId>com.cloud.com.vmware</groupId>
       <artifactId>vmware-vim</artifactId>
       <version>1.0</version>
-      <scope>provided</scope>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.cloud.com.vmware</groupId>
       <artifactId>vmware-vim25</artifactId>
       <version>1.0</version>
-      <scope>provided</scope>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.cloud.com.vmware</groupId>
       <artifactId>vmware-apputils</artifactId>
       <version>1.0</version>
-      <scope>provided</scope>
+      <scope>compile</scope>
+    </dependency>    
+    <dependency>
+      <groupId>com.cloud.com.vmware</groupId>
+      <artifactId>vmware-lib-jaxrpc</artifactId>
+      <version>1.0</version>
+      <scope>runtime</scope>
     </dependency>    
   </dependencies>
 </project>
