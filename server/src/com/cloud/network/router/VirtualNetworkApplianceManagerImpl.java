@@ -1263,7 +1263,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             boolean isRedundant, Map<Param, Object> params) throws ConcurrentOperationException, 
             InsufficientCapacityException, ResourceUnavailableException {
 
-        
         List<DomainRouterVO> routers = new ArrayList<DomainRouterVO>();
         Network lock = _networkDao.acquireInLockTable(guestNetwork.getId(), _networkMgr.getNetworkLockTimeout());
         if (lock == null) {
@@ -1285,73 +1284,111 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             boolean isPodBased = (dest.getDataCenter().getNetworkType() == NetworkType.Basic ||
                     _networkMgr.areServicesSupportedInNetwork(guestNetwork.getId(), Service.SecurityGroup))
                     && guestNetwork.getTrafficType() == TrafficType.Guest;
-        
-            Pair<DeploymentPlan, List<DomainRouterVO>> planAndRouters = getDeploymentPlanAndRouters(isPodBased, dest, guestNetwork.getId());
-            routers = planAndRouters.second();
-        
-            // 2) Figure out required routers count
-            int routerCount = 1;
-            if (isRedundant) {
-                routerCount = 2;
+
+            // dest has pod=null, for Basic Zone findOrDeployVRs for all Pods
+            List<DeployDestination> destinations = new ArrayList<DeployDestination>();
+
+            if (dest.getDataCenter().getNetworkType() == NetworkType.Basic) {
+                // Find all pods in the data center with running or starting user vms
+                long dcId = dest.getDataCenter().getId();
+                List<HostPodVO> pods = _podDao.listByDataCenterIdVMTypeAndStates(dcId, VirtualMachine.Type.User, VirtualMachine.State.Starting, VirtualMachine.State.Running);
+
+                // Loop through all the pods skip those with running or starting VRs
+                for (HostPodVO pod: pods) {
+                    // Get list of VRs in starting or running state
+                    long podId = pod.getId();
+                    List<DomainRouterVO> virtualRouters = _routerDao.listByPodIdAndStates(podId, VirtualMachine.State.Starting, VirtualMachine.State.Running);
+
+                    assert (virtualRouters.size() <= 1) : "Pod can have utmost one VR in Basic Zone, please check!";
+
+                    // Add virtualRouters to the routers, this avoids the situation when
+                    // all routers are skipped and VirtualRouterElement throws exception
+                    routers.addAll(virtualRouters);
+
+                    // If List size is one, we already have a starting or running VR, skip deployment
+                    if (virtualRouters.size() == 1) {
+                        s_logger.debug("Skipping VR deployment: Found a running or starting VR in Pod "
+                                + pod.getName() + " id=" + podId);
+                        continue;
+                    }
+                    // Add new DeployDestination for this pod
+                    destinations.add(new DeployDestination(dest.getDataCenter(), pod, null, null));
+                }
             }
-        
-            /* If old network is redundant but new is single router, then routers.size() = 2 but routerCount = 1 */
-            if (routers.size() >= routerCount) {
-                return routers;
-            }
-        
-            if (routers.size() >= 5) {
-                s_logger.error("Too much redundant routers!");
+            else {
+                // Else, just add the supplied dest
+                destinations.add(dest);
             }
 
-            // Check if providers are supported in the physical networks
-            VirtualRouterProviderType type = VirtualRouterProviderType.VirtualRouter;
-            Long physicalNetworkId = _networkMgr.getPhysicalNetworkId(guestNetwork);
-            PhysicalNetworkServiceProvider provider = _physicalProviderDao.findByServiceProvider(physicalNetworkId, type.toString());
-            if (provider == null) {
-                throw new CloudRuntimeException("Cannot find service provider " + type.toString() + " in physical network " + physicalNetworkId);
-            }
-            VirtualRouterProvider vrProvider = _vrProviderDao.findByNspIdAndType(provider.getId(), type);
-            if (vrProvider == null) {
-                throw new CloudRuntimeException("Cannot find virtual router provider " + type.toString()+ " as service provider " + provider.getId());
-            }
+            // Except for Basic Zone, the for loop will iterate only once
+            for (DeployDestination destination: destinations) {
+                Pair<DeploymentPlan, List<DomainRouterVO>> planAndRouters = getDeploymentPlanAndRouters(isPodBased, destination, guestNetwork.getId());
+                routers = planAndRouters.second();
 
-            if (_networkMgr.isNetworkSystem(guestNetwork) || guestNetwork.getGuestType() == Network.GuestType.Shared) {
-                owner = _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM);
-            }
+                // 2) Figure out required routers count
+                int routerCount = 1;
+                if (isRedundant) {
+                    routerCount = 2;
+                }
 
-            //Check if public network has to be set on VR
-            boolean publicNetwork = false;
-            if (_networkMgr.isProviderSupportServiceInNetwork(guestNetwork.getId(), Service.SourceNat, Provider.VirtualRouter)) {
-                publicNetwork = true;
-            }
-            if (isRedundant && !publicNetwork) {
-                s_logger.error("Didn't support redundant virtual router without public network!");
-                return null;
-            }
+                // If old network is redundant but new is single router, then routers.size() = 2 but routerCount = 1
+                if (routers.size() >= routerCount) {
+                    return routers;
+                }
 
-            Long offeringId = _networkOfferingDao.findById(guestNetwork.getNetworkOfferingId()).getServiceOfferingId();
-            if (offeringId == null) {
-                offeringId = _offering.getId();
-            }
+                if (routers.size() >= 5) {
+                    s_logger.error("Too much redundant routers!");
+                }
 
-            PublicIp sourceNatIp = null;
-            if (publicNetwork) {
-                sourceNatIp = _networkMgr.assignSourceNatIpAddressToGuestNetwork(owner, guestNetwork);
-            }
+                // Check if providers are supported in the physical networks
+                VirtualRouterProviderType type = VirtualRouterProviderType.VirtualRouter;
+                Long physicalNetworkId = _networkMgr.getPhysicalNetworkId(guestNetwork);
+                PhysicalNetworkServiceProvider provider = _physicalProviderDao.findByServiceProvider(physicalNetworkId, type.toString());
+                if (provider == null) {
+                    throw new CloudRuntimeException("Cannot find service provider " + type.toString() + " in physical network " + physicalNetworkId);
+                }
+                VirtualRouterProvider vrProvider = _vrProviderDao.findByNspIdAndType(provider.getId(), type);
+                if (vrProvider == null) {
+                    throw new CloudRuntimeException("Cannot find virtual router provider " + type.toString() + " as service provider " + provider.getId());
+                }
 
-            //3) deploy virtual router(s)
-            int count = routerCount - routers.size();
-            DeploymentPlan plan = planAndRouters.first();
-            for (int i = 0; i < count; i++) {
-                List<Pair<NetworkVO, NicProfile>> networks = createRouterNetworks(owner, isRedundant, plan, guestNetwork,
-                        new Pair<Boolean, PublicIp>(publicNetwork, sourceNatIp));
-                //don't start the router as we are holding the network lock that needs to be released at the end of router allocation
-                DomainRouterVO router = deployRouter(owner, dest, plan, params, isRedundant, vrProvider, offeringId,
-                        null, networks, false, null);
+                if (_networkMgr.isNetworkSystem(guestNetwork) || guestNetwork.getGuestType() == Network.GuestType.Shared) {
+                    owner = _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM);
+                }
 
-                _routerDao.addRouterToGuestNetwork(router, guestNetwork);
-                routers.add(router);
+                // Check if public network has to be set on VR
+                boolean publicNetwork = false;
+                if (_networkMgr.isProviderSupportServiceInNetwork(guestNetwork.getId(), Service.SourceNat, Provider.VirtualRouter)) {
+                    publicNetwork = true;
+                }
+                if (isRedundant && !publicNetwork) {
+                    s_logger.error("Didn't support redundant virtual router without public network!");
+                    return null;
+                }
+
+                Long offeringId = _networkOfferingDao.findById(guestNetwork.getNetworkOfferingId()).getServiceOfferingId();
+                if (offeringId == null) {
+                    offeringId = _offering.getId();
+                }
+
+                PublicIp sourceNatIp = null;
+                if (publicNetwork) {
+                    sourceNatIp = _networkMgr.assignSourceNatIpAddressToGuestNetwork(owner, guestNetwork);
+                }
+
+                // 3) deploy virtual router(s)
+                int count = routerCount - routers.size();
+                DeploymentPlan plan = planAndRouters.first();
+                for (int i = 0; i < count; i++) {
+                    List<Pair<NetworkVO, NicProfile>> networks = createRouterNetworks(owner, isRedundant, plan, guestNetwork,
+                            new Pair<Boolean, PublicIp>(publicNetwork, sourceNatIp));
+                    //don't start the router as we are holding the network lock that needs to be released at the end of router allocation
+                    DomainRouterVO router = deployRouter(owner, destination, plan, params, isRedundant, vrProvider, offeringId,
+                            null, networks, false, null);
+
+                    _routerDao.addRouterToGuestNetwork(router, guestNetwork);
+                    routers.add(router);
+                }
             }
         } finally {
             if (lock != null) {

@@ -3807,12 +3807,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             throw new InvalidParameterValueException("Network is not in the right state to be restarted. Correct states are: " + Network.State.Implemented + ", " + Network.State.Setup);
         }
 
-        // don't allow clenaup=true for the network in Basic zone
-        DataCenter zone = _configMgr.getZone(network.getDataCenterId());
-        if (zone.getNetworkType() == NetworkType.Basic && cleanup) {
-            throw new InvalidParameterValueException("Cleanup can't be true when restart network in Basic zone");
-        }
-
         _accountMgr.checkAccess(callerAccount, null, true, network);
 
         boolean success = restartNetwork(networkId, callerAccount, callerUser, cleanup);
@@ -3857,10 +3851,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         ReservationContext context = new ReservationContextImpl(null, null, callerUser, callerAccount);
 
         if (cleanup) {
-            if (network.getGuestType() != GuestType.Isolated) {
-                s_logger.warn("Only support clean up network for isolated network!");
-                return false;
-            }
             // shutdown the network
             s_logger.debug("Shutting down the network id=" + networkId + " as a part of network restart");
 

@@ -31,10 +31,15 @@ import com.cloud.dc.HostPodVO;
 import com.cloud.org.Grouping;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.component.ComponentLocator;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.dao.VMInstanceDaoImpl;
 
 @Local(value={HostPodDao.class})
 public class HostPodDaoImpl extends GenericDaoBase<HostPodVO, Long> implements HostPodDao {
@@ -61,7 +66,28 @@ public class HostPodDaoImpl extends GenericDaoBase<HostPodVO, Long> implements H
 		
 	    return listBy(sc);
 	}
-	
+
+    @Override
+    public List<HostPodVO> listByDataCenterIdVMTypeAndStates(long id, VirtualMachine.Type type, VirtualMachine.State... states) {
+        final VMInstanceDaoImpl _vmDao = ComponentLocator.inject(VMInstanceDaoImpl.class);
+        SearchBuilder<VMInstanceVO> vmInstanceSearch = _vmDao.createSearchBuilder();
+        vmInstanceSearch.and("type", vmInstanceSearch.entity().getType(), SearchCriteria.Op.EQ);
+        vmInstanceSearch.and("states", vmInstanceSearch.entity().getState(), SearchCriteria.Op.IN);
+
+        SearchBuilder<HostPodVO> podIdSearch = createSearchBuilder();
+        podIdSearch.and("dc", podIdSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        podIdSearch.select(null, SearchCriteria.Func.DISTINCT, podIdSearch.entity().getId());
+        podIdSearch.join("vmInstanceSearch", vmInstanceSearch, podIdSearch.entity().getId(),
+                vmInstanceSearch.entity().getPodIdToDeployIn(), JoinBuilder.JoinType.INNER);
+        podIdSearch.done();
+
+        SearchCriteria<HostPodVO> sc = podIdSearch.create();
+        sc.setParameters("dc", id);
+        sc.setJoinParameters("vmInstanceSearch", "type", type);
+        sc.setJoinParameters("vmInstanceSearch", "states", (Object[]) states);
+        return listBy(sc);
+    }
+
 	@Override
     public HostPodVO findByName(String name, long dcId) {
 	    SearchCriteria<HostPodVO> sc = DataCenterAndNameSearch.create();
