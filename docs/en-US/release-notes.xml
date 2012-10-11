@@ -31,8 +31,8 @@
   <chapter id="upgrade-instructions">
     <title>Upgrade Instructions</title>
     <section id="upgrade-from-3.0.2-to-4.0">
-      <title>Upgrade from 3.0.2 to 4.0</title>
-      <para>Perform the following to upgrade from version 3.0.2 to version 4.0.</para>
+      <title>Upgrade from 3.0.2 to 4.0.0-incubating</title>
+      <para>Perform the following to upgrade from version 3.0.2 to version 4.0.0-incubating.</para>
       <orderedlist>
         <listitem>
           <para>Starting in 3.0.2, the usage record format for IP addresses is the same as the rest
@@ -147,7 +147,7 @@
 # mysqldump -u root -p&lt;mysql_password&gt; cloud_usage &gt; cloud-usage-backup.dmp</programlisting>
         </listitem>
         <listitem>
-          <para>Download CloudStack 4.0 onto management server host where it will run. Get the
+          <para>Download CloudStack 4.0.0-incubating onto management server host where it will run. Get the
             software from the following link:</para>
           <para><ulink url="http://incubator.apache.org/cloudstack/downloads.html/"/>Apache
             CloudStack.</para>
@@ -172,7 +172,7 @@
           <para>If you have made changes to your existing copy of the file components.xml in your
             previous-version CloudStack installation, the changes will be preserved in the upgrade.
             However, you need to do the following steps to place these changes in a new version of
-            the file which is compatible with version 4.0.</para>
+            the file which is compatible with version 4.0.0-incubating.</para>
           <note>
             <para>How will you know whether you need to do this? If the upgrade output in the
               previous step included a message like the following, then some custom content was
@@ -223,7 +223,7 @@
             as hosts and only on the KVM hosts.</para>
           <orderedlist numeration="loweralpha">
             <listitem>
-              <para>Copy the CloudStack 4.0 tar file to the host, untar it, and change directory to
+              <para>Copy the CloudStack 4.0.0-incubating tar file to the host, untar it, and change directory to
                 the resulting directory.</para>
             </listitem>
             <listitem>
@@ -300,8 +300,8 @@
         </listitem>
         <listitem>
           <para>If needed, upgrade all Citrix XenServer hypervisor hosts in your cloud to a version
-            supported by CloudStack 4.0. The supported versions are XenServer 5.6 SP2 and 6.0.2.
-            Instructions for upgrade can be found in the CloudStack 4.0 Advanced Installation
+            supported by CloudStack 4.0.0-incubating. The supported versions are XenServer 5.6 SP2 and 6.0.2.
+            Instructions for upgrade can be found in the CloudStack 4.0.0-incubating Advanced Installation
             Guide.</para>
         </listitem>
         <listitem>
@@ -453,7 +453,7 @@
       </note>
     </section>
     <section id="upgrade-from-2.2.x-to-4.0">
-      <title>Upgrade from 2.2.14 to 4.0</title>
+      <title>Upgrade from 2.2.14 to 4.0.0-incubating</title>
       <orderedlist>
         <listitem>
           <para>Ensure that you query your IPaddress usage records and process them; for example,
@@ -462,7 +462,7 @@
             of the usage types. See <ulink url="http://bugs.cloudstack.org/browse/CS-8222"
               >CS-8222</ulink>. Instead of a single record with the assignment and release dates,
             separate records are generated per aggregation period with start and end dates. After
-            upgrading to 4.0, any existing IP address usage records in the old format will no longer
+            upgrading to 4.0.0-incubating, any existing IP address usage records in the old format will no longer
             be available.</para>
         </listitem>
         <listitem>
@@ -472,7 +472,7 @@
             <para>(KVM only) If KVM hypervisor is used in your cloud, be sure you completed the step
               to insert a valid username and password into the host_details table on each KVM node
               as described in the 2.2.14 Release Notes. This step is critical, as the database will
-              be encrypted after the upgrade to 4.0.</para>
+              be encrypted after the upgrade to 4.0.0-incubating.</para>
           </note>
         </listitem>
         <listitem>
@@ -590,7 +590,7 @@
 </programlisting>
         </listitem>
         <listitem>
-          <para>Download CloudStack 4.0 onto management server host where it will run. Get the
+          <para>Download CloudStack 4.0.0-incubating onto management server host where it will run. Get the
             software from the following link:</para>
           <para><ulink url="http://incubator.apache.org/cloudstack/downloads.html/"/>Apache
             CloudStack.</para>
@@ -616,7 +616,7 @@
           <para>If you have made changes to your existing copy of the file components.xml in your
             previous-version CloudStack installation, the changes will be preserved in the upgrade.
             However, you need to do the following steps to place these changes in a new version of
-            the file which is compatible with version 4.0.</para>
+            the file which is compatible with version 4.0.0-incubating.</para>
           <note>
             <para>How will you know whether you need to do this? If the upgrade output in the
               previous step included a message like the following, then some custom content was
@@ -645,7 +645,7 @@
             /etc/cloud/management/db.properties file in your previous-version CloudStack
             installation, the changes will be preserved in the upgrade. However, you need to do the
             following steps to place these changes in a new version of the file which is compatible
-            with version 4.0.</para>
+            with version 4.0.0-incubating.</para>
           <orderedlist>
             <listitem>
               <para>Make a backup copy of your file /etc/cloud/management/db.properties. For
@@ -710,8 +710,8 @@
             as hosts and only on the KVM hosts.</para>
           <orderedlist numeration="loweralpha">
             <listitem>
-              <para>Copy the CloudStack 4.0 .tgz download to the host, untar it, and cd into the
-                resulting directory.</para>
+                <para>Copy the CloudStack 4.0.0-incubating .tgz download to the host, untar it, 
+                and cd into the resulting directory.</para>
             </listitem>
             <listitem>
               <para>Stop the running agent.</para>
@@ -794,7 +794,7 @@ Done restarting router(s).
           <programlisting># ssh -i &lt;private-key-path&gt; &lt;link-local-ip&gt; -p 3922
 # cat /etc/cloudstack-release</programlisting>
           <para>The output should be like the following:</para>
-          <programlisting>Cloudstack Release 4.0 Mon Oct 9 15:10:04 PST 2012</programlisting>
+          <programlisting>Cloudstack Release 4.0.0-incubating Mon Oct 9 15:10:04 PST 2012</programlisting>
           <formalpara>
             <title>ESXi</title>
             <para>SSH in using the private IP address of the system VM. For example, in the command
@@ -806,12 +806,12 @@ Done restarting router(s).
 # cat /etc/cloudstack-release
 </programlisting>
           <para>The output should be like the following:</para>
-          <programlisting>Cloudstack Release 4.0 Mon Oct 9 15:10:04 PST 2012</programlisting>
+          <programlisting>Cloudstack Release 4.0.0-incubating Mon Oct 9 15:10:04 PST 2012</programlisting>
         </listitem>
         <listitem>
           <para>If needed, upgrade all Citrix XenServer hypervisor hosts in your cloud to a version
-            supported by CloudStack 4.0. The supported versions are XenServer 5.6 SP2 and 6.0.2.
-            Instructions for upgrade can be found in the CloudStack 4.0 Installation Guide.</para>
+            supported by CloudStack 4.0.0-incubating. The supported versions are XenServer 5.6 SP2 and 6.0.2.
+            Instructions for upgrade can be found in the CloudStack 4.0.0-incubating Installation Guide.</para>
         </listitem>
         <listitem>
           <para>Apply the XenServer hotfix XS602E003 (and any other needed hotfixes) to XenServer
@@ -958,10 +958,10 @@ Done restarting router(s).
     </section>
   </chapter>
   <chapter id="version-4.0">
-    <title>Version 4.0</title>
+    <title>Version 4.0.0-incubating</title>
     <section id="what-new-in-4.0">
-      <title>What’s New in 4.0</title>
-      <para>Apache CloudStack 4.0 includes the following new features:</para>
+      <title>What’s New in 4.0.0-incubating</title>
+      <para>Apache CloudStack 4.0.0-incubating includes the following new features:</para>
       <section id="inter-vlan-routing">
         <title>Inter-VLAN Routing</title>
         <para>Inter-VLAN Routing is the capability to route network traffic between VLANs. This
@@ -1254,7 +1254,7 @@ Done restarting router(s).
           API. Fidelity with the EC2 API and the installation experience for this functionality are
           both enhanced. In prior releases, users were required to install a separate component
           called CloudBridge, in addition to installing the Management Server. For new installations
-          of CloudStack 4.0, this software is installed automatically along with CloudStack and runs
+          of CloudStack 4.0.0-incubating, this software is installed automatically along with CloudStack and runs
           in a more closely integrated fashion. The feature is disabled by default, but can be
           easily enabled by setting the appropriate global configuration parameter and performing a
           few setup steps.</para>
@@ -1262,7 +1262,7 @@ Done restarting router(s).
       <section id="nicira-nvp-plugin">
         <title>The Nicira NVP Plugin</title>
         <para>The Nicira NVP plug-in allows CloudStack to use the Nicira solution for virtualized
-          network as a provider for CloudStack networks and services. In CloudStack 4.0 this plug-in
+          network as a provider for CloudStack networks and services. In CloudStack 4.0.0-incubating this plug-in
           supports the Connectivity service. This service is responsible for creating Layer 2
           networks supporting the networks created by guests. When a tenant creates a new network,
           instead of a traditional VLAN, a logical network will be created by sending the
@@ -1271,7 +1271,7 @@ Done restarting router(s).
       </section>
       <section id="castor-support">
         <title>Support for CAStor Cluster</title>
-        <para>CloudStack 4.0 supports using a CAStor cluster as the back-end storage system for a
+        <para>CloudStack 4.0.0-incubating supports using a CAStor cluster as the back-end storage system for a
           CloudStack S3 front-end. The CAStor back-end storage for CloudStack extends the existing
           storage classes and allows the storage configuration attribute to point to a CAStor
           cluster. This feature makes use of the CloudStack server's local disk to spool files
@@ -1296,7 +1296,7 @@ Done restarting router(s).
       </section>
       <section id="rbd-support-kvm">
         <title>Rados Block Device Support for KVM</title>
-        <para>You can now use Rados Block Device (RBD) to run instances on Apache CloudStack 4.0.
+        <para>You can now use Rados Block Device (RBD) to run instances on Apache CloudStack 4.0.0-incubating.
           This can be done by adding a RBD pool as primary storage. Before using RBD, ensure that
           Qemu is compiled with RBD enabled, and the libvirt version is at least 0.10 with RBD
           enabled on the KVM host </para>
@@ -1305,7 +1305,7 @@ Done restarting router(s).
       </section>
     </section>
     <section id="issues-fixed-4.0">
-      <title>Issues Fixed in 4.0</title>
+      <title>Issues Fixed in 4.0.0-incubating</title>
       <informaltable>
         <tgroup cols="2" align="left" colsep="1" rowsep="1">
           <colspec colwidth="1*" colname="1" colnum="1"/>
@@ -1975,7 +1975,7 @@ Done restarting router(s).
       </informaltable>
     </section>
     <section id="known-issues-4.0">
-      <title>Known Issues in 4.0</title>
+      <title>Known Issues in 4.0.0-incubating</title>
       <informaltable>
         <tgroup cols="2" align="left" colsep="1" rowsep="1">
           <colspec colwidth="1*" colname="1" colnum="1"/>
@@ -2251,7 +2251,7 @@ Done restarting router(s).
                 <para>CS-15476</para>
               </entry>
               <entry>
-                <para>The 2.2.14 to 4.0 upgrade fails if multiple untagged physical networks exist
+                <para>The 2.2.14 to 4.0.0-incubating upgrade fails if multiple untagged physical networks exist
                   before the upgrade.</para>
               </entry>
             </row>
@@ -2260,7 +2260,7 @@ Done restarting router(s).
                 <para>CS-15407</para>
               </entry>
               <entry>
-                <para>After the 2.2.14 to 4.0 upgrade, VLAN allocation on multiple physical networks
+                <para>After the 2.2.14 to 4.0.0-incubating upgrade, VLAN allocation on multiple physical networks
                   does not happen as expected.</para>
                 <para>To workaround this issue, follow the instructions given below:</para>
                 <orderedlist>
@@ -2398,9 +2398,9 @@ Done restarting router(s).
     </section>
   </chapter>
   <chapter id="api-changes-4.0">
-    <title>API Changes from 3.0.2 to 4.0</title>
+    <title>API Changes from 3.0.2 to 4.0.0-incubating</title>
     <section id="new-api-commands-4.0">
-      <title>New API Commands in 4.0</title>
+      <title>New API Commands in 4.0.0-incubating</title>
       <itemizedlist>
         <listitem>
           <para>createCounter (Adds metric counter)</para>
@@ -2537,7 +2537,7 @@ Done restarting router(s).
       </itemizedlist>
     </section>
     <section id="changed-api-commands-4.0">
-      <title>Changed API Commands in 4.0</title>
+      <title>Changed API Commands in 4.0.0-incubating</title>
       <informaltable>
         <tgroup cols="2" align="left" colsep="1" rowsep="1">
           <colspec colwidth="1.0*" colname="1" colnum="1"/>
