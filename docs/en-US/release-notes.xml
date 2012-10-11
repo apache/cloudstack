@@ -471,7 +471,7 @@
       </note>
     </section>
     <section id="upgrade-from-2.2.x-to-4.0">
-      <title>Upgrade from 2.2.14 to 4.0</title>
+      <title>Upgrade from 2.2.14 to 4.0.0-incubating</title>
       <orderedlist>
         <listitem>
           <para>Ensure that you query your IPaddress usage records and process them; for example,
@@ -624,7 +624,7 @@
           <para>If you have made changes to your existing copy of the file components.xml in your
             previous-version CloudStack installation, the changes will be preserved in the upgrade.
             However, you need to do the following steps to place these changes in a new version of
-            the file which is compatible with version 4.0.</para>
+            the file which is compatible with version 4.0.0-incubating.</para>
           <note>
             <para>How will you know whether you need to do this? If the upgrade output in the
               previous step included a message like the following, then some custom content was
@@ -806,7 +806,7 @@ Done restarting router(s).
           <programlisting><prompt>#</prompt> <command>ssh</command> -i <replaceable>private-key-path</replaceable> <replaceable>link-local-ip</replaceable> -p 3922
 # cat /etc/cloudstack-release</programlisting>
           <para>The output should be like the following:</para>
-          <programlisting>Cloudstack Release 4.0 Mon Oct 9 15:10:04 PST 2012</programlisting>
+          <programlisting>Cloudstack Release 4.0.0-incubating Mon Oct 9 15:10:04 PST 2012</programlisting>
           <formalpara>
             <title>ESXi</title>
             <para>SSH in using the private IP address of the system VM. For example, in the command
@@ -818,7 +818,7 @@ Done restarting router(s).
 <prompt>#</prompt> <command>cat</command> <filename>/etc/cloudstack-release</filename>
 </programlisting>
           <para>The output should be like the following:</para>
-          <programlisting>Cloudstack Release 4.0 Mon Oct 9 15:10:04 PST 2012</programlisting>
+          <programlisting>Cloudstack Release 4.0.0-incubating Mon Oct 9 15:10:04 PST 2012</programlisting>
         </listitem>
         <listitem>
           <para>If needed, upgrade all Citrix XenServer hypervisor hosts in your cloud to a version
@@ -978,10 +978,10 @@ Done restarting router(s).
     </section>
   </chapter>
   <chapter id="version-4.0">
-    <title>Version 4.0</title>
+    <title>Version 4.0.0-incubating</title>
     <section id="what-new-in-4.0">
-      <title>What’s New in 4.0</title>
-      <para>Apache CloudStack 4.0 includes the following new features:</para>
+      <title>What’s New in 4.0.0-incubating</title>
+      <para>Apache CloudStack 4.0.0-incubating includes the following new features:</para>
       <section id="inter-vlan-routing">
         <title>Inter-VLAN Routing</title>
         <para>Inter-VLAN Routing is the capability to route network traffic between VLANs. This
@@ -2000,7 +2000,7 @@ Done restarting router(s).
       </informaltable>
     </section>
     <section id="known-issues-4.0">
-      <title>Known Issues in 4.0</title>
+      <title>Known Issues in 4.0.0-incubating</title>
       <informaltable>
         <tgroup cols="2" align="left" colsep="1" rowsep="1">
           <colspec colwidth="1*" colname="1" colnum="1"/>
@@ -2423,9 +2423,9 @@ Done restarting router(s).
     </section>
   </chapter>
   <chapter id="api-changes-4.0">
-    <title>API Changes from 3.0.2 to 4.0</title>
+    <title>API Changes from 3.0.2 to 4.0.0-incubating</title>
     <section id="new-api-commands-4.0">
-      <title>New API Commands in 4.0</title>
+      <title>New API Commands in 4.0.0-incubating</title>
       <itemizedlist>
         <listitem>
           <para>createCounter (Adds metric counter)</para>
@@ -2562,7 +2562,7 @@ Done restarting router(s).
       </itemizedlist>
     </section>
     <section id="changed-api-commands-4.0">
-      <title>Changed API Commands in 4.0</title>
+      <title>Changed API Commands in 4.0.0-incubating</title>
       <informaltable>
         <tgroup cols="2" align="left" colsep="1" rowsep="1">
           <colspec colwidth="1.0*" colname="1" colnum="1"/>
