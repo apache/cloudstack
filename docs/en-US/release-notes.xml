@@ -30,12 +30,12 @@
   </chapter>
   <chapter id="upgrade-instructions">
     <title>Upgrade Instructions</title>
-        <section id="upgrade-from-3.0.2-to-4.0">
+    <section id="upgrade-from-3.0.2-to-4.0">
       <title>Upgrade from 3.0.2 to 4.0</title>
       <para>Perform the following to upgrade from version 3.0.2 to version 4.0.</para>
       <orderedlist>
         <listitem>
-           <para>Starting in 3.0.2, the usage record format for IP addresses is the same as the rest
+          <para>Starting in 3.0.2, the usage record format for IP addresses is the same as the rest
             of the usage types. See <ulink url="http://bugs.cloudstack.org/browse/CS-8222">bug
               CS-8222</ulink>). Instead of a single record with the assignment and release dates,
             separate records are generated per aggregation period with start and end dates. After
@@ -147,10 +147,11 @@
 # mysqldump -u root -p&lt;mysql_password&gt; cloud_usage &gt; cloud-usage-backup.dmp</programlisting>
         </listitem>
         <listitem>
-            <para>Download CloudStack 4.0 onto management server host where it will run. Get the
-              software from the following link:</para>
-            <para><ulink url="http://incubator.apache.org/cloudstack/downloads.html/"/>Apache
-              CloudStack.</para></listitem>
+          <para>Download CloudStack 4.0 onto management server host where it will run. Get the
+            software from the following link:</para>
+          <para><ulink url="http://incubator.apache.org/cloudstack/downloads.html/"/>Apache
+            CloudStack.</para>
+        </listitem>
         <listitem>
           <para>Upgrade the CloudStack packages. You should have a file in the form of
             “CloudStack-4.0-N-OSVERSION.tar.gz”. Untar the file, then run the install.sh script
@@ -169,9 +170,9 @@
         </listitem>
         <listitem>
           <para>If you have made changes to your existing copy of the file components.xml in your
-            previous-version CloudStack installation, the changes will be preserved in the
-            upgrade. However, you need to do the following steps to place these changes in a new
-            version of the file which is compatible with version 4.0.</para>
+            previous-version CloudStack installation, the changes will be preserved in the upgrade.
+            However, you need to do the following steps to place these changes in a new version of
+            the file which is compatible with version 4.0.</para>
           <note>
             <para>How will you know whether you need to do this? If the upgrade output in the
               previous step included a message like the following, then some custom content was
@@ -222,8 +223,8 @@
             as hosts and only on the KVM hosts.</para>
           <orderedlist numeration="loweralpha">
             <listitem>
-              <para>Copy the CloudStack 4.0 tar file to the host, untar it, and change
-                directory to the resulting directory.</para>
+              <para>Copy the CloudStack 4.0 tar file to the host, untar it, and change directory to
+                the resulting directory.</para>
             </listitem>
             <listitem>
               <para>Stop the running agent.</para>
@@ -255,9 +256,9 @@
           </orderedlist>
         </listitem>
         <listitem>
-          <para>Log in to the CloudStack UI as administrator, and check the status of the hosts.
-            All hosts should come to Up state (except those that you know to be offline). You may
-            need to wait 20 or 30 minutes, depending on the number of hosts.</para>
+          <para>Log in to the CloudStack UI as administrator, and check the status of the hosts. All
+            hosts should come to Up state (except those that you know to be offline). You may need
+            to wait 20 or 30 minutes, depending on the number of hosts.</para>
           <note>
             <para>Troubleshooting: If login fails, clear your browser cache and reload the
               page.</para>
@@ -299,9 +300,9 @@
         </listitem>
         <listitem>
           <para>If needed, upgrade all Citrix XenServer hypervisor hosts in your cloud to a version
-            supported by CloudStack 4.0. The supported versions are XenServer 5.6 SP2 and
-            6.0.2. Instructions for upgrade can be found in the CloudStack 4.0 Advanced
-            Installation Guide.</para>
+            supported by CloudStack 4.0. The supported versions are XenServer 5.6 SP2 and 6.0.2.
+            Instructions for upgrade can be found in the CloudStack 4.0 Advanced Installation
+            Guide.</para>
         </listitem>
         <listitem>
           <para>Now apply the XenServer hotfix XS602E003 (and any other needed hotfixes) to
@@ -315,9 +316,9 @@
               <para>This may fail if there are hosts not in one of the states Up, Down,
                 Disconnected, or Alert. You may need to fix that before unmanaging this
                 cluster.</para>
-              <para>Wait until the status of the cluster has reached Unmanaged. Use the
-                CloudStack UI to check on the status. When the cluster is in the unmanaged state,
-                there is no connection to the hosts in the cluster.</para>
+              <para>Wait until the status of the cluster has reached Unmanaged. Use the CloudStack
+                UI to check on the status. When the cluster is in the unmanaged state, there is no
+                connection to the hosts in the cluster.</para>
             </listitem>
             <listitem>
               <para>To clean up the VLAN, log in to one XenServer host and run:</para>
@@ -326,7 +327,7 @@
             <listitem>
               <para>Now prepare the upgrade by running the following on one XenServer host:</para>
               <programlisting>/opt/xensource/bin/cloud-prepare-upgrade.sh</programlisting>
-              <para>If you see a message like "can't eject CD", log in to the VM and umount the CD,
+              <para>If you see a message like "can't eject CD", log in to the VM and unmount the CD,
                 then run this script again.</para>
             </listitem>
             <listitem>
@@ -613,9 +614,9 @@
         </listitem>
         <listitem>
           <para>If you have made changes to your existing copy of the file components.xml in your
-            previous-version CloudStack installation, the changes will be preserved in the
-            upgrade. However, you need to do the following steps to place these changes in a new
-            version of the file which is compatible with version 4.0.</para>
+            previous-version CloudStack installation, the changes will be preserved in the upgrade.
+            However, you need to do the following steps to place these changes in a new version of
+            the file which is compatible with version 4.0.</para>
           <note>
             <para>How will you know whether you need to do this? If the upgrade output in the
               previous step included a message like the following, then some custom content was
@@ -681,8 +682,8 @@
             </listitem>
             <listitem>
               <para>(Optional) For database_key, substitute the default key that is used to encrypt
-                confidential parameters in the CloudStack database. Default: password. It is
-                highly recommended that you replace this with a more secure value.</para>
+                confidential parameters in the CloudStack database. Default: password. It is highly
+                recommended that you replace this with a more secure value.</para>
             </listitem>
           </itemizedlist>
         </listitem>
@@ -707,7 +708,7 @@
           <para>(KVM only) Additional steps are required for each KVM host. These steps will not
             affect running guests in the cloud. These steps are required only for clouds using KVM
             as hosts and only on the KVM hosts.</para>
-           <orderedlist numeration="loweralpha">
+          <orderedlist numeration="loweralpha">
             <listitem>
               <para>Copy the CloudStack 4.0 .tgz download to the host, untar it, and cd into the
                 resulting directory.</para>
@@ -742,9 +743,9 @@
           </orderedlist>
         </listitem>
         <listitem>
-          <para>Log in to the CloudStack UI as admin, and check the status of the hosts. All
-            hosts should come to Up state (except those that you know to be offline). You may need
-            to wait 20 or 30 minutes, depending on the number of hosts.</para>
+          <para>Log in to the CloudStack UI as admin, and check the status of the hosts. All hosts
+            should come to Up state (except those that you know to be offline). You may need to wait
+            20 or 30 minutes, depending on the number of hosts.</para>
           <para>Do not proceed to the next step until the hosts show in the Up state. If the hosts
             do not come to the Up state, contact support.</para>
         </listitem>
@@ -809,9 +810,8 @@ Done restarting router(s).
         </listitem>
         <listitem>
           <para>If needed, upgrade all Citrix XenServer hypervisor hosts in your cloud to a version
-            supported by CloudStack 4.0. The supported versions are XenServer 5.6 SP2 and
-            6.0.2. Instructions for upgrade can be found in the CloudStack 4.0
-            Installation Guide.</para>
+            supported by CloudStack 4.0. The supported versions are XenServer 5.6 SP2 and 6.0.2.
+            Instructions for upgrade can be found in the CloudStack 4.0 Installation Guide.</para>
         </listitem>
         <listitem>
           <para>Apply the XenServer hotfix XS602E003 (and any other needed hotfixes) to XenServer
@@ -825,9 +825,9 @@ Done restarting router(s).
               <para>This may fail if there are hosts not in one of the states Up, Down,
                 Disconnected, or Alert. You may need to fix that before unmanaging this
                 cluster.</para>
-              <para>Wait until the status of the cluster has reached Unmanaged. Use the
-                CloudStack UI to check on the status. When the cluster is in the unmanaged state,
-                there is no connection to the hosts in the cluster.</para>
+              <para>Wait until the status of the cluster has reached Unmanaged. Use the CloudStack
+                UI to check on the status. When the cluster is in the unmanaged state, there is no
+                connection to the hosts in the cluster.</para>
             </listitem>
             <listitem>
               <para>To clean up the VLAN, log in to one XenServer host and run:</para>
@@ -956,7 +956,7 @@ Done restarting router(s).
         </listitem>
       </orderedlist>
     </section>
-    </chapter>
+  </chapter>
   <chapter id="version-4.0">
     <title>Version 4.0</title>
     <section id="what-new-in-4.0">
@@ -1258,6 +1258,50 @@ Done restarting router(s).
           in a more closely integrated fashion. The feature is disabled by default, but can be
           easily enabled by setting the appropriate global configuration parameter and performing a
           few setup steps.</para>
+      </section>
+      <section id="nicira-nvp-plugin">
+        <title>The Nicira NVP Plugin</title>
+        <para>The Nicira NVP plug-in allows CloudStack to use the Nicira solution for virtualized
+          network as a provider for CloudStack networks and services. In CloudStack 4.0 this plug-in
+          supports the Connectivity service. This service is responsible for creating Layer 2
+          networks supporting the networks created by guests. When a tenant creates a new network,
+          instead of a traditional VLAN, a logical network will be created by sending the
+          appropriate calls to the Nicira NVP Controller. The plug-in has been tested with Nicira
+          NVP versions 2.1.0, 2.2.0 and 2.2.1.</para>
+      </section>
+      <section id="castor-support">
+        <title>Support for CAStor Cluster</title>
+        <para>CloudStack 4.0 supports using a CAStor cluster as the back-end storage system for a
+          CloudStack S3 front-end. The CAStor back-end storage for CloudStack extends the existing
+          storage classes and allows the storage configuration attribute to point to a CAStor
+          cluster. This feature makes use of the CloudStack server's local disk to spool files
+          before writing them to CAStor when handling the PUT operations. However, a file must be
+          successfully written into the CAStor cluster prior to the return of a success code to the
+          S3 client to ensure that the transaction outcome is correctly reported.</para>
+        <para>The S3 multipart file upload is not supported in this release. You are prompted with
+          proper error message if a multipart upload is attempted.</para>
+      </section>
+      <section id="clvm-support-kvm">
+        <title>Clustered Logical Volume Manager Support for KVM</title>
+        <para>This release adds Clustered Logical Volume Manager (CLVM) storage support for KVM
+          hosts. With this support, you can use CLVM as primary storage.</para>
+        <para>The CLVM support for KVM allows root and data disks (primary storage) to reside on
+          Linux logical volumes. The administrators are required to configure CLVM on the KVM hosts
+          independent of CloudStack. When the volume groups are available, an administrator can
+          simply add primary storage of type CLVM, providing the volume group name. Then CloudStack
+          creates and manages logical volumes as needed.</para>
+        <para>CLVM also supports Snapshots. CloudStack creates an LVM snapshot, copy the applicable
+          logical volume to the secondary storage in the qcow2 format, and then delete the LVM
+          snapshot. </para>
+      </section>
+      <section id="rbd-support-kvm">
+        <title>Rados Block Device Support for KVM</title>
+        <para>You can now use Rados Block Device (RBD) to run instances on Apache CloudStack 4.0.
+          This can be done by adding a RBD pool as primary storage. Before using RBD, ensure that
+          Qemu is compiled with RBD enabled, and the libvirt version is at least 0.10 with RBD
+          enabled on the KVM host </para>
+        <para>Create a disk offering for RBD so that you can ensure that StoragePoolAllocator
+          chooses the RBD pool to deploy instances.</para>
       </section>
     </section>
     <section id="issues-fixed-4.0">
@@ -1950,9 +1994,9 @@ Done restarting router(s).
             <row>
               <entry><para>CLOUDSTACK-301</para></entry>
               <entry><para>Nexus 1000v DVS integration is not functional</para>
-                    <para>This source code release includes some partial functionality to
-                    support the Cisco Nexus 1000v Distributed Virtual Switch within a VMware
-                    hypervisor environment. The functionality is not complete at this time.</para>
+                <para>This source code release includes some partial functionality to support the
+                  Cisco Nexus 1000v Distributed Virtual Switch within a VMware hypervisor
+                  environment. The functionality is not complete at this time.</para>
               </entry>
             </row>
             <row>
@@ -2745,9 +2789,15 @@ Done restarting router(s).
               <entry><para>addCluster</para></entry>
               <entry><para>The following request parameters are added:</para>
                 <itemizedlist>
-                  <listitem><para>vsmipaddress (optional)</para></listitem>
-                  <listitem><para>vsmpassword (optional)</para></listitem>
-                  <listitem><para>vsmusername (optional)</para></listitem>
+                  <listitem>
+                    <para>vsmipaddress (optional)</para>
+                  </listitem>
+                  <listitem>
+                    <para>vsmpassword (optional)</para>
+                  </listitem>
+                  <listitem>
+                    <para>vsmusername (optional)</para>
+                  </listitem>
                 </itemizedlist>
                 <para>The following parameter is made mandatory: podid</para>
               </entry>
@@ -2798,7 +2848,8 @@ Done restarting router(s).
             </row>
             <row>
               <entry><para>listCapabilities</para></entry>
-              <entry><para>A new response parameter is added: customdiskofferingmaxsize</para></entry>
+              <entry><para>A new response parameter is added:
+                customdiskofferingmaxsize</para></entry>
             </row>
             <row>
               <entry><para>disableAccount</para></entry>
@@ -2834,7 +2885,8 @@ Done restarting router(s).
             </row>
             <row>
               <entry><para>listHosts</para></entry>
-              <entry><para>A new response parameter is added: hahost</para><para>A new request parameter is added: hahost (optional)</para></entry>
+              <entry><para>A new response parameter is added: hahost</para><para>A new request
+                  parameter is added: hahost (optional)</para></entry>
             </row>
           </tbody>
         </tgroup>
