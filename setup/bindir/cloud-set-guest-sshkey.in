@@ -40,7 +40,7 @@ do
 		file_count=$((file_count+1))
 		SSHKEY_SERVER_IP=$(grep dhcp-server-identifier $DHCP_FILE | tail -1 | awk '{print $NF}' | tr -d '\;')
 
-		if [ -n $SSHKEY_SERVER_IP ]
+		if [ -n "$SSHKEY_SERVER_IP" ]
 		then
 			logger -t "cloud" "Sending request to ssh key server at $SSHKEY_SERVER_IP"
 
