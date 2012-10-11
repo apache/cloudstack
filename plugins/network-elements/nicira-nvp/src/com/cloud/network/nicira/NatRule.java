@@ -19,7 +19,7 @@ package com.cloud.network.nicira;
 /**
  * 
  */
-public abstract class NatRule {
+public class NatRule {
 	protected Match match;
 	protected String to_source_ip_address_min;
 	protected String to_source_ip_address_max;
@@ -30,6 +30,8 @@ public abstract class NatRule {
 	protected String to_destination_ip_address_min;
 	protected String to_destination_ip_address_max;
 	protected Integer to_destination_port;
+	
+	public NatRule() {}
 	
 	public Match getMatch() {
 		return match;

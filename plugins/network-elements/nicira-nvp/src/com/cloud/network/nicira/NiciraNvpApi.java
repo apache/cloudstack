@@ -256,6 +256,12 @@ public class NiciraNvpApi {
     	throw new NiciraNvpApiException("Unknown NatRule type");
     }
     
+    public void modifyLogicalRouterNatRule(String logicalRouterUuid, NatRule natRule) throws NiciraNvpApiException {
+    	String uri = "/ws.v1/lrouter/" + logicalRouterUuid + "/nat/" + natRule.getUuid();
+    	
+    	executeUpdateObject(natRule, uri, Collections.<String,String>emptyMap());
+    }
+    
     public void deleteLogicalRouterNatRule(String logicalRouterUuid, String natRuleUuid) throws NiciraNvpApiException {
     	String uri = "/ws.v1/lrouter/" + logicalRouterUuid + "/nat/" + natRuleUuid;
     	
@@ -286,8 +292,10 @@ public class NiciraNvpApi {
     
     public NiciraNvpList<NatRule> findNatRulesByLogicalRouterUuid(String logicalRouterUuid) throws NiciraNvpApiException {
     	String uri = "/ws.v1/lrouter/" + logicalRouterUuid + "/nat";
-    	
-    	return executeRetrieveObject(new TypeToken<NiciraNvpList<NatRule>>(){}.getType(), uri, Collections.<String,String>emptyMap());
+        Map<String,String> params = new HashMap<String,String>();
+        params.put("fields","*");
+        
+    	return executeRetrieveObject(new TypeToken<NiciraNvpList<NatRule>>(){}.getType(), uri, params);
     }
     
     private <T> void executeUpdateObject(T newObject, String uri, Map<String,String> parameters) throws NiciraNvpApiException {
