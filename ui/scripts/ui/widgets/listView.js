@@ -666,26 +666,26 @@
   var createFilters = function($toolbar, filters) {
     if (!filters) return false;
 
-    var $filters = $('<div></div>').addClass('filters reduced-hide');
-    $filters.append($('<label>').html(_l('label.filterBy')));
+      var $filters = $('<div></div>').addClass('filters reduced-hide');
+      $filters.append($('<label>').html(_l('label.filterBy')));
 
-    var $filterSelect = $('<select id="filterBy"></select>').appendTo($filters);
+      var $filterSelect = $('<select id="filterBy"></select>').appendTo($filters);
 
-    if (filters)
-      $.each(filters, function(key) {
-        if(this.preFilter != null && this.preFilter() == false) {
-          return true; //skip to next item in each loop
-        }
-        var $option = $('<option>').attr({
-          value: key
-        }).html(_l(this.label));
+      if (filters)
+        $.each(filters, function(key) {
+          if(this.preFilter != null && this.preFilter() == false) {
+            return true; //skip to next item in each loop
+          }
+          var $option = $('<option>').attr({
+            value: key
+          }).html(_l(this.label));
 
-        $option.appendTo($filterSelect);
+          $option.appendTo($filterSelect);
 
-        return true;
-      });
+          return true;
+        });
 
-    return $filters.appendTo($toolbar);
+        return $filters.appendTo($toolbar);
   };
 
   var createSearchBar = function($toolbar, listViewData) {
@@ -693,12 +693,19 @@
     var $searchBar = $('<div></div>').addClass('search-bar reduced hide').appendTo($search);
     $searchBar.append('<input type="text" />');
     $search.append('<div id="basic_search" class="button search"></div>');
-		
-		if(listViewData.advSearchFields != null)
-		  $search.append('<div id="advanced_search" class="button search"></div>'); 
-		
+
+    if (listViewData.advSearchFields != null) {
+      $search.append(
+        $('<div>').attr({
+        id: 'advanced_search'
+      })
+      .addClass('button search')
+      .append($('<div>').addClass('icon'))
+      );
+    }
+
     return $search.appendTo($toolbar);
-  };
+  }; 
 
   /**
    * Makes set of icons from data, in the for of a table cell
@@ -1527,9 +1534,20 @@
         }
       );
     };
-				
-    $listView.find('.button.search#advanced_search').bind('click', function(event) {	
-			cloudStack.dialog.createForm({
+
+    var closeAdvancedSearch = function() {
+      $('#advanced_search .form-container:visible').remove();
+    };
+
+    $listView.find('.button.search#advanced_search .icon').bind('click', function(event) {
+      if ($('#advanced_search .form-container:visible').size()) {
+        closeAdvancedSearch();
+
+        return false;
+      }
+      
+			var form = cloudStack.dialog.createForm({
+        noDialog: true,
 				form: {
 					title: 'Advanced Search',					
 					fields: listViewData.advSearchFields
@@ -1537,8 +1555,22 @@
 				after: function(args) {				  
 					advancedSearch(args);	
 					$listView.find('.button.search#basic_search').siblings('.search-bar').find('input').val(''); //clear basic search input field to avoid confusion of search result   
+          closeAdvancedSearch();
 				}
 			});
+      var $formContainer = form.$formContainer;
+      var $form = $formContainer.find('form');
+
+      $formContainer.hide().appendTo('#advanced_search').show();
+      $form.find('.form-item:first input').focus();
+      $form.find('input[type=submit]')
+        .show()
+        .appendTo($form)
+        .val('Search');
+
+      $form.submit(function() {
+        form.completeAction($formContainer);
+      });
 					
       return false;
     });		

@@ -1,3 +1,4 @@
+/*[fmt]1C20-1C0D-E*/
 /*
 * Licensed to the Apache Software Foundation (ASF) under one
 * or more contributor license agreements.  See the NOTICE file
@@ -16,7 +17,6 @@
 * specific language governing permissions and limitations
 * under the License.
 */
-/*[fmt]1C20-1C0D-E*/
 /*+clearfix {*/
 div.toolbar:after,
 .multi-wizard .progress ul li:after,
@@ -2543,6 +2543,7 @@ div.toolbar div.filters select {
 
 div.toolbar div.text-search {
   float: right;
+  position: relative;
 }
 
 div.toolbar div.text-search div.search-bar {
@@ -2675,6 +2676,120 @@ div.toolbar div.button.add span {
 
 #browser div.panel.selected div.toolbar {
   border-right: 1px solid #43586B;
+}
+
+/*** Advanced search*/
+#advanced_search {
+  width: 15px;
+  position: absolute;
+  left: 139px;
+  top: 4px;
+  z-index: 4;
+  background: none;
+}
+
+#advanced_search .icon {
+  /*+opacity:56%;*/
+  filter: alpha(opacity=56);
+  -ms-filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=56);
+  -moz-opacity: 0.56;
+  opacity: 0.56;
+  background: url(../images/sprites.png) no-repeat -62px -162px;
+  padding: 10px;
+  position: absolute;
+  top: 1px;
+  left: -1px;
+  z-index: 10;
+}
+
+#advanced_search:hover .icon {
+  /*+opacity:100%;*/
+  filter: alpha(opacity=100);
+  -ms-filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=100);
+  -moz-opacity: 1;
+  opacity: 1;
+}
+
+#advanced_search .form-container {
+  /*+opacity:91%;*/
+  filter: alpha(opacity=91);
+  -ms-filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=91);
+  -moz-opacity: 0.91;
+  opacity: 0.91;
+  /*+box-shadow:0px 5px 9px #B6B0B0;*/
+  -moz-box-shadow: 0px 5px 9px #B6B0B0;
+  -webkit-box-shadow: 0px 5px 9px #B6B0B0;
+  -o-box-shadow: 0px 5px 9px #B6B0B0;
+  box-shadow: 0px 5px 9px #B6B0B0;
+  border: 1px solid #808080;
+  /*+border-radius:0 0 4px 4px;*/
+  -moz-border-radius: 0 0 4px 4px;
+  -webkit-border-radius: 0 0 4px 4px;
+  -khtml-border-radius: 0 0 4px 4px;
+  border-radius: 0 0 4px 4px;
+  left: -290px;
+  top: 2px;
+  position: absolute;
+  display: inline-block;
+  background: #FFFFFF;
+  padding: 18px;
+  cursor: default;
+}
+
+#advanced_search .form-container .name {
+  width: 66px;
+  float: left;
+}
+
+#advanced_search .form-container .value {
+  width: 186px;
+  float: left;
+}
+
+#advanced_search .form-container .form-item {
+  width: 268px;
+  height: 40px;
+  margin-bottom: 15px;
+}
+
+#advanced_search .form-container .form-item input,
+#advanced_search .form-container .form-item select {
+  width: 97%;
+  padding: 3px;
+}
+
+#advanced_search input[type=submit] {
+  background: url(../images/bg-gradients.png) 0px -220px;
+  /*+box-shadow:0px 2px 5px #858585;*/
+  -moz-box-shadow: 0px 2px 5px #858585;
+  -webkit-box-shadow: 0px 2px 5px #858585;
+  -o-box-shadow: 0px 2px 5px #858585;
+  box-shadow: 0px 2px 5px #858585;
+  border: 1px solid #606060;
+  border-top: none;
+  color: #FFFFFF;
+  font-size: 12px;
+  font-weight: bold;
+  /*+text-shadow:0px 1px 1px #000000;*/
+  -moz-text-shadow: 0px 1px 1px #000000;
+  -webkit-text-shadow: 0px 1px 1px #000000;
+  -o-text-shadow: 0px 1px 1px #000000;
+  text-shadow: 0px 1px 1px #000000;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 8px 20px;
+}
+
+#advanced_search input[type=submit]:hover {
+  /*+box-shadow:inset 0px 2px 3px #000000;*/
+  -moz-box-shadow: inset 0px 2px 3px #000000;
+  -webkit-box-shadow: inset 0px 2px 3px #000000;
+  -o-box-shadow: inset 0px 2px 3px #000000;
+  box-shadow: inset 0px 2px 3px #000000;
 }
 
 /*** Panel controls*/
