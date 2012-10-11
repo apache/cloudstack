@@ -122,7 +122,7 @@
           </connectors>
           <contextPath>/client</contextPath>
           <webXml>${basedir}/WEB-INF/web.xml</webXml>
-          <webAppSourceDirectory>${basedir}/target/generated-webapp</webAppSourceDirectory>
+          <webAppSourceDirectory>${project.build.directory}/${project.build.finalName}</webAppSourceDirectory>
         </configuration>
       </plugin>
       <plugin>
@@ -130,7 +130,7 @@
         <artifactId>tomcat7-maven-plugin</artifactId>
         <configuration>
           <tomcatWebXml>${basedir}/WEB-INF/web.xml</tomcatWebXml>
-          <warSourceDirectory>./target/generated-webapp</warSourceDirectory>
+          <warSourceDirectory>${project.build.directory}/${project.build.finalName}</warSourceDirectory>
         </configuration>
       </plugin>
       <plugin>

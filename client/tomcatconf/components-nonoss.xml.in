@@ -82,6 +82,9 @@ under the License.
 	   <dao name="NetappPool" class="com.cloud.netapp.dao.PoolDaoImpl" singleton="false"/>
 		<dao name="NetappVolume" class="com.cloud.netapp.dao.VolumeDaoImpl" singleton="false"/>
 	  <dao name="NetappLun" class="com.cloud.netapp.dao.LunDaoImpl" singleton="false"/>
+	    <dao name="Configuration configuration server" class="com.cloud.configuration.dao.ConfigurationDaoImpl" singleton="false">
+             <param name="premium">true</param>
+        </dao>
     </management-server>
     <configuration-server class="com.cloud.server.ConfigurationServerImpl" extends="components.xml:configuration-server">
         <dao name="Configuration configuration server" class="com.cloud.configuration.dao.ConfigurationDaoImpl" singleton="false">
