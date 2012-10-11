@@ -176,9 +176,9 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 			}
 			
 			List <PhysicalNetworkSetupInfo> netInfos = _networkMgr.getPhysicalNetworkInfo(dcId, HypervisorType.KVM);
-			String kvmPrivateNic = _kvmPrivateNic;
-			String kvmPublicNic = _kvmPublicNic;
-			String kvmGuestNic = _kvmGuestNic;
+			String kvmPrivateNic = null;
+			String kvmPublicNic = null;
+			String kvmGuestNic = null;
 
 			for (PhysicalNetworkSetupInfo info : netInfos) {
 			    if (info.getPrivateNetworkName() != null) {
@@ -191,21 +191,31 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 			        kvmGuestNic = info.getGuestNetworkName();
 			    }
 			}
+			
+			if (kvmPrivateNic == null && kvmPublicNic == null && kvmGuestNic == null) {
+				kvmPrivateNic = _kvmPrivateNic;
+				kvmPublicNic = _kvmPublicNic;
+				kvmGuestNic = _kvmGuestNic;
+			} 
+			
+			if (kvmPublicNic == null) {
+				kvmPublicNic = (kvmGuestNic != null) ? kvmGuestNic : kvmPrivateNic;
+			} 
+			
+			if (kvmPrivateNic == null) {
+				kvmPrivateNic = (kvmPublicNic != null) ? kvmPublicNic : kvmGuestNic;
+			}
+			
+			if (kvmGuestNic == null) {
+				kvmGuestNic = (kvmPublicNic != null) ? kvmPublicNic : kvmPrivateNic;
+			}
 
-                        String parameters = " -m " + _hostIp + " -z " + dcId + " -p " + podId + " -c " + clusterId + " -g " + guid + " -a";
-			
-			if (kvmPublicNic != null) {
-				parameters += " --pubNic=" + kvmPublicNic;
-			}
-			
-			if (kvmPrivateNic != null) {
-				parameters += " --prvNic=" + kvmPrivateNic;
-			}
-			
-			if (kvmGuestNic != null) {
-			    parameters += " --guestNic=" + kvmGuestNic;
-			}
-		
+            String parameters = " -m " + _hostIp + " -z " + dcId + " -p " + podId + " -c " + clusterId + " -g " + guid + " -a";
+
+            parameters += " --pubNic=" + kvmPublicNic;
+            parameters += " --prvNic=" + kvmPrivateNic;
+            parameters += " --guestNic=" + kvmGuestNic;
+
 			SSHCmdHelper.sshExecuteCmd(sshConnection, "cloud-setup-agent " + parameters, 3);
 			
 			KvmDummyResourceBase kvmResource = new KvmDummyResourceBase();
