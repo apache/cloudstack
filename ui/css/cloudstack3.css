@@ -2759,6 +2759,7 @@ div.toolbar div.button.add span {
 }
 
 #advanced_search input[type=submit] {
+  float: right;
   background: url(../images/bg-gradients.png) 0px -220px;
   /*+box-shadow:0px 2px 5px #858585;*/
   -moz-box-shadow: 0px 2px 5px #858585;
@@ -2790,6 +2791,22 @@ div.toolbar div.button.add span {
   -webkit-box-shadow: inset 0px 2px 3px #000000;
   -o-box-shadow: inset 0px 2px 3px #000000;
   box-shadow: inset 0px 2px 3px #000000;
+}
+
+#advanced_search .button.cancel {
+  background: url(noen);
+  color: #9A9A9A;
+  font-size: 12px;
+  float: right;
+  /*+placement:shift -32px 13px;*/
+  position: relative;
+  left: -32px;
+  top: 13px;
+  font-weight: bold;
+}
+
+#advanced_search .button.cancel:hover {
+  color: #494949;
 }
 
 /*** Panel controls*/

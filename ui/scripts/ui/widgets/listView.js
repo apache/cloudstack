@@ -1568,6 +1568,14 @@
         .appendTo($form)
         .val('Search');
 
+      // Cancel button
+      $form.append(
+        $('<div>').addClass('button cancel').html(_l('label.cancel'))
+          .click(function() {
+            closeAdvancedSearch();
+          })
+      );
+
       $form.submit(function() {
         form.completeAction($formContainer);
       });
