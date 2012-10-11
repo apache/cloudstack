@@ -50,7 +50,7 @@
     </dependency>
     <dependency>
       <groupId>org.apache.ws.commons.axiom</groupId>
-      <artifactId>axiom-impl</artifactId>
+      <artifactId>axiom-api</artifactId>
       <version>${cs.axiom.version}</version>
     </dependency>
     <dependency>
