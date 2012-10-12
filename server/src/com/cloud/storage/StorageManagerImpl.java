@@ -1281,7 +1281,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         }
         URI uri = null;
         try {
-            uri = new URI(cmd.getUrl());
+            uri = new URI(UriUtils.encodeURIComponent(cmd.getUrl()));
             if (uri.getScheme() == null) {
                 throw new InvalidParameterValueException("scheme is null " + cmd.getUrl() + ", add nfs:// as a prefix");
             } else if (uri.getScheme().equalsIgnoreCase("nfs")) {
