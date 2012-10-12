@@ -419,8 +419,6 @@ fi
 %attr(0755,root,root) %{_bindir}/cloud-sccs
 %attr(0755,root,root) %{_bindir}/cloud-gitrevs
 %doc %{_docdir}/%{name}-%{version}/version-info
-%doc %{_docdir}/%{name}-%{version}/sccs-info
-%doc %{_docdir}/%{name}-%{version}/configure-info
 %doc LICENSE
 %doc NOTICE
 
