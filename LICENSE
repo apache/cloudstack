@@ -184,7 +184,7 @@ This distribution contains third party resources.
 Within the . directory
     licensed under the BSD (3-clause) http://www.opensource.org/licenses/BSD-3-Clause  (as follows)
 
-            Copyright © 2005-2010 Thomas Nagy 
+            Copyright (c) 2005-2010 Thomas Nagy 
             
               Redistribution and use in source and binary forms, with or without
               modification, are permitted provided that the following conditions
@@ -217,7 +217,7 @@ Within the . directory
 Within the awsapi directory
     licensed under the BSD (3-clause) http://www.opensource.org/licenses/BSD-3-Clause  (as follows)
 
-            Copyright © 2005-2010 Thomas Nagy 
+            Copyright (c) 2005-2010 Thomas Nagy 
             
               Redistribution and use in source and binary forms, with or without
               modification, are permitted provided that the following conditions
@@ -250,7 +250,7 @@ Within the awsapi directory
 Within the console-proxy/js directory
     licensed under the MIT License http://www.opensource.org/licenses/mit-license.php  (as follows)
 
-            Copyright © 2009, John Resig 
+            Copyright (c) 2009, John Resig 
             
             Permission is hereby granted, free  of charge, to any person obtaining
             a  copy  of this  software  and  associated  documentation files  (the
@@ -312,7 +312,7 @@ Within the deps directory
 Within the deps/awsapi-lib directory
     licensed under the ANTLR 2 License http://www.antlr2.org/license.html  (as follows)
  
-                        
+                            
             ANTLR 2 License
             
             We reserve no legal rights to the ANTLR--it is fully in the public domain. An
@@ -328,17 +328,17 @@ Within the deps/awsapi-lib directory
             remain intact in our source code. As long as these guidelines are kept, we
             expect to continue enhancing this system and expect to make other tools
             available as they are completed.
-                          
+                            
         from ANTLR Translator Generator Project  http://www.antlr2.org/ 
             antlr-2.7.6.jar  http://repo1.maven.org/maven2/antlr/antlr/2.7.6/antlr-2.7.6-sources.jar             
 
     licensed under the Apache License, Version 2 http://www.apache.org/licenses/LICENSE-2.0.txt  (as above)
-    Copyright © 2004-2008 The Apache Software Foundation
+    Copyright (c) 2004-2008 The Apache Software Foundation
         from The Apache Software Foundation  http://www.apache.org/ 
             XmlSchema-1.4.3.jar             
 
     licensed under the Apache License, Version 2 http://www.apache.org/licenses/LICENSE-2.0.txt  (as above)
-    Copyright © 2004-2012 The Apache Software Foundation
+    Copyright (c) 2004-2012 The Apache Software Foundation
         from The Apache Software Foundation  http://www.apache.org/ 
             apache-log4j-extras-1.0.jar  http://logging.apache.org/log4j/companions/extras/             
             axiom-api-1.2.8.jar  http://ws.apache.org/axiom/source-repository.html             
@@ -370,7 +370,7 @@ Within the deps/awsapi-lib directory
             xml-apis.jar  http://repo1.maven.org/maven2/xml-apis/xml-apis/1.3.04/xml-apis-1.3.04-sources.jar             
 
     licensed under the Apache License, Version 2 http://www.apache.org/licenses/LICENSE-2.0.txt  (as above)
-    Copyright © 2009 Google Inc.
+    Copyright (c) 2009 Google Inc.
         from Google Inc.  http://google.com 
             cloud-gson.jar  http://code.google.com/p/google-gson/             
 
@@ -381,7 +381,7 @@ Within the deps/awsapi-lib directory
 
     licensed under the BSD (3-clause) http://www.opensource.org/licenses/BSD-3-Clause  (as follows)
 
-            Copyright © 2002-2011 Atsuhiko Yamanaka, JCraft,Inc. 
+            Copyright (c) 2002-2011 Atsuhiko Yamanaka, JCraft,Inc. 
             
               Redistribution and use in source and binary forms, with or without
               modification, are permitted provided that the following conditions
@@ -412,7 +412,7 @@ Within the deps/awsapi-lib directory
 
     licensed under the COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0 http://www.opensource.org/licenses/CDDL-1.0  (as follows)
 
-            Copyright © 1997-2010 Oracle and/or its affiliates. All rights reserved. 
+            Copyright (c) 1997-2010 Oracle and/or its affiliates. All rights reserved. 
             
             COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0
             
@@ -802,7 +802,7 @@ Within the deps/awsapi-lib directory
 
     licensed under the COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0 http://www.opensource.org/licenses/CDDL-1.0  (as follows)
 
-            Copyright © 2006 Sun Microsystems, Inc. All rights reserved. 
+            Copyright (c) 2006 Sun Microsystems, Inc. All rights reserved. 
             
             COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0
             
@@ -1190,7 +1190,7 @@ Within the deps/awsapi-lib directory
 
     licensed under the COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0 http://www.opensource.org/licenses/CDDL-1.0  (as follows)
 
-            Copyright © 1997-2010 Oracle and/or its affiliates. All rights reserved. 
+            Copyright (c) 1997-2010 Oracle and/or its affiliates. All rights reserved. 
             
             COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0
             
@@ -1839,13 +1839,13 @@ Within the deps/awsapi-lib directory
             STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
             ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
             OF THE POSSIBILITY OF SUCH DAMAGE.
-                          
+                            
         from DOM4J Project  http://dom4j.sourceforge.net/ 
             dom4j-1.6.1.jar  http://dom4j.sourceforge.net/source-repository.html             
 
     licensed under the MIT License http://www.opensource.org/licenses/mit-license.php  (as follows)
 
-            Copyright © 2004-2011 QOS.ch 
+            Copyright (c) 2004-2011 QOS.ch 
             
             Permission is hereby granted, free  of charge, to any person obtaining
             a  copy  of this  software  and  associated  documentation files  (the
@@ -2343,21 +2343,79 @@ Within the deps/awsapi-lib directory
                  use the text of this Exhibit A rather than the text found in the
                  Original Code Source Code for Your Modifications.]
             
-                          
+                            
         from Shigeru Chiba  http://www.csg.ci.i.u-tokyo.ac.jp/~chiba/javassist/ 
             javassist-3.9.0.GA.jar  http://sourceforge.net/projects/jboss/files/Javassist/             
 
 
+Within the patches/systemvm/debian/config/etc directory
+    placed in the public domain
+        by Adiscon GmbH  http://www.adiscon.com/ 
+            rsyslog.conf
+        by Simon Kelley   
+            dnsmasq.conf
+            vpcdnsmasq.conf
+
+
+Within the patches/systemvm/debian/config/etc/apache2 directory
+    licensed under the Apache License, Version 2 http://www.apache.org/licenses/LICENSE-2.0.txt  (as above)
+    Copyright (c) 2012 The Apache Software Foundation
+        from The Apache Software Foundation  http://www.apache.org/ 
+            httpd.conf             
+            ports.conf             
+            sites-available/default             
+            sites-available/default-ssl             
+            vhostexample.conf             
+
+
+Within the patches/systemvm/debian/config/etc/ssh/ directory
+    licensed under the BSD (2-clause) http://www.opensource.org/licenses/BSD-2-Clause  (as follows)
+ 
+            
+            Redistribution and use in source and binary forms, with or without modification,
+            are permitted provided that the following conditions are met:
+            
+            Redistributions of source code must retain the above copyright notice, this list
+            of  conditions and the following disclaimer. Redistributions in binary form must
+            reproduce the above copyright notice, this list  of conditions and the following
+            disclaimer in the documentation and/or other materials  provided with the
+            distribution.
+            
+            Neither the name of the author nor the names of contributors may be used to
+            endorse  or promote products derived from this software without specific prior
+            written permission.
+            
+            THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+            ANY  EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+            WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+            DISCLAIMED. IN NO EVENT SHALL THE  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+            ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,  EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+            (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE  GOODS OR SERVICES;
+            LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED  AND ON
+            ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+            (INCLUDING  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+            SOFTWARE, EVEN IF ADVISED  OF THE POSSIBILITY OF SUCH DAMAGE.
+                            
+        from OpenSSH Project  http://www.openssh.org/ 
+            sshd_config             
+
+
+Within the patches/systemvm/debian/config/root/redundant_router directory
+    placed in the public domain
+        by The netfilter.org project  http://www.netfilter.org/ 
+            conntrackd.conf.templ
+
+
 Within the scripts/storage/secondary directory
     licensed under the Apache License, Version 2 http://www.apache.org/licenses/LICENSE-2.0.txt  (as above)
-    Copyright © 2010-2011 OpenStack, LLC.
+    Copyright (c) 2010-2011 OpenStack, LLC.
         from OpenStack, LLC  http://www.openstack.org 
             swift             
 
 
 Within the scripts/vm/hypervisor/xenserver directory
     licensed under the Apache License, Version 2 http://www.apache.org/licenses/LICENSE-2.0.txt  (as above)
-    Copyright © 2010-2011 OpenStack, LLC.
+    Copyright (c) 2010-2011 OpenStack, LLC.
         from OpenStack, LLC  http://www.openstack.org 
             swift             
 
@@ -2369,7 +2427,7 @@ Within the target/jar directory
 
     licensed under the Apache License, Version 1.1 http://www.apache.org/licenses/LICENSE-1.1  (as follows)
 
-            Copyright © 2012 The Apache Software Foundation 
+            Copyright (c) 2012 The Apache Software Foundation 
             
             /* ====================================================================
              * The Apache Software License, Version 1.1
@@ -2429,7 +2487,7 @@ Within the target/jar directory
             cloud-commons-discovery.jar  http://commons.apache.org/discovery/             
 
     licensed under the Apache License, Version 2 http://www.apache.org/licenses/LICENSE-2.0.txt  (as above)
-    Copyright © 2012 The Apache Software Foundation
+    Copyright (c) 2012 The Apache Software Foundation
         from The Apache Software Foundation  http://www.apache.org/ 
             cloud-axis.jar  http://axis.apache.org/axis/             
             cloud-cglib.jar  http://cglib.sourceforge.net/             
@@ -2453,12 +2511,12 @@ Within the target/jar directory
             cloud-jasypt-1.9.jar  http://www.jasypt.org             
 
     licensed under the Apache License, Version 2 http://www.apache.org/licenses/LICENSE-2.0.txt  (as above)
-    Copyright © 2003-2007 Luck Consulting Pty Ltd
+    Copyright (c) 2003-2007 Luck Consulting Pty Ltd
         from Luck Consulting Pty Ltd  http://gregluck.com/blog/about/ 
             cloud-ehcache.jar  http://ehcache.org/             
 
     licensed under the Apache License, Version 2 http://www.apache.org/licenses/LICENSE-2.0.txt  (as above)
-    Copyright © 2009 Google Inc.
+    Copyright (c) 2009 Google Inc.
         from Google Inc.  http://google.com 
             cloud-google-gson-1.7.1.jar  http://code.google.com/p/google-gson/             
 
@@ -2470,7 +2528,7 @@ Within the target/jar directory
 
     licensed under the BSD (3-clause) http://www.opensource.org/licenses/BSD-3-Clause  (as follows)
 
-            Copyright © 2009, Caringo, Inc. 
+            Copyright (c) 2009, Caringo, Inc. 
             
               Redistribution and use in source and binary forms, with or without
               modification, are permitted provided that the following conditions
@@ -2501,7 +2559,7 @@ Within the target/jar directory
 
     licensed under the BSD (3-clause) http://www.opensource.org/licenses/BSD-3-Clause  (as follows)
 
-            Copyright © 2002-2011 Atsuhiko Yamanaka, JCraft,Inc. 
+            Copyright (c) 2002-2011 Atsuhiko Yamanaka, JCraft,Inc. 
             
               Redistribution and use in source and binary forms, with or without
               modification, are permitted provided that the following conditions
@@ -2532,7 +2590,7 @@ Within the target/jar directory
 
     licensed under the BSD (3-clause) http://www.opensource.org/licenses/BSD-3-Clause  (as follows)
 
-            Copyright © 2007-2008 Trilead AG (http://www.trilead.com)
+            Copyright (c) 2007-2008 Trilead AG (http://www.trilead.com)
             All rights reserved. 
             
               Redistribution and use in source and binary forms, with or without
@@ -2593,7 +2651,7 @@ Within the target/jar directory
 
     licensed under the COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0 http://www.opensource.org/licenses/CDDL-1.0  (as follows)
 
-            Copyright © 2006 Sun Microsystems, Inc. All rights reserved. 
+            Copyright (c) 2006 Sun Microsystems, Inc. All rights reserved. 
             
             COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0
             
@@ -2982,7 +3040,7 @@ Within the target/jar directory
 
     licensed under the COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0 http://www.opensource.org/licenses/CDDL-1.0  (as follows)
 
-            Copyright © 1997-2010 Oracle and/or its affiliates. All rights reserved. 
+            Copyright (c) 1997-2010 Oracle and/or its affiliates. All rights reserved. 
             
             COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0
             
@@ -3370,7 +3428,7 @@ Within the target/jar directory
 
     licensed under the Common Public License - v 1.0 http://opensource.org/licenses/cpl1.0  (as follows)
 
-            Copyright © IBM Corp 2006 
+            Copyright (c) IBM Corp 2006 
             
             Common Public License Version 1.0 (CPL)
             
@@ -3812,7 +3870,7 @@ Within the target/jar directory
 
     licensed under the Eclipse Distribution License Version 1.0 http://www.eclipse.org/org/documents/edl-v10.php  (as follows)
 
-            Copyright © 2012 The Eclipse Foundation. 
+            Copyright (c) 2012 The Eclipse Foundation. 
             
             Eclipse Distribution License Version 1.0
             
@@ -3844,6 +3902,34 @@ Within the target/jar directory
                             
         from The Eclipse Foundation  http://www.eclipse.org 
             cloud-javax.persistence-2.0.0.jar  http://wiki.eclipse.org/EclipseLink/Release/2.0.0             
+
+    licensed under the MIT License http://www.opensource.org/licenses/mit-license.php  (as follows)
+
+            Copyright (C) 2008      Tóth István <stoty@tvnet.hu>
+                          2008-2012 Daniel Veillard <veillard@redhat.com>
+                          2009-2011 Bryan Kearney <bkearney@redhat.com> 
+            
+            Permission is hereby granted, free  of charge, to any person obtaining
+            a  copy  of this  software  and  associated  documentation files  (the
+            "Software"), to  deal in  the Software without  restriction, including
+            without limitation  the rights to  use, copy, modify,  merge, publish,
+            distribute,  sublicense, and/or sell  copies of  the Software,  and to
+            permit persons to whom the Software  is furnished to do so, subject to
+            the following conditions:
+            
+            The  above  copyright  notice  and  this permission  notice  shall  be
+            included in all copies or substantial portions of the Software.
+            
+            THE  SOFTWARE IS  PROVIDED  "AS  IS", WITHOUT  WARRANTY  OF ANY  KIND,
+            EXPRESS OR  IMPLIED, INCLUDING  BUT NOT LIMITED  TO THE  WARRANTIES OF
+            MERCHANTABILITY,    FITNESS    FOR    A   PARTICULAR    PURPOSE    AND
+            NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+            LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+            OF CONTRACT, TORT OR OTHERWISE,  ARISING FROM, OUT OF OR IN CONNECTION
+            WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+                            
+        from The libvirt project  http://libvirt.org/ 
+            libvirt-java-0.4.9             
 
     licensed under the XStream BSD Style License https://fisheye.codehaus.org/browse/xstream/trunk/LICENSE.txt?hb=true  (as follows)
  
@@ -3881,13 +3967,6 @@ Within the target/jar directory
             cloud-xstream-1.3.1.jar  http://xstream.codehaus.org/repository.html             
 
 
-Within the tools/gcc directory
-    licensed under the Apache License, Version 2 http://www.apache.org/licenses/LICENSE-2.0.txt  (as above)
-    Copyright © 2009 Google Inc.
-        from Google Inc.  http://google.com 
-            compiler.jar             
-
-
 Within the ui/lib directory
     placed in the public domain
         by Eric Meyer  http://meyerweb.com/eric/ 
@@ -3895,7 +3974,7 @@ Within the ui/lib directory
 
     licensed under the BSD (2-clause) http://www.opensource.org/licenses/BSD-2-Clause  (as follows)
 
-            Copyright © 2008 George McGinley Smith
+            Copyright (c) 2008 George McGinley Smith
             All rights reserved. 
             
             Redistribution and use in source and binary forms, with or without modification,
@@ -3927,7 +4006,7 @@ Within the ui/lib directory
 
     licensed under the MIT License http://www.opensource.org/licenses/mit-license.php  (as follows)
 
-            Copyright © 2011, John Resig 
+            Copyright (c) 2011, John Resig 
             
             Permission is hereby granted, free  of charge, to any person obtaining
             a  copy  of this  software  and  associated  documentation files  (the
@@ -3953,7 +4032,7 @@ Within the ui/lib directory
 
     licensed under the MIT License http://www.opensource.org/licenses/mit-license.php  (as follows)
 
-            Copyright © 2006 - 2011 Jörn Zaefferer 
+            Copyright (c) 2006 - 2011 Jörn Zaefferer 
             
             Permission is hereby granted, free  of charge, to any person obtaining
             a  copy  of this  software  and  associated  documentation files  (the
@@ -3979,7 +4058,7 @@ Within the ui/lib directory
 
     licensed under the MIT License http://www.opensource.org/licenses/mit-license.php  (as follows)
 
-            Copyright © 2010, Sebastian Tschan 
+            Copyright (c) 2010, Sebastian Tschan 
             
             Permission is hereby granted, free  of charge, to any person obtaining
             a  copy  of this  software  and  associated  documentation files  (the
@@ -4005,7 +4084,7 @@ Within the ui/lib directory
 
     licensed under the MIT License http://www.opensource.org/licenses/mit-license.php  (as follows)
 
-            Copyright © 2006 Klaus Hartl (stilbuero.de) 
+            Copyright (c) 2006 Klaus Hartl (stilbuero.de) 
             
             Permission is hereby granted, free  of charge, to any person obtaining
             a  copy  of this  software  and  associated  documentation files  (the
@@ -4151,7 +4230,7 @@ Within the ui/lib/jquery-ui directory
 Within the ui/lib/qunit directory
     licensed under the MIT License http://www.opensource.org/licenses/mit-license.php  (as follows)
 
-            Copyright © 2012 John Resig, Jörn Zaefferer 
+            Copyright (c) 2012 John Resig, Jörn Zaefferer 
             
             Permission is hereby granted, free  of charge, to any person obtaining
             a  copy  of this  software  and  associated  documentation files  (the
@@ -4179,7 +4258,7 @@ Within the ui/lib/qunit directory
 
 Within the utils/src/com/cloud/utils/db directory
     licensed under the Apache License, Version 2 http://www.apache.org/licenses/LICENSE-2.0.txt  (as above)
-    Copyright © 2004 Clinton Begin
+    Copyright (c) 2004 Clinton Begin
         from Clinton Begin  http://code.google.com/p/mybatis/ 
             ScriptRunner.java  http://code.google.com/p/mybatis/             
 

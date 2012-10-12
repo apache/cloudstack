@@ -244,6 +244,24 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             } else {
                 dstIp = new Ip(guestNic.getIp4Address());
             }
+            
+            //if start port and end port are passed in, and they are not equal to each other, perform the validation
+            boolean validatePortRange = false;
+            if (rule.getSourcePortStart().intValue() != rule.getSourcePortEnd().intValue() 
+                    || rule.getDestinationPortStart() != rule.getDestinationPortEnd()) {
+                validatePortRange = true;
+            }
+            
+            if (validatePortRange) {
+                //source start port and source dest port should be the same. The same applies to dest ports
+                if (rule.getSourcePortStart().intValue() != rule.getDestinationPortStart()) {
+                    throw new InvalidParameterValueException("Private port start should be equal to public port start");
+                }
+                
+                if (rule.getSourcePortEnd().intValue() != rule.getDestinationPortEnd()) {
+                    throw new InvalidParameterValueException("Private port end should be equal to public port end");
+                }
+            }
 
             Transaction txn = Transaction.currentTxn();
             txn.start();

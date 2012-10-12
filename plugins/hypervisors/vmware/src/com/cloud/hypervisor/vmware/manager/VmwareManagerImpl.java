@@ -230,25 +230,31 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
         _privateNetworkVSwitchName = configDao.getValue(Config.VmwarePrivateNetworkVSwitch.key());
 
         if (_privateNetworkVSwitchName == null) {
-            _privateNetworkVSwitchName = "vSwitch0";
-        } else {
-            _privateNetworkVSwitchName = "privateEthernetPortProfile";
+            if (_nexusVSwitchActive) {
+                _privateNetworkVSwitchName = "privateEthernetPortProfile";
+            } else {
+                _privateNetworkVSwitchName = "vSwitch0";
+            }
         }
 
         _publicNetworkVSwitchName = configDao.getValue(Config.VmwarePublicNetworkVSwitch.key());
 
         if (_publicNetworkVSwitchName == null) {
-            _publicNetworkVSwitchName = "vSwitch0";
-        } else {
-            _publicNetworkVSwitchName = "publicEthernetPortProfile";
+            if (_nexusVSwitchActive) {
+                _publicNetworkVSwitchName = "publicEthernetPortProfile";
+            } else {
+                _publicNetworkVSwitchName = "vSwitch0";
+            }
         }
 
         _guestNetworkVSwitchName = configDao.getValue(Config.VmwareGuestNetworkVSwitch.key());
 
         if (_guestNetworkVSwitchName == null) {
-            _guestNetworkVSwitchName = "vSwitch0";
-        } else {
-            _guestNetworkVSwitchName = "guestEthernetPortProfile";
+            if (_nexusVSwitchActive) {
+                _guestNetworkVSwitchName = "guestEthernetPortProfile";
+            } else {
+                _guestNetworkVSwitchName = "vSwitch0";
+            }
         }
 
         _serviceConsoleName = configDao.getValue(Config.VmwareServiceConsole.key());
@@ -658,9 +664,9 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
         File file = new File(url.getFile());
         File isoFile = new File(file.getParent() + "/vms/systemvm.iso");
         if (!isoFile.exists()) {
-            isoFile = new File("/usr/lib64/cloud/agent/" + "/vms/systemvm.iso");
+            isoFile = new File("/usr/lib64/cloud/common/" + "/vms/systemvm.iso");
             if (!isoFile.exists()) {
-                isoFile = new File("/usr/lib/cloud/agent/" + "/vms/systemvm.iso");
+                isoFile = new File("/usr/lib/cloud/common/" + "/vms/systemvm.iso");
             }
         }
         return isoFile;
@@ -673,9 +679,9 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
 
         File keyFile = new File(file.getParent(), "/scripts/vm/systemvm/id_rsa.cloud");
         if (!keyFile.exists()) {
-            keyFile = new File("/usr/lib64/cloud/agent" + "/scripts/vm/systemvm/id_rsa.cloud");
+            keyFile = new File("/usr/lib64/cloud/common" + "/scripts/vm/systemvm/id_rsa.cloud");
             if (!keyFile.exists()) {
-                keyFile = new File("/usr/lib/cloud/agent" + "/scripts/vm/systemvm/id_rsa.cloud");
+                keyFile = new File("/usr/lib/cloud/common" + "/scripts/vm/systemvm/id_rsa.cloud");
             }
         }
         return keyFile;

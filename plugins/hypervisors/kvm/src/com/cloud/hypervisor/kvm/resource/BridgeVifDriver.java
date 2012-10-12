@@ -85,11 +85,18 @@ public class BridgeVifDriver extends VifDriverBase {
             URI broadcastUri = nic.getBroadcastUri();
             vlanId = broadcastUri.getHost();
         }
+        String trafficLabel = nic.getName();
         if (nic.getType() == Networks.TrafficType.Guest) {
             if (nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan
                     && !vlanId.equalsIgnoreCase("untagged")) {
-                String brName = createVlanBr(vlanId, _pifs.get("private"));
-                intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType));
+                if(trafficLabel != null || !trafficLabel.isEmpty()) {
+                    s_logger.debug("creating a vlan dev and bridge for guest traffic per traffic label " + trafficLabel);
+                    String brName = createVlanBr(vlanId, _pifs.get(trafficLabel));
+                    intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType));
+                } else {
+                    String brName = createVlanBr(vlanId, _pifs.get("private"));
+                    intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType));
+                }
             } else {
                 intf.defBridgeNet(_bridges.get("guest"), null, nic.getMac(), getGuestNicModel(guestOsType));
             }
@@ -100,8 +107,14 @@ public class BridgeVifDriver extends VifDriverBase {
         } else if (nic.getType() == Networks.TrafficType.Public) {
             if (nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan
                     && !vlanId.equalsIgnoreCase("untagged")) {
-                String brName = createVlanBr(vlanId, _pifs.get("public"));
-                intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType));
+                if(trafficLabel != null || !trafficLabel.isEmpty()){
+                    s_logger.debug("creating a vlan dev and bridge for public traffic per traffic label " + trafficLabel);
+                    String brName = createVlanBr(vlanId, _pifs.get(trafficLabel));
+                    intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType));
+                } else {
+                    String brName = createVlanBr(vlanId, _pifs.get("public"));
+                    intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType));
+                }
             } else {
                 intf.defBridgeNet(_bridges.get("public"), null, nic.getMac(), getGuestNicModel(guestOsType));
             }
@@ -120,22 +133,32 @@ public class BridgeVifDriver extends VifDriverBase {
         // Nothing needed as libvirt cleans up tap interface from bridge.
     }
 
-    private String setVnetBrName(String vnetId) {
-        return "cloudVirBr" + vnetId;
+    private String setVnetBrName(String pifName, String vnetId) {
+        String brName = "br" + pifName + "-"+ vnetId;
+        String oldStyleBrName = "cloudVirBr" + vnetId;
+
+        String cmdout = Script.runSimpleBashScript("brctl show | grep " + oldStyleBrName);
+        if (cmdout != null && cmdout.contains(oldStyleBrName)) {
+            s_logger.info("Using old style bridge name for vlan " + vnetId + " because existing bridge " + oldStyleBrName + " was found");
+            brName = oldStyleBrName;
+        }
+
+        return brName;
     }
 
     private String createVlanBr(String vlanId, String nic)
             throws InternalErrorException {
-        String brName = setVnetBrName(vlanId);
-        createVnet(vlanId, nic);
+        String brName = setVnetBrName(nic, vlanId);
+        createVnet(vlanId, nic, brName);
         return brName;
     }
 
-    private void createVnet(String vnetId, String pif)
+    private void createVnet(String vnetId, String pif, String brName)
             throws InternalErrorException {
         final Script command = new Script(_modifyVlanPath, _timeout, s_logger);
         command.add("-v", vnetId);
         command.add("-p", pif);
+        command.add("-b", brName);
         command.add("-o", "add");
 
         final String result = command.execute();

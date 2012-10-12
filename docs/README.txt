@@ -57,10 +57,21 @@ Some of the XML files contain only a series of include tags to pull in content f
 The master book file contains <book> ... </book> tags. This file is referred to in the Publican configuration file, and is used as the controlling file when building the book.
 
 
-As a naming convention, start the name of a book file with cloudstack_ ; for example, cloudstack_installation.
+Document names are derived from the docname setting in the appropriate .cfg file. 
+This should not have CloudStack in the name (which is redundant because of 
+the CloudStack brand that the documentation is built with. The docname variable
+sets the name in the doc site table of contents. This name also needs to exist
+as .xml and .ent in the en-US directory. Examples of appropriate docnames: 
+Admin_Guide
+API_Developers_Guide
+Installation_Guide
 
 
-A Publican book file must also have certain other tags that are expected by Publican when it builds the project. Copy an existing master book file to get these tags.
+
+
+A Publican book file must also have certain other tags that are expected by
+Publican when it builds the project. Copy an existing master book file to
+get these tags.
 
 
 ----------------------------------
@@ -71,10 +82,15 @@ CONFIG FILES
 
 For each book file, there must be a corresponding publican.cfg (or
 <other_name>.cfg) file in order to build the book with Publican. The
-docname: attribute in the config file matches the name of the master book file; for example, docname: cloudstack corresponds to the master book file cloudstack.xml.
+docname: attribute in the config file matches the name of the master book file;
+for example, docname: cloudstack corresponds to the master book file 
+cloudstack.xml.
 
 
-The .cfg files reside in the main directory, docs. To build a different book, just use the Publican command line flag --config=<filename>.cfg. (We also need per-book entities, Book_Info, Author_Info, and other Publican files. The technique for pulling these in is TBD.)
+The .cfg files reside in the main directory, docs. To build a different book,
+just use the Publican command line flag --config=<filename>.cfg. (We also
+need per-book entities, Book_Info, Author_Info, and other Publican files.
+The technique for pulling these in is TBD.)
 
 
 ----------------------------------
@@ -83,13 +99,18 @@ TO BUILD A BOOK
 
 ----------------------------------
 
-We will set up an automatic Publican job that generates new output whenever we check in changes to this repository. You can also build a book locally as follows.
+We will set up an automatic Publican job that generates new output whenever we
+check in changes to this repository. You can also build a book locally as 
+follows.
 
 
 First, install Publican, and get a local copy of the book source files.
 
 
-Put the desired publican.cfg in the docs directory. Go to the command line, cd to that directory, and run the publican build command. Specify what output format(s) and what language(s) you want to build. Always start with a test run. For example:
+Put the desired publican.cfg in the docs directory. Go to the command line, cd
+to that directory, and run the publican build command. Specify what output 
+format(s) and what language(s) you want to build. Always start with a test 
+run. For example:
 
 
 publican build --formats test --langs en-US
@@ -111,8 +132,28 @@ LOCALIZATION
 
 ----------------------------------
 
-Localized versions of the documentation files can be stored in appropriately named subdirectories parallel to en-US. The language code names to use for these directories are listed in Publican documentation, http://jfearn.fedorapeople.org/en-US/Publican/2.7/html/Users_Guide/appe-Users_Guide-Language_codes.html.
+Localized versions of the documentation files can be stored in appropriately 
+named subdirectories parallel to en-US. The language code names to use for 
+these directories are listed in Publican documentation, 
+http://jfearn.fedorapeople.org/en-US/Publican/2.7/html/Users_Guide/appe-Users_Guide-Language_codes.html.
 For example, Japanese XML files would be stored in the docs/ja-JP directory.
+
+Localization currently happens using Transifex and you can find the strings 
+to be translated at this location: 
+https://www.transifex.com/projects/p/ACS_DOCS/
+
+In preparation for l10n, authors and docs folks must take not of a number of
+things. 
+All .xml files must contain a translatable string. <xi:include> tags are not enough. 
+All new .xml files must have a corresponding entry in docs/.tx/config 
+Filenames should be less than 50 characters long. 
+
+To generate new POT files and upload source do the following: 
+publican update_pot --config=./publican-all.cfg
+tx push -s 
+
+To receive translated files from publican, run the following command:
+tx pull 
 
 
 ----------------------------------
@@ -121,7 +162,11 @@ CONTRIBUTING
 
 ----------------------------------
 
-Contributors can create new section, chapter, book, publican.cfg, or localized .xml files at any time. Submit them following the same patch approval procedure that is used for contributing to CloudStack code. More information for contributors is available at https://cwiki.apache.org/confluence/display/CLOUDSTACK/Documentation+Team.
+Contributors can create new section, chapter, book, publican.cfg, or localized 
+.xml files at any time. Submit them following the same patch approval procedure
+that is used for contributing to CloudStack code. More information for 
+contributors is available at 
+https://cwiki.apache.org/confluence/display/CLOUDSTACK/Documentation+Team.
 
 ----------------------------------
 

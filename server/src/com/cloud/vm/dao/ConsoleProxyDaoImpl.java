@@ -90,7 +90,7 @@ public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> im
     private static final String GET_PROXY_ACTIVE_LOAD =
     	"SELECT active_session AS count"		+
     	" FROM console_proxy" 					+
-    	" WHERE proxy_id=?";
+    	" WHERE id=?";
     
     private static final String STORAGE_POOL_HOST_INFO =
     	"SELECT p.data_center_id,  count(ph.host_id) " +

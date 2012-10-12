@@ -1,0 +1,104 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+	or more contributor license agreements.  See the NOTICE file
+	distributed with this work for additional information
+	regarding copyright ownership.  The ASF licenses this file
+	to you under the Apache License, Version 2.0 (the
+	"License"); you may not use this file except in compliance
+	with the License.  You may obtain a copy of the License at
+	http://www.apache.org/licenses/LICENSE-2.0
+	Unless required by applicable law or agreed to in writing,
+	software distributed under the License is distributed on an
+	"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+	KIND, either express or implied.  See the License for the
+	specific language governing permissions and limitations
+	under the License.
+-->
+<section id="add-gateway-vpc">
+  <title>Adding a Private Gateway to a VPC</title>
+  <para>A private gateway can be added by the root admin only. The VPC private network has 1:1
+    relationship with the NIC of the physical network. No gateways with duplicated VLAN and IP are
+    allowed in the same data center.</para>
+  <orderedlist>
+    <listitem>
+      <para>Log in to the &PRODUCT; UI as an administrator or end user.</para>
+    </listitem>
+    <listitem>
+      <para>In the left navigation, choose Network.</para>
+    </listitem>
+    <listitem>
+      <para>In the Select view, select VPC.</para>
+      <para>All the VPCs that you have created for the account is listed in the page.</para>
+    </listitem>
+    <listitem>
+      <para>Click the Configure button of the VPC to which you want to configure load balancing
+        rules.</para>
+      <para>The VPC page is displayed where all the tiers you created are listed in a
+        diagram.</para>
+    </listitem>
+    <listitem>
+      <para>Click the Settings icon.</para>
+      <para>The following options are displayed.</para>
+      <itemizedlist>
+        <listitem>
+          <para>IP Addresses</para>
+        </listitem>
+        <listitem>
+          <para>Private Gateways</para>
+        </listitem>
+        <listitem>
+          <para>Site-to-Site VPN</para>
+        </listitem>
+        <listitem>
+          <para>Network ACLs</para>
+        </listitem>
+      </itemizedlist>
+    </listitem>
+    <listitem>
+      <para>Select Private Gateways.</para>
+      <para>The Gateways page is displayed.</para>
+    </listitem>
+    <listitem>
+      <para>Click Add new gateway:</para>
+      <mediaobject>
+        <imageobject>
+          <imagedata fileref="./images/add-new-gateway-vpc.png"/>
+        </imageobject>
+        <textobject>
+          <phrase>add-new-gateway-vpc.png: adding a private gateway for the VPC.</phrase>
+        </textobject>
+      </mediaobject>
+    </listitem>
+    <listitem>
+      <para>Specify the following:</para>
+      <itemizedlist>
+        <listitem>
+          <para><emphasis role="bold">Physical Network</emphasis>: The physical network you have
+            created in the zone.</para>
+        </listitem>
+        <listitem>
+          <para><emphasis role="bold">IP Address</emphasis>: The IP address associated with the VPC
+            gateway.</para>
+        </listitem>
+        <listitem>
+          <para><emphasis role="bold">Gateway</emphasis>: The gateway through which the traffic is
+            routed to and from the VPC.</para>
+        </listitem>
+        <listitem>
+          <para><emphasis role="bold">Netmask</emphasis>: The netmask associated with the VPC
+            gateway.</para>
+        </listitem>
+        <listitem>
+          <para><emphasis role="bold">VLAN</emphasis>: The VLAN associated with the VPC
+            gateway.</para>
+        </listitem>
+      </itemizedlist>
+      <para>The new gateway appears in the list. You can repeat these steps to add more gateway for
+        this VPC.</para>
+    </listitem>
+  </orderedlist>
+</section>

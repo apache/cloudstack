@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -28,6 +29,7 @@ import java.util.UUID;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
+import javax.persistence.Table;
 
 import org.apache.log4j.Logger;
 
@@ -105,6 +107,7 @@ import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.servlet.ConsoleProxyServlet;
+import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StoragePoolVO;
@@ -656,6 +659,13 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         assert (allocator != null);
         List<ConsoleProxyVO> runningList = _consoleProxyDao.getProxyListInStates(dataCenterId, State.Running);
         if (runningList != null && runningList.size() > 0) {
+            Iterator<ConsoleProxyVO> it = runningList.iterator();
+            while (it.hasNext()) {
+                ConsoleProxyVO proxy = it.next();
+                if(proxy.getActiveSession() >= _capacityPerProxy){
+                    it.remove();
+                }
+            }            
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace("Running proxy pool size : " + runningList.size());
                 for (ConsoleProxyVO proxy : runningList) {
@@ -1184,7 +1194,11 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
                 }
             } else {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Zone host is ready, but console proxy template: " + template.getId() +  " is not ready on secondary storage: " + secondaryStorageHost.getId());
+                	if (secondaryStorageHost != null) {
+                		s_logger.debug("Zone host is ready, but console proxy template: " + template.getId() +  " is not ready on secondary storage: " + secondaryStorageHost.getId());
+                	} else {
+                		s_logger.debug("Zone host is ready, but console proxy template: " + template.getId() +  " is not ready on secondary storage.");
+                	}
                 }
             }
         }
@@ -1511,14 +1525,20 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         //check if there is a default service offering configured
         String cpvmSrvcOffIdStr = configs.get(Config.ConsoleProxyServiceOffering.key()); 
         if (cpvmSrvcOffIdStr != null) {
-            Long cpvmSrvcOffId = Long.parseLong(cpvmSrvcOffIdStr);
-            _serviceOffering = _offeringDao.findById(cpvmSrvcOffId);
-            if (_serviceOffering == null || !_serviceOffering.getSystemUse()) {
-                String msg = "Can't find system service offering id=" + cpvmSrvcOffId + " for console proxy vm";
-                s_logger.error(msg);
-                throw new ConfigurationException(msg);
+            
+            Long cpvmSrvcOffId = null;
+            try {
+                cpvmSrvcOffId = _identityDao.getIdentityId(DiskOfferingVO.class.getAnnotation(Table.class).name(),cpvmSrvcOffIdStr);
+            } catch (Exception e) {
+                String msg = "Can't find system service offering specified by global config, uuid=" + cpvmSrvcOffIdStr + " for console proxy vm";
+                s_logger.warn(msg);
             }
-        } else {
+            if(cpvmSrvcOffId != null){
+                _serviceOffering = _offeringDao.findById(cpvmSrvcOffId);
+            }
+        } 
+
+        if(_serviceOffering == null || !_serviceOffering.getSystemUse()){
         	int ramSize = NumbersUtil.parseInt(_configDao.getValue("console.ram.size"), DEFAULT_PROXY_VM_RAMSIZE);
         	int cpuFreq = NumbersUtil.parseInt(_configDao.getValue("console.cpu.mhz"), DEFAULT_PROXY_VM_CPUMHZ);
             _serviceOffering = new ServiceOfferingVO("System Offering For Console Proxy", 1, ramSize, cpuFreq, 0, 0, false, null, useLocalStorage, true, null, true, VirtualMachine.Type.ConsoleProxy, true);

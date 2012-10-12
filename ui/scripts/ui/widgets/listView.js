@@ -468,7 +468,12 @@
       };
 
       if (args.cancel) {  //click Cancel button
-        showLabel();
+       // showLabel();
+         var oldVal = $label.html();
+         $edit.hide();
+         $label.fadeIn();
+         $instanceRow.closest('div.data-table').dataTable('refresh');
+         $editInput.val(_s(oldVal));
         return false;
       }
 
@@ -665,12 +670,15 @@
     return $filters.appendTo($toolbar);
   };
 
-  var createSearchBar = function($toolbar) {
+  var createSearchBar = function($toolbar, listViewData) {
     var $search = $('<div></div>').addClass('text-search reduced-hide');
     var $searchBar = $('<div></div>').addClass('search-bar reduced hide').appendTo($search);
     $searchBar.append('<input type="text" />');
-    $search.append('<div class="button search"></div>');
-
+    $search.append('<div id="basic_search" class="button search"></div>');
+		
+		if(listViewData.advSearchFields != null)
+		  $search.append('<div id="advanced_search" class="button search"></div>'); 
+		
     return $search.appendTo($toolbar);
   };
 
@@ -1266,7 +1274,7 @@
                  listViewData.actions,
                  { reorder: reorder });
     createFilters($toolbar, listViewData.filters);
-    createSearchBar($toolbar);
+    createSearchBar($toolbar, listViewData);
 
     loadBody(
       $table,
@@ -1316,7 +1324,10 @@
       return true;
     });
 
-    var search = function() {
+		//basic search
+    var basicSearch = function() {		 
+			$listView.removeData('advSearch');
+		
       page = 1;
       loadBody(
         $table,
@@ -1341,13 +1352,17 @@
         }
       );
     };
-
-    $listView.find('.search-bar input[type=text]').change(function(event) {
-      search();
-    });
-
-    // Setup filter events
-    $listView.find('.button.search, select').bind('change', function(event) {
+				
+    $listView.find('.search-bar input[type=text]').keyup(function(event) {	
+			if(event.keyCode == 13) //13 is keycode of Enter key		
+        basicSearch();
+			return true;
+    });    		    
+    $listView.find('.button.search#basic_search').bind('click', function(event) {					
+      basicSearch();			
+      return true;
+    });			
+		$listView.find('select').bind('change', function(event) {
       if ($(event.target).closest('.section-select').size()) return true;
       if ((event.type == 'click' ||
            event.type == 'mouseup') &&
@@ -1356,11 +1371,52 @@
            $(event.target).is('input')))
         return true;
 
-      search();
+      basicSearch();
 
       return true;
     });
-
+   		
+		//advanced search 	
+		var advancedSearch = function(args) {		     
+			$listView.data('advSearch', args.data);
+				
+      page = 1;			
+      loadBody(
+        $table,
+        listViewData.dataProvider,
+        listViewData.preFilter,
+        listViewData.fields,
+        false,
+        {
+          page: page,
+          filterBy: {
+            kind: $listView.find('select[id=filterBy]').val(),
+            advSearch: args.data            
+          }
+        },
+        listViewData.actions,
+        {
+          context: $listView.data('view-args').context,
+          reorder: listViewData.reorder
+        }
+      );
+    };
+				
+    $listView.find('.button.search#advanced_search').bind('click', function(event) {	
+			cloudStack.dialog.createForm({
+				form: {
+					title: 'Advanced Search',					
+					fields: listViewData.advSearchFields
+				},
+				after: function(args) {				  
+					advancedSearch(args);	
+					$listView.find('.button.search#basic_search').siblings('.search-bar').find('input').val(''); //clear basic search input field to avoid confusion of search result   
+				}
+			});
+					
+      return false;
+    });		
+				
     // Infinite scrolling event
     $listView.bind('scroll', function(event) {
       if (args.listView && args.listView.disableInfiniteScrolling) return false;
@@ -1373,17 +1429,24 @@
 
         if (loadMoreData) {
           page = page + 1;
-
+					
+					var filterBy = {
+					  kind: $listView.find('select[id=filterBy]').length > 0? $listView.find('select[id=filterBy]').val(): 'all'
+					};				
+					if($listView.data('advSearch') == null) {
+					  filterBy.search = {
+							value: $listView.find('input[type=text]').length > 0? $listView.find('input[type=text]').val(): '',
+							by: 'name'
+						};
+					}
+					else {
+					  filterBy.advSearch = $listView.data('advSearch');
+					}
+					
           loadBody($table, listViewData.dataProvider, listViewData.preFilter, listViewData.fields, true, {
             context: context,
             page: page,
-            filterBy: {	
-							kind: $listView.find('select[id=filterBy]').length > 0? $listView.find('select[id=filterBy]').val(): 'all',
-							search: {
-								value: $listView.find('input[type=text]').length > 0? $listView.find('input[type=text]').val(): '',
-								by: 'name'
-							}
-            }
+            filterBy: filterBy
           }, actions, {
             reorder: listViewData.reorder
           });

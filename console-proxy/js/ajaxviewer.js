@@ -63,11 +63,296 @@ function getCurrentLanguage() {
 //
 function KeyboardMapper() {
 	this.mappedInput = [];
+	this.jsX11KeysymMap = [];
+	this.jsKeyPressX11KeysymMap = [];
 }
 
+//
+// RAW keyboard
+// 		Primarily translates KeyDown/KeyUp event, either as is (if there is no mapping entry)
+// 		or through mapped result.
+//
+// 		For KeyPress event, it translates it only if there exist a mapping entry
+// 		in jsX11KeysymMap map and the entry meets the condition
+// 
+// COOKED keyboard
+//		Primarily translates KeyPress event, either as is or through mapped result
+//		It translates KeyDown/KeyUp only there exists a mapping entry, or if there
+//		is no mapping entry, translate when certain modifier key is pressed (i.e., 
+//		CTRL or ALT key
+//
+// Mapping entry types
+//		direct		:	will be directly mapped into the entry value with the same event type
+//		boolean		:	only valid for jsX11KeysymMap, existence of this type, no matter true or false
+//						in value, corresponding KeyDown/KeyUp event will be masked
+//		array		:	contains a set of conditional mapping entry
+//		
+// Conditional mapping entry
+//
+//		{ 
+//			type: <event type>, code: <mapped key code>, modifiers: <modifiers>,
+//		  	shift : <shift state match condition>,		-- match on shift state
+//			guestos : <guest os match condition>,		-- match on guestos type
+//			browser: <browser type match condition>,	-- match on browser
+//			browserVersion: <brower version match condition>	-- match on browser version
+//		}
+//
+KeyboardMapper.KEYBOARD_TYPE_RAW = 0;
+KeyboardMapper.KEYBOARD_TYPE_COOKED = 1;
+
 KeyboardMapper.prototype = {
-	inputFeed : function(eventType, code, modifiers) {
-		this.mappedInput.push({type: eventType, code: code, modifiers: modifiers});
+		
+	setKeyboardType : function(keyboardType) {
+		this.keyboardType = keyboardType;
+		
+		if(keyboardType == KeyboardMapper.KEYBOARD_TYPE_RAW) {
+			// intialize keyboard mapping for RAW keyboard
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_CAPSLOCK] 		= AjaxViewer.X11_KEY_CAPSLOCK;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_BACKSPACE] 		= AjaxViewer.X11_KEY_BACKSPACE;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_TAB] 				= AjaxViewer.X11_KEY_TAB;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_ENTER] 			= AjaxViewer.X11_KEY_ENTER;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_ESCAPE] 			= AjaxViewer.X11_KEY_ESCAPE;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_INSERT] 			= AjaxViewer.X11_KEY_INSERT;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_DELETE] 			= AjaxViewer.X11_KEY_DELETE;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_HOME] 			= AjaxViewer.X11_KEY_HOME;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_END] 				= AjaxViewer.X11_KEY_END;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_PAGEUP] 			= AjaxViewer.X11_KEY_PAGEUP;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_PAGEDOWN] 		= AjaxViewer.X11_KEY_PAGEDOWN;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_LEFT] 			= AjaxViewer.X11_KEY_LEFT;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_UP] 				= AjaxViewer.X11_KEY_UP;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_RIGHT] 			= AjaxViewer.X11_KEY_RIGHT;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_DOWN] 			= AjaxViewer.X11_KEY_DOWN;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_F1] 				= AjaxViewer.X11_KEY_F1;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_F2] 				= AjaxViewer.X11_KEY_F2;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_F3] 				= AjaxViewer.X11_KEY_F3;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_F4] 				= AjaxViewer.X11_KEY_F4;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_F5] 				= AjaxViewer.X11_KEY_F5;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_F6] 				= AjaxViewer.X11_KEY_F6;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_F7] 				= AjaxViewer.X11_KEY_F7;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_F8] 				= AjaxViewer.X11_KEY_F8;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_F9] 				= AjaxViewer.X11_KEY_F9;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_F10] 				= AjaxViewer.X11_KEY_F10;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_F11] 				= AjaxViewer.X11_KEY_F11;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_F12] 				= AjaxViewer.X11_KEY_F12;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_SHIFT] 			= AjaxViewer.X11_KEY_SHIFT;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_CTRL] 			= AjaxViewer.X11_KEY_CTRL;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_ALT] 				= AjaxViewer.X11_KEY_ALT;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_GRAVE_ACCENT] 	= AjaxViewer.X11_KEY_GRAVE_ACCENT;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_SUBSTRACT] 		= AjaxViewer.X11_KEY_SUBSTRACT;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_ADD] 				= AjaxViewer.X11_KEY_ADD;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_OPEN_BRACKET] 	= AjaxViewer.X11_KEY_OPEN_BRACKET;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_CLOSE_BRACKET] 	= AjaxViewer.X11_KEY_CLOSE_BRACKET;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_BACK_SLASH] 		= AjaxViewer.X11_KEY_BACK_SLASH;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_SINGLE_QUOTE] 	= AjaxViewer.X11_KEY_SINGLE_QUOTE;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_COMMA] 			= AjaxViewer.X11_KEY_COMMA;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_PERIOD] 			= AjaxViewer.X11_KEY_PERIOD;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_FORWARD_SLASH] 	= AjaxViewer.X11_KEY_FORWARD_SLASH;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_DASH] 			= AjaxViewer.X11_KEY_DASH;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_SEMI_COLON] 		= AjaxViewer.X11_KEY_SEMI_COLON;
+
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_NUMPAD0] 			= AjaxViewer.X11_KEY_NUMPAD0;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_NUMPAD1] 			= AjaxViewer.X11_KEY_NUMPAD1;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_NUMPAD2] 			= AjaxViewer.X11_KEY_NUMPAD2;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_NUMPAD3] 			= AjaxViewer.X11_KEY_NUMPAD3;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_NUMPAD4] 			= AjaxViewer.X11_KEY_NUMPAD4;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_NUMPAD5] 			= AjaxViewer.X11_KEY_NUMPAD5;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_NUMPAD6] 			= AjaxViewer.X11_KEY_NUMPAD6;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_NUMPAD7] 			= AjaxViewer.X11_KEY_NUMPAD7;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_NUMPAD8] 			= AjaxViewer.X11_KEY_NUMPAD8;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_NUMPAD9] 			= AjaxViewer.X11_KEY_NUMPAD9;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_DECIMAL_POINT] 	= AjaxViewer.X11_KEY_DECIMAL_POINT;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_DIVIDE] 			= AjaxViewer.X11_KEY_DIVIDE;
+			
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_MULTIPLY] = [
+			    {type: AjaxViewer.KEY_DOWN, code: AjaxViewer.X11_KEY_SHIFT, modifiers: 0 },
+			    {type: AjaxViewer.KEY_DOWN, code: AjaxViewer.X11_KEY_ASTERISK, modifiers: 0 },
+			    {type: AjaxViewer.KEY_UP, code: AjaxViewer.X11_KEY_ASTERISK, modifiers: 0 },
+			    {type: AjaxViewer.KEY_UP, code: AjaxViewer.X11_KEY_SHIFT, modifiers: 0 }
+			];
+			
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_ADD] = false;
+			this.jsKeyPressX11KeysymMap = [];
+			this.jsKeyPressX11KeysymMap[61] = [
+			    {type: AjaxViewer.KEY_DOWN, code: AjaxViewer.X11_KEY_ADD, modifiers: 0, shift: false },
+			    {type: AjaxViewer.KEY_UP, code: AjaxViewer.X11_KEY_ADD, modifiers: 0, shift: false }
+			];
+			this.jsKeyPressX11KeysymMap[43] = [
+			    {type: AjaxViewer.KEY_DOWN, code: AjaxViewer.X11_KEY_SHIFT, modifiers: 0, shift: false },
+			    {type: AjaxViewer.KEY_DOWN, code: AjaxViewer.X11_KEY_ADD, modifiers: 0, shift: false },
+			    {type: AjaxViewer.KEY_UP, code: AjaxViewer.X11_KEY_ADD, modifiers: 0, shift: false },
+			    {type: AjaxViewer.KEY_UP, code: AjaxViewer.X11_KEY_SHIFT, modifiers: 0, shift: false },
+			    {type: AjaxViewer.KEY_DOWN, code: AjaxViewer.X11_KEY_ADD, modifiers: 0, shift: true },
+			    {type: AjaxViewer.KEY_UP, code: AjaxViewer.X11_KEY_ADD, modifiers: 0, shift: true }
+			];
+		} else {
+			// initialize mapping for COOKED keyboard
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_CAPSLOCK] 		= AjaxViewer.X11_KEY_CAPSLOCK;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_BACKSPACE] 		= AjaxViewer.X11_KEY_BACKSPACE;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_TAB] 				= AjaxViewer.X11_KEY_TAB;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_ENTER] 			= AjaxViewer.X11_KEY_ENTER;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_ESCAPE] 			= AjaxViewer.X11_KEY_ESCAPE;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_INSERT] 			= AjaxViewer.X11_KEY_INSERT;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_DELETE] 			= AjaxViewer.X11_KEY_DELETE;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_HOME] 			= AjaxViewer.X11_KEY_HOME;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_END] 				= AjaxViewer.X11_KEY_END;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_PAGEUP] 			= AjaxViewer.X11_KEY_PAGEUP;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_PAGEDOWN] 		= AjaxViewer.X11_KEY_PAGEDOWN;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_LEFT] 			= AjaxViewer.X11_KEY_LEFT;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_UP] 				= AjaxViewer.X11_KEY_UP;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_RIGHT] 			= AjaxViewer.X11_KEY_RIGHT;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_DOWN] 			= AjaxViewer.X11_KEY_DOWN;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_F1] 				= AjaxViewer.X11_KEY_F1;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_F2] 				= AjaxViewer.X11_KEY_F2;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_F3] 				= AjaxViewer.X11_KEY_F3;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_F4] 				= AjaxViewer.X11_KEY_F4;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_F5] 				= AjaxViewer.X11_KEY_F5;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_F6] 				= AjaxViewer.X11_KEY_F6;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_F7] 				= AjaxViewer.X11_KEY_F7;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_F8] 				= AjaxViewer.X11_KEY_F8;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_F9] 				= AjaxViewer.X11_KEY_F9;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_F10] 				= AjaxViewer.X11_KEY_F10;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_F11] 				= AjaxViewer.X11_KEY_F11;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_F12] 				= AjaxViewer.X11_KEY_F12;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_SHIFT] 			= AjaxViewer.X11_KEY_SHIFT;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_CTRL] 			= AjaxViewer.X11_KEY_CTRL;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_ALT] 				= AjaxViewer.X11_KEY_ALT;
+		}
+	},
+	
+	RawkeyboardInputHandler : function(eventType, code, modifiers, guestos, browser, browserVersion) {
+		if(eventType == AjaxViewer.KEY_DOWN || eventType == AjaxViewer.KEY_UP) {
+			
+			// special handling for Alt + Ctrl + Ins, convert it into Alt-Ctrl-Del
+			if(code == AjaxViewer.JS_KEY_INSERT) {
+				if((modifiers & AjaxViewer.ALT_KEY_MASK) != 0 && (modifiers & AjaxViewer.CTRL_KEY_MASK) != 0) {
+					this.mappedInput.push({type : eventType, code: 0xffff, modifiers: modifiers});
+					return;
+				}
+			}
+			
+			var X11Keysym = code;
+			if(this.jsX11KeysymMap[code] != undefined) {
+				X11Keysym = this.jsX11KeysymMap[code];
+				if(typeof this.jsX11KeysymMap[code] == "boolean") {
+					return;
+				} else if($.isArray(X11Keysym)) {
+					for(var i = 0; i < X11Keysym.length; i++) {
+						if(this.isConditionalEntryMatched(eventType, code, modifiers, X11Keysym[i], guestos, browser, browserVersion)) {
+							this.mappedInput.push(X11Keysym[i]);
+						}
+					}
+				} else {
+					this.mappedInput.push({type : eventType, code: X11Keysym, modifiers: modifiers});
+				}
+			} else {
+				this.mappedInput.push({type : eventType, code: X11Keysym, modifiers: modifiers});
+			}
+
+			// special handling for ALT/CTRL key
+			if(eventType == AjaxViewer.KEY_UP && (code == AjaxViewer.JS_KEY_ALT || code == code == AjaxViewer.JS_KEY_CTRL))
+				this.mappedInput.push({type : eventType, code: this.jsX11KeysymMap[code], modifiers: modifiers});
+			
+		} else if(eventType == AjaxViewer.KEY_PRESS) {
+			var X11Keysym = code;
+			X11Keysym = this.jsKeyPressX11KeysymMap[code];
+			if(X11Keysym) {
+				if($.isArray(X11Keysym)) {
+					for(var i = 0; i < X11Keysym.length; i++) {
+						if(this.isConditionalEntryMatched(eventType, code, modifiers, X11Keysym[i], guestos, browser))
+							this.mappedInput.push(X11Keysym[i]);
+					}
+				} else {
+					this.mappedInput.push({type : AjaxViewer.KEY_DOWN, code: X11Keysym, modifiers: modifiers});
+					this.mappedInput.push({type : AjaxViewer.KEY_UP, code: X11Keysym, modifiers: modifiers});
+				}
+			}
+		}
+	},
+	
+	CookedKeyboardInputHandler : function(eventType, code, modifiers, guestos, browser, browserVersion) {
+		if(eventType == AjaxViewer.KEY_DOWN || eventType == AjaxViewer.KEY_UP) {
+			
+			// special handling for Alt + Ctrl + Ins, convert it into Alt-Ctrl-Del
+			if(code == AjaxViewer.JS_KEY_INSERT) {
+				if((modifiers & AjaxViewer.ALT_KEY_MASK) != 0 && (modifiers & AjaxViewer.CTRL_KEY_MASK) != 0) {
+					this.mappedInput.push({type : eventType, code: 0xffff, modifiers: modifiers});
+					return;
+				}
+			}
+			
+			var X11Keysym = code;
+			if(this.jsX11KeysymMap[code] != undefined) {
+				X11Keysym = this.jsX11KeysymMap[code];
+				if(typeof this.jsX11KeysymMap[code] == "boolean") {
+					return;
+				} else if($.isArray(X11Keysym)) {
+					for(var i = 0; i < X11Keysym.length; i++) {
+						if(this.isConditionalEntryMatched(eventType, code, modifiers, X11Keysym[i], guestos, browser, browserVersion)) {
+							this.mappedInput.push(X11Keysym[i]);
+						}
+					}
+				} else {
+					this.mappedInput.push({type : eventType, code: X11Keysym, modifiers: modifiers});
+				}
+			} else {
+				if((modifiers & (AjaxViewer.CTRL_KEY_MASK | AjaxViewer.ALT_KEY_MASK)) != 0) {
+					this.mappedInput.push({type : eventType, code: X11Keysym, modifiers: modifiers});
+				}
+			}
+
+			// special handling for ALT/CTRL key
+			if(eventType == AjaxViewer.KEY_UP && (code == AjaxViewer.JS_KEY_ALT || code == code == AjaxViewer.JS_KEY_CTRL))
+				this.mappedInput.push({type : eventType, code: this.jsX11KeysymMap[code], modifiers: modifiers});
+			
+		} else if(eventType == AjaxViewer.KEY_PRESS) {
+			// special handling for * and + key on number pad
+			if(code == AjaxViewer.JS_NUMPAD_MULTIPLY) {
+				this.mappedInput.push({type : AjaxViewer.KEY_DOWN, code: AjaxViewer.X11_KEY_SHIFT, modifiers: modifiers});
+				this.mappedInput.push({type : AjaxViewer.KEY_DOWN, code: 42, modifiers: modifiers});
+				this.mappedInput.push({type : AjaxViewer.KEY_UP, code: 42, modifiers: modifiers});
+				this.mappedInput.push({type : AjaxViewer.KEY_UP, code: AjaxViewer.X11_KEY_SHIFT, modifiers: modifiers});
+				return;
+			}
+			
+			if(code == AjaxViewer.JS_NUMPAD_PLUS) {
+				this.mappedInput.push({type : AjaxViewer.KEY_DOWN, code: AjaxViewer.X11_KEY_SHIFT, modifiers: modifiers});
+				this.mappedInput.push({type : AjaxViewer.KEY_DOWN, code: 43, modifiers: modifiers});
+				this.mappedInput.push({type : AjaxViewer.KEY_UP, code: 43, modifiers: modifiers});
+				this.mappedInput.push({type : AjaxViewer.KEY_UP, code: AjaxViewer.X11_KEY_SHIFT, modifiers: modifiers});
+				return;
+			}
+			
+			// ENTER/BACKSPACE key should already have been sent through KEY DOWN/KEY UP event
+			if(code == AjaxViewer.JS_KEY_ENTER || code == AjaxViewer.JS_KEY_BACKSPACE)
+				return;
+
+			if(code > 0) {
+				var X11Keysym = code;
+				X11Keysym = this.jsKeyPressX11KeysymMap[code];
+				if(X11Keysym) {
+					if($.isArray(X11Keysym)) {
+						for(var i = 0; i < X11Keysym.length; i++) {
+							if(this.isConditionalEntryMatched(eventType, code, modifiers, X11Keysym[i], guestos, browser))
+								this.mappedInput.push(X11Keysym[i]);
+						}
+					} else {
+						this.mappedInput.push({type : AjaxViewer.KEY_DOWN, code: X11Keysym, modifiers: modifiers});
+						this.mappedInput.push({type : AjaxViewer.KEY_UP, code: X11Keysym, modifiers: modifiers});
+					}
+				} else {
+					// if there is no mappting entry, use the JS keypress code directly
+					this.mappedInput.push({type : AjaxViewer.KEY_DOWN, code: code, modifiers: modifiers});
+					this.mappedInput.push({type : AjaxViewer.KEY_UP, code: code, modifiers: modifiers});
+				}
+			}
+		}
+	},
+	
+	inputFeed : function(eventType, code, modifiers, guestos, browser, browserVersion) {
+		if(this.keyboardType == KeyboardMapper.KEYBOARD_TYPE_RAW)
+			this.RawkeyboardInputHandler(eventType, code, modifiers, guestos, browser, browserVersion);
+		else
+			this.CookedKeyboardInputHandler(eventType, code, modifiers, guestos, browser, browserVersion);
 	},
 	
 	getMappedInput : function() {
@@ -76,252 +361,43 @@ KeyboardMapper.prototype = {
 		return mappedInput;
 	},
 	
+	isConditionalEntryMatched : function(eventType, code, modifiers, entry, guestos, browser, browserVersion) {
+		if(eventType == AjaxViewer.KEY_DOWN || eventType == AjaxViewer.KEY_UP) {
+			// for KeyDown/KeyUp events, we require that the type in entry should match with
+			// the real input
+			if(entry.type != eventType)
+				return false;
+		}
+		
+		// check conditional match
+		if(entry.shift != undefined) {
+			var shift = ((modifiers & AjaxViewer.SHIFT_KEY_MASK) != 0 ? true : false); 
+			if(entry.shift ^ shift)
+				return false;
+		}
+		
+		if(entry.guestos != undefined) {
+			if(entry.guestos != guestos)
+				return false;
+		}
+		
+		if(entry.browser != undefined) {
+			if(entry.browser != browser)
+				return false;
+		}
+		
+		if(entry.browserVersion != undefined) {
+			if(entry.browserVersion != browserVersion)
+				return false;
+		}
+		
+		return true;
+	},
+	
 	isModifierInput : function(code) {
 		return $.inArray(code, [AjaxViewer.ALT_KEY_MASK, AjaxViewer.SHIFT_KEY_MASK, AjaxViewer.CTRL_KEY_MASK, AjaxViewer.META_KEY_MASK]) >= 0;
 	}
 };
-
-/////////////////////////////////////////////////////////////////////////////
-// JsX11KeyboardMapper
-//
-function JsX11KeyboardMapper() {
-	KeyboardMapper.apply(this, arguments);
-	
-	this.jsX11KeysymMap = [];
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_CAPSLOCK] 		= AjaxViewer.X11_KEY_CAPSLOCK;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_BACKSPACE] 		= AjaxViewer.X11_KEY_BACKSPACE;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_TAB] 				= AjaxViewer.X11_KEY_TAB;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_ENTER] 			= AjaxViewer.X11_KEY_ENTER;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_ESCAPE] 			= AjaxViewer.X11_KEY_ESCAPE;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_INSERT] 			= AjaxViewer.X11_KEY_INSERT;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_DELETE] 			= AjaxViewer.X11_KEY_DELETE;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_HOME] 			= AjaxViewer.X11_KEY_HOME;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_END] 				= AjaxViewer.X11_KEY_END;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_PAGEUP] 			= AjaxViewer.X11_KEY_PAGEUP;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_PAGEDOWN] 		= AjaxViewer.X11_KEY_PAGEDOWN;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_LEFT] 			= AjaxViewer.X11_KEY_LEFT;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_UP] 				= AjaxViewer.X11_KEY_UP;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_RIGHT] 			= AjaxViewer.X11_KEY_RIGHT;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_DOWN] 			= AjaxViewer.X11_KEY_DOWN;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F1] 				= AjaxViewer.X11_KEY_F1;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F2] 				= AjaxViewer.X11_KEY_F2;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F3] 				= AjaxViewer.X11_KEY_F3;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F4] 				= AjaxViewer.X11_KEY_F4;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F5] 				= AjaxViewer.X11_KEY_F5;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F6] 				= AjaxViewer.X11_KEY_F6;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F7] 				= AjaxViewer.X11_KEY_F7;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F8] 				= AjaxViewer.X11_KEY_F8;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F9] 				= AjaxViewer.X11_KEY_F9;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F10] 				= AjaxViewer.X11_KEY_F10;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F11] 				= AjaxViewer.X11_KEY_F11;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F12] 				= AjaxViewer.X11_KEY_F12;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_SHIFT] 			= AjaxViewer.X11_KEY_SHIFT;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_CTRL] 			= AjaxViewer.X11_KEY_CTRL;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_ALT] 				= AjaxViewer.X11_KEY_ALT;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_GRAVE_ACCENT] 	= AjaxViewer.X11_KEY_GRAVE_ACCENT;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_SUBSTRACT] 		= AjaxViewer.X11_KEY_SUBSTRACT;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_ADD] 				= AjaxViewer.X11_KEY_ADD;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_OPEN_BRACKET] 	= AjaxViewer.X11_KEY_OPEN_BRACKET;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_CLOSE_BRACKET] 	= AjaxViewer.X11_KEY_CLOSE_BRACKET;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_BACK_SLASH] 		= AjaxViewer.X11_KEY_BACK_SLASH;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_SINGLE_QUOTE] 	= AjaxViewer.X11_KEY_SINGLE_QUOTE;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_COMMA] 			= AjaxViewer.X11_KEY_COMMA;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_PERIOD] 			= AjaxViewer.X11_KEY_PERIOD;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_FORWARD_SLASH] 	= AjaxViewer.X11_KEY_FORWARD_SLASH;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_DASH] 			= AjaxViewer.X11_KEY_DASH;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_SEMI_COLON] 		= AjaxViewer.X11_KEY_SEMI_COLON;
-
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_NUMPAD0] 			= AjaxViewer.X11_KEY_NUMPAD0;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_NUMPAD1] 			= AjaxViewer.X11_KEY_NUMPAD1;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_NUMPAD2] 			= AjaxViewer.X11_KEY_NUMPAD2;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_NUMPAD3] 			= AjaxViewer.X11_KEY_NUMPAD3;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_NUMPAD4] 			= AjaxViewer.X11_KEY_NUMPAD4;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_NUMPAD5] 			= AjaxViewer.X11_KEY_NUMPAD5;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_NUMPAD6] 			= AjaxViewer.X11_KEY_NUMPAD6;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_NUMPAD7] 			= AjaxViewer.X11_KEY_NUMPAD7;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_NUMPAD8] 			= AjaxViewer.X11_KEY_NUMPAD8;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_NUMPAD9] 			= AjaxViewer.X11_KEY_NUMPAD9;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_DECIMAL_POINT] 	= AjaxViewer.X11_KEY_DECIMAL_POINT;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_DIVIDE] 			= AjaxViewer.X11_KEY_DIVIDE;
-	
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_MULTIPLY] = [
-	    {type: AjaxViewer.KEY_DOWN, code: AjaxViewer.X11_KEY_SHIFT, modifiers: 0 },
-	    {type: AjaxViewer.KEY_DOWN, code: AjaxViewer.X11_KEY_ASTERISK, modifiers: 0 },
-	    {type: AjaxViewer.KEY_UP, code: AjaxViewer.X11_KEY_ASTERISK, modifiers: 0 },
-	    {type: AjaxViewer.KEY_UP, code: AjaxViewer.X11_KEY_SHIFT, modifiers: 0 }
-	];
-	
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_ADD] = false;
-	this.jsKeyPressX11KeysymMap = [];
-	this.jsKeyPressX11KeysymMap[61] = [
-	    {type: AjaxViewer.KEY_DOWN, code: AjaxViewer.X11_KEY_ADD, modifiers: 0, shift: false },
-	    {type: AjaxViewer.KEY_UP, code: AjaxViewer.X11_KEY_ADD, modifiers: 0, shift: false }
-	];
-	this.jsKeyPressX11KeysymMap[43] = [
-	    {type: AjaxViewer.KEY_DOWN, code: AjaxViewer.X11_KEY_SHIFT, modifiers: 0, shift: false },
-	    {type: AjaxViewer.KEY_DOWN, code: AjaxViewer.X11_KEY_ADD, modifiers: 0, shift: false },
-	    {type: AjaxViewer.KEY_UP, code: AjaxViewer.X11_KEY_ADD, modifiers: 0, shift: false },
-	    {type: AjaxViewer.KEY_UP, code: AjaxViewer.X11_KEY_SHIFT, modifiers: 0, shift: false },
-	    {type: AjaxViewer.KEY_DOWN, code: AjaxViewer.X11_KEY_ADD, modifiers: 0, shift: true },
-	    {type: AjaxViewer.KEY_UP, code: AjaxViewer.X11_KEY_ADD, modifiers: 0, shift: true }
-	];
-}
-
-JsX11KeyboardMapper.prototype = new KeyboardMapper();
-JsX11KeyboardMapper.prototype.inputFeed = function(eventType, code, modifiers) {
-	if(eventType == AjaxViewer.KEY_DOWN || eventType == AjaxViewer.KEY_UP) {
-		
-		// special handling for Alt + Ctrl + Ins, convert it into Alt-Ctrl-Del
-		if(code == AjaxViewer.JS_KEY_INSERT) {
-			if((modifiers & AjaxViewer.ALT_KEY_MASK) != 0 && (modifiers & AjaxViewer.CTRL_KEY_MASK) != 0) {
-				this.mappedInput.push({type : eventType, code: 0xffff, modifiers: modifiers});
-				return;
-			}
-		}
-		
-		var X11Keysym = code;
-		if(this.jsX11KeysymMap[code] != undefined) {
-			X11Keysym = this.jsX11KeysymMap[code];
-			if(typeof this.jsX11KeysymMap[code] == "boolean") {
-				return;
-			} else if($.isArray(X11Keysym)) {
-				for(var i = 0; i < X11Keysym.length; i++) {
-					if(X11Keysym[i].type == eventType) {
-						this.mappedInput.push(X11Keysym[i]);
-					}
-				}
-			} else {
-				this.mappedInput.push({type : eventType, code: X11Keysym, modifiers: modifiers});
-			}
-		} else {
-			this.mappedInput.push({type : eventType, code: X11Keysym, modifiers: modifiers});
-		}
-
-		// special handling for ALT/CTRL key
-		if(eventType == AjaxViewer.KEY_UP && (code == AjaxViewer.JS_KEY_ALT || code == code == AjaxViewer.JS_KEY_CTRL))
-			this.mappedInput.push({type : eventType, code: this.jsX11KeysymMap[code], modifiers: modifiers});
-		
-	} else if(eventType == AjaxViewer.KEY_PRESS) {
-		var X11Keysym = code;
-		X11Keysym = this.jsKeyPressX11KeysymMap[code];
-		if(X11Keysym) {
-			if($.isArray(X11Keysym)) {
-				for(var i = 0; i < X11Keysym.length; i++) {
-					var shift = ((modifiers & AjaxViewer.SHIFT_KEY_MASK) != 0 ? true : false); 
-					if(!(X11Keysym[i].shift ^ shift))
-						this.mappedInput.push(X11Keysym[i]);
-				}
-			} else {
-				this.mappedInput.push({type : eventType, code: X11Keysym, modifiers: modifiers});
-			}
-		}
-	}
-}
-
-/////////////////////////////////////////////////////////////////////////////
-//JsCookedKeyboardMapper
-// For Xen/KVM hypervisors, it accepts "cooked" keyborad events
-//
-function JsCookedKeyboardMapper() {
-	KeyboardMapper.apply(this, arguments);
-	
-	this.jsX11KeysymMap = [];
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_CAPSLOCK] 		= AjaxViewer.X11_KEY_CAPSLOCK;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_BACKSPACE] 		= AjaxViewer.X11_KEY_BACKSPACE;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_TAB] 				= AjaxViewer.X11_KEY_TAB;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_ENTER] 			= AjaxViewer.X11_KEY_ENTER;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_ESCAPE] 			= AjaxViewer.X11_KEY_ESCAPE;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_INSERT] 			= AjaxViewer.X11_KEY_INSERT;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_DELETE] 			= AjaxViewer.X11_KEY_DELETE;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_HOME] 			= AjaxViewer.X11_KEY_HOME;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_END] 				= AjaxViewer.X11_KEY_END;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_PAGEUP] 			= AjaxViewer.X11_KEY_PAGEUP;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_PAGEDOWN] 		= AjaxViewer.X11_KEY_PAGEDOWN;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_LEFT] 			= AjaxViewer.X11_KEY_LEFT;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_UP] 				= AjaxViewer.X11_KEY_UP;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_RIGHT] 			= AjaxViewer.X11_KEY_RIGHT;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_DOWN] 			= AjaxViewer.X11_KEY_DOWN;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F1] 				= AjaxViewer.X11_KEY_F1;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F2] 				= AjaxViewer.X11_KEY_F2;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F3] 				= AjaxViewer.X11_KEY_F3;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F4] 				= AjaxViewer.X11_KEY_F4;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F5] 				= AjaxViewer.X11_KEY_F5;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F6] 				= AjaxViewer.X11_KEY_F6;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F7] 				= AjaxViewer.X11_KEY_F7;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F8] 				= AjaxViewer.X11_KEY_F8;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F9] 				= AjaxViewer.X11_KEY_F9;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F10] 				= AjaxViewer.X11_KEY_F10;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F11] 				= AjaxViewer.X11_KEY_F11;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F12] 				= AjaxViewer.X11_KEY_F12;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_SHIFT] 			= AjaxViewer.X11_KEY_SHIFT;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_CTRL] 			= AjaxViewer.X11_KEY_CTRL;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_ALT] 				= AjaxViewer.X11_KEY_ALT;
-}
-
-JsCookedKeyboardMapper.prototype = new KeyboardMapper();
-JsCookedKeyboardMapper.prototype.inputFeed = function(eventType, code, modifiers) {
-	if(eventType == AjaxViewer.KEY_DOWN || eventType == AjaxViewer.KEY_UP) {
-		
-		// special handling for Alt + Ctrl + Ins, convert it into Alt-Ctrl-Del
-		if(code == AjaxViewer.JS_KEY_INSERT) {
-			if((modifiers & AjaxViewer.ALT_KEY_MASK) != 0 && (modifiers & AjaxViewer.CTRL_KEY_MASK) != 0) {
-				this.mappedInput.push({type : eventType, code: 0xffff, modifiers: modifiers});
-				return;
-			}
-		}
-		
-		var X11Keysym = code;
-		if(this.jsX11KeysymMap[code] != undefined) {
-			X11Keysym = this.jsX11KeysymMap[code];
-			if(typeof this.jsX11KeysymMap[code] == "boolean") {
-				return;
-			} else if($.isArray(X11Keysym)) {
-				for(var i = 0; i < X11Keysym.length; i++) {
-					if(X11Keysym[i].type == eventType) {
-						this.mappedInput.push(X11Keysym[i]);
-					}
-				}
-			} else {
-				this.mappedInput.push({type : eventType, code: X11Keysym, modifiers: modifiers});
-			}
-		} else {
-			if((modifiers & AjaxViewer.CTRL_KEY_MASK) != 0) {
-				this.mappedInput.push({type : eventType, code: X11Keysym, modifiers: modifiers});
-			}
-		}
-
-		// special handling for ALT/CTRL key
-		if(eventType == AjaxViewer.KEY_UP && (code == AjaxViewer.JS_KEY_ALT || code == code == AjaxViewer.JS_KEY_CTRL))
-			this.mappedInput.push({type : eventType, code: this.jsX11KeysymMap[code], modifiers: modifiers});
-		
-	} else if(eventType == AjaxViewer.KEY_PRESS) {
-		var X11Keysym = code;
-		
-		// special handling for * and + key on number pad
-		if(code == AjaxViewer.JS_NUMPAD_MULTIPLY) {
-			this.mappedInput.push({type : AjaxViewer.KEY_DOWN, code: AjaxViewer.X11_KEY_SHIFT, modifiers: modifiers});
-			this.mappedInput.push({type : AjaxViewer.KEY_DOWN, code: 42, modifiers: modifiers});
-			this.mappedInput.push({type : AjaxViewer.KEY_UP, code: 42, modifiers: modifiers});
-			this.mappedInput.push({type : AjaxViewer.KEY_UP, code: AjaxViewer.X11_KEY_SHIFT, modifiers: modifiers});
-			return;
-		}
-		
-		if(code == AjaxViewer.JS_NUMPAD_PLUS) {
-			this.mappedInput.push({type : AjaxViewer.KEY_DOWN, code: AjaxViewer.X11_KEY_SHIFT, modifiers: modifiers});
-			this.mappedInput.push({type : AjaxViewer.KEY_DOWN, code: 43, modifiers: modifiers});
-			this.mappedInput.push({type : AjaxViewer.KEY_UP, code: 43, modifiers: modifiers});
-			this.mappedInput.push({type : AjaxViewer.KEY_UP, code: AjaxViewer.X11_KEY_SHIFT, modifiers: modifiers});
-			return;
-		}
-		
-		// ENTER/BACKSPACE key should already have been sent through KEY DOWN/KEY UP event
-		if(code == AjaxViewer.JS_KEY_ENTER || code == AjaxViewer.JS_KEY_BACKSPACE)
-			return;
-			
-		this.mappedInput.push({type : AjaxViewer.KEY_DOWN, code: X11Keysym, modifiers: modifiers});
-		this.mappedInput.push({type : AjaxViewer.KEY_UP, code: X11Keysym, modifiers: modifiers});
-	}
-}
 
 /////////////////////////////////////////////////////////////////////////////
 // class AjaxViewer
@@ -653,12 +729,14 @@ AjaxViewer.prototype = {
 	
 	setupKeyboardTranslationTable : function() {
 		this.keyboardMappers = [];
-		// this.keyboardMappers[AjaxViewer.KEYBOARD_TYPE_ENGLISH] = new JsX11KeyboardMapper();
-		this.keyboardMappers[AjaxViewer.KEYBOARD_TYPE_ENGLISH] = new JsCookedKeyboardMapper();
-
-		// setup Japanese keyboard translation table
-		var mapper = new JsX11KeyboardMapper();
+		
+		var mapper = new KeyboardMapper();
+		this.keyboardMappers[AjaxViewer.KEYBOARD_TYPE_ENGLISH] = mapper;
+		mapper.setKeyboardType(KeyboardMapper.KEYBOARD_TYPE_COOKED);
+		
+		mapper = new KeyboardMapper();
 		this.keyboardMappers[AjaxViewer.KEYBOARD_TYPE_JAPANESE] = mapper;
+		mapper.setKeyboardType(KeyboardMapper.KEYBOARD_TYPE_RAW);
 		
 		// JP keyboard plugged in a English host OS
 /*		
@@ -1288,7 +1366,7 @@ AjaxViewer.prototype = {
 	
 	dispatchKeyboardInput : function(event, code, modifiers) {
 		var keyboardMapper = ajaxViewer.getCurrentKeyboardMapper();
-		keyboardMapper.inputFeed(event, code, modifiers);
+		keyboardMapper.inputFeed(event, code, modifiers, this.guestos, $.browser, $.browser.version);
 		this.dispatchMappedKeyboardInput(keyboardMapper.getMappedInput());
 	},
 	

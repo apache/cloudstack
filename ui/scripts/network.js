@@ -191,7 +191,8 @@
           url: createURL('listNetworks', { ignoreProject: true }),
           data: {
             supportedServices: 'SecurityGroup',
-            listAll: true
+            listAll: true,
+						details: 'min'
           },
           async: false,
           success: function(data) {
@@ -207,6 +208,7 @@
           sectionsToShow.push('vpc');
           sectionsToShow.push('vpnCustomerGateway');
         }
+
         
         if(havingSecurityGroupNetwork == true)
           sectionsToShow.push('securityGroups');
@@ -282,25 +284,40 @@
                     label: 'label.network.offering',
                     validation: { required: true },
 										dependsOn: 'zoneId',
-                    select: function(args) {										 
+                    select: function(args) {
                       $.ajax({
-                        url: createURL('listNetworkOfferings&zoneid=' + args.zoneId),
+                        url: createURL('listVPCs'),
                         data: {
-                          guestiptype: 'Isolated',
-                          supportedServices: 'SourceNat',
-                          specifyvlan: false,
-                          state: 'Enabled'
+                          listAll: true
                         },
                         success: function(json) {
-                          networkOfferingObjs = json.listnetworkofferingsresponse.networkoffering;
-                          args.response.success({
-                            data: $.map(networkOfferingObjs, function(zone) {
-                              return {
-                                id: zone.id,
-                                description: zone.name
-                              };
-                            })
-                          });
+                          var items = json.listvpcsresponse.vpc;
+                          var baseUrl = 'listNetworkOfferings&zoneid=' + args.zoneId;
+                          var listUrl;
+                          if(items != null && items.length > 0) 
+                            listUrl = baseUrl;
+                          else
+                            listUrl = baseUrl + '&forVpc=false';
+                          $.ajax({
+                            url: createURL(listUrl),
+                            data: {
+                              guestiptype: 'Isolated',
+                              supportedServices: 'SourceNat',
+                              specifyvlan: false,
+                              state: 'Enabled'
+                            },
+                            success: function(json) {
+                              networkOfferingObjs = json.listnetworkofferingsresponse.networkoffering;
+                              args.response.success({
+                                data: $.map(networkOfferingObjs, function(zone) {
+                                  return {
+                                    id: zone.id,
+                                    description: zone.name
+                                  };
+                                })
+                              });
+                            }
+                          });                            
                         }
                       });
                     }
@@ -311,6 +328,7 @@
                     dependsOn: 'networkOfferingId',
                     select: function(args) {
                       var networkOfferingObj;
+                      var $form = args.$select.closest('form');
                       $(networkOfferingObjs).each(function(key, value) {
                         if(value.id == args.networkOfferingId) {
                           networkOfferingObj = value;
@@ -322,7 +340,8 @@
                         $.ajax({
                           url: createURL('listVPCs'),
                           data: {
-                            listAll: true
+                            listAll: true,
+														details: 'min'
                           },
                           success: function(json) {
                             var items = json.listvpcsresponse.vpc;
@@ -338,40 +357,50 @@
                             args.response.success({ data: data });
                           }
                         });
+                        $form.find('.form-item[rel=networkDomain]').hide();
                       }
                       else {
                         args.$select.closest('.form-item').hide();
+                        $form.find('.form-item[rel=networkDomain]').show();
                         args.response.success({ data: null });
                       }
                     }
                   },
 
                   guestGateway: { label: 'label.guest.gateway' },
-                  guestNetmask: { label: 'label.guest.netmask' }
+                  guestNetmask: { label: 'label.guest.netmask' },
+                  networkDomain: { label: 'label.network.domain' }
                 }
               },
               action: function(args) {
-							  var dataObj = {
-								  zoneId: args.data.zoneId,
-									name: args.data.name,
-									displayText: args.data.displayText,
-									networkOfferingId: args.data.networkOfferingId
-								};				
+                var dataObj = {
+                  zoneId: args.data.zoneId,
+                  name: args.data.name,
+                  displayText: args.data.displayText,
+                  networkOfferingId: args.data.networkOfferingId
+                };		
+		
                 if(args.data.guestGateway != null && args.data.guestGateway.length > 0) {                  
-									$.extend(dataObj, {
-									  gateway: args.data.guestGateway
-									});
-								}								
+                  $.extend(dataObj, {
+                    gateway: args.data.guestGateway
+                  });
+                }								
                 if(args.data.guestNetmask != null && args.data.guestNetmask.length > 0) {                  
-									$.extend(dataObj, {
-									  netmask: args.data.guestNetmask
-									});									
-								}								
-								if(args.$form.find('.form-item[rel=vpcid]').css("display") != "none") {                 
-									$.extend(dataObj, {
-									  vpcid: args.data.vpcid
-									});
-								}											
+                  $.extend(dataObj, {
+                    netmask: args.data.guestNetmask
+                  });									
+                }								
+                if(args.$form.find('.form-item[rel=vpcid]').css("display") != "none") {                 
+                  $.extend(dataObj, {
+                    vpcid: args.data.vpcid
+                  });
+                }
+                if(args.data.networkDomain != null && args.data.networkDomain.length > 0 && args.$form.find('.form-item[rel=vpcid]').css("display") == "none") {
+                  $.extend(dataObj, {
+                    networkDomain: args.data.networkDomain
+                  });                
+                }
+															
                 $.ajax({
                   url: createURL('createNetwork'),
 									data: dataObj,
@@ -410,24 +439,90 @@
              }
              */
           },
-          dataProvider: function(args) {
-            var array1 = [];
-            if(args.filterBy != null) {
-              if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
-                switch(args.filterBy.search.by) {
-                case "name":
-                  if(args.filterBy.search.value.length > 0)
-                    array1.push("&keyword=" + args.filterBy.search.value);
-                  break;
-                }
-              }
-            }
+          
+					advSearchFields: {					 
+						zoneid: { 
+						  label: 'Zone',							
+              select: function(args) {							  					
+								$.ajax({
+									url: createURL('listZones'),
+									data: {
+									  listAll: true
+									},
+									success: function(json) {									  
+										var zones = json.listzonesresponse.zone;
+
+										args.response.success({
+											data: $.map(zones, function(zone) {
+												return {
+													id: zone.id,
+													description: zone.name
+												};
+											})
+										});
+									}
+								});
+							}						
+						},	
+            						
+						domainid: {					
+							label: 'Domain',					
+							select: function(args) {
+								if(isAdmin() || isDomainAdmin()) {
+									$.ajax({
+										url: createURL('listDomains'),
+										data: { 
+											listAll: true,
+											details: 'min'
+										},
+										success: function(json) {
+											var array1 = [{id: '', description: ''}];
+											var domains = json.listdomainsresponse.domain;
+											if(domains != null && domains.length > 0) {
+												for(var i = 0; i < domains.length; i++) {
+													array1.push({id: domains[i].id, description: domains[i].path});
+												}
+											}
+											args.response.success({
+												data: array1
+											});
+										}
+									});
+								}
+								else {
+									args.response.success({
+										data: null
+									});
+								}
+							},
+							isHidden: function(args) {
+								if(isAdmin() || isDomainAdmin())
+									return false;
+								else
+									return true;
+							}
+						},		
+						
+						account: { 
+							label: 'Account',
+							isHidden: function(args) {
+								if(isAdmin() || isDomainAdmin())
+									return false;
+								else
+									return true;
+							}			
+						},						
+						tagKey: { label: 'Tag Key' },
+						tagValue: { label: 'Tag Value' }						
+					},
+					
+					dataProvider: function(args) {
+            var data = {};
+						listViewDataProvider(args, data);		
+						
             $.ajax({
-              url: createURL("listNetworks&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
-              data: {
-                listAll: true
-              },
-              dataType: 'json',
+              url: createURL('listNetworks'),
+              data: data,			
               async: false,
               success: function(data) {
                 args.response.success({								  
@@ -2719,14 +2814,16 @@
                       //'private-ports': {
                       privateport: {
                         edit: true,
-                        label: 'label.private.port'
+                        label: 'label.private.port',
                         //range: ['privateport', 'privateendport']  //Bug 13427 - Don't allow port forwarding ranges in the CreatePortForwardingRule API
+												range: ['privateport', 'privateendport']    //Bug 16344 (restore port range back) (http://bugs.cloudstack.org/browse/CS-16344)
                       },
                       //'public-ports': {
                       publicport: {
                         edit: true,
-                        label: 'label.public.port'
+                        label: 'label.public.port',
                         //range: ['publicport', 'publicendport']  //Bug 13427 - Don't allow port forwarding ranges in the CreatePortForwardingRule API
+												range: ['publicport', 'publicendport']    //Bug 16344 (restore port range back) (http://bugs.cloudstack.org/browse/CS-16344)
                       },
                       'protocol': {
                         label: 'label.protocol',
@@ -2749,25 +2846,28 @@
 
                     add: {
                       label: 'label.add.vm',
-                      action: function(args) {  
-												var data = {
-												  ipaddressid: args.context.ipAddresses[0].id,
-												  privateport: args.data.privateport,
-													publicport: args.data.publicport,
-													protocol: args.data.protocol,		
-													virtualmachineid: args.itemData[0].id,
-                          openfirewall: false													
-												};	
-													                        								
-												if('vpc' in args.context) { //from VPC section
-												  if(args.data.tier == null) {													  
-														args.response.error('Tier is required');
-													  return;
-													}			
+
+                      action: function(args) {
+                        var data = {
+                          ipaddressid: args.context.ipAddresses[0].id,
+                          privateport: args.data.privateport,
+													privateendport: args.data.privateendport,
+                          publicport: args.data.publicport,
+													publicendport: args.data.publicendport,
+                          protocol: args.data.protocol,
+                          virtualmachineid: args.itemData[0].id,
+                          openfirewall: false
+                        };
+
+                        if('vpc' in args.context) { //from VPC section
+                          if(args.data.tier == null) {
+                            args.response.error('Tier is required');
+                            return;
+                          }
                           $.extend(data, {
-                            networkid: args.data.tier		
-                          });	
-												}
+                            networkid: args.data.tier
+                          });
+                        }                        
 												else {  //from Guest Network section
 												  $.extend(data, {
                             networkid: args.context.networks[0].id
@@ -3091,23 +3191,18 @@
             }
           },
 
+					advSearchFields: {					  					
+						tagKey: { label: 'Tag Key' },
+						tagValue: { label: 'Tag Value' }						
+					},
+					
           dataProvider: function(args) {
-            var array1 = [];
-            if(args.filterBy != null) {
-              if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
-                switch(args.filterBy.search.by) {
-                case "name":
-                  if(args.filterBy.search.value.length > 0)
-                    array1.push("&keyword=" + args.filterBy.search.value);
-                  break;
-                }
-              }
-            }
+            var data = {};
+						listViewDataProvider(args, data);						
 
             $.ajax({
-              url: createURL("listSecurityGroups&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
-              dataType: "json",
-              async: true,
+              url: createURL('listSecurityGroups'),
+              data: data,              
               success: function(json) {
                 var items = json.listsecuritygroupsresponse.securitygroup;
                 args.response.success({
@@ -3569,23 +3664,91 @@
             cidr: { label: 'label.cidr' },
             state: {label: 'label.state', indicator: { 'Enabled': 'on', 'Disabled': 'off'}}
           },
-          dataProvider: function(args) {            
-						var array1 = [];  
-						if(args.filterBy != null) {          
-							if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
-								switch(args.filterBy.search.by) {
-								case "name":
-									if(args.filterBy.search.value.length > 0)
-										array1.push("&keyword=" + args.filterBy.search.value);
-									break;
+										
+					advSearchFields: {
+					  name: { label: 'Name' },
+						zoneid: { 
+						  label: 'Zone',							
+              select: function(args) {							  					
+								$.ajax({
+									url: createURL('listZones'),
+									data: {
+									  listAll: true
+									},
+									success: function(json) {									  
+										var zones = json.listzonesresponse.zone;
+
+										args.response.success({
+											data: $.map(zones, function(zone) {
+												return {
+													id: zone.id,
+													description: zone.name
+												};
+											})
+										});
+									}
+								});
+							}						
+						},
+            
+						domainid: {					
+							label: 'Domain',					
+							select: function(args) {
+								if(isAdmin() || isDomainAdmin()) {
+									$.ajax({
+										url: createURL('listDomains'),
+										data: { 
+											listAll: true,
+											details: 'min'
+										},
+										success: function(json) {
+											var array1 = [{id: '', description: ''}];
+											var domains = json.listdomainsresponse.domain;
+											if(domains != null && domains.length > 0) {
+												for(var i = 0; i < domains.length; i++) {
+													array1.push({id: domains[i].id, description: domains[i].path});
+												}
+											}
+											args.response.success({
+												data: array1
+											});
+										}
+									});
 								}
+								else {
+									args.response.success({
+										data: null
+									});
+								}
+							},
+							isHidden: function(args) {
+								if(isAdmin() || isDomainAdmin())
+									return false;
+								else
+									return true;
 							}
-						}
+						},		
 						
+						account: { 
+							label: 'Account',
+							isHidden: function(args) {
+								if(isAdmin() || isDomainAdmin())
+									return false;
+								else
+									return true;
+							}			
+						},						
+						tagKey: { label: 'Tag Key' },
+						tagValue: { label: 'Tag Value' }						
+					},					
+					
+          dataProvider: function(args) {
+            var data = {};
+						listViewDataProvider(args, data);			
+
             $.ajax({
-              url: createURL("listVPCs&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
-              dataType: "json",
-              async: true,
+              url: createURL('listVPCs'),
+              data: data,              
               success: function(json) {
                 var items = json.listvpcsresponse.vpc; 
                 args.response.success({data:items});

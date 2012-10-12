@@ -136,6 +136,9 @@ under the License.
                     <li class="last"><a href="#instance-wizard-my-templates"><fmt:message key="label.my.templates"/></a></li>
                   </ul>
 
+                  <!-- Used for Select Template only -->
+                  <input type="hidden" wizard-field="hypervisor" name="hypervisor" value="" disabled="disabled"/>
+
                   <div id="instance-wizard-featured-templates">
                     <div class="select-container">
                     </div>

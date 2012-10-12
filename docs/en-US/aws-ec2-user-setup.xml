@@ -1,0 +1,91 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+<section id="aws-ec2-user-setup">
+  <title>User configuration</title>
+  <para>
+    Users of the Amazon EC2 compatible interface will be able to keep their existing EC2 tools and scripts and use them with their &PRODUCT; deployment, by specifyingi the endpoint of the managment server and using the proper user credentials.In order to do this, each user must perform the following configuration steps:
+  </para>
+  <para>
+    <itemizedlist>
+      <listitem>
+        <para>Generate user credentials.</para>
+      </listitem>
+      <listitem>
+        <para>Register with the service.</para>
+      </listitem>
+      <listitem>
+        <para>Setup the environment variables</para>
+      </listitem>
+    </itemizedlist>
+  </para>
+
+  <para>
+    To register, a user needs to:
+  </para>
+
+  <orderedlist>
+    <listitem>
+      <para>
+        Obtain his API key and his secret key as well as the DNS name or IP address of the &PRODUCT; server. Obtaining the keys can be done by asking the &PRODUCT; administrator or by using the GUI or via the API.
+      </para>
+    </listitem>
+	<listitem>
+      <para>
+        Obtain a self-signed X.509 certificate. It can be generated with the following command:
+      </para>
+      <para><programlisting>$ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /path/to/private_key.pem -out /path/to/cert.pem </programlisting>
+      </para>
+    </listitem>
+    <listitem>
+      <para>
+        Register the mapping from the X.509 certificate to the API/Secret keys. Download the following script from http://download.cloud.com/releases/3.0.3/cloudstack-aws-api-register and run it. Substitute the values you obtained from the administrator in the URL below.
+      </para>
+      <para>
+<programlisting>$ cloudstack-aws-api-register --apikey=<replaceable>User’s CloudPlatform API key</replaceable> --secretkey=<replaceable>User’s CloudPlatform Secret key</replaceable> --cert=<replaceable>/path/to/cert.pem</replaceable> --url=http://<replaceable>&PRODUCT;.server</replaceable>:8080/awsapi</programlisting>
+       </para>
+     </listitem>
+   </orderedlist>
+
+   <note>
+     <para>
+       A user with an existing AWS certificate could choose to use the same certificate with &PRODUCT; but note that the public key would be uploaded to the &PRODUCT; management server database.
+     </para>
+   </note>
+
+   <para>
+     To use the EC2 command line tools, setup the environment variable in a similar fashion than with Amazon EC2 service. Specifically, in bash shell:
+     <programlisting>
+       $ export EC2_CERT=/path/to/cert.pem
+       $ export EC2_PRIVATE_KEY=/path/to/private_key.pem
+       $ export EC2_URL=http://<replaceable>&PRODUCT;.server</replaceable>:8080/awsapi
+       $ export EC2_HOME=/path/to/EC2_tools_directory
+     </programlisting>
+   </para>
+
+   <note>
+     <para>The Amazon EC2 command-line tools have a default connection timeout. If you find that EC2 commands are not completing due to timeouts, you can pass a new timeout value as an argument with <programlisting>--connection-timeout TIMEOUT </programlisting> or <programlisting>--request-timeout TIMEOUT </programlisting>
+     </para>
+   </note>
+
+</section>

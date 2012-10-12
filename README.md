@@ -53,7 +53,7 @@ Software License Version 2.
 
 To build the default build target, use maven3 and execute:
 
-maven install
+mvn install
 
 ## Including optional third party libraries in your build
 

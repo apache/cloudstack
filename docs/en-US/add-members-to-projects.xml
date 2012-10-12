@@ -29,5 +29,7 @@
         <listitem><para>If invitations have been enabled, you can send invitations to new members.</para></listitem>
         <listitem><para>If invitations are not enabled, you can add members directly through the UI.</para></listitem>
     </itemizedlist>
+    <xi:include href="send-projects-membership-invitation.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="add-projects-members-from-ui.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
    </section>
       

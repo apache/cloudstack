@@ -24,45 +24,9 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.*;
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.AttachIsoCommand;
-import com.cloud.agent.api.AttachVolumeCommand;
-import com.cloud.agent.api.BackupSnapshotCommand;
-import com.cloud.agent.api.CheckHealthCommand;
-import com.cloud.agent.api.CheckNetworkCommand;
-import com.cloud.agent.api.CheckVirtualMachineCommand;
-import com.cloud.agent.api.CleanupNetworkRulesCmd;
-import com.cloud.agent.api.ClusterSyncAnswer;
-import com.cloud.agent.api.ClusterSyncCommand;
-import com.cloud.agent.api.Command;
-import com.cloud.agent.api.ComputeChecksumCommand;
-import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
-import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
-import com.cloud.agent.api.CreateStoragePoolCommand;
-import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
-import com.cloud.agent.api.DeleteSnapshotBackupCommand;
-import com.cloud.agent.api.DeleteStoragePoolCommand;
-import com.cloud.agent.api.GetDomRVersionCmd;
-import com.cloud.agent.api.GetHostStatsCommand;
-import com.cloud.agent.api.GetStorageStatsCommand;
-import com.cloud.agent.api.GetVmStatsCommand;
-import com.cloud.agent.api.GetVncPortCommand;
-import com.cloud.agent.api.MaintainCommand;
-import com.cloud.agent.api.ManageSnapshotCommand;
-import com.cloud.agent.api.MigrateCommand;
-import com.cloud.agent.api.ModifyStoragePoolCommand;
-import com.cloud.agent.api.NetworkUsageCommand;
-import com.cloud.agent.api.PingTestCommand;
-import com.cloud.agent.api.PrepareForMigrationCommand;
-import com.cloud.agent.api.RebootCommand;
-import com.cloud.agent.api.SecStorageSetupCommand;
-import com.cloud.agent.api.SecStorageVMSetupCommand;
-import com.cloud.agent.api.SecurityGroupRulesCmd;
-import com.cloud.agent.api.StartCommand;
-import com.cloud.agent.api.StopCommand;
-import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
@@ -292,13 +256,17 @@ public class SimulatorManagerImpl implements SimulatorManager {
                 return _mockAgentMgr.maintain((MaintainCommand)cmd);
             } else if (cmd instanceof GetVmStatsCommand) {
                 return _mockVmMgr.getVmStats((GetVmStatsCommand)cmd);
+            } else if (cmd instanceof CheckRouterCommand) {
+                return _mockVmMgr.checkRouter((CheckRouterCommand) cmd);
+            } else if (cmd instanceof BumpUpPriorityCommand) {
+                return _mockVmMgr.bumpPriority((BumpUpPriorityCommand) cmd);
             } else if (cmd instanceof GetDomRVersionCmd) {
-            	return _mockVmMgr.getDomRVersion((GetDomRVersionCmd)cmd);
+            	return _mockVmMgr.getDomRVersion((GetDomRVersionCmd) cmd);
             } else if (cmd instanceof ClusterSyncCommand) {
             	return new Answer(cmd);
             	//return new ClusterSyncAnswer(((ClusterSyncCommand) cmd).getClusterId(), this.getVmStates(hostGuid));
             } else if (cmd instanceof CopyVolumeCommand) {
-            	return _mockStorageMgr.CopyVolume((CopyVolumeCommand)cmd);
+            	return _mockStorageMgr.CopyVolume((CopyVolumeCommand) cmd);
             } else {
                 return Answer.createUnsupportedCommandAnswer(cmd);
             }

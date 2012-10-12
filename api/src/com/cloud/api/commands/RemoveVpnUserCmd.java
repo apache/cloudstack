@@ -113,7 +113,7 @@ public class RemoveVpnUserCmd extends BaseAsyncCmd {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to remove vpn user");
         }
         
-        if (!_ravService.applyVpnUsers(owner.getId())) {
+        if (!_ravService.applyVpnUsers(owner.getId(), userName)) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to apply vpn user removal");
         } 
         SuccessResponse response = new SuccessResponse(getCommandName());

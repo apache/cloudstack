@@ -93,4 +93,6 @@ public interface ProjectService {
     Project enableProject(long projectId);
 
     boolean deleteProjectInvitation(long invitationId);
+    
+    Project findByProjectAccountIdIncludingRemoved(long projectAccountId);
 }

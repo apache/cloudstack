@@ -45,10 +45,13 @@ deps/awsapi-lib/
 git-remote-https.exe.stackdump
 *.swp
 tools/devcloud/devcloudbox/.vagrant
-deps/*.jar
-deps/*.war
-deps/*.mar
 *.jar
+*.war
+*.mar
+*.zip
+*.iso
+*.tar.gz
+*.tgz
 awsapi/modules/*
 !.gitignore
 .classpath

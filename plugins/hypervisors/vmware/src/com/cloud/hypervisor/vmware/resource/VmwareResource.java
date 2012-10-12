@@ -250,9 +250,6 @@ import com.vmware.vim25.VirtualMachineGuestOsIdentifier;
 import com.vmware.vim25.VirtualMachinePowerState;
 import com.vmware.vim25.VirtualMachineRuntimeInfo;
 import com.vmware.vim25.VirtualSCSISharing;
-import com.xensource.xenapi.Connection;
-import com.xensource.xenapi.VIF;
-import com.xensource.xenapi.VM;
 
 public class VmwareResource implements StoragePoolResource, ServerResource, VmwareHostService {
     private static final Logger s_logger = Logger.getLogger(VmwareResource.class);
@@ -936,7 +933,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             int ethDeviceNum = findRouterEthDeviceIndex(domrName, routerIp, nic.getMac());
             s_logger.info("find interface index. routerIp: " + routerIp + ", mac: " + nic.getMac() + ", index: " + ethDeviceNum);
 
-            String args = "-C ";
+            String args =(cmd.isAdd()?"-C":"-D");
             String dev = "eth" + ethDeviceNum;
             args += " -d " + dev;
             args += " -i " + domrGIP;
@@ -4558,12 +4555,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         try {
             if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Executing /root/netusage.sh " + args + " on DomR " + privateIpAddress);
+                s_logger.trace("Executing /opt/cloud/bin/netusage.sh " + args + " on DomR " + privateIpAddress);
             }
 
             VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
 
-            Pair<Boolean, String> result = SshHelper.sshExecute(privateIpAddress, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null, "/root/netusage.sh " + args);
+            Pair<Boolean, String> result = SshHelper.sshExecute(privateIpAddress, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/netusage.sh " + args);
 
             if (!result.first()) {
                 return null;

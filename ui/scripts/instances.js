@@ -44,7 +44,7 @@
 			},			
       fields: {        
         displayname: { label: 'label.display.name' },
-				instancename: { label: 'label.internal.name' },
+				name: { label: 'label.host.name' },
         zonename: { label: 'label.zone.name' },
         state: {
           label: 'label.state',         
@@ -56,7 +56,84 @@
           }
         }
       },
+			
+			advSearchFields: {
+				name: { label: 'Name' },
+				zoneid: { 
+					label: 'Zone',							
+					select: function(args) {							  					
+						$.ajax({
+							url: createURL('listZones'),
+							data: {
+								listAll: true
+							},
+							success: function(json) {									  
+								var zones = json.listzonesresponse.zone;
 
+								args.response.success({
+									data: $.map(zones, function(zone) {
+										return {
+											id: zone.id,
+											description: zone.name
+										};
+									})
+								});
+							}
+						});
+					}						
+				},	
+				
+				domainid: {					
+				  label: 'Domain',					
+					select: function(args) {
+					  if(isAdmin() || isDomainAdmin()) {
+							$.ajax({
+								url: createURL('listDomains'),
+								data: { 
+									listAll: true,
+									details: 'min'
+								},
+								success: function(json) {
+									var array1 = [{id: '', description: ''}];
+									var domains = json.listdomainsresponse.domain;
+									if(domains != null && domains.length > 0) {
+										for(var i = 0; i < domains.length; i++) {
+											array1.push({id: domains[i].id, description: domains[i].path});
+										}
+									}
+									args.response.success({
+										data: array1
+									});
+								}
+							});
+						}
+						else {
+						  args.response.success({
+								data: null
+							});
+						}
+					},
+					isHidden: function(args) {
+					  if(isAdmin() || isDomainAdmin())
+						  return false;
+						else
+						  return true;
+					}
+				},		
+        account: { 
+				  label: 'Account',
+          isHidden: function(args) {
+					  if(isAdmin() || isDomainAdmin())
+						  return false;
+						else
+						  return true;
+					}			
+				},
+				
+				tagKey: { label: 'Tag Key' },
+				tagValue: { label: 'Tag Value' }						
+			},						
+			
       // List view actions
       actions: {
         // Add instance wizard
@@ -266,44 +343,52 @@
       },
 
       dataProvider: function(args) {
-        var array1 = [];
-        if(args.filterBy != null) {
-          if(args.filterBy.kind != null) {
-            switch(args.filterBy.kind) {
-            case "all":
-              array1.push("&listAll=true");
-              break;
-            case "mine":
-              if (!args.context.projects) array1.push("&domainid=" + g_domainid + "&account=" + g_account);
-              break;
-            case "running":
-              array1.push("&listAll=true&state=Running");
-              break;
-            case "stopped":
-              array1.push("&listAll=true&state=Stopped");
-              break;
-            case "destroyed":
-              array1.push("&listAll=true&state=Destroyed");
-              break;
-            }
-          }
-          if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
-            switch(args.filterBy.search.by) {
-            case "name":
-              if(args.filterBy.search.value.length > 0)
-                array1.push("&keyword=" + args.filterBy.search.value);
-              break;
-            }
-          }
-        }
-
-        if("hosts" in args.context)
-          array1.push("&hostid=" + args.context.hosts[0].id);
-
+			  var data = {};
+				listViewDataProvider(args, data);		
+				        				
+				if(args.filterBy != null) {	//filter dropdown
+					if(args.filterBy.kind != null) {
+						switch(args.filterBy.kind) {
+						case "all":						  						
+							break;
+						case "mine":
+							if (!args.context.projects) {
+							  $.extend(data, {
+								  domainid: g_domainid, 
+									account: g_account
+								});		
+              }								
+							break;
+						case "running":
+						  $.extend(data, {
+							  state: 'Running'
+							});						
+							break;
+						case "stopped":
+						  $.extend(data, {
+							  state: 'Stopped'
+							});	
+							break;
+						case "destroyed":
+						  $.extend(data, {
+							  state: 'Destroyed'
+							});									
+							break;
+						}
+					}					
+				}
+								
+        if("hosts" in args.context) {          
+					$.extend(data, {
+					  hostid: args.context.hosts[0].id
+					});
+				}
+							
+        delete data.details;	//remove "details: 'min'" from data	
+								
         $.ajax({
-          url: createURL("listVirtualMachines&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
-          dataType: "json",
-          async: true,
+          url: createURL('listVirtualMachines'),
+          data: data,          
           success: function(json) {
             var items = json.listvirtualmachinesresponse.virtualmachine;
 
@@ -1079,7 +1164,7 @@
             fields: [
               {  
                 displayname: { label: 'label.display.name', isEditable: true },		
-                instancename: { label: 'label.internal.name' },								
+                name: { label: 'label.host.name' },								
                 state: { 
 								  label: 'label.state',
 									pollAgainIfValueIsIn: { 

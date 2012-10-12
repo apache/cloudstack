@@ -87,6 +87,7 @@ public class ConsoleProxyGCThread extends Thread {
                 
                 synchronized (connMap) {
                     connMap.remove(key);
+                    bReportLoad = true;
                 }
                 
                 // close the server connection

@@ -523,7 +523,11 @@
 				if(args.context.networks != null) { //from VPC tier
 				  array1.push("&networkIds=" + args.context.networks[0].id);
 					array1.push("&domainid=" + args.context.vpc[0].domainid);
-					array1.push("&account=" + args.context.vpc[0].account);
+					
+					if(args.context.vpc[0].account != null)
+					  array1.push("&account=" + args.context.vpc[0].account);
+					else if(args.context.vpc[0].projectid != null)
+					  array1.push("&projectid=" + args.context.vpc[0].projectid);
 				}
 			}
 			

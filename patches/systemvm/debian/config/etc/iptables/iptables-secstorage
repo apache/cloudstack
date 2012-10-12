@@ -33,6 +33,4 @@ COMMIT
 -A INPUT -p icmp --icmp-type 13 -j DROP
 -A INPUT -p icmp -j ACCEPT 
 -A INPUT -i eth0 -p tcp -m state --state NEW --dport 3922 -j ACCEPT
--A INPUT -i eth1 -p tcp -m state --state NEW --dport 3922 -j ACCEPT
--A INPUT -i eth3 -p tcp -m state --state NEW --dport 3922 -j ACCEPT
 COMMIT

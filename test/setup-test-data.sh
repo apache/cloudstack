@@ -62,7 +62,7 @@ if [[ $ostypeid == "" ]]; then
     exit 2
 fi
 
-$(nc -z $MGMT_SVR 8096)
+nc -z $MGMT_SVR 8096
 if [[ $? -ne 0 ]]; then
     echo "$MGMT_SVR doesn't have port 8096 open"
     exit 2

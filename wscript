@@ -24,7 +24,7 @@
 # entry in debian/changelog. SHORTVERSION is used in package
 # naming for deb/rpm, VERSION is used for tarball and bin 
 VERSION = '4.0.0.2012-08-15T18:03:12Z'
-SHORTVERSION = '4.0'
+SHORTVERSION = '4.0.0'
 APPNAME = 'cloud'
 
 import shutil,os
@@ -82,6 +82,14 @@ for _globber in [
 for pattern in ["**/.project","**/.classpath","**/.pydevproject"]: Node.exclude_regs += "\n%s"%pattern
 
 # Support functions
+
+def distclean(ctx):
+   """Clear the build artifacts"""
+   for root, folder, files in os.walk(blddir):
+       for f in files:
+           path = os.path.join(root, f)
+           print "Removing artifact %s"%path
+           os.remove(path)
 
 def inspectobj(x):
 	"""Look inside an object"""

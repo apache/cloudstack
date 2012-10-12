@@ -18,5 +18,11 @@
 # under the License.
 
 export CATALINA_HOME=/opt/cloudstack/apache-tomcat-6.0.32
+export M2_HOME=/opt/cloudstack/apache-maven-3.0.4
+export M2=$M2_HOME/bin
+MAVEN_OPTS="-Xms256m -Xmx512m"
+PATH=$M2:$PATH
 cd /opt/cloudstack/incubator-cloudstack/
+/usr/bin/mvn -P deps
+/usr/bin/mvn clean
 /usr/bin/ant clean-all build-all deploy-server deploydb

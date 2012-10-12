@@ -34,7 +34,7 @@
         </listitem>
         <listitem>
             <para>Make sure that the machine can reach the Internet.</para>
-            <programlisting language="Bash">ping www.google.com</programlisting>
+            <programlisting language="Bash">ping www.cloudstack.org</programlisting>
         </listitem>
         <listitem>
             <para>Turn on NTP for time synchronization.</para>

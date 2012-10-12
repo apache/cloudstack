@@ -7359,7 +7359,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 return new SetupGuestNetworkAnswer(cmd, false, "Can not find vif with mac " + mac + " for VM " + domrName);
             }
 
-            String args = "vpc_guestnw.sh " + domrIP + " -C";
+            String args = "vpc_guestnw.sh " + domrIP + (cmd.isAdd()?" -C":" -D");
             String dev = "eth" + domrVif.getDevice(conn);
             args += " -d " + dev;
             args += " -i " + domrGIP;

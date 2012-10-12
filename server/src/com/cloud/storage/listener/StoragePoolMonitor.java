@@ -34,6 +34,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.server.ManagementService;
 import com.cloud.storage.OCFS2Manager;
 import com.cloud.storage.StorageManagerImpl;
+import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.dao.StoragePoolDao;
@@ -78,6 +79,9 @@ public class StoragePoolMonitor implements Listener {
 				scCmd.getHypervisorType() == HypervisorType.VMware || scCmd.getHypervisorType() ==  HypervisorType.Simulator || scCmd.getHypervisorType() == HypervisorType.Ovm) {
     			List<StoragePoolVO> pools = _poolDao.listBy(host.getDataCenterId(), host.getPodId(), host.getClusterId());
     			for (StoragePoolVO pool : pools) {
+    			    if (pool.getStatus() != StoragePoolStatus.Up) {
+    			        continue;
+    			    }
     			    if (!pool.getPoolType().isShared()) {
     			        continue;
     			    }
@@ -92,7 +96,7 @@ public class StoragePoolMonitor implements Listener {
     				    _storageManager.connectHostToSharedPool(hostId, pool);
     					_storageManager.createCapacityEntry(pool);
     				} catch (Exception e) {
-    				    throw new ConnectionException(true, "Unable to connect to pool " + pool, e);
+    				    s_logger.warn("Unable to connect host " + hostId + " to pool " + pool + " due to " + e.toString(), e);
     				}
     			}
     		}

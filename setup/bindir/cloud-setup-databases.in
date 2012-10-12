@@ -8,16 +8,15 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
 
 import os
 import sys
@@ -149,6 +148,7 @@ class DBDeployer(object):
             mysqlCmds.append('<')
             mysqlCmds.append(self.tmpMysqlFile)
             runCmd(mysqlCmds)
+            
         except Exception, e:
             err = '''Encountering an error when executing mysql script
 ----------------------------------------------------------------------
@@ -257,6 +257,26 @@ for full help
             self.info("Applying %s"%p)
             self.runMysql(text, p, True)
             self.info(None, True)
+            
+        awsApiDbDir = '/usr/share/cloud/setup/bridge/db'
+        for f in ["cloudbridge_db.sql"]:
+            p = os.path.join(awsApiDbDir,f)
+            if not os.path.exists(p): continue
+            text = file(p).read()
+            for t, r in replacements: text = text.replace(t,r)
+            self.info("Applying %s"%p)
+            self.runMysql(text, p, True)
+            self.info(None, True)
+
+        for f in ["cloudbridge_schema", "cloudbridge_multipart", "cloudbridge_index", "cloudbridge_multipart_alter", "cloudbridge_bucketpolicy", "cloudbridge_policy_alter",
+            "cloudbridge_offering", "cloudbridge_offering_alter"]:
+            if os.path.isfile(p):
+                p = os.path.join(awsApiDbDir,"%s.sql"%f)
+                if not os.path.exists(p): continue
+                text = file(p).read()
+                self.info("Applying %s"%p)
+                self.runMysql(text, p, True)
+                self.info(None, True)
                
     def prepareDBFiles(self):
         def prepareDBDotProperties():

@@ -733,6 +733,10 @@ public class ApiDBUtils {
         return _projectMgr.findByProjectAccountId(projectAccountId);
     }
     
+    public static Project findProjectByProjectAccountIdIncludingRemoved(long projectAccountId) {
+        return _projectMgr.findByProjectAccountIdIncludingRemoved(projectAccountId);
+    }
+    
     public static Project findProjectById(long projectId) {
         return _projectMgr.getProject(projectId);
     }

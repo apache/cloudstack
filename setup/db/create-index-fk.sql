@@ -93,3 +93,5 @@ ALTER TABLE `cloud`.`ssh_keypairs` ADD CONSTRAINT `fk_ssh_keypairs__account_id` 
 ALTER TABLE `cloud`.`ssh_keypairs` ADD CONSTRAINT `fk_ssh_keypairs__domain_id` FOREIGN KEY `fk_ssh_keypair__domain_id` (`domain_id`) REFERENCES `domain` (`id`) ON DELETE CASCADE;
 
 ALTER TABLE `cloud`.`usage_event` ADD INDEX `i_usage_event__created`(`created`);
+
+ALTER TABLE `cloud`.`nicira_nvp_nic_map` ADD CONSTRAINT `fk_nicira_nvp_nic_map__nic` FOREIGN KEY `fk_nicira_nvp_nic_map__nic` (`nic`) REFERENCES `nics` (`uuid`) ON DELETE CASCADE;

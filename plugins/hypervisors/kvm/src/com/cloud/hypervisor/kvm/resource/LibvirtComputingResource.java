@@ -44,6 +44,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -681,7 +683,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements
         _sysvmISOPath = (String) params.get("systemvm.iso.path");
         if (_sysvmISOPath == null) {
             String[] isoPaths = { "/usr/lib64/cloud/agent/vms/systemvm.iso",
-                    "/usr/lib/cloud/agent/vms/systemvm.iso" };
+                    "/usr/lib/cloud/agent/vms/systemvm.iso",
+                    "/usr/lib64/cloud/common/vms/systemvm.iso",
+                    "/usr/lib/cloud/common/vms/systemvm.iso" };
             for (String isoPath : isoPaths) {
                 if (_storage.exists(isoPath)) {
                     _sysvmISOPath = isoPath;
@@ -775,32 +779,32 @@ public class LibvirtComputingResource extends ServerResourceBase implements
     }
 
     private void getPifs() {
-        /* get pifs from bridge */
-        String pubPif = null;
-        String privPif = null;
-        String vlan = null;
-        if (_publicBridgeName != null) {
-            pubPif = Script.runSimpleBashScript("brctl show | grep "
-                    + _publicBridgeName + " | awk '{print $4}'");
-            vlan = Script.runSimpleBashScript("ls /proc/net/vlan/" + pubPif);
-            if (vlan != null && !vlan.isEmpty()) {
-                pubPif = Script
-                        .runSimpleBashScript("grep ^Device\\: /proc/net/vlan/"
-                                + pubPif + " | awk {'print $2'}");
+        /* gather all available bridges and find their pifs, so that we can match them against traffic labels later */
+        String cmdout = Script.runSimpleBashScript("brctl show | tail -n +2 | grep -v \"^\\s\"|awk '{print $1}'|sed '{:q;N;s/\\n/%/g;t q}'");
+        s_logger.debug("cmdout was " + cmdout);
+        List<String> bridges = Arrays.asList(cmdout.split("%"));
+        for (String bridge : bridges) {
+            s_logger.debug("looking for pif for bridge " + bridge);
+            String pif = getPif(bridge);
+            if(_publicBridgeName != null && bridge.equals(_publicBridgeName)){
+                _pifs.put("public", pif);
+            } else if (_guestBridgeName != null) {
+                _pifs.put("private", pif);
             }
+            _pifs.put(bridge, pif);
         }
-        if (_guestBridgeName != null) {
-            privPif = Script.runSimpleBashScript("brctl show | grep "
-                    + _guestBridgeName + " | awk '{print $4}'");
-            vlan = Script.runSimpleBashScript("ls /proc/net/vlan/" + privPif);
-            if (vlan != null && !vlan.isEmpty()) {
-                privPif = Script
-                        .runSimpleBashScript("grep ^Device\\: /proc/net/vlan/"
-                                + privPif + " | awk {'print $2'}");
-            }
+        s_logger.debug("done looking for pifs, no more bridges");
+    }
+
+    private String getPif(String bridge) {
+        String pif = Script.runSimpleBashScript("brctl show | grep " + bridge + " | awk '{print $4}'");
+        String vlan = Script.runSimpleBashScript("ls /proc/net/vlan/" + pif);
+
+        if (vlan != null && !vlan.isEmpty()) {
+                pif = Script.runSimpleBashScript("grep ^Device\\: /proc/net/vlan/" + pif + " | awk {'print $2'}");
         }
-        _pifs.put("private", privPif);
-        _pifs.put("public", pubPif);
+
+        return pif;
     }
 
     private boolean checkNetwork(String networkName) {
@@ -2626,11 +2630,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements
         File sshKeysDir = new File(_SSHKEYSPATH);
         String result = null;
         if (!sshKeysDir.exists()) {
-            sshKeysDir.mkdir();
             // Change permissions for the 700
-            Script script = new Script("chmod", _timeout, s_logger);
-            script.add("700", _SSHKEYSPATH);
+            Script script = new Script("mkdir", _timeout, s_logger);
+            script.add("-m","700");
+            script.add(_SSHKEYSPATH);
             script.execute();
+            
+            if(!sshKeysDir.exists()) {
+                s_logger.debug("failed to create directory " + _SSHKEYSPATH);
+            }
         }
 
         File pubKeyFile = new File(_SSHPUBKEYPATH);
@@ -3908,7 +3916,18 @@ public class LibvirtComputingResource extends ServerResourceBase implements
     }
 
     private String getVnetIdFromBrName(String vnetBrName) {
-        return vnetBrName.replaceAll("cloudVirBr", "");
+        if (vnetBrName.contains("cloudVirBr")) {
+            return vnetBrName.replaceAll("cloudVirBr", "");
+        } else {
+            Pattern r = Pattern.compile("-(\\d+)$");
+            Matcher m = r.matcher(vnetBrName);
+            if(m.group(1) != null || !m.group(1).isEmpty()) {
+                return m.group(1);
+            } else {
+                s_logger.debug("unable to get a vlan ID from name " + vnetBrName);
+                return "";
+            }
+        }
     }
 
     private void cleanupVMNetworks(Connect conn, List<InterfaceDef> nics) {
@@ -4285,7 +4304,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 
     /* online snapshot supported by enhanced qemu-kvm */
     private boolean isSnapshotSupported() {
-        String result = executeBashScript("qemu-img --help|grep convert |grep snapshot");
+        String result = executeBashScript("qemu-img --help|grep convert");
         if (result != null) {
             return false;
         } else {

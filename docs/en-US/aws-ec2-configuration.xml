@@ -1,0 +1,64 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
+<section id="aws-ec2-configuration">
+  <title>Enabling the AWS API compatible Interface</title>
+  <para>
+    To enable the EC2 compatible service you need to set the configuration variable <emphasis>enable.ec2.api</emphasis>to true. This can be done via the &PRODUCT; GUI by going in <emphasis>Global Settings</emphasis> or via the API.
+  </para>
+  <para>
+    <mediaobject>
+      <imageobject>
+        <imagedata fileref="./images/ec2-s3-configuration.png"/>
+      </imageobject>
+      <textobject>
+        <phrase>Use the GUI to set the configuration variable to <emphasis>true</emphasis></phrase>
+      </textobject>
+    </mediaobject>
+  </para>
+  <para>
+    The easiest is to use the so-called integration port on which you can make unauthenticated calls. In Global Settings set the port to 8096 and subsequently call the <emphasis>updateConfiguration</emphasis> method. The following url shows you how:
+  </para>
+  <para>
+    <programlisting>
+      http://localhost:8096/client/api?command=updateConfiguration&amp;name=enable.ec2.api&amp;value=true
+    </programlisting>
+  </para>
+  <para>
+    Once you have updated <emphasis>enable.ec2.api</emphasis>to true, restart the server.
+  </para>
+  <para>
+    You will also need to define compute service offerings with names compatible with the <ulink url="http://aws.amazon.com/ec2/instance-types/">Amazon EC2 instance types</ulink> API names (e.g m1.small,m1.large). This is easiest done via the &PRODUCT; GUI. Go under <emphasis>Service Offerings</emphasis> select <emphasis>Compute offering</emphasis> and either create a new compute offering or modify an existing one, ensuring that the name matches an EC2 instance type API name. The snapshot below shows you how:
+  </para>
+  <para>
+    <mediaobject>
+      <imageobject>
+        <imagedata fileref="./images/compute-service-offerings.png"/>
+      </imageobject>
+    <textobject>
+      <phrase>Use the GUI to set the name of a compute service offering to an EC2 instance type API name.</phrase>
+    </textobject>
+    </mediaobject>
+  </para>
+ </section>

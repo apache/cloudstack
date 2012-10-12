@@ -1,0 +1,47 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
+<section id="aws-ec2-introduction">
+  <title>Amazon Web Services EC2 Compatible Interface</title>
+    <para>&PRODUCT; can translate Amazon Web Services (AWS) API calls to native &PRODUCT; API calls so that users can continue using existing AWS-compatible tools. This translation service runs as a separate web application in the same tomcat server as the management server of &PRODUCT;, listening on the same port. This Amazon EC2-compatible API is accessible through a SOAP web service as well as the REST query interface.</para>
+    <warning>
+	  <para>Expect the SOAP service to be deprecated in new releases in favor of the REST interface.</para>
+    </warning> 
+    <note>
+      <para>This service was previously enabled by a separate software called CloudBridge, it is now fully integrated with the &PRODUCT; management server.
+      </para>
+    </note>
+    <para>Limitations</para>
+    <itemizedlist>
+      <listitem>
+        <para>Supported only in zones that use basic networking.</para>
+      </listitem>
+      <listitem>
+        <para>Available in fresh installations of &PRODUCT;. Not available through upgrade of previous versions.</para>
+      </listitem>
+      <listitem>
+        <para>If you need to support features such as elastic IP, set up a Citrix NetScaler to provide this service. The commands such as ec2-associate-address will not work without EIP setup. Users running VMs in this zone will be using the NetScaler-enabled network offering (DefaultSharedNetscalerEIP and ELBNetworkOffering).</para>
+      </listitem>
+    </itemizedlist>
+</section>

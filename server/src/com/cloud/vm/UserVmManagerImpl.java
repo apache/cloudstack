@@ -2253,10 +2253,15 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                     throw new InvalidParameterValueException("Unable to find network by id " + networkIdList.get(0).longValue());
                 }
                 if (network.getVpcId() != null) {
-                    //Only XenServer, KVM, and VmWare hypervisors are supported for vpc networks
-                    if (!vpcSupportedHTypes.contains(template.getHypervisorType())) {
+                    //Only ISOs, XenServer, KVM, and VmWare template types are supported for vpc networks
+                    if (template.getFormat() != ImageFormat.ISO && !vpcSupportedHTypes.contains(template.getHypervisorType())) {
                         throw new InvalidParameterValueException("Can't create vm from template with hypervisor "
                                 + template.getHypervisorType() + " in vpc network " + network);
+                    }
+
+                    //Only XenServer, KVM, and VMware hypervisors are supported for vpc networks
+                    if (!vpcSupportedHTypes.contains(hypervisor)) {
+                        throw new InvalidParameterValueException("Can't create vm of hypervisor type " + hypervisor + " in vpc network");
                     }
 
                 }

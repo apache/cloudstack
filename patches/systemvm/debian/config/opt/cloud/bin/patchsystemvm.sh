@@ -70,7 +70,6 @@ routing_svcs() {
    grep "redundant_router=1" /var/cache/cloud/cmdline > /dev/null
    RROUTER=$?
    chkconfig cloud off
-   chkconfig cloud-passwd-srvr on ; 
    chkconfig haproxy on ; 
    chkconfig ssh on
    chkconfig nfs-common off
@@ -78,20 +77,36 @@ routing_svcs() {
    if [ $RROUTER -eq 0 ]
    then
        chkconfig dnsmasq off
+       chkconfig cloud-passwd-srvr off
        chkconfig keepalived on
        chkconfig conntrackd on
        chkconfig postinit on
        echo "keepalived conntrackd postinit" > /var/cache/cloud/enabled_svcs
-       echo "dnsmasq " > /var/cache/cloud/disabled_svcs
+       echo "dnsmasq cloud-passwd-srvr" > /var/cache/cloud/disabled_svcs
    else
        chkconfig dnsmasq on
+       chkconfig cloud-passwd-srvr on
        chkconfig keepalived off
        chkconfig conntrackd off
-       echo "dnsmasq " > /var/cache/cloud/enabled_svcs
+       echo "dnsmasq cloud-passwd-srvr " > /var/cache/cloud/enabled_svcs
        echo "keepalived conntrackd " > /var/cache/cloud/disabled_svcs
    fi
-   echo "cloud-passwd-srvr ssh haproxy apache2" >> /var/cache/cloud/enabled_svcs
+   echo "ssh haproxy apache2" >> /var/cache/cloud/enabled_svcs
    echo "cloud nfs-common portmap" > /var/cache/cloud/disabled_svcs
+}
+
+vpcrouting_svcs() {
+   chkconfig cloud off
+   chkconfig haproxy on ; 
+   chkconfig ssh on
+   chkconfig nfs-common off
+   chkconfig portmap off
+   chkconfig dnsmasq on
+   chkconfig keepalived off
+   chkconfig conntrackd off
+   chkconfig apache2 off
+   echo "ssh haproxy dnsmasq" > /var/cache/cloud/enabled_svcs
+   echo "cloud cloud-passwd-srvr apache2 nfs-common portmap keepalived conntrackd" > /var/cache/cloud/disabled_svcs
 }
 
 dhcpsrvr_svcs() {
@@ -177,12 +192,22 @@ then
    enable_serial_console
 fi
 
-if [ "$TYPE" == "router" ]
+if [ "$TYPE" == "router" ] || [ "$TYPE" == "vpcrouter" ]
 then
   routing_svcs
   if [ $? -gt 0 ]
   then
     printf "Failed to execute routing_svcs\n" >$logfile
+    exit 6
+  fi
+fi
+
+if [ "$TYPE" == "vpcrouter" ]
+then
+  vpcrouting_svcs
+  if [ $? -gt 0 ]
+  then
+    printf "Failed to execute vpcrouting_svcs\n" >$logfile
     exit 6
   fi
 fi

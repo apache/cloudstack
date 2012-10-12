@@ -1,0 +1,103 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+	or more contributor license agreements.  See the NOTICE file
+	distributed with this work for additional information
+	regarding copyright ownership.  The ASF licenses this file
+	to you under the Apache License, Version 2.0 (the
+	"License"); you may not use this file except in compliance
+	with the License.  You may obtain a copy of the License at
+	http://www.apache.org/licenses/LICENSE-2.0
+	Unless required by applicable law or agreed to in writing,
+	software distributed under the License is distributed on an
+	"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+	KIND, either express or implied.  See the License for the
+	specific language governing permissions and limitations
+	under the License.
+-->
+<section id="add-portforward-vpc">
+  <title>Adding a Port Forwarding Rule on a VPC</title>
+  <orderedlist>
+    <listitem>
+      <para>Log in to the &PRODUCT; UI as an administrator or end user.</para>
+    </listitem>
+    <listitem>
+      <para>In the left navigation, choose Network.</para>
+    </listitem>
+    <listitem>
+      <para>In the Select view, select VPC.</para>
+      <para>All the VPCs that you have created for the account is listed in the page.</para>
+    </listitem>
+    <listitem>
+      <para>Click the Configure button of the VPC to which you want to deploy the VMs.</para>
+      <para>The VPC page is displayed where all the tiers you created are listed in a
+        diagram.</para>
+    </listitem>
+    <listitem>
+      <para>Click the Settings icon.</para>
+      <para>The following options are displayed.</para>
+      <itemizedlist>
+        <listitem>
+          <para>IP Addresses</para>
+        </listitem>
+        <listitem>
+          <para>Gateways</para>
+        </listitem>
+        <listitem>
+          <para>Site-to-Site VPN</para>
+        </listitem>
+        <listitem>
+          <para>Network ACLs</para>
+        </listitem>
+      </itemizedlist>
+    </listitem>
+    <listitem>
+      <para>Choose an existing IP address or acquire a new IP address. Click the name of the IP
+        address in the list.</para>
+      <para>The IP Addresses page is displayed.</para>
+    </listitem>
+    <listitem>
+      <para>Click the IP address for which you want to create the rule, then click the Configuration
+        tab.</para>
+    </listitem>
+    <listitem>
+      <para>In the Port Forwarding node of the diagram, click View All.</para>
+    </listitem>
+    <listitem>
+      <para>Select the tier to which you want to apply the rule.</para>
+    </listitem>
+    <listitem>
+      <para>Specify the following:</para>
+      <itemizedlist>
+        <listitem>
+          <para><emphasis role="bold">Public Port</emphasis>: The port to which public traffic will
+            be addressed on the IP address you acquired in the previous step.</para>
+        </listitem>
+        <listitem>
+          <para><emphasis role="bold">Private Port</emphasis>: The port on which the instance is
+            listening for forwarded public traffic.</para>
+        </listitem>
+        <listitem>
+          <para><emphasis role="bold">Protocol</emphasis>: The communication protocol in use between
+            the two ports.</para>
+          <itemizedlist>
+            <listitem>
+              <para>TCP</para>
+            </listitem>
+            <listitem>
+              <para>UDP</para>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+        <listitem>
+          <para><emphasis role="bold">Add VM</emphasis>: Click Add VM. Select the name of the
+            instance to which this rule applies, and click Apply.</para>
+          <para>You can test the rule by opening an ssh session to the instance.</para>
+        </listitem>
+      </itemizedlist>
+    </listitem>
+  </orderedlist>
+</section>
