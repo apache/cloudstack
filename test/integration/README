@@ -1,8 +1,0 @@
-To run the tests - you should have marvin installed and correctly importable.
-The tests are long running and are best monitored by external hudson jobs.
-
-Also you will have to point marvin to the right configuration file that has
-details about your cloudstack deployment. For more help on how to write the
-config file and run tests check the tutorial at :
-
-https://cwiki.apache.org/confluence/display/CLOUDSTACK/Testing+with+Python
