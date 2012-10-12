@@ -12,7 +12,18 @@ unittests and functional tests with Marvin makes testing with cloudstack easier
    3. remote ssh login/execute command
    4. mysql query 
 
-3. sample code is under sandbox
+3. sample code is under sandbox. To generate the config for a deployment.
+
+Alter the .properties file in the sandbox. For example the
+simualtordemo.properties after modification can generate the config file as
+shown below
+
+$ python simulator_setup.py -i simulatordemo.properties -o simulatordemo.cfg
+
+To deploy the environment and run the tests
+
+$ python -m marvin.deployAndRun -c simulatordemo.cfg -t /tmp/t.log -r /tmp/r.log -d testcase
 
 4. WIKI page
    https://cwiki.apache.org/confluence/display/CLOUDSTACK/Testing+with+Python
+
