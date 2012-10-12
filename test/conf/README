@@ -1,8 +1,0 @@
-To run submitCertEC2 and deleteCertEC2 scripts, update parameters in conf/tool.properties file:
-
-* host - ip address of the host where cloud-bridge software is installed
-* port - port cloud-bridge software is listening to
-* accesspoint - access point for cloud-bridge REST request
-* version - Amazon EC2 api version supported by cloud-bridge
-* signaturemethod - HmacSHA1 or HmacSHA256
-* expires - the date when certificate expires
