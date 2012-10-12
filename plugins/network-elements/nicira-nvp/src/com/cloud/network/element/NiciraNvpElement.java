@@ -268,10 +268,7 @@ public class NiciraNvpElement extends AdapterBase implements
 					+ network.getId());
 		}
 		try {
-			// FIXME Check if any services other than connectiviy are required
-			// If that is the case start the logical router with only the
-			// internal interface, leave the external interfaces to the
-			// IpDeployer
+			// Implement SourceNat immediately as we have al the info already
 			if (_networkManager.isProviderSupportServiceInNetwork(
 					network.getId(), Service.SourceNat, Provider.NiciraNvp)) {
 				s_logger.debug("Apparently we are supposed to provide SourceNat on this network");

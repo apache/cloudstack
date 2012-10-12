@@ -57,7 +57,6 @@ public class ConfigureStaticNatRulesOnLogicalRouterCommand extends Command {
 	 */
 	@Override
 	public boolean executeInSequence() {
-		// TODO Auto-generated method stub
 		return false;
 	}
 

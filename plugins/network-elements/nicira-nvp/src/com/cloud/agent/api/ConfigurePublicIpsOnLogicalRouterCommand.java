@@ -43,7 +43,6 @@ public class ConfigurePublicIpsOnLogicalRouterCommand extends Command {
 
 	@Override
 	public boolean executeInSequence() {
-		// TODO Auto-generated method stub
 		return false;
 	}
 
