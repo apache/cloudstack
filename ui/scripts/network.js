@@ -1727,25 +1727,27 @@
             tabs: {
               details: {
                 title: 'label.details',
-								
-								preFilter: function(args) {
-								  var hiddenFields = [];								
-									var zoneObj;
-									$.ajax({
-									  url: createURL("listZones&id=" + args.context.ipAddresses[0].zoneid),
-										dataType: "json",
-										async: false,
-										success: function(json) {										  
-											zoneObj = json.listzonesresponse.zone[0];											
-										}
-									});							
-									if(zoneObj.networktype == "Advanced") {
-									  hiddenFields.push("issystem");
-										hiddenFields.push("purpose");
-									}																	
-									return hiddenFields;								
-								},
-								
+                preFilter: function(args) {
+                  var hiddenFields = [];
+                  var zoneObj;
+                  $.ajax({
+                    url: createURL("listZones&id=" + args.context.ipAddresses[0].zoneid),
+                    dataType: "json",
+                    async: false,
+                    success: function(json) {
+                      zoneObj = json.listzonesresponse.zone[0];
+                    }
+                  });
+                  if(zoneObj.networktype == "Advanced") {
+                    hiddenFields.push("issystem");
+                    hiddenFields.push("purpose");
+                  }
+									
+									if(!isAdmin()) {                   
+                    hiddenFields.push("vlanname");
+                  }									
+                  return hiddenFields;
+                },
                 fields: [
                   {
                     ipaddress: { label: 'label.ip' }
