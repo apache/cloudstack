@@ -42,9 +42,9 @@ import com.cloud.user.UserContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Implementation(responseObject=NiciraNvpDeviceResponse.class, description="Adds a Nicira NVP device")
-public class AddNiciraNvpDeviceCmd extends BaseCmd {
+public class AddNiciraNvpDeviceCmd extends BaseAsyncCmd {
     private static final Logger s_logger = Logger.getLogger(AddNiciraNvpDeviceCmd.class.getName());
-    private static final String s_name = "addniciranvpdevice";
+    private static final String s_name = "addniciranvpdeviceresponse";
     @PlugService NiciraNvpElementService _niciraNvpElementService;
     
     /////////////////////////////////////////////////////
@@ -66,6 +66,9 @@ public class AddNiciraNvpDeviceCmd extends BaseCmd {
     
     @Parameter(name=ApiConstants.NICIRA_NVP_TRANSPORT_ZONE_UUID, type=CommandType.STRING, required = true, description="The Transportzone UUID configured on the Nicira Controller")
     private String transportzoneuuid;
+    
+    @Parameter(name=ApiConstants.NICIRA_NVP_GATEWAYSERVICE_UUID, type=CommandType.STRING, required = false, description="The L3 Gateway Service UUID configured on the Nicira Controller")
+    private String l3gatewayserviceuuid;
     
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -89,6 +92,10 @@ public class AddNiciraNvpDeviceCmd extends BaseCmd {
     
     public String getTransportzoneUuid() {
         return transportzoneuuid;
+    }
+    
+    public String getL3GatewayServiceUuid() {
+    	return l3gatewayserviceuuid;
     }
 
     /////////////////////////////////////////////////////
@@ -123,4 +130,14 @@ public class AddNiciraNvpDeviceCmd extends BaseCmd {
     public long getEntityOwnerId() {
         return UserContext.current().getCaller().getId();
     }
+
+	@Override
+	public String getEventType() {
+		return EventTypes.EVENT_EXTERNAL_NVP_CONTROLLER_ADD;
+	}
+
+	@Override
+	public String getEventDescription() {
+		return "Adding a Nicira Nvp Controller";
+	}
 }

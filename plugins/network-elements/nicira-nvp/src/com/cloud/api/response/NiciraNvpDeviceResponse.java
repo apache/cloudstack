@@ -33,7 +33,16 @@ public class NiciraNvpDeviceResponse extends BaseResponse {
     
     @SerializedName(ApiConstants.NICIRA_NVP_DEVICE_NAME) @Param(description="device name")
     private String deviceName;
-
+    
+    @SerializedName(ApiConstants.HOST_NAME) @Param(description="the controller Ip address")
+    private String hostName;
+    
+    @SerializedName(ApiConstants.NICIRA_NVP_TRANSPORT_ZONE_UUID) @Param(description="the transport zone Uuid")
+    private String transportZoneUuid;
+    
+    @SerializedName(ApiConstants.NICIRA_NVP_GATEWAYSERVICE_UUID) @Param(description="this L3 gateway service Uuid")
+    private String l3GatewayServiceUuid;
+    
     public void setId(long nvpDeviceId) {
         this.id.setValue(nvpDeviceId);
     }
@@ -48,6 +57,26 @@ public class NiciraNvpDeviceResponse extends BaseResponse {
 
     public void setDeviceName(String deviceName) {
         this.deviceName = deviceName;
-    }     
+    }
+
+	public void setId(IdentityProxy id) {
+		this.id = id;
+	}
+
+	public void setPhysicalNetworkId(IdentityProxy physicalNetworkId) {
+		this.physicalNetworkId = physicalNetworkId;
+	}
+
+	public void setHostName(String hostName) {
+		this.hostName = hostName;
+	}
+
+	public void setTransportZoneUuid(String transportZoneUuid) {
+		this.transportZoneUuid = transportZoneUuid;
+	}
+
+	public void setL3GatewayServiceUuid(String l3GatewayServiceUuid) {
+		this.l3GatewayServiceUuid = l3GatewayServiceUuid;
+	}     
     
 }

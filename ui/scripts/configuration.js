@@ -1331,6 +1331,7 @@
                             case 'PortForwarding': serviceDisplayName = 'Port Forwarding'; break;
                             case 'SecurityGroup': serviceDisplayName = 'Security Groups'; break;
                             case 'UserData': serviceDisplayName = 'User Data'; break;
+                            case 'Connectivity': serviceDisplayName = 'Virtual Networking'; break;
                             default: serviceDisplayName = serviceName; break;
                             }
 

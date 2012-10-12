@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-//
+// 
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -16,30 +16,12 @@
 // under the License.
 package com.cloud.network.nicira;
 
-import java.util.List;
-
-public class NiciraNvpList<T> {
-    private List<T> results;
-    private int result_count;
-
-    public List<T> getResults() {
-        return results;
-    }
-
-    public void setResults(List<T> results) {
-        this.results = results;
-    }
-
-    public int getResultCount() {
-        return result_count;
-    }
-
-    public void setResultCount(int result_count) {
-        this.result_count = result_count;
-    }
-    
-    public boolean isEmpty() {
-    	return result_count == 0;
-    }
-
+/**
+ * 
+ */
+public class SourceNatRule extends NatRule {
+	{
+		type = "SourceNatRule";
+	}	
+	
 }
