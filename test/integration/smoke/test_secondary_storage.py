@@ -277,8 +277,8 @@ class TestSecStorageServices(cloudstackTestCase):
 
         # Validate the following
         # If SSVM is in UP state and running
-        # 1. wait for listTemplates to show all builtin templates
-        #    downloaded for all added hypervisors and in “Ready” state"
+        # 1. wait for listTemplates to show all builtin templates downloaded and
+        # in Ready state
 
         for k, v in self.services["hypervisors"].items():
 
