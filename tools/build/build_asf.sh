@@ -78,7 +78,6 @@ if [ -d "$outputdir" ]; then
 else
     mkdir $outputdir
 fi
-cp $sourcedir/KEYS $outputdir/KEYS
 
 cd $sourcedir
 echo 'archiving'
