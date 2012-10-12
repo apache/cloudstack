@@ -432,7 +432,7 @@ def build_usage_dir ():
 
 
 # Get started to execute here
-build_utils_docs ()
+#build_utils_docs ()
 build_jars ()
 build_premium ()
 #build_thirdparty_dir()
