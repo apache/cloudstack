@@ -422,22 +422,9 @@
           id: 'networks',
           fields: {
             name: { label: 'label.name' },
-            account: { label: 'label.account' },
-            //zonename: { label: 'label.zone' },
-            type: { label: 'label.type' },
-            vlan: { label: 'label.vlan' },
-            cidr: { label: 'label.cidr' }
-            /*
-             state: {
-             label: 'label.state',
-             indicator: {
-             'Implemented': 'on',
-             'Setup': 'on',
-             'Allocated': 'on',
-             'Destroyed': 'off'
-             }
-             }
-             */
+            account: { label: 'label.account' },            
+            type: { label: 'label.type' },            
+            cidr: { label: 'label.cidr' }           
           },
           
 					advSearchFields: {					 
@@ -841,7 +828,19 @@
                     hiddenFields.push("networkdomain");
                   }
                   return hiddenFields;
+                },								
+								
+								preFilter: function(args) {
+                  var hiddenFields;
+                  if(isAdmin()) {
+                    hiddenFields = [];
+                  }
+                  else {
+                    hiddenFields = ["vlan"];
+                  }
+                  return hiddenFields;
                 },
+																
                 fields: [
                   {
                     name: {
@@ -871,9 +870,7 @@
                           return "No";
                       }
                     },
-                    vlan: { label: 'label.vlan.id' },
-
-                    networkofferingname: { label: 'label.network.offering' },
+                    vlan: { label: 'label.vlan.id' },               
 
                     networkofferingid: {
                       label: 'label.network.offering',
