@@ -237,6 +237,12 @@ public class NiciraNvpApi {
     	
     	executeDeleteObject(uri);
     }
+
+    public void modifyLogicalRouterPort(String logicalRouterUuid, LogicalRouterPort logicalRouterPort) throws NiciraNvpApiException {
+    	String uri = "/ws.v1/lrouter/" + logicalRouterUuid + "/lport/" +  logicalRouterPort.getUuid();
+    	
+    	executeUpdateObject(logicalRouterPort, uri, Collections.<String,String>emptyMap());
+    }
     
     public void modifyLogicalRouterPortAttachment(String logicalRouterUuid, String logicalRouterPortUuid, Attachment attachment) throws NiciraNvpApiException {
         String uri = "/ws.v1/lrouter/" + logicalRouterUuid + "/lport/" + logicalRouterPortUuid + "/attachment";
@@ -296,6 +302,15 @@ public class NiciraNvpApi {
         params.put("fields","*");
         
     	return executeRetrieveObject(new TypeToken<NiciraNvpList<NatRule>>(){}.getType(), uri, params);
+    }
+    
+    public NiciraNvpList<LogicalRouterPort> findLogicalRouterPortByGatewayServiceUuid(String logicalRouterUuid, String l3GatewayServiceUuid) throws NiciraNvpApiException {
+    	String uri = "/ws.v1/lrouter/" + logicalRouterUuid + "/lport";
+    	Map<String,String> params = new HashMap<String,String>();
+    	params.put("fields", "*");
+    	params.put("attachment_gwsvc_uuid", l3GatewayServiceUuid);
+    	
+    	return executeRetrieveObject(new TypeToken<NiciraNvpList<LogicalRouterPort>>(){}.getType(), uri, params);
     }
     
     private <T> void executeUpdateObject(T newObject, String uri, Map<String,String> parameters) throws NiciraNvpApiException {

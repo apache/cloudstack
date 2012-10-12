@@ -5,5 +5,5 @@ import com.cloud.utils.db.GenericDao;
 
 public interface NiciraNvpRouterMappingDao extends GenericDao<NiciraNvpRouterMappingVO, Long> {
 
-	public NiciraNvpRouterMappingVO findByNetworkIdI(long id);
+	public NiciraNvpRouterMappingVO findByNetworkId(long id);
 }

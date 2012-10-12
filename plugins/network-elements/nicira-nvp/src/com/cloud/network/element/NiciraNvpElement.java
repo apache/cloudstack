@@ -49,6 +49,8 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.ConfigurePortForwardingRulesOnLogicalRouterAnswer;
 import com.cloud.agent.api.ConfigurePortForwardingRulesOnLogicalRouterCommand;
+import com.cloud.agent.api.ConfigurePublicIpsOnLogicalRouterAnswer;
+import com.cloud.agent.api.ConfigurePublicIpsOnLogicalRouterCommand;
 import com.cloud.agent.api.ConfigureStaticNatRulesOnLogicalRouterAnswer;
 import com.cloud.agent.api.ConfigureStaticNatRulesOnLogicalRouterCommand;
 import com.cloud.agent.api.CreateLogicalRouterAnswer;
@@ -469,7 +471,7 @@ public class NiciraNvpElement extends AdapterBase implements
 			// Deleting the LogicalRouter will also take care of all provisioned
 			// nat rules.
 			NiciraNvpRouterMappingVO routermapping = _niciraNvpRouterMappingDao
-					.findByNetworkIdI(network.getId());
+					.findByNetworkId(network.getId());
 			if (routermapping == null) {
 				s_logger.warn("No logical router uuid found for network "
 						+ network.getDisplayText());
@@ -834,13 +836,40 @@ public class NiciraNvpElement extends AdapterBase implements
 	public boolean applyIps(Network network,
 			List<? extends PublicIpAddress> ipAddress, Set<Service> services)
 			throws ResourceUnavailableException {
-		s_logger.debug("Entering applyIps"); // TODO Remove this line
-		
-		// The Nicira Nvp L3 Gateway doesn't need the addresses configured on
-		// the router interface. Only configure the CIDR and individual ip
-		// addresses become available when DNAT rules are created for them.
-		// The cidr setup is done during implementation of the logical router
-		// in the function implement 
+		if (services.contains(Service.SourceNat)) {
+			// Only if we need to provide SourceNat we need to configure the logical router
+			// SourceNat is required for StaticNat and PortForwarding
+			List<NiciraNvpDeviceVO> devices = _niciraNvpDao
+					.listByPhysicalNetwork(network.getPhysicalNetworkId());
+			if (devices.isEmpty()) {
+				s_logger.error("No NiciraNvp Controller on physical network "
+						+ network.getPhysicalNetworkId());
+				return false;
+			}
+			NiciraNvpDeviceVO niciraNvpDevice = devices.get(0);
+			HostVO niciraNvpHost = _hostDao.findById(niciraNvpDevice.getHostId());
+			_hostDao.loadDetails(niciraNvpHost);
+	        	
+			NiciraNvpRouterMappingVO routermapping = _niciraNvpRouterMappingDao
+					.findByNetworkId(network.getId());
+			if (routermapping == null) {
+				s_logger.error("No logical router uuid found for network "
+						+ network.getDisplayText());
+				return false;
+			}
+	
+			List<String> cidrs = new ArrayList<String>();
+			for (PublicIpAddress ip : ipAddress) {
+				cidrs.add(ip.getAddress().addr() + "/" + NetUtils.getCidrSize(ip.getNetmask()));
+			}
+			ConfigurePublicIpsOnLogicalRouterCommand cmd = new ConfigurePublicIpsOnLogicalRouterCommand(routermapping.getLogicalRouterUuid(), 
+					niciraNvpHost.getDetail("l3gatewayserviceuuid"), cidrs);
+			ConfigurePublicIpsOnLogicalRouterAnswer answer = (ConfigurePublicIpsOnLogicalRouterAnswer) _agentMgr.easySend(niciraNvpHost.getId(), cmd);
+			return answer.getResult();
+		}
+		else {
+			s_logger.debug("No need to provision ip addresses as we are not providing L3 services.");
+		}
 		
 		return true;
 	}
@@ -867,7 +896,7 @@ public class NiciraNvpElement extends AdapterBase implements
 		HostVO niciraNvpHost = _hostDao.findById(niciraNvpDevice.getHostId());
         	
 		NiciraNvpRouterMappingVO routermapping = _niciraNvpRouterMappingDao
-				.findByNetworkIdI(network.getId());
+				.findByNetworkId(network.getId());
 		if (routermapping == null) {
 			s_logger.error("No logical router uuid found for network "
 					+ network.getDisplayText());
@@ -915,7 +944,7 @@ public class NiciraNvpElement extends AdapterBase implements
 		HostVO niciraNvpHost = _hostDao.findById(niciraNvpDevice.getHostId());
         	
 		NiciraNvpRouterMappingVO routermapping = _niciraNvpRouterMappingDao
-				.findByNetworkIdI(network.getId());
+				.findByNetworkId(network.getId());
 		if (routermapping == null) {
 			s_logger.error("No logical router uuid found for network "
 					+ network.getDisplayText());
