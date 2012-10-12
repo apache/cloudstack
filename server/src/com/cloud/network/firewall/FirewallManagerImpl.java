@@ -66,6 +66,8 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
 import com.cloud.user.UserContext;
+import com.cloud.utils.IdentityProxy;
+import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
@@ -206,7 +208,7 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
     }
 
     @Override
-    public List<? extends FirewallRule> listFirewallRules(ListFirewallRulesCmd cmd) {
+    public Pair<List<? extends FirewallRule>, Integer> listFirewallRules(ListFirewallRulesCmd cmd) {
         Long ipId = cmd.getIpAddressId();
         Long id = cmd.getId();
         Map<String, String> tags = cmd.getTags();
@@ -272,7 +274,8 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
 
         sc.setParameters("purpose", Purpose.Firewall);
 
-        return _firewallDao.search(sc, filter);
+        Pair<List<FirewallRuleVO>, Integer> result = _firewallDao.searchAndCount(sc, filter);
+        return new Pair<List<? extends FirewallRule>, Integer>(result.first(), result.second());
     }
 
     @Override

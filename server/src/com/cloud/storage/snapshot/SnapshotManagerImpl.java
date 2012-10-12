@@ -853,7 +853,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     }
 
     @Override
-    public List<SnapshotVO> listSnapshots(ListSnapshotsCmd cmd) {
+    public Pair<List<? extends Snapshot>, Integer> listSnapshots(ListSnapshotsCmd cmd) {
         Long volumeId = cmd.getVolumeId();
         String name = cmd.getSnapshotName();
         Long id = cmd.getId();
@@ -954,7 +954,8 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             sc.setParameters("snapshotTypeNEQ", Snapshot.Type.TEMPLATE.ordinal());
         }
 
-        return _snapshotDao.search(sc, searchFilter);
+        Pair<List<SnapshotVO>, Integer> result = _snapshotDao.searchAndCount(sc, searchFilter);
+        return new Pair<List<? extends Snapshot>, Integer>(result.first(), result.second());
     }
 
 

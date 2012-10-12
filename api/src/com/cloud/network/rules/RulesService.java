@@ -23,9 +23,10 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 
 public interface RulesService {
-    List<? extends FirewallRule> searchStaticNatRules(Long ipId, Long id, Long vmId, Long start, Long size, String accountName, Long domainId, Long projectId, boolean isRecursive, boolean listAll);
+    Pair<List<? extends FirewallRule>, Integer> searchStaticNatRules(Long ipId, Long id, Long vmId, Long start, Long size, String accountName, Long domainId, Long projectId, boolean isRecursive, boolean listAll);
 
     /**
      * Creates a port forwarding rule between two ip addresses or between
@@ -60,7 +61,7 @@ public interface RulesService {
      *            the command object holding the criteria for listing port forwarding rules (the ipAddress)
      * @return list of port forwarding rules on the given address, empty list if no rules exist
      */
-    public List<? extends PortForwardingRule> listPortForwardingRules(ListPortForwardingRulesCmd cmd);
+    public Pair<List<? extends PortForwardingRule>, Integer> listPortForwardingRules(ListPortForwardingRulesCmd cmd);
 
     boolean applyPortForwardingRules(long ipAdddressId, Account caller) throws ResourceUnavailableException;
 

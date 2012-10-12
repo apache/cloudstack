@@ -29,6 +29,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.VpnUsersResponse;
 import com.cloud.network.VpnUser;
+import com.cloud.utils.Pair;
 
 @Implementation(description="Lists vpn users", responseObject=VpnUsersResponse.class)
 public class ListVpnUsersCmd extends BaseListProjectAndAccountResourcesCmd {
@@ -69,15 +70,15 @@ public class ListVpnUsersCmd extends BaseListProjectAndAccountResourcesCmd {
     
     @Override
     public void execute(){
-        List<? extends VpnUser> vpnUsers = _ravService.searchForVpnUsers(this);
+        Pair<List<? extends VpnUser>, Integer> vpnUsers = _ravService.searchForVpnUsers(this);
 
         ListResponse<VpnUsersResponse> response = new ListResponse<VpnUsersResponse>();
         List<VpnUsersResponse> vpnResponses = new ArrayList<VpnUsersResponse>();
-        for (VpnUser vpnUser : vpnUsers) {
+        for (VpnUser vpnUser : vpnUsers.first()) {
             vpnResponses.add(_responseGenerator.createVpnUserResponse(vpnUser));
         }
 
-        response.setResponses(vpnResponses);
+        response.setResponses(vpnResponses, vpnUsers.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

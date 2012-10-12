@@ -22,6 +22,7 @@ import com.cloud.api.commands.ListDomainChildrenCmd;
 import com.cloud.api.commands.ListDomainsCmd;
 import com.cloud.domain.Domain;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.utils.Pair;
 
 public interface DomainService {
 
@@ -39,10 +40,10 @@ public interface DomainService {
 
     boolean deleteDomain(long domainId, Boolean cleanup);
 
-    List<? extends Domain> searchForDomains(ListDomainsCmd cmd)
+    Pair<List<? extends Domain>, Integer> searchForDomains(ListDomainsCmd cmd)
             throws PermissionDeniedException;
 
-    List<? extends Domain> searchForDomainChildren(ListDomainChildrenCmd cmd)
+    Pair<List<? extends Domain>, Integer> searchForDomainChildren(ListDomainChildrenCmd cmd)
             throws PermissionDeniedException;
 
 }

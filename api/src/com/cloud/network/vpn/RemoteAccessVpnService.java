@@ -24,6 +24,7 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VpnUser;
+import com.cloud.utils.Pair;
 
 public interface RemoteAccessVpnService {
 
@@ -37,8 +38,8 @@ public interface RemoteAccessVpnService {
     List<? extends VpnUser> listVpnUsers(long vpnOwnerId, String userName);
     boolean applyVpnUsers(long vpnOwnerId, String userName);
     
-    List<? extends RemoteAccessVpn> searchForRemoteAccessVpns(ListRemoteAccessVpnsCmd cmd);
-    List<? extends VpnUser> searchForVpnUsers(ListVpnUsersCmd cmd);
+    Pair<List<? extends RemoteAccessVpn>, Integer> searchForRemoteAccessVpns(ListRemoteAccessVpnsCmd cmd);
+    Pair<List<? extends VpnUser>, Integer> searchForVpnUsers(ListVpnUsersCmd cmd);
     
     List<? extends RemoteAccessVpn> listRemoteAccessVpns(long networkId);
     

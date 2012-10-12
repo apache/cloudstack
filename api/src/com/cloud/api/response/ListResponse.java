@@ -22,6 +22,7 @@ import com.cloud.api.ResponseObject;
 
 public class ListResponse<T extends ResponseObject> extends BaseResponse {
     List<T> responses;
+    private transient Integer count;
 
     public List<T> getResponses() {
         return responses;
@@ -30,12 +31,22 @@ public class ListResponse<T extends ResponseObject> extends BaseResponse {
     public void setResponses(List<T> responses) {
         this.responses = responses;
     }
+    
+    public void setResponses(List<T> responses, Integer count) {
+        this.responses = responses;
+        this.count = count;
+    }
+    
 
     public Integer getCount() {
+        if (count != null) {
+            return count;
+        }
+        
         if (responses != null) {
             return responses.size();
-        } else {
-            return null;
         }
+        
+        return null;
     }
 }

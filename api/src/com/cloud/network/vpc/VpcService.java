@@ -34,6 +34,7 @@ import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.user.Account;
 import com.cloud.user.User;
+import com.cloud.utils.Pair;
 
 public interface VpcService {
     
@@ -190,7 +191,7 @@ public interface VpcService {
      * @param listPrivateGatewaysCmd
      * @return
      */
-    public List<PrivateGateway> listPrivateGateway(ListPrivateGatewaysCmd listPrivateGatewaysCmd);
+    public Pair<List<PrivateGateway>, Integer> listPrivateGateway(ListPrivateGatewaysCmd listPrivateGatewaysCmd);
 
     /**
      * @param routeId
@@ -223,7 +224,7 @@ public interface VpcService {
      * @param listStaticRoutesCmd
      * @return
      */
-    public List<? extends StaticRoute> listStaticRoutes(ListStaticRoutesCmd cmd);
+    public Pair<List<? extends StaticRoute>, Integer> listStaticRoutes(ListStaticRoutesCmd cmd);
 
     /**
      * @param id

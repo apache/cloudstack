@@ -184,7 +184,7 @@ public interface ManagementService {
      * @param cmd
      * @return List of DomainRouters.
      */
-    List<? extends VirtualRouter> searchForRouters(ListRoutersCmd cmd);
+    Pair<List<? extends VirtualRouter>, Integer> searchForRouters(ListRoutersCmd cmd);
 
     /**
      * Obtains a list of IP Addresses by the specified search criteria. Can search by: "userId", "dataCenterId",
@@ -194,7 +194,7 @@ public interface ManagementService {
      *            the command that wraps the search criteria
      * @return List of IPAddresses
      */
-    List<? extends IpAddress> searchForIPAddresses(ListPublicIpAddressesCmd cmd);
+    Pair<List<? extends IpAddress>, Integer> searchForIPAddresses(ListPublicIpAddressesCmd cmd);
 
     /**
      * Obtains a list of all guest OS.
@@ -235,7 +235,7 @@ public interface ManagementService {
      * @param c
      * @return List of Alerts
      */
-    List<? extends Alert> searchForAlerts(ListAlertsCmd cmd);
+    Pair<List<? extends Alert>, Integer> searchForAlerts(ListAlertsCmd cmd);
 
     /**
      * list all the capacity rows in capacity operations table
@@ -363,7 +363,7 @@ public interface ManagementService {
      *            the command specifying the account and start date parameters
      * @return the list of async jobs that match the criteria
      */
-    List<? extends AsyncJob> searchForAsyncJobs(ListAsyncJobsCmd cmd);
+    Pair<List<? extends AsyncJob>, Integer> searchForAsyncJobs(ListAsyncJobsCmd cmd);
 
     /**
      * Generates a random password that will be used (initially) by newly created and started virtual machines

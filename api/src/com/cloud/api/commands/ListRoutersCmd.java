@@ -30,6 +30,7 @@ import com.cloud.api.response.DomainRouterResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.network.router.VirtualRouter;
+import com.cloud.utils.Pair;
 
 @Implementation(description="List routers.", responseObject=DomainRouterResponse.class)
 public class ListRoutersCmd extends BaseListProjectAndAccountResourcesCmd {
@@ -129,16 +130,16 @@ public class ListRoutersCmd extends BaseListProjectAndAccountResourcesCmd {
 
     @Override
     public void execute(){
-        List<? extends VirtualRouter> result = _mgr.searchForRouters(this);
+        Pair<List<? extends VirtualRouter>, Integer> result = _mgr.searchForRouters(this);
         ListResponse<DomainRouterResponse> response = new ListResponse<DomainRouterResponse>();
         List<DomainRouterResponse> routerResponses = new ArrayList<DomainRouterResponse>();
-        for (VirtualRouter router : result) {
+        for (VirtualRouter router : result.first()) {
             DomainRouterResponse routerResponse = _responseGenerator.createDomainRouterResponse(router);
             routerResponse.setObjectName("router");
             routerResponses.add(routerResponse);
         }
 
-        response.setResponses(routerResponses);
+        response.setResponses(routerResponses, result.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

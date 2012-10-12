@@ -53,6 +53,7 @@ import com.cloud.storage.Volume;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.ExecutionException;
 
 public interface UserVmService {
@@ -378,7 +379,7 @@ public interface UserVmService {
      *            the API command that wraps the search criteria
      * @return List of UserVMs.
      */
-    List<? extends UserVm> searchForUserVMs(ListVMsCmd cmd);
+    Pair<List<? extends UserVm>, Integer> searchForUserVMs(ListVMsCmd cmd);
 
     HypervisorType getHypervisorTypeOfUserVM(long vmid);
 

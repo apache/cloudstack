@@ -22,7 +22,6 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.BaseListProjectAndAccountResourcesCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
@@ -32,6 +31,7 @@ import com.cloud.api.response.IpForwardingRuleResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.StaticNatRule;
+import com.cloud.utils.Pair;
 
 @Implementation(description="List the ip forwarding rules", responseObject=FirewallRuleResponse.class)
 public class ListIpForwardingRulesCmd extends BaseListProjectAndAccountResourcesCmd {
@@ -82,17 +82,18 @@ public class ListIpForwardingRulesCmd extends BaseListProjectAndAccountResources
 
     @Override
     public void execute(){
-        List<? extends FirewallRule> result = _rulesService.searchStaticNatRules(publicIpAddressId, id, vmId, this.getStartIndex(), this.getPageSizeVal(), this.getAccountName(), this.getDomainId(), this.getProjectId(), this.isRecursive(), this.listAll());
+        Pair<List<? extends FirewallRule>, Integer> result = _rulesService.searchStaticNatRules(publicIpAddressId, id, vmId, 
+                this.getStartIndex(), this.getPageSizeVal(), this.getAccountName(), this.getDomainId(), this.getProjectId(), this.isRecursive(), this.listAll());
         ListResponse<IpForwardingRuleResponse> response = new ListResponse<IpForwardingRuleResponse>();
         List<IpForwardingRuleResponse> ipForwardingResponses = new ArrayList<IpForwardingRuleResponse>();
-        for (FirewallRule rule : result) {
+        for (FirewallRule rule : result.first()) {
             StaticNatRule staticNatRule = _rulesService.buildStaticNatRule(rule, false);
             IpForwardingRuleResponse resp = _responseGenerator.createIpForwardingRuleResponse(staticNatRule);
             if (resp != null) {
                 ipForwardingResponses.add(resp);
             }
         }
-        response.setResponses(ipForwardingResponses);
+        response.setResponses(ipForwardingResponses, result.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

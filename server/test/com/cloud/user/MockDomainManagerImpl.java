@@ -29,6 +29,7 @@ import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.Pair;
 
 @Local(value = { DomainManager.class })
 public class MockDomainManagerImpl implements  Manager, DomainManager {
@@ -58,14 +59,14 @@ public class MockDomainManagerImpl implements  Manager, DomainManager {
     }
 
     @Override
-    public List<? extends Domain> searchForDomains(ListDomainsCmd cmd)
+    public Pair<List<? extends Domain>, Integer> searchForDomains(ListDomainsCmd cmd)
             throws PermissionDeniedException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public List<? extends Domain> searchForDomainChildren(
+    public Pair<List<? extends Domain>, Integer> searchForDomainChildren(
             ListDomainChildrenCmd cmd) throws PermissionDeniedException {
         // TODO Auto-generated method stub
         return null;

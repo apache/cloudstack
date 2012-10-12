@@ -2996,7 +2996,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     }
 
     @Override
-    public List<UserVmVO> searchForUserVMs(ListVMsCmd cmd) {
+    public Pair<List<? extends UserVm>, Integer> searchForUserVMs(ListVMsCmd cmd) {
         Account caller = UserContext.current().getCaller();
         List<Long> permittedAccounts = new ArrayList<Long>();
         String hypervisor = cmd.getHypervisor();
@@ -3045,11 +3045,13 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
         c.addCriteria(Criteria.ISADMIN, _accountMgr.isAdmin(caller.getType()));
 
-        return searchForUserVMs(c, caller, domainId, isRecursive, permittedAccounts, listAll, listProjectResourcesCriteria, tags);
+        Pair<List<UserVmVO>, Integer> result = searchForUserVMs(c, caller, domainId, isRecursive,
+                permittedAccounts, listAll, listProjectResourcesCriteria, tags);
+        return new Pair<List<? extends UserVm>, Integer>(result.first(), result.second());
     }
 
     @Override
-    public List<UserVmVO> searchForUserVMs(Criteria c, Account caller, Long domainId, boolean isRecursive, 
+    public Pair<List<UserVmVO>, Integer> searchForUserVMs(Criteria c, Account caller, Long domainId, boolean isRecursive, 
             List<Long> permittedAccounts, boolean listAll, ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags) {
         Filter searchFilter = new Filter(UserVmVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
 
@@ -3240,7 +3242,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                     }
                     sc.setParameters("hostIdIN", (Object[]) hostIds);
                 } else {
-                    return new ArrayList<UserVmVO>();
+                    return new Pair<List<UserVmVO>, Integer>(new ArrayList<UserVmVO>(), 0);
                 }
             }
         }
@@ -3248,8 +3250,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (storageId != null) {
             sc.setJoinParameters("volumeSearch", "poolId", storageId);
         }
-        s_logger.debug("THE WHERE CLAUSE IS:" + sc.getWhereClause());
-        return _vmDao.search(sc, searchFilter);
+        
+        return _vmDao.searchAndCount(sc, searchFilter);
     }
 
     @Override

@@ -29,6 +29,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.UserResponse;
 import com.cloud.user.UserAccount;
+import com.cloud.utils.Pair;
 
 @Implementation(description="Lists user accounts", responseObject=UserResponse.class)
 public class ListUsersCmd extends BaseListAccountResourcesCmd {
@@ -85,14 +86,14 @@ public class ListUsersCmd extends BaseListAccountResourcesCmd {
     
     @Override
     public void execute(){
-        List<? extends UserAccount> result = _accountService.searchForUsers(this);
+        Pair<List<? extends UserAccount>, Integer> result = _accountService.searchForUsers(this);
         ListResponse<UserResponse> response = new ListResponse<UserResponse>();
         List<UserResponse> userResponses = new ArrayList<UserResponse>();
-        for (UserAccount user : result) {
+        for (UserAccount user : result.first()) {
             UserResponse userResponse = _responseGenerator.createUserResponse(user);
             userResponses.add(userResponse);
         }
-        response.setResponses(userResponses);
+        response.setResponses(userResponses, result.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

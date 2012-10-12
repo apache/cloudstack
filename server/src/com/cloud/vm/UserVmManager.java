@@ -96,9 +96,9 @@ public interface UserVmManager extends VirtualMachineGuru<UserVmVO>, UserVmServi
      * @param listAll TODO
      * @param listProjectResourcesCriteria TODO
      * @param tags TODO
-     * @return List of UserVMs.
+     * @return List of UserVMs + count
      */
-    List<UserVmVO> searchForUserVMs(Criteria c, Account caller, Long domainId, boolean isRecursive, List<Long> permittedAccounts, boolean listAll, ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags);
+	Pair<List<UserVmVO>, Integer> searchForUserVMs(Criteria c, Account caller, Long domainId, boolean isRecursive, List<Long> permittedAccounts, boolean listAll, ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags);
 
     String getChecksum(Long hostId, String templatePath);
     

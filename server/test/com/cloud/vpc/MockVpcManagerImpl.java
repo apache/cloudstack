@@ -49,6 +49,7 @@ import com.cloud.network.vpc.VpcService;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.user.User;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.DomainRouterVO;
@@ -244,7 +245,7 @@ public class MockVpcManagerImpl implements VpcManager, Manager{
      * @see com.cloud.network.vpc.VpcService#listPrivateGateway(com.cloud.api.commands.ListPrivateGatewaysCmd)
      */
     @Override
-    public List<PrivateGateway> listPrivateGateway(ListPrivateGatewaysCmd listPrivateGatewaysCmd) {
+    public Pair<List<PrivateGateway>, Integer> listPrivateGateway(ListPrivateGatewaysCmd listPrivateGatewaysCmd) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -289,7 +290,7 @@ public class MockVpcManagerImpl implements VpcManager, Manager{
      * @see com.cloud.network.vpc.VpcService#listStaticRoutes(com.cloud.api.commands.ListStaticRoutesCmd)
      */
     @Override
-    public List<? extends StaticRoute> listStaticRoutes(ListStaticRoutesCmd cmd) {
+    public Pair<List<? extends StaticRoute>, Integer> listStaticRoutes(ListStaticRoutesCmd cmd) {
         // TODO Auto-generated method stub
         return null;
     }

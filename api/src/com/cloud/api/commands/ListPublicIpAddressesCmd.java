@@ -30,6 +30,7 @@ import com.cloud.api.response.IPAddressResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.network.IpAddress;
+import com.cloud.utils.Pair;
 
 
 @Implementation(description="Lists all public ip addresses", responseObject=IPAddressResponse.class)
@@ -141,16 +142,16 @@ public class ListPublicIpAddressesCmd extends BaseListTaggedResourcesCmd {
     
     @Override
     public void execute(){
-        List<? extends IpAddress> result = _mgr.searchForIPAddresses(this);
+        Pair<List<? extends IpAddress>, Integer> result = _mgr.searchForIPAddresses(this);
         ListResponse<IPAddressResponse> response = new ListResponse<IPAddressResponse>();
         List<IPAddressResponse> ipAddrResponses = new ArrayList<IPAddressResponse>();
-        for (IpAddress ipAddress : result) {
+        for (IpAddress ipAddress : result.first()) {
             IPAddressResponse ipResponse = _responseGenerator.createIPAddressResponse(ipAddress);
             ipResponse.setObjectName("publicipaddress");
             ipAddrResponses.add(ipResponse);
         }
 
-        response.setResponses(ipAddrResponses);
+        response.setResponses(ipAddrResponses, result.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

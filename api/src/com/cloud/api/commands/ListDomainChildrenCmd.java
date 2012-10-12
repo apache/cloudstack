@@ -29,6 +29,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.response.DomainResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.domain.Domain;
+import com.cloud.utils.Pair;
 
 @Implementation(description="Lists all children domains belonging to a specified domain", responseObject=DomainResponse.class)
 public class ListDomainChildrenCmd extends BaseListCmd {
@@ -84,16 +85,16 @@ public class ListDomainChildrenCmd extends BaseListCmd {
     
     @Override
     public void execute(){
-        List<? extends Domain> result = _domainService.searchForDomainChildren(this);
+        Pair<List<? extends Domain>, Integer> result = _domainService.searchForDomainChildren(this);
         ListResponse<DomainResponse> response = new ListResponse<DomainResponse>();
         List<DomainResponse> domainResponses = new ArrayList<DomainResponse>();
-        for (Domain domain : result) {
+        for (Domain domain : result.first()) {
             DomainResponse domainResponse = _responseGenerator.createDomainResponse(domain);
             domainResponse.setObjectName("domain");
             domainResponses.add(domainResponse);
         }
 
-        response.setResponses(domainResponses);
+        response.setResponses(domainResponses, result.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

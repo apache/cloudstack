@@ -30,6 +30,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.StickinessPolicy;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.Pair;
+
 
 public interface LoadBalancingRulesService {
     /**
@@ -90,7 +92,7 @@ public interface LoadBalancingRulesService {
      *            by id, name, public ip, and vm instance id
      * @return list of load balancers that match the criteria
      */
-    List<? extends LoadBalancer> searchForLoadBalancers(ListLoadBalancerRulesCmd cmd);
+    Pair<List<? extends LoadBalancer>, Integer> searchForLoadBalancers(ListLoadBalancerRulesCmd cmd);
 
     /**
      * List stickiness policies based on the given criteria

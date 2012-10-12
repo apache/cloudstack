@@ -95,6 +95,8 @@ import com.cloud.user.DomainService;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.IdentityProxy;
+import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
@@ -1237,7 +1239,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
     }
 
     @Override
-    public List<LoadBalancerVO> searchForLoadBalancers(ListLoadBalancerRulesCmd cmd) {
+    public Pair<List<? extends LoadBalancer>, Integer> searchForLoadBalancers(ListLoadBalancerRulesCmd cmd) {
         Long ipId = cmd.getPublicIpId();
         Long zoneId = cmd.getZoneId();
         Long id = cmd.getId();
@@ -1328,7 +1330,8 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
             }
         }
 
-        return _lbDao.search(sc, searchFilter);
+        Pair<List<LoadBalancerVO>, Integer> result = _lbDao.searchAndCount(sc, searchFilter);
+        return new Pair<List<? extends LoadBalancer>, Integer>(result.first(), result.second());
     }
 
     @Override

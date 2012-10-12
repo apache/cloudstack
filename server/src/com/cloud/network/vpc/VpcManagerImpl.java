@@ -95,6 +95,7 @@ import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
@@ -1387,7 +1388,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
     }
 
     @Override
-    public List<PrivateGateway> listPrivateGateway(ListPrivateGatewaysCmd cmd) {
+    public Pair<List<PrivateGateway>, Integer> listPrivateGateway(ListPrivateGatewaysCmd cmd) {
         String ipAddress = cmd.getIpAddress();
         String vlan = cmd.getVlan();
         Long vpcId = cmd.getVpcId();
@@ -1441,14 +1442,14 @@ public class VpcManagerImpl implements VpcManager, Manager{
         if (vlan != null) {
             sc.setJoinParameters("networkSearch", "vlan", BroadcastDomainType.Vlan.toUri(vlan));
         }
-       
-        List<VpcGatewayVO> vos = _vpcGatewayDao.search(sc, searchFilter);
-        List<PrivateGateway> privateGtws = new ArrayList<PrivateGateway>(vos.size());
-        for (VpcGateway vo : vos) {
+
+        Pair<List<VpcGatewayVO>, Integer> vos = _vpcGatewayDao.searchAndCount(sc, searchFilter);
+        List<PrivateGateway> privateGtws = new ArrayList<PrivateGateway>(vos.first().size());
+        for (VpcGateway vo : vos.first()) {
             privateGtws.add(getPrivateGatewayProfile(vo));
         }
-        
-        return privateGtws;
+
+        return new Pair<List<PrivateGateway>, Integer>(privateGtws, vos.second());
     }
     
     @Override
@@ -1608,7 +1609,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
     }
 
     @Override
-    public List<? extends StaticRoute> listStaticRoutes(ListStaticRoutesCmd cmd) {
+    public Pair<List<? extends StaticRoute>, Integer> listStaticRoutes(ListStaticRoutesCmd cmd) {
         Long id = cmd.getId();
         Long gatewayId = cmd.getGatewayId();
         Long vpcId = cmd.getVpcId();
@@ -1673,10 +1674,11 @@ public class VpcManagerImpl implements VpcManager, Manager{
                 count++;
             }   
         }
-        
-        return _staticRouteDao.search(sc, searchFilter);
+
+        Pair<List<StaticRouteVO>, Integer> result = _staticRouteDao.searchAndCount(sc, searchFilter);
+        return new Pair<List<? extends StaticRoute>, Integer>(result.first(), result.second());
     }
-    
+
     protected void detectRoutesConflict(StaticRoute newRoute) throws NetworkRuleConflictException {
         List<? extends StaticRoute> routes = _staticRouteDao.listByGatewayIdAndNotRevoked(newRoute.getVpcGatewayId());
         assert (routes.size() >= 1) : "For static routes, we now always first persist the route and then check for " +

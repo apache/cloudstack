@@ -3825,7 +3825,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
     }
 
     @Override
-    public List<VolumeVO> searchForVolumes(ListVolumesCmd cmd) {
+    public Pair<List<? extends Volume>, Integer> searchForVolumes(ListVolumesCmd cmd) {
         Account caller = UserContext.current().getCaller();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
@@ -3937,8 +3937,10 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
 
         // Only return volumes that are not destroyed
         sc.setParameters("state", Volume.State.Destroy);
+        
+        Pair<List<VolumeVO>, Integer> volumes = _volumeDao.searchAndCount(sc, searchFilter);
 
-        return _volumeDao.search(sc, searchFilter);
+        return new Pair<List<? extends Volume>, Integer>(volumes.first(), volumes.second());
     }
 
     @Override
