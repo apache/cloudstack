@@ -2504,6 +2504,14 @@ Copyright (c) 2009, John Resig
         </with-license>
     </within>
     <within dir='ui/lib'>
+        <with-license id='ApacheLicenseVersion2'>
+            <copyright-notice>
+Copyright (c) 2006 Google Inc.
+            </copyright-notice>
+            <by-organisation id='google.com'>
+                <resource name='excanvas.js' source='http://code.google.com/p/explorercanvas/' />
+            </by-organisation>
+        </with-license>
         <with-license id='MIT'>
             <copyright-notice>
 Copyright (c) 2011, John Resig
