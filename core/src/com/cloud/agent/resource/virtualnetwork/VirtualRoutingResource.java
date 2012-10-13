@@ -80,6 +80,7 @@ import com.cloud.utils.component.Manager;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
+import com.cloud.utils.ssh.SshHelper;
 
 /**
  * VirtualNetworkResource controls and configures virtual networking
@@ -298,8 +299,77 @@ public class VirtualRoutingResource implements Manager {
         return new SetStaticNatRulesAnswer(cmd, results, endResult);
     }
     
+    protected Answer VPCLoadBalancerConfig(final LoadBalancerConfigCommand cmd) {
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+
+        if (routerIp == null) {
+            return new Answer(cmd);
+        }
+
+        LoadBalancerConfigurator cfgtr = new HAProxyConfigurator();
+        String[] config = cfgtr.generateConfiguration(cmd);
+        String tmpCfgFileContents = "";
+        for (int i = 0; i < config.length; i++) {
+            tmpCfgFileContents += config[i];
+            tmpCfgFileContents += "\n";
+        }
+        File permKey = new File("/root/.ssh/id_rsa.cloud");
+       
+        try {
+        	SshHelper.scpTo(routerIp, 3922, "root", permKey, null, "/etc/haproxy/", tmpCfgFileContents.getBytes(), "haproxy.cfg.new", null);
+
+        	String[][] rules = cfgtr.generateFwRules(cmd);
+
+        	String[] addRules = rules[LoadBalancerConfigurator.ADD];
+        	String[] removeRules = rules[LoadBalancerConfigurator.REMOVE];
+        	String[] statRules = rules[LoadBalancerConfigurator.STATS];
+
+        	String ip = cmd.getNic().getIp();
+        	String args = " -i " + ip;
+        	StringBuilder sb = new StringBuilder();
+        	if (addRules.length > 0) {
+        		for (int i = 0; i < addRules.length; i++) {
+        			sb.append(addRules[i]).append(',');
+        		}
+
+        		args += " -a " + sb.toString();
+        	}
+
+        	sb = new StringBuilder();
+        	if (removeRules.length > 0) {
+        		for (int i = 0; i < removeRules.length; i++) {
+        			sb.append(removeRules[i]).append(',');
+        		}
+
+        		args += " -d " + sb.toString();
+        	}
+
+        	sb = new StringBuilder();
+        	if (statRules.length > 0) {
+        		for (int i = 0; i < statRules.length; i++) {
+        			sb.append(statRules[i]).append(',');
+        		}
+
+        		args += " -s " + sb.toString();
+        	}
+
+        	String result = routerProxy("vpc_loadbalancer.sh", routerIp, args);
+
+        	if (result != null) {
+        		return new Answer(cmd, false, "LoadBalancerConfigCommand failed");
+        	}
+        	return new Answer(cmd);
+
+        } catch (Exception e) {
+        	return new Answer(cmd, e);
+        }
+    }
 
     private Answer execute(LoadBalancerConfigCommand cmd) {
+        if ( cmd.getVpcId() != null ) {
+            return VPCLoadBalancerConfig(cmd);
+        }
+        
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         File tmpCfgFile = null;
         try {
@@ -520,7 +590,7 @@ public class VirtualRoutingResource implements Manager {
         }
         
         final String result = routerProxy("checkbatchs2svpn.sh", routerIP, args);
-        if (result == null || result.isEmpty()) {
+        if (result != null) {
             return new CheckS2SVpnConnectionsAnswer(cmd, false, "CheckS2SVpnConneciontsCommand failed");
         }
         return new CheckS2SVpnConnectionsAnswer(cmd, true, result);
