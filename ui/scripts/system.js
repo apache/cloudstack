@@ -773,7 +773,7 @@
                       selectedManagementNetworkObj.xennetworklabel = trafficType.xennetworklabel;
                       selectedManagementNetworkObj.kvmnetworklabel = trafficType.kvmnetworklabel;
                       selectedManagementNetworkObj.vmwarenetworklabel = trafficType.vmwarenetworklabel;
-                      selectedPublicNetworkObj.ovmnetworklabel = trafficType.ovmnetworklabel;
+                      selectedManagementNetworkObj.ovmnetworklabel = trafficType.ovmnetworklabel;
                       args.response.success({ data: selectedManagementNetworkObj });
                     }
                   });
