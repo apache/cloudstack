@@ -34,20 +34,14 @@
     </dependency>
     <dependency>
       <groupId>com.cloud.com.vmware</groupId>
-      <artifactId>vmware-vim</artifactId>
-      <version>1.0</version>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.cloud.com.vmware</groupId>
       <artifactId>vmware-vim25</artifactId>
-      <version>1.0</version>
+      <version>4.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.cloud.com.vmware</groupId>
       <artifactId>vmware-apputils</artifactId>
-      <version>1.0</version>
+      <version>4.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
