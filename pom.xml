@@ -158,6 +158,8 @@
     <module>patches</module>
     <module>client</module>
     <module>test</module>
+    <module>platform</module>
+    <module>framework</module>
   </modules>
 
   <dependencies>

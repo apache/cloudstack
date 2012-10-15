@@ -21,6 +21,7 @@ package org.apache.cloudstack.storage.image;
 import java.util.List;
 
 import org.apache.cloudstack.platform.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.platform.subsystem.api.storage.TemplateProfile;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.commands.RegisterTemplateCmd;
@@ -28,7 +29,6 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
-import com.cloud.storage.TemplateProfile;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
@@ -161,7 +161,7 @@ public class ImageManagerImpl implements ImageManager {
 
 	public TemplateProfile allocateTemplateInDB(RegisterTemplateCmd cmd) {
 		parameterCheck(cmd);
-		TemplateProfile tp = new TemplateProfile(cmd);
-		return persistTemplate(tp);
+		//TemplateProfile tp = new TemplateProfile(cmd);
+		return persistTemplate(null);
 	}
 }

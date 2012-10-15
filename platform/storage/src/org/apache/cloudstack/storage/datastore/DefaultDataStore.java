@@ -6,9 +6,18 @@ import org.apache.cloudstack.platform.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.platform.subsystem.api.storage.DataStoreEndPointSelector;
 import org.apache.cloudstack.platform.subsystem.api.storage.DataStoreLifeCycle;
 import org.apache.cloudstack.platform.subsystem.api.storage.FileSystem;
+import org.apache.cloudstack.platform.subsystem.api.storage.SnapshotProfile;
 import org.apache.cloudstack.platform.subsystem.api.storage.SnapshotStrategy;
+import org.apache.cloudstack.platform.subsystem.api.storage.StorageProvider;
+import org.apache.cloudstack.platform.subsystem.api.storage.TemplateProfile;
 import org.apache.cloudstack.platform.subsystem.api.storage.TemplateStrategy;
+import org.apache.cloudstack.platform.subsystem.api.storage.VolumeProfile;
 import org.apache.cloudstack.platform.subsystem.api.storage.VolumeStrategy;
+
+import com.cloud.agent.api.to.StorageFilerTO;
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.Volume;
 
 public class DefaultDataStore implements DataStore {
 	protected VolumeStrategy _volumeStrategy;
@@ -136,5 +145,85 @@ public class DefaultDataStore implements DataStore {
 	
 	public void setLifeCycle(DataStoreLifeCycle lf) {
 		this._dslf = lf;
+	}
+
+	public long getCluterId() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	public long getPodId() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	public long getZoneId() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	public String getPath() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public StoragePoolType getPoolType() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public boolean isSharedStorage() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	public StorageProvider getProvider() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public DataStoreEndPointSelector getEndPointSelector() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public VolumeProfile prepareVolume(Volume volume, DataStore destStore) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public SnapshotProfile prepareSnapshot(Snapshot snapshot, DataStore destStore) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public TemplateProfile prepareTemplate(long templateId, DataStore destStore) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public boolean contains(Volume volume) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	public boolean contains(Snapshot snapshot) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	public boolean contains(TemplateProfile template) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	public TemplateProfile get(TemplateProfile template) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public StorageFilerTO getTO() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

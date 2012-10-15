@@ -19,14 +19,14 @@
 package org.apache.cloudstack.storage.image;
 
 import org.apache.cloudstack.platform.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.platform.subsystem.api.storage.TemplateProfile;
 
 
 import com.cloud.api.commands.RegisterTemplateCmd;
 
-import com.cloud.storage.TemplateProfile;
 
 public interface ImageManager {
 	TemplateProfile AssociateTemplateStoragePool(TemplateProfile tp, DataStore ds);
 	TemplateProfile getProfile(long templateId);
-	com.cloud.storage.TemplateProfile allocateTemplateInDB(RegisterTemplateCmd cmd);
+	TemplateProfile allocateTemplateInDB(RegisterTemplateCmd cmd);
 }

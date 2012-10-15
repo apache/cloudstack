@@ -136,4 +136,9 @@ public class DefaultPrimaryStorageProvider implements StorageProvider {
 		return ds;
 	}
 
+	public List<StoreType> supportedStoreTypes() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

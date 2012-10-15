@@ -4,6 +4,7 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.platform.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.platform.subsystem.api.storage.StorageProvider;
 
 import com.cloud.utils.component.Manager;
@@ -32,6 +33,21 @@ public class StorageProviderManagerImpl implements StorageProviderManager, Manag
 	}
 
 	public String getName() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public StorageProvider getProvider(long poolId) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public StorageProvider getBackupStorageProvider(long zoneId) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public DataStore getDataStore(long poolId) {
 		// TODO Auto-generated method stub
 		return null;
 	}

@@ -21,7 +21,6 @@ package org.apache.cloudstack.platform.subsystem.api.storage;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.storage.TemplateProfile;
 import com.cloud.storage.Volume;
 import com.cloud.template.VirtualMachineTemplate;
 

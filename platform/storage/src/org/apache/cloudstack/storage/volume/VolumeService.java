@@ -18,9 +18,9 @@
  */
 package org.apache.cloudstack.storage.volume;
 
-import org.apache.cloudstack.platform.subsystem.api.storage.Volume;
 
 import com.cloud.api.commands.CreateVolumeCmd;
+import com.cloud.storage.Volume;
 
 public interface VolumeService {
 	 /**

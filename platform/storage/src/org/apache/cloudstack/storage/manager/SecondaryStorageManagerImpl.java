@@ -48,4 +48,9 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageManager {
 		return null;
 	}
 
+	public List<DataStore> getImageStores(long zoneId) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

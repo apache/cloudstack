@@ -21,22 +21,14 @@ package org.apache.cloudstack.storage.driver;
 import org.apache.cloudstack.platform.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.platform.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.platform.subsystem.api.storage.DataStoreEndPoint;
-import org.apache.cloudstack.platform.subsystem.api.storage.VolumeProfile;
+import org.apache.cloudstack.platform.subsystem.api.storage.TemplateProfile;
 
 import org.apache.cloudstack.platform.subsystem.api.storage.TemplateStrategy;
 import com.cloud.agent.api.storage.DownloadProgressCommand;
 import com.cloud.agent.api.storage.DownloadProgressCommand.RequestType;
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.storage.CreateAnswer;
-import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.DownloadCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
-import com.cloud.agent.api.to.VolumeTO;
-import com.cloud.storage.TemplateProfile;
-import com.cloud.vm.DiskProfile;
-
-
 
 public abstract class AbstractStorageDriver implements DataStoreDriver {
 	protected DataStore _ds;
@@ -70,14 +62,15 @@ public abstract class AbstractStorageDriver implements DataStoreDriver {
 		ep.sendCommand(dcmd);
 		return tp;
 	}
-
-	public DiskProfile createVolumeFromTemplate(DiskProfile volProfile, TemplateProfile tp, DataStoreEndPoint ep) {
+	/*
+	public VolumeProfile createVolumeFromTemplate(VolumeProfile volProfile, TemplateProfile tp, DataStoreEndPoint ep) {
 		CreateCommand cmd = new CreateCommand(volProfile, tp.getLocalPath(), _ds.getTO());
 		CreateAnswer ans = (CreateAnswer)ep.sendCommand(cmd);
 		VolumeTO created = ans.getVolume();
-		DiskProfile diskProfile = new DiskProfile(volProfile);
+		DiskProfile diskProfile = new VolumeProfile(volProfile);
 		diskProfile.setPath(created.getPath());
 		diskProfile.setSize(created.getSize());
 		return diskProfile;
-	}
+		return null;
+	}*/
 }

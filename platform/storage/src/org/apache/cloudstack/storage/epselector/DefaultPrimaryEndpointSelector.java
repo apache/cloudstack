@@ -6,6 +6,7 @@ import java.util.List;
 import org.apache.cloudstack.platform.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.platform.subsystem.api.storage.DataStoreEndPoint;
 import org.apache.cloudstack.platform.subsystem.api.storage.DataStoreEndPointSelector;
+import org.apache.cloudstack.platform.subsystem.api.storage.StorageEvent;
 
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -30,5 +31,10 @@ public class DefaultPrimaryEndpointSelector implements
 			dseps.add(new DataStoreEndPoint(host.getId(), host.getPrivateIpAddress()));
 		}
 		return dseps;
+	}
+
+	public List<DataStoreEndPoint> getEndPoints(StorageEvent event) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

@@ -79,7 +79,7 @@ public class DefaultPrimaryDataStoreLifeCycle implements DataStoreLifeCycle {
 
 	 public void add() {
 		 DataStoreEndPointSelector dseps = _ds.getEndPointSelector();
-		 List<DataStoreEndPoint> dsep = dseps.getEndPoints();
+		 List<DataStoreEndPoint> dsep = dseps.getEndPoints(null);
 		 boolean success = false;
 		 StoragePoolVO spool = _storagePoolDao.findById(_ds.getId());
 		 for (DataStoreEndPoint ep : dsep) {

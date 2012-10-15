@@ -21,6 +21,7 @@ package org.apache.cloudstack.storage.driver;
 import org.apache.cloudstack.platform.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.platform.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.platform.subsystem.api.storage.DataStoreEndPoint;
+import org.apache.cloudstack.platform.subsystem.api.storage.VolumeProfile;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -74,6 +75,16 @@ public class DefaultNfsSecondaryDriver extends AbstractStorageDriver {
 	public boolean delete(DataObject obj) {
 		// TODO Auto-generated method stub
 		return false;
+	}
+
+	public org.apache.cloudstack.platform.subsystem.api.storage.TemplateProfile register(org.apache.cloudstack.platform.subsystem.api.storage.TemplateProfile tp, DataStoreEndPoint ep) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public VolumeProfile createVolumeFromTemplate(VolumeProfile vol, org.apache.cloudstack.platform.subsystem.api.storage.TemplateProfile tp, DataStoreEndPoint dp) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

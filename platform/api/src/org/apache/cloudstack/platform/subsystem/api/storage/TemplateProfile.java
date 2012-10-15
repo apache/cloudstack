@@ -14,13 +14,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.template;
+package org.apache.cloudstack.platform.subsystem.api.storage;
 
 import java.util.Map;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.VMTemplateVO;
+import com.cloud.template.VirtualMachineTemplate;
 
 public class TemplateProfile {	
 	Long userId;
@@ -44,7 +44,7 @@ public class TemplateProfile {
 	String chksum;
 	Boolean bootable;
 	Long templateId;
-	VMTemplateVO template;
+	VirtualMachineTemplate template;
 	String templateTag;
 	Map details;
 	
@@ -75,7 +75,7 @@ public class TemplateProfile {
 		this.sshKeyEnbaled = sshKeyEnabled;
 	}
 	
-	public TemplateProfile(Long userId, VMTemplateVO template, Long zoneId) {
+	public TemplateProfile(Long userId, VirtualMachineTemplate template, Long zoneId) {
 		this.userId = userId;
 		this.template = template;
 		this.zoneId = zoneId;
@@ -222,10 +222,10 @@ public class TemplateProfile {
 		this.bootable = bootable;
 	}
 	
-	public VMTemplateVO getTemplate() {
+	public VirtualMachineTemplate getTemplate() {
 		return template;
 	}
-	public void setTemplate(VMTemplateVO template) {
+	public void setTemplate(VirtualMachineTemplate template) {
 		this.template = template;
 	}
 	
@@ -251,5 +251,37 @@ public class TemplateProfile {
     
     public Boolean getSshKeyEnabled() {
     	return this.sshKeyEnbaled;
+    }
+    
+    public String getImageStorageUri() {
+    	return null;
+    }
+    
+    public void setLocalPath(String path) {
+    	
+    }
+    
+    public String getLocalPath() {
+    	return null;
+    }
+    
+    public String getJobId() {
+    	return null;
+    }
+    
+    public void setTemplatePoolRefId(long id) {
+    	
+    }
+    
+    public long getId() {
+    	return 0;
+    }
+    
+    public long getTemplatePoolRefId() {
+    	return 0;
+    }
+    
+    public long getSize() {
+    	return 0;
     }
 }

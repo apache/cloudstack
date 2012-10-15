@@ -18,6 +18,8 @@
  */
 package org.apache.cloudstack.storage.volume;
 
+import org.apache.cloudstack.platform.subsystem.api.storage.VolumeProfile;
+
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.dao.VolumeDao;
@@ -46,5 +48,23 @@ public class VolumeManagerImpl implements VolumeManager {
 	public VolumeVO processEvent(Volume vol, Volume.Event event) throws NoTransitionException {
 		_volStateMachine.transitTo(vol, event, null, _volumeDao);
 		return _volumeDao.findById(vol.getId());
+	}
+
+
+	public VolumeProfile getProfile(long volumeId) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+
+	public VolumeVO getVolume(long volumeId) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+
+	public VolumeVO updateVolume(VolumeVO volume) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }
