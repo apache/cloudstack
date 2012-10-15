@@ -23,4 +23,3 @@ mvn install:install-file -Dfile=cloud-manageontap.jar   -DgroupId=com.cloud.com.
 mvn install:install-file -Dfile=vmware-vim.jar          -DgroupId=com.cloud.com.vmware -DartifactId=vmware-vim      -Dversion=1.0   -Dpackaging=jar
 mvn install:install-file -Dfile=vmware-vim25.jar        -DgroupId=com.cloud.com.vmware -DartifactId=vmware-vim25    -Dversion=1.0   -Dpackaging=jar
 mvn install:install-file -Dfile=vmware-apputils.jar     -DgroupId=com.cloud.com.vmware -DartifactId=vmware-apputils -Dversion=1.0   -Dpackaging=jar
-mvn install:install-file -Dfile=vmware-lib-jaxrpc.jar   -DgroupId=com.cloud.com.vmware -DartifactId=vmware-lib-jaxrpc -Dversion=1.0  -Dpackaging=jar

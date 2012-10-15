@@ -49,12 +49,11 @@
       <artifactId>vmware-apputils</artifactId>
       <version>1.0</version>
       <scope>compile</scope>
-    </dependency>    
+    </dependency>
     <dependency>
-      <groupId>com.cloud.com.vmware</groupId>
-      <artifactId>vmware-lib-jaxrpc</artifactId>
-      <version>1.0</version>
-      <scope>runtime</scope>
-    </dependency>    
+      <groupId>org.apache.axis</groupId>
+      <artifactId>axis-jaxrpc</artifactId>
+      <version>${cs.axis.version}</version>
+    </dependency>
   </dependencies>
 </project>
