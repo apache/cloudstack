@@ -30,7 +30,7 @@
     <dependency>
       <groupId>com.cloud.com.netapp</groupId>
       <artifactId>manageontap</artifactId>
-      <version>1.0</version>
+      <version>4.0</version>
     </dependency>
   </dependencies>
 </project>
