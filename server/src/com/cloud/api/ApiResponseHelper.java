@@ -833,7 +833,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         // show this info to admin only
         Account account = UserContext.current().getCaller();
-        if ((account == null) || account.getType() == Account.ACCOUNT_TYPE_ADMIN) {
+        if (account.getType() == Account.ACCOUNT_TYPE_ADMIN) {
             ipResponse.setVlanId(ipAddr.getVlanId());
             ipResponse.setVlanName(ApiDBUtils.findVlanById(ipAddr.getVlanId()).getVlanTag());
         }
@@ -2967,14 +2967,17 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setNetmask(NetUtils.cidr2Netmask(network.getCidr()));
         }
 
-        if (network.getBroadcastUri() != null) {
+        //return vlan information only to Root admin
+        if (network.getBroadcastUri() != null && UserContext.current().getCaller().getType() == Account.ACCOUNT_TYPE_ADMIN) {
             String broadcastUri = network.getBroadcastUri().toString();
             response.setBroadcastUri(broadcastUri);
             String vlan="N/A";
             if (broadcastUri.startsWith("vlan")) {
             	vlan = broadcastUri.substring("vlan://".length(), broadcastUri.length());
             }
+            //return vlan information only to Root admin
             response.setVlan(vlan);
+            
         }
 
         DataCenter zone = ApiDBUtils.findZoneById(network.getDataCenterId());

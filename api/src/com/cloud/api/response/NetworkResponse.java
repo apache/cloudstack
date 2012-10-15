@@ -77,7 +77,7 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     @SerializedName("related") @Param(description="related to what other network configuration")
     private IdentityProxy related = new IdentityProxy("networks");
     
-    @SerializedName("broadcasturi") @Param(description="broadcast uri of the network")
+    @SerializedName("broadcasturi") @Param(description="broadcast uri of the network. This parameter is visible to ROOT admins only")
     private String broadcastUri;
     
     @SerializedName(ApiConstants.DNS1) @Param(description="the first DNS for the network")
@@ -89,7 +89,7 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     @SerializedName(ApiConstants.TYPE) @Param(description="the type of the network")
     private String type;
     
-    @SerializedName(ApiConstants.VLAN) @Param(description="the vlan of the network")
+    @SerializedName(ApiConstants.VLAN) @Param(description="The vlan of the network. This parameter is visible to ROOT admins only")
     private String vlan;
     
     @SerializedName(ApiConstants.ACL_TYPE) @Param(description="acl type - access type to the network")

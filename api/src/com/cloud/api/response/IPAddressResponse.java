@@ -62,7 +62,8 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
     @SerializedName(ApiConstants.FOR_VIRTUAL_NETWORK) @Param(description="the virtual network for the IP address")
     private Boolean forVirtualNetwork;
 
-    @SerializedName(ApiConstants.VLAN_ID) @Param(description="the ID of the VLAN associated with the IP address")
+    @SerializedName(ApiConstants.VLAN_ID) @Param(description="the ID of the VLAN associated with the IP address." +
+    		" This parameter is visible to ROOT admins only")
     private IdentityProxy vlanId = new IdentityProxy("vlan");
 
     @SerializedName("vlanname") @Param(description="the VLAN associated with the IP address")
