@@ -236,18 +236,18 @@ public class EC2Engine extends ManagerBase {
      * @param groupDesc
      * @return
      */
-    public Boolean createSecurityGroup(String groupName, String groupDesc) {
+    public EC2SecurityGroup createSecurityGroup(String groupName, String groupDesc) {
+        EC2SecurityGroup sg = new EC2SecurityGroup();
         try {
             CloudStackSecurityGroup grp = getApi().createSecurityGroup(groupName, null, groupDesc, null);
             if (grp != null && grp.getId() != null) {
-                return true;
+            	sg.setId(grp.getId());
             }
-            return false;
         } catch( Exception e ) {
             logger.error( "EC2 CreateSecurityGroup - ", e);
             handleException(e);
         }
-        return false;
+        return sg;
     }
 
     /**
@@ -1360,6 +1360,8 @@ public class EC2Engine extends ManagerBase {
         int createInstances    = 0;
         int canCreateInstances = -1;
         int countCreated       = 0;
+        String groupIds   = null;
+        String groupNames = null;
 
         try {
             // ugly...
@@ -1401,13 +1403,25 @@ public class EC2Engine extends ManagerBase {
             // network
             CloudStackNetwork network = findNetwork(zone);
 
+            // for EC2 security groups either a group ID or a group name is accepted
+            String[] sgIdList = request.getSecurityGroupIdSet();
+            String[] sgNameList = request.getSecurityGroupNameSet();
+            if ( sgIdList.length != 0 && sgNameList.length != 0 )
+                throw new EC2ServiceException(ClientError.InvalidParameterCombination,
+                        " for EC2 groups either a group ID or a group name is accepted");
+
+            if (sgIdList.length != 0)
+                groupIds = constructList(sgIdList);
+            if (sgNameList.length != 0)
+                groupNames = constructList(sgNameList);
+
             // now actually deploy the vms
             for( int i=0; i < createInstances; i++ ) {
                 try{
                     CloudStackUserVm resp = getApi().deployVirtualMachine(svcOffering.getId(), 
                             request.getTemplateId(), zoneId, null, null, null, null, 
                             null, null, null, request.getKeyName(), null, (network != null ? network.getId() : null), 
-                            null, constructList(request.getGroupSet()), request.getSize().longValue(), request.getUserData());
+                            groupIds, groupNames, request.getSize().longValue(), request.getUserData());
                     EC2Instance vm = new EC2Instance();
                     vm.setId(resp.getId().toString());
                     vm.setName(resp.getName());
