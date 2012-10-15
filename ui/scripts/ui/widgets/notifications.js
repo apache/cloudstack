@@ -47,6 +47,7 @@
 
       return $cornerAlert
         .css({
+          opacity: 0,
           position: 'absolute',
           top: $($container).height(),
           left: $($container).width() - $cornerAlert.width()
