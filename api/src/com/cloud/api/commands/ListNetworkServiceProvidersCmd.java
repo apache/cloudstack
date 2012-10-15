@@ -30,6 +30,7 @@ import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.ProviderResponse;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 
 
 @Implementation(description="Lists network serviceproviders for a given physical network.", responseObject=ProviderResponse.class, since="3.0.0")
@@ -86,15 +87,16 @@ public class ListNetworkServiceProvidersCmd extends BaseListCmd {
     
     @Override
     public void execute(){
-        List<? extends PhysicalNetworkServiceProvider> serviceProviders = _networkService.listNetworkServiceProviders(getPhysicalNetworkId(), getName(), getState(), this.getStartIndex(), this.getPageSizeVal());
+        Pair<List<? extends PhysicalNetworkServiceProvider>, Integer> serviceProviders = _networkService.listNetworkServiceProviders(getPhysicalNetworkId(),
+                getName(), getState(), this.getStartIndex(), this.getPageSizeVal());
         ListResponse<ProviderResponse> response = new ListResponse<ProviderResponse>();
         List<ProviderResponse> serviceProvidersResponses = new ArrayList<ProviderResponse>();
-        for (PhysicalNetworkServiceProvider serviceProvider : serviceProviders) {
+        for (PhysicalNetworkServiceProvider serviceProvider : serviceProviders.first()) {
             ProviderResponse serviceProviderResponse = _responseGenerator.createNetworkServiceProviderResponse(serviceProvider);
             serviceProvidersResponses.add(serviceProviderResponse);
         }
 
-        response.setResponses(serviceProvidersResponses);
+        response.setResponses(serviceProvidersResponses, serviceProviders.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

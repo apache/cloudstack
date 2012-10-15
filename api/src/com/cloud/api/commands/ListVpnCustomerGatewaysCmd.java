@@ -29,6 +29,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.Site2SiteCustomerGatewayResponse;
 import com.cloud.network.Site2SiteCustomerGateway;
+import com.cloud.utils.Pair;
 
 @Implementation(description="Lists site to site vpn customer gateways", responseObject=Site2SiteCustomerGatewayResponse.class)
 public class ListVpnCustomerGatewaysCmd extends BaseListProjectAndAccountResourcesCmd {
@@ -64,20 +65,19 @@ public class ListVpnCustomerGatewaysCmd extends BaseListProjectAndAccountResourc
 
     @Override
     public void execute(){
-        List<Site2SiteCustomerGateway> gws = _s2sVpnService.searchForCustomerGateways(this);
+        Pair<List<? extends Site2SiteCustomerGateway>, Integer> gws = _s2sVpnService.searchForCustomerGateways(this);
         ListResponse<Site2SiteCustomerGatewayResponse> response = new ListResponse<Site2SiteCustomerGatewayResponse>();
         List<Site2SiteCustomerGatewayResponse> gwResponses = new ArrayList<Site2SiteCustomerGatewayResponse>();
-        if (gws != null && !gws.isEmpty()) {
-        	for (Site2SiteCustomerGateway gw : gws) {
-                if (gw == null) {
-                    continue;
-                }
-            	Site2SiteCustomerGatewayResponse site2SiteCustomerGatewayRes = _responseGenerator.createSite2SiteCustomerGatewayResponse(gw);
-            	site2SiteCustomerGatewayRes.setObjectName("vpncustomergateway");
-                gwResponses.add(site2SiteCustomerGatewayRes);
+        for (Site2SiteCustomerGateway gw : gws.first()) {
+            if (gw == null) {
+                continue;
             }
+        	Site2SiteCustomerGatewayResponse site2SiteCustomerGatewayRes = _responseGenerator.createSite2SiteCustomerGatewayResponse(gw);
+        	site2SiteCustomerGatewayRes.setObjectName("vpncustomergateway");
+            gwResponses.add(site2SiteCustomerGatewayRes);
         }
-        response.setResponses(gwResponses);
+        
+        response.setResponses(gwResponses, gws.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

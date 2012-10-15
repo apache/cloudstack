@@ -29,6 +29,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.Site2SiteVpnGatewayResponse;
 import com.cloud.network.Site2SiteVpnGateway;
+import com.cloud.utils.Pair;
 
 @Implementation(description="Lists site 2 site vpn gateways", responseObject=Site2SiteVpnGatewayResponse.class)
 public class ListVpnGatewaysCmd extends BaseListProjectAndAccountResourcesCmd {
@@ -71,20 +72,19 @@ public class ListVpnGatewaysCmd extends BaseListProjectAndAccountResourcesCmd {
 
     @Override
     public void execute(){
-        List<Site2SiteVpnGateway> gws = _s2sVpnService.searchForVpnGateways(this);
+        Pair<List<? extends Site2SiteVpnGateway>, Integer> gws = _s2sVpnService.searchForVpnGateways(this);
         ListResponse<Site2SiteVpnGatewayResponse> response = new ListResponse<Site2SiteVpnGatewayResponse>();
         List<Site2SiteVpnGatewayResponse> gwResponses = new ArrayList<Site2SiteVpnGatewayResponse>();
-        if (gws != null && !gws.isEmpty()) {
-        	 for (Site2SiteVpnGateway gw : gws) {
-                 if (gw == null) {
-                     continue;
-                 }
-             	Site2SiteVpnGatewayResponse site2SiteVpnGatewayRes = _responseGenerator.createSite2SiteVpnGatewayResponse(gw);
-             	site2SiteVpnGatewayRes.setObjectName("vpngateway");
-                 gwResponses.add(site2SiteVpnGatewayRes);
-             }
+        for (Site2SiteVpnGateway gw : gws.first()) {
+            if (gw == null) {
+                continue;
+            }
+        	Site2SiteVpnGatewayResponse site2SiteVpnGatewayRes = _responseGenerator.createSite2SiteVpnGatewayResponse(gw);
+        	site2SiteVpnGatewayRes.setObjectName("vpngateway");
+            gwResponses.add(site2SiteVpnGatewayRes);
         }
-        response.setResponses(gwResponses);
+        
+        response.setResponses(gwResponses, gws.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

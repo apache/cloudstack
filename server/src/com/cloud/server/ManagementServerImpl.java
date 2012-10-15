@@ -111,6 +111,7 @@ import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
+import com.cloud.configuration.Configuration;
 import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.consoleproxy.ConsoleProxyManagementState;
@@ -119,7 +120,9 @@ import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.dc.Pod;
 import com.cloud.dc.PodVlanMapVO;
+import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
@@ -177,11 +180,14 @@ import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
+import com.cloud.storage.GuestOsCategory;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.Upload;
 import com.cloud.storage.Upload.Mode;
@@ -237,6 +243,7 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.ssh.SSHKeysHelper;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.SecondaryStorageVmVO;
@@ -822,7 +829,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
     
     @Override
-    public List<ClusterVO> searchForClusters(ListClustersCmd cmd) {
+    public Pair<List<? extends Cluster>, Integer> searchForClusters(ListClustersCmd cmd) {
         Filter searchFilter = new Filter(ClusterVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchCriteria<ClusterVO> sc = _clusterDao.createSearchCriteria();
 
@@ -872,7 +879,8 @@ public class ManagementServerImpl implements ManagementServer {
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
         }
 
-        return _clusterDao.search(sc, searchFilter);
+        Pair<List<ClusterVO>, Integer> result = _clusterDao.searchAndCount(sc, searchFilter);
+        return new Pair<List<? extends Cluster>, Integer>(result.first(), result.second());
     }
 
     @Override
@@ -1065,7 +1073,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<HostPodVO> searchForPods(ListPodsByCmd cmd) {
+    public Pair<List<? extends Pod>, Integer> searchForPods(ListPodsByCmd cmd) {
         Filter searchFilter = new Filter(HostPodVO.class, "dataCenterId", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchCriteria<HostPodVO> sc = _hostPodDao.createSearchCriteria();
 
@@ -1101,11 +1109,12 @@ public class ManagementServerImpl implements ManagementServer {
             sc.addAnd("allocationState", SearchCriteria.Op.EQ, allocationState);
         }
 
-        return _hostPodDao.search(sc, searchFilter);
+        Pair<List<HostPodVO>, Integer> result =  _hostPodDao.searchAndCount(sc, searchFilter);
+        return new Pair<List<? extends Pod>, Integer>(result.first(), result.second());
     }
 
     @Override
-    public List<VlanVO> searchForVlans(ListVlanIpRangesCmd cmd) {
+    public Pair<List<? extends Vlan>, Integer> searchForVlans(ListVlanIpRangesCmd cmd) {
         // If an account name and domain ID are specified, look up the account
         String accountName = cmd.getAccountName();
         Long domainId = cmd.getDomainId();
@@ -1219,11 +1228,12 @@ public class ManagementServerImpl implements ManagementServer {
             }
         }
 
-        return _vlanDao.search(sc, searchFilter);
+        Pair<List<VlanVO>, Integer> result = _vlanDao.searchAndCount(sc, searchFilter);
+        return new Pair<List<? extends Vlan>, Integer>(result.first(), result.second());
     }
 
     @Override
-    public List<ConfigurationVO> searchForConfigurations(ListCfgsByCmd cmd) {
+    public Pair<List<? extends Configuration>, Integer> searchForConfigurations(ListCfgsByCmd cmd) {
         Filter searchFilter = new Filter(ConfigurationVO.class, "name", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchCriteria<ConfigurationVO> sc = _configDao.createSearchCriteria();
 
@@ -1254,7 +1264,8 @@ public class ManagementServerImpl implements ManagementServer {
         // hidden configurations are not displayed using the search API
         sc.addAnd("category", SearchCriteria.Op.NEQ, "Hidden");
 
-        return _configDao.search(sc, searchFilter);
+        Pair<List<ConfigurationVO>, Integer> result = _configDao.searchAndCount(sc, searchFilter);
+        return new Pair<List<? extends Configuration>, Integer>(result.first(), result.second());
     }
 
     @Override
@@ -1867,7 +1878,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<GuestOSVO> listGuestOSByCriteria(ListGuestOsCmd cmd) {
+    public Pair<List<? extends GuestOS>, Integer> listGuestOSByCriteria(ListGuestOsCmd cmd) {
         Filter searchFilter = new Filter(GuestOSVO.class, "displayName", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         Long id = cmd.getId();
         Long osCategoryId = cmd.getOsCategoryId();
@@ -1892,11 +1903,12 @@ public class ManagementServerImpl implements ManagementServer {
             sc.addAnd("displayName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
         }
 
-        return _guestOSDao.search(sc, searchFilter);
+        Pair<List<GuestOSVO>, Integer> result = _guestOSDao.searchAndCount(sc, searchFilter);
+        return new Pair<List<? extends GuestOS>, Integer>(result.first(), result.second());
     }
 
     @Override
-    public List<GuestOSCategoryVO> listGuestOSCategoriesByCriteria(ListGuestOsCategoriesCmd cmd) {
+    public Pair<List<? extends GuestOsCategory>, Integer> listGuestOSCategoriesByCriteria(ListGuestOsCategoriesCmd cmd) {
         Filter searchFilter = new Filter(GuestOSCategoryVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         Long id = cmd.getId();
         String name = cmd.getName();
@@ -1916,7 +1928,8 @@ public class ManagementServerImpl implements ManagementServer {
             sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
         }
 
-        return _guestOSCategoryDao.search(sc, searchFilter);
+        Pair<List<GuestOSCategoryVO>, Integer> result = _guestOSCategoryDao.searchAndCount(sc, searchFilter);
+        return new Pair<List<? extends GuestOsCategory>, Integer>(result.first(), result.second());
     }
 
     @Override
@@ -2476,7 +2489,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<? extends StoragePoolVO> searchForStoragePools(ListStoragePoolsCmd cmd) {
+    public Pair<List<? extends StoragePool>, Integer> searchForStoragePools(ListStoragePoolsCmd cmd) {
 
         Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), cmd.getZoneId());
         Criteria c = new Criteria("id", Boolean.TRUE, cmd.getStartIndex(), cmd.getPageSizeVal());
@@ -2489,11 +2502,12 @@ public class ManagementServerImpl implements ManagementServer {
         c.addCriteria(Criteria.PODID, cmd.getPodId());
         c.addCriteria(Criteria.DATACENTERID, zoneId);
 
-        return searchForStoragePools(c);
+        Pair<List<StoragePoolVO>, Integer> result = searchForStoragePools(c);
+        return new Pair<List<? extends StoragePool>, Integer>(result.first(), result.second());
     }
 
     @Override
-    public List<? extends StoragePoolVO> searchForStoragePools(Criteria c) {
+    public Pair<List<StoragePoolVO>, Integer> searchForStoragePools(Criteria c) {
         Filter searchFilter = new Filter(StoragePoolVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
         SearchCriteria<StoragePoolVO> sc = _poolDao.createSearchCriteria();
 
@@ -2541,7 +2555,7 @@ public class ManagementServerImpl implements ManagementServer {
             sc.addAnd("clusterId", SearchCriteria.Op.EQ, cluster);
         }
 
-        return _poolDao.search(sc, searchFilter);
+        return _poolDao.searchAndCount(sc, searchFilter);
     }
 
     @Override
@@ -2651,7 +2665,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<? extends VMInstanceVO> searchForSystemVm(ListSystemVMsCmd cmd) {
+    public Pair<List<? extends VirtualMachine>, Integer> searchForSystemVm(ListSystemVMsCmd cmd) {
         String type = cmd.getSystemVmType();
         Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), cmd.getZoneId());
         Long id = cmd.getId();
@@ -2720,7 +2734,8 @@ public class ManagementServerImpl implements ManagementServer {
             sc.setJoinParameters("volumeSearch", "poolId", storageId);
         }
 
-        return _vmInstanceDao.search(sc, searchFilter);
+        Pair<List<VMInstanceVO>, Integer> result = _vmInstanceDao.searchAndCount(sc, searchFilter);
+        return new Pair<List<? extends VirtualMachine>, Integer>(result.first(), result.second());
     }
 
     @Override
@@ -3111,7 +3126,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<InstanceGroupVO> searchForVmGroups(ListVMGroupsCmd cmd) {
+    public Pair<List<? extends InstanceGroup>, Integer> searchForVmGroups(ListVMGroupsCmd cmd) {
         Long id = cmd.getId();
         String name = cmd.getGroupName();
         String keyword = cmd.getKeyword();
@@ -3178,7 +3193,8 @@ public class ManagementServerImpl implements ManagementServer {
             sc.setParameters("name", "%" + name + "%");
         }
 
-        return _vmGroupDao.search(sc, searchFilter);
+        Pair<List<InstanceGroupVO>, Integer> result = _vmGroupDao.searchAndCount(sc, searchFilter);
+        return new Pair<List<? extends InstanceGroup>, Integer>(result.first(), result.second());
     }
 
     @Override
@@ -3322,7 +3338,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<? extends SSHKeyPair> listSSHKeyPairs(ListSSHKeyPairsCmd cmd) {
+    public Pair<List<? extends SSHKeyPair>, Integer> listSSHKeyPairs(ListSSHKeyPairsCmd cmd) {
         String name = cmd.getName();
         String fingerPrint = cmd.getFingerprint();
 
@@ -3349,7 +3365,8 @@ public class ManagementServerImpl implements ManagementServer {
             sc.addAnd("fingerprint", SearchCriteria.Op.EQ, fingerPrint);
         }
 
-        return _sshKeyPairDao.search(sc, searchFilter);
+        Pair<List<SSHKeyPairVO>, Integer> result = _sshKeyPairDao.searchAndCount(sc, searchFilter);
+        return new Pair<List<? extends SSHKeyPair>, Integer>(result.first(), result.second());
     }
 
     @Override
@@ -3486,7 +3503,8 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<HypervisorCapabilitiesVO> listHypervisorCapabilities(Long id, HypervisorType hypervisorType, String keyword, Long startIndex, Long pageSizeVal) {
+    public Pair<List<? extends HypervisorCapabilities>, Integer> listHypervisorCapabilities(Long id,
+            HypervisorType hypervisorType, String keyword, Long startIndex, Long pageSizeVal) {
         Filter searchFilter = new Filter(HypervisorCapabilitiesVO.class, "id", true, startIndex, pageSizeVal);
         SearchCriteria<HypervisorCapabilitiesVO> sc = _hypervisorCapabilitiesDao.createSearchCriteria();
 
@@ -3504,8 +3522,8 @@ public class ManagementServerImpl implements ManagementServer {
             sc.addAnd("hypervisorType", SearchCriteria.Op.SC, ssc);
         }
 
-        return _hypervisorCapabilitiesDao.search(sc, searchFilter);
-
+        Pair<List<HypervisorCapabilitiesVO>, Integer> result =  _hypervisorCapabilitiesDao.searchAndCount(sc, searchFilter);
+        return new Pair<List<? extends HypervisorCapabilities>, Integer>(result.first(), result.second());
     }
 
     @Override

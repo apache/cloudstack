@@ -29,6 +29,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.SystemVmResponse;
 import com.cloud.async.AsyncJob;
+import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachine;
 
 @Implementation(description="List system virtual machines.", responseObject=SystemVmResponse.class)
@@ -121,16 +122,16 @@ public class ListSystemVMsCmd extends BaseListCmd {
     
     @Override
     public void execute(){
-        List<? extends VirtualMachine> systemVMs = _mgr.searchForSystemVm(this);
+        Pair<List<? extends VirtualMachine>, Integer> systemVMs = _mgr.searchForSystemVm(this);
         ListResponse<SystemVmResponse> response = new ListResponse<SystemVmResponse>();
         List<SystemVmResponse> vmResponses = new ArrayList<SystemVmResponse>();
-        for (VirtualMachine systemVM : systemVMs) {
+        for (VirtualMachine systemVM : systemVMs.first()) {
             SystemVmResponse vmResponse = _responseGenerator.createSystemVmResponse(systemVM);
             vmResponse.setObjectName("systemvm");
             vmResponses.add(vmResponse);
         }
 
-        response.setResponses(vmResponses);
+        response.setResponses(vmResponses, systemVMs.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

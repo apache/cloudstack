@@ -30,6 +30,7 @@ import com.cloud.api.response.HypervisorCapabilitiesResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorCapabilities;
+import com.cloud.utils.Pair;
 
 @Implementation(description="Lists all hypervisor capabilities.", responseObject=HypervisorCapabilitiesResponse.class, since="3.0.0")
 public class ListHypervisorCapabilitiesCmd extends BaseListCmd {
@@ -76,16 +77,17 @@ public class ListHypervisorCapabilitiesCmd extends BaseListCmd {
 
     @Override
     public void execute(){
-        List<? extends HypervisorCapabilities> hpvCapabilities = _mgr.listHypervisorCapabilities(getId(), getHypervisor(), getKeyword(), this.getStartIndex(), this.getPageSizeVal());
+        Pair<List<? extends HypervisorCapabilities>, Integer> hpvCapabilities = _mgr.listHypervisorCapabilities(getId(),
+                getHypervisor(), getKeyword(), this.getStartIndex(), this.getPageSizeVal());
         ListResponse<HypervisorCapabilitiesResponse> response = new ListResponse<HypervisorCapabilitiesResponse>();
         List<HypervisorCapabilitiesResponse> hpvCapabilitiesResponses = new ArrayList<HypervisorCapabilitiesResponse>();
-        for (HypervisorCapabilities capability : hpvCapabilities) {
+        for (HypervisorCapabilities capability : hpvCapabilities.first()) {
             HypervisorCapabilitiesResponse hpvCapabilityResponse = _responseGenerator.createHypervisorCapabilitiesResponse(capability);
             hpvCapabilityResponse.setObjectName("hypervisorCapabilities");
             hpvCapabilitiesResponses.add(hpvCapabilityResponse);
         }
 
-        response.setResponses(hpvCapabilitiesResponses);
+        response.setResponses(hpvCapabilitiesResponses, hpvCapabilities.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

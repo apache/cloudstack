@@ -24,6 +24,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.projects.ProjectAccount.Role;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 
 public interface ProjectService {
     /**
@@ -60,7 +61,7 @@ public interface ProjectService {
      */
     Project getProject(long id);
 
-    List<? extends Project> listProjects(Long id, String name, String displayText, String state, String accountName, 
+    Pair<List<? extends Project>, Integer> listProjects(Long id, String name, String displayText, String state, String accountName, 
             Long domainId, String keyword, Long startIndex, Long pageSize, boolean listAll, boolean isRecursive, Map<String, String> tags);
 
     ProjectAccount assignAccountToProject(Project project, long accountId, Role accountRole);
@@ -79,9 +80,9 @@ public interface ProjectService {
 
     boolean deleteAccountFromProject(long projectId, String accountName);
 
-    List<? extends ProjectAccount> listProjectAccounts(long projectId, String accountName, String role, Long startIndex, Long pageSizeVal);
+    Pair<List<? extends ProjectAccount>, Integer> listProjectAccounts(long projectId, String accountName, String role, Long startIndex, Long pageSizeVal);
 
-    List<? extends ProjectInvitation> listProjectInvitations(Long id, Long projectId, String accountName, Long domainId, String state, boolean activeOnly, Long startIndex, Long pageSizeVal, boolean isRecursive,
+    Pair<List<? extends ProjectInvitation>, Integer> listProjectInvitations(Long id, Long projectId, String accountName, Long domainId, String state, boolean activeOnly, Long startIndex, Long pageSizeVal, boolean isRecursive,
             boolean listAll);
 
     boolean updateInvitation(long projectId, String accountName, String token, boolean accept);

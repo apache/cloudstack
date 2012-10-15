@@ -29,6 +29,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.VlanIpRangeResponse;
 import com.cloud.dc.Vlan;
+import com.cloud.utils.Pair;
 
 @Implementation(description="Lists all VLAN IP ranges.", responseObject=VlanIpRangeResponse.class)
 public class ListVlanIpRangesCmd extends BaseListCmd {
@@ -132,16 +133,16 @@ public class ListVlanIpRangesCmd extends BaseListCmd {
     
     @Override
     public void execute(){
-        List<? extends Vlan> vlans = _mgr.searchForVlans(this);
+        Pair<List<? extends Vlan>, Integer> vlans = _mgr.searchForVlans(this);
         ListResponse<VlanIpRangeResponse> response = new ListResponse<VlanIpRangeResponse>();
         List<VlanIpRangeResponse> vlanResponses = new ArrayList<VlanIpRangeResponse>();
-        for (Vlan vlan : vlans) {  
+        for (Vlan vlan : vlans.first()) {  
             VlanIpRangeResponse vlanResponse = _responseGenerator.createVlanIpRangeResponse(vlan);
             vlanResponse.setObjectName("vlaniprange");
             vlanResponses.add(vlanResponse);
         }
 
-        response.setResponses(vlanResponses);
+        response.setResponses(vlanResponses, vlans.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

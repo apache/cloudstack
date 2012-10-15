@@ -31,6 +31,7 @@ import com.cloud.api.response.ProviderResponse;
 import com.cloud.api.response.TrafficTypeResponse;
 import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 
 
 @Implementation(description="Lists traffic types of a given physical network.", responseObject=ProviderResponse.class, since="3.0.0")
@@ -72,15 +73,15 @@ public class ListTrafficTypesCmd extends BaseListCmd {
     
     @Override
     public void execute(){
-        List<? extends PhysicalNetworkTrafficType> trafficTypes = _networkService.listTrafficTypes(getPhysicalNetworkId());
+        Pair<List<? extends PhysicalNetworkTrafficType>, Integer> trafficTypes = _networkService.listTrafficTypes(getPhysicalNetworkId());
         ListResponse<TrafficTypeResponse> response = new ListResponse<TrafficTypeResponse>();
         List<TrafficTypeResponse> trafficTypesResponses = new ArrayList<TrafficTypeResponse>();
-        for (PhysicalNetworkTrafficType trafficType : trafficTypes) {
+        for (PhysicalNetworkTrafficType trafficType : trafficTypes.first()) {
             TrafficTypeResponse trafficTypeResponse = _responseGenerator.createTrafficTypeResponse(trafficType);
             trafficTypesResponses.add(trafficTypeResponse);
         }
 
-        response.setResponses(trafficTypesResponses);
+        response.setResponses(trafficTypesResponses, trafficTypes.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

@@ -32,6 +32,7 @@ import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.PhysicalNetworkResponse;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 
 @Implementation(description="Lists physical networks", responseObject=PhysicalNetworkResponse.class, since="3.0.0")
 public class ListPhysicalNetworksCmd extends BaseListCmd {
@@ -86,15 +87,16 @@ public class ListPhysicalNetworksCmd extends BaseListCmd {
     
     @Override
     public void execute(){
-        List<? extends PhysicalNetwork> result = _networkService.searchPhysicalNetworks(getId(),getZoneId(), this.getKeyword(), this.getStartIndex(), this.getPageSizeVal(), getNetworkName());
+        Pair<List<? extends PhysicalNetwork>, Integer> result = _networkService.searchPhysicalNetworks(getId(),getZoneId(),
+                this.getKeyword(), this.getStartIndex(), this.getPageSizeVal(), getNetworkName());
         if (result != null) {
             ListResponse<PhysicalNetworkResponse> response = new ListResponse<PhysicalNetworkResponse>();
             List<PhysicalNetworkResponse> networkResponses = new ArrayList<PhysicalNetworkResponse>();
-            for (PhysicalNetwork network : result) {
+            for (PhysicalNetwork network : result.first()) {
                 PhysicalNetworkResponse networkResponse = _responseGenerator.createPhysicalNetworkResponse(network);
                 networkResponses.add(networkResponse);
             }
-            response.setResponses(networkResponses);
+            response.setResponses(networkResponses, result.second());
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         }else {

@@ -327,7 +327,7 @@ public class ApiDBUtils {
     }
 
     public static List<? extends StoragePoolVO> searchForStoragePools(Criteria c) {
-        return _ms.searchForStoragePools(c);
+        return _ms.searchForStoragePools(c).first();
     }
 
     // ///////////////////////////////////////////////////////////

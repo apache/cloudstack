@@ -28,6 +28,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.projects.ProjectAccount.Role;
 import com.cloud.user.Account;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.Pair;
+
 
 @Local(value = { ProjectManager.class })
 public class MockProjectManagerImpl implements ProjectManager, Manager {
@@ -104,14 +106,14 @@ public class MockProjectManagerImpl implements ProjectManager, Manager {
     }
 
     @Override
-    public List<? extends ProjectAccount> listProjectAccounts(long projectId,
+    public Pair<List<? extends ProjectAccount>, Integer> listProjectAccounts(long projectId,
             String accountName, String role, Long startIndex, Long pageSizeVal) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public List<? extends ProjectInvitation> listProjectInvitations(Long id,
+    public Pair<List<? extends ProjectInvitation>, Integer> listProjectInvitations(Long id,
             Long projectId, String accountName, Long domainId, String state,
             boolean activeOnly, Long startIndex, Long pageSizeVal,
             boolean isRecursive, boolean listAll) {
@@ -223,7 +225,7 @@ public class MockProjectManagerImpl implements ProjectManager, Manager {
      * @see com.cloud.projects.ProjectService#listProjects(java.lang.Long, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.Long, java.lang.String, java.lang.Long, java.lang.Long, boolean, boolean, java.util.Map)
      */
     @Override
-    public List<? extends Project> listProjects(Long id, String name, String displayText, String state, String accountName, Long domainId, String keyword, Long startIndex, Long pageSize, boolean listAll,
+    public Pair<List<? extends Project>, Integer> listProjects(Long id, String name, String displayText, String state, String accountName, Long domainId, String keyword, Long startIndex, Long pageSize, boolean listAll,
             boolean isRecursive, Map<String, String> tags) {
         // TODO Auto-generated method stub
         return null;

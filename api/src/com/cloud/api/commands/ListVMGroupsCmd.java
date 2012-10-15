@@ -28,6 +28,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.InstanceGroupResponse;
 import com.cloud.api.response.ListResponse;
+import com.cloud.utils.Pair;
 import com.cloud.vm.InstanceGroup;
 
 @Implementation(description="Lists vm groups", responseObject=InstanceGroupResponse.class)
@@ -70,16 +71,16 @@ public class ListVMGroupsCmd extends BaseListProjectAndAccountResourcesCmd {
 
     @Override
     public void execute(){
-        List<? extends InstanceGroup> groups = _mgr.searchForVmGroups(this);
+        Pair<List<? extends InstanceGroup>, Integer> groups = _mgr.searchForVmGroups(this);
         ListResponse<InstanceGroupResponse> response = new ListResponse<InstanceGroupResponse>();
         List<InstanceGroupResponse> responses = new ArrayList<InstanceGroupResponse>();
-        for (InstanceGroup group : groups) {
+        for (InstanceGroup group : groups.first()) {
             InstanceGroupResponse groupResponse = _responseGenerator.createInstanceGroupResponse(group);
             groupResponse.setObjectName("instancegroup");
             responses.add(groupResponse);
         }
 
-        response.setResponses(responses);
+        response.setResponses(responses, groups.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

@@ -114,7 +114,7 @@ public interface ManagementService {
      * 
      * @return map of configuration name/values
      */
-    List<? extends Configuration> searchForConfigurations(ListCfgsByCmd c);
+    Pair<List<? extends Configuration>, Integer> searchForConfigurations(ListCfgsByCmd c);
 
     /**
      * Searches for Service Offerings by the specified search criteria Can search by: "name"
@@ -130,7 +130,7 @@ public interface ManagementService {
      * @param c
      * @return
      */
-    List<? extends Cluster> searchForClusters(ListClustersCmd c);
+    Pair<List<? extends Cluster>, Integer> searchForClusters(ListClustersCmd c);
     
     /**
      * Searches for Clusters by the specified zone Id.
@@ -145,7 +145,7 @@ public interface ManagementService {
      * @param cmd
      * @return List of Pods
      */
-    List<? extends Pod> searchForPods(ListPodsByCmd cmd);
+    Pair<List<? extends Pod>, Integer> searchForPods(ListPodsByCmd cmd);
 
     /**
      * Searches for servers by the specified search criteria Can search by: "name", "type", "state", "dataCenterId",
@@ -201,14 +201,14 @@ public interface ManagementService {
      * 
      * @return list of GuestOS
      */
-    List<? extends GuestOS> listGuestOSByCriteria(ListGuestOsCmd cmd);
+    Pair<List<? extends GuestOS>, Integer> listGuestOSByCriteria(ListGuestOsCmd cmd);
 
     /**
      * Obtains a list of all guest OS categories.
      * 
      * @return list of GuestOSCategories
      */
-    List<? extends GuestOsCategory> listGuestOSCategoriesByCriteria(ListGuestOsCategoriesCmd cmd);
+    Pair<List<? extends GuestOsCategory>, Integer> listGuestOSCategoriesByCriteria(ListGuestOsCategoriesCmd cmd);
 
     VirtualMachine stopSystemVM(StopSystemVmCmd cmd) throws ResourceUnavailableException, ConcurrentOperationException;
 
@@ -283,7 +283,7 @@ public interface ManagementService {
      *            the command that wraps the search criteria (zone, pod, name, IP address, path, and cluster id)
      * @return a list of storage pools that match the given criteria
      */
-    List<? extends StoragePool> searchForStoragePools(ListStoragePoolsCmd cmd);
+    Pair<List<? extends StoragePool>, Integer> searchForStoragePools(ListStoragePoolsCmd cmd);
 
     /**
      * List system VMs by the given search criteria
@@ -292,7 +292,7 @@ public interface ManagementService {
      *            the command that wraps the search criteria (host, name, state, type, zone, pod, and/or id)
      * @return the list of system vms that match the given criteria
      */
-    List<? extends VirtualMachine> searchForSystemVm(ListSystemVMsCmd cmd);
+    Pair<List<? extends VirtualMachine>, Integer> searchForSystemVm(ListSystemVMsCmd cmd);
 
     /**
      * Returns back a SHA1 signed response
@@ -307,7 +307,7 @@ public interface ManagementService {
 
     InstanceGroup updateVmGroup(UpdateVMGroupCmd cmd);
 
-    List<? extends InstanceGroup> searchForVmGroups(ListVMGroupsCmd cmd);
+    Pair<List<? extends InstanceGroup>, Integer> searchForVmGroups(ListVMGroupsCmd cmd);
 
     Map<String, Object> listCapabilities(ListCapabilitiesCmd cmd);
 
@@ -354,7 +354,7 @@ public interface ManagementService {
      * @param cmd
      * @return List of Vlans
      */
-    List<? extends Vlan> searchForVlans(ListVlanIpRangesCmd cmd);
+    Pair<List<? extends Vlan>, Integer> searchForVlans(ListVlanIpRangesCmd cmd);
 
     /**
      * Search for async jobs by account and/or startDate
@@ -383,7 +383,7 @@ public interface ManagementService {
      *            The api command class.
      * @return The list of key pairs found.
      */
-    List<? extends SSHKeyPair> listSSHKeyPairs(ListSSHKeyPairsCmd cmd);
+    Pair<List<? extends SSHKeyPair>, Integer> listSSHKeyPairs(ListSSHKeyPairsCmd cmd);
 
     /**
      * Registers a key pair for a given public key.
@@ -439,7 +439,7 @@ public interface ManagementService {
 
     String[] listEventTypes();
 
-    List<? extends HypervisorCapabilities> listHypervisorCapabilities(Long id, HypervisorType hypervisorType, String keyword, Long startIndex, Long pageSizeVal);
+    Pair<List<? extends HypervisorCapabilities>, Integer> listHypervisorCapabilities(Long id, HypervisorType hypervisorType, String keyword, Long startIndex, Long pageSizeVal);
 
     HypervisorCapabilities updateHypervisorCapabilities(Long id, Long maxGuestsLimit, Boolean securityGroupEnabled);
 
