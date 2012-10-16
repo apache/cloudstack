@@ -80,12 +80,14 @@
     </scp>
 
     <echo message="copying target folder to remote"/>
+    <sshexec trust="yes" host="${host}" port="${port}" username="root" password="password" command="cd /opt/cloudstack/incubator-cloudstack; mkdir -p target"/>
     <scp trust="yes" port="${port}" todir="root:password@${host}:/opt/cloudstack/incubator-cloudstack/target">
       <fileset dir="target">
       </fileset>
     </scp>
 
     <echo message="copying dist folder to remote"/>
+    <sshexec trust="yes" host="${host}" port="${port}" username="root" password="password" command="cd /opt/cloudstack/incubator-cloudstack; mkdir -p dist"/>
     <scp trust="yes" port="${port}" todir="root:password@${host}:/opt/cloudstack/incubator-cloudstack/dist">
       <fileset dir="dist">
       </fileset>
