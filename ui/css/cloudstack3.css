@@ -1357,7 +1357,7 @@ div.list-view td.state.off span {
   width: 400px;
   min-height: 100px;
   height: auto;
-  overflow: auto;
+  overflow: hidden;
   display: inline-block;
   /*+box-shadow:0px 7px 9px #676F76;*/
   -moz-box-shadow: 0px 7px 9px #676F76;
