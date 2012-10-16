@@ -63,7 +63,7 @@ public class ApiDispatcher {
     ComponentLocator _locator;
     AsyncJobManager _asyncMgr;
     IdentityDao _identityDao;
-    long _createSnapshotQueueSizeLimit;
+    Long _createSnapshotQueueSizeLimit;
 
     // singleton class
     private static ApiDispatcher s_instance = new ApiDispatcher();
@@ -78,7 +78,16 @@ public class ApiDispatcher {
         _identityDao = _locator.getDao(IdentityDao.class);
         ConfigurationDao configDao = _locator.getDao(ConfigurationDao.class);
         Map<String, String> configs = configDao.getConfiguration();
-        _createSnapshotQueueSizeLimit = NumbersUtil.parseInt(configs.get(Config.ConcurrentSnapshotsThresholdPerHost.key()), 10);
+        String strSnapshotLimit = configs.get(Config.ConcurrentSnapshotsThresholdPerHost.key());
+        if (strSnapshotLimit != null) {
+            Long snapshotLimit = NumbersUtil.parseLong(strSnapshotLimit, 1L);
+            if (snapshotLimit <= 0) {
+                s_logger.debug("Global config parameter " + Config.ConcurrentSnapshotsThresholdPerHost.toString()
+                        + " is less or equal 0; defaulting to unlimited");
+            } else {
+                _createSnapshotQueueSizeLimit = snapshotLimit;
+            }
+        }
     }
 
     public void dispatchCreateCmd(BaseAsyncCreateCmd cmd, Map<String, String> params) {
@@ -138,14 +147,20 @@ public class ApiDispatcher {
                 ctx.setStartEventId(Long.valueOf(startEventId));
 
                 // Synchronise job on the object if needed
-                
                 if (asyncCmd.getJob() != null && asyncCmd.getSyncObjId() != null && asyncCmd.getSyncObjType() != null) {
-                    long queueSizeLimit = 1;
+                    Long queueSizeLimit = null;
                     if (asyncCmd.getSyncObjType() != null && asyncCmd.getSyncObjType().equalsIgnoreCase(BaseAsyncCmd.snapshotHostSyncObject)) {
                         queueSizeLimit = _createSnapshotQueueSizeLimit;
+                    } else {
+                        queueSizeLimit = 1L;
                     }
-                    _asyncMgr.syncAsyncJobExecution(asyncCmd.getJob(), asyncCmd.getSyncObjType(), 
-                            asyncCmd.getSyncObjId().longValue(), queueSizeLimit);
+                    
+                    if (queueSizeLimit != null) {
+                        _asyncMgr.syncAsyncJobExecution(asyncCmd.getJob(), asyncCmd.getSyncObjType(), 
+                                asyncCmd.getSyncObjId().longValue(), queueSizeLimit);
+                    } else {
+                        s_logger.trace("The queue size is unlimited, skipping the synchronizing");
+                    }
                 }
             }
 

@@ -350,8 +350,8 @@ public enum Config {
 	VpcCleanupInterval("Advanced", ManagementServer.class, Integer.class, "vpc.cleanup.interval", "3600", "The interval (in seconds) between cleanup for Inactive VPCs", null),
     VpcMaxNetworks("Advanced", ManagementServer.class, Integer.class, "vpc.max.networks", "3", "Maximum number of networks per vpc", null),
     
-	ConcurrentSnapshotsThresholdPerHost("Advanced", ManagementServer.class, String.class, "concurrent.snapshots.threshold.perhost",
-	                "10", "Limits number of snapshots that can be handled by the host concurrently", null);
+	ConcurrentSnapshotsThresholdPerHost("Advanced", ManagementServer.class, Long.class, "concurrent.snapshots.threshold.perhost",
+	                null, "Limits number of snapshots that can be handled by the host concurrently; default is NULL - unlimited", null);
 	
 	
 	private final String _category;
