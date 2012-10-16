@@ -2726,8 +2726,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             s_logger.warn("Only guest networks can be created using this method");
             return null;
         }
-        
-        boolean updateResourceCount = (!ntwkOff.getSpecifyVlan() && aclType == ACLType.Account);
+
+        boolean updateResourceCount = resourceCountNeedsUpdate(ntwkOff, aclType);
         //check resource limits
         if (updateResourceCount) {
             _resourceLimitMgr.checkResourceLimit(owner, ResourceType.network);
@@ -3587,11 +3587,22 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 network.setState(Network.State.Destroy);
                 _networksDao.update(network.getId(), network);
                 _networksDao.remove(network.getId());
+                
+                NetworkOffering ntwkOff = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
+                boolean updateResourceCount = resourceCountNeedsUpdate(ntwkOff, network.getAclType());
+                if (updateResourceCount) {
+                    _resourceLimitMgr.decrementResourceCount(owner.getId(), ResourceType.network);
+                }
                 txn.commit();
             }
         }
 
         return success;
+    }
+
+    private boolean resourceCountNeedsUpdate(NetworkOffering ntwkOff, ACLType aclType) {
+        boolean updateResourceCount = (!ntwkOff.getSpecifyVlan() && aclType == ACLType.Account);
+        return updateResourceCount;
     }
 
     protected boolean deleteVlansInNetwork(long networkId, long userId, Account callerAccount) {
