@@ -2445,11 +2445,47 @@ div.detail-group.actions td {
   overflow: hidden;
 }
 
+#browser.panel-highlight {
+  overflow: visible;
+}
+
+#browser.panel-highlight .panel {
+}
+
 #browser div.panel {
   height: 698px;
   background: #F7F7F7;
   border-right: 1px solid #A5A5A5;
   overflow: visible;
+}
+
+#browser div.panel.panel-highlight-wrapper {
+  display: inline-block;
+  background: none;
+  /*+border-radius:9px;*/
+  -moz-border-radius: 9px;
+  -webkit-border-radius: 9px;
+  -khtml-border-radius: 9px;
+  border-radius: 9px;
+  margin-top: 7px;
+  /*+box-shadow:0px 0px 12px #000000;*/
+  -moz-box-shadow: 0px 0px 12px #000000;
+  -webkit-box-shadow: 0px 0px 12px #000000;
+  -o-box-shadow: 0px 0px 12px #000000;
+  box-shadow: 0px 0px 12px #000000;
+  border: 3px solid #FFFFFF;
+  height: 542px;
+  overflow: hidden;
+  position: absolute;
+  z-index: 10000;
+  padding: 78px 0px 67px 51px;
+}
+
+#browser div.panel.panel-highlight-wrapper .panel {
+  left: 20px !important;
+  height: 631px;
+  overflow: hidden;
+  top: 3px;
 }
 
 .project-view #browser div.panel {
@@ -2472,6 +2508,38 @@ div.detail-group.actions td {
   left: -10px;
   position: absolute;
   background: url(../images/bg-panel-shadow.png) repeat-y 0px 0px;
+}
+
+#browser.panel-highlight {
+  overflow: visible;
+}
+
+#browser.panel-highlight .panel.highlighted {
+  /*+box-shadow:0px 10px 11px #5C5C5C;*/
+  -moz-box-shadow: 0px 10px 11px #5C5C5C;
+  -webkit-box-shadow: 0px 10px 11px #5C5C5C;
+  -o-box-shadow: 0px 10px 11px #5C5C5C;
+  box-shadow: 0px 10px 11px #5C5C5C;
+  border: 5px solid #FFFFFF;
+  /*+border-radius:6px;*/
+  -moz-border-radius: 6px;
+  -webkit-border-radius: 6px;
+  -khtml-border-radius: 6px;
+  border-radius: 6px;
+  margin-top: 21px;
+}
+
+#browser.panel-highlight .panel > .shadow {
+  display: none;
+}
+
+#browser .highlight-arrow {
+  width: 24px;
+  height: 19px;
+  background: url(../images/sprites.png) -590px -1295px;
+  position: absolute;
+  top: -22px;
+  left: 80px;
 }
 
 /*Toolbar*/
