@@ -25,7 +25,7 @@ configure: configure-stamp
 configure-stamp:
 	dh_testdir
 	# Add here commands to configure the package.
-	./waf configure --prefix=/usr --libdir=/usr/lib --bindir=/usr/bin --javadir=/usr/share/java --sharedstatedir=/var/lib --localstatedir=/var --sysconfdir=/etc --mandir=/usr/share/man --libexecdir=/usr/bin --with-tomcat=/usr/share/tomcat6 --tomcat-user=cloud --fast --package-version=$(PACKAGEVERSION)
+	./waf configure --prefix=/usr --libdir=/usr/lib --bindir=/usr/bin --javadir=/usr/share/java --sharedstatedir=/var/lib --localstatedir=/var --sysconfdir=/etc --mandir=/usr/share/man --libexecdir=/usr/bin --with-tomcat=/usr/share/tomcat6 --tomcat-user=cloud --fast 
 	./waf showconfig
 	touch configure-stamp
 
@@ -38,7 +38,7 @@ build-arch: build-arch-stamp
 build-arch-stamp: configure-stamp  
 
 	# Add here commands to compile the arch part of the package.
-	./waf build --build-number=$(BUILDNUMBER) --package-version=$(PACKAGEVERSION)
+	./waf build
 	touch $@
 
 # build-indep: build-indep-stamp
