@@ -204,3 +204,6 @@ table th {
 .list-view td.quick-view {
 }
 
+.quick-view-tooltip .detail-view .detail-group.actions .action.text {
+  filter:alpha(opacity=100);
+}
