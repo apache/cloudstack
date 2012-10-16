@@ -3268,15 +3268,15 @@
                       label: 'label.numretries',
                       defaultValue: '2'
                     },
-                    // inline: {
-                    //   label: 'Mode',
-                    //   select: function(args) {
-                    //     var items = [];
-                    //     items.push({id: "false", description: "side by side"});
-                    //     items.push({id: "true", description: "inline"});
-                    //     args.response.success({data: items});
-                    //   }
-                    // },                    
+                    inline: {
+                      label: 'Mode',
+                      select: function(args) {
+                        var items = [];
+                        items.push({id: "false", description: "side by side"});
+                        items.push({id: "true", description: "inline"});
+                        args.response.success({data: items});
+                      }
+                    },                    
                     dedicated: {
                       label: 'label.dedicated',
                       isBoolean: true,
@@ -3507,15 +3507,15 @@
                       label: 'label.timeout',
                       defaultValue: '300'
                     },
-                    // inline: {
-                    //   label: 'Mode',
-                    //   select: function(args) {
-                    //     var items = [];
-                    //     items.push({id: "false", description: "side by side"});
-                    //     items.push({id: "true", description: "inline"});
-                    //     args.response.success({data: items});
-                    //   }
-                    // },
+                    inline: {
+                      label: 'Mode',
+                      select: function(args) {
+                        var items = [];
+                        items.push({id: "false", description: "side by side"});
+                        items.push({id: "true", description: "inline"});
+                        args.response.success({data: items});
+                      }
+                    },
                     publicnetwork: {
                       label: 'label.public.network',
                       defaultValue: 'untrusted'
@@ -6005,15 +6005,15 @@
                     label: 'label.numretries',
                     defaultValue: '2'
                   },
-                  // inline: {
-                  //   label: 'Mode',
-                  //   select: function(args) {
-                  //     var items = [];
-                  //     items.push({id: "false", description: "side by side"});
-                  //     items.push({id: "true", description: "inline"});
-                  //     args.response.success({data: items});
-                  //   }
-                  // },
+                  inline: {
+                    label: 'Mode',
+                    select: function(args) {
+                      var items = [];
+                      items.push({id: "false", description: "side by side"});
+                      items.push({id: "true", description: "inline"});
+                      args.response.success({data: items});
+                    }
+                  },
                   dedicated: {
                     label: 'label.dedicated',
                     isBoolean: true,
@@ -6197,15 +6197,15 @@
                     label: 'label.numretries',
                     defaultValue: '2'
                   },
-                  // inline: {
-                  //   label: 'Mode',
-                  //   select: function(args) {
-                  //     var items = [];
-                  //     items.push({id: "false", description: "side by side"});
-                  //     items.push({id: "true", description: "inline"});
-                  //     args.response.success({data: items});
-                  //   }
-                  // },                  
+                  inline: {
+                    label: 'Mode',
+                    select: function(args) {
+                      var items = [];
+                      items.push({id: "false", description: "side by side"});
+                      items.push({id: "true", description: "inline"});
+                      args.response.success({data: items});
+                    }
+                  },                 
                   dedicated: {
                     label: 'label.dedicated',
                     isBoolean: true,
