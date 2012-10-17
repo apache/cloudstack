@@ -46,6 +46,7 @@
     </bookinfo>
     <xi:include href="concepts.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="cloud-infrastructure-concepts.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+    <xi:include href="source.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="installation.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="ui.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="provisioning-steps.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>

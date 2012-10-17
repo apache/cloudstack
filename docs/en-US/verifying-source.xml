@@ -1,0 +1,82 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+    
+    http://www.apache.org/licenses/LICENSE-2.0
+    
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+
+<section id="sect-source-verify">
+    <title>Verifying the downloaded release</title>
+    <para>
+        There are a number of mechanisms to check the authenticity and validity of a 
+        downloaded release. 
+    </para>
+    <section id="sect-source-verify-keys">
+       <title>Getting the KEYS</title>
+       <para>
+          To enable you to verify the GPG signature, you will need to download the 
+          <ulink url="http://www.apache.org/dist/dev/incubator/cloudstack/KEYS">KEYS</ulink>
+          file.
+       </para>
+       <para>
+          You next need to import those keys, which you can do by running the following command:
+          <programlisting><prompt>#</prompt> <command>gpg</command> --import KEYS</programlisting>
+       </para>
+    </section>
+    <section id="sect-source-verify-gpg">
+        <title>GPG</title>
+        <para>
+           The &PRODUCT; project provides a detached GPG signature of the release.
+           To check the signature, run the following command:
+           <programlisting><prompt>$</prompt> <command>gpg</command> --verify apache-cloudstack-4.0.0-incubating-src.tar.bz2.asc</programlisting>
+        </para>
+        <para>
+           If the signature is valid you will see a line of output that contains 'Good signature'.
+        </para>  
+    </section>
+    <section id="sect-source-verify-md5">
+        <title>MD5</title>
+        <para>
+           In addition to the cryptographic signature, the &PRODUCT; provides a number 
+           of cryptographic hashes to aid in assurance of validity of the downloaded
+           release. You can verify this hash by executing the following command:
+           <programlisting><prompt>$</prompt> <command>gpg</command> --print-md MD5 apache-cloudstack-4.0.0-incubating-src.tar.bz2 | <command>diff</command> - apache-cloudstack-4.0.0-incubating-src.tar.bz2.md5</programlisting>
+         </para>
+         <para>
+             If this successfully completes you should see no output. If there is any output from them,
+             then there is a difference between the hash you generated locally and the hash that has been
+             pulled from the server.
+         </para>
+     </section>
+     <section id="sect-source-verify-sha512">
+        <title>SHA512</title>
+        <para>
+           In addition to the MD5 hash, the &PRODUCT; project provides a SHA512
+           cryptographic hash to aid in assurance of the validity of the downloaded
+           release. You can verify this hash by executing the following command:
+           <programlisting><prompt>$</prompt> <command>gpg</command> --print-md SHA512 apache-cloudstack-4.0.0-incubating-src.tar.bz2 | <command>diff</command> - apache-cloudstack-4.0.0-incubating-src.tar.bz2.sha</programlisting>
+        </para>
+        <para>
+           If this command successfully completes you should see no output. If there is any output from them,
+           then there is a difference between the hash you generated locally and the hash that has been
+           pulled from the server.
+        </para>
+     </section>
+</section>

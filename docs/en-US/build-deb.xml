@@ -1,0 +1,60 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+    
+    http://www.apache.org/licenses/LICENSE-2.0
+    
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+
+<section id="sect-source-builddebs">
+    <title>Building DEB packages</title>
+    <para>
+       In addition to the bootstrap dependencies, you'll also need to install
+       a few other dependencies by issuing the following commands: 
+       <programlisting><prompt>#</prompt> <command>apt-get</command> update</programlisting>
+       <programlisting><prompt>$</prompt> <command>apt-get</command> install debhelper openjdk-6-jdk tomcat6 libws-commons-util-java genisoimage python-mysqldb</programlisting>
+    </para>
+    <para>
+       While we have defined, and you have presumably already installed the
+       bootstrap prerequisites, there are a number of build time prerequisites
+       that need to be resolved. &PRODUCT; uses maven for dependency resolution.
+       You can resolve the buildtime depdencies for CloudStack by running the
+       following command:
+       <programlisting><prompt>$</prompt> <command>mvn</command> -P deps</programlisting>
+    </para>
+    <para>
+       Now that we have resolved the dependencies we can move on to building &PRODUCT;
+       and packaging them into DEBs by issuing the following command.
+       <programlisting><prompt>#</prompt> <command>dpkg-buildpackage</command></programlisting>
+    </para>
+
+    <section id="sect-source-builddebs-repo">
+       <title>Setting up an APT repo</title>
+       <para>TBD</para>
+    </section>
+    <section id="sect-source-builddebs-repo2">
+       <title>Configuring your machines to use the APT repository</title>
+       <para>
+          Now that we have created the repository, you need to configure your machine 
+          to make use of the APT repository. We do that by issuing the following commands:
+          <programlisting><prompt>$</prompt> <command>echo</command> "deb <replaceable>http://url.to/apt/repo</replaceable> $(lsb_release -s -c) 4.0" > <filename>/etc/apt/sources.list.d/cloudstack.list</filename></programlisting>
+          <programlisting><prompt>#</prompt> <command>apt-get</command> update </programlisting>
+       </para>
+   </section>
+</section>
