@@ -38,7 +38,7 @@ Group:     System Environment/Libraries
 Source0:   %{name}-%{_ver}.tar.bz2
 BuildRoot: %{_tmppath}/%{name}-%{_ver}-%{release}-build
 
-BuildRequires: java-1.6.0-openjdk-devel
+BuildRequires: java-1.7.0-openjdk-devel
 BuildRequires: tomcat6
 BuildRequires: ws-commons-util
 BuildRequires: jpackage-utils
