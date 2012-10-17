@@ -23,21 +23,23 @@
 -->
 
 <section id="configure-package-repository">
-    <title>Configure the Package Repository</title>
-    <para>&PRODUCT; is only distributed from source from the official mirrors. If you didn't follow
-        the steps to build your own packages from source in the sections for <xref
-            linkend="sect-source-buildrpm"/> or <xref linkend="sect-source-builddebs"/> you can find
-        pre-built DEB and RPM packages provided for your convience by third parties. </para>
-    <para>When installing &PRODUCT; it is recommended you use these package repositories for easy
-        installation. </para>
+    <title>Configure package repository</title>
+    <para>&PRODUCT; is only distributed from source from the official mirrors. 
+        If you didn't follow the steps to build your own packages from source 
+        in the sections for <xref linkend="sect-source-buildrpm" /> or
+        <xref linkend="sect-source-builddebs" /> you can find pre-build
+        DEB and RPM packages for your convience by third-parties.
+    </para>
+    <para>
+       When installing &PRODUCT; it is recommended you use these package
+       repositories for easy installation.
+    </para>
     <note>
         <para>These repositories contain both the Management Server and KVM Hypervisor packages.</para>
     </note>
     <section id="configure-package-repository-deb">
         <title>DEB package repository</title>
-        <para>You can add a DEB package repository to your apt sources with the following commands.
-            Please note that currently only packages for Ubuntu 12.04 (precise) are being
-            built.</para>
+        <para>You can add a DEB package repository to your apt sources with the following commands. Please note that currently only packages for Ubuntu 12.04 (precise) are being build.</para>
         <programlisting language="Bash">echo "deb http://cloudstack.apt-get.eu/ubuntu $(lsb_release -s -c) 4.0" > /etc/apt/sources.list.d/cloudstack.list</programlisting>
         <para>We now have to add the public key to the trusted keys.</para>
         <programlisting language="Bash"><prompt>#</prompt> <command>wget</command> -O - http://cloudstack.apt-get.eu/release.asc|apt-key add -</programlisting>
