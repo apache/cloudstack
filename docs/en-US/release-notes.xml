@@ -352,7 +352,7 @@
               <programlisting># xe vm-list</programlisting>
               <para>Then use this command to migrate each VM. Replace the example host name and VM
                 name with your own:</para>
-              <programlisting># xe vm-migrate live=true host=<replaceable>ghost-name</replaceable> vm=<replaceable>VM-name</replaceable></programlisting>
+              <programlisting># xe vm-migrate live=true host=<replaceable>host-name</replaceable> vm=<replaceable>VM-name</replaceable></programlisting>
               <para><emphasis role="bold">Troubleshooting:</emphasis> If you see a message like "You
                 attempted an operation on a VM which requires PV drivers to be installed but the
                 drivers were not detected," run /opt/xensource/bin/make_migratable.sh
@@ -365,7 +365,7 @@
                 UUID with the current host ID, and replace the hotfix UUID with the output from the
                 patch-upload command you ran on this machine earlier. You can also get the hotfix
                 UUID by running xe patch-list. </para>
-              <programlisting><command>xe</command> patch-apply host-uuid=<replaceable>ghost-uuid</replaceable> uuid=<replaceable>hotfix-uuid</replaceable></programlisting>
+              <programlisting><command>xe</command> patch-apply host-uuid=<replaceable>host-uuid</replaceable> uuid=<replaceable>hotfix-uuid</replaceable></programlisting>
             </listitem>
             <listitem>
               <para>Copy the following files from the CloudStack Management Server to the
@@ -587,7 +587,7 @@
           <para>In the following commands, it is assumed that you have set the root password on the
             database, which is a CloudStack recommended best practice. Substitute your own MySQL
             root password.</para>
-          <programlisting><prompt>#</prompt> <command>mysqldump</command> -u root -p<replaceable>gmysql_password</replaceable> cloud > <filename>cloud-backup.dmp</filename>
+          <programlisting><prompt>#</prompt> <command>mysqldump</command> -u root -p<replaceable>mysql_password</replaceable> cloud > <filename>cloud-backup.dmp</filename>
 <prompt>#</prompt> <command>mysqldump</command> -u root -p<replaceable>mysql_password</replaceable> cloud_usage > <filename>cloud-usage-backup.dmp</filename>
 </programlisting>
         </listitem>
@@ -684,8 +684,8 @@
           </itemizedlist>
         </listitem>
         <listitem>
-          <para>Repeat steps 10 - 15 on every management server node. If you provided your own
-            encryption key in step 15, use the same key on all other management servers.</para>
+          <para>Repeat steps 10 - 14 on every management server node. If you provided your own
+            encryption key in step 14, use the same key on all other management servers.</para>
         </listitem>
         <listitem>
           <para>Start the first Management Server. Do not start any other Management Server nodes
@@ -803,7 +803,7 @@ Done restarting router(s).
               your own private IP.</para>
           </formalpara>
           <para>Run the following commands on the Management Server:</para>
-          <programlisting><prompt>#</prompt> <command>ssh</command> -i <replaceable>gprivate-key-path</replaceable> <replaceable>private-ip</replaceable> -p 3922
+          <programlisting><prompt>#</prompt> <command>ssh</command> -i <replaceable>private-key-path</replaceable> <replaceable>private-ip</replaceable> -p 3922
 <prompt>#</prompt> <command>cat</command> <filename>/etc/cloudstack-release</filename>
 </programlisting>
           <para>The output should be like the following:</para>
@@ -860,7 +860,7 @@ Done restarting router(s).
               <programlisting># xe vm-list</programlisting>
               <para>Then use this command to migrate each VM. Replace the example host name and VM
                 name with your own:</para>
-              <programlisting><prompt>#</prompt> <command>xe</command> vm-migrate live=true host=<replaceable>ghost-name</replaceable> vm=<replaceable>VM-name</replaceable></programlisting>
+              <programlisting><prompt>#</prompt> <command>xe</command> vm-migrate live=true host=<replaceable>host-name</replaceable> vm=<replaceable>VM-name</replaceable></programlisting>
               <para><emphasis role="bold">Troubleshooting:</emphasis> If you see a message like "You
                 attempted an operation on a VM which requires PV drivers to be installed but the
                 drivers were not detected," run <filename>/opt/xensource/bin/make_migratable.sh</filename>
@@ -873,7 +873,7 @@ Done restarting router(s).
                 UUID with the current host ID, and replace the hotfix UUID with the output from the
                 patch-upload command you ran on this machine earlier. You can also get the hotfix
                 UUID by running xe patch-list. </para>
-              <programlisting>xe patch-apply host-uuid=<replaceable>ghost-uuid</replaceable> uuid=<replaceable>hotfix-uuid</replaceable></programlisting>
+              <programlisting>xe patch-apply host-uuid=<replaceable>host-uuid</replaceable> uuid=<replaceable>hotfix-uuid</replaceable></programlisting>
             </listitem>
             <listitem>
               <para>Copy the following files from the CloudStack Management Server to the
