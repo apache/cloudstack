@@ -24,13 +24,14 @@
 
 <section id="aws-ec2-introduction">
   <title>Amazon Web Services EC2 Compatible Interface</title>
-    <para>&PRODUCT; can translate Amazon Web Services (AWS) API calls to native &PRODUCT; API calls so that users can continue using existing AWS-compatible tools. This translation service runs as a separate web application in the same tomcat server as the management server of &PRODUCT;, listening on the same port. This Amazon EC2-compatible API is accessible through a SOAP web service as well as the REST query interface.</para>
-    <warning>
-	  <para>Expect the SOAP service to be deprecated in new releases in favor of the REST interface.</para>
-    </warning> 
+    <para>&PRODUCT; can translate Amazon Web Services (AWS) API calls to native &PRODUCT; API calls
+    so that users can continue using existing AWS-compatible tools. This translation service runs as
+    a separate web application in the same tomcat server as the management server of &PRODUCT;,
+    listening on the same port. This Amazon EC2-compatible API is accessible through a SOAP web
+    service.</para> 
     <note>
-      <para>This service was previously enabled by a separate software called CloudBridge, it is now fully integrated with the &PRODUCT; management server.
-      </para>
+      <para>This service was previously enabled by separate software called CloudBridge. It is now
+      fully integrated with the &PRODUCT; management server. </para>
     </note>
     <para>Limitations</para>
     <itemizedlist>
