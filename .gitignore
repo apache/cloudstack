@@ -59,3 +59,4 @@ awsapi/modules/*
 .settings.xml
 .settings/
 db.properties.override
+awsapi/overlays/
