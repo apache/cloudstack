@@ -147,15 +147,9 @@
 <prompt>#</prompt> <command>mysqldump</command> -u root -p<replaceable>mysql_password</replaceable> cloud_usage > <filename>cloud-usage-backup.dmp</filename></programlisting>
         </listitem>
         <listitem>
-          <para>Download CloudStack 4.0 onto management server host where it will run. Get the
-            software from the following link:</para>
-          <para><ulink url="http://incubator.apache.org/cloudstack/downloads.html/"/>Apache
-            CloudStack.</para>
-        </listitem>
-        <listitem>
           <para>
-             Either build RPM/DEB packages as detailed in the Installation Guide, or use one of 
-             the community provided yum/apt repositories to gain access to the &PRODUCT; binaries. 
+             Either build RPM/DEB packages as detailed in the Installation Guide, or use one of
+             the community provided yum/apt repositories to gain access to the &PRODUCT; binaries.
           </para>
         </listitem>
         <listitem>
@@ -197,7 +191,7 @@
           </orderedlist>
         </listitem>
         <listitem>
-          <para>Repeat steps 7 - 10 on each management server node.</para>
+          <para>Repeat steps 7 - 9 on each management server node.</para>
         </listitem>
         <listitem>
           <para>Start the first Management Server. Do not start any other Management Server nodes
@@ -598,27 +592,20 @@
 </programlisting>
         </listitem>
         <listitem>
-          <para>Download CloudStack 4.0 onto management server host where it will run. Get the
-            software from the following link:</para>
-          <para><ulink url="http://incubator.apache.org/cloudstack/downloads.html/"/>Apache
-            CloudStack.</para>
+          <para>
+             Either build RPM/DEB packages as detailed in the Installation Guide, or use one of
+             the community provided yum/apt repositories to gain access to the &PRODUCT; binaries.
+          </para>
         </listitem>
         <listitem>
-          <para>Upgrade the CloudStack packages. You should have a file in the form of
-            “CloudStack-4.0-N-OSVERSION.tar.gz”. Untar the file, then run the install.sh script
-            inside it. Replace the file and directory names below with those you are using: </para>
-          <programlisting># tar xzf CloudStack-4.0-N-OSVERSION.tar.gz
-# cd CloudStack-4.0-N-OSVERSION
-# ./install.sh
-</programlisting>
-          <para>You should see a few messages as the installer prepares, followed by a list of
-            choices.</para>
-        </listitem>
-        <listitem>
-          <para>Choose "U" to upgrade the package.</para>
-          <programlisting>&gt; U</programlisting>
-          <para>You should see some output as the upgrade proceeds, ending with a message like
-            "Complete! Done."</para>
+          <para>
+             After you have configured an appropriate yum or apt repository, you
+             may execute the one of the following commands as appropriate for your
+             environment in order to upgrade &PRODUCT;:
+             <programlisting><prompt>#</prompt> <command>yum</command> update cloud-*</programlisting>
+             <programlisting><prompt>#</prompt> <command>apt-get</command> update
+<prompt>#</prompt> <command>apt-get</command> upgrade cloud-*</programlisting>
+         </para>
         </listitem>
         <listitem>
           <para>If you have made changes to your existing copy of the file components.xml in your
@@ -633,19 +620,18 @@
           <programlisting>warning: /etc/cloud/management/components.xml created as /etc/cloud/management/components.xml.rpmnew </programlisting>
           <orderedlist numeration="loweralpha">
             <listitem>
-              <para>Make a backup copy of your /etc/cloud/management/components.xml file. For
+              <para>Make a backup copy of your <filename>/etc/cloud/management/components.xml</filename> file. For
                 example:</para>
-              <programlisting># mv /etc/cloud/management/components.xml /etc/cloud/management/components.xml-backup</programlisting>
+              <programlisting><prompt>#</prompt> <command>mv</command> <filename>/etc/cloud/management/components.xml</filename> <filename>/etc/cloud/management/components.xml-backup</filename></programlisting>
             </listitem>
             <listitem>
-              <para>Copy /etc/cloud/management/components.xml.rpmnew to create a new
-                /etc/cloud/management/components.xml:</para>
-              <programlisting># cp -ap /etc/cloud/management/components.xml.rpmnew /etc/cloud/management/components.xml</programlisting>
+              <para>Copy <filename>/etc/cloud/management/components.xml.rpmnew</filename> to create a new
+                <filename>/etc/cloud/management/components.xml</filename>:</para>
+              <programlisting><prompt>#</prompt> <command>cp</command> -ap <filename>/etc/cloud/management/components.xml.rpmnew</filename> <filename>/etc/cloud/management/components.xml</filename></programlisting>
             </listitem>
             <listitem>
               <para>Merge your changes from the backup file into the new components.xml file.</para>
-              <programlisting>
-                  <prompt>#</prompt> <command>vi</command> <filename>/etc/cloud/management/components.xml</filename>
+              <programlisting><prompt>#</prompt> <command>vi</command> <filename>/etc/cloud/management/components.xml</filename>
               </programlisting>
             </listitem>
           </orderedlist>
