@@ -256,7 +256,7 @@ public class NiciraNvpResource implements ServerResource {
     
     private Answer executeRequest(CreateLogicalSwitchCommand cmd, int numRetries) {
         LogicalSwitch logicalSwitch = new LogicalSwitch();
-        logicalSwitch.setDisplay_name("lswitch-" + cmd.getName());
+        logicalSwitch.setDisplay_name(truncate("lswitch-" + cmd.getName(), 40));
         logicalSwitch.setPort_isolation_enabled(false);
 
         // Set transport binding
@@ -399,7 +399,7 @@ public class NiciraNvpResource implements ServerResource {
         try {
         	// Create the Router
         	LogicalRouterConfig lrc = new LogicalRouterConfig();
-        	lrc.setDisplayName(routerName);
+        	lrc.setDisplayName(truncate(routerName, 40));
         	lrc.setTags(tags);
         	lrc.setRoutingConfig(new SingleDefaultRouteImplictRoutingConfig(
         			new RouterNextHop(publicNetworkNextHopIp)));
@@ -409,7 +409,7 @@ public class NiciraNvpResource implements ServerResource {
 	        	// Create the outside port for the router
 	        	LogicalRouterPort lrpo = new LogicalRouterPort();
 	        	lrpo.setAdminStatusEnabled(true);
-	        	lrpo.setDisplayName(routerName + "-outside-port");
+	        	lrpo.setDisplayName(truncate(routerName + "-outside-port", 40));
 	        	lrpo.setTags(tags);
 	        	List<String> outsideIpAddresses = new ArrayList<String>();
 	        	outsideIpAddresses.add(publicNetworkIpAddress);
@@ -426,7 +426,7 @@ public class NiciraNvpResource implements ServerResource {
 	        	// Create the inside port for the router
 	        	LogicalRouterPort lrpi = new LogicalRouterPort();
 	        	lrpi.setAdminStatusEnabled(true);
-	        	lrpi.setDisplayName(routerName + "-inside-port");
+	        	lrpi.setDisplayName(truncate(routerName + "-inside-port", 40));
 	        	lrpi.setTags(tags);
 	        	List<String> insideIpAddresses = new ArrayList<String>();
 	        	insideIpAddresses.add(internalNetworkAddress);
@@ -434,7 +434,7 @@ public class NiciraNvpResource implements ServerResource {
 	        	lrpi = _niciraNvpApi.createLogicalRouterPort(lrc.getUuid(),lrpi);
 	        	
 	        	// Create the inside port on the lswitch
-	            LogicalSwitchPort lsp = new LogicalSwitchPort(routerName + "-inside-port", tags, true);
+	            LogicalSwitchPort lsp = new LogicalSwitchPort(truncate(routerName + "-inside-port", 40), tags, true);
 	            lsp = _niciraNvpApi.createLogicalSwitchPort(logicalSwitchUuid, lsp);
 	       	
 	        	// Attach the inside router port to the lswitch port with a PatchAttachment
@@ -528,51 +528,7 @@ public class NiciraNvpResource implements ServerResource {
 				NatRule incoming = null;
 				NatRule outgoing = null;
 
-				for (NatRule storedRule : existingRules.getResults()) {
-					if (s_logger.isDebugEnabled()) {
-						StringBuilder natRuleStr = new StringBuilder();
-						natRuleStr.append("Rule ");
-						natRuleStr.append(storedRule.getUuid());
-						natRuleStr.append(" (");
-						natRuleStr.append(storedRule.getType());
-						natRuleStr.append(") :");
-						Match m = storedRule.getMatch();
-						natRuleStr.append("match (");
-						natRuleStr.append(m.getProtocol());
-						natRuleStr.append(" ");
-						natRuleStr.append(m.getSourceIpAddresses());
-						natRuleStr.append(" [");
-						natRuleStr.append(m.getSource_port_min());
-						natRuleStr.append("-");
-						natRuleStr.append(m.getSourcePortMax());
-						natRuleStr.append(" ] -> ");
-						natRuleStr.append(m.getDestinationIpAddresses());
-						natRuleStr.append(" [");
-						natRuleStr.append(m.getDestinationPortMin());
-						natRuleStr.append("-");
-						natRuleStr.append(m.getDestinationPortMax());
-						natRuleStr.append(" ]) -->");
-						if ("SourceNatRule".equals(storedRule.getType())) {
-							natRuleStr.append(storedRule.getToSourceIpAddressMin());
-							natRuleStr.append("-");
-							natRuleStr.append(storedRule.getToSourceIpAddressMax());
-							natRuleStr.append(" [");
-							natRuleStr.append(storedRule.getToSourcePortMin());
-							natRuleStr.append("-");
-							natRuleStr.append(storedRule.getToSourcePortMax());
-							natRuleStr.append(" ])");
-						}
-						else {
-							natRuleStr.append(storedRule.getToDestinationIpAddressMin());
-							natRuleStr.append("-");
-							natRuleStr.append(storedRule.getToDestinationIpAddressMax());
-							natRuleStr.append(" [");
-							natRuleStr.append(storedRule.getToDestinationPort());
-							natRuleStr.append(" ])");
-						}
-						s_logger.debug(natRuleStr.toString());
-					}
-					
+				for (NatRule storedRule : existingRules.getResults()) {					
     				if ("SourceNatRule".equals(storedRule.getType())) {
     					if (outsideIp.equals(storedRule.getToSourceIpAddressMin()) && 
     							outsideIp.equals(storedRule.getToSourceIpAddressMax()) &&
@@ -842,6 +798,15 @@ public class NiciraNvpResource implements ServerResource {
 			natRuleStr.append(" ])");
 		}
 		return natRuleStr.toString();
-    }    	
+    }
+    
+    private String truncate(String string, int length) {
+    	if (string.length() <= length) {
+    		return string;
+    	}
+    	else {
+    		return string.substring(0, length);
+    	}
+    }
     
 }
