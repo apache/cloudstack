@@ -129,8 +129,9 @@
         <groupId>org.apache.tomcat.maven</groupId>
         <artifactId>tomcat7-maven-plugin</artifactId>
         <configuration>
+          <path>/client</path>
           <tomcatWebXml>${basedir}/WEB-INF/web.xml</tomcatWebXml>
-          <warSourceDirectory>${project.build.directory}/${project.build.finalName}</warSourceDirectory>
+          <warSourceDirectory>${project.build.directory}/generated-webapp/</warSourceDirectory>
         </configuration>
       </plugin>
       <plugin>
