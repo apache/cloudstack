@@ -143,8 +143,8 @@
           <para>In the following commands, it is assumed that you have set the root password on the
             database, which is a CloudStack recommended best practice. Substitute your own MySQL
             root password.</para>
-          <programlisting># mysqldump -u root -p&lt;mysql_password&gt; cloud &gt;> cloud-backup.dmp
-# mysqldump -u root -p&lt;mysql_password&gt; cloud_usage &gt; cloud-usage-backup.dmp</programlisting>
+          <programlisting><prompt>#</prompt> <command>mysqldump</command> -u root -p<replaceable>mysql_password</replaceable> cloud > <filename>cloud-backup.dmp</filename>
+<prompt>#</prompt> <command>mysqldump</command> -u root -p<replaceable>mysql_password</replaceable> cloud_usage > <filename>cloud-usage-backup.dmp</filename></programlisting>
         </listitem>
         <listitem>
           <para>Download CloudStack 4.0.0-incubating onto management server host where it will run. Get the
@@ -153,20 +153,20 @@
             CloudStack.</para>
         </listitem>
         <listitem>
-          <para>Upgrade the CloudStack packages. You should have a file in the form of
-            “CloudStack-4.0-N-OSVERSION.tar.gz”. Untar the file, then run the install.sh script
-            inside it. Replace the file and directory names below with those you are using: </para>
-          <programlisting># tar xzf CloudStack-4.0-N-OSVERSION.tar.gz
-# cd CloudStack-4.0-N-OSVERSION
-# ./install.sh</programlisting>
-          <para>You should see a few messages as the installer prepares, followed by a list of
-            choices.</para>
+          <para>
+             Either build RPM/DEB packages as detailed in the Installation Guide, or use one of 
+             the community provided yum/apt repositories to gain access to the &PRODUCT; binaries. 
+          </para>
         </listitem>
         <listitem>
-          <para>Choose "U" to upgrade the package</para>
-          <programlisting>&gt;U</programlisting>
-          <para>You should see some output as the upgrade proceeds, ending with a message like
-            "Complete! Done."</para>
+          <para>
+             After you have configured an appropriate yum or apt repository, you
+             may execute the one of the following commands as appropriate for your
+             environment in order to upgrade &PRODUCT;:
+             <programlisting><prompt>#</prompt> <command>yum</command> update cloud-*</programlisting>
+             <programlisting><prompt>#</prompt> <command>apt-get</command> update
+<prompt>#</prompt> <command>apt-get</command> upgrade cloud-*</programlisting>
+         </para>
         </listitem>
         <listitem>
           <para>If you have made changes to your existing copy of the file components.xml in your
@@ -223,19 +223,25 @@
             as hosts and only on the KVM hosts.</para>
           <orderedlist numeration="loweralpha">
             <listitem>
-              <para>Copy the CloudStack 4.0.0-incubating tar file to the host, untar it, and change directory to
-                the resulting directory.</para>
+              <para>
+                 Configure a yum or apt respository containing the &PRODUCT; packages as outlined
+                 in the Installation Guide. 
+              </para>
             </listitem>
             <listitem>
               <para>Stop the running agent.</para>
               <programlisting># service cloud-agent stop</programlisting>
             </listitem>
             <listitem>
-              <para>Update the agent software.</para>
-              <programlisting># ./install.sh</programlisting>
-            </listitem>
-            <listitem>
-              <para>Choose "U" to update the packages.</para>
+              <para>
+                 Update the agent software with one of the following command
+                 sets as appropriate for your environment.
+             
+                 <programlisting><prompt>#</prompt> <command>yum</command> update cloud-*</programlisting>
+                 <programlisting><prompt>#</prompt> <command>apt-get</command> update
+<prompt>#</prompt> <command>apt-get</command> upgrade cloud-*
+                 </programlisting>
+              </para>
             </listitem>
             <listitem>
               <para>Start the agent.</para>
@@ -244,7 +250,9 @@
             <listitem>
               <para>Copy the contents of the agent.properties file to the new agent.properties file
                 by using the following command</para>
-              <programlisting>sed -i 's/com.cloud.agent.resource.computing.LibvirtComputingResource/com.cloud.hypervisor.kvm.resource.LibvirtComputingResource/g' /etc/cloud/agent/agent.properties</programlisting>
+              <programlisting>
+                  <prompt>#</prompt> <command>sed</command> -i 's/com.cloud.agent.resource.computing.LibvirtComputingResource/com.cloud.hypervisor.kvm.resource.LibvirtComputingResource/g' <filename>/etc/cloud/agent/agent.properties</filename>
+              </programlisting>
             </listitem>
             <listitem>
               <para>Start the cloud agent and cloud management services.</para>
@@ -350,7 +358,7 @@
               <programlisting># xe vm-list</programlisting>
               <para>Then use this command to migrate each VM. Replace the example host name and VM
                 name with your own:</para>
-              <programlisting># xe vm-migrate live=true host=&lt;host-name&gt; vm=&lt;VM-name&gt;</programlisting>
+              <programlisting># xe vm-migrate live=true host=<replaceable>ghost-name</replaceable> vm=<replaceable>VM-name</replaceable></programlisting>
               <para><emphasis role="bold">Troubleshooting:</emphasis> If you see a message like "You
                 attempted an operation on a VM which requires PV drivers to be installed but the
                 drivers were not detected," run /opt/xensource/bin/make_migratable.sh
@@ -363,7 +371,7 @@
                 UUID with the current host ID, and replace the hotfix UUID with the output from the
                 patch-upload command you ran on this machine earlier. You can also get the hotfix
                 UUID by running xe patch-list. </para>
-              <programlisting>xe patch-apply host-uuid=&lt;host-uuid&gt; uuid=&lt;hotfix-uuid&gt;</programlisting>
+              <programlisting><command>xe</command> patch-apply host-uuid=<replaceable>ghost-uuid</replaceable> uuid=<replaceable>hotfix-uuid</replaceable></programlisting>
             </listitem>
             <listitem>
               <para>Copy the following files from the CloudStack Management Server to the
@@ -585,8 +593,8 @@
           <para>In the following commands, it is assumed that you have set the root password on the
             database, which is a CloudStack recommended best practice. Substitute your own MySQL
             root password.</para>
-          <programlisting># mysqldump -u root -p&lt;mysql_password&gt; cloud &gt;> cloud-backup.dmp
-# mysqldump -u root -p&lt;mysql_password&gt; cloud_usage &gt; cloud-usage-backup.dmp
+          <programlisting><prompt>#</prompt> <command>mysqldump</command> -u root -p<replaceable>gmysql_password</replaceable> cloud > <filename>cloud-backup.dmp</filename>
+<prompt>#</prompt> <command>mysqldump</command> -u root -p<replaceable>mysql_password</replaceable> cloud_usage > <filename>cloud-usage-backup.dmp</filename>
 </programlisting>
         </listitem>
         <listitem>
@@ -636,30 +644,32 @@
             </listitem>
             <listitem>
               <para>Merge your changes from the backup file into the new components.xml file.</para>
-              <programlisting># vi /etc/cloud/management/components.xml</programlisting>
+              <programlisting>
+                  <prompt>#</prompt> <command>vi</command> <filename>/etc/cloud/management/components.xml</filename>
+              </programlisting>
             </listitem>
           </orderedlist>
         </listitem>
         <listitem>
           <para>If you have made changes to your existing copy of the
-            /etc/cloud/management/db.properties file in your previous-version CloudStack
+            <filename>/etc/cloud/management/db.properties</filename> file in your previous-version CloudStack
             installation, the changes will be preserved in the upgrade. However, you need to do the
             following steps to place these changes in a new version of the file which is compatible
             with version 4.0.0-incubating.</para>
           <orderedlist>
             <listitem>
-              <para>Make a backup copy of your file /etc/cloud/management/db.properties. For
+              <para>Make a backup copy of your file <filename>/etc/cloud/management/db.properties</filename>. For
                 example:</para>
-              <programlisting># mv /etc/cloud/management/db.properties /etc/cloud/management/db.properties-backup</programlisting>
+              <programlisting><prompt>#</prompt> <command>mv</command> <filename>/etc/cloud/management/db.properties</filename> <filename>/etc/cloud/management/db.properties-backup</filename></programlisting>
             </listitem>
             <listitem>
-              <para>Copy /etc/cloud/management/db.properties.rpmnew to create a new
-                /etc/cloud/management/db.properties:</para>
-              <programlisting># cp -ap /etc/cloud/management/db.properties.rpmnew etc/cloud/management/db.properties</programlisting>
+              <para>Copy <filename>/etc/cloud/management/db.properties.rpmnew</filename> to create a new
+                <filename>/etc/cloud/management/db.properties</filename>:</para>
+              <programlisting><prompt>#</prompt> <command>cp</command> -ap <filename>/etc/cloud/management/db.properties.rpmnew</filename> <filename>etc/cloud/management/db.properties</filename></programlisting>
             </listitem>
             <listitem>
               <para>Merge your changes from the backup file into the new db.properties file.</para>
-              <programlisting># vi /etc/cloud/management/db.properties</programlisting>
+              <programlisting><prompt>#</prompt> <command>vi</command> <filename>/etc/cloud/management/db.properties</filename></programlisting>
             </listitem>
           </orderedlist>
         </listitem>
@@ -667,7 +677,7 @@
           <para>On the management server node, run the following command. It is recommended that you
             use the command-line flags to provide your own encryption keys. See Password and Key
             Encryption in the Installation Guide.</para>
-          <programlisting># cloud-setup-encryption -e &lt;encryption_type&gt; -m &lt;management_server_key&gt; -k &lt;database_key&gt;</programlisting>
+          <programlisting><prompt>#</prompt> <command>cloud-setup-encryption</command> -e <replaceable>encryption_type</replaceable> -m <replaceable>management_server_key</replaceable> -k <replaceable>database_key</replaceable></programlisting>
           <para>When used without arguments, as in the following example, the default encryption
             type and keys will be used:</para>
           <itemizedlist>
@@ -710,28 +720,33 @@
             as hosts and only on the KVM hosts.</para>
           <orderedlist numeration="loweralpha">
             <listitem>
-                <para>Copy the CloudStack 4.0.0-incubating .tgz download to the host, untar it, 
-                and cd into the resulting directory.</para>
+                <para>
+                   Configure your CloudStack package repositories as outlined
+                   in the Installation Guide
+                </para>
             </listitem>
             <listitem>
               <para>Stop the running agent.</para>
               <programlisting># service cloud-agent stop</programlisting>
             </listitem>
             <listitem>
-              <para>Update the agent software.</para>
-              <programlisting># ./install.sh</programlisting>
-            </listitem>
-            <listitem>
-              <para>Choose "U" to update the packages.</para>
+              <para>Update the agent software with one of the following command sets as appropriate.</para>
+              <programlisting><prompt>#</prompt> <command>yum</command> update cloud-*</programlisting>
+              <programlisting>
+                 <prompt>#</prompt> <command>apt-get</command> update
+<prompt>#</prompt> <command>apt-get</command> upgrade cloud-*
+              </programlisting>
             </listitem>
             <listitem>
               <para>Start the agent.</para>
               <programlisting># service cloud-agent start</programlisting>
             </listitem>
             <listitem>
-              <para>Copy the contents of the agent.properties file to the new agent.properties file
-                by using the following command</para>
-              <programlisting>sed -i 's/com.cloud.agent.resource.computing.LibvirtComputingResource/com.cloud.hypervisor.kvm.resource.LibvirtComputingResource/g' /etc/cloud/agent/agent.properties</programlisting>
+              <para>
+                 Copy the contents of the <filename>agent.properties</filename>
+                 file to the new <filename>agent.properties</filename> file
+                 by using the following command</para>
+                 <programlisting><command>sed</command> -i 's/com.cloud.agent.resource.computing.LibvirtComputingResource/com.cloud.hypervisor.kvm.resource.LibvirtComputingResource/g' <filename>/etc/cloud/agent/agent.properties</filename></programlisting>
             </listitem>
             <listitem>
               <para>Start the cloud agent and cloud management services.</para>
@@ -758,14 +773,14 @@
                 the MySQL instance, the MySQL user to connect as, and the password to use for that
                 user. In addition to those parameters, provide the "-c" and "-r" arguments. For
                 example:</para>
-              <programlisting># nohup cloud-sysvmadm -d 192.168.1.5 -u cloud -p password -c -r > sysvm.log 2>&amp;1 &amp;
-# tail -f sysvm.log</programlisting>
+              <programlisting><prompt>#</prompt> <command>nohup cloud-sysvmadm</command> -d <replaceable>192.168.1.5</replaceable> -u cloud -p <replaceable>password</replaceable> -c -r > sysvm.log 2>&amp;1 &amp;
+<prompt>#</prompt> <command>tail</command> -f <filename>sysvm.log</filename></programlisting>
               <para>This might take up to an hour or more to run, depending on the number of
                 accounts in the system.</para>
             </listitem>
             <listitem>
               <para>After the script terminates, check the log to verify correct execution:</para>
-              <programlisting># tail -f sysvm.log</programlisting>
+              <programlisting><prompt>#</prompt> <command>tail</command> -f <filename>sysvm.log</filename></programlisting>
               <para>The content should be like the following:</para>
               <programlisting>
 Stopping and starting 1 secondary storage vm(s)...
@@ -791,7 +806,7 @@ Done restarting router(s).
           </formalpara>
           <para>Run the following commands on the XenServer or KVM host on which the system VM is
             present:</para>
-          <programlisting># ssh -i &lt;private-key-path&gt; &lt;link-local-ip&gt; -p 3922
+          <programlisting><prompt>#</prompt> <command>ssh</command> -i <replaceable>private-key-path</replaceable> <replaceable>link-local-ip</replaceable> -p 3922
 # cat /etc/cloudstack-release</programlisting>
           <para>The output should be like the following:</para>
           <programlisting>Cloudstack Release 4.0.0-incubating Mon Oct 9 15:10:04 PST 2012</programlisting>
@@ -802,8 +817,8 @@ Done restarting router(s).
               your own private IP.</para>
           </formalpara>
           <para>Run the following commands on the Management Server:</para>
-          <programlisting># ssh -i &lt;private-key-path&gt; &lt;private-ip&gt; -p 3922
-# cat /etc/cloudstack-release
+          <programlisting><prompt>#</prompt> <command>ssh</command> -i <replaceable>gprivate-key-path</replaceable> <replaceable>private-ip</replaceable> -p 3922
+<prompt>#</prompt> <command>cat</command> <filename>/etc/cloudstack-release</filename>
 </programlisting>
           <para>The output should be like the following:</para>
           <programlisting>Cloudstack Release 4.0.0-incubating Mon Oct 9 15:10:04 PST 2012</programlisting>
@@ -859,10 +874,10 @@ Done restarting router(s).
               <programlisting># xe vm-list</programlisting>
               <para>Then use this command to migrate each VM. Replace the example host name and VM
                 name with your own:</para>
-              <programlisting># xe vm-migrate live=true host=&lt;host-name&gt; vm=&lt;VM-name&gt;</programlisting>
+              <programlisting><prompt>#</prompt> <command>xe</command> vm-migrate live=true host=<replaceable>ghost-name</replaceable> vm=<replaceable>VM-name</replaceable></programlisting>
               <para><emphasis role="bold">Troubleshooting:</emphasis> If you see a message like "You
                 attempted an operation on a VM which requires PV drivers to be installed but the
-                drivers were not detected," run /opt/xensource/bin/make_migratable.sh
+                drivers were not detected," run <filename>/opt/xensource/bin/make_migratable.sh</filename>
                 b6cf79c8-02ee-050b-922f-49583d9f1a14.</para>
             </listitem>
             <listitem>
@@ -872,7 +887,7 @@ Done restarting router(s).
                 UUID with the current host ID, and replace the hotfix UUID with the output from the
                 patch-upload command you ran on this machine earlier. You can also get the hotfix
                 UUID by running xe patch-list. </para>
-              <programlisting>xe patch-apply host-uuid=&lt;host-uuid&gt; uuid=&lt;hotfix-uuid&gt;</programlisting>
+              <programlisting>xe patch-apply host-uuid=<replaceable>ghost-uuid</replaceable> uuid=<replaceable>hotfix-uuid</replaceable></programlisting>
             </listitem>
             <listitem>
               <para>Copy the following files from the CloudStack Management Server to the
@@ -2073,7 +2088,7 @@ Done restarting router(s).
               <entry><para>CS-15789</para></entry>
               <entry><para>Invalid global setting prevents management server to restart. For
                   example, if you configure the "project.invite.timeout" parameter to
-                  "300&lt;space&gt; and attempt to restart management server, it fails without
+                  "300" and attempt to restart management server, it fails without
                   throwing a warning or setting the value to the default.</para>
               </entry>
             </row>
@@ -2099,9 +2114,10 @@ Done restarting router(s).
             <row>
               <entry><para>CS-15664</para></entry>
               <entry><para>A typo in the component.xml file that blocks Nicira NVP
-                  integration:</para><screen>&lt;pluggableservice name="NiciraNvpElementService" key="com.coud.network.element.NiciraNvpElementService" class="com.cloud.network.element.NiciraNvpElement"/&gt; </screen>
+                  integration:</para>
+                  <screen>pluggableservice name="NiciraNvpElementService" key="com.coud.network.element.NiciraNvpElementService" class="com.cloud.network.element.NiciraNvpElement"/&gt; </screen>
                 <para>The line should
-                be:</para><screen>&lt;pluggableservice name="NiciraNvpElementService" key="com.cloud.network.element.NiciraNvpElementService" class="com.cloud.network.element.NiciraNvpElement"/&gt;</screen></entry>
+                be:</para><screen>pluggableservice name="NiciraNvpElementService" key="com.cloud.network.element.NiciraNvpElementService" class="com.cloud.network.element.NiciraNvpElement"/&gt;</screen></entry>
             </row>
             <row>
               <entry><para>CS-15634</para></entry>
@@ -2296,7 +2312,7 @@ Done restarting router(s).
                       <listitem>
                         <para>Remove the NICs count for the virtual network IDs returned in step
                           (a), and set the NIC count to 0:</para>
-                        <programlisting>UPDATE `cloud`.`op_networks` SET nics_count = 0 WHERE id = &lt;enter id of virtual network&gt;</programlisting>
+                        <programlisting>UPDATE `cloud`.`op_networks` SET nics_count = 0 WHERE id = <replaceable>enter id of virtual network</replaceable></programlisting>
                       </listitem>
                       <listitem>
                         <para>Restart the Management Server, and wait for all the networks to shut
