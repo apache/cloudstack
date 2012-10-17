@@ -475,7 +475,7 @@ public class NiciraNvpElement extends AdapterBase implements
 	}
 
 	@Override
-	public boolean destroy(Network network)
+	public boolean destroy(Network network, ReservationContext context)
 			throws ConcurrentOperationException, ResourceUnavailableException {
 		if (!canHandle(network, Service.Connectivity)) {
 			return false;

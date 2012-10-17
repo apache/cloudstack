@@ -212,9 +212,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
     }
 
     @Override @DB
-    public void destroyRemoteAccessVpn(long ipId) throws ResourceUnavailableException {
-        Account caller = UserContext.current().getCaller();
-        
+    public void destroyRemoteAccessVpn(long ipId, Account caller) throws ResourceUnavailableException {
         RemoteAccessVpnVO vpn = _remoteAccessVpnDao.findById(ipId);
         if (vpn == null) {
             s_logger.debug("vpn id=" + ipId + " does not exists ");
@@ -337,9 +335,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
     }
 
     @DB @Override
-    public boolean removeVpnUser(long vpnOwnerId, String username) {
-        Account caller = UserContext.current().getCaller();
-
+    public boolean removeVpnUser(long vpnOwnerId, String username, Account caller) {
         VpnUserVO user = _vpnUsersDao.findByAccountAndUsername(vpnOwnerId, username);
         if (user == null) {
             throw new InvalidParameterValueException("Could not find vpn user " + username);

@@ -121,14 +121,14 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
     }
     
     @Override
-    public boolean shutdownVpc(Vpc vpc) throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean shutdownVpc(Vpc vpc, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
         List<DomainRouterVO> routers = _routerDao.listByVpcId(vpc.getId());
         if (routers == null || routers.isEmpty()) {
             return true;
         }
         boolean result = true;
         for (DomainRouterVO router : routers) {
-            result = result && (_routerMgr.destroyRouter(router.getId()) != null);
+            result = result && (_routerMgr.destroyRouter(router.getId(), context.getAccount(), context.getCaller().getId()) != null);
         }
         return result;
     }
@@ -251,7 +251,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
     }
 
     @Override
-    public boolean destroy(Network config) throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean destroy(Network config, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
         boolean success = true;
         Long vpcId = config.getVpcId();
         if (vpcId == null) {

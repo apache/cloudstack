@@ -2864,15 +2864,10 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         }
     }
 
-    private boolean isAdmin(short accountType) {
-        return ((accountType == Account.ACCOUNT_TYPE_ADMIN) || (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) || (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
-    }
-
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_DELETE, eventDescription = "deleting volume")
-    public boolean deleteVolume(long volumeId) throws ConcurrentOperationException {
-        Account caller = UserContext.current().getCaller();
+    public boolean deleteVolume(long volumeId, Account caller) throws ConcurrentOperationException {
 
         // Check that the volume ID is valid
         VolumeVO volume = _volsDao.findById(volumeId);

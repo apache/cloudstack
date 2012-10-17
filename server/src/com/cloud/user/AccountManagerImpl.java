@@ -572,7 +572,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             for (VolumeVO volume : volumes) {
                 if (!volume.getState().equals(Volume.State.Destroy)) {
                     try {
-                        _storageMgr.deleteVolume(volume.getId());
+                        _storageMgr.deleteVolume(volume.getId(), caller);
                     } catch (Exception ex) {
                         s_logger.warn("Failed to cleanup volumes as a part of account id=" + accountId + " cleanup due to Exception: ", ex);
                         accountCleanupNeeded = true;
@@ -585,12 +585,12 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             List<VpnUserVO> vpnUsers = _vpnUser.listByAccount(accountId);
 
             for (VpnUserVO vpnUser : vpnUsers) {
-                _remoteAccessVpnMgr.removeVpnUser(accountId, vpnUser.getUsername());
+                _remoteAccessVpnMgr.removeVpnUser(accountId, vpnUser.getUsername(), caller);
             }
 
             try {
                 for (RemoteAccessVpnVO vpn : remoteAccessVpns) {
-                    _remoteAccessVpnMgr.destroyRemoteAccessVpn(vpn.getServerAddressId());
+                    _remoteAccessVpnMgr.destroyRemoteAccessVpn(vpn.getServerAddressId(), caller);
                 }
             } catch (ResourceUnavailableException ex) {
                 s_logger.warn("Failed to cleanup remote access vpn resources as a part of account id=" + accountId + " cleanup due to Exception: ", ex);
@@ -608,7 +608,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             if (networks != null) {
                 for (NetworkVO network : networks) {
 
-                    ReservationContext context = new ReservationContextImpl(null, null, getActiveUser(callerUserId), account);
+                    ReservationContext context = new ReservationContextImpl(null, null, getActiveUser(callerUserId), caller);
 
                     if (!_networkMgr.destroyNetwork(network.getId(), context)) {
                         s_logger.warn("Unable to destroy network " + network + " as a part of account id=" + accountId + " cleanup.");
@@ -626,7 +626,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             List<? extends Vpc> vpcs = _vpcMgr.getVpcsForAccount(account.getId());
             for (Vpc vpc : vpcs) {
 
-                if (!_vpcMgr.destroyVpc(vpc)) {
+                if (!_vpcMgr.destroyVpc(vpc, caller, callerUserId)) {
                     s_logger.warn("Unable to destroy VPC " + vpc + " as a part of account id=" + accountId + " cleanup.");
                     accountCleanupNeeded = true;
                     vpcsDeleted = false;

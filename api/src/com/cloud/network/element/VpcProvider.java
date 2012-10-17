@@ -41,11 +41,12 @@ public interface VpcProvider extends NetworkElement{
 
     /**
      * @param vpc
+     * @param context TODO
      * @return
      * @throws ConcurrentOperationException
      * @throws ResourceUnavailableException
      */
-    boolean shutdownVpc(Vpc vpc) throws ConcurrentOperationException, ResourceUnavailableException;
+    boolean shutdownVpc(Vpc vpc, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException;
     
     boolean createPrivateGateway(PrivateGateway gateway) throws ConcurrentOperationException, ResourceUnavailableException;
     
