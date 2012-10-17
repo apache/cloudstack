@@ -22,10 +22,19 @@
  under the License.
 -->
 
-<chapter id="hypervisor-installation">
-    <title>Hypervisor Installation</title>
-    <xi:include href="hypervisor-kvm-install-flow.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-    <xi:include href="citrix-xenserver-installation.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-    <xi:include href="vmware-install.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-    <xi:include href="ovm-install.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-</chapter>
+<section id="vmware-requirements">
+	  <title>System Requirements for VMware</title>
+    <para>TODO</para>
+    <itemizedlist>
+    <listitem><para>Must support HVM (Intel-VT or AMD-V enabled).</para></listitem> 
+    <listitem><para>64-bit x86 CPU (more cores results in better performance)</para></listitem>
+    <listitem><para>Hardware virtualization support required</para></listitem>
+    <listitem><para>4 GB of memory</para></listitem>
+    <listitem><para>36 GB of local disk</para></listitem>
+    <listitem><para>At least 1 NIC</para></listitem>
+    <listitem><para>Statically allocated IP Address</para></listitem>
+    <listitem><para>Latest hotfixes applied to hypervisor software</para></listitem>
+    <listitem><para>When you deploy &PRODUCT;, the hypervisor host must not have any VMs already running</para></listitem>
+    <listitem><para>All hosts within a cluster must be homogenous. The CPUs must be of the same type, count, and feature flags.</para></listitem>
+    </itemizedlist>
+</section>

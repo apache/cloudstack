@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8' ?>
-<!DOCTYPE bookinfo PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
 <!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
 %BOOK_ENTITIES;
 ]>
@@ -26,123 +26,123 @@
     <title>Citrix XenServer Installation for &PRODUCT;</title>
     <para>If you want to use the Citrix XenServer hypervisor to run guest virtual machines, install XenServer 6.0 or XenServer 6.0.2 on the host(s) in your cloud.  For an initial installation, follow the steps below. If you have previously installed XenServer and want to upgrade to another version, see <xref linkend="xenserver-version-upgrading" />.</para>
     <section id="system-requirements-xenserver-hosts">
-  <title>System Requirements for XenServer Hosts</title>
-  <itemizedlist>
-      <listitem><para>The host must be certified as compatible with one of the following. See the Citrix Hardware Compatibility Guide: <ulink url="http://hcl.xensource.com">http://hcl.xensource.com</ulink></para>
+    <title>System Requirements for XenServer Hosts</title>
     <itemizedlist>
-        <listitem><para>XenServer 5.6 SP2</para></listitem>
-        <listitem><para>XenServer 6.0</para></listitem>
-        <listitem><para>XenServer 6.0.2</para></listitem>
+    <listitem><para>The host must be certified as compatible with one of the following. See the Citrix Hardware Compatibility Guide: <ulink url="http://hcl.xensource.com">http://hcl.xensource.com</ulink></para>
+        <itemizedlist>
+            <listitem><para>XenServer 5.6 SP2</para></listitem>
+            <listitem><para>XenServer 6.0</para></listitem>
+            <listitem><para>XenServer 6.0.2</para></listitem>
+        </itemizedlist>
+    </listitem>
+    <listitem><para>You must re-install Citrix XenServer if you are going to re-use a host from a previous install.</para></listitem><listitem><para>Must support HVM (Intel-VT or AMD-V enabled)</para></listitem>
+    <listitem><para>Be sure all the hotfixes provided by the hypervisor vendor are applied. Track the release of hypervisor patches through your hypervisor vendor’s support channel, and apply patches as soon as possible after they are released. &PRODUCT; will not track or notify you of required hypervisor patches. It is essential that your hosts are completely up to date with the provided hypervisor patches. The hypervisor vendor is likely to refuse to support any system that is not up to date with patches.</para></listitem>
+    <listitem><para>All hosts within a cluster must be homogenous. The CPUs must be of the same type, count, and feature flags.</para></listitem>
+    <listitem><para>Must support HVM (Intel-VT or AMD-V enabled in BIOS)</para></listitem>
+    <listitem><para>64-bit x86 CPU (more cores results in better performance)</para></listitem>
+    <listitem><para>Hardware virtualization support required</para></listitem>
+    <listitem><para>4 GB of memory</para></listitem>
+    <listitem><para>36 GB of local disk</para></listitem>
+    <listitem><para>At least 1 NIC</para></listitem>
+    <listitem><para>Statically allocated IP Address</para></listitem>
+    <listitem><para>When you deploy &PRODUCT;, the hypervisor host must not have any VMs already running</para></listitem>
     </itemizedlist>
-      </listitem>
-      <listitem><para>All hosts must be 64-bit and must support HVM (Intel-VT or AMD-V enabled in BIOS).</para></listitem>
-      <listitem><para>All hosts within a cluster must be homogenous. That means the CPUs must be of the same type, count, and feature flags.</para></listitem>
-      <listitem><para>You must re-install Citrix XenServer if you are going to re-use a host from a previous install.</para></listitem>
-      <listitem><para>64-bit x86 CPU (more cores results in better performance)</para></listitem>
-      <listitem><para>Hardware virtualization support required</para></listitem>
-      <listitem><para>4 GB of memory</para></listitem>
-      <listitem><para>36 GB of local disk</para></listitem>
-      <listitem><para>At least 1 NIC</para></listitem>
-      <listitem><para>Statically allocated IP Address</para></listitem>
-      <listitem><para>Be sure all the hotfixes provided by the hypervisor vendor are applied. Track the release of hypervisor patches through your hypervisor vendor’s support channel, and apply patches as soon as possible after they are released. &PRODUCT; will not track or notify you of required hypervisor patches. It is essential that your hosts are completely up to date with the provided hypervisor patches. The hypervisor vendor is likely to refuse to support any system that is not up to date with patches. For more information, see <ulink url="http://docs.cloudstack.org/Knowledge_Base/Possible_VM_corruption_if_XenServer_Hotfix_is_not_Applied/Highly_Recomended_Hotfixes_for_XenServer_5.6_SP2">Highly Recommended Hotfixes for XenServer</ulink> in the &PRODUCT; Knowledge Base.</para></listitem>
-  </itemizedlist>
-  <warning><para>The lack of up-do-date hotfixes can lead to data corruption and lost VMs.</para></warning>
+    <warning><para>The lack of up-do-date hotfixes can lead to data corruption and lost VMs.</para></warning>
     </section>
     <section id="xenserver-installation-steps">
-  <title>XenServer Installation Steps</title>
-  <orderedlist>
-      <listitem><para>From <ulink url="https://www.citrix.com/English/ss/downloads/">https://www.citrix.com/English/ss/downloads/</ulink>, download the appropriate version of XenServer for your &PRODUCT; version (see <xref linkend="system-requirements-xenserver-hosts"/>).  Install it using the Citrix XenServer Installation Guide.</para></listitem>
-      <listitem><para>After installation, perform the following configuration steps, which are described in the next few sections:</para>
+    <title>XenServer Installation Steps</title>
+    <orderedlist>
+    <listitem><para>From <ulink url="https://www.citrix.com/English/ss/downloads/">https://www.citrix.com/English/ss/downloads/</ulink>, download the appropriate version of XenServer for your &PRODUCT; version (see <xref linkend="system-requirements-xenserver-hosts"/>).  Install it using the Citrix XenServer Installation Guide.</para></listitem>
+    <listitem><para>After installation, perform the following configuration steps, which are described in the next few sections:</para>
     <informaltable frame="all">
         <tgroup cols="2" align="left" colsep="1" rowsep="1">
-      <colspec colname="c1" />
-      <colspec colname="c2" />
-      <thead>
-          <row>
+        <colspec colname="c1" />
+        <colspec colname="c2" />
+        <thead>
+        <row>
         <entry><para>Required</para></entry>
         <entry><para>Optional</para></entry>
-          </row>
-      </thead>
-      <tbody>
-          <row>
+        </row>
+        </thead>
+        <tbody>
+        <row>
         <entry><para><xref linkend="config-xenserver-dom0-memory" /></para></entry>
         <entry><para><xref linkend="xenserver-support-pkg-installation" /></para></entry>
-          </row>
-          <row>
+        </row>
+        <row>
         <entry><para><xref linkend="xenserver-username-password" /></para></entry>
         <entry><para>Set up SR if not using NFS, iSCSI, or local disk; see <xref linkend="xenserver-primary-storage-setup" /></para></entry>
-          </row>
-          <row>
+        </row>
+        <row>
         <entry><para><xref linkend="xenserver-time-sync" /></para></entry>
         <entry><para><xref linkend="xenserver-iscsi-multipath-setup" /></para></entry>
-          </row>
-          <row>
+        </row>
+        <row>
         <entry><para><xref linkend="xenserver-get-deploy-license" /></para></entry>
         <entry><para><xref linkend="xenserver-physical-network-setup" /></para></entry>
-          </row>
-      </tbody>
+        </row>
+        </tbody>
         </tgroup>
     </informaltable>
-      </listitem>
-  </orderedlist>
+    </listitem>
+    </orderedlist>
     </section>
     <section id="config-xenserver-dom0-memory">
-  <title>Configure XenServer dom0 Memory</title>
-  <para>Configure the XenServer dom0 settings to allocate more memory to dom0. This can enable XenServer to handle larger numbers of virtual machines. We recommend 2940 MB of RAM for XenServer dom0.  For instructions on how to do this, see <ulink url="http://support.citrix.com/article/CTX126531">http://support.citrix.com/article/CTX126531</ulink>. The article refers to XenServer 5.6, but the same information applies to XenServer 6.0.</para>
+    <title>Configure XenServer dom0 Memory</title>
+    <para>Configure the XenServer dom0 settings to allocate more memory to dom0. This can enable XenServer to handle larger numbers of virtual machines. We recommend 2940 MB of RAM for XenServer dom0.  For instructions on how to do this, see <ulink url="http://support.citrix.com/article/CTX126531">http://support.citrix.com/article/CTX126531</ulink>. The article refers to XenServer 5.6, but the same information applies to XenServer 6.0.</para>
     </section>
     <section id="xenserver-username-password">
-  <title>Username and Password</title>
-  <para>All XenServers in a cluster must have the same username and password as configured in &PRODUCT;.</para>
+    <title>Username and Password</title>
+    <para>All XenServers in a cluster must have the same username and password as configured in &PRODUCT;.</para>
     </section>
     <section id="xenserver-time-sync">
-  <title>Time Synchronization</title>
-  <para>The host must be set to use NTP. All hosts in a pod must have the same time.</para>
-  <orderedlist>
-      <listitem>
+    <title>Time Synchronization</title>
+    <para>The host must be set to use NTP. All hosts in a pod must have the same time.</para>
+    <orderedlist>
+    <listitem>
     <para>Install NTP.</para>
     <programlisting># yum install ntp</programlisting>
-      </listitem>
-      <listitem>
+    </listitem>
+    <listitem>
     <para>Edit the NTP configuration file to point to your NTP server.</para>
     <programlisting># vi /etc/ntp.conf</programlisting>
     <para>Add one or more server lines in this file with the names of the NTP servers you want to use. For example:</para>
-    <programlisting>
-server 0.xenserver.pool.ntp.org
+    <programlisting>server 0.xenserver.pool.ntp.org
 server 1.xenserver.pool.ntp.org
 server 2.xenserver.pool.ntp.org
 server 3.xenserver.pool.ntp.org
     </programlisting>
-      </listitem>
-      <listitem>
+    </listitem>
+    <listitem>
     <para>Restart the NTP client.</para>
     <programlisting># service ntpd restart</programlisting>
-      </listitem>
-      <listitem>
+    </listitem>
+    <listitem>
     <para>Make sure NTP will start again upon reboot.</para>
     <programlisting># chkconfig ntpd on</programlisting>
-      </listitem>
-  </orderedlist>
+    </listitem>
+    </orderedlist>
     </section>
     <section id="xenserver-licensing">
-  <title>Licensing</title>
-  <para>Citrix XenServer Free version provides 30 days usage without a license. Following the 30 day trial, XenServer requires a free activation and license. You can choose to install a license now or skip this step. If you skip this step, you will need to install a license when you activate and license the XenServer.</para>
-  <section id="xenserver-get-deploy-license">
-      <title>Getting and Deploying a License</title>
-      <para>If you choose to install a license now you will need to use the XenCenter to activate and get a license.</para>
-      <orderedlist>
+    <title>Licensing</title>
+    <para>Citrix XenServer Free version provides 30 days usage without a license. Following the 30 day trial, XenServer requires a free activation and license. You can choose to install a license now or skip this step. If you skip this step, you will need to install a license when you activate and license the XenServer.</para>
+    <section id="xenserver-get-deploy-license">
+    <title>Getting and Deploying a License</title>
+    <para>If you choose to install a license now you will need to use the XenCenter to activate and get a license.</para>
+    <orderedlist>
     <listitem><para>In XenCenter, click Tools > License manager.</para></listitem>
     <listitem><para>Select your XenServer and select Activate Free XenServer.</para></listitem>
     <listitem><para>Request a license.</para></listitem>
-      </orderedlist>
-      <para>You can install the license with XenCenter or using the xe command line tool.</para>
-  </section>
+    </orderedlist>
+    <para>You can install the license with XenCenter or using the xe command line tool.</para>
+    </section>
     </section>
     <section id="xenserver-support-pkg-installation">
-  <title>Install &PRODUCT; XenServer Support Package (CSP)</title>
-  <para>(Optional)</para>
-  <para>To enable security groups, elastic load balancing, and elastic IP on XenServer, download and install the &PRODUCT; XenServer Support Package (CSP). After installing XenServer, perform the following additional steps on each XenServer host.</para>
-  <orderedlist>
-      <listitem>
+    <title>Install &PRODUCT; XenServer Support Package (CSP)</title>
+    <para>(Optional)</para>
+    <para>To enable security groups, elastic load balancing, and elastic IP on XenServer, download and install the &PRODUCT; XenServer Support Package (CSP). After installing XenServer, perform the following additional steps on each XenServer host.</para>
+    <orderedlist>
+    <listitem>
     <para>Download the CSP software onto the XenServer host from one of the following links:</para>
     <para>For XenServer 6.0.2:</para>
     <para><ulink url="http://download.cloud.com/releases/3.0.1/XS-6.0.2/xenserver-cloud-supp.tgz">http://download.cloud.com/releases/3.0.1/XS-6.0.2/xenserver-cloud-supp.tgz</ulink></para>
@@ -150,51 +150,50 @@ server 3.xenserver.pool.ntp.org
     <para><ulink url="http://download.cloud.com/releases/2.2.0/xenserver-cloud-supp.tgz">http://download.cloud.com/releases/2.2.0/xenserver-cloud-supp.tgz</ulink></para>
     <para>For XenServer 6.0:</para>
     <para><ulink url="http://download.cloud.com/releases/3.0/xenserver-cloud-supp.tgz">http://download.cloud.com/releases/3.0/xenserver-cloud-supp.tgz</ulink></para>
-      </listitem>
-      <listitem>
+    </listitem>
+    <listitem>
     <para>Extract the file:</para>
     <programlisting># tar xf xenserver-cloud-supp.tgz</programlisting>
-      </listitem>
-      <listitem>
+    </listitem>
+    <listitem>
     <para>Run the following script:</para>
     <programlisting># xe-install-supplemental-pack xenserver-cloud-supp.iso</programlisting>
-      </listitem>
-      <listitem>
+    </listitem>
+    <listitem>
     <para>If the XenServer host is part of a zone that uses basic networking, disable Open vSwitch (OVS):</para>
     <programlisting># xe-switch-network-backend  bridge</programlisting>
     <para>Restart  the host machine when prompted.</para>
-      </listitem>
-  </orderedlist>
-  <para>The XenServer host is now ready to be added to &PRODUCT;.</para>
+    </listitem>
+    </orderedlist>
+    <para>The XenServer host is now ready to be added to &PRODUCT;.</para>
     </section>
     <section id="xenserver-primary-storage-setup">
-  <title>Primary Storage Setup for XenServer</title>
-  <para>&PRODUCT; natively supports NFS, iSCSI and local storage.  If you are using one of these storage types, there is no need to create the XenServer Storage Repository ("SR").</para>
-  <para>If, however, you would like to use storage connected via some other technology, such as FiberChannel, you must set up the SR yourself. To do so, perform the following steps. If you have your hosts in a XenServer pool, perform the steps on the master node. If you are working with a single XenServer which is not part of a cluster, perform the steps on that XenServer.</para>
-  <orderedlist>
-      <listitem><para>Connect FiberChannel cable to all hosts in the cluster and to the FiberChannel storage host.</para></listitem>
-      <listitem>
+    <title>Primary Storage Setup for XenServer</title>
+    <para>&PRODUCT; natively supports NFS, iSCSI and local storage.  If you are using one of these storage types, there is no need to create the XenServer Storage Repository ("SR").</para>
+    <para>If, however, you would like to use storage connected via some other technology, such as FiberChannel, you must set up the SR yourself. To do so, perform the following steps. If you have your hosts in a XenServer pool, perform the steps on the master node. If you are working with a single XenServer which is not part of a cluster, perform the steps on that XenServer.</para>
+    <orderedlist>
+    <listitem><para>Connect FiberChannel cable to all hosts in the cluster and to the FiberChannel storage host.</para></listitem>
+    <listitem>
     <para>Rescan the SCSI bus. Either use the following command or use XenCenter to perform an HBA rescan.</para>
     <programlisting># scsi-rescan</programlisting>
-      </listitem>
-      <listitem><para>Repeat step 2 on every host.</para></listitem>
-      <listitem>
+    </listitem>
+    <listitem><para>Repeat step 2 on every host.</para></listitem>
+    <listitem>
     <para>Check to be sure you see the new SCSI disk.</para>
     <programlisting># ls /dev/disk/by-id/scsi-360a98000503365344e6f6177615a516b -l</programlisting>
     <para>The output should look like this, although the specific file name will be different (scsi-&lt;scsiID&gt;):</para>
-    <programlisting>
-lrwxrwxrwx 1 root root 9 Mar 16 13:47
+    <programlisting>lrwxrwxrwx 1 root root 9 Mar 16 13:47
 /dev/disk/by-id/scsi-360a98000503365344e6f6177615a516b -> ../../sdc
     </programlisting>
-      </listitem>
-      <listitem><para>Repeat step 4 on every host.</para></listitem>
-      <listitem>
+    </listitem>
+    <listitem><para>Repeat step 4 on every host.</para></listitem>
+    <listitem>
     <para>On the storage server, run this command to get a unique ID for the new SR.</para>
     <programlisting># uuidgen</programlisting>
     <para>The output should look like this, although the specific ID will be different:</para>
     <programlisting>e6849e96-86c3-4f2c-8fcc-350cc711be3d</programlisting>
-      </listitem>
-      <listitem>
+    </listitem>
+    <listitem>
     <para>Create the FiberChannel SR. In name-label, use the unique ID you just generated.</para>
     <programlisting>
 # xe sr-create type=lvmohba shared=true
