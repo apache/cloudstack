@@ -14,20 +14,21 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.region.dao;
+package com.cloud.region;
 
-import javax.ejb.Local;
 
-import org.apache.log4j.Logger;
+public class FindUserResponse {
 
-import com.cloud.region.RegionVO;
-import com.cloud.utils.db.GenericDaoBase;
+	private RegionUser user;
 
-@Local(value={RegionDao.class})
-public class RegionDaoImpl extends GenericDaoBase<RegionVO, Integer> implements RegionDao {
-    private static final Logger s_logger = Logger.getLogger(RegionDaoImpl.class);
-    
-    public RegionDaoImpl(){
-    	
-    }
+	public FindUserResponse(){
+	}
+
+	public RegionUser getUser() {
+		return user;
+	}
+	
+	public void setUser(RegionUser user) {
+		this.user = user;
+	}
 }

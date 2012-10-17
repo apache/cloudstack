@@ -62,7 +62,7 @@ public interface AccountService {
      * @return the user if created successfully, null otherwise
      */
     UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName, short accountType, Long domainId, String networkDomain,
-            Map<String, String> details, String accountUUID, String userUUID, Long regionId);
+            Map<String, String> details, String accountUUID, String userUUID, Integer regionId);
 
     /**
      * Deletes a user by userId
@@ -163,7 +163,7 @@ public interface AccountService {
 
     User getSystemUser();
 
-    User createUser(String userName, String password, String firstName, String lastName, String email, String timeZone, String accountName, Long domainId, String userUUID, Long regionId);
+    User createUser(String userName, String password, String firstName, String lastName, String email, String timeZone, String accountName, Long domainId, String userUUID, Integer regionId);
 
     boolean deleteUser(DeleteUserCmd deleteUserCmd);
 
@@ -202,4 +202,7 @@ public interface AccountService {
 
     void checkAccess(Account account, AccessType accessType, boolean sameOwner, ControlledEntity... entities) throws PermissionDeniedException;
 
+	User findUser(String username, Long domainId);
+
+	Account findAccount(Long id);
 }

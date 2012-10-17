@@ -759,7 +759,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_CREATE, eventDescription = "creating Account")
     public UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName, short accountType, Long domainId, String networkDomain,
-            Map<String, String> details, String accountUUID, String userUUID, Long regionId) {
+            Map<String, String> details, String accountUUID, String userUUID, Integer regionId) {
 
         if (accountName == null) {
             accountName = userName;
@@ -849,7 +849,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     }
 
     @Override
-    public UserVO createUser(String userName, String password, String firstName, String lastName, String email, String timeZone, String accountName, Long domainId, String userUUID, Long regionId) {
+    public UserVO createUser(String userName, String password, String firstName, String lastName, String email, String timeZone, String accountName, Long domainId, String userUUID, Integer regionId) {
 
         // default domain to ROOT if not specified
         if (domainId == null) {
@@ -1629,7 +1629,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
     @Override
     @DB
-    public AccountVO createAccount(String accountName, short accountType, Long domainId, String networkDomain, Map details, String uuid, long regionId) {
+    public AccountVO createAccount(String accountName, short accountType, Long domainId, String networkDomain, Map details, String uuid, int regionId) {
         // Validate domain
         Domain domain = _domainMgr.getDomain(domainId);
         if (domain == null) {
@@ -1709,7 +1709,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     }
 
     //ToDo Add events??
-    public UserVO createUser(long accountId, String userName, String password, String firstName, String lastName, String email, String timezone, String uuid, long regionId) {
+    public UserVO createUser(long accountId, String userName, String password, String firstName, String lastName, String email, String timezone, String uuid, int regionId) {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Creating user: " + userName + ", accountId: " + accountId + " timezone:" + timezone);
         }
@@ -2376,5 +2376,20 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 	@Override
 	public UserAccount getUserByApiKey(String apiKey) {
 		return _userAccountDao.getUserByApiKey(apiKey);
+	}
+
+	@Override
+	public User findUser(String username, Long domainId) {
+		UserAccount userAccount = _userAccountDao.getUserAccount(username, domainId);
+		User user = _userDao.findById(userAccount.getId());
+		if(user == null){
+			throw new InvalidParameterValueException("Unable to find user by name: "+username);
+		}
+		return user;
+	}
+
+	@Override
+	public Account findAccount(Long id) {
+		return _accountDao.findById(id);		
 	}
 }

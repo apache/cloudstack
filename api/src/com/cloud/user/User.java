@@ -68,5 +68,6 @@ public interface User extends OwnedBy {
     String getRegistrationToken();
 
     boolean isRegistered();
-
+    
+    public int getRegionId();
 }

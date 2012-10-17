@@ -62,7 +62,7 @@ public interface Account extends ControlledEntity {
     
     public Long getDefaultZoneId();
     
-    public long getRegionId();
+    public int getRegionId();
     
     public String getUuid();
 }

@@ -27,6 +27,7 @@ enableAccount=com.cloud.api.commands.EnableAccountCmd;7
 ###lockAccount=com.cloud.api.commands.LockAccountCmd;7
 listAccounts=com.cloud.api.commands.ListAccountsCmd;15
 markDefaultZoneForAccount=com.cloud.api.commands.MarkDefaultZoneForAccountCmd;1
+findAccount=com.cloud.api.commands.FindAccountCmd;1
 
 #### User commands
 createUser=com.cloud.api.commands.CreateUserCmd;3
@@ -37,6 +38,7 @@ listUsers=com.cloud.api.commands.ListUsersCmd;7
 disableUser=com.cloud.api.commands.DisableUserCmd;7
 enableUser=com.cloud.api.commands.EnableUserCmd;7
 getUser=com.cloud.api.commands.GetUserCmd;1
+findUser=com.cloud.api.commands.FindUserCmd;1
 
 #### Domain commands
 createDomain=com.cloud.api.commands.CreateDomainCmd;1
@@ -44,6 +46,7 @@ updateDomain=com.cloud.api.commands.UpdateDomainCmd;1
 deleteDomain=com.cloud.api.commands.DeleteDomainCmd;1
 listDomains=com.cloud.api.commands.ListDomainsCmd;7
 listDomainChildren=com.cloud.api.commands.ListDomainChildrenCmd;7
+findDomain=com.cloud.api.commands.FindDomainCmd;1
 
 ####Cloud Identifier commands
 getCloudIdentifier=com.cloud.api.commands.GetCloudIdentifierCmd;15

@@ -68,8 +68,8 @@ public class CreateUserCmd extends BaseCmd {
     @Parameter(name=ApiConstants.USER_ID, type=CommandType.STRING, description="User UUID, required for adding account from another Region")
     private String userUUID;
     
-    @Parameter(name=ApiConstants.REGION_ID, type=CommandType.LONG, description="Id of the Region creating the User")
-    private Long regionId;
+    @Parameter(name=ApiConstants.REGION_ID, type=CommandType.INTEGER, description="Id of the Region creating the User")
+    private Integer regionId;
     
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -111,7 +111,7 @@ public class CreateUserCmd extends BaseCmd {
 		return userUUID;
 	}
     
-	public Long getRegionId() {
+	public Integer getRegionId() {
 		return regionId;
 	}
     

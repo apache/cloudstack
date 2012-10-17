@@ -53,8 +53,8 @@ public class CreateDomainCmd extends BaseCmd {
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.STRING, description="Domain UUID, required for adding domain from another Region")
     private String domainUUID;
     
-    @Parameter(name=ApiConstants.REGION_ID, type=CommandType.LONG, description="Id of the Region creating the Domain")
-    private Long regionId;
+    @Parameter(name=ApiConstants.REGION_ID, type=CommandType.INTEGER, description="Id of the Region creating the Domain")
+    private Integer regionId;
     
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -76,7 +76,7 @@ public class CreateDomainCmd extends BaseCmd {
         return domainUUID;
     }
     
-	public Long getRegionId() {
+	public Integer getRegionId() {
 		return regionId;
 	}
     

@@ -16,69 +16,75 @@
 // under the License.
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseListCmd;
+import com.cloud.api.BaseCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.response.ListResponse;
-import com.cloud.api.response.RegionResponse;
-import com.cloud.region.Region;
+import com.cloud.api.response.FindDomainResponse;
+import com.cloud.domain.Domain;
+import com.cloud.exception.InvalidParameterValueException;
 
-@Implementation(description="Lists Regions", responseObject=RegionResponse.class)
-public class ListRegionsCmd extends BaseListCmd {
-	public static final Logger s_logger = Logger.getLogger(ListRegionsCmd.class.getName());
-	
-    private static final String s_name = "listregionsresponse";
+@Implementation(description="Find account by ID", responseObject=FindDomainResponse.class)
+public class FindDomainCmd extends BaseCmd {
+    public static final Logger s_logger = Logger.getLogger(FindDomainCmd.class.getName());
+
+    private static final String s_name = "finddomainresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="List Region by region ID.")
-    private Integer id;
+    @IdentityMapper(entityTableName="domain")
+    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, description = "Id of the domain")
+    private Long id;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="List Region by region name.")
-    private String domainName;
-    
+    @Parameter(name = ApiConstants.DOMAIN, type = CommandType.STRING, description = "Path of the domain")
+    private String domain;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Integer getId() {
-        return id;
-    }
+	public Long getId() {
+		return id;
+	}
 
-    public String getRegionName() {
-        return domainName;
-    }
-    
+	public String getDomain() {
+		return domain;
+	}
+	
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-    @Override
+	@Override
     public String getCommandName() {
         return s_name;
     }
 
+	@Override
+	public long getEntityOwnerId() {
+		return 0;
+	}
+	
     @Override
     public void execute(){
-        List<? extends Region> result = _regionService.listRegions(this);
-        ListResponse<RegionResponse> response = new ListResponse<RegionResponse>();
-        List<RegionResponse> regionResponses = new ArrayList<RegionResponse>();
-        for (Region region : result) {
-        	RegionResponse regionResponse = _responseGenerator.createRegionResponse(region);
-        	regionResponse.setObjectName("region");
-        	regionResponses.add(regionResponse);
+    	Domain result = null;
+    	if(getId() != null){
+    		result = _domainService.getDomain(getId());	
+    	} else if (getDomain() != null){
+    		result = _domainService.findDomainByPath(getDomain());
+    	}
+        
+        if(result != null){
+        	FindDomainResponse response = _responseGenerator.createFindDomainResponse(result);
+        	response.setResponseName(getCommandName());
+        	this.setResponseObject(response);
+        } else {
+            throw new InvalidParameterValueException("Domain with specified Id does not exist");
         }
-
-        response.setResponses(regionResponses);
-        response.setResponseName(getCommandName());
-        this.setResponseObject(response);
     }
 }

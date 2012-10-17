@@ -29,10 +29,9 @@ import org.apache.log4j.Logger;
 
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
-import com.cloud.user.UserVO;
+import com.cloud.region.RegionManager;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
@@ -47,7 +46,6 @@ public class DomainDaoImpl extends GenericDaoBase<DomainVO, Long> implements Dom
 	protected SearchBuilder<DomainVO> ImmediateChildDomainSearch;
 	protected SearchBuilder<DomainVO> FindAllChildrenSearch;
 	protected SearchBuilder<DomainVO> AllFieldsSearch;
-	private final long _regionId = 1;
 	
 	public DomainDaoImpl () {
 		DomainNameLikeSearch = createSearchBuilder();
@@ -273,10 +271,4 @@ public class DomainDaoImpl extends GenericDaoBase<DomainVO, Long> implements Dom
         return parentDomains;
     }
     
-	@Override
-	@DB
-	public DomainVO persist(DomainVO domain) {
-		domain.setRegionId(_regionId);
-		return super.persist(domain);
-	}
 }

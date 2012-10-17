@@ -50,6 +50,9 @@ import com.cloud.api.response.DomainResponse;
 import com.cloud.api.response.DomainRouterResponse;
 import com.cloud.api.response.EventResponse;
 import com.cloud.api.response.ExtractResponse;
+import com.cloud.api.response.FindAccountResponse;
+import com.cloud.api.response.FindDomainResponse;
+import com.cloud.api.response.FindUserResponse;
 import com.cloud.api.response.FirewallResponse;
 import com.cloud.api.response.FirewallRuleResponse;
 import com.cloud.api.response.HostResponse;
@@ -200,6 +203,7 @@ import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.test.PodZoneConfig;
 import com.cloud.user.Account;
+import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.user.UserContext;
@@ -3927,4 +3931,55 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setObjectName("vpnconnection");
         return response;
     }
+    
+    @Override
+    public FindUserResponse createFindUserResponse(User user) {
+    	FindUserResponse userResponse = new FindUserResponse();
+    	userResponse.setId(user.getId());
+    	userResponse.setUsername(user.getUsername());
+    	userResponse.setPassword(user.getPassword());
+        userResponse.setFirstname(user.getFirstname());        
+        userResponse.setLastname(user.getLastname());
+        userResponse.setAccountId(user.getAccountId());
+        userResponse.setEmail(user.getEmail());
+        userResponse.setState(user.getState().toString());
+        userResponse.setApiKey(user.getApiKey());
+        userResponse.setSecretKey(user.getSecretKey());        
+        userResponse.setCreated(user.getCreated());        
+        userResponse.setTimezone(user.getTimezone());
+        userResponse.setRegistrationToken(user.getRegistrationToken());
+        userResponse.setRegistered(user.isRegistered());
+        userResponse.setRegionId(user.getRegionId());
+        userResponse.setObjectName("user");
+
+        return userResponse;
+    }
+
+	@Override
+	public FindAccountResponse createFindAccountResponse(Account account) {
+		FindAccountResponse accountResponse = new FindAccountResponse();
+		accountResponse.setId(account.getId());
+		accountResponse.setName(account.getAccountName());
+		accountResponse.setAccountType(account.getType());
+		accountResponse.setDefaultZone(account.getDefaultZoneId());
+		accountResponse.setDomainId(account.getDomainId());
+		accountResponse.setRegionId(account.getRegionId());
+		accountResponse.setState(account.getState().toString());
+		accountResponse.setObjectName("account");
+		return accountResponse;
+	}
+
+	@Override
+	public FindDomainResponse createFindDomainResponse(Domain domain) {
+		FindDomainResponse domainResponse = new FindDomainResponse();
+        domainResponse.setDomainName(domain.getName());
+        domainResponse.setId(domain.getId());
+        domainResponse.setLevel(domain.getLevel());
+        domainResponse.setNetworkDomain(domain.getNetworkDomain());
+        domainResponse.setParent(domain.getParent());
+        domainResponse.setPath(domain.getPath());
+        domainResponse.setObjectName("domain");
+        domainResponse.setRegionId(domain.getRegionId());
+		return domainResponse;
+	}
 }

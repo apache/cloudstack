@@ -59,4 +59,6 @@ public interface Domain extends OwnedBy {
     String getNetworkDomain();
     
     public String getUuid();
+    
+    int getRegionId();
 }

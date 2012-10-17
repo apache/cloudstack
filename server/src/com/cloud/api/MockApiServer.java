@@ -28,32 +28,18 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URLDecoder;
-import java.net.URLEncoder;
-import java.security.SecureRandom;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.TimeZone;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-
-import org.apache.commons.codec.binary.Base64;
 import org.apache.http.ConnectionClosedException;
 import org.apache.http.HttpException;
 import org.apache.http.HttpRequest;
@@ -83,43 +69,29 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.ExceptionResponse;
-import com.cloud.api.response.ListResponse;
-import com.cloud.async.AsyncJob;
 import com.cloud.async.AsyncJobManager;
-import com.cloud.async.AsyncJobVO;
 import com.cloud.cluster.StackMaid;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.domain.Domain;
-import com.cloud.domain.DomainVO;
-import com.cloud.event.EventUtils;
-import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.region.RegionManager;
-import com.cloud.server.ManagementServer;
+import com.cloud.server.ManagementService;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
 import com.cloud.user.User;
-import com.cloud.user.UserAccount;
 import com.cloud.user.UserContext;
-import com.cloud.user.UserVO;
 import com.cloud.utils.IdentityProxy;
-import com.cloud.utils.Pair;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CSExceptionErrorCode;
-import com.cloud.uuididentity.dao.IdentityDao;
 
-public class ApiServer implements HttpRequestHandler {
-    private static final Logger s_logger = Logger.getLogger(ApiServer.class.getName());
-    private static final Logger s_accessLogger = Logger.getLogger("apiserver." + ApiServer.class.getName());
+public class MockApiServer implements HttpRequestHandler {
+    private static final Logger s_logger = Logger.getLogger(MockApiServer.class.getName());
 
     public static final short ADMIN_COMMAND = 1;
     public static final short DOMAIN_ADMIN_COMMAND = 4;
@@ -130,22 +102,18 @@ public class ApiServer implements HttpRequestHandler {
     private Properties _apiCommands = null;
     private ApiDispatcher _dispatcher;
     private AccountManager _accountMgr = null;
-    private DomainManager _domainMgr = null;
-    private AsyncJobManager _asyncMgr = null;
     private Account _systemAccount = null;
     private User _systemUser = null;
-    private RegionManager _regionMgr = null;
-    
+
     private static int _workerCount = 0;
 
-    private static ApiServer s_instance = null;
+    private static MockApiServer s_instance = null;
     private static List<String> s_userCommands = null;
     private static List<String> s_resellerCommands = null; // AKA domain-admin
     private static List<String> s_adminCommands = null;
     private static List<String> s_resourceDomainAdminCommands = null;
     private static List<String> s_allCommands = null;
     private static List<String> s_pluggableServiceCommands = null;
-    private static final DateFormat _dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
 
     private static ExecutorService _executor = new ThreadPoolExecutor(10, 150, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("ApiServer"));
 
@@ -158,43 +126,23 @@ public class ApiServer implements HttpRequestHandler {
         s_pluggableServiceCommands = new ArrayList<String>();
     }
 
-    private ApiServer() {
+    private MockApiServer() {
     }
 
     public static void initApiServer(String[] apiConfig) {
         if (s_instance == null) {
-            s_instance = new ApiServer();
+            s_instance = new MockApiServer();
             s_instance.init(apiConfig);
         }
     }
 
-    public static ApiServer getInstance() {
+    public static MockApiServer getInstance() {
         // initApiServer();
         return s_instance;
     }
 
     public Properties get_apiCommands() {
         return _apiCommands;
-    }
-
-    public static boolean isPluggableServiceCommand(String cmdClassName) {
-        if (s_pluggableServiceCommands != null) {
-            if (s_pluggableServiceCommands.contains(cmdClassName)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private String[] getPluggableServicesApiConfigs() {
-        List<String> pluggableServicesApiConfigs = new ArrayList<String>();
-
-        ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
-        List<PluggableService> services = locator.getAllPluggableServices();
-        for (PluggableService service : services) {
-            pluggableServicesApiConfigs.add(service.getPropertiesFile());
-        }
-        return pluggableServicesApiConfigs.toArray(new String[0]);
     }
 
     private void processConfigFiles(String[] apiConfig, boolean pluggableServicesConfig) {
@@ -267,18 +215,11 @@ public class ApiServer implements HttpRequestHandler {
         BaseListCmd.configure();
         processConfigFiles(apiConfig, false);
 
-        // get commands for all pluggable services
-        String[] pluggableServicesApiConfigs = getPluggableServicesApiConfigs();
-        processConfigFiles(pluggableServicesApiConfigs, true);
-
-        ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
+        ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
         _accountMgr = locator.getManager(AccountManager.class);
-        _asyncMgr = locator.getManager(AsyncJobManager.class);
         _systemAccount = _accountMgr.getSystemAccount();
         _systemUser = _accountMgr.getSystemUser();
         _dispatcher = ApiDispatcher.getInstance();
-        _domainMgr = locator.getManager(DomainManager.class);
-        _regionMgr = locator.getManager(RegionManager.class);
 
         Integer apiPort = null; // api port, null by default
         ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
@@ -364,9 +305,10 @@ public class ApiServer implements HttpRequestHandler {
                 // log runtime exception like NullPointerException to help identify the source easier
                 s_logger.error("Unhandled exception, ", e);
                 throw e;
+            } catch (Exception e){
+            	s_logger.info("Error: "+e.getMessage());
             }
         } finally {
-            s_accessLogger.info(sb.toString());
             UserContext.unregisterContext();
         }
     }
@@ -423,7 +365,6 @@ public class ApiServer implements HttpRequestHandler {
                     cmdObj.setResponseType(responseType);
                     // This is where the command is either serialized, or directly dispatched
                     response = queueCommand(cmdObj, paramMap);
-                    buildAuditTrail(auditTrailSb, command[0], response);
                 } else {
                     if (!command[0].equalsIgnoreCase("login") && !command[0].equalsIgnoreCase("logout")) {
                         String errorString = "Unknown API command: " + ((command == null) ? "null" : command[0]);
@@ -476,421 +417,10 @@ public class ApiServer implements HttpRequestHandler {
     }
 
     private String queueCommand(BaseCmd cmdObj, Map<String, String> params) {
-        UserContext ctx = UserContext.current();
-        Long callerUserId = ctx.getCallerUserId();
-        Account caller = ctx.getCaller();
-        if (cmdObj instanceof BaseAsyncCmd) {
-            Long objectId = null;
-            String objectEntityTable = null;
-            if (cmdObj instanceof BaseAsyncCreateCmd) {
-                BaseAsyncCreateCmd createCmd = (BaseAsyncCreateCmd) cmdObj;
-                _dispatcher.dispatchCreateCmd(createCmd, params);
-                objectId = createCmd.getEntityId();
-                objectEntityTable = createCmd.getEntityTable();
-                params.put("id", objectId.toString());
-            } else {
-                ApiDispatcher.setupParameters(cmdObj, params);
-                ApiDispatcher.plugService(cmdObj);
-            }
-
-            BaseAsyncCmd asyncCmd = (BaseAsyncCmd) cmdObj;
-
-            if (callerUserId != null) {
-                params.put("ctxUserId", callerUserId.toString());
-            }
-            if (caller != null) {
-                params.put("ctxAccountId", String.valueOf(caller.getId()));
-            }
-
-            long startEventId = ctx.getStartEventId();
-            asyncCmd.setStartEventId(startEventId);
-
-            // save the scheduled event
-            Long eventId = EventUtils.saveScheduledEvent((callerUserId == null) ? User.UID_SYSTEM : callerUserId, 
-                    asyncCmd.getEntityOwnerId(), asyncCmd.getEventType(), asyncCmd.getEventDescription(),
-                    startEventId);
-            if (startEventId == 0) {
-                // There was no create event before, set current event id as start eventId
-                startEventId = eventId;
-            }
-
-            params.put("ctxStartEventId", String.valueOf(startEventId));
-
-            ctx.setAccountId(asyncCmd.getEntityOwnerId());
-
-            AsyncJobVO job = new AsyncJobVO();
-            job.setInstanceId((objectId == null) ? asyncCmd.getInstanceId() : objectId);
-            job.setInstanceType(asyncCmd.getInstanceType());
-            job.setUserId(callerUserId);
-            job.setAccountId(caller.getId());
-
-            job.setCmd(cmdObj.getClass().getName());
-            job.setCmdInfo(ApiGsonHelper.getBuilder().create().toJson(params));
-
-            long jobId = _asyncMgr.submitAsyncJob(job);
-
-            if (jobId == 0L) {
-                String errorMsg = "Unable to schedule async job for command " + job.getCmd();
-                s_logger.warn(errorMsg);
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, errorMsg);
-            }
-
-            if (objectId != null) {
-                SerializationContext.current().setUuidTranslation(true);
-                return ((BaseAsyncCreateCmd) asyncCmd).getResponse(jobId, objectId, objectEntityTable);
-            }
-
-            SerializationContext.current().setUuidTranslation(true);
-            return ApiResponseSerializer.toSerializedString(asyncCmd.getResponse(jobId), asyncCmd.getResponseType());
-        } else {
-            _dispatcher.dispatch(cmdObj, params);
-
-            // if the command is of the listXXXCommand, we will need to also return the
-            // the job id and status if possible
-            if (cmdObj instanceof BaseListCmd) {
-                buildAsyncListResponse((BaseListCmd) cmdObj, caller);
-            }
-
-            SerializationContext.current().setUuidTranslation(true);
-            return ApiResponseSerializer.toSerializedString((ResponseObject) cmdObj.getResponseObject(), cmdObj.getResponseType());
-        }
-    }
-
-    private void buildAsyncListResponse(BaseListCmd command, Account account) {
-        List<ResponseObject> responses = ((ListResponse) command.getResponseObject()).getResponses();
-        if (responses != null && responses.size() > 0) {
-            List<? extends AsyncJob> jobs = null;
-
-            // list all jobs for ROOT admin
-            if (account.getType() == Account.ACCOUNT_TYPE_ADMIN) {
-                jobs = _asyncMgr.findInstancePendingAsyncJobs(command.getInstanceType(), null);
-            } else {
-                jobs = _asyncMgr.findInstancePendingAsyncJobs(command.getInstanceType(), account.getId());
-            }
-
-            if (jobs.size() == 0) {
-                return;
-            }
-
-            // Using maps might possibly be more efficient if the set is large enough but for now, we'll just do a
-            // comparison of two lists. Either way, there shouldn't be too many async jobs active for the account.
-            for (AsyncJob job : jobs) {
-                if (job.getInstanceId() == null) {
-                    continue;
-                }
-                for (ResponseObject response : responses) {
-                    if (response.getObjectId() != null && job.getInstanceId().longValue() == response.getObjectId().longValue()) {
-                        response.setJobId(job.getId());
-                        response.setJobStatus(job.getStatus());
-                    }
-                }
-            }
-        }
-    }
-
-    private void buildAuditTrail(StringBuffer auditTrailSb, String command, String result) {
-        if (result == null) {
-            return;
-        }
-        auditTrailSb.append(" " + HttpServletResponse.SC_OK + " ");
-        auditTrailSb.append(result);
-        /*
-         * if (command.equals("queryAsyncJobResult")){ //For this command we need to also log job status and job
-         * resultcode for
-         * (Pair<String,Object> pair : resultValues){ String key = pair.first(); if (key.equals("jobstatus")){
-         * auditTrailSb.append(" "); auditTrailSb.append(key); auditTrailSb.append("=");
-         * auditTrailSb.append(pair.second());
-         * }else if (key.equals("jobresultcode")){ auditTrailSb.append(" "); auditTrailSb.append(key);
-         * auditTrailSb.append("=");
-         * auditTrailSb.append(pair.second()); } } }else { for (Pair<String,Object> pair : resultValues){ if
-         * (pair.first().equals("jobid")){ // Its an async job so report the jobid auditTrailSb.append(" ");
-         * auditTrailSb.append(pair.first()); auditTrailSb.append("="); auditTrailSb.append(pair.second()); } } }
-         */
-    }
-
-    private static boolean isCommandAvailable(String commandName) {
-        boolean isCommandAvailable = false;
-        isCommandAvailable = s_allCommands.contains(commandName);
-        return isCommandAvailable;
-    }
-
-    public boolean verifyRequest(Map<String, Object[]> requestParameters, Long userId) throws ServerApiException {
-        try {
-            String apiKey = null;
-            String secretKey = null;
-            String signature = null;
-            String unsignedRequest = null;
-
-            String[] command = (String[]) requestParameters.get("command");
-            if (command == null) {
-                s_logger.info("missing command, ignoring request...");
-                return false;
-            }
-
-            String commandName = command[0];
-
-            // if userId not null, that mean that user is logged in
-            if (userId != null) {
-                Long accountId = ApiDBUtils.findUserById(userId).getAccountId();
-                Account userAccount = _accountMgr.getAccount(accountId);
-                short accountType = userAccount.getType();
-
-                if (!isCommandAvailable(accountType, commandName)) {
-                    s_logger.warn("The given command:" + commandName + " does not exist");
-                    throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command does not exist");
-                }
-                return true;
-            } else {
-                // check against every available command to see if the command exists or not
-                if (!isCommandAvailable(commandName) && !commandName.equals("login") && !commandName.equals("logout")) {
-                    s_logger.warn("The given command:" + commandName + " does not exist");
-                    throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command does not exist");
-                }
-            }
-
-            // - build a request string with sorted params, make sure it's all lowercase
-            // - sign the request, verify the signature is the same
-            List<String> parameterNames = new ArrayList<String>();
-
-            for (Object paramNameObj : requestParameters.keySet()) {
-                parameterNames.add((String) paramNameObj); // put the name in a list that we'll sort later
-            }
-
-            Collections.sort(parameterNames);
-
-            String signatureVersion = null;
-            String expires = null;
-
-            for (String paramName : parameterNames) {
-                // parameters come as name/value pairs in the form String/String[]
-                String paramValue = ((String[]) requestParameters.get(paramName))[0];
-
-                if ("signature".equalsIgnoreCase(paramName)) {
-                    signature = paramValue;
-                } else {
-                    if ("apikey".equalsIgnoreCase(paramName)) {
-                        apiKey = paramValue;
-                    }
-                    else if ("signatureversion".equalsIgnoreCase(paramName)) {
-                        signatureVersion = paramValue;
-                    } else if ("expires".equalsIgnoreCase(paramName)) {
-                        expires = paramValue;
-                    }
-
-                    if (unsignedRequest == null) {
-                        unsignedRequest = paramName + "=" + URLEncoder.encode(paramValue, "UTF-8").replaceAll("\\+", "%20");
-                    } else {
-                        unsignedRequest = unsignedRequest + "&" + paramName + "=" + URLEncoder.encode(paramValue, "UTF-8").replaceAll("\\+", "%20");
-                    }
-                }
-            }
-
-            // if api/secret key are passed to the parameters
-            if ((signature == null) || (apiKey == null)) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.info("expired session, missing signature, or missing apiKey -- ignoring request...sig: " + signature + ", apiKey: " + apiKey);
-                }
-                return false; // no signature, bad request
-            }
-
-            Date expiresTS = null;
-            if ("3".equals(signatureVersion)) {
-                // New signature authentication. Check for expire parameter and its validity
-                if (expires == null) {
-                    s_logger.info("missing Expires parameter -- ignoring request...sig: " + signature + ", apiKey: " + apiKey);
-                    return false;
-                }
-                synchronized (_dateFormat) {
-                    try {
-                        expiresTS = _dateFormat.parse(expires);
-                    } catch (ParseException pe) {
-                        s_logger.info("Incorrect date format for Expires parameter", pe);
-                        return false;
-                    }
-                }
-                Date now = new Date(System.currentTimeMillis());
-                if (expiresTS.before(now)) {
-                    s_logger.info("Request expired -- ignoring ...sig: " + signature + ", apiKey: " + apiKey);
-                    return false;
-                }
-            }
-
-            Transaction txn = Transaction.open(Transaction.CLOUD_DB);
-            txn.close();
-            User user = null;
-            // verify there is a user with this api key
-            Pair<User, Account> userAcctPair = _accountMgr.findUserByApiKey(apiKey);
-            if (userAcctPair == null) {
-                s_logger.info("apiKey does not map to a valid user -- ignoring request, apiKey: " + apiKey);
-                return false;
-            }
-
-            user = userAcctPair.first();
-            Account account = userAcctPair.second();
-
-            if (user.getState() != Account.State.enabled || !account.getState().equals(Account.State.enabled)) {
-                s_logger.info("disabled or locked user accessing the api, userid = " + user.getId() + "; name = " + user.getUsername() + "; state: " + user.getState() + "; accountState: "
-                        + account.getState());
-                return false;
-            }
-
-            UserContext.updateContext(user.getId(), account, null);
-
-            if (!isCommandAvailable(account.getType(), commandName)) {
-                s_logger.warn("The given command:" + commandName + " does not exist");
-                throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command:" + commandName + " does not exist");
-            }
-
-            // verify secret key exists
-            secretKey = user.getSecretKey();
-            if (secretKey == null) {
-                s_logger.info("User does not have a secret key associated with the account -- ignoring request, username: " + user.getUsername());
-                return false;
-            }
-
-            unsignedRequest = unsignedRequest.toLowerCase();
-
-            Mac mac = Mac.getInstance("HmacSHA1");
-            SecretKeySpec keySpec = new SecretKeySpec(secretKey.getBytes(), "HmacSHA1");
-            mac.init(keySpec);
-            mac.update(unsignedRequest.getBytes());
-            byte[] encryptedBytes = mac.doFinal();
-            String computedSignature = Base64.encodeBase64String(encryptedBytes);
-            boolean equalSig = signature.equals(computedSignature);
-            if (!equalSig) {
-                s_logger.info("User signature: " + signature + " is not equaled to computed signature: " + computedSignature);
-            }
-            return equalSig;
-        } catch (Exception ex) {
-            if (ex instanceof ServerApiException && ((ServerApiException) ex).getErrorCode() == BaseCmd.UNSUPPORTED_ACTION_ERROR) {
-                throw (ServerApiException) ex;
-            }
-            s_logger.error("unable to verifty request signature", ex);
-        }
-        return false;
-    }
-    
-    public Long fetchDomainId(String domainUUID){
-        ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
-        IdentityDao identityDao = locator.getDao(IdentityDao.class);
-        try{
-            Long domainId = identityDao.getIdentityId("domain", domainUUID);
-            return domainId;
-        }catch(InvalidParameterValueException ex){
-            return null;
-        }
-    }
-
-    public void loginUser(HttpSession session, String username, String password, Long domainId, String domainPath, String loginIpAddress ,Map<String, Object[]> requestParameters) throws CloudAuthenticationException {
-        // We will always use domainId first. If that does not exist, we will use domain name. If THAT doesn't exist
-        // we will default to ROOT
-        if (domainId == null) {
-            if (domainPath == null || domainPath.trim().length() == 0) {
-                domainId = DomainVO.ROOT_DOMAIN;
-            } else {
-                Domain domainObj = _regionMgr.findDomainByPath(domainPath);
-                if (domainObj != null) {
-                    domainId = domainObj.getId();
-                } else { // if an unknown path is passed in, fail the login call
-                    throw new CloudAuthenticationException("Unable to find the domain from the path " + domainPath);
-                }
-            }
-        }
-
-        UserAccount userAcct = _accountMgr.authenticateUser(username, password, domainId, loginIpAddress, requestParameters);
-        if (userAcct != null) {
-            String timezone = userAcct.getTimezone();
-            float offsetInHrs = 0f;
-            if (timezone != null) {
-                TimeZone t = TimeZone.getTimeZone(timezone);
-                s_logger.info("Current user logged in under " + timezone + " timezone");
-
-                java.util.Date date = new java.util.Date();
-                long longDate = date.getTime();
-                float offsetInMs = (t.getOffset(longDate));
-                offsetInHrs = offsetInMs / (1000 * 60 * 60);
-                s_logger.info("Timezone offset from UTC is: " + offsetInHrs);
-            }
-
-            Account account = _accountMgr.getAccount(userAcct.getAccountId());
-
-            // set the userId and account object for everyone
-            session.setAttribute("userid", userAcct.getId());
-            UserVO user = (UserVO) _accountMgr.getActiveUser(userAcct.getId());
-            if(user.getUuid() != null){
-                session.setAttribute("user_UUID", user.getUuid());
-            }
-            
-            session.setAttribute("username", userAcct.getUsername());
-            session.setAttribute("firstname", userAcct.getFirstname());
-            session.setAttribute("lastname", userAcct.getLastname());
-            session.setAttribute("accountobj", account);
-            session.setAttribute("account", account.getAccountName());
-            
-            session.setAttribute("domainid", account.getDomainId());
-            DomainVO domain = (DomainVO) _domainMgr.getDomain(account.getDomainId());
-            if(domain.getUuid() != null){
-                session.setAttribute("domain_UUID", domain.getUuid());
-            }
-            
-            session.setAttribute("type", Short.valueOf(account.getType()).toString());
-            session.setAttribute("registrationtoken", userAcct.getRegistrationToken());
-            session.setAttribute("registered", new Boolean(userAcct.isRegistered()).toString());
-
-            if (timezone != null) {
-                session.setAttribute("timezone", timezone);
-                session.setAttribute("timezoneoffset", Float.valueOf(offsetInHrs).toString());
-            }
-
-            // (bug 5483) generate a session key that the user must submit on every request to prevent CSRF, add that
-            // to the login response so that session-based authenticators know to send the key back
-            SecureRandom sesssionKeyRandom = new SecureRandom();
-            byte sessionKeyBytes[] = new byte[20];
-            sesssionKeyRandom.nextBytes(sessionKeyBytes);
-            String sessionKey = Base64.encodeBase64String(sessionKeyBytes);
-            session.setAttribute("sessionkey", sessionKey);
-
-            return;
-        }
-        throw new CloudAuthenticationException("Failed to authenticate user " + username + " in domain " + domainId + "; please provide valid credentials");
-    }
-
-    public void logoutUser(long userId) {
-        _accountMgr.logoutUser(Long.valueOf(userId));
-        return;
-    }
-
-    public boolean verifyUser(Long userId) {
-        User user = _accountMgr.getUserIncludingRemoved(userId);
-        Account account = null;
-        if (user != null) {
-            account = _accountMgr.getAccount(user.getAccountId());
-        }
-
-        if ((user == null) || (user.getRemoved() != null) || !user.getState().equals(Account.State.enabled) || (account == null) || !account.getState().equals(Account.State.enabled)) {
-            s_logger.warn("Deleted/Disabled/Locked user with id=" + userId + " attempting to access public API");
-            return false;
-        }
-        return true;
-    }
-
-    public static boolean isCommandAvailable(short accountType, String commandName) {
-        boolean isCommandAvailable = false;
-        switch (accountType) {
-        case Account.ACCOUNT_TYPE_ADMIN:
-            isCommandAvailable = s_adminCommands.contains(commandName);
-            break;
-        case Account.ACCOUNT_TYPE_DOMAIN_ADMIN:
-            isCommandAvailable = s_resellerCommands.contains(commandName);
-            break;
-        case Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN:
-            isCommandAvailable = s_resourceDomainAdminCommands.contains(commandName);
-            break;
-        case Account.ACCOUNT_TYPE_NORMAL:
-            isCommandAvailable = s_userCommands.contains(commandName);
-            break;
-        }
-        return isCommandAvailable;
+    	params.put("ctxStartEventId", String.valueOf(0L));
+    	_dispatcher.dispatch(cmdObj, params);
+    	SerializationContext.current().setUuidTranslation(true);
+    	return ApiResponseSerializer.toSerializedString((ResponseObject) cmdObj.getResponseObject(), cmdObj.getResponseType());
     }
 
     // FIXME: rather than isError, we might was to pass in the status code to give more flexibility
@@ -932,7 +462,7 @@ public class ApiServer implements HttpRequestHandler {
         private ServerSocket _serverSocket = null;
         private HttpParams _params = null;
 
-        public ListenerThread(ApiServer requestHandler, int port) {
+        public ListenerThread(MockApiServer requestHandler, int port) {
             try {
                 _serverSocket = new ServerSocket(port);
             } catch (IOException ioex) {
@@ -1104,4 +634,5 @@ public class ApiServer implements HttpRequestHandler {
         }
         return responseText;
     }
+    
 }

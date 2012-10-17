@@ -31,9 +31,9 @@ import com.cloud.user.UserAccount;
 
 
 public interface RegionService {
-	public Region addRegion(long id, String name, String endPoint);
-	public Region updateRegion(long id, String name, String endPoint);
-	public boolean removeRegion(long id);
+	public Region addRegion(int id, String name, String endPoint, String apiKey, String secretKey);
+	public Region updateRegion(int id, String name, String endPoint, String apiKey, String secretKey);
+	public boolean removeRegion(int id);
 	public List<? extends Region> listRegions(ListRegionsCmd cmd);
 	boolean deleteUserAccount(long accountId);
 	Account updateAccount(UpdateAccountCmd cmd);

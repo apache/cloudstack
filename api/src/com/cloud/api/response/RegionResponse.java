@@ -22,7 +22,7 @@ import com.google.gson.annotations.SerializedName;
 
 public class RegionResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the region")
-    private Long id;
+    private Integer id;
 
     @SerializedName(ApiConstants.NAME) @Param(description="the name of the region")
     private String name;
@@ -30,11 +30,11 @@ public class RegionResponse extends BaseResponse {
     @SerializedName(ApiConstants.END_POINT) @Param(description="the end point of the region")
     private String endPoint;
 
-	public Long getId() {
+	public Integer getId() {
 		return id;
 	}
 
-	public void setId(Long id) {
+	public void setId(Integer id) {
 		this.id = id;
 	}
 

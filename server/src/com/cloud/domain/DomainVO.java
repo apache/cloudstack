@@ -75,11 +75,11 @@ public class DomainVO implements Domain, Identity {
     private String uuid;
 
     @Column(name="region_id")
-    private long regionId;
+    private int regionId;
     
     public DomainVO() {}
     
-    public DomainVO(String name, long owner, Long parentId, String networkDomain, Long regionId) {
+    public DomainVO(String name, long owner, Long parentId, String networkDomain, int regionId) {
     	this.parent = parentId;
         this.name = name;
         this.accountId = owner;
@@ -91,7 +91,7 @@ public class DomainVO implements Domain, Identity {
         this.regionId = regionId;
     }
 
-    public DomainVO(String name, long owner, Long parentId, String networkDomain, String uuid, Long regionId) {
+    public DomainVO(String name, long owner, Long parentId, String networkDomain, String uuid, int regionId) {
     	this.parent = parentId;
         this.name = name;
         this.accountId = owner;
@@ -215,11 +215,11 @@ public class DomainVO implements Domain, Identity {
     	this.uuid = uuid;
     }
     
-	public long getRegionId() {
+	public int getRegionId() {
 		return regionId;
 	}
 
-	public void setRegionId(long regionId) {
+	public void setRegionId(int regionId) {
 		this.regionId = regionId;
 	}
 }

@@ -93,7 +93,7 @@ public class UpdateDomainCmd extends BaseCmd {
         boolean isPopagate = (getIsPropagate() != null ) ? getIsPropagate() : false;
         Domain domain = null;
     	if(isPopagate){
-    		domain = _mgr.updateDomain(this);
+    		domain = _domainService.updateDomain(this);
         } else {
         	domain = _regionService.updateDomain(this);
         }

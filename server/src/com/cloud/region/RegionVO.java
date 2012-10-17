@@ -20,12 +20,9 @@ import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.region.Region;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -34,7 +31,7 @@ public class RegionVO implements Region{
 
     @Id
     @Column(name="id")
-    private long id;
+    private int id;
     
     @Column(name="name")
     private String name;
@@ -42,9 +39,11 @@ public class RegionVO implements Region{
     @Column(name="end_point")
     private String endPoint;
     
-    @Column(name="status")
-    @Enumerated(value=EnumType.STRING)
-    private Region.State status;
+    @Column(name="api_key")
+    private String apiKey;
+    
+    @Column(name="secret_key")
+    private String secretKey;
     
     @Column(name=GenericDao.REMOVED_COLUMN)
     private Date removed;
@@ -52,14 +51,15 @@ public class RegionVO implements Region{
     public RegionVO() {
     }
     
-    public RegionVO(long id, String name, String endPoint) {
+    public RegionVO(int id, String name, String endPoint, String apiKey, String secretKey) {
     	this.id = id;
     	this.name = name;
     	this.endPoint = endPoint;
-    	this.status = Region.State.Down;
+    	this.apiKey = apiKey;
+    	this.secretKey = secretKey;
     }
 
-	public long getId() {
+	public int getId() {
 		return id;
 	}
 
@@ -69,14 +69,6 @@ public class RegionVO implements Region{
 
 	public void setName(String name) {
 		this.name = name;
-	}
-
-	public Region.State getStatus() {
-		return status;
-	}
-
-	public void setStatus(Region.State status) {
-		this.status = status;
 	}
 
 	public Date getRemoved() {
@@ -89,6 +81,22 @@ public class RegionVO implements Region{
 
 	public void setEndPoint(String endPoint) {
 		this.endPoint = endPoint;
+	}
+
+	public String getApiKey() {
+		return apiKey;
+	}
+
+	public void setApiKey(String apiKey) {
+		this.apiKey = apiKey;
+	}
+
+	public String getSecretKey() {
+		return secretKey;
+	}
+
+	public void setSecretKey(String secretKey) {
+		this.secretKey = secretKey;
 	}
 
     

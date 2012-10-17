@@ -16,21 +16,46 @@
 // under the License.
 package com.cloud.region;
 
-import java.util.Map;
-
 import com.cloud.domain.DomainVO;
-import com.cloud.user.UserAccount;
 
+public class RegionDomain extends DomainVO {
+    String accountUuid;
+    String parentUuid;
+    String parentdomainname;
+    Boolean haschild;
 
-public interface RegionManager {
-	public boolean propogateAddAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName, short accountType, Long domainId, String networkDomain,
-            Map<String, String> details, String accountUUID, String userUUID);
-	public int getId();
-	public void setId(int id);
-	public void propogateAddUser(String userName, String password,
-			String firstName, String lastName, String email, String timeZone,
-			String accountName, String domainUUId, String userUUID);
-	public void propogateAddDomain(String name, Long parentId, String networkDomain, String uuid);
-	UserAccount getUserAccount(String username, Long domainId);
-	DomainVO findDomainByPath(String domainPath);	
+	public RegionDomain() {
+    }
+    
+    public String getAccountuuid() {
+		return accountUuid;
+	}
+
+	public void setAccountuuid(String accountUuid) {
+		this.accountUuid = accountUuid;
+	}
+
+	public String getParentUuid() {
+		return parentUuid;
+	}
+
+	public void setParentUuid(String parentUuid) {
+		this.parentUuid = parentUuid;
+	}
+
+	public String getParentdomainname() {
+		return parentdomainname;
+	}
+
+	public void setParentdomainname(String parentdomainname) {
+		this.parentdomainname = parentdomainname;
+	}
+
+	public Boolean getHaschild() {
+		return haschild;
+	}
+
+	public void setHaschild(Boolean haschild) {
+		this.haschild = haschild;
+	}
 }

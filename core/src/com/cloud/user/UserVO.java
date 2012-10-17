@@ -93,7 +93,7 @@ public class UserVO implements User, Identity {
     private String uuid;
 
     @Column(name="region_id")
-    private long regionId;
+    private int regionId;
     
     public UserVO() {
         this.uuid = UUID.randomUUID().toString();
@@ -104,7 +104,7 @@ public class UserVO implements User, Identity {
         this.uuid = UUID.randomUUID().toString();
     }
     
-    public UserVO(long accountId, String username, String password, String firstName, String lastName, String email, String timezone, String uuid, long regionId) {
+    public UserVO(long accountId, String username, String password, String firstName, String lastName, String email, String timezone, String uuid, int regionId) {
         this.accountId = accountId;
         this.username = username;
         this.password = password;
@@ -265,11 +265,11 @@ public class UserVO implements User, Identity {
         this.uuid = uuid;
     }
     
-	public long getRegionId() {
+	public int getRegionId() {
 		return regionId;
 	}
 
-	public void setRegionId(long regionId) {
+	public void setRegionId(int regionId) {
 		this.regionId = regionId;
 	}
 }

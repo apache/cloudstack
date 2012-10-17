@@ -34,6 +34,9 @@ import com.cloud.api.response.DomainResponse;
 import com.cloud.api.response.DomainRouterResponse;
 import com.cloud.api.response.EventResponse;
 import com.cloud.api.response.ExtractResponse;
+import com.cloud.api.response.FindAccountResponse;
+import com.cloud.api.response.FindDomainResponse;
+import com.cloud.api.response.FindUserResponse;
 import com.cloud.api.response.FirewallResponse;
 import com.cloud.api.response.FirewallRuleResponse;
 import com.cloud.api.response.HostResponse;
@@ -344,4 +347,10 @@ public interface ResponseGenerator {
     Site2SiteCustomerGatewayResponse createSite2SiteCustomerGatewayResponse(Site2SiteCustomerGateway result);
 
     Site2SiteVpnConnectionResponse createSite2SiteVpnConnectionResponse(Site2SiteVpnConnection result);
+
+	FindUserResponse createFindUserResponse(User user);
+
+	FindAccountResponse createFindAccountResponse(Account account);
+
+	FindDomainResponse createFindDomainResponse(Domain domain);
 }

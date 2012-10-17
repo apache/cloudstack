@@ -22,10 +22,12 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.region.RegionManager;
 import com.cloud.server.ManagementServer;
 import com.cloud.user.UserAccount;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.component.Inject;
 
 /**
  * Simple UserAuthenticator that performs a MD5 hash of the password before 
@@ -36,14 +38,14 @@ import com.cloud.utils.component.ComponentLocator;
 public class MD5UserAuthenticator extends DefaultUserAuthenticator {
 	public static final Logger s_logger = Logger.getLogger(MD5UserAuthenticator.class);
 	
-	private UserAccountDao _userAccountDao;
+    private RegionManager _regionMgr;
 	
 	@Override
 	public boolean authenticate(String username, String password, Long domainId, Map<String, Object[]> requestParameters ) {
 		if (s_logger.isDebugEnabled()) {
             s_logger.debug("Retrieving user: " + username);
         }
-        UserAccount user = _userAccountDao.getUserAccount(username, domainId);
+        UserAccount user = _regionMgr.getUserAccount(username, domainId);
         if (user == null) {
             s_logger.debug("Unable to find user with " + username + " in domain " + domainId);
             return false;
@@ -84,7 +86,7 @@ public class MD5UserAuthenticator extends DefaultUserAuthenticator {
 			throws ConfigurationException {
 		super.configure(name, params);
 		ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
-		_userAccountDao = locator.getDao(UserAccountDao.class);
+		_regionMgr = locator.getManager(RegionManager.class);
 		return true;
 	}
 }

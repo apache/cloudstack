@@ -25,16 +25,7 @@ import com.cloud.domain.DomainVO;
 public interface DomainManager extends DomainService {
     Set<Long> getDomainChildrenIds(String parentDomainPath);
 
-    Domain createDomain(String name, Long parentId, Long ownerId, String networkDomain, String domainUUID, Long regionId);
-
-    /**
-     * find the domain by its path
-     * 
-     * @param domainPath
-     *            the path to use to lookup a domain
-     * @return domainVO the domain with the matching path, or null if no domain with the given path exists
-     */
-    DomainVO findDomainByPath(String domainPath);
+    Domain createDomain(String name, Long parentId, Long ownerId, String networkDomain, String domainUUID, Integer regionId);
 
     Set<Long> getDomainParentIds(long domainId);
 

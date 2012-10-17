@@ -891,7 +891,7 @@ CREATE TABLE  `cloud`.`user` (
   `timezone` varchar(30) default NULL,
   `registration_token` varchar(255) default NULL,
   `is_registered` tinyint NOT NULL DEFAULT 0 COMMENT '1: yes, 0: no',
-  `region_id` bigint unsigned,
+  `region_id` int unsigned,
   `incorrect_login_attempts` integer unsigned NOT NULL DEFAULT 0,
   PRIMARY KEY  (`id`),
   INDEX `i_user__removed`(`removed`),
@@ -1241,7 +1241,7 @@ CREATE TABLE  `cloud`.`domain` (
   `state` char(32) NOT NULL default 'Active' COMMENT 'state of the domain',
   `network_domain` varchar(255),
   `type` varchar(255) NOT NULL DEFAULT 'Normal' COMMENT 'type of the domain - can be Normal or Project',
-  `region_id` bigint unsigned,  
+  `region_id` int unsigned,  
   PRIMARY KEY  (`id`),
   UNIQUE (parent, name, removed),
   INDEX `i_domain__path`(`path`),
@@ -1260,7 +1260,7 @@ CREATE TABLE  `cloud`.`account` (
   `cleanup_needed` tinyint(1) NOT NULL default '0',
   `network_domain` varchar(255),
   `default_zone_id` bigint unsigned,
-  `region_id` bigint unsigned,  
+  `region_id` int unsigned,  
   PRIMARY KEY  (`id`),
   INDEX i_account__removed(`removed`),
   CONSTRAINT `fk_account__default_zone_id` FOREIGN KEY `fk_account__default_zone_id`(`default_zone_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,
@@ -2214,10 +2214,11 @@ CREATE TABLE  `cloud`.`netscaler_pod_ref` (
 
 
 CREATE TABLE  `cloud`.`region` (
-  `id` bigint unsigned NOT NULL UNIQUE,
-  `name` varchar(255),
-  `end_point` varchar(255),
-  `status` varchar(32) NOT NULL,
+  `id` int unsigned NOT NULL UNIQUE,
+  `name` varchar(255) NOT NULL,
+  `end_point` varchar(255) NOT NULL,
+  `api_key` varchar(255),
+  `secret_key` varchar(255),
   `removed` datetime COMMENT 'date removed if not null',
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

@@ -20,18 +20,14 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
-import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.response.DomainResponse;
 import com.cloud.api.response.RegionResponse;
-import com.cloud.domain.Domain;
 import com.cloud.region.Region;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
-@Implementation(description="Updates a region", responseObject=DomainResponse.class)
+@Implementation(description="Updates a region", responseObject=RegionResponse.class)
 public class UpdateRegionCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateRegionCmd.class.getName());
     private static final String s_name = "updateregionresponse";
@@ -40,8 +36,8 @@ public class UpdateRegionCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="ID of region to update")
-    private Long id;
+    @Parameter(name=ApiConstants.ID, type=CommandType.INTEGER, required=true, description="ID of region to update")
+    private Integer id;
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="updates region with this name")
     private String regionName;
@@ -49,11 +45,17 @@ public class UpdateRegionCmd extends BaseCmd {
     @Parameter(name=ApiConstants.END_POINT, type=CommandType.STRING, description="updates region with this end point")
     private String endPoint;
 
+    @Parameter(name=ApiConstants.API_KEY, type=CommandType.STRING, description="API key")
+    private String apiKey;
+    
+    @Parameter(name=ApiConstants.SECRET_KEY, type=CommandType.STRING, description="Secret Key")
+    private String secretKey;
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getId() {
+    public Integer getId() {
         return id;
     }
 
@@ -65,6 +67,13 @@ public class UpdateRegionCmd extends BaseCmd {
         return endPoint;
     }
 
+    public String getApiKey() {
+        return apiKey;
+    }
+    
+    public String getSecretKey() {
+        return secretKey;
+    }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -81,7 +90,7 @@ public class UpdateRegionCmd extends BaseCmd {
     
     @Override
     public void execute(){
-    	Region region = _regionService.updateRegion(getId(), getRegionName(), getEndPoint());
+    	Region region = _regionService.updateRegion(getId(), getRegionName(), getEndPoint(), getApiKey(), getSecretKey());
     	if (region != null) {
     		RegionResponse response = _responseGenerator.createRegionResponse(region);
     		response.setResponseName(getCommandName());

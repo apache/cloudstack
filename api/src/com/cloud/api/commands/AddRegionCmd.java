@@ -36,20 +36,26 @@ public class AddRegionCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="Id of the Region")
-    private Long id;
+    @Parameter(name=ApiConstants.ID, type=CommandType.INTEGER, required=true, description="Id of the Region")
+    private Integer id;
     
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="adds Region with this name")
     private String regionName;
 
     @Parameter(name=ApiConstants.END_POINT, type=CommandType.STRING, required=true, description="end_point of the Region")
     private String endPoint;
+
+    @Parameter(name=ApiConstants.API_KEY, type=CommandType.STRING, description="API key")
+    private String apiKey;
+    
+    @Parameter(name=ApiConstants.SECRET_KEY, type=CommandType.STRING, description="Secret Key")
+    private String secretKey;
     
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getId() {
+    public Integer getId() {
         return id;
     }
     
@@ -59,8 +65,16 @@ public class AddRegionCmd extends BaseCmd {
 
     public String getEndPoint() {
         return endPoint;
-    }  
+    }
 
+    public String getApiKey() {
+        return apiKey;
+    }
+    
+    public String getSecretKey() {
+        return secretKey;
+    }
+    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -77,7 +91,7 @@ public class AddRegionCmd extends BaseCmd {
     
     @Override
     public void execute(){
-        Region region = _regionService.addRegion(getId(), getRegionName(), getEndPoint());
+        Region region = _regionService.addRegion(getId(), getRegionName(), getEndPoint(), getApiKey(), getSecretKey());
         if (region != null) {
         	RegionResponse response = _responseGenerator.createRegionResponse(region);
             response.setResponseName(getCommandName());

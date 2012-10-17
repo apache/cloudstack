@@ -16,69 +16,62 @@
 // under the License.
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseListCmd;
+import com.cloud.api.BaseCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.response.ListResponse;
-import com.cloud.api.response.RegionResponse;
-import com.cloud.region.Region;
+import com.cloud.api.response.FindAccountResponse;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.user.Account;
 
-@Implementation(description="Lists Regions", responseObject=RegionResponse.class)
-public class ListRegionsCmd extends BaseListCmd {
-	public static final Logger s_logger = Logger.getLogger(ListRegionsCmd.class.getName());
-	
-    private static final String s_name = "listregionsresponse";
+@Implementation(description="Find account by ID", responseObject=FindAccountResponse.class)
+public class FindAccountCmd extends BaseCmd {
+    public static final Logger s_logger = Logger.getLogger(FindAccountCmd.class.getName());
+
+    private static final String s_name = "findaccountresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="List Region by region ID.")
-    private Integer id;
+    @IdentityMapper(entityTableName="account")
+    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, required=true, description = "Id of the account")
+    private Long id;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="List Region by region name.")
-    private String domainName;
-    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Integer getId() {
-        return id;
-    }
+	public Long getId() {
+		return id;
+	}
 
-    public String getRegionName() {
-        return domainName;
-    }
-    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-    @Override
+	@Override
     public String getCommandName() {
         return s_name;
     }
 
+	@Override
+	public long getEntityOwnerId() {
+		return 0;
+	}
+	
     @Override
     public void execute(){
-        List<? extends Region> result = _regionService.listRegions(this);
-        ListResponse<RegionResponse> response = new ListResponse<RegionResponse>();
-        List<RegionResponse> regionResponses = new ArrayList<RegionResponse>();
-        for (Region region : result) {
-        	RegionResponse regionResponse = _responseGenerator.createRegionResponse(region);
-        	regionResponse.setObjectName("region");
-        	regionResponses.add(regionResponse);
+        Account result = _accountService.findAccount(getId());
+        if(result != null){
+        	FindAccountResponse response = _responseGenerator.createFindAccountResponse(result);
+        	response.setResponseName(getCommandName());
+        	this.setResponseObject(response);
+        } else {
+            throw new InvalidParameterValueException("Account with specified Id does not exist");
         }
-
-        response.setResponses(regionResponses);
-        response.setResponseName(getCommandName());
-        this.setResponseObject(response);
     }
 }

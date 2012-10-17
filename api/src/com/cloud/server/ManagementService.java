@@ -221,15 +221,6 @@ public interface ManagementService {
     VirtualMachine upgradeSystemVM(UpgradeSystemVMCmd cmd);
 
     /**
-     * update an existing domain
-     * 
-     * @param cmd
-     *            - the command containing domainId and new domainName
-     * @return Domain object if the command succeeded
-     */
-    Domain updateDomain(UpdateDomainCmd cmd);
-
-    /**
      * Searches for alerts
      * 
      * @param c

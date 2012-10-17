@@ -19,5 +19,5 @@ package com.cloud.region.dao;
 import com.cloud.region.RegionVO;
 import com.cloud.utils.db.GenericDao;
 
-public interface RegionDao extends GenericDao<RegionVO, Long> {
+public interface RegionDao extends GenericDao<RegionVO, Integer> {
 }

@@ -19,17 +19,12 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
-import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
-import com.cloud.domain.Domain;
-import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @Implementation(description="Removes specified region", responseObject=SuccessResponse.class)
 public class RemoveRegionCmd extends BaseCmd {
@@ -40,14 +35,14 @@ public class RemoveRegionCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="ID of the region to delete")
-    private Long id;
+    @Parameter(name=ApiConstants.ID, type=CommandType.INTEGER, required=true, description="ID of the region to delete")
+    private Integer id;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getId() {
+    public Integer getId() {
         return id;
     }
 

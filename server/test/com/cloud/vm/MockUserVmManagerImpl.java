@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.vm;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -194,7 +195,7 @@ public class MockUserVmManagerImpl implements UserVmManager, UserVmService, Mana
     @Override
     public List<UserVmVO> searchForUserVMs(Criteria c, Account caller, Long domainId, boolean isRecursive, List<Long> permittedAccounts, boolean listAll, ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags) {
         // TODO Auto-generated method stub
-        return null;
+        return new ArrayList<UserVmVO>();
     }
 
     @Override

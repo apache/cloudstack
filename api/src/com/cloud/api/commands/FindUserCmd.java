@@ -16,69 +16,69 @@
 // under the License.
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseListCmd;
+import com.cloud.api.BaseCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.response.ListResponse;
-import com.cloud.api.response.RegionResponse;
-import com.cloud.region.Region;
+import com.cloud.api.response.FindUserResponse;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.user.User;
 
-@Implementation(description="Lists Regions", responseObject=RegionResponse.class)
-public class ListRegionsCmd extends BaseListCmd {
-	public static final Logger s_logger = Logger.getLogger(ListRegionsCmd.class.getName());
-	
-    private static final String s_name = "listregionsresponse";
+@Implementation(description="Find user by name and domain", responseObject=FindUserResponse.class)
+public class FindUserCmd extends BaseCmd {
+    public static final Logger s_logger = Logger.getLogger(FindUserCmd.class.getName());
+
+    private static final String s_name = "finduserresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="List Region by region ID.")
-    private Integer id;
-
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="List Region by region name.")
-    private String domainName;
+    @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required=true, description="find user with specified username")
+    private String username;
     
+    @IdentityMapper(entityTableName="domain")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.LONG, required=true, description = "Domain the user belongs to")
+    private Long domainId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Integer getId() {
-        return id;
-    }
+	public String getUserName() {
+		return username;
+	}
+	
+	public Long getDomainId() {
+		return domainId;
+	}
 
-    public String getRegionName() {
-        return domainName;
-    }
-    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-    @Override
+	@Override
     public String getCommandName() {
         return s_name;
     }
 
+	@Override
+	public long getEntityOwnerId() {
+		return 0;
+	}
+	
     @Override
     public void execute(){
-        List<? extends Region> result = _regionService.listRegions(this);
-        ListResponse<RegionResponse> response = new ListResponse<RegionResponse>();
-        List<RegionResponse> regionResponses = new ArrayList<RegionResponse>();
-        for (Region region : result) {
-        	RegionResponse regionResponse = _responseGenerator.createRegionResponse(region);
-        	regionResponse.setObjectName("region");
-        	regionResponses.add(regionResponse);
+        User result = _accountService.findUser(getUserName(), getDomainId());
+        if(result != null){
+        	FindUserResponse response = _responseGenerator.createFindUserResponse(result);
+        	response.setResponseName(getCommandName());
+        	this.setResponseObject(response);
+        } else {
+            throw new InvalidParameterValueException("User with specified name and domainId does not exist");
         }
-
-        response.setResponses(regionResponses);
-        response.setResponseName(getCommandName());
-        this.setResponseObject(response);
     }
 }

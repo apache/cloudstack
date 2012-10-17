@@ -22,19 +22,18 @@ import java.util.Date;
  *
  */
 public interface Region  {
-    public static enum State {
-        Up, Down
-    };
     
-    public long getId();
+    public int getId();
 
 	public String getName();
 
 	public void setName(String name);
 
-	public Region.State getStatus();
-    
 	public Date getRemoved();
 	
 	public String getEndPoint();
+	
+	public String getApiKey();
+	
+	public String getSecretKey();
 }

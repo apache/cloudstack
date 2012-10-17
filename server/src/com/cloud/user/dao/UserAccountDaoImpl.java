@@ -62,4 +62,5 @@ public class UserAccountDaoImpl extends GenericDaoBase<UserAccountVO, Long> impl
 		sc.setParameters("apiKey",apiKey);
 		return findOneBy(sc);
 	}
+	
 }

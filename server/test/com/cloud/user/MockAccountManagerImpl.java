@@ -207,12 +207,6 @@ public class MockAccountManagerImpl implements Manager, AccountManager, AccountS
     }
 
     @Override
-    public UserVO createUser(String userName, String password, String firstName, String lastName, String email, String timeZone, String accountName, Long domainId) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public Long checkAccessAndSpecifyAuthority(Account caller, Long zoneId) {
         // TODO Auto-generated method stub
         return null;
@@ -280,23 +274,6 @@ public class MockAccountManagerImpl implements Manager, AccountManager, AccountS
         return true;
     }
 
-
-	@Override
-	public UserAccount createUserAccount(String userName, String password,
-			String firstName, String lastName, String email, String timezone,
-			String accountName, short accountType, Long domainId,
-			String networkDomain, Map<String, String> details) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Account createAccount(String accountName, short accountType,
-			Long domainId, String networkDomain, Map details) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
     @Override
     public List<? extends Account> searchForAccounts(ListAccountsCmd cmd) {
         // TODO Auto-generated method stub
@@ -342,5 +319,43 @@ public class MockAccountManagerImpl implements Manager, AccountManager, AccountS
         // TODO Auto-generated method stub
         return null;
     }
+
+	@Override
+	public UserAccount createUserAccount(String userName, String password,
+			String firstName, String lastName, String email, String timezone,
+			String accountName, short accountType, Long domainId,
+			String networkDomain, Map<String, String> details,
+			String accountUUID, String userUUID, Integer regionId) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public User createUser(String userName, String password, String firstName,
+			String lastName, String email, String timeZone, String accountName,
+			Long domainId, String userUUID, Integer regionId) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public User findUser(String username, Long domainId) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Account findAccount(Long id) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Account createAccount(String accountName, short accountType,
+			Long domainId, String networkDomain, Map details, String uuid,
+			int regionId) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 }

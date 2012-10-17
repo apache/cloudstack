@@ -1769,4 +1769,9 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
         factory.setCallback(0, sc);
         return sc;
     }
+    
+    @Override
+    public int getRegionId(){
+    	return Transaction.s_region_id;
+    }
 }

@@ -20,12 +20,13 @@ import java.util.List;
 
 import com.cloud.api.commands.ListDomainChildrenCmd;
 import com.cloud.api.commands.ListDomainsCmd;
+import com.cloud.api.commands.UpdateDomainCmd;
 import com.cloud.domain.Domain;
 import com.cloud.exception.PermissionDeniedException;
 
 public interface DomainService {
 
-    Domain createDomain(String name, Long parentId, String networkDomain, String domainUUID, Long regionId);
+    Domain createDomain(String name, Long parentId, String networkDomain, String domainUUID, Integer regionId);
 
     Domain getDomain(long id);
 
@@ -44,5 +45,22 @@ public interface DomainService {
 
     List<? extends Domain> searchForDomainChildren(ListDomainChildrenCmd cmd)
             throws PermissionDeniedException;
+    /**
+     * update an existing domain
+     * 
+     * @param cmd
+     *            - the command containing domainId and new domainName
+     * @return Domain object if the command succeeded
+     */
+    Domain updateDomain(UpdateDomainCmd cmd);
+
+    /**
+     * find the domain by its path
+     * 
+     * @param domainPath
+     *            the path to use to lookup a domain
+     * @return domainVO the domain with the matching path, or null if no domain with the given path exists
+     */
+    Domain findDomainByPath(String domainPath);
 
 }

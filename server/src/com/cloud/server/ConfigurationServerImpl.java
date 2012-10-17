@@ -85,6 +85,8 @@ import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
+import com.cloud.region.RegionVO;
+import com.cloud.region.dao.RegionDao;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -123,6 +125,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
     private final ResourceCountDao _resourceCountDao;
     private final NetworkOfferingServiceMapDao _ntwkOfferingServiceMapDao;
     private final IdentityDao _identityDao;
+    private final RegionDao _regionDao;
 
     public ConfigurationServerImpl() {
         ComponentLocator locator = ComponentLocator.getLocator(Name);
@@ -140,6 +143,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         _resourceCountDao = locator.getDao(ResourceCountDao.class);
         _ntwkOfferingServiceMapDao = locator.getDao(NetworkOfferingServiceMapDao.class);
         _identityDao = locator.getDao(IdentityDao.class);
+        _regionDao = locator.getDao(RegionDao.class);
     }
 
     @Override
@@ -228,6 +232,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             // Create default networks
             createDefaultNetworks();
 
+            createDefaultRegion();
+            
             // Create userIpAddress ranges
 
             // Update existing vlans with networkId
@@ -274,7 +280,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         updateCloudIdentifier();
 
         updateUuids();
-
+        
         // Set init to true
         _configDao.update("init", "Hidden", "true");
     }
@@ -324,6 +330,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 
     @DB
     protected void saveUser() {
+    	//ToDo: Add regionId to default users and accounts
         // insert system account
         String insertSql = "INSERT INTO `cloud`.`account` (id, account_name, type, domain_id) VALUES (1, 'system', '1', '1')";
         Transaction txn = Transaction.currentTxn();
@@ -1271,6 +1278,12 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         }
 
         return svcProviders;
+    }
+    
+    private void createDefaultRegion(){
+    	//Get Region name and URL from db.properties    	
+    	_regionDao.persist(new RegionVO(_regionDao.getRegionId(), "Local", "http://localhost:8080/client/api", "", ""));
+    	//Default account, user and domain should share same uuid
     }
 
 }
