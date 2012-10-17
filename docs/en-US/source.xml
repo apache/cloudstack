@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8' ?>
-<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
 <!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
 %BOOK_ENTITIES;
 ]>
@@ -22,16 +22,26 @@
     under the License.
 -->
 
-<section id="sect-source">
+<chapter id="sect-source">
     <title>Building from Source</title>
     <para>The official &PRODUCT; release is always in source code form. While there may
         exist convenience binaries in various forms from a number of places, the
         source is the canonical release will be source. In this document we'll cover 
         acquiring the source release, building that into binary, deployable packages.
     </para>
+    <para>
+       While building and deploying directly from source is certainly possible, the reality
+       of Infrastructure-as-a-Service cloud computing implies a need to deploy packages on
+       a potentially large number of systems, which RPMs and DEBs fill nicely.
+    </para>
+    <para>
+       Building and deploying directly from source is thus outside the scope of this
+       document, but is documented in the INSTALL.md file in the release.
+    </para>
     <xi:include href="getting-release.xml" xmlns:xi="http://www.w3.org/2001/XInclude" /> 
     <xi:include href="verifying-source.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="source-prereqs.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="build-deb-packages" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="build-rpm-packages" xmlns:xi="http://www.w3.org/2001/XInclude" />  
-</section>
+    <xi:include href="extracting-source.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="build-deb.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="build-rpm.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />  
+</chapter>
