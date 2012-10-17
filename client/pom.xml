@@ -69,6 +69,12 @@
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-hypervisor-kvm</artifactId>
       <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.mortbay.jetty</groupId>
+          <artifactId>servlet-api</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
