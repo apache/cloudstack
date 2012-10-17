@@ -30,8 +30,7 @@
         <itemizedlist>
             <listitem><para>Operating system:</para>
                 <itemizedlist>
-                    <listitem><para>Preferred: CentOS/RHEL 6.2+ or Ubuntu 12.04(.1)</para></listitem>
-                    <listitem><para>Also supported: CentOS/RHEL 5.5 or Ubuntu 10.04</para></listitem>
+                    <listitem><para>Preferred: CentOS/RHEL 6.3+ or Ubuntu 12.04(.1)</para></listitem>
                 </itemizedlist>
             </listitem>
             <listitem><para>64-bit x86 CPU (more cores results in better performance)</para></listitem>
@@ -73,7 +72,7 @@
             <para>For running a KVM hypervisor the main requirement is the Linux distribution it is running. Although you are not required to run these distributions, it is recommended.</para>
             <para>Recommended distributions:</para>
             <itemizedlist>
-            <listitem><para>CentOS / RHEL: 6.2 and 6.3</para></listitem>
+            <listitem><para>CentOS / RHEL: 6.3</para></listitem>
                 <listitem><para>Ubuntu: 12.04(.1)</para></listitem>
             </itemizedlist>
             <para>The main requirement for KVM hypervisors is the libvirt and Qemu version. If you whish to run on a different distribution, make sure you meet the following requirements:</para>
