@@ -16,7 +16,8 @@
   specific language governing permissions and limitations
   under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
@@ -253,14 +254,17 @@
               <exclude>patches/systemvm/debian/config/etc/apache2/vhostexample.conf</exclude>
               <exclude>patches/systemvm/debian/config/etc/dnsmasq.conf</exclude>
               <exclude>patches/systemvm/debian/config/etc/vpcdnsmasq.conf</exclude>
-              <exclude>patches/systemvm/debian/config/etc/ssh/sshd_config</exclude> <!-- Pending resolution of CLOUDSTACK-145 -->
-              <exclude>patches/systemvm/debian/config/etc/rsyslog.conf</exclude> <!-- Pending resolution of CLOUDSTACK-147 -->
+              <exclude>patches/systemvm/debian/config/etc/ssh/sshd_config</exclude>
+              <!-- Pending resolution of CLOUDSTACK-145 -->
+              <exclude>patches/systemvm/debian/config/etc/rsyslog.conf</exclude>
+              <!-- Pending resolution of CLOUDSTACK-147 -->
               <exclude>patches/systemvm/debian/config/etc/logrotate.conf</exclude>
               <exclude>patches/systemvm/debian/config/etc/logrotate.d/*</exclude>
               <exclude>patches/systemvm/debian/config/etc/sysctl.conf</exclude>
               <exclude>patches/systemvm/debian/config/root/redundant_router/keepalived.conf.templ</exclude>
               <exclude>patches/systemvm/debian/config/root/redundant_router/arping_gateways.sh.templ</exclude>
-              <exclude>patches/systemvm/debian/config/root/redundant_router/conntrackd.conf.templ</exclude> <!-- Pending resolution of CLOUDSTACK-166 -->
+              <exclude>patches/systemvm/debian/config/root/redundant_router/conntrackd.conf.templ</exclude>
+              <!-- Pending resolution of CLOUDSTACK-166 -->
               <exclude>patches/systemvm/debian/vpn/etc/ipsec.conf</exclude>
               <exclude>patches/systemvm/debian/vpn/etc/ppp/options.xl2tpd</exclude>
               <exclude>patches/systemvm/debian/vpn/etc/xl2tpd/xl2tpd.conf</exclude>
@@ -283,40 +287,40 @@
           <configuration>
             <source>${cs.jdk.version}</source>
             <target>${cs.jdk.version}</target>
-			<fork>true</fork>
-          	<meminitial>128m</meminitial>
-          	<maxmem>512m</maxmem>            
+            <fork>true</fork>
+            <meminitial>128m</meminitial>
+            <maxmem>512m</maxmem>
           </configuration>
         </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <version>2.4</version>
-        <configuration>
-          <archive>
-            <manifest>
-              <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-              <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
-            </manifest>
-          </archive>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>build-helper-maven-plugin</artifactId>
-        <version>1.7</version>
-        <executions>
-          <execution>
-            <id>remove-old-installers</id>
-            <goals>
-              <goal>remove-project-artifact</goal>
-            </goals>
-            <configuration>
-              <removeAll>true</removeAll>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-jar-plugin</artifactId>
+          <version>2.4</version>
+          <configuration>
+            <archive>
+              <manifest>
+                <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+              </manifest>
+            </archive>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>build-helper-maven-plugin</artifactId>
+          <version>1.7</version>
+          <executions>
+            <execution>
+              <id>remove-old-installers</id>
+              <goals>
+                <goal>remove-project-artifact</goal>
+              </goals>
+              <configuration>
+                <removeAll>true</removeAll>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
       </plugins>
     </pluginManagement>
   </build>
