@@ -24,10 +24,9 @@
 
 <section id="aws-ec2-supported-commands">
   <title>Supported AWS API Calls</title>
-    <para>
-      The following Amazon EC2 commands are supported by &PRODUCT; when the AWS API compatibility feature is enabled. For a few commands, there are differences between the &PRODUCT; and Amazon EC2 versions, and these differences are noted. The underlying SOAP call for each command is also given, for those who have built tools using those calls.
+    <para>The following Amazon EC2 commands are supported by &PRODUCT; when the AWS API compatibility feature is enabled.
+        For a few commands, there are differences between the &PRODUCT; and Amazon EC2 versions, and these differences are noted. The underlying SOAP call for each command is also given, for those who have built tools using those calls.
     </para>
-    <para>Elastic IP Addresses</para>
     <table frame='all'>
       <title>Elastic IP API mapping</title>
       <tgroup cols='3' align='left' colsep='1' rowsep='1'>
@@ -36,7 +35,7 @@
         <thead>
           <row>
             <entry>EC2 command</entry>
-            <entry>SOAP all</entry>
+            <entry>SOAP call</entry>
             <entry>&PRODUCT; API call</entry>
           </row>
         </thead>
@@ -69,7 +68,6 @@
         </tbody>
       </tgroup>
     </table>
-    <para>Availability Zones</para>
     <table frame='all'>
       <title>Availability Zone API mapping</title>
         <tgroup cols='3' align='left' colsep='1' rowsep='1'>
@@ -78,7 +76,7 @@
           <thead>
             <row>
               <entry>EC2 command</entry>
-              <entry>SOAP all</entry>
+              <entry>SOAP call</entry>
               <entry>&PRODUCT; API call</entry>
             </row>
           </thead>
@@ -91,7 +89,6 @@
           </tbody>
         </tgroup>
     </table>
-    <para>Images</para>
     <table frame='all'>
       <title>Images API mapping</title>
         <tgroup cols='3' align='left' colsep='1' rowsep='1'>
@@ -100,7 +97,7 @@
           <thead>
             <row>
               <entry>EC2 command</entry>
-              <entry>SOAP all</entry>
+              <entry>SOAP call</entry>
               <entry>&PRODUCT; API call</entry>
             </row>
           </thead>
@@ -128,7 +125,6 @@
           </tbody>
         </tgroup>
     </table>
-    <para>Image Attributes</para>
     <table frame='all'>
       <title>Image Attributes API mapping</title>
       <tgroup cols='3' align='left' colsep='1' rowsep='1'>
@@ -137,7 +133,7 @@
         <thead>
           <row>
             <entry>EC2 command</entry>
-            <entry>SOAP all</entry>
+            <entry>SOAP call</entry>
             <entry>&PRODUCT; API call</entry>
           </row>
         </thead>
@@ -160,7 +156,6 @@
         </tbody>
       </tgroup>
     </table>
-    <para>Instances</para>
     <table frame='all'>
       <title>Instances API mapping</title>
       <tgroup cols='3' align='left' colsep='1' rowsep='1'>
@@ -169,7 +164,7 @@
         <thead>
           <row>
             <entry>EC2 command</entry>
-            <entry>SOAP all</entry>
+            <entry>SOAP call</entry>
             <entry>&PRODUCT; API call</entry>
           </row>
         </thead>
@@ -207,7 +202,6 @@
         </tbody>
       </tgroup>
     </table>
-    <para>Instance Attributes</para>
     <table frame='all'>
       <title>Instance Attributes Mapping</title>
       <tgroup cols='3' align='left' colsep='1' rowsep='1'>
@@ -216,7 +210,7 @@
         <thead>
           <row>
             <entry>EC2 command</entry>
-            <entry>SOAP all</entry>
+            <entry>SOAP call</entry>
             <entry>&PRODUCT; API call</entry>
           </row>
         </thead>
@@ -229,7 +223,6 @@
          </tbody>
        </tgroup>
      </table>
-     <para>Key Pairs</para>
      <table frame='all'>
        <title>Keys Pairs Mapping</title>
        <tgroup cols='3' align='left' colsep='1' rowsep='1'>
@@ -238,7 +231,7 @@
          <thead>
            <row>
              <entry>EC2 command</entry>
-             <entry>SOAP all</entry>
+             <entry>SOAP call</entry>
              <entry>&PRODUCT; API call</entry>
            </row>
          </thead>
@@ -266,7 +259,6 @@
          </tbody>
        </tgroup>
      </table>
-     <para>Passwords</para>
      <table frame='all'>
        <title>Passwords API Mapping</title>
        <tgroup cols='3' align='left' colsep='1' rowsep='1'>
@@ -275,7 +267,7 @@
          <thead>
            <row>
              <entry>EC2 command</entry>
-             <entry>SOAP all</entry>
+             <entry>SOAP call</entry>
              <entry>&PRODUCT; API call</entry>
            </row>
          </thead>
@@ -288,7 +280,6 @@
          </tbody>
        </tgroup>
      </table>
-     <para>Security Groups</para>
      <table frame='all'>
        <title>Security Groups API Mapping</title>
        <tgroup cols='3' align='left' colsep='1' rowsep='1'>
@@ -297,7 +288,7 @@
          <thead>
            <row>
              <entry>EC2 command</entry>
-             <entry>SOAP all</entry>
+             <entry>SOAP call</entry>
              <entry>&PRODUCT; API call</entry>
            </row>
          </thead>
@@ -330,7 +321,6 @@
          </tbody>
        </tgroup>
      </table>
-     <para>Snapshots</para>
      <table frame='all'>
        <title>Snapshots API Mapping</title>
        <tgroup cols='3' align='left' colsep='1' rowsep='1'>
@@ -339,7 +329,7 @@
          <thead>
            <row>
              <entry>EC2 command</entry>
-             <entry>SOAP all</entry>
+             <entry>SOAP call</entry>
              <entry>&PRODUCT; API call</entry>
            </row>
          </thead>
@@ -362,7 +352,6 @@
          </tbody>
       </tgroup>
     </table>
-    <para>Volumes</para>
     <table frame='all'>
 	  <title>Volumes API Mapping</title>
         <tgroup cols='3' align='left' colsep='1' rowsep='1'>
@@ -371,7 +360,7 @@
          <thead>
            <row>
              <entry>EC2 command</entry>
-             <entry>SOAP all</entry>
+             <entry>SOAP call</entry>
              <entry>&PRODUCT; API call</entry>
            </row>
          </thead>
