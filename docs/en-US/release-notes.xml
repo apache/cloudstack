@@ -1914,14 +1914,6 @@ Done restarting router(s).
               </entry>
             </row>
             <row>
-              <entry><para>CS-15664</para></entry>
-              <entry><para>A typo in the component.xml file that blocks Nicira NVP
-                  integration:</para>
-                  <screen>pluggableservice name="NiciraNvpElementService" key="com.coud.network.element.NiciraNvpElementService" class="com.cloud.network.element.NiciraNvpElement"/&gt; </screen>
-                <para>The line should
-                be:</para><screen>pluggableservice name="NiciraNvpElementService" key="com.cloud.network.element.NiciraNvpElementService" class="com.cloud.network.element.NiciraNvpElement"/&gt;</screen></entry>
-            </row>
-            <row>
               <entry><para>CS-15634</para></entry>
               <entry><para>The FQDN of a VM that is deployed as a part of both a shared network and
                   default isolated guest network has the suffix of the shared network instead of the
