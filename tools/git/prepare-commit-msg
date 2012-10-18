@@ -35,7 +35,9 @@
 # SOB=$(git var GIT_AUTHOR_IDENT | sed -n 's/^\(.*>\).*$/Signed-off-by: \1/p')
 # grep -qs "^$SOB" "$1" || echo "$SOB" >> "$1"
 
-cat <<EOF > $1
+run_generic_commit () {
+local file=$1
+cat <<EOF > $file
 ################################# 80 chars #####################################
 # The following is an example of how to fill out the above form. Please limit
 # your formatting to 80 cols.
@@ -60,5 +62,25 @@ Detail: \n\n\
 BUG-ID : \n\
 Reviewed-by: \n\
 Reported-by: \n\
-Signed-off-by: ${SOB}\n\n/" $1 
+Signed-off-by: ${SOB}\n\n/" $file
+
+}
+
+case "$2,$3" in
+  merge,*)
+  ;;
+
+  template,*)
+  ;;
+
+  message,*)
+  ;;
+
+  squash,*)
+  ;;
+
+  *)
+  run_generic_commit $1
+  ;;
+esac
 
