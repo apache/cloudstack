@@ -122,7 +122,7 @@ publican build --formats test --langs en-US
 publican build --formats html,pdf --langs en-US
 
 
-Output will be found in the /tmp subdirectory.
+Output will be found in the tmp subdirectory of the docs directory.
 
 
 
@@ -210,8 +210,7 @@ TAGS FOR A SECTION
         Our publication tool (publican) prefers the note tag. The tool will 
         automatically insert the text NOTE: for you, so please don't type it.</para></note>
     <warning><para>Use this for anything that is vital to avoid runtime errors. Don't use
-        other tags such as caution. Our publication tool (publican) prefers the warning tag. The tool will
-        automatically insert the text WARNING: for you, so please don't type it.</para></warning>
+        other tags such as caution. Our publication tool (publican) prefers the warning tag. The tool will automatically insert the text WARNING: for you, so please don't type it.</para></warning>
     <para>Here's how to do a bulleted list:</para>
     <itemizedlist>
         <listitem><para>Bulleted list item text.</para></listitem>
