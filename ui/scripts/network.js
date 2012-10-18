@@ -1820,8 +1820,10 @@
                     var havingFirewallService = false;
                     var havingPortForwardingService = false;
                     var havingLbService = false;
-										var havingVpnService = false;		
-										
+                    var havingVpnService = false;
+
+										var FirewallProviderArrayIncludesJuniperSRX = false;
+									
                     if('networks' in args.context && args.context.networks[0].vpcid == null) { //a non-VPC network from Guest Network section
                       $.ajax({
                         url: createURL('listNetworkOfferings'),
@@ -1834,14 +1836,25 @@
                           var networkoffering = json.listnetworkofferingsresponse.networkoffering[0];
                           $(networkoffering.service).each(function(){
                             var thisService = this;
-                            if(thisService.name == "Firewall")
+                            if(thisService.name == "Firewall") {
                               havingFirewallService = true;
-                            if(thisService.name == "PortForwarding")
+															var providerArray = thisService.provider;
+															for(var k = 0; k < providerArray.length; k++) {
+																if(providerArray[k].name == "JuniperSRX") {
+																	FirewallProviderArrayIncludesJuniperSRX = true;
+																	break;
+																}
+															}		                              
+														}
+                            if(thisService.name == "PortForwarding") {
                               havingPortForwardingService = true;
-                            if(thisService.name == "Lb")
+														}
+                            if(thisService.name == "Lb") {
                               havingLbService = true;
-                            if(thisService.name == "Vpn")
+														}
+                            if(thisService.name == "Vpn") {
                               havingVpnService = true;
+														}
                           });
                         }
                       });
@@ -1960,7 +1973,24 @@
                         });
                       }
                     }
-
+																				
+										if(FirewallProviderArrayIncludesJuniperSRX == true) { //if Firewall is provided by JuniperSRX 										  								
+										  $.ajax({
+                        url: createURL('listPortForwardingRules'),
+                        data: {
+                          ipaddressid: args.context.ipAddresses[0].id,
+                          listAll: true
+                        },
+												async: false,
+                        success: function(json) {												  
+													var rules = json.listportforwardingrulesresponse.portforwardingrule;													
+													if(rules != null && rules.length > 0) {
+													  disallowedActions.push("firewall"); //hide Firewall icon when Port forwarding is configured on IP Address 		
+													}
+												}
+											});											
+										}
+										
                     return disallowedActions;
                   },
 
@@ -2003,14 +2033,44 @@
                               $icmpFields.parent().find('label.error').hide();
                             }
                           });
-
-                          args.response.success({
-                            data: [
-                              { name: 'tcp', description: 'TCP' },
-                              { name: 'udp', description: 'UDP' },
-                              { name: 'icmp', description: 'ICMP' }
-                            ]
-                          });
+													
+													var data = [
+														{ name: 'tcp', description: 'TCP' },
+														{ name: 'udp', description: 'UDP' }
+													];
+																										
+													//ICMP portocol is not supported in Firewall provided by JuniperSRX 
+                          var FirewallProviderArrayIncludesJuniperSRX = false;																
+													if('networks' in args.context) {
+														$.ajax({
+															url: createURL('listNetworkOfferings'),
+															data: {
+																id: args.context.networks[0].networkofferingid
+															},
+															async: false,
+															success: function(json) {		
+																var serviceArray = json.listnetworkofferingsresponse.networkoffering[0].service;
+																
+																for(var i = 0; i < serviceArray.length; i++) {
+																	if(serviceArray[i].name == "Firewall") {
+																		var providerArray = serviceArray[i].provider;
+																		for(var k = 0; k < providerArray.length; k++) {
+																			if(providerArray[k].name == "JuniperSRX") {
+																				FirewallProviderArrayIncludesJuniperSRX = true;
+																				break;
+																			}
+																		}																					
+																		break;
+																	}															
+																}															
+															}
+														});			
+													}	
+													if(FirewallProviderArrayIncludesJuniperSRX == false) {																
+														data.push({ name: 'icmp', description: 'ICMP' }); //show ICMP option only when provider is not JuniperSRX
+													}			
+													
+                          args.response.success({data: data});
                         }
                       },
                       'startport': { edit: true, label: 'label.start.port' },
