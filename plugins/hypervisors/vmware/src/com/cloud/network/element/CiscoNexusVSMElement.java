@@ -110,7 +110,7 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
     }
 
     @Override
-    public boolean destroy(Network network)
+    public boolean destroy(Network network, ReservationContext context)
             throws ConcurrentOperationException, ResourceUnavailableException {
         return true;
     }
