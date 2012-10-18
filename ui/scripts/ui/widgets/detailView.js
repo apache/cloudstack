@@ -986,7 +986,9 @@
             actionFilter: actionFilter
           }).appendTo($tabContent);
 
-          if (tabs.tags) {
+          if (tabs.tags &&
+              $detailView.data('view-args') &&
+              !$detailView.data('view-args').compact) {
             $('<div>').tagger(
               $.extend(true, {}, tabs.tags, {
                 context: $detailView.data('view-args').context
