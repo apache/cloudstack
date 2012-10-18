@@ -655,7 +655,7 @@
     if (detailView && !detailView.noCompact && !uiCustom) {
       $thead.find('tr').append(
         $('<th></th>')
-          .html('Quickview')
+          .html(_l('label.quickview'))
           .addClass('quick-view reduced-hide')
       );
     }
@@ -1055,7 +1055,7 @@
 
             // Title
             $title.append(
-              $('<span>').html('Quickview: '),
+              $('<span>').html(_l('label.quickview') + ': '),
               $('<span>').addClass('title').html(
                 cloudStack.concat(
                   $tr.find('td:first span').html(), 30

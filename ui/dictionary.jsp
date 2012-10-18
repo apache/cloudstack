@@ -25,6 +25,7 @@ under the License.
 <% long now = System.currentTimeMillis(); %>
 <script language="javascript">
 dictionary = {
+'label.quickview': '<fmt:message key="label.quickview"/>',
 'label.migrate.to.host': '<fmt:message key="label.migrate.to.host"/>',
 'label.migrate.to.storage': '<fmt:message key="label.migrate.to.storage"/>',
 'label.stop': '<fmt:message key="label.stop"/>',
