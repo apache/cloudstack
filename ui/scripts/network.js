@@ -2008,34 +2008,38 @@
 														{ name: 'tcp', description: 'TCP' },
 														{ name: 'udp', description: 'UDP' }
 													];
-													//ICMP portocol is not supported in Firewall provided by JuniperSRX 													
-													$.ajax({
-														url: createURL('listNetworkOfferings'),
-														data: {
-															id: args.context.networks[0].networkofferingid
-														},
-														async: false,
-														success: function(json) {		
-															var serviceArray = json.listnetworkofferingsresponse.networkoffering[0].service;
-															var FirewallProviderArrayIncludesJuniperSRX = false;
-															for(var i = 0; i < serviceArray.length; i++) {
-																if(serviceArray[i].name == "Firewall") {
-																	var providerArray = serviceArray[i].provider;
-																	for(var k = 0; k < providerArray.length; k++) {
-																		if(providerArray[k].name == "JuniperSRX") {
-																			FirewallProviderArrayIncludesJuniperSRX = true;
-																			break;
-																		}
-																	}																					
-																	break;
-																}															
-															}		                              												
-															if(FirewallProviderArrayIncludesJuniperSRX == false) {																
-																data.push({ name: 'icmp', description: 'ICMP' }); //show ICMP option only when provider is not JuniperSRX
-															}																	
-														}
-													});			
 																										
+													//ICMP portocol is not supported in Firewall provided by JuniperSRX 
+                          var FirewallProviderArrayIncludesJuniperSRX = false;																
+													if('networks' in args.context) {
+														$.ajax({
+															url: createURL('listNetworkOfferings'),
+															data: {
+																id: args.context.networks[0].networkofferingid
+															},
+															async: false,
+															success: function(json) {		
+																var serviceArray = json.listnetworkofferingsresponse.networkoffering[0].service;
+																
+																for(var i = 0; i < serviceArray.length; i++) {
+																	if(serviceArray[i].name == "Firewall") {
+																		var providerArray = serviceArray[i].provider;
+																		for(var k = 0; k < providerArray.length; k++) {
+																			if(providerArray[k].name == "JuniperSRX") {
+																				FirewallProviderArrayIncludesJuniperSRX = true;
+																				break;
+																			}
+																		}																					
+																		break;
+																	}															
+																}															
+															}
+														});			
+													}	
+													if(FirewallProviderArrayIncludesJuniperSRX == false) {																
+														data.push({ name: 'icmp', description: 'ICMP' }); //show ICMP option only when provider is not JuniperSRX
+													}			
+													
                           args.response.success({data: data});
                         }
                       },
