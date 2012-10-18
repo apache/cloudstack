@@ -435,7 +435,7 @@
               $formContainer.remove();
               $(this).dialog('destroy');
 
-              $('.hovered-elem').trigger('mouseleave');
+              $('.hovered-elem').hide();
 
               return true;
             }
@@ -448,7 +448,7 @@
               $formContainer.remove();
               $(this).dialog('destroy');
 
-              $('.hovered-elem').trigger('mouseleave');
+              $('.hovered-elem').hide();
             }
           }
         ]
@@ -517,7 +517,7 @@
               $(this).dialog('destroy');
               $('div.overlay').remove();
               if (args.cancelAction) { args.cancelAction(); }
-              $('.hovered-elem').trigger('mouseleave');
+              $('.hovered-elem').hide();
             }
           },
           {
@@ -527,7 +527,7 @@
               args.action();
               $(this).dialog('destroy');
               $('div.overlay').remove();
-              $('.hovered-elem').trigger('mouseleave');
+              $('.hovered-elem').hide();
             }
           }
         ]
@@ -554,7 +554,7 @@
             click: function() {
               $(this).dialog('destroy');
               if (args.clickAction) args.clickAction();
-              $('.hovered-elem').trigger('mouseleave');
+              $('.hovered-elem').hide();
             }
           }
         ]
