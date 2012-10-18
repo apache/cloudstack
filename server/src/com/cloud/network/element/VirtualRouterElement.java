@@ -621,7 +621,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
                 if (!result) {
                     s_logger.warn("Failed to stop virtual router element " + router + ", but would try to process clean up anyway.");
                 }
-                result = (_routerMgr.destroyRouter(router.getId()) != null);
+                result = (_routerMgr.destroyRouter(router.getId(), context.getAccount(), context.getCaller().getId()) != null);
                 if (!result) {
                     s_logger.warn("Failed to clean up virtual router element " + router);
                 }
@@ -631,14 +631,14 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     }
 
     @Override
-    public boolean destroy(Network config) throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean destroy(Network config, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
         List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(config.getId(), Role.VIRTUAL_ROUTER);
         if (routers == null || routers.isEmpty()) {
             return true;
         }
         boolean result = true;
         for (DomainRouterVO router : routers) {
-            result = result && (_routerMgr.destroyRouter(router.getId()) != null);
+            result = result && (_routerMgr.destroyRouter(router.getId(), context.getAccount(), context.getCaller().getId()) != null);
         }
         return result;
     }
@@ -736,7 +736,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         List<DomainRouterVO> routers = _routerDao.listByElementId(elementId);
         boolean result = true;
         for (DomainRouterVO router : routers) {
-            result = result && (_routerMgr.destroyRouter(router.getId()) != null);
+            result = result && (_routerMgr.destroyRouter(router.getId(), context.getAccount(), context.getCaller().getId()) != null);
         }
         _vrProviderDao.remove(elementId);
         

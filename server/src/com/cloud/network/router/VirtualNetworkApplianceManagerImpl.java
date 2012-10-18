@@ -17,6 +17,7 @@
 
 package com.cloud.network.router;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -66,6 +67,7 @@ import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.SetFirewallRulesCommand;
+import com.cloud.agent.api.routing.SetNetworkACLCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesVpcCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
@@ -74,6 +76,7 @@ import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.api.to.FirewallRuleTO;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.LoadBalancerTO;
+import com.cloud.agent.api.to.NetworkACLTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
@@ -363,11 +366,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             return false;
         }
     }
+    
+    
 
     @Override
-    public VirtualRouter destroyRouter(final long routerId) throws ResourceUnavailableException, ConcurrentOperationException {
-        UserContext context = UserContext.current();
-        User user = _accountMgr.getActiveUser(context.getCallerUserId());
+    public VirtualRouter destroyRouter(final long routerId, Account caller, Long callerUserId) throws ResourceUnavailableException, ConcurrentOperationException {
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Attempting to destroy router " + routerId);
@@ -378,9 +381,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             return null;
         }
 
-        _accountMgr.checkAccess(context.getCaller(), null, true, router);
+        _accountMgr.checkAccess(caller, null, true, router);
 
-        boolean result = _itMgr.expunge(router, user, _accountMgr.getAccount(router.getAccountId()));
+        boolean result = _itMgr.expunge(router, _accountMgr.getActiveUser(callerUserId), _accountMgr.getAccount(router.getAccountId()));
 
         if (result) {
             return router;
@@ -1465,7 +1468,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                         s_logger.debug("Failed to start the VR  " + router + " with hypervisor type " + hType + ", " +
                                 "destroying it and recreating one more time");
                         // destroy the router
-                        destroyRouter(router.getId());
+                        destroyRouter(router.getId(), _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM), User.UID_SYSTEM);
                         continue;
                     } else {
                         throw ex;

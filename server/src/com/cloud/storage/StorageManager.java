@@ -236,5 +236,7 @@ public interface StorageManager extends StorageService, Manager {
 
 	HypervisorType getHypervisorTypeFromFormat(ImageFormat format);
 
-        boolean storagePoolHasEnoughSpace(List<Volume> volume, StoragePool pool);
+    boolean storagePoolHasEnoughSpace(List<Volume> volume, StoragePool pool);
+	
+    boolean deleteVolume(long volumeId, Account caller) throws ConcurrentOperationException;
 }

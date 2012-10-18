@@ -55,11 +55,13 @@ public interface VpcManager extends VpcService{
 
     /**
      * @param vpc
+     * @param caller TODO
+     * @param callerUserId TODO
      * @return
      * @throws ConcurrentOperationException
      * @throws ResourceUnavailableException
      */
-    boolean destroyVpc(Vpc vpc) throws ConcurrentOperationException, ResourceUnavailableException;
+    boolean destroyVpc(Vpc vpc, Account caller, Long callerUserId) throws ConcurrentOperationException, ResourceUnavailableException;
 
     /**
      * @param vpcId

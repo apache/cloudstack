@@ -344,7 +344,7 @@ public class MockVpcManagerImpl implements VpcManager, Manager{
      * @see com.cloud.network.vpc.VpcManager#destroyVpc(com.cloud.network.vpc.Vpc)
      */
     @Override
-    public boolean destroyVpc(Vpc vpc) throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean destroyVpc(Vpc vpc, Account caller, Long callerUserId) throws ConcurrentOperationException, ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
     }

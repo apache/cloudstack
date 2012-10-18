@@ -3551,7 +3551,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                         s_logger.debug("Sending destroy to " + element);
                     }
 
-                    if (!element.destroy(network)) {
+                    if (!element.destroy(network, context)) {
                         success = false;
                         s_logger.warn("Unable to complete destroy of the network: failed to destroy network element " + element.getName());
                     }
@@ -4384,7 +4384,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         // the code would be triggered
         s_logger.debug("Cleaning up remote access vpns as a part of public IP id=" + ipId + " release...");
         try {
-            _vpnMgr.destroyRemoteAccessVpn(ipId);
+            _vpnMgr.destroyRemoteAccessVpn(ipId, caller);
         } catch (ResourceUnavailableException e) {
             s_logger.warn("Unable to destroy remote access vpn for ip id=" + ipId + " as a part of ip release", e);
             success = false;

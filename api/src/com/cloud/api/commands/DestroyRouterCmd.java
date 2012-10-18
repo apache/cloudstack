@@ -96,8 +96,10 @@ public class DestroyRouterCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException {
-        UserContext.current().setEventDetails("Router Id: "+getId());
-        VirtualRouter result = _routerService.destroyRouter(getId());
+        UserContext ctx = UserContext.current();
+        ctx.setEventDetails("Router Id: "+getId());
+
+        VirtualRouter result = _routerService.destroyRouter(getId(), ctx.getCaller(), ctx.getCallerUserId());
         if (result != null) {
             DomainRouterResponse response = _responseGenerator.createDomainRouterResponse(result);
             response.setResponseName(getCommandName());

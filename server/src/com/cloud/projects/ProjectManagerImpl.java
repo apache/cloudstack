@@ -68,6 +68,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.DomainManager;
 import com.cloud.user.ResourceLimitService;
+import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
@@ -284,7 +285,8 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         txn.commit();
         
         if (updateResult) {
-            if (!cleanupProject(project, _accountDao.findById(caller.getId()), callerUserId)) {
+            //pass system caller when clenaup projects account
+            if (!cleanupProject(project, _accountDao.findById(Account.ACCOUNT_ID_SYSTEM), User.UID_SYSTEM)) {
                 s_logger.warn("Failed to cleanup project's id=" + project.getId() + " resources, not removing the project yet");
                 return false;
             } else {
