@@ -21,47 +21,49 @@
  specific language governing permissions and limitations
  under the License.
 -->
-
 <section id="install-management-server-multi-nodes">
-    <title>Prepare and Start Additional Management Servers</title>
-    <para>For your second and subsequent Management Servers, you will install the Management Server software, connect it to the database, and set up the OS for the Management Server. 
-    </para>
-    <orderedlist>
-        <listitem>
-            <para>
-                Perform the steps in <xref linkend="prepare-os"/> and 
-                <xref linkend="sect-source-buildrpm" /> or 
-                <xref linkend="sect-source-builddebs" /> as appropriate.
-            </para>
-        </listitem>
-        <listitem>
-            <para>
-               Ensure that necessary services are started and set to start
-               on boot.
-            <programlisting>
-<prompt>#</prompt> <command>service</command> rpcbind start
+  <title>Prepare and Start Additional Management Servers</title>
+  <para>For your second and subsequent Management Servers, you will install the Management Server
+    software, connect it to the database, and set up the OS for the Management Server. </para>
+  <orderedlist>
+    <listitem>
+      <para> Perform the steps in <xref linkend="prepare-os"/> and <xref
+linkend="sect-source-buildrpm"/> or <xref linkend="sect-source-builddebs"/> as
+        appropriate. </para>
+    </listitem>
+    <listitem>
+      <para>Download vhd-util from <ulink
+          url="http://download.cloud.com.s3.amazonaws.com/tools/vhd-util">vhd-util</ulink></para>
+      <para>If the Management Server is RHEL or CentOS, copy vhd-util to
+        /usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver.</para>
+      <para>If the Management Server is Ubuntu, copy vhd-util to
+        /usr/lib/cloud/common/scripts/vm/hypervisor/xenserver/vhd-util.</para>
+    </listitem>
+    <listitem>
+      <para> Ensure that necessary services are started and set to start on boot.
+        <programlisting><prompt>#</prompt> <command>service</command> rpcbind start
 <prompt>#</prompt> <command>service</command> nfs start
 <prompt>#</prompt> <command>chkconfig</command> nfs on
-<prompt>#</prompt> <command>chkconfig</command> rpcbind on
-            </programlisting>
-            </para>
-        </listitem>
-        <listitem>
-            <para>
-               Configure the database client. Note the absence of the
-               --deploy-as argument in this case.
-               (For more details about the arguments to this command, see 
-               <xref linkend="management-server-install-db-external"/>.)
-            </para>
-            <programlisting>
-                <prompt>#</prompt> <command>cloud-setup-databases</command> cloud:<replaceable>dbpassword</replaceable>@<replaceable>dbhost</replaceable> -e <replaceable>encryption_type</replaceable> -m <replaceable>management_server_key</replaceable> -k <replaceable>database_key</replaceable>
-            </programlisting>
-        </listitem>
-        <listitem><para>Configure the OS and start the Management Server:</para>
-            <programlisting><prompt>#</prompt> <command>cloud-setup-management</command></programlisting>
-            <para>The Management Server on this node should now be running.</para>
-        </listitem>
-        <listitem><para>Repeat these steps on each additional Management Server. </para></listitem>
-        <listitem><para>Be sure to configure a load balancer for the Management Servers. See Management Server Load Balancing.</para></listitem>
-    </orderedlist>
+<prompt>#</prompt> <command>chkconfig</command> rpcbind on            </programlisting>
+      </para>
+    </listitem>
+    <listitem>
+      <para> Configure the database client. Note the absence of the --deploy-as argument in this
+        case. (For more details about the arguments to this command, see <xref
+          linkend="management-server-install-db-external"/>.) </para>
+      <programlisting><prompt>#</prompt> <command>cloud-setup-databases</command> cloud:<replaceable>dbpassword</replaceable>@<replaceable>dbhost</replaceable> -e <replaceable>encryption_type</replaceable> -m <replaceable>management_server_key</replaceable> -k <replaceable>database_key</replaceable>            </programlisting>
+    </listitem>
+    <listitem>
+      <para>Configure the OS and start the Management Server:</para>
+      <programlisting><prompt>#</prompt> <command>cloud-setup-management</command></programlisting>
+      <para>The Management Server on this node should now be running.</para>
+    </listitem>
+    <listitem>
+      <para>Repeat these steps on each additional Management Server. </para>
+    </listitem>
+    <listitem>
+      <para>Be sure to configure a load balancer for the Management Servers. See Management Server
+        Load Balancing.</para>
+    </listitem>
+  </orderedlist>
 </section>
