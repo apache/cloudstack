@@ -2205,13 +2205,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
 
     @Override
+    @DB
     public void releaseNic(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, Nic nic) 
             throws ConcurrentOperationException, ResourceUnavailableException {
         NicVO nicVO = _nicDao.findById(nic.getId());
         releaseNic(vmProfile, nicVO);
     }
 
-
+    @DB
     protected void releaseNic(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, NicVO nicVO) 
             throws ConcurrentOperationException, ResourceUnavailableException {
         //lock the nic
