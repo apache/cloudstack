@@ -35,7 +35,12 @@
             The procedure for installing the Management Server is:
         </para>
             <orderedlist>
-                <listitem><para>Prepare the Operating System</para></listitem>
+                <listitem>
+      <para>Prepare the Operating System</para>
+    </listitem>
+    <listitem>
+      <para>Download and install vhd-util.</para>
+    </listitem>
                 <listitem><para>Install the First Management Server</para></listitem>
                 <listitem><para>Install and Configure the MySQL database</para></listitem>
                 <listitem><para>Prepare NFS Shares</para></listitem>
