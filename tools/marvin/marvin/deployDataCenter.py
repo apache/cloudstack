@@ -349,6 +349,11 @@ class deployDataCenters():
         self.config.mgtSvr[0].securityKey = securityKey
         return apiKey, securityKey
 
+    def getCfg(self):
+        if self.config:
+            return self.config
+        return None
+
     def loadCfg(self):
         try:
             self.config = configGenerator.get_setup_config(self.configFile)

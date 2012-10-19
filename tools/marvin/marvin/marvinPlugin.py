@@ -58,6 +58,7 @@ class MarvinPlugin(Plugin):
         deploy = deployDataCenter.deployDataCenters(options.config) 
         deploy.loadCfg() if options.load else deploy.deploy()
         self.setClient(deploy.testClient)
+        self.setConfig(deploy.getCfg())
         
         cfg = nose.config.Config()
         cfg.logStream = self.result_stream
@@ -104,6 +105,10 @@ class MarvinPlugin(Plugin):
         if client:
             self.testclient = client
 
+    def setConfig(self, config):
+        if config:
+            self.config = config
+
     def _injectClients(self, test):
         testcaselogger = logging.getLogger("testclient.testcase.%s" % test.__name__)
         self.debug_stream.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(name)s - %(message)s"))
@@ -111,6 +116,7 @@ class MarvinPlugin(Plugin):
         testcaselogger.setLevel(logging.DEBUG)
         
         setattr(test, "testClient", self.testclient)
+        setattr(test, "config", self.config)
         setattr(test, "debug", partial(testCaseLogger, logger=testcaselogger))
         setattr(test, "clstestclient", self.testclient)
         if hasattr(test, "UserName"):

@@ -103,6 +103,8 @@ def describeResources(config):
     '''Add mgt server'''
     mgt = managementServer()
     mgt.mgtSvrIp = config.get('environment', 'mshost')
+    mgt.user = config.get('environment', 'mshost.user')
+    mgt.passwd = config.get('environment', 'mshost.passwd')
     zs.mgtSvr.append(mgt)
 
     '''Add a database'''
