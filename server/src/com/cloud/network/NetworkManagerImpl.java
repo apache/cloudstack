@@ -2261,9 +2261,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 updateNic(nic, network.getId(), -1);
                 txn.commit();
             }
-        } else {
-            //commiting the empty transaction here as we have to release the lock we've held
-            txn.commit();
         }
     }
 
