@@ -17,6 +17,7 @@
 
 package com.cloud.utils.events;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -72,7 +73,7 @@ public class EventBusBase implements EventBus {
 
 	@Override
 	public void publish(String subject, PublishScope scope, Object sender,
-		String args) {
+		Serializable args) {
 		
 		if(_gate.enter(true)) {
 
@@ -283,7 +284,7 @@ public class EventBusBase implements EventBus {
 			_children.put(key, childNode);
 		}
 		
-		public void notifySubscribers(String subject, Object sender, String args) {
+		public void notifySubscribers(String subject, Object sender, Serializable args) {
 			for(Subscriber subscriber : _subscribers) {
 				subscriber.onPublishEvent(subject, sender, args);
 			}

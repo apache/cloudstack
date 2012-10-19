@@ -17,9 +17,11 @@
 
 package com.cloud.utils.events;
 
+import java.io.Serializable;
+
 public interface EventBus {
 	void subscribe(String subject, Subscriber subscriber);
 	void unsubscribe(String subject, Subscriber subscriber);
 	
-	void publish(String subject, PublishScope scope, Object sender, String args);
+	void publish(String subject, PublishScope scope, Object sender, Serializable args);
 }

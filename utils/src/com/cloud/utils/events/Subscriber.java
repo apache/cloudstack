@@ -17,6 +17,8 @@
 
 package com.cloud.utils.events;
 
+import java.io.Serializable;
+
 public interface Subscriber {
-	void onPublishEvent(String subject, Object sender, String args);
+	void onPublishEvent(String subject, Object sender, Serializable args);
 }
