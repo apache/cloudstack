@@ -22,10 +22,10 @@
     under the License.
 -->
 <section id="host-add-xenserver-kvm-ovm">
-  <title>Adding a Host (XenServer, KVM, or OVM)</title>
-  <para>XenServer, KVM, and Oracle VM (OVM) hosts can be added to a cluster at any time.</para>
+  <title>Adding a Host (XenServer or KVM)</title>
+  <para>XenServer and KVM hosts can be added to a cluster at any time.</para>
   <section>
-    <title>Requirements for XenServer, KVM, and OVM Hosts</title>
+    <title>Requirements for XenServer and KVM Hosts</title>
     <warning>
       <para>Make sure the hypervisor host does not have any VMs already running before you add it to
         &PRODUCT;.</para>
@@ -85,14 +85,14 @@
         </listitem>
       </itemizedlist>
     </section>
-    <section>
-      <title>OVM Host Additional Requirements</title>
+    <!-- <section>
+    <title>OVM Host Additional Requirements</title>
       <para>Before adding a used host in &PRODUCT;, as part of the cleanup procedure on the host, be
-        sure to remove /etc/ovs-agent/db/.</para>
-    </section>
+          sure to remove /etc/ovs-agent/db/.</para> 
+    </section> -->
   </section>
   <section>
-    <title>Adding a XenServer, KVM, or OVM Host</title>
+    <title>Adding a XenServer or KVM Host</title>
     <itemizedlist>
       <listitem>
         <para>If you have not already done so, install the hypervisor software on the host. You will
@@ -130,8 +130,8 @@
             <para>Username. Usually root.</para>
           </listitem>
           <listitem>
-            <para>Password. This is the password for the user named above (from your XenServer, KVM,
-              or OVM install).</para>
+            <para>Password. This is the password for the user from your XenServer or KVM
+              install).</para>
           </listitem>
           <listitem>
             <para>Host Tags (Optional). Any labels that you use to categorize hosts for ease of

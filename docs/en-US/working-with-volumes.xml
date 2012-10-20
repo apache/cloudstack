@@ -31,7 +31,7 @@
     <para>Volumes are created for a specific hypervisor type. A volume that has
       been attached to guest using one hypervisor type (e.g, XenServer) may not
       be attached to a guest that is using another hypervisor type (e.g. 
-      vSphere, Oracle VM, KVM).  This is because the different hypervisors use
+      vSphere, KVM).  This is because the different hypervisors use
       different disk image formats.
     </para>
     <para>&PRODUCT; defines a volume as a unit of storage available to a guest

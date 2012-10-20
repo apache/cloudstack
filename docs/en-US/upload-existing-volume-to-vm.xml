@@ -59,10 +59,10 @@
                             <entry><para>KVM</para></entry>
                             <entry><para>QCOW2</para></entry>
                         </row>
-                        <row>
+                        <!--                        <row>
                             <entry><para>OVM</para></entry>
                             <entry><para>RAW</para></entry>
-                        </row>
+                        </row> -->
                     </tbody>
                 </tgroup>
             </informaltable></listitem>                                

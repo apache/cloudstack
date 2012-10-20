@@ -28,10 +28,7 @@
         <emphasis role="bold">Multiple Hypervisor Support</emphasis>
     </para>
     <para>
-        &PRODUCT; works with a variety of hypervisors. A single cloud deployment can contain multiple hypervisor implementations. You have the complete freedom to choose the right hypervisor for your workload.
-    </para>
-    <para>
-        &PRODUCT; is designed to work with open source Xen and KVM hypervisors as well as enterprise-grade hypervisors such as Citrix XenServer, VMware vSphere, and Oracle VM (OVM). You can also provision “bare metal” hosts with no hypervisor (Beta feature. Untested in &PRODUCT; 3.0.x.)
+        &PRODUCT; works with a variety of hypervisors, and a single cloud deployment can contain multiple hypervisor implementations. The current release of &PRODUCT; supports pre-packaged enterprise solutions like Citrix XenServer and VMware vSphere, as well as KVM or Xen running on Ubuntu or CentOS. 
     </para>
     <para>
         <emphasis role="bold">Massively Scalable Infrastructure Management</emphasis>

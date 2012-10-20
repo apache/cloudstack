@@ -26,7 +26,7 @@
     <title>About Clusters</title>
     <para>
        A cluster provides a way to group hosts. To be precise, a cluster is a
-       XenServer server pool, a set of KVM servers, a set of OVM hosts, or a 
+       XenServer server pool, a set of KVM servers, <!-- a set of OVM hosts -->, or a 
        VMware cluster preconfigured in vCenter. The hosts in a cluster all 
        have identical hardware, run the same hypervisor, are on the same subnet,
        and access the same shared primary storage. Virtual machine instances
