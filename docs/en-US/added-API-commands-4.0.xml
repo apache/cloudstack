@@ -19,7 +19,7 @@
   under the License.
 -->
 <section id="added-API-commands-4.0">
-  <title>Added API Commands in 4.0</title>
+  <title>Added API Commands in 4.0.0-incubating</title>
   <itemizedlist>
     <listitem>
       <para>createCounter (Adds metric counter)</para>

@@ -19,7 +19,7 @@
   under the License.
 -->
 <section id="changed-apicommands-4.0">
-  <title>Changed API Commands in 4.0</title>
+  <title>Changed API Commands in 4.0.0-incubating</title>
   <informaltable>
     <tgroup cols="2" align="left" colsep="1" rowsep="1">
       <colspec colwidth="1" colname="1" colnum="1"/>
