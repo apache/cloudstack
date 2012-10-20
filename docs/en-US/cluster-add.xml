@@ -26,6 +26,6 @@
 	<title>Adding a Cluster</title>
     <para>You need to tell &PRODUCT; about the hosts that it will manage. Hosts exist inside clusters, so before you begin adding hosts to the cloud, you must add at least one cluster.</para>
     <xi:include href="add-clusters-kvm-xenserver.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="add-clusters-ovm.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <!--    <xi:include href="add-clusters-ovm.xml" xmlns:xi="http://www.w3.org/2001/XInclude" /> -->
     <xi:include href="add-clusters-vsphere.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />  
 </section>

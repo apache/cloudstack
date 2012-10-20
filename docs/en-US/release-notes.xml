@@ -1254,9 +1254,9 @@ Done restarting router(s).
           <listitem>
             <para>KVM : QCOW2</para>
           </listitem>
-          <listitem>
+          <!--          <listitem>
             <para>OVM : RAW</para>
-          </listitem>
+        </listitem> -->
         </itemizedlist>
       </section>
       <section id="dedicated-ha-hosts">
@@ -2022,6 +2022,13 @@ Done restarting router(s).
                 <para>This source code release includes some partial functionality to support the
                   Cisco Nexus 1000v Distributed Virtual Switch within a VMware hypervisor
                   environment. The functionality is not complete at this time.</para>
+              </entry>
+            </row>
+            <row>
+              <entry><para>CLOUDSTACK-368</para></entry>
+              <entry><para>OVM - cannot create guest VM</para>
+                  <para>This source code release has regressed from the CloudStack 2.2.x code
+                      and is unable to support Oracle VM (OVM).</para>
               </entry>
             </row>
             <row>

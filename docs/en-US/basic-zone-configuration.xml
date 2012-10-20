@@ -125,7 +125,7 @@
                 <listitem><para>Citrix XenServer Installation and Configuration</para></listitem>
                 <listitem><para>VMware vSphere Installation and Configuration</para></listitem>
                 <listitem><para>KVM vSphere Installation and Configuration</para></listitem>
-                <listitem><para>Oracle VM (OVM) Installation and Configuration</para></listitem>
+                <!-- <listitem><para>Oracle VM (OVM) Installation and Configuration</para></listitem> -->
             </itemizedlist>
             <para>To configure the first host, enter the following, then click Next:</para>
             <itemizedlist>
