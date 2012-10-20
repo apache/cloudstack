@@ -32,8 +32,11 @@
     <para>Provide private IPs for the system in each pod and provision them in &PRODUCT;.</para>
     <para>For KVM and XenServer, the recommended number of private IPs per pod is one per host. If you expect a pod to grow, add enough private IPs now to accommodate the growth.</para>
     <para><emphasis role="bold">In a zone that uses advanced networking:</emphasis></para>
-    <para>For vSphere with advanced networking, we recommend provisioning enough private IPs for your total number of customers, plus enough for the required &PRODUCT; System VMs. Typically, about 10 additional IPs are required for the System VMs. For more information about System VMs, see Working with System Virtual Machines in the Administrator's Guide.</para>
+    <para>For zones with advanced networking, we recommend provisioning enough private IPs for your total number of customers, plus enough for the required &PRODUCT; System VMs. Typically, about 10 additional IPs are required for the System VMs. For more information about System VMs, see Working with System Virtual Machines in the Administrator's Guide.</para>
     <para>When advanced networking is being used, the number of private IP addresses available in each pod varies depending on which hypervisor is running on the nodes in that pod. Citrix XenServer and KVM use link-local addresses, which in theory provide more than 65,000 private IP addresses within the address block. As the pod grows over time, this should be more than enough for any reasonable number of hosts as well as IP addresses for guest virtual routers. VMWare ESXi, by contrast uses any administrator-specified subnetting scheme, and the typical administrator provides only 255 IPs per pod. Since these are shared by physical machines, the guest virtual router, and other entities, it is possible to run out of private IPs when scaling up a pod whose nodes are running ESXi.</para>
-    <para>To ensure adequate headroom to scale private IP space in an ESXi pod that uses advanced networking, use one or more of the following techniques:</para>
-    <para>TODO</para>
+    <para>To ensure adequate headroom to scale private IP space in an ESXi pod that uses advanced networking, use one or both of the following techniques:</para>
+    <itemizedlist>
+        <listitem><para>Specify a larger CIDR block for the subnet. A subnet mask with a /20 suffix will provide more than 4,000 IP addresses.</para></listitem>
+        <listitem><para>Create multiple pods, each with its own subnet. For example, if you create 10 pods and each pod has 255 IPs, this will provide 2,550 IP addresses.</para></listitem>
+    </itemizedlist>
 </section>
