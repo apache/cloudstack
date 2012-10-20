@@ -37,7 +37,7 @@ setup(name="Marvin",
       packages=["marvin", "marvin.cloudstackAPI", "marvin.sandbox", "marvin.sandbox.advanced", "marvin.sandbox.basic"],
       license="LICENSE.txt",
       install_requires=[
-          "pymysql",
+          "mysql-connector-python",
           "paramiko",
           "nose",
           "unittest-xml-reporting"
