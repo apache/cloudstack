@@ -16,7 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from distutils.core import setup
+from setuptools import setup
 from sys import version
 import sys
 
@@ -37,7 +37,7 @@ setup(name="Marvin",
       packages=["marvin", "marvin.cloudstackAPI", "marvin.sandbox", "marvin.sandbox.advanced", "marvin.sandbox.basic"],
       license="LICENSE.txt",
       install_requires=[
-          "pymysql",
+          "mysql-connector-python",
           "paramiko",
           "nose",
           "unittest-xml-reporting"

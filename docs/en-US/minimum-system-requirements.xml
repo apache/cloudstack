@@ -64,7 +64,7 @@
             <listitem><para><xref linkend="hypervisor-kvm-requirements"/></para></listitem>
             <listitem><para><xref linkend="system-requirements-xenserver-hosts"/></para></listitem>
             <listitem><para><xref linkend="vmware-requirements"/></para></listitem>
-            <listitem><para><xref linkend="ovm-requirements"/></para></listitem>
+            <!--            <listitem><para><xref linkend="ovm-requirements"/></para></listitem> -->
         </itemizedlist>
     </section>
 </section>

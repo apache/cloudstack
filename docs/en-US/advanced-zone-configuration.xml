@@ -180,9 +180,9 @@
         <listitem>
           <para>KVM Installation and Configuration</para>
         </listitem>
-        <listitem>
+        <!-- <listitem>
           <para>Oracle VM (OVM) Installation and Configuration</para>
-        </listitem>
+      </listitem> -->
       </itemizedlist>
       <para>To configure the first host, enter the following, then click Next:</para>
       <itemizedlist>

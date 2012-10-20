@@ -1484,6 +1484,12 @@
                     isHidden: true,                    
                     isBoolean: true
                   },
+                  associatePublicIP: {
+                    label: 'Associate IP',
+                    isBoolean: true,
+                    isHidden: true,
+                    dependsOn: 'service.Lb.elasticLbCheckbox'
+                  },
                   "service.Lb.lbIsolationDropdown": {
                     label: 'label.LB.isolation',
                     isHidden: true,                   
@@ -1603,6 +1609,12 @@
                   inputData['conservemode'] = true;
                 } else {
                   inputData['conservemode'] = false;
+                }
+
+                if (inputData['associatePublicIP'] == 'on') {
+                  inputData['associatePublicIP'] = true;
+                } else {
+                  inputData['associatePublicIP'] = false;
                 }
 								
                 // Make service provider map

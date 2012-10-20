@@ -24,6 +24,6 @@
     so before you begin adding hosts to the cloud, you must add at least one cluster.</para>
   <xi:include href="about-clusters.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
   <xi:include href="add-clusters-kvm-xenserver.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-  <xi:include href="add-clusters-ovm.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+  <!--  <xi:include href="add-clusters-ovm.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/> -->
   <xi:include href="add-clusters-vsphere.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
 </section>
