@@ -19,13 +19,13 @@
   under the License.
 -->
 <bookinfo id="book-release-notes-4.0">
-  <title>Version 4.0 Release Notes</title>
+  <title>Version 4.0.0-incubating Release Notes</title>
   <subtitle>Revised October 17, 2012 19:49 UTC</subtitle>
   <productname>Apache CloudStack</productname>
   <productnumber/>
   <pubsnumber/>
   <abstract>
-    <para>Release notes for the Apache CloudStack 4.0 release.</para>
+    <para>Release notes for the Apache CloudStack 4.0.0-incubating release.</para>
   </abstract>
   <corpauthor>
     <inlinemediaobject>
