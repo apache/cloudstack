@@ -16,7 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from distutils.core import setup
+from setuptools import setup
 from sys import version
 import sys
 
