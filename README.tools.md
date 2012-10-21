@@ -89,6 +89,15 @@ Visit the
 [wiki](https://cwiki.apache.org/confluence/display/CLOUDSTACK/Testing+with+Python)
 for the most updated information
 
+#### Dependencies ####
+Marvin will require the following dependencies, these will be automatically
+downloaded from the python cheeseshop when you install Marvin.
+
+- mysql-connector-python, 
+- paramiko,
+- nose,
+- unittest-xml-reporting,
+
 #### Installation ####
 
         $ untar Marvin-0.1.0.tar.gz 
