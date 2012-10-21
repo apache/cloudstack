@@ -160,6 +160,7 @@
     <module>client</module>
     <module>test</module>
     <module>tools/devcloud</module>
+    <module>tools/apidoc</module>
   </modules>
 
   <dependencies>

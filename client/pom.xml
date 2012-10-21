@@ -159,7 +159,7 @@
                   </fileset>
                 </copy>
                 <copy
-                  todir="${basedir}/target/generated-webapp/WEB-INF/classes/scripts">
+                  todir="${basedir}/target/generated-webapp/WEB-INF/lib/scripts">
                   <fileset dir="${basedir}/../scripts" />
                 </copy>
                 <copy
@@ -186,6 +186,7 @@
                     </filterreader>
                   </filterchain>
                 </copy>
+                <copy overwrite="true" file="../console-proxy/dist/systemvm.iso" todir="${basedir}/target/generated-webapp/WEB-INF/lib/vms"/>  
               </target>
             </configuration>
           </execution>

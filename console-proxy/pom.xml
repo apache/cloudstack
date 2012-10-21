@@ -121,12 +121,6 @@
                   </includes>
                 </resource>
                 <resource>
-                  <directory>../patches/target/</directory>
-                  <includes>
-                    <include>cloud-scripts.tar.gz</include>
-                  </includes>
-                </resource>
-                <resource>
                   <directory>../patches/systemvm/debian/config/root/.ssh</directory>
                   <includes>
                     <include>authorized_keys</include>
@@ -136,6 +130,50 @@
             </configuration>            
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>1.7</version>
+        <executions>
+          <execution>
+            <id>generate-resource</id>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <copy overwrite="true" file="../patches/target/cloud-scripts.tar.gz" tofile="${basedir}/dist/cloud-scripts.tgz"/>  
+              </target>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>1.2.1</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <executable>mkisofs</executable>
+          <workingDirectory>dist</workingDirectory>
+          <arguments>
+            <argument>-quiet</argument>
+            <argument>-r</argument>
+            <argument>-o</argument>
+            <argument>systemvm.iso</argument>
+            <argument>systemvm.zip</argument>
+            <argument>cloud-scripts.tgz</argument>
+            <argument>authorized_keys</argument>
+          </arguments>
+        </configuration>
       </plugin>
     </plugins>
   </build>
@@ -162,11 +200,6 @@
     </profile>
     <profile>
       <id>systemvm</id>
-      <activation>
-        <property>
-          <name>systemvm</name>
-        </property>
-      </activation>
       <build>
       <plugins>
       <plugin>
@@ -190,7 +223,7 @@
             <argument>-o</argument>
             <argument>systemvm.iso</argument>
             <argument>systemvm.zip</argument>
-            <argument>cloud-scripts.tar.gz</argument>
+            <argument>cloud-scripts.tgz</argument>
             <argument>authorized_keys</argument>
           </arguments>
         </configuration>

@@ -16,17 +16,17 @@
 -- under the License.
 
 
-UPDATE `cloud`.`configuration` SET value = 'true' where name = 'use.local.storage';
-UPDATE `cloud`.`configuration` SET value = 'true' where name = 'system.vm.use.local.storage';
-INSERT INTO `cloud`.`disk_offering` (id, name, uuid, display_text, created, use_local_storage, type) VALUES (17, 'tinyOffering', UUID(), 'tinyOffering', NOW(), 1, 'Service');
+INSERT INTO `cloud`.`disk_offering` (id, name, uuid, display_text, created, use_local_storage, type, disk_size) VALUES (17, 'tinyOffering', UUID(), 'tinyOffering', NOW(), 1, 'Service', 0);
 INSERT INTO `cloud`.`service_offering` (id, cpu, speed, ram_size) VALUES (17, 1, 100, 100);
 INSERT INTO `cloud`.`disk_offering` (id, name, uuid, display_text, created, type, disk_size) VALUES (18, 'tinyDiskOffering', UUID(), 'tinyDiskOffering', NOW(), 'Disk', 1073741824);
-INSERT INTO `cloud`.`configuration` (name,value) VALUE('router.ram.size', '100');
-INSERT INTO `cloud`.`configuration` (name,value) VALUE('router.cpu.mhz','100');
-INSERT INTO `cloud`.`configuration` (name,value) VALUE('console.ram.size','100');
-INSERT INTO `cloud`.`configuration` (name,value) VALUE('console.cpu.mhz', '100');
-INSERT INTO `cloud`.`configuration` (name,value) VALUE('ssvm.ram.size','100');
-INSERT INTO `cloud`.`configuration` (name,value) VALUE('ssvm.cpu.mhz','100');
+INSERT INTO `cloud`.`configuration` (instance, name,value) VALUE('DEFAULT','router.ram.size', '100');
+INSERT INTO `cloud`.`configuration` (instance, name,value) VALUE('DEFAULT','router.cpu.mhz','100');
+INSERT INTO `cloud`.`configuration` (instance, name,value) VALUE('DEFAULT','console.ram.size','100');
+INSERT INTO `cloud`.`configuration` (instance, name,value) VALUE('DEFAULT','console.cpu.mhz', '100');
+INSERT INTO `cloud`.`configuration` (instance, name,value) VALUE('DEFAULT','ssvm.ram.size','100');
+INSERT INTO `cloud`.`configuration` (instance, name,value) VALUE('DEFAULT','ssvm.cpu.mhz','100');
+INSERT INTO `cloud`.`configuration` (instance, name, value) VALUE('DEFAULT', 'system.vm.use.local.storage', 'true');
+INSERT INTO `cloud`.`configuration` (instance, name, value) VALUE('DEFAULT', 'integration.api.port', '8096');
 UPDATE `cloud`.`configuration` SET value='10' where name = 'storage.overprovisioning.factor';
 UPDATE `cloud`.`configuration` SET value='10' where name = 'cpu.overprovisioning.factor';
 UPDATE `cloud`.`configuration` SET value='10' where name = 'mem.overprovisioning.factor';

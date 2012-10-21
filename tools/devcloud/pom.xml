@@ -20,54 +20,119 @@
     <version>4.1.0-SNAPSHOT</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
+  <dependencies>
+    <dependency>
+      <groupId>mysql</groupId>
+      <artifactId>mysql-connector-java</artifactId>
+      <version>5.1.21</version>
+      <scope>runtime</scope>
+    </dependency>
+  </dependencies>
+
   <build>
     <defaultGoal>install</defaultGoal>
   </build>
   <profiles>
     <profile>
-      <id>clean</id>
+      <id>deploydb</id>
       <activation>
         <property>
-          <name>clean</name>
+          <name>deploydb</name>
         </property>
       </activation>
-
-
       <build>
         <plugins>
           <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-antrun-plugin</artifactId>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>properties-maven-plugin</artifactId>
+            <version>1.0-alpha-2</version>
             <executions>
               <execution>
-                <phase>integration-test</phase>
+                <phase>initialize</phase>
                 <goals>
-                  <goal>run</goal>
+                  <goal>read-project-properties</goal>
                 </goals>
                 <configuration>
-                  <target>
-                    <sshexec host="localhost" username="root"
-                      password="password" port="2222" command="touch /tmp/x"
-                      trust="true" />
-                  </target>
+                  <files>
+                    <file>${project.parent.basedir}/utils/conf/db.properties</file>
+                    <file>${project.parent.basedir}/utils/conf/db.properties.override</file>
+                  </files>
+                  <quiet>true</quiet>
                 </configuration>
               </execution>
             </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>sql-maven-plugin</artifactId>
+            <version>1.5</version>
             <dependencies>
+              <!-- specify the dependent jdbc driver here -->
               <dependency>
-                <groupId>ant</groupId>
-                <artifactId>ant-jsch</artifactId>
-                <version>1.6.5</version>
-              </dependency>
-              <dependency>
-                <groupId>jsch</groupId>
-                <artifactId>jsch</artifactId>
-                <version>0.1.29</version>
+                <groupId>mysql</groupId>
+                <artifactId>mysql-connector-java</artifactId>
+                <version>${cs.mysql.version}</version>
               </dependency>
             </dependencies>
+            <configuration>
+              <driver>org.gjt.mm.mysql.Driver</driver>
+              <url>jdbc:mysql://${db.cloud.host}:${db.cloud.port}/cloud</url>
+              <username>${db.cloud.username}</username>
+              <password>${db.cloud.password}</password>
+              <!--all executions are ignored if -Dmaven.test.skip=true -->
+              <skip>${maven.test.skip}</skip>
+              <forceMojoExecution>true</forceMojoExecution>
+            </configuration>
+            <executions>
+              <execution>
+                <id>create-schema</id>
+                <phase>process-test-resources</phase>
+                <goals>
+                  <goal>execute</goal>
+                </goals>
+                <configuration>
+                  <srcFiles>
+                    <srcFile>${basedir}/devcloud.sql</srcFile>
+                  </srcFiles>
+                </configuration>
+              </execution>
+            </executions>
           </plugin>
         </plugins>
       </build>
+    </profile>
+    <profile>
+      <id>deploysvr</id>
+      <activation>
+        <property>
+          <name>deploysvr</name>
+        </property>
+      </activation>
+      <build> 
+        <plugins>
+          <plugin>
+         <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>1.2.1</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <executable>python</executable>
+          <arguments>
+            <argument>../marvin/marvin/deployDataCenter.py</argument>
+            <argument>-i</argument>
+            <argument>devcloud.cfg</argument>
+          </arguments>
+        </configuration>
+          </plugin>
+        </plugins>
+      </build> 
     </profile>
   </profiles>
 </project>

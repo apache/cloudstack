@@ -69,7 +69,6 @@ import com.cloud.utils.ssh.SSHCmdHelper;
 public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 		Listener, ResourceStateAdapter {
 	 private static final Logger s_logger = Logger.getLogger(KvmServerDiscoverer.class);
-	 private String _setupAgentPath;
 	 private ConfigurationDao _configDao;
 	 private String _hostIp;
 	 private int _waitTime = 5; /*wait for 5 minutes*/
@@ -288,7 +287,6 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
 		ComponentLocator locator = ComponentLocator.getCurrentLocator();
         _configDao = locator.getDao(ConfigurationDao.class);
-		_setupAgentPath = Script.findScript(getPatchPath(), "setup_agent.sh");
 		_kvmPrivateNic = _configDao.getValue(Config.KvmPrivateNetwork.key());
 		if (_kvmPrivateNic == null) {
 		    _kvmPrivateNic = "cloudbr0";
@@ -304,9 +302,6 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 		    _kvmGuestNic = _kvmPrivateNic;
 		}
 		
-		if (_setupAgentPath == null) {
-			throw new ConfigurationException("Can't find setup_agent.sh");
-		}
 		_hostIp = _configDao.getValue("host");
 		if (_hostIp == null) {
 			throw new ConfigurationException("Can't get host IP");

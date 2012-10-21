@@ -160,6 +160,8 @@ stopRouter=com.cloud.api.commands.StopRouterCmd;7
 destroyRouter=com.cloud.api.commands.DestroyRouterCmd;7
 changeServiceForRouter=com.cloud.api.commands.UpgradeRouterCmd;7
 listRouters=com.cloud.api.commands.ListRoutersCmd;7
+listVirtualRouterElements=com.cloud.api.commands.ListVirtualRouterElementsCmd;7
+configureVirtualRouterElement=com.cloud.api.commands.ConfigureVirtualRouterElementCmd;7
 
 #### system vm commands
 startSystemVm=com.cloud.api.commands.StartSystemVMCmd;1
