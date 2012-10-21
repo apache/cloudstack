@@ -139,7 +139,7 @@
             <para>To configure the first primary storage server, enter the following, then click Next:</para>
             <itemizedlist>
                 <listitem><para><emphasis role="bold">Name.</emphasis> The name of the storage device.</para></listitem>
-                <listitem><para><emphasis role="bold">Protocol.</emphasis> For XenServer, choose either NFS, iSCSI, or PreSetup.  For KVM, choose NFS or SharedMountPoint.  For vSphere choose either VMFS (iSCSI or FiberChannel) or NFS. The remaining fields in the screen vary depending on what you choose here.</para></listitem>
+                <listitem><para><emphasis role="bold">Protocol.</emphasis> For XenServer, choose either NFS, iSCSI, or PreSetup.  For KVM, choose NFS, SharedMountPoint,CLVM, or RBD.  For vSphere choose either VMFS (iSCSI or FiberChannel) or NFS. The remaining fields in the screen vary depending on what you choose here.</para></listitem>
             </itemizedlist>
         </listitem>
     </orderedlist>
