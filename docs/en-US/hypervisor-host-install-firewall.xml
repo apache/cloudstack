@@ -56,4 +56,5 @@
         <programlisting language="Bash">ufw allow proto tcp from any to any port 49152:492160</programlisting>
         <note><para>By default UFW is not enabled on Ubuntu. Executing these commands with the firewall disabled does not enable the firewall.</para></note>
     </section>
+    <para>The host is now ready to be added to a cluster. This is covered in a later section, see <xref linkend="host-add" />. It is recommended that you continue to read the documentation before adding the host!</para>
 </section>
