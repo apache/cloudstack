@@ -527,8 +527,6 @@
     </tar>
     <copy file="${base.dir}/patches/systemvm/debian/config/root/.ssh/authorized_keys" todir="${dist.dir}/"/>
     <gzip destfile="${dist.dir}/cloud-scripts.tgz" src="${dist.dir}/patch.tar"/>
-    <delete file="${dist.dir}/patch.tar"/>
-    <delete dir="${dist.dir}/build-patch"/>
   </target>
 
   <target name="help">
