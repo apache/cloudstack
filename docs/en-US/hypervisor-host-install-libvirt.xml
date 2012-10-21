@@ -24,7 +24,7 @@
 
 <section id="hypervisor-host-install-libvirt">
     <title>Install and Configure libvirt</title>
-    <para>&PRODUCT; uses libvirt for managing virtual machines. Therefor it is vital that libvirt is configured correctly.</para>
+    <para>&PRODUCT; uses libvirt for managing virtual machines. Therefore it is vital that libvirt is configured correctly.</para>
     <orderedlist>
         <listitem>
             <para>Install libvirt</para>

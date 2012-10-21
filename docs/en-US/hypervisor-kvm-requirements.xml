@@ -37,17 +37,12 @@
   </itemizedlist>
   <para>In addition, the following hardware requirements apply:</para>
   <itemizedlist>
-    <listitem><para>Hosts must be certified as compatible with the selected operating system. For example, see the RHEL Hardware Compatibility Guide at https://hardware.redhat.com/.</para></listitem>
-    <listitem><para>Within a single cluster, the hosts must be of the same kernel version.  For example, if one host is RHEL6 64 bit, they must all be RHEL6 64 bit.</para></listitem>
+    <listitem><para>Within a single cluster, the hosts must be of the same distribution version.</para></listitem>
     <listitem><para>All hosts within a cluster must be homogenous. The CPUs must be of the same type, count, and feature flags.</para></listitem>
     <listitem><para>Must support HVM (Intel-VT or AMD-V enabled)</para></listitem>
     <listitem><para>64-bit x86 CPU (more cores results in better performance)</para></listitem>
-    <listitem><para>Hardware virtualization support required</para></listitem>
     <listitem><para>4 GB of memory</para></listitem>
-    <listitem><para>36 GB of local disk</para></listitem>
     <listitem><para>At least 1 NIC</para></listitem>
-    <listitem><para>Statically allocated IP Address</para></listitem>
-    <listitem><para>Latest hotfixes applied to hypervisor software</para></listitem>
     <listitem><para>When you deploy &PRODUCT;, the hypervisor host must not have any VMs already running</para></listitem>
   </itemizedlist>
 </section>
