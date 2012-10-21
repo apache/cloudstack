@@ -41,7 +41,7 @@
         <programlisting language="Bash">iptables -I INPUT -p tcp -m tcp --dport 1798 -j ACCEPT</programlisting>
         <programlisting language="Bash">iptables -I INPUT -p tcp -m tcp --dport 16509 -j ACCEPT</programlisting>
         <programlisting language="Bash">iptables -I INPUT -p tcp -m tcp --dport 5900:6100 -j ACCEPT</programlisting>
-        <programlisting language="Bash">iptables -I INPUT -p tcp -m tcp --dport 49152:492160 -j ACCEPT</programlisting>
+        <programlisting language="Bash">iptables -I INPUT -p tcp -m tcp --dport 49152:49216 -j ACCEPT</programlisting>
         <para>These iptable settings are not persistent accross reboots, we have to save them first.</para>
         <programlisting language="Bash">iptables-save > /etc/sysconfig/iptables</programlisting>
     </section>
