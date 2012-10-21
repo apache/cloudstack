@@ -42,13 +42,10 @@ class dbConnection(object):
             with contextlib.closing(conn.cursor(buffered=True)) as cursor:
                 cursor.execute(sql, params)
                 try:
-                    result = cursor.fetchall()
+                    resultRow = cursor.fetchall()
                 except errors.InterfaceError:
                     #Raised on empty result - DML
-                    result = []
-                    if result:
-                        [resultRow.append(r) for r in result]
-
+                    resultRow = []
         return resultRow
 
     def executeSqlFromFile(self, fileName=None):
