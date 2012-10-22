@@ -49,9 +49,9 @@
         <listitem>
             <para>Restart libvirt</para>
             <para>In RHEL or CentOS:</para>
-            <programlisting language="Bash">service libvirtd restart</programlisting>
+            <programlisting><command>$ service libvirtd restart</command></programlisting>
             <para>In Ubuntu:</para>
-            <programlisting language="Bash">service libvirt-bin restart</programlisting>
+            <programlisting><command>$ service libvirt-bin restart</command></programlisting>
         </listitem>
     </orderedlist>
 </section>
