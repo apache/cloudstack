@@ -3647,14 +3647,24 @@
                           data: $.map(
                             data.listsecuritygroupsresponse.securitygroup[0].egressrule ? 
                               data.listsecuritygroupsresponse.securitygroup[0].egressrule : [],
+                            
                             function(elem) {
-                              return {
+                              var elemData = {
                                 id: elem.ruleid,
                                 protocol: elem.protocol,
-                                startport: elem.startport ? elem.startport : elem.icmptype,
-                                endport: elem.endport ? elem.endport : elem.icmpcode,
+                                startport: elem.startport,
+                                endport: elem.endport,
                                 cidr: elem.cidr ? elem.cidr : ''.concat(elem.account, ' - ', elem.securitygroupname)
                               };
+
+                              if (elemData.startport == 0 && elemData.endport) {
+                                elemData.startport = '0';
+                              } else if (elem.icmptype && elem.icmpcode) {
+                                elemData.startport = elem.icmptype;
+                                elemData.endport = elem.icmpcode;
+                              }
+
+                              return elemData;
                             }
                           )
                         });
