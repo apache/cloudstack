@@ -46,9 +46,9 @@
         <para>Use your preferred editor and open (or create) <filename>/etc/apt/sources.list.d/cloudstack</filename>. Add the community provided repository to the file:</para>
 <programlisting>deb http://cloudstack.apt-get.eu/ubuntu precise 4.0</programlisting>
         <para>We now have to add the public key to the trusted keys.</para>
-        <programlisting language="Bash"><prompt>#</prompt> <command>wget</command> -O - http://cloudstack.apt-get.eu/release.asc|apt-key add -</programlisting>
+        <programlisting language="Bash"><prompt>$</prompt> <command>wget</command> -O - http://cloudstack.apt-get.eu/release.asc|apt-key add -</programlisting>
         <para>Now update your local apt cache.</para>
-        <programlisting language="Bash"><prompt>#</prompt> <command>apt-get</command> update</programlisting>
+        <programlisting language="Bash"><prompt>$</prompt> <command>apt-get</command> update</programlisting>
         <para>Your DEB package repository should now be configured and ready for use.</para>
     </section>
     <section id="configure-package-repository-rpm">
@@ -65,7 +65,7 @@ gpgcheck=1
         </programlisting>
         <para>Next you'll want to add the GPG key:</para>
 <screen>
-<command># rpm --import http://server.url/downloads/RPM-GPG-KEY.txt</command>
+<command>$ rpm --import http://server.url/downloads/RPM-GPG-KEY.txt</command>
 </screen>
         <para>Now you should be able to install CloudStack using Yum.</para>
     </section>
