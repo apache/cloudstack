@@ -694,10 +694,10 @@ cloudStack.api = {
           var resourceId = args.context[contextId][0].id;
 
           $.ajax({
-            url: createURL(
-              'createTags&tags[0].key=' + data.key + '&tags[0].value=' + data.value
-            ),
+            url: createURL('createTags'),
             data: {
+						  'tags[0].key': data.key,
+							'tags[0].value': data.value,						
               resourceIds: resourceId,
               resourceType: resourceType
             },
@@ -718,10 +718,10 @@ cloudStack.api = {
           var resourceId = args.context[contextId][0].id;
 
           $.ajax({
-            url: createURL(
-              'deleteTags&tags[0].key=' + data.key + '&tags[0].value=' + data.value
-            ),
+            url: createURL('deleteTags'),
             data: {
+						  'tags[0].key': data.key,
+							'tags[0].value': data.value,						
               resourceIds: resourceId,
               resourceType: resourceType
             },
