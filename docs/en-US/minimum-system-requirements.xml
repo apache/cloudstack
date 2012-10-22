@@ -51,7 +51,7 @@
             <listitem><para>4 GB of memory</para></listitem>
             <listitem><para>36 GB of local disk</para></listitem>
             <listitem><para>At least 1 NIC</para></listitem>
-            <listitem><para>Statically allocated IP Address</para></listitem>
+            <listitem><note><para>If DHCP is used for hosts, ensure that no conflict occurs between DHCP server used for these hosts and the DHCP router created by &PRODUCT;.</para></note></listitem>
             <listitem><para>Latest hotfixes applied to hypervisor software</para></listitem>
             <listitem><para>When you deploy &PRODUCT;, the hypervisor host must not have any VMs already running</para></listitem>
             <listitem><para>All hosts within a cluster must be homogenous. The CPUs must be of the same type, count, and feature flags.</para></listitem>
