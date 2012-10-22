@@ -652,7 +652,9 @@
     }
 
     // Quick view
-    if (detailView && !detailView.noCompact && !uiCustom) {
+    if (detailView &&
+        !$.isFunction(detailView) &&
+        !detailView.noCompact && !uiCustom) {
       $thead.find('tr').append(
         $('<th></th>')
           .html(_l('label.quickview'))
@@ -1031,7 +1033,10 @@
       }
 
       // Add quick view
-      if (detailView && !detailView.noCompact && !uiCustom) {
+      if (detailView &&
+          !$.isFunction(detailView) &&
+          !detailView.noCompact &&
+          !uiCustom) {
         $quickView = $('<td>').addClass('quick-view reduced-hide')
           .append(
             $('<span>').addClass('icon').html('&nbsp;')
