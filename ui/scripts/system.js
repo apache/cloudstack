@@ -3268,6 +3268,8 @@
                       label: 'label.numretries',
                       defaultValue: '2'
                     },
+										//Inline Mode has been moved from Add F5 Device to Create Network Offering (both backend and UI)
+										/*
                     inline: {
                       label: 'Mode',
                       select: function(args) {
@@ -3276,7 +3278,8 @@
                         items.push({id: "true", description: "inline"});
                         args.response.success({data: items});
                       }
-                    },                    
+                    },    
+                    */										
                     dedicated: {
                       label: 'label.dedicated',
                       isBoolean: true,
@@ -6197,6 +6200,8 @@
                     label: 'label.numretries',
                     defaultValue: '2'
                   },
+									//Inline Mode has been moved from Add F5 Device to Create Network Offering (both backend and UI)
+									/*
                   inline: {
                     label: 'Mode',
                     select: function(args) {
@@ -6205,7 +6210,8 @@
                       items.push({id: "true", description: "inline"});
                       args.response.success({data: items});
                     }
-                  },                 
+                  },  
+                  */									
                   dedicated: {
                     label: 'label.dedicated',
                     isBoolean: true,
