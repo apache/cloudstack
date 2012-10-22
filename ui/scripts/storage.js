@@ -141,20 +141,22 @@
               },
 
               action: function(args) {
-                var array1 = [];
-                array1.push("&name=" + args.data.name);
-                array1.push("&zoneId=" + args.data.availabilityZone);
-                array1.push("&diskOfferingId=" + args.data.diskOffering);
-
+							  var data = {
+								  name: args.data.name,
+									zoneId: args.data.availabilityZone,
+									diskOfferingId: args.data.diskOffering
+								};
+							
                 // if(thisDialog.find("#size_container").css("display") != "none") { //wait for Brian to include $form in args
                 if (selectedDiskOfferingObj.iscustomized == true) {
-                  array1.push("&size=" + args.data.diskSize);
+								  $.extend(data, {
+									  size: args.data.diskSize
+									});
                 }
 
                 $.ajax({
-                  url: createURL("createVolume" + array1.join("")),
-                  dataType: "json",
-                  async: true,
+                  url: createURL('createVolume'),
+                  data: data,                 
                   success: function(json) {
                     var jid = json.createvolumeresponse.jobid;
                     args.response.success(
