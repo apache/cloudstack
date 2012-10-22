@@ -77,12 +77,12 @@ class DBDeployer(object):
         def backUpDbDotProperties():
             dbpPath = os.path.join(self.dbConfPath, 'db.properties')
             copyPath = os.path.join(self.dbConfPath, 'db.properties.origin')
-            
+
             if os.path.isfile(dbpPath):
                 shutil.copy2(dbpPath, copyPath)
-        
+
         backUpDbDotProperties()
-    
+
     def postRun(self):
         def cleanOrRecoverDbDotProperties():
             dbpPath = os.path.join(self.dbConfPath, 'db.properties')
@@ -91,24 +91,24 @@ class DBDeployer(object):
                 if not self.success:
                     shutil.copy2(copyPath, dbpPath)
                 os.remove(copyPath)
-        
+
         cleanOrRecoverDbDotProperties()
         if os.path.exists(self.tmpMysqlFile):
             os.remove(self.tmpMysqlFile)
-                
-        
+
+
     def info(self, msg, result=None):
         output = ""
         if msg is not None:
             output = "%-80s"%msg
-            
+
         if result is True:
             output += "[ \033[92m%-2s\033[0m ]\n"%"OK"
         elif result is False:
             output += "[ \033[91m%-6s\033[0m ]\n"%"FAILED"
         sys.stdout.write(output)
         sys.stdout.flush()
-    
+
     def debug(self, msg):
         msg = "DEBUG:%s"%msg
         sys.stdout.write(msg)
@@ -121,13 +121,13 @@ class DBDeployer(object):
         else:
             self.dbDotProperties[key] = (value, self.dbDotPropertiesIndex)
             self.dbDotPropertiesIndex += 1
-    
+
     def getDbProperty(self, key):
         if not self.dbDotProperties.has_key(key):
             return None
         (value, index) = self.dbDotProperties[key]
         return value
-        
+
     def runMysql(self, text, table, isRoot=False):
         kwargs = {}
         if not isRoot:
@@ -136,7 +136,7 @@ class DBDeployer(object):
         else:
             kwargs['user'] = self.rootuser
             if self.rootpassword != '': kwargs['passwd'] = self.rootpassword
-            
+
         kwargs['port'] = self.port
         kwargs['host'] = self.host
 
@@ -148,7 +148,7 @@ class DBDeployer(object):
             mysqlCmds.append('<')
             mysqlCmds.append(self.tmpMysqlFile)
             runCmd(mysqlCmds)
-            
+
         except Exception, e:
             err = '''Encountering an error when executing mysql script
 ----------------------------------------------------------------------
@@ -163,13 +163,13 @@ Sql parameters:
 ----------------------------------------------------------------------
             '''%(table, e.__str__(), kwargs)
             self.errorAndExit(err)
-        
+
     def errorAndExit(self, msg):
         self.postRun()
         err = '''\n\nWe apologize for below error:
-***************************************************************      
+***************************************************************
 %s
-*************************************************************** 
+***************************************************************
 Please run:
 
     cloud-setup-database -h
@@ -184,7 +184,7 @@ for full help
         if not self.rootuser:
             self.info("No mysql root user specified, will not create Cloud DB schema\n", None)
             return
-        
+
         replacements = (
                 ("CREATE USER cloud identified by 'cloud';",
                     "CREATE USER %s@`localhost` identified by '%s'; CREATE USER %s@`%%` identified by '%s';"%(
@@ -211,7 +211,7 @@ for full help
                 ("CALL `test`.`drop_user_if_exists`() ;",
                     ""),
             )
-        
+
         for f in ["create-database","create-schema","create-database-premium","create-schema-premium"]:
             p = os.path.join(self.dbFilesPath,"%s.sql"%f)
             if not os.path.exists(p): continue
@@ -220,7 +220,7 @@ for full help
             self.info("Applying %s"%p)
             self.runMysql(text, p, True)
             self.info(None, True)
-        
+
         if self.serversetup:
             conf = os.path.join(self.dbConfPath, 'db.properties')
             pcp = os.path.pathsep.join( glob.glob( os.path.join ( r"@PREMIUMJAVADIR@" , "*" ) ) )
@@ -243,21 +243,21 @@ for full help
             self.info("Applying %s"%p)
             self.runMysql(text, p, True)
             self.info(None, True)
-                
+
         for f in ["templates","create-index-fk"]:
             p = os.path.join(self.dbFilesPath,"%s.sql"%f)
             text = file(p).read()
             self.info("Applying %s"%p)
             self.runMysql(text, p, True)
             self.info(None, True)
-            
+
         p = os.path.join(self.dbFilesPath,"schema-level.sql")
         if os.path.isfile(p):
             text = file(p).read()
             self.info("Applying %s"%p)
             self.runMysql(text, p, True)
             self.info(None, True)
-            
+
         awsApiDbDir = '/usr/share/cloud/setup/bridge/db'
         for f in ["cloudbridge_db.sql"]:
             p = os.path.join(awsApiDbDir,f)
@@ -277,7 +277,7 @@ for full help
                 self.info("Applying %s"%p)
                 self.runMysql(text, p, True)
                 self.info(None, True)
-               
+
     def prepareDBFiles(self):
         def prepareDBDotProperties():
             dbpPath = os.path.join(self.dbConfPath, 'db.properties')
@@ -289,7 +289,7 @@ for full help
                 line = line.strip()
                 if line.startswith("#"): key = line; value = ''; passed = True
                 if line == '' or line == '\n': key = self.magicString + str(emptyLine); value = ''; emptyLine += 1; passed = True
-                
+
                 try:
                     if not passed:
                         (key, value) = line.split('=', 1)
@@ -312,9 +312,9 @@ for example:
                     self.errorAndExit(err)
                 self.putDbProperty(key, value)
             self.info("Preparing %s"%dbpPath, True)
-        
+
         prepareDBDotProperties()
-    
+
     def finalize(self):
         def finalizeDbProperties():
             entries = []
@@ -327,12 +327,12 @@ for example:
                 else:
                     entries.insert(index, "%s=%s"%(key, value))
             file(os.path.join(self.dbConfPath, 'db.properties'), 'w').write('\n'.join(entries))
-        
+
         self.info("Finalizing setup ...", None)
         finalizeDbProperties()
         self.info(None, True)
         self.success = True # At here, we have done successfully and nothing more after this flag is set
-            
+
     def grabSystemInfo(self):
         def getIpAddr():
             try:
@@ -346,10 +346,11 @@ for example:
                 return '127.0.0.1'
             except Exception, e:
                 return "127.0.0.1"
-        
-        self.ip = getIpAddr()
-        self.info("Detected local IP address as %s, will use as cluster management server node IP"%self.ip, True)
-            
+
+        if not self.ip:
+            self.ip = getIpAddr()
+            self.info("Detected local IP address as %s, will use as cluster management server node IP" % self.ip, True)
+
     def checkSystemSetup(self):
         def checkCloudDbFiles():
             self.info("Checking Cloud database files ...", None)
@@ -357,25 +358,25 @@ for example:
             for dbf in dbfpaths:
                 if not os.path.exists(dbf):
                     self.errorAndExit("Cannot find %s"%dbf)
-            
+
             coreSchemas = ['create-database.sql', 'create-schema.sql', 'templates.sql', 'create-index-fk.sql']
             if not self.serversetup:
                 coreSchemas.append('server-setup.sql')
-            
+
             checkingList = [os.path.join(self.dbFilesPath, x) for x in coreSchemas]
             checkingList.append(self.encryptionJarPath)
             for f in checkingList:
                 if not os.path.isfile(f):
                     self.errorAndExit("Cloud DB required file %s was not found"%f)
             self.info(None, True)
-        
+
         def checkDbserverHostname():
             self.info("Checking mysql server hostname ...", None)
             if resolves_to_ipv6(self, self.port):
                 err = "%s resolves to an IPv6 address.  The CloudStack does not support IPv6 yet.\nPlease fix this issue in either /etc/hosts or your DNS configuration.\n"%self.host
                 self.errorAndExit(err)
             self.info(None, True)
-        
+
         def checkHostName():
             self.info("Checking local machine hostname ...", None)
             try:
@@ -384,7 +385,7 @@ for example:
                 err = "The host name of this computer does not resolve to an IP address.\nPlease use your operating system's network setup tools to fix this ('hostname --fqdn' %s).\n"%e.__str__()
                 self.errorAndExit(err)
             self.info(None, True)
-        
+
         def checkSELinux():
             self.info("Checking SELinux setup ...", None)
             try:
@@ -395,54 +396,54 @@ for example:
                 if e.errno == 2: pass
                 else: self.errorAndExit(e.__str__())
             self.info(None, True)
-                
+
         checkCloudDbFiles()
         checkHostName()
         checkSELinux()
-    
+
     def processEncryptionStuff(self):
         def encrypt(input):
             cmd = ['java','-classpath',self.encryptionJarPath,'org.jasypt.intf.cli.JasyptPBEStringEncryptionCLI', 'encrypt.sh', 'input=%s'%input, 'password=%s'%self.mgmtsecretkey,'verbose=false']
             return runCmd(cmd).strip('\n')
-        
+
         def saveMgmtServerSecretKey():
             if self.encryptiontype == 'file':
                 file(self.encryptionKeyFile, 'w').write(self.mgmtsecretkey)
-                
+
         def formatEncryptResult(value):
             return 'ENC(%s)'%value
-        
+
         def encryptDBSecretKey():
             self.putDbProperty('db.cloud.encrypt.secret', formatEncryptResult(encrypt(self.dbsecretkey)))
-        
+
         def encryptDBPassword():
             dbPassword = self.getDbProperty('db.cloud.password')
             if dbPassword == '': return # Don't encrypt empty password
             if dbPassword == None: self.errorAndExit('Cannot find db.cloud.password in %s'%os.path.join(self.dbConfPath, 'db.properties'))
             self.putDbProperty('db.cloud.password', formatEncryptResult(encrypt(dbPassword)))
-            
+
             usagePassword = self.getDbProperty('db.usage.password')
             if usagePassword == '': return # Don't encrypt empty password
             if usagePassword == None: self.errorAndExit('Cannot find db.usage.password in %s'%os.path.join(self.dbConfPath, 'db.properties'))
             self.putDbProperty('db.usage.password', formatEncryptResult(encrypt(usagePassword)))
-        
+
         self.info("Processing encryption ...", None)
         self.putDbProperty("db.cloud.encryption.type", self.encryptiontype)
         saveMgmtServerSecretKey()
         encryptDBSecretKey()
         encryptDBPassword()
         self.info(None, True)
-        
+
     def parseOptions(self):
         def parseOtherOptions():
             if self.options.rootcreds:
                 self.rootuser,self.rootpassword = parseUserAndPassword(self.options.rootcreds)
                 if self.rootuser == self.user:
                     self.errorAndExit("--deploy-as= user name cannot be the user name supplied for the connection credentials")
-                
+
                 self.info("Mysql root user name:%s"%self.rootuser, True)
                 self.info("Mysql root user password:%s"%self.rootpassword, True)
-                
+
             if self.options.serversetup:
                 if not self.options.rootcreds:
                     self.errorAndExit("--auto= requires valid --deploy-as= credentials")
@@ -450,12 +451,16 @@ for example:
                     self.errorAndExit("%s is not a valid file"%self.options.serversetup)
                 self.serversetup = self.options.serversetup
                 self.info("User specified server-setup.sql file at %s"%self.serversetup, True)
-            
+
+            if self.options.mshostip:
+                self.ip = self.options.mshostip
+                self.info("Using specified cluster management server node IP %s" % self.options.mshostip, True)
+
             self.encryptiontype = self.options.encryptiontype
             self.mgmtsecretkey = self.options.mgmtsecretkey
             self.dbsecretkey = self.options.dbsecretkey
             self.isDebug = self.options.debug
-            
+
         def parseUserAndPassword(cred):
             stuff = cred.split(':')
             if len(stuff) != 1 and len(stuff) != 2:
@@ -467,13 +472,13 @@ for example:
                 password = ''
             else:
                 password = stuff[1]
-                
+
             forbidden = "' \\`"
             for f in forbidden:
                 if f in user: self.errorAndExit("User name cannot have the %r characters"%f)
                 if f in password: self.errorAndExit("Password cannot have the %r characters"%f)
             return user, password
-            
+
         def parseCasualCredit():
             def parseHostInfo(info):
                 stuff = info.split(":")
@@ -488,18 +493,18 @@ for example:
                 else:
                     self.errorAndExit("Invalid host and port format, it must be in format of host:port (%s)"%info)
                 return host, port
-    
+
             if len(self.args) == 0:
                 self.errorAndExit("Please specify user:password@hostname")
             if len(self.args) > 1:
                 self.errorAndExit("There are more than one parameters for user:password@hostname (%s)"%self.args)
-            
+
             arg = self.args[0]
             stuff = arg.split("@", 1)
             if len(stuff) == 1: stuff.append("localhost")
             self.user,self.password = parseUserAndPassword(stuff[0])
             self.host,self.port = parseHostInfo(stuff[1])
-            
+
             self.info("Mysql user name:%s"%self.user, True)
             if self.password:
                 self.info("Mysql user password:%s"%self.password, True)
@@ -507,32 +512,32 @@ for example:
                 self.info("Mysql user password:", True)
             self.info("Mysql server ip:%s"%self.host, True)
             self.info("Mysql server port:%s"%self.port, True)
-        
+
         def validateParameters():
             if self.encryptiontype != 'file' and self.encryptiontype != 'web':
                 self.errorAndExit('Wrong encryption type %s, --encrypt-type can only be "file" or "web'%self.encryptiontype)
-            
+
     #---------------------- option parsing and command line checks ------------------------
         usage = """%prog user:[password]@mysqlhost:[port] [--deploy-as=rootuser:[rootpassword]] [--auto=/path/to/server-setup.xml] [-e ENCRYPTIONTYPE] [-m MGMTSECRETKEY] [-k DBSECRETKEY] [--debug]
-    
+
     This command sets up the CloudStack Management Server and CloudStack Usage Server database configuration (connection credentials and host information) based on the first argument.
-    
+
     If the the --deploy-as option is present, this command will also connect to the database using the administrative credentials specified as the value for the --deploy-as argument, construct the database environment needed to run the CloudStack Management Server, and alter the password specified for the user in the first argument.  In this case, the user name specified in --deploy-as= cannot be the same as the user name specified for the connection credentials that the CloudStack Management Server will be set up with.
-    
+
     If a server-setup.xml cloud setup information file is specified with the --auto option, this command will also construct a customized database environment according to the cloud setup information in the file.
-    
+
     The port and the password are optional and can be left out..  If host is omitted altogether, it will default to localhost.
-    
+
     Examples:
-    
-    %prog cloud:secret 
+
+    %prog cloud:secret
         sets user cloud and password 'secret' up in
         @MSCONF@/db.properties, using localhost as the
         database server
-        
-    %prog sheng:rules@192.168.1.1 
+
+    %prog sheng:rules@192.168.1.1
         sets these credentials up in @MSCONF@/db.properties
-        
+
     %prog alex:founder@1.2.3.4 --deploy-as=root:nonsense
         sets alex up as the MySQL user, then connects as the root user
         with password 'nonsense', and recreates the databases, creating
@@ -542,7 +547,7 @@ for example:
         In addition actions performing in above example, using 'password' as management server encryption key
         and 'dbpassword' as database encryption key, saving management server encryption key to a file as the
         encryption type specified by -e is file.
-    
+
     %prog alena:tests@5.6.7.8 --deploy-as=root:nonsense --auto=/root/server-setup.xml
         sets alena up as the MySQL user, then connects as the root user
         with password 'nonsense' to server 5.6.7.8, then recreates the
@@ -562,12 +567,14 @@ for example:
                           help="Secret key used to encrypt confidential parameters in db.properties. A string, default is password")
         self.parser.add_option("-k", "--database-secretkey", action="store", type="string", dest="dbsecretkey", default="password",
                           help="Secret key used to encrypt sensitive database values. A string, default is password")
-        
+        self.parser.add_option("-i", "--mshost", action="store", type="string", dest="mshostip", default="",
+                          help="Cluster management server host IP. A string, by default it will try to detect a local IP")
+
         (self.options, self.args) = self.parser.parse_args()
         parseCasualCredit()
         parseOtherOptions()
         validateParameters()
-    
+
     def run(self):
         try:
             self.preRun()
@@ -580,7 +587,7 @@ for example:
             self.finalize()
         finally:
             self.postRun()
-        
+
         print ''
         print "CloudStack has successfully initialized database, you can check your database configuration in %s"%os.path.join(self.dbConfPath, 'db.properties')
         print ''
@@ -588,4 +595,4 @@ for example:
 if __name__ == "__main__":
    o = DBDeployer()
    o.run()
-        
+
