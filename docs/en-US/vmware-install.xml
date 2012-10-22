@@ -30,9 +30,8 @@
     <title>Preparation Checklist for VMware</title>
     <para>For a smoother installation, gather the following information before you start:</para>
     <itemizedlist>
-        <listitem><para><xref linkend="vmware-vcenter-checklist" /></para></listitem>
-        <listitem><para><xref linkend="vmware-network-checklist" /></para></listitem>
-        <listitem><para>In addition to the VMware-specific checklists, you should also see Preparation Checklists</para></listitem>
+        <listitem><para>Information listed in <xref linkend="vmware-vcenter-checklist" /></para></listitem>
+        <listitem><para>Information listed in <xref linkend="vmware-network-checklist" /></para></listitem>
     </itemizedlist>
     <section id="vmware-vcenter-checklist">
         <title>vCenter Checklist</title>
@@ -148,7 +147,7 @@
     <section id="vmware-vsphere-installation-steps">
     <title>vSphere Installation Steps</title>
     <orderedlist>
-    <listitem><para>Download and purchase vSphere from the VMware Website (<ulink url="https://www.vmware.com/tryvmware/index.php?p=vmware-vsphere&amp;lp=1">https://www.vmware.com/tryvmware/index.php?p=vmware-vsphere&amp;lp=1</ulink>) and install it by following the VMware vSphere Installation Guide.</para></listitem>
+    <listitem><para>If you haven't already, you'll need to download and purchase vSphere from the VMware Website (<ulink url="https://www.vmware.com/tryvmware/index.php?p=vmware-vsphere&amp;lp=1">https://www.vmware.com/tryvmware/index.php?p=vmware-vsphere&amp;lp=1</ulink>) and install it by following the VMware vSphere Installation Guide.</para></listitem>
         <listitem>
         <para>Following installation, perform the following configuration, which are described in the next few sections:</para>
         <informaltable frame="all">
@@ -200,7 +199,7 @@
         </textobject>
     </mediaobject>
     <para>In the host configuration tab, click the &quot;Hardware/Networking&quot; link to bring up the networking configuration page as above.</para>
-    <section id="vmware-physical-host-networking-config-vswitch">
+ <section id="vmware-physical-host-networking-config-vswitch">
         <title>Configure Virtual Switch</title>
         <para>A default virtual switch vSwitch0 is created. &PRODUCT; requires all ESXi hosts in the cloud to use the same set of virtual switch names. If you change the default virtual switch name, you will need to configure one or more &PRODUCT; configuration variables as well.</para>
         <section id="vmware-physical-host-networking-config-vswitch-separate-traffic">
@@ -268,7 +267,7 @@ esxcfg-firewall -o 59000-60000,tcp,out,vncextras
         <para>NIC bonding on vSphere hosts may be done according to the vSphere installation guide.</para>
     </section>
     </section>
-    <section id="vmware-vsphere-cluster-config-nexus-vswitch">
+    <!--    <section id="vmware-vsphere-cluster-config-nexus-vswitch">
     <title>Configuring a vSphere Cluster with Nexus 1000v Virtual Switch</title>
     <para>&PRODUCT; supports Cisco Nexus 1000v dvSwitch (Distributed Virtual Switch) for virtual network configuration in a VMware vSphere environment. This section helps you configure a vSphere cluster with Nexus 1000v virtual switch in a VMware vCenter environment. For information on creating a vSphere cluster, see <xref linkend="vmware-install" /></para>
     <section id="vmware-vsphere-cluster-config-nexus-vswitch-about">
@@ -542,8 +541,8 @@ esxcfg-firewall -o 59000-60000,tcp,out,vncextras
             <para>Click Yes in the confirmation dialog box.</para>
         </listitem>
         </orderedlist>
-    </section>
-    </section>
+    </section> 
+</section> -->
     <section id="vmware-vsphere-iscsi-storage-preparation">
     <title>Storage Preparation for vSphere (iSCSI only)</title>
     <para>Use of iSCSI requires preparatory work in vCenter.  You must add an iSCSI target and create an iSCSI datastore.</para>
@@ -628,5 +627,5 @@ esxcfg-firewall -o 59000-60000,tcp,out,vncextras
     <section id="vmware-add-hosts-config-vsphere-cluster">
     <title>Add Hosts or Configure Clusters (vSphere)</title>
     <para>Use vCenter to create a vCenter cluster and add your desired hosts to the cluster.  You will later add the entire cluster to &PRODUCT;. (see <xref linkend="add-clusters-vsphere" />).</para>
-    </section>
+</section> 
 </section>
