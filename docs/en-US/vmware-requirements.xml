@@ -34,7 +34,7 @@
         </listitem>
         <listitem><para>Be sure all the hotfixes provided by the hypervisor vendor are applied. Track the release of hypervisor patches through your hypervisor vendor's support channel, and apply patches as soon as possible after they are released. &PRODUCT; will not track or notify you of required hypervisor patches. It is essential that your hosts are completely up to date with the provided hypervisor patches. The hypervisor vendor is likely to refuse to support any system that is not up to date with patches.</para></listitem>
     </itemizedlist>
-    <warning><para>The lack of up-do-date hotfixes can lead to data corruption and lost VMs.</para></warning>
+    <warning><title>Apply All Necessary Hotfixes</title><para>The lack of up-do-date hotfixes can lead to data corruption and lost VMs.</para></warning>
     </section>
     <section id="vmware-requirements-hardware">
     <title>Hardware requirements:</title>
@@ -53,7 +53,7 @@
     <section id="vmware-requirements-vcenter">
     <title>vCenter Server requirements:</title>
     <itemizedlist>
-        <listitem><para>Processor - 2 CPUs 2.0GHz or higher Intel or AMD x86 processors. Processor may be higher if the database runs on the same machine.</para></listitem>
+        <listitem><para>Processor - 2 CPUs 2.0GHz or higher Intel or AMD x86 processors. Processor requirements may be higher if the database runs on the same machine.</para></listitem>
         <listitem><para>Memory - 3GB RAM. RAM requirements may be higher if your database runs on the same machine.</para></listitem>
         <listitem><para>Disk storage - 2GB. Disk requirements may be higher if your database runs on the same machine.</para></listitem>
         <listitem><para>Microsoft SQL Server 2005 Express disk requirements. The bundled database requires up to 2GB free disk space to decompress the installation archive.</para></listitem>
@@ -71,10 +71,10 @@
         <listitem><para>All hosts must be 64-bit and must support HVM (Intel-VT or AMD-V enabled). All hosts within a cluster must be homogenous. That means the CPUs must be of the same type, count, and feature flags.</para></listitem>
         <listitem><para>The &PRODUCT; management network must not be configured as a separate virtual network. The &PRODUCT; management network is the same as the vCenter management network, and will inherit its configuration. See <xref linkend="vmware-physical-host-networking-config-vcenter-mgt" />.</para></listitem>
         <listitem><para>&PRODUCT; requires ESXi.  ESX is not supported.</para></listitem>
-        <listitem><para>All resources used for &PRODUCT; must be used for &PRODUCT; only.  &PRODUCT; cannot shares instance of ESXi or storage with other management consoles.  Do not share the same storage volumes that will be used by &PRODUCT; with a different set of ESXi servers that are not managed by &PRODUCT;.</para></listitem>
+        <listitem><para>All resources used for &PRODUCT; must be used for &PRODUCT; only.  &PRODUCT; cannot share instance of ESXi or storage with other management consoles.  Do not share the same storage volumes that will be used by &PRODUCT; with a different set of ESXi servers that are not managed by &PRODUCT;.</para></listitem>
         <listitem><para>Put all target ESXi hypervisors in a cluster in a separate Datacenter in vCenter.</para></listitem>
         <listitem><para>The cluster that will be managed by &PRODUCT; should not contain any VMs.  Do not run the management server, vCenter or any other VMs on the cluster that is designated for &PRODUCT; use.  Create  a separate cluster for use of &PRODUCT; and make sure that they are no VMs in this cluster.</para></listitem>
-        <listitem><para>All the required VLANS must be trunked into all network switches that are connected to the ESXi hypervisor hosts.  These would include the VLANS for Management, Storage, vMotion, and guest VLANs.  The guest VLAN (used in Advanced Networking; see Network Setup) is a contiguous range of VLANs that will be managed by &PRODUCT;. &PRODUCT; supports Nexus 1000v virtual switch. For more information, see <xref linkend="vmware-vsphere-cluster-config-nexus-vswitch" />.</para></listitem>
+        <listitem><para>All the required VLANS must be trunked into all network switches that are connected to the ESXi hypervisor hosts.  These would include the VLANS for Management, Storage, vMotion, and guest VLANs.  The guest VLAN (used in Advanced Networking; see Network Setup) is a contiguous range of VLANs that will be managed by &PRODUCT;. <!-- &PRODUCT; supports Nexus 1000v virtual switch. For more information, see <xref linkend="vmware-vsphere-cluster-config-nexus-vswitch" />.--> </para></listitem>
     </itemizedlist>
     </section>
 </section>
