@@ -28,3 +28,4 @@ mvn install:install-file -Dfile=manageontap.jar   -DgroupId=com.cloud.com.netapp
 # Version: 4.1, Release-date: 2010-07-13, Build: 257238 
 mvn install:install-file -Dfile=vim25.jar        -DgroupId=com.cloud.com.vmware -DartifactId=vmware-vim25    -Dversion=4.1   -Dpackaging=jar
 mvn install:install-file -Dfile=apputils.jar     -DgroupId=com.cloud.com.vmware -DartifactId=vmware-apputils -Dversion=4.1   -Dpackaging=jar
+mvn install:install-file -Dfile=vim.jar          -DgroupId=com.cloud.com.vmware -DartifactId=vmware-vim      -Dversion=4.1   -Dpackaging=jar
