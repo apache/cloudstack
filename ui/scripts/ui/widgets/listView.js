@@ -1060,7 +1060,9 @@
                 cloudStack.concat(
                   $tr.find('td:first span').html(), 30
                 )
-              ),
+              ).attr({
+                title: $tr.find('td:first span').html()
+              }),
               $('<span>').addClass('icon').html('&nbsp;')
             );
             $quickViewTooltip.append($title);
