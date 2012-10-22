@@ -88,23 +88,28 @@
                 }
               },
               createForm: {
-                title: 'label.action.register.template',                
+                title: 'label.action.register.template',
+                docID:'helpNetworkOfferingName',                
                 preFilter: cloudStack.preFilter.createTemplate,
                 fields: {
                   name: {
                     label: 'label.name',
+                    docID:'helpRegisterTemplateName',
                     validation: { required: true }
                   },
                   description: {
                     label: 'label.description',
+                    docID: 'helpRegisterTemplateDescription',
                     validation: { required: true }
                   },
                   url: {
                     label: 'URL',
+                    docID: 'helpRegisterTemplateURL',
                     validation: { required: true }
                   },
                   zone: {
                     label: 'label.zone',
+                    docID: 'helpRegisterTemplateZone',
                     select: function(args) {
                       $.ajax({
                         url: createURL("listZones&available=true"),
@@ -126,6 +131,7 @@
                   },
                   hypervisor: {
                     label: 'label.hypervisor',
+                    docID: 'helpRegisterTemplateHypervisor',
                     dependsOn: 'zone',
                     select: function(args) {
                       if(args.zone == null)
@@ -207,6 +213,7 @@
 
                   format: {
                     label: 'label.format',
+                    docID: 'helpRegisterTemplateFormat',
                     dependsOn: 'hypervisor',
                     select: function(args) {
                       var items = [];
@@ -236,6 +243,7 @@
 
                   osTypeId: {
                     label: 'label.os.type',
+                    docID: 'helpRegisterTemplateOSType',
                     select: function(args) {
                       $.ajax({
                         url: createURL("listOsTypes"),
@@ -251,22 +259,26 @@
 
                   isExtractable: {
                     label: "extractable",
+                    docID: 'helpRegisterTemplateExtractable',
                     isBoolean: true
                   },
 
                   isPasswordEnabled: {
                     label: "label.password.enabled",
+                    docID: 'helpRegisterTemplatePasswordEnabled',
                     isBoolean: true
                   },
 
                   isPublic: {
                     label: "label.public",
+                    docID: 'helpRegisterTemplatePublic',
                     isBoolean: true,
                     isHidden: true
                   },
 
                   isFeatured: {
                     label: "label.featured",
+                    docID: 'helpRegisterTemplateFeatured',
                     isBoolean: true,
                     isHidden: true
                   }
@@ -461,6 +473,7 @@
                   fields: {
                     destinationZoneId: {
                       label: 'label.destination.zone',
+                      docID: 'helpCopyTemplateDestination',
                       validation: { required: true },
                       select: function(args) {
                         $.ajax({

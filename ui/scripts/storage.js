@@ -70,11 +70,13 @@
                 desc: 'message.add.volume',
                 fields: {
                   name: {
+                    docID: 'helpVolumeName',
                     label: 'label.name',
                     validation: { required: true }
                   },
                   availabilityZone: {
                     label: 'label.availability.zone',
+                    docID: 'helpVolumeAvailabilityZone',
                     select: function(args) {
                       $.ajax({
                         url: createURL("listZones&available=true"),
@@ -89,6 +91,7 @@
                   },
                   diskOffering: {
                     label: 'label.disk.offering',
+                    docID: 'helpVolumeDiskOffering',
                     select: function(args) {
                       $.ajax({
                         url: createURL("listDiskOfferings"),
@@ -191,10 +194,12 @@
                 fields: {
                   name: {
                     label: 'label.name',
-                    validation: { required: true }
+                    validation: { required: true },
+                    docID: 'helpUploadVolumeName'
                   },
                   availabilityZone: {
                     label: 'label.availability.zone',
+                    docID: 'helpUploadVolumeZone',
                     select: function(args) {
                       $.ajax({
                         url: createURL("listZones&available=true"),
@@ -209,6 +214,7 @@
                   },
                   format: {
 									  label: 'label.format',
+                    docID: 'helpUploadVolumeFormat',
 										select: function(args) {
 										  var items = [];
                       items.push({ id: 'RAW', description: 'RAW' });
@@ -220,9 +226,11 @@
 									},
 									url: {
 									  label: 'label.url',
+                    docID: 'helpUploadVolumeURL',
 										validation: { required: true }
 									},
                   checksum : {
+                    docID: 'helpUploadVolumeChecksum',
                     label: 'label.checksum'
                   }                  
                 }

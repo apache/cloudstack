@@ -59,14 +59,17 @@
                 fields: {
                   name: {
                     label: 'label.name',
+                    docID: 'helpComputeOfferingName',
                     validation: { required: true }
                   },
                   description: {
                     label: 'label.description',
+                    docID: 'helpComputeOfferingDescription',
                     validation: { required: true }
                   },
                   storageType: {
                     label: 'label.storage.type',
+                    docID: 'helpComputeOfferingStorageType',
                     select: function(args) {
                       var items = [];
                       items.push({id: 'shared', description: 'shared'});
@@ -76,6 +79,7 @@
                   },
                   cpuNumber: {
                     label: 'label.num.cpu.cores',
+                    docID: 'helpComputeOfferingCPUCores',
                     validation: {
                       required: true,
                       number: true
@@ -83,6 +87,7 @@
                   },
                   cpuSpeed: {
                     label: 'label.cpu.mhz',
+                    docID: 'helpComputeOfferingCPUMHz',
                     validation: {
                       required: true,
                       number: true
@@ -90,6 +95,7 @@
                   },
                   memory: {
                     label: 'label.memory.mb',
+                    docID: 'helpComputeOfferingMemory',
                     validation: {
                       required: true,
                       number: true
@@ -97,6 +103,7 @@
                   },
                   networkRate: {
                     label: 'label.network.rate',
+                    docID: 'helpComputeOfferingNetworkRate',
                     validation: {
                       required: false, //optional
                       number: true
@@ -104,28 +111,34 @@
                   },
                   offerHA: {
                     label: 'label.offer.ha',
+                    docID: 'helpComputeOfferingHA',
                     isBoolean: true,
                     isChecked: false
                   },
                   storageTags: {
-                    label: 'label.storage.tags'
+                    label: 'label.storage.tags',
+                    docID: 'helpComputeOfferingStorageType'
                   },
                   hostTags: {
-                    label: 'label.host.tags'
+                    label: 'label.host.tags',
+                    docID: 'helpComputeOfferingHostTags'
                   },
                   cpuCap: {
                     label: 'label.CPU.cap',
                     isBoolean: true,
-                    isChecked: false
+                    isChecked: false,
+                    docID: 'helpComputeOfferingCPUCap'
                   },
                   isPublic: {
                     label: 'label.public',
                     isBoolean: true,
                     isReverse: true,
-                    isChecked: true
+                    isChecked: true,
+                    docID: 'helpComputeOfferingPublic'
                   },
                   domainId: {
                     label: 'label.domain',
+                    docID: 'helpComputeOfferingDomain',
                     dependsOn: 'isPublic',
                     select: function(args) {		
                       $.ajax({
@@ -383,14 +396,17 @@
                 fields: {
                   name: {
                     label: 'label.name',
-                    validation: { required: true }
+                    validation: { required: true },
+                    docID: 'helpSystemOfferingName'
                   },
                   description: {
                     label: 'label.description',
-                    validation: { required: true }
+                    validation: { required: true },
+                    docID: 'helpSystemOfferingDescription'
                   },																		
 									systemvmtype: {
                     label: 'label.system.vm.type',
+                    docID: 'helpSystemOfferingVMType',
                     select: function(args) {
                       var items = [];											
                       items.push({id: 'domainrouter', description: dictionary['label.domain.router']}); 
@@ -401,6 +417,7 @@
                   },									
                   storageType: {
                     label: 'label.storage.type',
+                    docID: 'helpSystemOfferingStorageType',
                     select: function(args) {
                       var items = [];
                       items.push({id: 'shared', description: 'shared'});
@@ -410,6 +427,7 @@
                   },
                   cpuNumber: {
                     label: 'label.num.cpu.cores',
+                    docID: 'helpSystemOfferingCPUCores',
                     validation: {
                       required: true,
                       number: true
@@ -417,6 +435,7 @@
                   },
                   cpuSpeed: {
                     label: 'label.cpu.mhz',
+                    docID: 'helpSystemOfferingCPUMHz',
                     validation: {
                       required: true,
                       number: true
@@ -424,6 +443,7 @@
                   },
                   memory: {
                     label: 'label.memory.mb',
+                    docID: 'helpSystemOfferingMemory',
                     validation: {
                       required: true,
                       number: true
@@ -431,6 +451,7 @@
                   },
                   networkRate: {
                     label: 'label.network.rate',
+                    docID: 'helpSystemOfferingNetworkRate',
                     validation: {
                       required: false, //optional
                       number: true
@@ -438,25 +459,30 @@
                   },
                   offerHA: {
                     label: 'label.offer.ha',
+                    docID: 'helpSystemOfferingHA',
                     isBoolean: true,
                     isChecked: false
                   },
                   storageTags: {
-                    label: 'label.storage.tags'
+                    label: 'label.storage.tags',
+                    docID: 'helpSystemOfferingStorageTags'
                   },
                   hostTags: {
-                    label: 'label.host.tags'
+                    label: 'label.host.tags',
+                    docID: 'helpSystemOfferingHostTags'
                   },
                   cpuCap: {
                     label: 'label.CPU.cap',
                     isBoolean: true,
-                    isChecked: false
+                    isChecked: false,
+                    docID: 'helpSystemOfferingCPUCap'
                   },
                   isPublic: {
                     label: 'label.public',
                     isBoolean: true,
                     isReverse: true,
-                    isChecked: true
+                    isChecked: true,
+                    docID: 'helpSystemOfferingPublic'
                   },
                   domainId: {
                     label: 'label.domain',
@@ -768,14 +794,17 @@
                 fields: {
                   name: {
                     label: 'label.name',
+                    docID: 'helpDiskOfferingName',
                     validation: { required: true }
                   },
                   description: {
                     label: 'label.description',
+                    docID: 'helpDiskOfferingDescription',
                     validation: { required: true }
                   },
                   storageType: {
                     label: 'label.storage.type',
+                    docID: 'helpDiskOfferingStorageType',
                     select: function(args) {
                       var items = [];
                       items.push({id: 'shared', description: 'shared'});
@@ -785,23 +814,27 @@
                   },
                   isCustomized: {
                     label: 'label.custom.disk.size',
+                    docID: 'helpDiskOfferingCustomDiskSize',
                     isBoolean: true,
                     isReverse: true,
                     isChecked: false
                   },
                   disksize: {
                     label: 'label.disk.size.gb',
+                    docID: 'helpDiskOfferingDiskSize',
                     dependsOn: 'isCustomized',
                     validation: { required: true, number: true }
                   },
                   tags: {
-                    label: 'label.storage.tags'
+                    label: 'label.storage.tags',
+                    docID: 'helpDiskOfferingStorageTags'
                   },
                   isPublic: {
                     label: 'label.public',
                     isBoolean: true,
                     isReverse: true,
-                    isChecked: true
+                    isChecked: true,
+                    docID: 'helpDiskOfferingPublic'
                   },
                   domainId: {
                     label: 'label.domain',
@@ -1247,11 +1280,11 @@
 									args.$form.change();
 								},				
                 fields: {
-                  name: { label: 'label.name', validation: { required: true } },
+                  name: { label: 'label.name', validation: { required: true }, docID: 'helpNetworkOfferingName' },
 
                   displayText: { label: 'label.description', validation: { required: true } },
 
-                  networkRate: { label: 'label.network.rate' },
+                  networkRate: { label: 'label.network.rate.megabytes', docID: 'helpNetworkOfferingNetworkRate' },
 
 									/*
                   trafficType: {
@@ -1268,6 +1301,7 @@
 
                   guestIpType: {
                     label: 'label.guest.type',
+                    docID: 'helpNetworkOfferingGuestType',
                     select: function(args) {
                       args.response.success({
                         data: [
@@ -1289,7 +1323,7 @@
                     }
                   },
 
-                  specifyVlan: { label: 'label.specify.vlan', isBoolean: true },
+                  specifyVlan: { label: 'label.specify.vlan', isBoolean: true, docID: 'helpNetworkOfferingSpecifyVLAN' },
 
                   useVpc: {
                     label: 'VPC',

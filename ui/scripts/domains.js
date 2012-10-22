@@ -226,10 +226,12 @@
               fields: {
                 name: {
                   label: 'label.name',
+                  docID: 'helpDomainName',
                   validation: { required: true }
                 },
                 networkdomain: {
                   label: 'label.network.domain',
+                  docID: 'helpDomainNetworkDomain',
                   validation: { required: false }
                 }
               }

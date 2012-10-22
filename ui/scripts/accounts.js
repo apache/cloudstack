@@ -79,13 +79,15 @@
                 fields: {
                   username: {
                     label: 'label.username',
-                    validation: { required: true }
+                    validation: { required: true },
+                    docID: 'helpAccountUsername'
                   },
                   password: {
                     label: 'label.password',
                     validation: { required: true },
                     isPassword: true,
-                    id: 'password'
+                    id: 'password',
+                    docID: 'helpAccountPassword'
                   },
                   'password-confirm': {
                     label: 'label.confirm.password',
@@ -93,22 +95,27 @@
                       required: true,
                       equalTo: '#password'
                     },
-                    isPassword: true
+                    isPassword: true,
+                    docID: 'helpAccountConfirmPassword'
                   },
                   email: {
                     label: 'label.email',
-                    validation: { required: true, email:true }
+                    validation: { required: true, email:true },
+                    docID: 'helpAccountEmail'
                   },
                   firstname: {
                     label: 'label.first.name',
-                    validation: { required: true }
+                    validation: { required: true },
+                    docID: 'helpAccountFirstName'
                   },
                   lastname: {
                     label: 'label.last.name',
-                    validation: { required: true }
+                    validation: { required: true },
+                    docID: 'helpAccountLastName'
                   },
                   domainid: {
                     label: 'label.domain',
+                    docID: 'helpAccountDomain',
                     validation: { required: true },
                     select: function(args) {
                       var data = {};
@@ -139,10 +146,12 @@
                     }
                   },
                   account: {
-                    label: 'label.account'
+                    label: 'label.account',
+                    docID: 'helpAccountAccount'
                   },
                   accounttype: {
                     label: 'label.type',
+                    docID: 'helpAccountType',
                     validation: { required: true },
                     select: function(args) {
                       var items = [];
@@ -153,6 +162,7 @@
                   },
                   timezone: {
                     label: 'label.timezone',
+                    docID: 'helpAccountTimezone',
                     select: function(args) {
                       var items = [];
                       items.push({id: "", description: ""});
@@ -163,6 +173,7 @@
                   },
                   networkdomain: {
                     label: 'label.network.domain',
+                    docID: 'helpAccountNetworkDomain',
                     validation: { required: false }
                   }
                 }
@@ -754,16 +765,19 @@
                 fields: {
                   username: {
                     label: 'label.username',
-                    validation: { required: true }
+                    validation: { required: true },
+                    docID: 'helpUserUsername'
                   },
                   password: {
                     label: 'label.password',
                     isPassword: true,
                     validation: { required: true },
-                    id: 'password'
+                    id: 'password',
+                    docID: 'helpUserPassword'
                   },
                   'password-confirm': {
                     label: 'label.confirm.password',
+                    docID: 'helpUserConfirmPassword',
                     validation: {
                       required: true,
                       equalTo: '#password'
@@ -772,18 +786,22 @@
                   },
                   email: {
                     label: 'label.email',
+                    docID: 'helpUserEmail',
                     validation: { required: true, email: true }
                   },
                   firstname: {
                     label: 'label.first.name',
+                    docID: 'helpUserFirstName',
                     validation: { required: true }
                   },
                   lastname: {
                     label: 'label.last.name',
+                    docID: 'helpUserLastName',
                     validation: { required: true }
                   },
                   timezone: {
                     label: 'label.timezone',
+                    docID: 'helpUserTimezone',
                     select: function(args) {
                       var items = [];
                       items.push({id: "", description: ""});

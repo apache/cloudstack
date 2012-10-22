@@ -1088,19 +1088,23 @@
 
                         fields: {
                           name: {
+                            docID: 'helpGuestNetworkZoneName',
                             label: 'label.name',
                             validation: { required: true }
                           },
                           description: {
                             label: 'label.description',
+                            docID: 'helpGuestNetworkZoneDescription',
                             validation: { required: true }
                           },
                           vlanId: {
-                            label: 'label.vlan.id'
+                            label: 'label.vlan.id',
+                            docID: 'helpGuestNetworkZoneVLANID'
                           },
 
                           scope: {
                             label: 'label.scope',
+                            docID: 'helpGuestNetworkZoneScope',
                             select: function(args) {
                               var array1 = [];
 															array1.push({id: 'zone-wide', description: 'All'});
@@ -1184,7 +1188,9 @@
                               args.response.success({data: items});
                             }
                           },
-                          subdomainaccess: { label: 'label.subdomain.access', isBoolean: true, isHidden: true },
+                          subdomainaccess: {
+                            label: 'label.subdomain.access', isBoolean: true, isHidden: true,
+                          },
                           account: { label: 'label.account' },
 
 													projectId: {
@@ -1209,6 +1215,7 @@
 
                           networkOfferingId: {
                             label: 'label.network.offering',
+                            docID: 'helpGuestNetworkZoneNetworkOffering',
                             dependsOn: 'scope',
                             select: function(args) {
 															$.ajax({
@@ -1349,17 +1356,28 @@
                             }
                           },
 
-                          guestGateway: { label: 'label.guest.gateway' },
-                          guestNetmask: { label: 'label.guest.netmask' },
+                          guestGateway: {
+                            label: 'label.guest.gateway',
+                            docID: 'helpGuestNetworkZoneGateway'
+                          },
+                          guestNetmask: {
+                            label: 'label.guest.netmask',
+                            docID: 'helpGuestNetworkZoneNetmask'
+                          },
                           guestStartIp: { 
 													  label: 'label.guest.start.ip', 
-														validation: { required: true } 
+														validation: { required: true },
+                            docID: 'helpGuestNetworkZoneStartIP'
 													},
                           guestEndIp: { 
 													  label: 'label.guest.end.ip', 
-														validation: { required: true } 
+														validation: { required: true },
+                            docID: 'helpGuestNetworkZoneEndIP'
 													},
-                          networkdomain: { label: 'label.network.domain' }
+                          networkdomain: {
+                            label: 'label.network.domain',
+                            docID: 'helpGuestNetworkZoneNetworkDomain'
+                          }
                         }
                       },
 
@@ -3006,17 +3024,21 @@
 									preFilter: cloudStack.preFilter.addLoadBalancerDevice,	
                   fields: {
                     ip: {
-                      label: 'label.ip.address'
+                      label: 'label.ip.address',
+                      docID: 'helpNetScalerIPAddress'
                     },
                     username: {
-                      label: 'label.username'
+                      label: 'label.username',
+                      docID: 'helpNetScalerUsername'
                     },
                     password: {
                       label: 'label.password',
-                      isPassword: true
+                      isPassword: true,
+                      docID: 'helpNetScalerPassword'
                     },
                     networkdevicetype: {
                       label: 'label.type',
+                      docID: 'helpNetScalerType',
                       select: function(args) {
                         var items = [];
                         items.push({id: "NetscalerMPXLoadBalancer", description: "NetScaler MPX LoadBalancer"});
@@ -3026,14 +3048,17 @@
                       }
                     },
                     publicinterface: {
-                      label: 'label.public.interface'
+                      label: 'label.public.interface',
+                      docID: 'helpNetScalerPublicInterface'
                     },
                     privateinterface: {
-                      label: 'label.private.interface'
+                      label: 'label.private.interface',
+                      docID: 'helpNetScalerPrivateInterface'
                     },
                     numretries: {
                       label: 'label.numretries',
-                      defaultValue: '2'
+                      defaultValue: '2',
+                      docID: 'helpNetScalerRetries'
                     },
                     // inline: {
                     //   label: 'Mode',
@@ -3047,11 +3072,13 @@
                     dedicated: {
                       label: 'label.dedicated',
                       isBoolean: true,
-                      isChecked: false
+                      isChecked: false,
+                      docID: 'helpNetScalerDedicated'
                     },
 										capacity: {
                       label: 'label.capacity',											
-                      validation: { required: false, number: true }
+                      validation: { required: false, number: true },
+                      docID: 'helpNetScalerCapacity'
                     }
                   }
                 },
@@ -3241,17 +3268,21 @@
 									preFilter: cloudStack.preFilter.addLoadBalancerDevice,	
                   fields: {
                     ip: {
-                      label: 'label.ip.address'
+                      label: 'label.ip.address',
+                      docID: 'helpF5IPAddress'
                     },
                     username: {
-                      label: 'label.username'
+                      label: 'label.username',
+                      docID: 'helpF5Username'
                     },
                     password: {
                       label: 'label.password',
+                      docID: 'helpF5Password',
                       isPassword: true
                     },
                     networkdevicetype: {
                       label: 'label.type',
+                      docID: 'helpF5Type',
                       select: function(args) {
                         var items = [];
                         items.push({id: "F5BigIpLoadBalancer", description: "F5 Big Ip Load Balancer"});
@@ -3259,19 +3290,23 @@
                       }
                     },
                     publicinterface: {
-                      label: 'label.public.interface'
+                      label: 'label.public.interface',
+                      docID: 'helpF5PublicInterface'
                     },
                     privateinterface: {
-                      label: 'label.private.interface'
+                      label: 'label.private.interface',
+                      docID: 'helpF5PrivateInterface'
                     },
                     numretries: {
                       label: 'label.numretries',
+                      docID: 'helpF5Retries',
                       defaultValue: '2'
                     },
 										//Inline Mode has been moved from Add F5 Device to Create Network Offering (both backend and UI)
 										/*
                     inline: {
                       label: 'Mode',
+                      docID: 'helpF5Mode',
                       select: function(args) {
                         var items = [];
                         items.push({id: "false", description: "side by side"});
@@ -3282,11 +3317,13 @@
                     */										
                     dedicated: {
                       label: 'label.dedicated',
+                      docID: 'helpF5Dedicated',
                       isBoolean: true,
                       isChecked: false
                     },
 										capacity: {
                       label: 'label.capacity',
+                      docID: 'helpF5Capacity',
                       validation: { required: false, number: true }
                     }
                   }
@@ -3476,17 +3513,21 @@
                   title: 'label.add.SRX.device',
                   fields: {
                     ip: {
-                      label: 'label.ip.address'
+                      label: 'label.ip.address',
+                      docID: 'helpSRXIPAddress'
                     },
                     username: {
-                      label: 'label.username'
+                      label: 'label.username',
+                      docID: 'helpSRXUsername'
                     },
                     password: {
                       label: 'label.password',
-                      isPassword: true
+                      isPassword: true,
+                      docID: 'helpSRXPassword'
                     },
                     networkdevicetype: {
                       label: 'label.type',
+                      docID: 'helpSRXType',
                       select: function(args) {
                         var items = [];
                         items.push({id: "JuniperSRXFirewall", description: "Juniper SRX Firewall"});
@@ -3494,24 +3535,30 @@
                       }
                     },
                     publicinterface: {
-                      label: 'label.public.interface'
+                      label: 'label.public.interface',
+                      docID: 'helpSRXPublicInterface'
                     },
                     privateinterface: {
-                      label: 'label.private.interface'
+                      label: 'label.private.interface',
+                      docID: 'helpSRXPrivateInterface'
                     },
                     usageinterface: {
-                      label: 'Usage interface'
+                      label: 'Usage interface',
+                      docID: 'helpSRXUsageInterface'
                     },
                     numretries: {
                       label: 'label.numretries',
-                      defaultValue: '2'
+                      defaultValue: '2',
+                      docID: 'helpSRXRetries'
                     },
                     timeout: {
                       label: 'label.timeout',
-                      defaultValue: '300'
+                      defaultValue: '300',
+                      docID: 'helpSRXTimeout'
                     },
                     inline: {
                       label: 'Mode',
+                      docID: 'helpSRXMode',
                       select: function(args) {
                         var items = [];
                         items.push({id: "false", description: "side by side"});
@@ -3521,20 +3568,24 @@
                     },
                     publicnetwork: {
                       label: 'label.public.network',
-                      defaultValue: 'untrusted'
+                      defaultValue: 'untrusted',
+                      docID: 'helpSRXPublicNetwork'
                     },
                     privatenetwork: {
                       label: 'label.private.network',
-                      defaultValue: 'trusted'
+                      defaultValue: 'trusted',
+                      docID: 'helpSRXPrivateNetwork'
                     },
                     capacity: {
                       label: 'label.capacity',
-                      validation: { required: false, number: true }
+                      validation: { required: false, number: true },
+                      docID: 'helpSRXCapacity'
                     },
                     dedicated: {
                       label: 'label.dedicated',
                       isBoolean: true,
-                      isChecked: false
+                      isChecked: false,
+                      docID: 'helpSRXDedicated'
                     }
                   }
                 },
@@ -6776,6 +6827,7 @@
                 fields: {
                   zoneid: {
                     label: 'Zone',
+                    docID: 'helpPodZone',
                     validation: { required: true },
                     select: function(args) {
                       var data = args.context.zones ?
@@ -6801,22 +6853,27 @@
                   },
                   podname: {
                     label: 'label.pod.name',
+                    docID: 'helpPodName',
                     validation: { required: true }
                   },
                   reservedSystemGateway: {
                     label: 'label.reserved.system.gateway',
+                    docID: 'helpPodGateway',
                     validation: { required: true }
                   },
                   reservedSystemNetmask: {
                     label: 'label.reserved.system.netmask',
+                    docID: 'helpPodNetmask',
                     validation: { required: true }
                   },
                   reservedSystemStartIp: {
                     label: 'label.start.reserved.system.IP',
+                    docID: 'helpPodStartIP',
                     validation: { required: true }
                   },
                   reservedSystemEndIp: {
                     label: 'label.end.reserved.system.IP',
+                    docID: 'helpPodEndIP',
                     validation: { required: false }
                   }
                 }
@@ -7131,6 +7188,7 @@
                 fields: {
                   zoneid: {
                     label: 'Zone',
+                    docID: 'helpClusterZone',
                     validation: { required: true },
                     select: function(args) {
                       var data = args.context.zones ?
@@ -7156,6 +7214,7 @@
                   },
                   hypervisor: {
                     label: 'label.hypervisor',
+                    docID: 'helpClusterHypervisor',
                     select: function(args) {
                       var vSwitchEnabled = false;
 
@@ -7224,6 +7283,7 @@
                   },
                   podId: {
                     label: 'label.pod',
+                    docID: 'helpClusterPod',
                     dependsOn: 'zoneid',
                     select: function(args) {
                       $.ajax({
@@ -7246,25 +7306,30 @@
                   },
                   name: {
                     label: 'label.cluster.name',
+                    docID: 'helpClusterName',
                     validation: { required: true }
                   },
 
                   //hypervisor==VMWare begins here
                   vCenterHost: {
                     label: 'label.vcenter.host',
+                    docID: 'helpClustervCenterHost',
                     validation: { required: true }
                   },
                   vCenterUsername: {
                     label: 'label.vcenter.username',
+                    docID: 'helpClustervCenterUsername',
                     validation: { required: true }
                   },
                   vCenterPassword: {
                     label: 'label.vcenter.password',
+                    docID: 'helpClustervCenterPassword',
                     validation: { required: true },
                     isPassword: true
                   },
                   vCenterDatacenter: {
                     label: 'label.vcenter.datacenter',
+                    docID: 'helpClustervCenterDatacenter',
                     validation: { required: true }
                   },
                   vsmipaddress: {
@@ -7797,6 +7862,7 @@
                 title: 'label.add.host',
                 fields: {
                   zoneid: {
+                    docID: 'helpHostZone',
                     label: 'Zone',
                     validation: { required: true },
                     select: function(args) {
@@ -7825,6 +7891,7 @@
                   //always appear (begin)
                   podId: {
                     label: 'label.pod',
+                    docID: 'helpHostPod',
                     validation: { required: true },
                     dependsOn: 'zoneid',
                     select: function(args) {
@@ -7849,6 +7916,7 @@
 
                   clusterId: {
                     label: 'label.cluster',
+                    docID: 'helpHostCluster',
                     validation: { required: true },
                     dependsOn: 'podId',
                     select: function(args) {
@@ -7973,18 +8041,21 @@
                   //input_group="general" starts here
                   hostname: {
                     label: 'label.host.name',
+                    docID: 'helpHostName',
                     validation: { required: true },
                     isHidden: true
                   },
 
                   username: {
                     label: 'label.username',
+                    docID: 'helpHostUsername',
                     validation: { required: true },
                     isHidden: true
                   },
 
                   password: {
                     label: 'label.password',
+                    docID: 'helpHostPassword',
                     validation: { required: true },
                     isHidden: true,
                     isPassword: true
@@ -8039,6 +8110,7 @@
                   //always appear (begin)
                   hosttags: {
                     label: 'label.host.tags',
+                    docID: 'helpHostTags',
                     validation: { required: false }
                   }
                   //always appear (end)
@@ -8481,6 +8553,7 @@
                 fields: {
                   zoneid: {
                     label: 'Zone',
+                    docID: 'helpPrimaryStorageZone',
                     validation: { required: true },
                     select: function(args) {
                       var data = args.context.zones ?
@@ -8507,6 +8580,7 @@
                   podId: {
                     label: 'label.pod',
                     dependsOn: 'zoneid',
+                    docID: 'helpPrimaryStoragePod',
                     validation: { required: true },
                     select: function(args) {
                       $.ajax({
@@ -8527,6 +8601,7 @@
 
                   clusterId: {
                     label: 'label.cluster',
+                    docID: 'helpPrimaryStorageCluster',
                     validation: { required: true },
                     dependsOn: 'podId',
                     select: function(args) {
@@ -8551,11 +8626,13 @@
 
                   name: {
                     label: 'label.name',
+                    docID: 'helpPrimaryStorageName',
                     validation: { required: true }
                   },
 
                   protocol: {
                     label: 'label.protocol',
+                    docID: 'helpPrimaryStorageProtocol',
                     validation: { required: true },
                     dependsOn: 'clusterId',
                     select: function(args) {
@@ -8808,6 +8885,7 @@
 
                   server: {
                     label: 'label.server',
+                    docID: 'helpPrimaryStorageServer',
                     validation: { required: true },
                     isHidden: true
                   },
@@ -8815,6 +8893,7 @@
                   //nfs
                   path: {
                     label: 'label.path',
+                    docID: 'helpPrimaryStoragePath',
                     validation: { required: true },
                     isHidden: true
                   },
@@ -8822,11 +8901,13 @@
                   //iscsi
                   iqn: {
                     label: 'label.target.iqn',
+                    docID: 'helpPrimaryStorageTargetIQN',
                     validation: { required: true },
                     isHidden: true
                   },
                   lun: {
                     label: 'label.LUN.number',
+                    docID: 'helpPrimaryStorageLun',
                     validation: { required: true },
                     isHidden: true
                   },
@@ -8875,6 +8956,7 @@
                   //always appear (begin)
                   storageTags: {
                     label: 'label.storage.tags',
+                    docID: 'helpPrimaryStorageTags',
                     validation: { required: false }
                   }
                   //always appear (end)
@@ -9240,6 +9322,7 @@
                 fields: {
                   zoneid: {
                     label: 'Zone',
+                    docID: 'helpSecondaryStorageZone',
                     validation: { required: true },
                     select: function(args) {
                       var data = args.context.zones ?
@@ -9265,10 +9348,12 @@
                   },
                   nfsServer: {
                     label: 'label.nfs.server',
+                    docID: 'helpSecondaryStorageNFSServer',
                     validation: { required: true }
                   },
                   path: {
                     label: 'label.path',
+                    docID: 'helpSecondaryStoragePath',
                     validation: { required: true }
                   }
                 }

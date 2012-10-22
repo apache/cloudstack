@@ -362,10 +362,23 @@
 				else
           $input.data('validation-rules', {});
 
-          var fieldLabel = field.label;
-          var inputId = $input.attr('id') ? $input.attr('id') : fieldLabel.replace(/\./g,'_');
-          $input.attr('id', inputId);
-          $name.find('label').attr('for', inputId);
+        var fieldLabel = field.label;
+        var inputId = $input.attr('id') ? $input.attr('id') : fieldLabel.replace(/\./g,'_');
+        
+        $input.attr('id', inputId);
+        $name.find('label').attr('for', inputId);
+
+        // Tooltip
+        if (field.docID) {
+          $input.toolTip({
+            docID: field.docID,
+            tooltip:'.tooltip-box',
+            mode:'focus'
+          });
+        }
+        /*     $input.blur(function() {
+         console.log('tooltip remove->' + $input.attr('name'));
+         });*/
       });
      
       var getFormValues = function() {
@@ -417,6 +430,7 @@
       return $formContainer.dialog({
         dialogClass: 'create-form',
         closeOnEscape: false,
+        draggable: false,
         width: 400,
         title: _l(args.form.title),
         open: function() {
@@ -432,6 +446,7 @@
               if (!complete($formContainer)) { return false; }
 
               $('div.overlay').remove();
+              $('.tooltip-box').remove();
               $formContainer.remove();
               $(this).dialog('destroy');
 
@@ -445,6 +460,7 @@
             'class': 'cancel',
             click: function() {
               $('div.overlay').remove();
+              $('.tooltip-box').remove();
               $formContainer.remove();
               $(this).dialog('destroy');
 

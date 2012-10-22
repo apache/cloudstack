@@ -253,12 +253,12 @@
                 title: 'label.add.guest.network',
                 desc: 'message.add.guest.network',
                 fields: {
-                  name: { label: 'label.name', validation: { required: true } },
-                  displayText: { label: 'label.display.text', validation: { required: true }},
+                  name: { label: 'label.name', validation: { required: true }, docID: 'helpGuestNetworkName' },
+                  displayText: { label: 'label.display.text', validation: { required: true }, docID: 'helpGuestNetworkDisplayText'},
                   zoneId: {
                     label: 'label.zone',
                     validation: { required: true },
-
+                    docID: 'helpGuestNetworkZone',
 
                     select: function(args) {
                       $.ajax({
@@ -283,7 +283,8 @@
                   networkOfferingId: {
                     label: 'label.network.offering',
                     validation: { required: true },
-										dependsOn: 'zoneId',
+                    dependsOn: 'zoneId',
+                    docID: 'helpGuestNetworkNetworkOffering',
                     select: function(args) {
                       $.ajax({
                         url: createURL('listVPCs'),
@@ -367,8 +368,8 @@
                     }
                   },
 
-                  guestGateway: { label: 'label.guest.gateway' },
-                  guestNetmask: { label: 'label.guest.netmask' },
+                  guestGateway: { label: 'label.guest.gateway', docID: 'helpGuestNetworkGateway' },
+                  guestNetmask: { label: 'label.guest.netmask', docID: 'helpGuestNetworkNetmask' },
                   networkDomain: { label: 'label.network.domain' }
                 }
               },
@@ -3826,16 +3827,19 @@
                   }
                 },
                 fields: {
-                  name: { 
-									  label: 'label.name', 
-										validation: { required: true } 
-									},   
+                  name: {
+                    label: 'label.name',
+                    docID: 'helpVPCName',
+                    validation: { required: true }
+                  },
                   displaytext: {
                     label: 'label.description',
+                    docID: 'helpVPCDescription',
                     validation: { required: true }
                   },
                   zoneid: {
                     label: 'label.zone',
+                    docID: 'helpVPCZone',
                     validation: { required: true },
                     select: function(args) {
                       var data = { listAll: true };
@@ -3861,9 +3865,11 @@
                   },
                   cidr: {
                     label: 'label.super.cidr.for.guest.networks',
+                    docID: 'helpVPCSuperCIDR',
                     validation: { required: true }
                   },
                   networkdomain: {
+                    docID: 'helpVPCDomain',
                     label: 'label.DNS.domain.for.guest.networks'
                   }
                 }

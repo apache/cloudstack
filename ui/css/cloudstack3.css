@@ -9478,6 +9478,38 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   background: #DFE1E3;
 }
 
+/*Tooltip*/
+.tooltip-box {
+  width: 15%;
+  height: auto;
+  display: inline-block, padding: 4px;
+  background: #FFFFFF;
+  border: 1px solid #BEB8B8;
+  padding: 10px;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px;
+  margin-left: 23px;
+  /*+box-shadow:0px 1px 12px #353535;*/
+  -moz-box-shadow: 0px 1px 12px #353535;
+  -webkit-box-shadow: 0px 1px 12px #353535;
+  -o-box-shadow: 0px 1px 12px #353535;
+  box-shadow: 0px 1px 12px #353535;
+}
+
+.tooltip-box .arrow {
+  width: 19px;
+  height: 30px;
+  background: url(../images/sprites.png) -585px -947px;
+  /*+placement:shift -16px 3px;*/
+  position: relative;
+  left: -16px;
+  top: 3px;
+  position: absolute;
+}
+
 /*Tagger*/
 .tagger {
   width: 94%;
