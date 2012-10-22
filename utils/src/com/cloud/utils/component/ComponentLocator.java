@@ -32,6 +32,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -199,17 +200,38 @@ public class ComponentLocator implements ComponentLocatorMBean {
                 library = (ComponentLibrary)clazz.newInstance();
                 _daoMap.putAll(library.getDaos());
                 _managerMap.putAll(library.getManagers());
-                adapters.putAll(library.getAdapters());
                 _factories.putAll(library.getFactories());
                 _pluginsMap.putAll(library.getPluggableServices());
+
+                // putAll overwrites existing keys, so merge instead
+                for (Entry<String, List<ComponentInfo<Adapter>>> e : handler.adapters.entrySet()) {
+                	if (adapters.containsKey(e.getKey())) {
+                		s_logger.debug("Merge needed for " + e.getKey());
+                		adapters.get(e.getKey()).addAll(e.getValue());
+                	}
+                	else {
+                		adapters.put(e.getKey(), e.getValue());
+                	}
+                }
             }
 
             _daoMap.putAll(handler.daos);
             _managerMap.putAll(handler.managers);
             _checkerMap.putAll(handler.checkers);
-            adapters.putAll(handler.adapters);
             _pluginsMap.putAll(handler.pluggableServices);
-
+            
+            // putAll overwrites existing keys, so merge instead
+            for (Entry<String, List<ComponentInfo<Adapter>>> e : handler.adapters.entrySet()) {
+            	if (adapters.containsKey(e.getKey())) {
+            		s_logger.debug("Merge needed for " + e.getKey());
+            		adapters.get(e.getKey()).addAll(e.getValue());
+            	}
+            	else {
+            		adapters.put(e.getKey(), e.getValue());
+            	}
+            }
+            
+            
             return new Pair<XmlHandler, HashMap<String, List<ComponentInfo<Adapter>>>>(handler, adapters);
         } catch (ParserConfigurationException e) {
             s_logger.error("Unable to load " + _serverName + " due to errors while parsing " + filename, e);
@@ -1261,4 +1283,5 @@ public class ComponentLocator implements ComponentLocatorMBean {
             return index;
         }
     }
+    
 }
