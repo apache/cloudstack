@@ -1198,7 +1198,16 @@
 											}											
 										}
 										//hide/show service fields upon guestIpType(Shared/Isolated), zoneType(Advanced/Basic), having VpcVirtualRouter or not ***** (end) *****			
-																				
+												
+
+                    //show LB InlineMode dropdown only when (1)LB Service is checked (2)Service Provider is F5 							
+										if((args.$form.find('.form-item[rel=\"service.Lb.isEnabled\"]').find('input[type=checkbox]').is(':checked') == true)
+										   &&(args.$form.find('.form-item[rel=\"service.Lb.provider\"]').find('select').val() == 'F5BigIp')) {										  
+											args.$form.find('.form-item[rel=\"service.Lb.inlineModeDropdown\"]').css('display', 'inline-block');	
+										}
+										else {										  
+											args.$form.find('.form-item[rel=\"service.Lb.inlineModeDropdown\"]').hide();	
+										}												
 										
 										//show LB Isolation dropdown only when (1)LB Service is checked (2)Service Provider is Netscaler OR F5 (3)Guest IP Type is Isolated 									
 										if((args.$form.find('.form-item[rel=\"service.Lb.isEnabled\"]').find('input[type=checkbox]').is(':checked') == true)
@@ -1501,7 +1510,16 @@
                         ]
                       })
                     }
-                  },									
+                  },	                
+									"service.Lb.inlineModeDropdown": {
+										label: 'Mode',
+										select: function(args) {
+											var items = [];
+											items.push({id: "false", description: "side by side"});
+											items.push({id: "true", description: "inline"});
+											args.response.success({data: items});
+										}
+									},  									
 									"service.StaticNat.elasticIpCheckbox" : {
 										label: "label.elastic.IP",
 										isHidden: true,										
@@ -1563,6 +1581,12 @@
 											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'lb';
 											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'ElasticLb'; 
 											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = true; //because this checkbox's value == "on"
+											serviceCapabilityIndex++;
+										} 
+                    else if ((key == 'service.Lb.inlineModeDropdown') && ("Lb" in serviceProviderMap) && (serviceProviderMap.Lb	== "F5BigIp")) {                      							
+											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'lb';
+											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'InlineMode';
+											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = value;
 											serviceCapabilityIndex++;
 										} 										
 										else if ((key == 'service.Lb.lbIsolationDropdown') && ("Lb" in serviceProviderMap)) {											
