@@ -159,9 +159,6 @@
     <module>patches</module>
     <module>client</module>
     <module>test</module>
-    <module>tools/apidoc</module>
-    <module>tools/devcloud</module>
-    <module>tools/marvin</module>
   </modules>
 
   <dependencies>
@@ -344,6 +341,9 @@
       <id>developer</id>
       <modules>
         <module>developer</module>
+	    <module>tools/apidoc</module>
+	    <module>tools/devcloud</module>
+	    <module>tools/marvin</module>
       </modules>
     </profile>
     <profile>
