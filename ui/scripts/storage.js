@@ -1457,7 +1457,7 @@
         }
       }
     }
-		allowedActions.push("createTemplate");
+		
     return allowedActions;
   };
 
@@ -1474,9 +1474,7 @@
       allowedActions.push("createVolume");
     }
     allowedActions.push("remove");
-		
-		allowedActions.push("createVolume");
-		allowedActions.push("createTemplate");
+			
     return allowedActions;
   }
 
