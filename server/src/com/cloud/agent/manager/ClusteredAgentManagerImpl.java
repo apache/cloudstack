@@ -863,7 +863,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                                     continue;
                                 }
                                 
-                                if (transferMap.getInitialOwner() != _nodeId || attache.forForward()) {
+                                if (transferMap.getInitialOwner() != _nodeId || attache == null || attache.forForward()) {
                                     s_logger.debug("Management server " + _nodeId + " doesn't own host id=" + hostId + " any more, skipping rebalance for the host");
                                     iterator.remove();
                                     _hostTransferDao.completeAgentTransfer(hostId);
