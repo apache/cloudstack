@@ -38,7 +38,7 @@
         <para>Set up the environment variables for the EC2 command-line tools.</para>
       </listitem>
       <listitem>
-        <para>For SOAP access, use the endpoint http://<replaceable>&PRODUCT;-management-server</replaceable>:8080/awsapi.
+        <para>For SOAP access, use the endpoint http://<replaceable>&PRODUCT;-management-server</replaceable>:7080/awsapi.
           The <replaceable>&PRODUCT;-management-server</replaceable> can be specified by a fully-qualified domain name or IP address.</para>
       </listitem>
     </itemizedlist>
@@ -68,7 +68,7 @@
         Substitute the values that were obtained in step 1 in the URL below.
       </para>
       <para>
-<programlisting>$ cloudstack-aws-api-register --apikey=<replaceable>User’s &PRODUCT; API key</replaceable> --secretkey=<replaceable>User’s &PRODUCT; Secret key</replaceable> --cert=<replaceable>/path/to/cert.pem</replaceable> --url=http://<replaceable>&PRODUCT;.server</replaceable>:8080/awsapi</programlisting>
+<programlisting>$ cloudstack-aws-api-register --apikey=<replaceable>User’s &PRODUCT; API key</replaceable> --secretkey=<replaceable>User’s &PRODUCT; Secret key</replaceable> --cert=<replaceable>/path/to/cert.pem</replaceable> --url=http://<replaceable>&PRODUCT;.server</replaceable>:7080/awsapi</programlisting>
        </para>
      </listitem>
    </orderedlist>
@@ -89,7 +89,7 @@
         <para>Set up the environment variables that will direct the tools to the server.  As a best practice, you may wish to place these commands in a script that may be sourced before using the AWS API translation feature.</para>
         <programlisting>$ export EC2_CERT=/path/to/cert.pem
 $ export EC2_PRIVATE_KEY=/path/to/private_key.pem
-$ export EC2_URL=http://<replaceable>&PRODUCT;.server</replaceable>:8080/awsapi
+$ export EC2_URL=http://<replaceable>&PRODUCT;.server</replaceable>:7080/awsapi
 $ export EC2_HOME=/path/to/EC2_tools_directory</programlisting>
       </listitem>
     </orderedlist>
