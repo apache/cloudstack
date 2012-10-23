@@ -16,25 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.test;
+package org.apache.cloudstack.storage.backup;
 
-import static org.junit.Assert.*;
-
-import org.apache.cloudstack.storage.volume.VolumeService;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations="storageContext.xml")
-public class volumeServiceTest {
-	@Autowired
-	protected VolumeService volService;
-	@Test
-	public void test() {
-		assertTrue(volService.deleteVolume(1) == false);
-		fail("Not yet implemented");
-	}
+public interface BackupService {
+	String grantAccessSnapshot(long snapshotId, long endpointId);
+	boolean revokeAccessSnapshot(long snapshotId, long endpointId);
 }

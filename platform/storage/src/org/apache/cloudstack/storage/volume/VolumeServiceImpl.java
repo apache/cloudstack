@@ -18,22 +18,16 @@
  */
 package org.apache.cloudstack.storage.volume;
 
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.commands.CreateVolumeCmd;
 import com.cloud.storage.Volume;
 
-@Service
+@Component
 public class VolumeServiceImpl implements VolumeService {
 
 	@Override
-	public Volume allocVolumeInDB(CreateVolumeCmd cmd) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Volume createVolume(CreateVolumeCmd cmd) {
+	public Volume createVolume(long volumeId) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -45,15 +39,27 @@ public class VolumeServiceImpl implements VolumeService {
 	}
 
 	@Override
-	public Volume migrateVolume(Long volumeId, Long storagePoolId) {
+	public boolean cloneVolume(long volumeId, long baseVolId) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean createVolumeFromSnapshot(long volumeId, long snapshotId) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public String grantAccess(long volumeId, long endpointId) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public Volume copyVolume(Long volumeId, Long destStoragePoolId) {
+	public boolean rokeAccess(long volumeId, long endpointId) {
 		// TODO Auto-generated method stub
-		return null;
+		return false;
 	}
 
 }

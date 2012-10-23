@@ -18,45 +18,6 @@
  */
 package org.apache.cloudstack.storage.volume;
 
-
-import com.cloud.storage.Volume;
-
-public interface VolumeService {
-
-    /**
-     * Creates the volume based on the given criteria
-     * 
-     * @param cmd
-     *            
-     * @return the volume object
-     */
-    Volume createVolume(long volumeId);
-
-    /**
-     * Delete volume
-     * @param volumeId
-     * @return
-     * @throws ConcurrentOperationException
-     */
-    boolean deleteVolume(long volumeId);
-    
-    /**
-     * 
-     */
-    boolean cloneVolume(long volumeId, long baseVolId);
-    
-    /**
-     * 
-     */
-    boolean createVolumeFromSnapshot(long volumeId, long snapshotId);
-    
-    /**
-     * 
-     */
-    String grantAccess(long volumeId, long endpointId);
-    
-    /**
-     * 
-     */
-    boolean rokeAccess(long volumeId, long endpointId);
+public interface VolumeMotionService {
+	boolean copyVolume(String volumeUri, String destVolumeUri);
 }
