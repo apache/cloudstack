@@ -753,31 +753,19 @@
                 url: { label: 'image.directory', validation: { required: true } }
               }
             },
-            action: function(args) {
-              /*
-               var isValid = true;
-               isValid &= validateString("Name", $thisDialog.find("#create_template_name"), $thisDialog.find("#create_template_name_errormsg"));
-               isValid &= validateString("Display Text", $thisDialog.find("#create_template_desc"), $thisDialog.find("#create_template_desc_errormsg"));
-               isValid &= validateString("Image Directory", $thisDialog.find("#image_directory"), $thisDialog.find("#image_directory_errormsg"), false); //image directory is required when creating template from VM whose hypervisor is BareMetal
-               if (!isValid)
-               return;
-               $thisDialog.dialog("close");
-               */
-
-              var array1 = [];
-              array1.push("&name=" + todb(args.data.name));
-              array1.push("&displayText=" + todb(args.data.displayText));
-              array1.push("&osTypeId=" + args.data.osTypeId);
-
-              //array1.push("&isPublic=" + args.data.isPublic);
-              array1.push("&isPublic=" + (args.data.isPublic=="on"));  //temporary, before Brian fixes it.
-
-              array1.push("&url=" + todb(args.data.url));
-
+            action: function(args) {              
+              var data = {
+							  virtualmachineid: args.context.instances[0].id,
+							  name: args.data.name,
+								displayText: args.data.displayText,
+								osTypeId: args.data.osTypeId,
+								isPublic: (args.data.isPublic=="on"),
+								url: args.data.url
+							};
+												
               $.ajax({
-                url: createURL("createTemplate&virtualmachineid=" + args.context.instances[0].id + array1.join("")),
-                dataType: "json",
-                async: true,
+                url: createURL('createTemplate'),
+                data: data,                
                 success: function(json) {
                   var jid = json.createtemplateresponse.jobid;
                   args.response.success(
@@ -993,7 +981,7 @@
 										'Starting': 1,
 										'Stopping': 1
 									},
-									pollAgainFn: function(context) { //???	
+									pollAgainFn: function(context) { 
                     var toClearInterval = false; 								  
 										$.ajax({
 											url: createURL("listVirtualMachines&id=" + context.instances[0].id),
