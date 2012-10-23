@@ -49,55 +49,54 @@
             line. The max_connections parameter should be set to 350 multiplied by the number of Management 
             Servers you are deploying. This example assumes two Management Servers.</para>
             <note>
-                <para>On Ubuntu you can also create a file /etc/mysql/conf.d/cloudstack.cnf and add these directives there. Don't forget to add [mysqld] on the first line of the file.</para>
+                <para>On Ubuntu, you can also create a file /etc/mysql/conf.d/cloudstack.cnf and add
+                    these directives there. Don't forget to add [mysqld] on the first line of the
+                    file.</para>
             </note>
-            <programlisting>
-innodb_rollback_on_timeout=1
+            <programlisting language="Bash">innodb_rollback_on_timeout=1
 innodb_lock_wait_timeout=600
 max_connections=700
 log-bin=mysql-bin
 binlog-format = 'ROW'
-bind-address = 0.0.0.0
-            </programlisting>
+bind-address = 0.0.0.0            </programlisting>
         </listitem>
         <listitem>
-            <para>On RHEL/CentOS MySQL doesn't start after installation, start it manually.</para>
+            <para>Start or restart MySQL to put the new configuration into effect.</para>
+            <para>On RHEL/CentOS,
+                MySQL doesn't automatically start after installation. Start it manually.</para>
             <programlisting language="Bash">service mysqld start</programlisting>
+            <para>On Ubuntu, restart MySQL.</para>
+            <programlisting language="Bash">service mysqld restart</programlisting>
         </listitem>
         <listitem>
+            <para>(CentOS and RHEL only; not required on Ubuntu)</para>
             <warning>
-                <para>On RHEL and CentOS, MySQL does not set a root password by default. It is very strongly recommended that you set a root password as a security precaution. Run the following commands, and substitute your own desired root password. This step is not required on Ubuntu as it asks for a root password during installation.</para>
+                <para>On RHEL and CentOS, MySQL does not set a root password by default. It is very
+                    strongly recommended that you set a root password as a security precaution. </para>
             </warning>
-            <para>Run this command to secure your installation. You can answer "Y" to all questions except to "Disallow root login remotely?". This is required to set up the databases.</para>
-            <programlisting>mysql_secure_installation</programlisting>
+            <para>Run the following command to secure your installation. You can answer "Y" to all
+                questions except "Disallow root login remotely?". Remote root login is required to
+                set up the databases.</para>
+            <programlisting language="Bash">mysql_secure_installation</programlisting>
         </listitem>
         <listitem><para>If a firewall is present on the system, open TCP port 3306 so external MySQL connections can be established.</para>
+            <para>On Ubuntu, UFW is the default firewall. Open the port with this command:</para>
+            <programlisting language="Bash">ufw allow mysql</programlisting>
+            <para>On RHEL/CentOS:</para>
             <orderedlist numeration="loweralpha">
                 <listitem>
-                    <para>On RHEL/CentOS:</para>
-                    <orderedlist>
-                        <listitem>
-                            <para>Edit the /etc/sysconfig/iptables file and add the following line at the beginning of the INPUT chain.</para>
-                            <programlisting>-A INPUT -p tcp --dport 3306 -j ACCEPT</programlisting>
-                        </listitem>
-                        <listitem>
-                            <para>Now reload the iptables rules.</para>
-                            <programlisting language="Bash">service iptables restart</programlisting>
-                        </listitem>
-                    </orderedlist>
+                    <para>Edit the /etc/sysconfig/iptables file and add the following line at the beginning of the INPUT chain.</para>
+                    <programlisting language="Bash">-A INPUT -p tcp --dport 3306 -j ACCEPT</programlisting>
                 </listitem>
                 <listitem>
-                    <para>On Ubuntu:</para>
-                    <para>UFW is the default firewall on Ubuntu, open the port with this command:</para>
-                    <programlisting language="Bash">ufw allow mysql</programlisting>
+                    <para>Now reload the iptables rules.</para>
+                    <programlisting language="Bash">service iptables restart</programlisting>
                 </listitem>
-            </orderedlist>
+            </orderedlist>      
         </listitem>
+        <listitem><para>Return to the root shell on your first Management Server.</para></listitem>
         <listitem>
             <para>Set up the database. The following command creates the cloud user on the database.</para>
-            <note>
-                <para>This command should be run on the first Management server node!</para>
-            </note>
             <itemizedlist>
                 <listitem><para>In dbpassword, specify the password to be assigned to the cloud user. You can choose to provide no password.</para></listitem>
                 <listitem><para>In deploy-as, specify the username and password of the user deploying the database. In the following command, it is assumed the root user is deploying the database and creating the cloud user.</para></listitem>
