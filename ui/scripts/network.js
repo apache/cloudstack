@@ -609,26 +609,36 @@
                   }
                 },
                 action: function(args) {
-                  var array1 = [];
-                  array1.push("&name=" + todb(args.data.name));
-                  array1.push("&displaytext=" + todb(args.data.displaytext));
-
+								  var data = {
+									  id: args.context.networks[0].id,		
+									  name: args.data.name,
+										displaytext: args.data.displaytext,
+									};
+								
                   //args.data.networkdomain is null when networkdomain field is hidden
-                  if(args.data.networkdomain != null && args.data.networkdomain != args.context.networks[0].networkdomain)
-                    array1.push("&networkdomain=" + todb(args.data.networkdomain));
+                  if(args.data.networkdomain != null && args.data.networkdomain != args.context.networks[0].networkdomain) {
+									  $.extend(data, {
+										  networkdomain: args.data.networkdomain
+										});
+									}
 
                   //args.data.networkofferingid is null when networkofferingid field is hidden
                   if(args.data.networkofferingid != null && args.data.networkofferingid != args.context.networks[0].networkofferingid) {
-                    array1.push("&networkofferingid=" + todb(args.data.networkofferingid));
+									  $.extend(data, {
+										  networkofferingid: args.data.networkofferingid
+										});
 
                     if(args.context.networks[0].type == "Isolated") { //Isolated network
                       cloudStack.dialog.confirm({
                         message: 'Do you want to keep the current guest network CIDR unchanged?',
-                        action: function() { //"Yes"	button is clicked
-                          array1.push("&changecidr=false");
+                        action: function() { //"Yes"	button is clicked                          
+													$.extend(data, {
+													  changecidr: false
+													});
+													
                           $.ajax({
-                            url: createURL("updateNetwork&id=" + args.context.networks[0].id + array1.join("")),
-                            dataType: "json",
+                            url: createURL('updateNetwork'),
+                            data: data,
                             success: function(json) {
                               var jid = json.updatenetworkresponse.jobid;
                               args.response.success(
@@ -644,11 +654,14 @@
                             }
                           });
                         },
-                        cancelAction: function() { //"Cancel" button is clicked
-                          array1.push("&changecidr=true");
+                        cancelAction: function() { //"Cancel" button is clicked                         
+													$.extend(data, {
+													  changecidr: true
+													});
+													
                           $.ajax({
-                            url: createURL("updateNetwork&id=" + args.context.networks[0].id + array1.join("")),
-                            dataType: "json",
+                            url: createURL('updateNetwork'),
+                            data: data,
                             success: function(json) {
                               var jid = json.updatenetworkresponse.jobid;
                               args.response.success(
@@ -670,8 +683,8 @@
                   }
 
                   $.ajax({
-                    url: createURL("updateNetwork&id=" + args.context.networks[0].id + array1.join("")),
-                    dataType: "json",
+                    url: createURL('updateNetwork'),
+                    data: data,
                     success: function(json) {
                       var jid = json.updatenetworkresponse.jobid;
                       args.response.success(
