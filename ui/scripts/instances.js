@@ -453,17 +453,21 @@
           edit: {
             label: 'label.edit',
             action: function(args) {
-              var array1 = [];							
-							if(args.data.displayname != args.context.instances[0].displayname)
-                array1.push("&displayName=" + args.data.displayname);
-								
-              array1.push("&group=" + args.data.group);
-              array1.push("&ostypeid=" + args.data.guestosid);
-              //array1.push("&haenable=" + haenable);
+						  var data = {
+							  id: args.context.instances[0].id,
+							  group: args.data.group,
+								ostypeid: args.data.guestosid
+							};
+						             						
+							if(args.data.displayname != args.context.instances[0].displayname) {
+							  $.extend(data, {
+								  displayName: args.data.displayname
+								});							
+							}								
 
               $.ajax({
-                url: createURL("updateVirtualMachine&id=" + args.context.instances[0].id + array1.join("")),
-                dataType: "json",
+                url: createURL('updateVirtualMachine'),
+                data: data,
                 success: function(json) {
                   var item = json.updatevirtualmachineresponse.virtualmachine;
                   args.response.success({data:item});
