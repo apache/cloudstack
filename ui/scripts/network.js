@@ -1311,10 +1311,8 @@
           },
 
           dataProvider: function(args) {
-            var data = {
-              page: args.page,
-              pageSize: pageSize
-            };
+            var data = {};
+						listViewDataProvider(args, data);
 
             if (g_supportELB == "guest") // IPs are allocated on guest network
               $.extend(data, {
@@ -1329,28 +1327,17 @@
 
             if (args.context.networks) {
               $.extend(data, { associatedNetworkId: args.context.networks[0].id });
+
+            }						
+            
+            if("vpc" in args.context) {
+              $.extend(data, {
+                vpcid: args.context.vpc[0].id
+              });
             }
 
-            var array1 = [];
-            if(args.filterBy != null) {
-              if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
-                switch(args.filterBy.search.by) {
-                case "name":
-                  if(args.filterBy.search.value.length > 0)
-                    array1.push("&keyword=" + args.filterBy.search.value);
-                  break;
-                }
-              }
-            }
-											
-						if("vpc" in args.context) {
-						  $.extend(data, {
-							  vpcid: args.context.vpc[0].id
-							});									
-            }							
-						
             $.ajax({
-              url: createURL("listPublicIpAddresses&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
+              url: createURL('listPublicIpAddresses'),
               data: data,
               dataType: "json",
               async: true,
@@ -4200,22 +4187,14 @@
             cidrlist: { label: 'label.CIDR.list' },
             ipsecpsk: { label: 'label.IPsec.preshared.key' }
           },
-          dataProvider: function(args) {					  
-						var array1 = [];  
-						if(args.filterBy != null) {          
-							if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
-								switch(args.filterBy.search.by) {
-								case "name":
-									if(args.filterBy.search.value.length > 0)
-										array1.push("&keyword=" + args.filterBy.search.value);
-									break;
-								}
-							}
-						}
-						
+
+          dataProvider: function(args) {
+					  var data = {};
+						listViewDataProvider(args, data);
+					
             $.ajax({
-              url: createURL("listVpnCustomerGateways&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
-              dataType: "json",
+              url: createURL('listVpnCustomerGateways'),
+              data: data,
               async: true,
               success: function(json) {							  
                 var items = json.listvpncustomergatewaysresponse.vpncustomergateway;
