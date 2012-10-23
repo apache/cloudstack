@@ -239,18 +239,22 @@
               },
 
               action: function(args) {
-                var array1 = [];
-                array1.push("&name=" + todb(args.data.name));
-                array1.push("&zoneId=" + args.data.availabilityZone);
-								array1.push("&format=" + args.data.format);
-								array1.push("&url=" + todb(args.data.url));
-								if(args.data.checksum != null && args.data.checksum.length > 0)
-								  array1.push("&checksum=" + todb(args.data.checksum));
+							  var data = {
+								  name: args.data.name,
+									zoneId: args.data.availabilityZone,
+									format: args.data.format,
+									url: args.data.url
+								};
+							                
+								if(args.data.checksum != null && args.data.checksum.length > 0) {
+								  $.extend(data, {
+									  checksum: args.data.checksum
+									});
+								}
                 
                 $.ajax({
-                  url: createURL("uploadVolume" + array1.join("")),
-                  dataType: "json",
-                  async: true,
+                  url: createURL('uploadVolume'),
+                  data: data,                 
                   success: function(json) {										  
 										var jid = json.uploadvolumeresponse.jobid;
 										args.response.success(
@@ -874,28 +878,24 @@
                   }
                 },
                 action: function(args) {
-                  /*
-                   var isValid = true;
-                   isValid &= validateString("Name", $thisDialog.find("#create_template_name"), $thisDialog.find("#create_template_name_errormsg"));
-                   isValid &= validateString("Display Text", $thisDialog.find("#create_template_desc"), $thisDialog.find("#create_template_desc_errormsg"));
-                   if (!isValid)
-                   return;
-                   $thisDialog.dialog("close");
-                   */
-
-                  var array1 = [];
-                  array1.push("&name=" + todb(args.data.name));
-                  array1.push("&displayText=" + todb(args.data.displayText));
-                  array1.push("&osTypeId=" + args.data.osTypeId);
-                  array1.push("&isPublic=" + (args.data.isPublic=="on"));
-                  array1.push("&passwordEnabled=" + (args.data.isPasswordEnabled=="on"));
-                  if(args.$form.find('.form-item[rel=isFeatured]').css("display") != "none")
-                      array1.push("&isfeatured=" + (args.data.isFeatured == "on"));
+                  var data = {
+									  volumeId: args.context.volumes[0].id,
+									  name: args.data.name,
+										displayText: args.data.displayText,
+										osTypeId: args.data.osTypeId,
+										isPublic: (args.data.isPublic=="on"),
+										passwordEnabled: (args.data.isPasswordEnabled=="on")
+									};
+								                 
+                  if(args.$form.find('.form-item[rel=isFeatured]').css("display") != "none") {
+									  $.extend(data, {
+										  isfeatured: (args.data.isFeatured == "on")
+										});
+									}
 
                   $.ajax({
-                    url: createURL("createTemplate&volumeId=" + args.context.volumes[0].id + array1.join("")),
-                    dataType: "json",
-                    async: true,
+                    url: createURL('createTemplate'),
+                    data: data,                    
                     success: function(json) {
                       var jid = json.createtemplateresponse.jobid;
                       args.response.success(
@@ -1251,26 +1251,18 @@
                   }
                 },
                 action: function(args) {
-                  /*
-                   var isValid = true;
-                   isValid &= validateString("Name", $thisDialog.find("#create_template_name"), $thisDialog.find("#create_template_name_errormsg"));
-                   isValid &= validateString("Display Text", $thisDialog.find("#create_template_desc"), $thisDialog.find("#create_template_desc_errormsg"));
-                   if (!isValid)
-                   return;
-                   $thisDialog.dialog("close");
-                   */
-
-                  var array1 = [];
-                  array1.push("&name=" + todb(args.data.name));
-                  array1.push("&displayText=" + todb(args.data.displayText));
-                  array1.push("&osTypeId=" + args.data.osTypeId);
-                  array1.push("&isPublic=" + (args.data.isPublic=="on"));
-                  array1.push("&passwordEnabled=" + (args.data.isPasswordEnabled=="on"));
-
+                  var data = {
+									  snapshotid: args.context.snapshots[0].id,
+										name: args.data.name,
+										displayText: args.data.displayText,
+										osTypeId: args.data.osTypeId,
+										isPublic: (args.data.isPublic=="on"),
+										passwordEnabled: (args.data.isPasswordEnabled=="on")
+									};
+								
                   $.ajax({
-                    url: createURL("createTemplate&snapshotid=" + args.context.snapshots[0].id + array1.join("")),
-                    dataType: "json",
-                    async: true,
+                    url: createURL('createTemplate'),
+                    data: data,                   
                     success: function(json) {
                       var jid = json.createtemplateresponse.jobid;
                       args.response.success(
@@ -1316,13 +1308,14 @@
                   }
                 },
                 action: function(args) {
-                  var array1 = [];
-                  array1.push("&name=" + todb(args.data.name));
+								  var data = {
+									  snapshotid: args.context.snapshots[0].id,
+										name: args.data.name
+									};								                
 
                   $.ajax({
-                    url: createURL("createVolume&snapshotid=" + args.context.snapshots[0].id + array1.join("")),
-                    dataType: "json",
-                    async: true,
+                    url: createURL('createVolume'),
+                    data: data,                    
                     success: function(json) {
                       var jid = json.createvolumeresponse.jobid;
                       args.response.success(
@@ -1464,6 +1457,7 @@
         }
       }
     }
+		allowedActions.push("createTemplate");
     return allowedActions;
   };
 
@@ -1480,6 +1474,9 @@
       allowedActions.push("createVolume");
     }
     allowedActions.push("remove");
+		
+		allowedActions.push("createVolume");
+		allowedActions.push("createTemplate");
     return allowedActions;
   }
 
