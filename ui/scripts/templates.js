@@ -286,34 +286,51 @@
               },
 
               action: function(args) {
-                var array1 = [];
-                array1.push("&name=" + todb(args.data.name));
-                array1.push("&displayText=" + todb(args.data.description));
-                array1.push("&url=" + todb(args.data.url));
-                array1.push("&zoneid=" + args.data.zone);
-                array1.push("&format=" + args.data.format);
-                array1.push("&isextractable=" + (args.data.isExtractable=="on"));
-                array1.push("&passwordEnabled=" + (args.data.isPasswordEnabled=="on"));
-                array1.push("&osTypeId=" + args.data.osTypeId);
-                array1.push("&hypervisor=" + args.data.hypervisor);
-
-                if(args.$form.find('.form-item[rel=isPublic]').css("display") != "none")
-                  array1.push("&ispublic=" + (args.data.isPublic == "on"));
-                if(args.$form.find('.form-item[rel=isFeatured]').css("display") != "none")
-                  array1.push("&isfeatured=" + (args.data.isFeatured == "on"));
+							  var data = {
+								  name: args.data.name,
+									displayText: args.data.description,
+									url: args.data.url,
+									zoneid: args.data.zone,
+									format: args.data.format,
+									isextractable: (args.data.isExtractable=="on"),
+									passwordEnabled: (args.data.isPasswordEnabled=="on"),
+									osTypeId: args.data.osTypeId,
+									hypervisor: args.data.hypervisor
+								};		
+                    
+                if(args.$form.find('.form-item[rel=isPublic]').css("display") != "none") {
+								  $.extend(data, {
+									  ispublic: (args.data.isPublic == "on")
+									});                  
+								}
+								
+                if(args.$form.find('.form-item[rel=isFeatured]').css("display") != "none") {
+								  $.extend(data, {
+									  isfeatured: (args.data.isFeatured == "on")
+									});		                 
+								}
 
                 //VMware only (starts here)
-                if(args.$form.find('.form-item[rel=rootDiskControllerType]').css("display") != "none" && args.data.rootDiskControllerType != "")
-                  array1.push("&details[0].rootDiskController=" + args.data.rootDiskControllerType);
-                if(args.$form.find('.form-item[rel=nicAdapterType]').css("display") != "none" && args.data.nicAdapterType != "")
-                  array1.push("&details[0].nicAdapter=" + args.data.nicAdapterType);
-                if(args.$form.find('.form-item[rel=keyboardType]').css("display") != "none" && args.data.keyboardType != "")
-                  array1.push("&details[0].keyboard=" + args.data.keyboardType);
+                if(args.$form.find('.form-item[rel=rootDiskControllerType]').css("display") != "none" && args.data.rootDiskControllerType != "") {
+								  $.extend(data, {
+									  'details[0].rootDiskController': args.data.rootDiskControllerType
+									});		
+								}
+                if(args.$form.find('.form-item[rel=nicAdapterType]').css("display") != "none" && args.data.nicAdapterType != "") {
+								  $.extend(data, {
+									  'details[0].nicAdapter': args.data.nicAdapterType
+									});
+								}
+                if(args.$form.find('.form-item[rel=keyboardType]').css("display") != "none" && args.data.keyboardType != "") {
+								  $.extend(data, {
+									  'details[0].keyboard': args.data.keyboardType
+									});                  
+								}
                 //VMware only (ends here)
 
                 $.ajax({
-                  url: createURL("registerTemplate" + array1.join("")),
-                  dataType: "json",
+                  url: createURL('registerTemplate'),
+                  data: data,
                   success: function(json) {
                     var items = json.registertemplateresponse.template;  //items might have more than one array element if it's create templates for all zones.
                     args.response.success({data:items[0]});
