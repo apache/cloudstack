@@ -202,7 +202,16 @@ public class ComponentLocator implements ComponentLocatorMBean {
                 _managerMap.putAll(library.getManagers());
                 _factories.putAll(library.getFactories());
                 _pluginsMap.putAll(library.getPluggableServices());
-
+                
+                 for (Entry<String, List<ComponentInfo<Adapter>>> e : library.getAdapters().entrySet()) {
+                	 if (adapters.containsKey(e.getKey())) {
+                 		s_logger.debug("Merge needed for " + e.getKey());
+                 		adapters.get(e.getKey()).addAll(e.getValue());
+                 	}
+                 	else {
+                 		adapters.put(e.getKey(), e.getValue());
+                 	}
+                 }
                 // putAll overwrites existing keys, so merge instead
                 for (Entry<String, List<ComponentInfo<Adapter>>> e : handler.adapters.entrySet()) {
                 	if (adapters.containsKey(e.getKey())) {
