@@ -794,7 +794,8 @@ public class ClusterManagerImpl implements ClusterManager {
 
                     invalidHeartbeatConnection();
                 } finally {
-                    txn.close("ClusterHeartBeat");
+                    txn.transitToAutoManagedConnection(Transaction.CLOUD_DB);                         
+                    txn.close("ClusterHeartBeat");           	
                 }
             }
         };
