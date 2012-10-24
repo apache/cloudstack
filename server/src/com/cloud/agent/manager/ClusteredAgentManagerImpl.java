@@ -581,6 +581,12 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                             logD(data, "Cancel request received");
                         }
                         agent.cancel(cancel.getSequence());
+                        final Long current = agent._currentSequence;
+                        //if the request is the current request, always have to trigger sending next request in sequence,
+                        //otherwise the agent queue will be blocked
+                        if (req.executeInSequence() && (current != null && current == Request.getSequence(data))) {
+                            agent.sendNext(Request.getSequence(data));
+                        }
                         return;
                     }
 
