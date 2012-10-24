@@ -889,25 +889,34 @@
              
 
               action: function(args) {
-                var array1 = [];
-                array1.push("&name=" + todb(args.data.name));
-                array1.push("&displayText=" + todb(args.data.description));
-                array1.push("&url=" + todb(args.data.url));
-                array1.push("&zoneid=" + args.data.zone);
-                array1.push("&isextractable=" + (args.data.isExtractable=="on"));
-                array1.push("&bootable=" + (args.data.isBootable=="on"));
+							  var data = {
+								  name: args.data.name,
+									displayText: args.data.description,
+									url: args.data.url,
+									zoneid: args.data.zone,
+									isextractable: (args.data.isExtractable=="on"),
+									bootable: (args.data.isBootable=="on") 
+								};		  
 
-                if(args.$form.find('.form-item[rel=osTypeId]').css("display") != "none")
-                  array1.push("&osTypeId=" + args.data.osTypeId);
-
-                if(args.$form.find('.form-item[rel=isPublic]').css("display") != "none")
-                  array1.push("&ispublic=" + (args.data.isPublic == "on"));
-                if(args.$form.find('.form-item[rel=isFeatured]').css("display") != "none")
-                  array1.push("&isfeatured=" + (args.data.isFeatured == "on"));
+                if(args.$form.find('.form-item[rel=osTypeId]').css("display") != "none") {
+								  $.extend(data, {
+									  osTypeId: args.data.osTypeId
+									});
+								}
+                if(args.$form.find('.form-item[rel=isPublic]').css("display") != "none") {
+								  $.extend(data, {
+									  ispublic: (args.data.isPublic == "on")
+									});								
+								}
+                if(args.$form.find('.form-item[rel=isFeatured]').css("display") != "none") {
+								  $.extend(data, {
+									  isfeatured: (args.data.isFeatured == "on")
+									});
+								}
 
                 $.ajax({
-                  url: createURL("registerIso" + array1.join("")),
-                  dataType: "json",
+                  url: createURL('registerIso'),
+                  data: data,
                   success: function(json) {
                     var items = json.registerisoresponse.iso;	//items might have more than one array element if it's create ISOs for all zones.
                     args.response.success({data:items[0]});
