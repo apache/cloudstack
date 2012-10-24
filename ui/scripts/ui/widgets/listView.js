@@ -1050,7 +1050,7 @@
             var $listView = $tr.closest('.list-view');
             var $title = $('<div>').addClass('title');
             var $detailsContainer = $('<div>').addClass('container').appendTo($quickViewTooltip);
-            var context = $.extend(true, {}, options.context);
+            var context = $.extend(true, {}, $listView.data('view-args').context);
             var activeSection = $listView.data('view-args').activeSection;
             var itemID = $tr.data('list-view-item-id');
             var jsonObj = $tr.data('json-obj');
