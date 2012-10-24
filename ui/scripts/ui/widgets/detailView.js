@@ -1019,7 +1019,6 @@
     var context = options.context ? options.context : {};
     var updateContext = $detailView.data('view-args').updateContext;
     var compact = options.compact;
-    var tabTotal = 0;
 
     if (updateContext) {
       $.extend($detailView.data('view-args').context, updateContext({
@@ -1035,16 +1034,22 @@
       );
     }
 
-    if (tabFilter) {
+    if (tabFilter && !compact) {
       removedTabs = tabFilter({
         context: context
       });
+    } else if (compact) {
+      removedTabs = $.grep(
+        $.map(
+          tabs,
+          function(value, key) { return key; }
+        ), function(tab, index) { return index > 0; }
+      );
     }
 
     $.each(tabs, function(key, value) {
       // Don't render tab, if filtered out
       if ($.inArray(key, removedTabs) > -1) return true;
-      if (compact && tabTotal) return true;
 
       var propGroup = key;
       var prop = value;
@@ -1061,8 +1066,6 @@
 
       $tabContent.data('detail-view-tab-id', key);
       $tabContent.data('detail-view-tab-data', value);
-
-      tabTotal++;
 
       return true;
     });
