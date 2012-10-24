@@ -414,54 +414,83 @@
               edit: {
                 label: 'label.edit',
                 action: function(args) {
-                  var array1 = [];
-                  array1.push("&name=" + todb(args.data.name));
-                  array1.push("&displaytext=" + todb(args.data.displaytext));
-                  array1.push("&ostypeid=" + args.data.ostypeid);
-                  array1.push("&passwordenabled=" + (args.data.passwordenabled=="on"));
+								  //***** updateTemplate *****
+								  var data = {
+									  id: args.context.templates[0].id,
+										zoneid: args.context.templates[0].zoneid,									
+									  name: args.data.name,
+										displaytext: args.data.displaytext,
+										ostypeid: args.data.ostypeid,
+										passwordenabled: (args.data.passwordenabled=="on")										
+									};	   
                   $.ajax({
-                    url: createURL("updateTemplate&id=" + args.context.templates[0].id + "&zoneid=" + args.context.templates[0].zoneid + array1.join("")),
-                    dataType: "json",
+                    url: createURL('updateTemplate'),
+                    data: data,
                     async: false,
                     success: function(json) {
                       //API returns an incomplete embedded object  (some properties are missing in the embedded template object)
                     }
-                  });
-
-                  var array2 = [];
-                  
-									//array2.push("&ispublic=" + (args.data.ispublic=="on"));
-									if(args.data.ispublic == "on")
-                    array2.push("&ispublic=true");
-									else if(args.data.ispublic == "off")
-                    array2.push("&ispublic=false");	
-									//if args.data.ispublic is undefined, do not pass ispublic to API call.
+                  });								
 									
-									if(args.data.isfeatured == "on")
-                    array2.push("&isfeatured=true");
-									else if(args.data.isfeatured == "off")
-                    array2.push("&isfeatured=false");	
+									
+									//***** updateTemplatePermissions *****
+                  var data = {
+									  id: args.context.templates[0].id,
+										zoneid: args.context.templates[0].zoneid
+									};     
+									
+									//if args.data.ispublic is undefined, do not pass ispublic to API call.
+									if(args.data.ispublic == "on") {
+									  $.extend(data, {
+										  ispublic: true
+										});					
+                  }										
+									else if(args.data.ispublic == "off") {
+									  $.extend(data, {
+										  ispublic: false
+										});
+									}																		
 									//if args.data.isfeatured is undefined, do not pass isfeatured to API call.
-									                  
-									if(args.data.isextractable == "on")
-                    array2.push("&isextractable=true");
-									else if(args.data.isextractable == "off")
-                    array2.push("&isextractable=false");	
-									//if args.data.isextractable is undefined, do not pass isextractable to API call.
-																		
+									if(args.data.isfeatured == "on") {
+									  $.extend(data, {
+										  isfeatured: true
+										});
+									}
+									else if(args.data.isfeatured == "off") {
+									  $.extend(data, {
+										  isfeatured: false
+										});									}									
+									//if args.data.isextractable is undefined, do not pass isextractable to API call.                  
+									if(args.data.isextractable == "on") {
+									  $.extend(data, {
+										  isextractable: true
+										});			
+									}
+									else if(args.data.isextractable == "off") {
+									  $.extend(data, {
+										  isextractable: false
+										});
+                  }								
                   $.ajax({
-                    url: createURL("updateTemplatePermissions&id=" + args.context.templates[0].id + "&zoneid=" + args.context.templates[0].zoneid + array2.join("")),
-                    dataType: "json",
+                    url: createURL('updateTemplatePermissions'),
+                    data: data,
                     async: false,
                     success: function(json) {
                       //API doesn't return an embedded object
                     }
                   });
 
+									
+									//***** listTemplates *****
                   //So, we call listTemplates API to get a complete template object
+									var data = {
+									  id: args.context.templates[0].id,
+										zoneid: args.context.templates[0].zoneid,
+										templatefilter: 'self'
+									};
                   $.ajax({
-                    url: createURL("listTemplates&id=" + args.context.templates[0].id + "&zoneid=" + args.context.templates[0].zoneid + "&templatefilter=self"),
-                    dataType: "json",
+                    url: createURL('listTemplates'),
+                    data: data,
                     async: false,
                     success: function(json){
                       var item = json.listtemplatesresponse.template;
