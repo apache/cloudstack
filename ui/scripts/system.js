@@ -8208,7 +8208,7 @@
                   var array1 = [];
                   array1.push("&hosttags=" + todb(args.data.hosttags));
 
-                  if (args.data.oscategoryid != null)
+                  if (args.data.oscategoryid != null && args.data.oscategoryid.length > 0)
                     array1.push("&osCategoryId=" + args.data.oscategoryid);
 
                   $.ajax({
@@ -8425,13 +8425,12 @@
                           async: true,
                           success: function(json) {
                             var oscategoryObjs = json.listoscategoriesresponse.oscategory;
-                            var items = [];
+                            var items = [
+                              { id: '', description: _l('label.none') }
+                            ];
                             $(oscategoryObjs).each(function() {
-                              if(this.name == 'None')
-                                items.unshift({ id: this.id, description: _l('label.none') });
-                              else
-                                items.push({id: this.id, description: this.name});
-                            });
+                              items.push({id: this.id, description: this.name});
+                            });														
                             args.response.success({data: items});
                           }
                         });
