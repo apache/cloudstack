@@ -1516,6 +1516,7 @@
 
                   detailView: {
                     name: 'Guest network details',
+                    noCompact: true,
                     viewAll: {
 										  path: '_zone.guestIpRanges',
 											label: 'label.ip.ranges',
