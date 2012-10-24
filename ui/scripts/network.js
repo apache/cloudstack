@@ -782,30 +782,41 @@
 
             tabFilter: function(args) {
               var networkOfferingHavingELB = false;
+              var hasNetworkACL = false;
+              
               $.ajax({
                 url: createURL("listNetworkOfferings&id=" + args.context.networks[0].networkofferingid),
                 dataType: "json",
                 async: false,
                 success: function(json) {
                   var networkoffering = json.listnetworkofferingsresponse.networkoffering[0];
+
                   $(networkoffering.service).each(function(){
                     var thisService = this;
-                    if(thisService.name == "Lb") {
+
+                    if (thisService.name == 'NetworkACL') {
+                      hasNetworkACL = true;
+                    } else if (thisService.name == "Lb") {
                       $(thisService.capability).each(function(){
-                        if(this.name == "ElasticLb" && this.value == "true") {
+                        if (this.name == "ElasticLb" && this.value == "true") {
                           networkOfferingHavingELB = true;
-                          return false; //break $.each() loop
                         }
                       });
-                      return false; //break $.each() loop
                     }
                   });
                 }
               });
 
               var hiddenTabs = [];
-              if(networkOfferingHavingELB == false)
+              
+              if (!networkOfferingHavingELB) {
                 hiddenTabs.push("addloadBalancer");
+              }
+
+              if (!hasNetworkACL) {
+                hiddenTabs.push('egressRules');
+              }
+              
               return hiddenTabs;
             },
 
