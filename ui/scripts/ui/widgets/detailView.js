@@ -104,6 +104,10 @@
             context: context,
             $detailView: $detailView,
             complete: function(args) {
+              if (viewArgs && viewArgs.onPerformAction) {
+                viewArgs.onPerformAction();
+              }
+
               // Set loading appearance
               var $loading = $('<div>').addClass('loading-overlay');
 
@@ -123,6 +127,10 @@
 
                 // Success
                 function(args) {
+                  if (viewArgs && viewArgs.onActionComplete) {
+                    viewArgs.onActionComplete();
+                  }
+
                   if (!$detailView.parents('html').size()) return;
 
                   $loading.remove();
