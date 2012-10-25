@@ -1817,10 +1817,8 @@
                     var havingFirewallService = false;
                     var havingPortForwardingService = false;
                     var havingLbService = false;
-                    var havingVpnService = false;
-
-										var FirewallProviderArrayIncludesJuniperSRX = false;
-									
+										var havingVpnService = false;		
+										
                     if('networks' in args.context && args.context.networks[0].vpcid == null) { //a non-VPC network from Guest Network section
                       $.ajax({
                         url: createURL('listNetworkOfferings'),
@@ -1833,25 +1831,14 @@
                           var networkoffering = json.listnetworkofferingsresponse.networkoffering[0];
                           $(networkoffering.service).each(function(){
                             var thisService = this;
-                            if(thisService.name == "Firewall") {
+                            if(thisService.name == "Firewall")
                               havingFirewallService = true;
-															var providerArray = thisService.provider;
-															for(var k = 0; k < providerArray.length; k++) {
-																if(providerArray[k].name == "JuniperSRX") {
-																	FirewallProviderArrayIncludesJuniperSRX = true;
-																	break;
-																}
-															}		                              
-														}
-                            if(thisService.name == "PortForwarding") {
+                            if(thisService.name == "PortForwarding")
                               havingPortForwardingService = true;
-														}
-                            if(thisService.name == "Lb") {
+                            if(thisService.name == "Lb")
                               havingLbService = true;
-														}
-                            if(thisService.name == "Vpn") {
+                            if(thisService.name == "Vpn")
                               havingVpnService = true;
-														}
                           });
                         }
                       });
@@ -1970,24 +1957,7 @@
                         });
                       }
                     }
-																				
-										if(FirewallProviderArrayIncludesJuniperSRX == true) { //if Firewall is provided by JuniperSRX 										  								
-										  $.ajax({
-                        url: createURL('listPortForwardingRules'),
-                        data: {
-                          ipaddressid: args.context.ipAddresses[0].id,
-                          listAll: true
-                        },
-												async: false,
-                        success: function(json) {												  
-													var rules = json.listportforwardingrulesresponse.portforwardingrule;													
-													if(rules != null && rules.length > 0) {
-													  disallowedActions.push("firewall"); //hide Firewall icon when Port forwarding is configured on IP Address 		
-													}
-												}
-											});											
-										}
-										
+
                     return disallowedActions;
                   },
 
