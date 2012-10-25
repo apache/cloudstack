@@ -1165,7 +1165,9 @@
 																				
 	                  $(':ui-dialog').dialog('option', 'position', 'center');
 										
-										//hide/show service fields upon guestIpType(Shared/Isolated), zoneType(Advanced/Basic), having VpcVirtualRouter or not ***** (begin) *****						
+										//CS-16612 show all services regardless of guestIpType(Shared/Isolated)
+										/*
+										//hide/show service fields upon guestIpType(Shared/Isolated), having VpcVirtualRouter or not ***** (begin) *****						
 										var serviceFieldsToHide = [];										
 										if($guestTypeField.val() == 'Shared') { //Shared network offering
 										  serviceFieldsToHide = [
@@ -1230,7 +1232,8 @@
                         }													
 											}											
 										}
-										//hide/show service fields upon guestIpType(Shared/Isolated), zoneType(Advanced/Basic), having VpcVirtualRouter or not ***** (end) *****			
+										//hide/show service fields upon guestIpType(Shared/Isolated), having VpcVirtualRouter or not ***** (end) *****			
+										*/
 												
 
                     //show LB InlineMode dropdown only when (1)LB Service is checked (2)Service Provider is F5 							
