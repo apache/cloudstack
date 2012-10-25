@@ -49,7 +49,6 @@ class TestCreateDiskOffering(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            self.dbclient.close()
             #Clean up, terminate the created templates
             cleanup_resources(self.apiclient, self.cleanup)
 
@@ -112,7 +111,6 @@ class TestDiskOfferings(cloudstackTestCase):
     def tearDown(self):
 
         try:
-            self.dbclient.close()
             #Clean up, terminate the created templates
             cleanup_resources(self.apiclient, self.cleanup)
 

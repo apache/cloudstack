@@ -1172,7 +1172,6 @@ class TestSecurityGroup(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            self.dbclient.close()
             #Clean up, terminate the created templates
             cleanup_resources(self.apiclient, self.cleanup)
 

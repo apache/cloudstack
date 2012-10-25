@@ -112,7 +112,6 @@ class TestCreateTemplate(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            self.dbclient.close()
             #Clean up, terminate the created templates
             cleanup_resources(self.apiclient, self.cleanup)
 
@@ -418,8 +417,6 @@ class TestTemplates(cloudstackTestCase):
 
     def tearDown(self):
         try:
-
-            self.dbclient.close()
             #Clean up, terminate the created templates
             cleanup_resources(self.apiclient, self.cleanup)
 

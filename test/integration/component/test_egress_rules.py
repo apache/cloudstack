@@ -138,7 +138,6 @@ class TestDefaultSecurityGroupEgress(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            self.dbclient.close()
             #Clean up, terminate the created templates
             cleanup_resources(self.apiclient, self.cleanup)
 
@@ -297,7 +296,6 @@ class TestAuthorizeIngressRule(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            self.dbclient.close()
             #Clean up, terminate the created templates
             cleanup_resources(self.apiclient, self.cleanup)
 
@@ -455,7 +453,6 @@ class TestDefaultGroupEgress(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            self.dbclient.close()
             #Clean up, terminate the created templates
             cleanup_resources(self.apiclient, self.cleanup)
 
@@ -656,7 +653,6 @@ class TestDefaultGroupEgressAfterDeploy(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            self.dbclient.close()
             #Clean up, terminate the created templates
             cleanup_resources(self.apiclient, self.cleanup)
 
@@ -839,7 +835,6 @@ class TestRevokeEgressRule(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            self.dbclient.close()
             #Clean up, terminate the created templates
             cleanup_resources(self.apiclient, self.cleanup)
 
@@ -1101,7 +1096,6 @@ class TestInvalidAccountAuthroize(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            self.dbclient.close()
             #Clean up, terminate the created templates
             cleanup_resources(self.apiclient, self.cleanup)
 
@@ -1223,7 +1217,6 @@ class TestMultipleAccountsEgressRuleNeg(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            self.dbclient.close()
             #Clean up, terminate the created templates
             cleanup_resources(self.apiclient, self.cleanup)
 
@@ -1471,7 +1464,6 @@ class TestMultipleAccountsEgressRule(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            self.dbclient.close()
             #Clean up, terminate the created templates
             cleanup_resources(self.apiclient, self.cleanup)
 
@@ -1768,7 +1760,6 @@ class TestStartStopVMWithEgressRule(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            self.dbclient.close()
             #Clean up, terminate the created templates
             cleanup_resources(self.apiclient, self.cleanup)
 
@@ -1980,7 +1971,6 @@ class TestInvalidParametersForEgress(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            self.dbclient.close()
             #Clean up, terminate the created templates
             cleanup_resources(self.apiclient, self.cleanup)
 
@@ -2163,7 +2153,6 @@ class TestEgressAfterHostMaintainance(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            self.dbclient.close()
             #Clean up, terminate the created templates
             cleanup_resources(self.apiclient, self.cleanup)
 

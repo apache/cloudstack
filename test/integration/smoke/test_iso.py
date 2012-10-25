@@ -108,8 +108,6 @@ class TestCreateIso(cloudstackTestCase):
 
     def tearDown(self):
         try:
-
-            self.dbclient.close()
             #Clean up, terminate the created ISOs
             cleanup_resources(self.apiclient, self.cleanup)
 
@@ -247,7 +245,6 @@ class TestISO(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            self.dbclient.close()
             #Clean up, terminate the created ISOs, VMs
             cleanup_resources(self.apiclient, self.cleanup)
 

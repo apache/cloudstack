@@ -176,7 +176,6 @@ class TestEIP(cloudstackTestCase):
         try:
             #Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self.cleanup)
-            self.dbclient.close()
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -999,7 +998,6 @@ class TestELB(cloudstackTestCase):
         try:
             #Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self.cleanup)
-            self.dbclient.close()
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
