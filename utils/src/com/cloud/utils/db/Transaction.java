@@ -130,7 +130,7 @@ public class Transaction {
     // the existing DAO features
     //
     public void transitToUserManagedConnection(Connection conn) {
-    	assert(_conn == null /*&& _stack.size() <= 1*/) : "Can't change to a user managed connection unless the stack is empty and the db connection is null, you may have forgotten to invoke transitToAutoManagedConnection to close out the DB connection: " + toString();
+        assert(_conn == null /*&& _stack.size() <= 1*/) : "Can't change to a user managed connection unless the stack is empty and the db connection is null, you may have forgotten to invoke transitToAutoManagedConnection to close out the DB connection: " + toString();
         _conn = conn;
         _dbId = CONNECTED_DB;
     }
@@ -747,8 +747,8 @@ public class Transaction {
         }
 
         try {
-        	// we should only close db connection when it is not user managed
-            if(this._dbId != CONNECTED_DB) {
+            // we should only close db connection when it is not user managed
+            if (this._dbId != CONNECTED_DB) {
                 if (s_connLogger.isTraceEnabled()) {
                     s_connLogger.trace("Closing DB connection: dbconn" + System.identityHashCode(_conn));
                 }                                
