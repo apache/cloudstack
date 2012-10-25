@@ -1500,6 +1500,7 @@ CREATE TABLE  `cloud`.`storage_pool` (
   `created` datetime COMMENT 'date the pool created',
   `removed` datetime COMMENT 'date removed if not null',
   `update_time` DATETIME,
+  `storage_provider` varchar(255) NOT NULL,
   `status` varchar(32),
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_storage_pool__pod_id` FOREIGN KEY `fk_storage_pool__pod_id` (`pod_id`) REFERENCES `host_pod_ref` (`id`) ON DELETE CASCADE,

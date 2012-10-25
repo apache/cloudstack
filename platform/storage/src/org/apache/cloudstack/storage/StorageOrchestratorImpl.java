@@ -27,7 +27,6 @@ import org.apache.cloudstack.platform.subsystem.api.storage.StorageProvider;
 import org.apache.cloudstack.platform.subsystem.api.storage.TemplateProfile;
 import org.apache.cloudstack.platform.subsystem.api.storage.VolumeProfile;
 import org.apache.cloudstack.platform.subsystem.api.storage.VolumeStrategy;
-import org.apache.cloudstack.storage.db.VolumeHostVO;
 import org.apache.cloudstack.storage.image.ImageManager;
 import org.apache.cloudstack.storage.manager.BackupStorageManager;
 import org.apache.cloudstack.storage.manager.SecondaryStorageManager;

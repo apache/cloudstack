@@ -40,13 +40,13 @@ public class VolumeManagerImpl implements VolumeManager {
 		newVol.setInstanceId(oldVol.getInstanceId());
 		newVol.setRecreatable(oldVol.isRecreatable());
 		newVol.setReservationId(oldVol.getReservationId());
-		
-		return _volumeDao.persist(newVol);
+		return null;
+		//return _volumeDao.persist(newVol);
 	}
 	
 
 	public VolumeVO processEvent(Volume vol, Volume.Event event) throws NoTransitionException {
-		_volStateMachine.transitTo(vol, event, null, _volumeDao);
+		//_volStateMachine.transitTo(vol, event, null, _volumeDao);
 		return _volumeDao.findById(vol.getId());
 	}
 

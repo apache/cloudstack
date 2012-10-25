@@ -79,7 +79,7 @@
     <cs.servlet.version>2.4</cs.servlet.version>
     <cs.jstl.version>1.2</cs.jstl.version>
     <cs.selenium.server.version>1.0-20081010.060147</cs.selenium.server.version>
-    <org.springframework.version>3.0.5.RELEASE</org.springframework.version>
+    <org.springframework.version>3.1.2.RELEASE</org.springframework.version>
     <skipTests>true</skipTests>
 
   </properties>

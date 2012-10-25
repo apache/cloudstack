@@ -20,21 +20,61 @@ package org.apache.cloudstack.storage.test;
 
 import static org.junit.Assert.*;
 
+import java.awt.List;
+import java.util.LinkedList;
+
+import javax.inject.Inject;
+
+import org.apache.cloudstack.storage.volume.VolumeMotionService;
 import org.apache.cloudstack.storage.volume.VolumeService;
+import org.apache.cloudstack.storage.volume.db.VolumeDao;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.mockito.Mockito.*;
+
+
+import com.cloud.utils.db.DB;
+
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations="storageContext.xml")
 public class volumeServiceTest {
 	@Autowired
 	protected VolumeService volService;
+	@Inject
+	protected VolumeDao volumeDao;
+	@Autowired
+	protected VolumeMotionService vmotion;
+ 
+	@Before
+	public void setUp() {
+		Mockito.when(vmotion.copyVolume(null, null)).thenReturn(false);
+	}
+	
 	@Test
+	@DB
 	public void test() {
-		assertTrue(volService.deleteVolume(1) == false);
+		assertTrue(volService.deleteVolume(1) != false);
+		assertNotNull(volumeDao);
+		//VolumeVO vol = new VolumeVO(Volume.Type.DATADISK, "test", 1, 2, 2, 1, 1);
+		//volumeDao.persist(vol);
+		/*
+		VolumeVO volume = new VolumeVO();
+		String name = "test";
+		long size = 100;
+		volume.setName(name);
+		volume.setSize(size);
+		volumeDao.persist(volume);
+		VolumeVO newVol = volumeDao.getVolumeByName(name);
+		assertTrue(newVol.getSize() == volume.getSize());
+		*/
+
 		fail("Not yet implemented");
 	}
 }

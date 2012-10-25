@@ -18,24 +18,34 @@
  */
 package org.apache.cloudstack.storage.volume;
 
+import org.apache.cloudstack.storage.volume.db.VolumeDao;
+import org.apache.cloudstack.storage.volume.db.VolumeVO;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.cloud.api.commands.CreateVolumeCmd;
+import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Volume;
+import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.upgrade.dao.VersionDao;
+import com.cloud.upgrade.dao.VersionVO;
+import com.cloud.utils.db.DB;
 
 @Component
 public class VolumeServiceImpl implements VolumeService {
-
+	@Autowired
+	VolumeDao _volumeDao;
 	@Override
 	public Volume createVolume(long volumeId) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
+	@DB
 	@Override
 	public boolean deleteVolume(long volumeId) {
-		// TODO Auto-generated method stub
-		return false;
+		VolumeVO vol = new VolumeVO(VolumeType.ROOT, "root", 1, 1,1 ,1,1);
+		_volumeDao.persist(vol);
+		return true;
 	}
 
 	@Override
@@ -61,5 +71,4 @@ public class VolumeServiceImpl implements VolumeService {
 		// TODO Auto-generated method stub
 		return false;
 	}
-
 }
