@@ -1620,11 +1620,13 @@
 											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = true; //because this checkbox's value == "on"
 											serviceCapabilityIndex++;
 										} 
-                    else if ((key == 'service.Lb.inlineModeDropdown') && ("Lb" in serviceProviderMap) && (serviceProviderMap.Lb	== "F5BigIp")) {                      							
-											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'lb';
-											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'InlineMode';
-											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = value;
-											serviceCapabilityIndex++;
+                    else if ((key == 'service.Lb.inlineModeDropdown') && ("Lb" in serviceProviderMap) && (serviceProviderMap.Lb	== "F5BigIp")) {   
+										  if(value == 'true') { //CS-16605 do not pass parameter if value is 'false'(side by side)
+												inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'lb';
+												inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'InlineMode';
+												inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = value;
+												serviceCapabilityIndex++;
+											}
 										} 										
 										else if ((key == 'service.Lb.lbIsolationDropdown') && ("Lb" in serviceProviderMap)) {											
 											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'lb';
