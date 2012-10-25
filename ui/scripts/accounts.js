@@ -180,48 +180,62 @@
               },
 
               action: function(args) {
-                var array1 = [];
-                array1.push("&username=" + todb(args.data.username));
-                var errorMsg = "";
+                var data = {
+								  username: args.data.username									
+								};															               
+               
                 var password = args.data.password;
-                if (md5Hashed)
-                  password = $.md5(password);
-								else
-                  password = todb(password);
-                array1.push("&password=" + password);
-
-                array1.push("&email=" + todb(args.data.email));
-                array1.push("&firstname=" + todb(args.data.firstname));
-                array1.push("&lastname=" + todb(args.data.lastname));
-
-                array1.push("&domainid=" + args.data.domainid);
+                if (md5Hashed) {
+                  password = $.md5(password);		
+                }									
+								$.extend(data, {
+                  password: password
+                });								
+								
+                $.extend(data, {
+								  email: args.data.email,
+                  firstname: args.data.firstname,
+                  lastname: args.data.lastname,
+                  domainid: args.data.domainid									
+								});								              
 
                 var account = args.data.account;
-                if(account == null || account.length == 0)
+                if(account == null || account.length == 0) {
                   account = args.data.username;
-                array1.push("&account=" + todb(account));
-
+								}
+								$.extend(data, {
+								  account: account
+								});
+               
                 var accountType = args.data.accounttype;							
-                if (args.data.accounttype == "1" && args.data.domainid != rootDomainId) //if account type is admin, but domain is not Root domain
-                  accountType = "2"; // Change accounttype from root-domain("1") to domain-admin("2")
-                array1.push("&accounttype=" + accountType);
+                if (args.data.accounttype == "1" && args.data.domainid != rootDomainId) { //if account type is admin, but domain is not Root domain
+                  accountType = "2"; // Change accounttype from root-domain("1") to domain-admin("2") 
+								}
+								$.extend(data, {
+								  accounttype: accountType
+								});
+               
+                if(args.data.timezone != null && args.data.timezone.length > 0) {
+								  $.extend(data, {
+									  timezone: args.data.timezone
+									});                  
+								}
 
-                if(args.data.timezone != null && args.data.timezone.length > 0)
-                  array1.push("&timezone=" + todb(args.data.timezone));
-
-                if(args.data.networkdomain != null && args.data.networkdomain.length > 0)
-                  array1.push("&networkdomain=" + todb(args.data.networkdomain));
+                if(args.data.networkdomain != null && args.data.networkdomain.length > 0) {
+								  $.extend(data, {
+									  networkdomain: args.data.networkdomain
+									});                  
+								}
 
                 $.ajax({
-                  url: createURL("createAccount" + array1.join("")),
-                  dataType: "json",
+                  url: createURL('createAccount'),
+                  data: data,
                   success: function(json) {
                     var item = json.createaccountresponse.account;
                     args.response.success({data:item});
                   },
-                  error: function(XMLHttpResponse) {
-                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                    args.response.error(errorMsg);
+                  error: function(XMLHttpResponse) {                    
+                    args.response.error(parseXMLHttpResponse(XMLHttpResponse));
                   }
                 });
               },
