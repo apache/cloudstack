@@ -26,6 +26,7 @@
       <version>5.1.21</version>
       <scope>runtime</scope>
     </dependency>
+
   </dependencies>
   <build>
     <defaultGoal>install</defaultGoal>
@@ -69,36 +70,37 @@
               </dependency>
               <dependency>
                 <groupId>org.apache.cloudstack</groupId>
-                <artifactId>cloud-server</artifactId>
-                <version>${project.version}</version>              
+                <artifactId>cloud-utils</artifactId>
+                <version>${project.version}</version>
               </dependency>
               <dependency>
                 <groupId>org.apache.cloudstack</groupId>
-                <artifactId>cloud-utils</artifactId>
-                <version>${project.version}</version>              
+                <artifactId>cloud-server</artifactId>
+                <version>${project.version}</version>
               </dependency>
             </dependencies>
             <executions>
               <execution>
-              <phase>package</phase>
+                <phase>package</phase>
                 <id>create-database-2</id>
                 <goals>
-                  <goal>exec</goal>
+                  <goal>java</goal>
                 </goals>
               </execution>
             </executions>
             <configuration>
-              <executable>java</executable>
-              <arguments>
-              <argument>-classpath</argument>
-              <classpath><dependency>org.apache.cloudstack:cloud-server</dependency></classpath>
-              <argument>com.cloud.upgrade.DatabaseCreator</argument>
-              </arguments>
-            </configuration>       
+              <includeProjectDependencies>false</includeProjectDependencies>
+              <includePluginDependencies>true</includePluginDependencies>
+              <executableDependency>
+                <groupId>org.apache.cloudstack</groupId>
+                <artifactId>cloud-server</artifactId>
+              </executableDependency>
+              <mainClass>com.cloud.upgrade.DatabaseCreator</mainClass>
+            </configuration>
           </plugin>
         </plugins>
       </build>
-	</profile>
+    </profile>
     <profile>
       <id>deploydb</id>
       <activation>
