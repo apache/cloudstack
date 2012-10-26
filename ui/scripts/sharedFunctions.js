@@ -264,14 +264,18 @@ cloudStack.actionFilter = {
   guestNetwork: function(args) {    
     var jsonObj = args.context.item;
 		var allowedActions = [];
-
+    
 		if(jsonObj.type == 'Isolated') {
 		  allowedActions.push('edit');		//only Isolated network can be upgraded
+			allowedActions.push('restart');   
+		  allowedActions.push('remove');
 		}
-		
-		allowedActions.push('restart');   
-		allowedActions.push('remove');
-		
+		else if(jsonObj.type == 'Shared') {
+		  if(isAdmin()) {
+				allowedActions.push('restart');   
+				allowedActions.push('remove');
+			}
+		}		
 		return allowedActions;
 	}
 }
