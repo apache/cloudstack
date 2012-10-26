@@ -424,9 +424,14 @@
                 },
                 action: function(args) {
                   var accountObj = args.context.accounts[0];
+									var data = {
+									  domainid: accountObj.domainid,
+										account: accountObj.name
+									};
+									
                   $.ajax({
-                    url: createURL("updateResourceCount&domainid=" + accountObj.domainid + "&account=" + accountObj.name),
-                    dataType: "json",
+                    url: createURL('updateResourceCount'),
+                    data: data,
                     async: true,
                     success: function(json) {
                       //var resourcecounts= json.updateresourcecountresponse.resourcecount;   //do nothing
@@ -456,9 +461,15 @@
                 },
                 action: function(args) {
                   var accountObj = args.context.accounts[0];
+									var data = {
+									  lock: false,
+										domainid: accountObj.domainid,
+										account: accountObj.name
+									};
+									
                   $.ajax({
-                    url: createURL("disableAccount&lock=false&domainid=" + accountObj.domainid + "&account=" + accountObj.name),
-                    dataType: "json",
+                    url: createURL('disableAccount'),
+                    data: data,
                     async: true,
                     success: function(json) {
                       var jid = json.disableaccountresponse.jobid;
@@ -494,9 +505,15 @@
                 },
                 action: function(args) {
                   var accountObj = args.context.accounts[0];
+									var data = {
+									  lock: true,
+										domainid: accountObj.domainid,
+										account: accountObj.name
+									};
+									
                   $.ajax({
-                    url: createURL("disableAccount&lock=true&domainid=" + accountObj.domainid + "&account=" + accountObj.name),
-                    dataType: "json",
+                    url: createURL('disableAccount'),
+                    data: data,
                     async: true,
                     success: function(json) {
                       var jid = json.disableaccountresponse.jobid;
@@ -532,9 +549,13 @@
                 },
                 action: function(args) {
                   var accountObj = args.context.accounts[0];
+									var data = {
+									  domainid: accountObj.domainid,
+										account: accountObj.name
+									};									
                   $.ajax({
-                    url: createURL("enableAccount&domainid=" + accountObj.domainid + "&account=" + accountObj.name),
-                    dataType: "json",
+                    url: createURL('enableAccount'),
+                    data: data,
                     async: true,
                     success: function(json) {
                       args.response.success({data: json.enableaccountresponse.account});
@@ -561,9 +582,12 @@
                   }
                 },
                 action: function(args) {
+								  var data = {
+									  id: args.context.accounts[0].id
+									};								
                   $.ajax({
-                    url: createURL("deleteAccount&id=" + args.context.accounts[0].id),
-                    dataType: "json",
+                    url: createURL('deleteAccount'),
+                    data: data,
                     async: true,
                     success: function(json) {
                       var jid = json.deleteaccountresponse.jobid;
@@ -694,15 +718,21 @@
                 ],
 
                 dataProvider: function(args) {
+								  var data = {
+									  id: args.context.accounts[0].id
+									};								
 									$.ajax({
-										url: createURL("listAccounts&id=" + args.context.accounts[0].id),
-										dataType: "json",										
+										url: createURL('listAccounts'),
+										data: data,					
 										success: function(json) {		
 											var accountObj = json.listaccountsresponse.account[0];
-
+                      var data = {
+											  domainid: accountObj.domainid,
+												account: accountObj.name
+											};
 											$.ajax({
-												url: createURL("listResourceLimits&domainid=" + accountObj.domainid + "&account=" + todb(accountObj.name)),
-												dataType: "json",												
+												url: createURL('listResourceLimits'),
+												data: data,											
 												success: function(json) {
 													var limits = json.listresourcelimitsresponse.resourcelimit;													
 													if (limits != null) {
