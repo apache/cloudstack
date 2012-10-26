@@ -623,31 +623,9 @@
           },
 
 					advSearchFields: {
-					  name: { label: 'Name' },
-						zoneid: { 
-						  label: 'Zone',							
-              select: function(args) {							  					
-								$.ajax({
-									url: createURL('listZones'),
-									data: {
-									  listAll: true
-									},
-									success: function(json) {									  
-										var zones = json.listzonesresponse.zone;
-
-										args.response.success({
-											data: $.map(zones, function(zone) {
-												return {
-													id: zone.id,
-													description: zone.name
-												};
-											})
-										});
-									}
-								});
-							}						
-						},	
-            
+					  name: { label: 'label.name' },						
+            displaytext: { label: 'label.display.text' },
+						
 						domainid: {					
 							label: 'Domain',					
 							select: function(args) {
@@ -694,9 +672,7 @@
 								else
 									return true;
 							}			
-						},						
-						tagKey: { label: 'Tag Key' },
-						tagValue: { label: 'Tag Value' }						
+						}			
 					},
 					
           dataProvider: function(args) {
