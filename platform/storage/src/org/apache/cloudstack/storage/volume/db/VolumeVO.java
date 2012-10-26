@@ -32,7 +32,8 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 import org.apache.cloudstack.storage.volume.VolumeState;
-import org.apache.cloudstack.storage.volume.VolumeType;
+import org.apache.cloudstack.storage.volume.disktype.Unknown;
+import org.apache.cloudstack.storage.volume.type.VolumeType;
 
 import com.cloud.api.Identity;
 import com.cloud.storage.Storage.StoragePoolType;
@@ -104,13 +105,15 @@ public class VolumeVO implements Identity {
  String firstSnapshotBackupUuid;
 
  @Column(name = "volume_type")
- @Enumerated(EnumType.STRING)
- VolumeType volumeType = VolumeType.UNKNOWN;
+ String volumeType = "UNKNOWN";
 
  @Column(name = "pool_type")
  @Enumerated(EnumType.STRING)
  StoragePoolType poolType;
-
+ 
+ @Column(name = "disk_type")
+ String diskType = new Unknown().toString();
+ 
  @Column(name = GenericDao.REMOVED_COLUMN)
  Date removed;
 
@@ -139,7 +142,7 @@ public class VolumeVO implements Identity {
  
  // Real Constructor
  public VolumeVO(VolumeType type, String name, long dcId, long domainId, long accountId, long diskOfferingId, long size) {
-     this.volumeType = type;
+     this.volumeType = type.toString();
      this.name = name;
      this.dataCenterId = dcId;
      this.accountId = accountId;
@@ -150,7 +153,7 @@ public class VolumeVO implements Identity {
      this.uuid = UUID.randomUUID().toString();
  }
 
- public VolumeVO(String name, long dcId, long podId, long accountId, long domainId, Long instanceId, String folder, String path, long size, VolumeType vType) {
+ public VolumeVO(String name, long dcId, long podId, long accountId, long domainId, Long instanceId, String folder, String path, long size, String vType) {
      this.name = name;
      this.accountId = accountId;
      this.domainId = domainId;
@@ -160,7 +163,7 @@ public class VolumeVO implements Identity {
      this.size = size;
      this.podId = podId;
      this.dataCenterId = dcId;
-     this.volumeType = vType;
+     this.volumeType = vType.toString();
      this.state = VolumeState.Allocated;
      this.recreatable = false;
      this.uuid = UUID.randomUUID().toString();
@@ -267,7 +270,7 @@ public class VolumeVO implements Identity {
      this.deviceId = deviceId;
  }
 
- public VolumeType getVolumeType() {
+ public String getVolumeType() {
      return volumeType;
  }
 
@@ -311,7 +314,7 @@ public class VolumeVO implements Identity {
      this.dataCenterId = dataCenterId;
  }
 
- public void setVolumeType(VolumeType type) {
+ public void setVolumeType(String type) {
      volumeType = type;
  }
 
@@ -429,6 +432,14 @@ public class VolumeVO implements Identity {
  
  public void setUuid(String uuid) {
  	this.uuid = uuid;
+ }
+ 
+ public String getDiskType() {
+	 return diskType;
+ }
+ 
+ public void setDiskType(String type) {
+	 diskType = type;
  }
 }
 

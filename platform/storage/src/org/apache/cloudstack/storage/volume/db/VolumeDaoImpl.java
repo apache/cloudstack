@@ -25,9 +25,11 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import org.apache.cloudstack.storage.volume.Volume;
 import org.apache.cloudstack.storage.volume.VolumeEvent;
 import org.apache.cloudstack.storage.volume.VolumeState;
-import org.apache.cloudstack.storage.volume.VolumeType;
+import org.apache.cloudstack.storage.volume.type.RootDisk;
+import org.apache.cloudstack.storage.volume.type.VolumeType;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -104,7 +106,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("poolId", poolId);
         sc.setParameters("notDestroyed", VolumeState.Destroy);
-        sc.setParameters("vType", VolumeType.ROOT.toString());
+        sc.setParameters("vType", new RootDisk().toString());
 	    return listBy(sc);
 	}
     
@@ -146,7 +148,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
 		SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
 		sc.setParameters("instanceId", instanceId);
 		sc.setParameters("state", VolumeState.Ready);
-		sc.setParameters("vType", VolumeType.ROOT);		
+		sc.setParameters("vType", new RootDisk().toString());		
 		return listBy(sc);
 	}
 	
@@ -412,5 +414,12 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         boolean result = super.remove(id);
         txn.commit();
         return result;
+    }
+    
+    @Override
+    @DB
+    public VolumeVO allocVolume(long size, VolumeType type) {
+    	VolumeVO vol = new VolumeVO();
+    	return vol;
     }
 }

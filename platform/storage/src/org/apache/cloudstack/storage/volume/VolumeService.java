@@ -18,11 +18,15 @@
  */
 package org.apache.cloudstack.storage.volume;
 
-
-import com.cloud.storage.Volume;
+import org.apache.cloudstack.storage.volume.type.VolumeType;
 
 public interface VolumeService {
 
+	/**
+	 * 
+	 */
+	Volume allocateVolumeInDb(long size, VolumeType type);
+	
     /**
      * Creates the volume based on the given criteria
      * 

@@ -28,6 +28,8 @@ import javax.inject.Inject;
 import org.apache.cloudstack.storage.volume.VolumeMotionService;
 import org.apache.cloudstack.storage.volume.VolumeService;
 import org.apache.cloudstack.storage.volume.db.VolumeDao;
+import org.apache.cloudstack.storage.volume.disktype.VolumeDiskTypeHelper;
+import org.apache.cloudstack.storage.volume.type.VolumeTypeHelper;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -51,13 +53,15 @@ public class volumeServiceTest {
 	protected VolumeDao volumeDao;
 	@Autowired
 	protected VolumeMotionService vmotion;
- 
+	@Autowired
+	protected VolumeTypeHelper volTypeHelper;
+	@Inject
+	protected VolumeDiskTypeHelper volDiskTypeHelper;
 	@Before
 	public void setUp() {
 		Mockito.when(vmotion.copyVolume(null, null)).thenReturn(false);
 	}
 	
-	@Test
 	@DB
 	public void test() {
 		assertTrue(volService.deleteVolume(1) != false);
@@ -76,5 +80,11 @@ public class volumeServiceTest {
 		*/
 
 		fail("Not yet implemented");
+	}
+	
+	@Test
+	public void test1() {
+		System.out.println(volTypeHelper.getType("Root"));
+		System.out.println(volDiskTypeHelper.getDiskType("vmdk"));
 	}
 }

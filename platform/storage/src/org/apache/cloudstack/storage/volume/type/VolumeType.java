@@ -16,12 +16,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.volume;
+package org.apache.cloudstack.storage.volume.type;
 
-public enum VolumeType {
-	UNKNOWN, 
-	ROOT, 
-	SWAP, 
-	DATADISK, 
-	ISO
+public interface VolumeType {
+	boolean equals(String type);
 }
