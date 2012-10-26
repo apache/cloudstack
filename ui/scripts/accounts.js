@@ -251,23 +251,18 @@
           },
 
           dataProvider: function(args) {
-            var array1 = [];
-            if(args.filterBy != null) {
-              if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
-                switch(args.filterBy.search.by) {
-                case "name":
-                  if(args.filterBy.search.value.length > 0)
-                    array1.push("&keyword=" + args.filterBy.search.value);
-                  break;
-                }
-              }
-            }
-
-            if("domains" in args.context)
-              array1.push("&domainid=" + args.context.domains[0].id);
+            var data = {};
+						listViewDataProvider(args, data);			
+						
+            if("domains" in args.context) {
+						  $.extend(data, {
+							  domainid: args.context.domains[0].id
+							});
+						}
+						
             $.ajax({
-              url: createURL("listAccounts" + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + '&listAll=true'),
-              dataType: "json",
+              url: createURL('listAccounts'),
+              data: data,
               async: true,
               success: function(json) {
                 var items = json.listaccountsresponse.account;
@@ -287,31 +282,39 @@
               edit: {
                 label: 'message.edit.account',
                 compactLabel: 'label.edit',
-                action: function(args) {
-                  var errorMsg = "";
+                action: function(args) {                  
                   var accountObj = args.context.accounts[0];
 
-                  var array1 = [];
-                  array1.push("&newname=" + todb(args.data.name));
-                  array1.push("&networkdomain=" + todb(args.data.networkdomain));
+                  var data = {
+									  domainid: accountObj.domainid,
+										account: accountObj.name,
+										newname: args.data.name,
+										networkdomain: args.data.networkdomain
+									};
+                
                   $.ajax({
-                    url: createURL("updateAccount&domainid=" + accountObj.domainid + "&account=" + accountObj.name + array1.join("")),
-                    dataType: "json",
+                    url: createURL('updateAccount'),
+                    data: data,
                     async: false,
                     success: function(json) {
                       accountObj = json.updateaccountresponse.account;
                     },
                     error: function(json) {
-                      errorMsg = parseXMLHttpResponse(json);
+                      var errorMsg = parseXMLHttpResponse(json);
                       args.response.error(errorMsg);
-                    }
- 
+                    } 
                   });
 
 									if(args.data.vmLimit != null) {
+									  var data = {
+										  resourceType: 0,
+											max: args.data.vmLimit,
+											domainid: accountObj.domainid,
+											account: accountObj.name											
+										};									
 										$.ajax({
-											url: createURL("updateResourceLimit&resourceType=0&max=" + todb(args.data.vmLimit) + "&account=" + accountObj.name + "&domainid=" + accountObj.domainid),
-											dataType: "json",
+											url: createURL('updateResourceLimit'),
+											data: data,
 											async: false,
 											success: function(json) {
 												accountObj["vmLimit"] = args.data.vmLimit;
@@ -320,9 +323,15 @@
 									}
 
 									if(args.data.ipLimit != null) {
+									  var data = {
+										  resourceType: 1,
+											max: args.data.ipLimit,
+											domainid: accountObj.domainid,
+											account: accountObj.name		
+										};									
 										$.ajax({
-											url: createURL("updateResourceLimit&resourceType=1&max=" + todb(args.data.ipLimit) + "&account=" + accountObj.name + "&domainid=" + accountObj.domainid),
-											dataType: "json",
+											url: createURL('updateResourceLimit'),
+											data: data,
 											async: false,
 											success: function(json) {
 												accountObj["ipLimit"] = args.data.ipLimit;
@@ -331,9 +340,15 @@
 									}
 
 									if(args.data.volumeLimit != null) {
+									  var data = {
+										  resourceType: 2,
+											max: args.data.volumeLimit,
+											domainid: accountObj.domainid,
+											account: accountObj.name	
+										};									
 										$.ajax({
-											url: createURL("updateResourceLimit&resourceType=2&max=" + todb(args.data.volumeLimit) + "&account=" + accountObj.name + "&domainid=" + accountObj.domainid),
-											dataType: "json",
+											url: createURL('updateResourceLimit'),
+											data: data,
 											async: false,
 											success: function(json) {
 												accountObj["volumeLimit"] = args.data.volumeLimit;
@@ -342,9 +357,15 @@
 									}
 
 									if(args.data.snapshotLimit != null) {
+									  var data = {
+										  resourceType: 3,
+											max: args.data.snapshotLimit,
+											domainid: accountObj.domainid,
+											account: accountObj.name	
+										};									
 										$.ajax({
-											url: createURL("updateResourceLimit&resourceType=3&max=" + todb(args.data.snapshotLimit) + "&account=" + accountObj.name + "&domainid=" + accountObj.domainid),
-											dataType: "json",
+											url: createURL('updateResourceLimit'),
+											data: data,
 											async: false,
 											success: function(json) {
 												accountObj["snapshotLimit"] = args.data.snapshotLimit;
@@ -353,9 +374,15 @@
 									}
  
                   if(args.data.templateLimit != null) {
+									  var data = {
+										  resourceType: 4,
+											max: args.data.templateLimit,
+											domainid: accountObj.domainid,
+											account: accountObj.name	
+										};									
 										$.ajax({
-											url: createURL("updateResourceLimit&resourceType=4&max=" + todb(args.data.templateLimit) + "&account=" + accountObj.name + "&domainid=" + accountObj.domainid),
-											dataType: "json",
+											url: createURL('updateResourceLimit'),
+											data: data,
 											async: false,
 											success: function(json) {
 												accountObj["templateLimit"] = args.data.templateLimit;
@@ -364,9 +391,16 @@
                   }
 									
 									if(args.data.vpcLimit != null) {
+									  var data = {
+										  resourceType: 7,
+											max: args.data.vpcLimit,
+											domainid: accountObj.domainid,
+											account: accountObj.name	
+										};
+									
 										$.ajax({
-											url: createURL("updateResourceLimit&resourceType=7&max=" + todb(args.data.vpcLimit) + "&account=" + accountObj.name + "&domainid=" + accountObj.domainid),
-											dataType: "json",
+											url: createURL('updateResourceLimit'),
+											data: data,
 											async: false,
 											success: function(json) {
 												accountObj["vpcLimit"] = args.data.vpcLimit;
@@ -374,7 +408,6 @@
 										});
 									}
 
-                  if(errorMsg == "")
                   args.response.success({data: accountObj});
                 }
               },
