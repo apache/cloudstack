@@ -8271,6 +8271,16 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   background-color: #35404B;
 }
 
+.system-dashboard.zone .status_box li .icon {
+  background: url(../images/infrastructure-icons.png) no-repeat 0px 0px;
+  padding: 65px 65px 5px;
+  /*+placement:shift 23px 24px;*/
+  position: relative;
+  left: 23px;
+  top: 24px;
+  position: absolute;
+}
+
 .system-dashboard .status_box li span {
   color: #FFFFFF;
   /*+text-shadow:0px 1px 1px #000000;*/
@@ -8488,6 +8498,39 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   float: left;
   margin: -3px 0 6px 13px;
   margin: 8px 0 0 9px;
+}
+
+/** Infrastructure icons*/
+.system-dashboard.zone .status_box li.zones .icon {
+  background-position: -36px -105px;
+}
+
+.system-dashboard.zone .status_box li.pods .icon {
+  background-position: -229px -105px;
+}
+
+.system-dashboard.zone .status_box li.clusters .icon {
+  background-position: -411px -96px;
+}
+
+.system-dashboard.zone .status_box li.hosts .icon {
+  background-position: -601px -102px;
+}
+
+.system-dashboard.zone .status_box li.primary-storage .icon {
+  background-position: -36px -404px;
+}
+
+.system-dashboard.zone .status_box li.secondary-storage .icon {
+  background-position: -219px -404px;
+}
+
+.system-dashboard.zone .status_box li.system-vms .icon {
+  background-position: -408px -399px;
+}
+
+.system-dashboard.zone .status_box li.virtual-routers .icon {
+  background-position: -601px -400px;
 }
 
 /*Projects
@@ -10516,15 +10559,6 @@ div.ui-dialog div.autoscaler div.scale-down-policy div.expand {
 
 div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-item div.name label {
   font-size: 11px;
-}
-
-/*CS-16413: Disable infrastructure totals*/
-.system-dashboard.zone .status_box li span.header {
-  display: block;
-  width: 156px;
-  font-size: 16px;
-  text-align: center;
-  top: 31px;
 }
 
 /*List state BG colors*/

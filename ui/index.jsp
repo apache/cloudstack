@@ -952,57 +952,65 @@ under the License.
             <span><fmt:message key="label.menu.infrastructure"/></span>
           </div>
           <ul class="status_box good">
-            <li class="block">
+            <li class="block zones">
               <span class="header"><fmt:message key="label.zones"/></span>
+              <span class="icon">&nbsp;</span>
               <span class="overview total" data-item="zoneCount"></span>
               <span class="button view-all zones"
                     view-all-title="<fmt:message key="label.zones"/>"
                     view-all-target="zones"><fmt:message key="label.view.all"/></span>
             </li>
-            <li class="block">
+            <li class="block pods">
               <span class="header"><fmt:message key="label.pods"/></span>
+              <span class="icon">&nbsp;</span>
               <span class="overview total" data-item="podCount"></span>
               <span class="button view-all pods"
                     view-all-title="<fmt:message key="label.pods"/>"
                     view-all-target="pods"><fmt:message key="label.view.all"/></span>
             </li>
-            <li class="block">
+            <li class="block clusters">
               <span class="header"><fmt:message key="label.clusters"/></span>
+              <span class="icon">&nbsp;</span>
               <span class="overview total" data-item="clusterCount"></span>
               <span class="button view-all clusters"
                     view-all-title="<fmt:message key="label.clusters"/>"
                     view-all-target="clusters"><fmt:message key="label.view.all"/></span>
             </li>
-            <li class="block last">
+            <li class="block last hosts">
               <span class="header"><fmt:message key="label.hosts"/></span>
+              <span class="icon">&nbsp;</span>
               <span class="overview total" data-item="hostCount"></span>
               <span class="button view-all hosts"
                     view-all-title="<fmt:message key="label.hosts"/>"
                     view-all-target="hosts"><fmt:message key="label.view.all"/></span>
             </li>
-            <li class="block">
+            <li class="block primary-storage">
               <span class="header"><fmt:message key="label.primary.storage"/></span>
+              <span class="icon">&nbsp;</span>
               <span class="overview total" data-item="primaryStorageCount"></span>
               <span class="button view-all zones"
                     view-all-title="<fmt:message key="label.primary.storage"/>"
                     view-all-target="primaryStorage"><fmt:message key="label.view.all"/></span>
             </li>
-            <li class="block">
+            <li class="block secondary-storage">
               <span class="header"><fmt:message key="label.secondary.storage"/></span>
+              <span class="icon">&nbsp;</span>
               <span class="overview total" data-item="secondaryStorageCount"></span>
               <span class="button view-all pods"
                     view-all-title="<fmt:message key="label.secondary.storage"/>"
                     view-all-target="secondaryStorage"><fmt:message key="label.view.all"/></span>
             </li>
-            <li class="block">
+            <li class="block system-vms">
               <span class="header"><fmt:message key="label.system.vms"/></span>
+              <span class="icon">&nbsp;</span>
               <span class="overview total" data-item="systemVmCount"></span>
               <span class="button view-all clusters"
                     view-all-title="<fmt:message key="label.system.vms"/>"
                     view-all-target="systemVms"><fmt:message key="label.view.all"/></span>
             </li>
-            <li class="block last">
+            <li class="block last virtual-routers">
               <span class="header"><fmt:message key="label.virtual.routers"/></span>
+              <span class="icon">&nbsp;</span>
               <span class="overview total" data-item="virtualRouterCount"></span>
               <span class="button view-all hosts"
                     view-all-title="<fmt:message key="label.virtual.routers"/>"
