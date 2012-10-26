@@ -14,27 +14,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.utils.db;
+package com.cloud.utils;
 
-
-import javax.annotation.PostConstruct;
-
-import junit.framework.Assert;
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
-@Component
-@DB
-public class DbAnnotatedBase {
-    private static final Logger s_logger = Logger.getLogger(DbAnnotatedBase.class);
-
-    @PostConstruct
-    public void initTest() {
-    	Assert.assertTrue(true);
-    }
-    
-    public void MethodWithClassDbAnnotated() {
-    	s_logger.info("called");
-    }
+public interface DummyInterface {
+	void foo();
 }

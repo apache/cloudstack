@@ -14,27 +14,23 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.utils.db;
+package com.cloud.utils;
 
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import javax.annotation.PostConstruct;
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(locations="classpath:/com/cloud/utils/QualifierTestContext.xml")
+public class QualifierTest {
 
-import junit.framework.Assert;
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
-@Component
-@DB
-public class DbAnnotatedBase {
-    private static final Logger s_logger = Logger.getLogger(DbAnnotatedBase.class);
-
-    @PostConstruct
-    public void initTest() {
-    	Assert.assertTrue(true);
-    }
-    
-    public void MethodWithClassDbAnnotated() {
-    	s_logger.info("called");
-    }
+	@Autowired
+	DummyInterface _dummy;
+	
+	@Test
+	public void test() {
+		_dummy.foo();
+	}
 }
