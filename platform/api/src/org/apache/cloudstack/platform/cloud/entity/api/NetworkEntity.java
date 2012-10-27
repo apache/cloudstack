@@ -23,4 +23,5 @@ import org.apache.cloudstack.platform.entity.api.CloudEntity;
 import com.cloud.network.Network;
 
 public interface NetworkEntity extends CloudEntity, Network {
+    void connectTo(NetworkEntity network);
 }

@@ -110,11 +110,11 @@ public interface VirtualMachineEntity extends VirtualMachine, CloudEntity {
      * @param network network to attach
      * @param deviceId device id to use when a nic is created
      */
-    void connectTo(NetworkEntity network, short deviceId);
+    void connectTo(NetworkEntity network, short nicId);
 
     /**
      * Disconnect the VM from this network
      * @param netowrk network to disconnect from
      */
-    void disconnectFrom(NetworkEntity netowrk);
+    void disconnectFrom(NetworkEntity netowrk, short nicId);
 }

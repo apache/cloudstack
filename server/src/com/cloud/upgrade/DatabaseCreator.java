@@ -26,11 +26,14 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.component.SystemIntegrityChecker;
 import com.cloud.utils.db.ScriptRunner;
 import com.cloud.utils.db.Transaction;
 
 /**
- * Creates the CloudStack Database
+ * Creates the CloudStack Database by using the 4.0 schema and apply 
+ * upgrade steps to it.
  */
 public class DatabaseCreator {
     protected static void printHelp(String cmd) {
@@ -42,46 +45,70 @@ public class DatabaseCreator {
     }
 
     public static void main(String[] args) {
-        System.out.println("Hello world!");
-    }
-    public static void main2(String[] args) {
         if (args.length < 2) {
             printHelp("DatabaseCreator");
             System.exit(1);
         }
 
-        File cleanScript = PropertiesUtil.findConfigFile(args[0]);
-        if (cleanScript == null) {
-            System.err.println("Unable to find " + args[0]);
-            printHelp("DatabaseCreator");
-            System.exit(1);
-        }
+        for (int i = 0; i < args.length; i++) {
 
-        Connection conn = Transaction.getStandaloneConnection();
+            if (args[i].endsWith("sql")) {
 
-        ScriptRunner runner = new ScriptRunner(conn, true, true);
-        FileReader reader = null;
-        try {
-            reader = new FileReader(cleanScript);
-        } catch (FileNotFoundException e) {
-            System.err.println("Unable to read " + args[0] + ": " + e.getMessage());
-            System.exit(1);
-        } 
-        try {
-            runner.runScript(reader);
-        } catch (IOException e) {
-            System.err.println("Unable to read " + args[0] + ": " + e.getMessage());
-            System.exit(1);
-        } catch (SQLException e) {
-            System.err.println("Unable to execute " + args[0] + ": " + e.getMessage());
-            System.exit(1);
-        }
+                File sqlScript = PropertiesUtil.findConfigFile(args[i]);
+                if (sqlScript == null) {
+                    System.err.println("Unable to find " + args[i]);
+                    printHelp("DatabaseCreator");
+                    System.exit(1);
+                }
 
-        try {
-            conn.close();
-        } catch (SQLException e) {
-            System.err.println("Unable to close DB connection: " + e.getMessage());
+                System.out.println("=============> Processing SQL file at " + sqlScript.getAbsolutePath());
+
+                Connection conn = Transaction.getStandaloneConnection();
+                try {
+
+                    ScriptRunner runner = new ScriptRunner(conn, false, true);
+                    FileReader reader = null;
+                    try {
+                        reader = new FileReader(sqlScript);
+                    } catch (FileNotFoundException e) {
+                        System.err.println("Unable to read " + args[i] + ": " + e.getMessage());
+                        System.exit(1);
+                    } 
+                    try {
+                        runner.runScript(reader);
+                    } catch (IOException e) {
+                        System.err.println("Unable to read " + args[i] + ": " + e.getMessage());
+                        System.exit(1);
+                    } catch (SQLException e) {
+                        System.err.println("Unable to execute " + args[i] + ": " + e.getMessage());
+                        System.exit(1);
+                    }
+                } finally {
+
+                    try {
+                        conn.close();
+                    } catch (SQLException e) {
+                        System.err.println("Unable to close DB connection: " + e.getMessage());
+                    }
+                }
+
+            } else {
+                System.out.println("=============> Processing upgrade: " + args[i]);
+                Class<?> clazz = null;
+                try {
+                    clazz = Class.forName(args[i]);
+                    if (!SystemIntegrityChecker.class.isAssignableFrom(clazz)) {
+                        System.err.println("The class must be of SystemIntegrityChecker: " + clazz.getName());
+                        System.exit(1);
+                    }
+                } catch (ClassNotFoundException e) {
+                    System.err.println("Unable to find " + args[i] + ": " + e.getMessage());
+                    System.exit(1);
+                }
+
+                SystemIntegrityChecker checker = (SystemIntegrityChecker)ComponentLocator.inject(clazz);
+                checker.check();
+            }
         }
     }
-
 }
