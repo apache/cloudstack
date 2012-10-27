@@ -18,6 +18,9 @@
  */
 package org.apache.cloudstack.storage.volume;
 
+import javax.inject.Inject;
+
+import org.apache.cloudstack.storage.volume.db.VolumeDao;
 import org.apache.cloudstack.storage.volume.type.VolumeType;
 import org.springframework.stereotype.Service;
 
@@ -25,8 +28,10 @@ import com.cloud.utils.db.DB;
 
 @Service
 public class VolumeServiceImpl implements VolumeService {
+	@Inject
+	VolumeDao volDao;
 	@Override
-	public Volume createVolume(long volumeId) {
+	public Volume createVolume(long volumeId, long dataStoreId) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -62,8 +67,8 @@ public class VolumeServiceImpl implements VolumeService {
 	}
 
 	@Override
-	public Volume allocateVolumeInDb(long size, VolumeType type) {
-		// TODO Auto-generated method stub
+	public Volume allocateVolumeInDb(long size, VolumeType type, String volName, Long templateId) {
+		volDao.allocVolume(size, type, volName, templateId);
 		return null;
 	}
 }

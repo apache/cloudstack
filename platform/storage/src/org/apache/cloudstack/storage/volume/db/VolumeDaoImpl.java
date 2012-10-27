@@ -28,6 +28,7 @@ import javax.ejb.Local;
 import org.apache.cloudstack.storage.volume.Volume;
 import org.apache.cloudstack.storage.volume.VolumeEvent;
 import org.apache.cloudstack.storage.volume.VolumeState;
+import org.apache.cloudstack.storage.volume.disktype.VolumeDiskType;
 import org.apache.cloudstack.storage.volume.type.RootDisk;
 import org.apache.cloudstack.storage.volume.type.VolumeType;
 import org.apache.log4j.Logger;
@@ -418,8 +419,9 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     
     @Override
     @DB
-    public VolumeVO allocVolume(long size, VolumeType type) {
-    	VolumeVO vol = new VolumeVO();
+    public VolumeVO allocVolume(long size, VolumeType type, String volName, Long templateId) {
+    	VolumeVO vol = new VolumeVO(size, type.toString(), volName, templateId);
+    	vol = this.persist(vol);
     	return vol;
     }
 }

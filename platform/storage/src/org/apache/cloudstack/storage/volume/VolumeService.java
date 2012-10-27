@@ -25,7 +25,7 @@ public interface VolumeService {
 	/**
 	 * 
 	 */
-	Volume allocateVolumeInDb(long size, VolumeType type);
+	Volume allocateVolumeInDb(long size, VolumeType type,String volName, Long templateId);
 	
     /**
      * Creates the volume based on the given criteria
@@ -34,7 +34,7 @@ public interface VolumeService {
      *            
      * @return the volume object
      */
-    Volume createVolume(long volumeId);
+    Volume createVolume(long volumeId, long dataStoreId);
 
     /**
      * Delete volume

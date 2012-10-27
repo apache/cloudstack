@@ -141,38 +141,17 @@ public class VolumeVO implements Identity {
  String reservationId;
  
  // Real Constructor
- public VolumeVO(VolumeType type, String name, long dcId, long domainId, long accountId, long diskOfferingId, long size) {
+ public VolumeVO(long size, String type, String name, Long templateId) {
      this.volumeType = type.toString();
-     this.name = name;
-     this.dataCenterId = dcId;
-     this.accountId = accountId;
-     this.domainId = domainId;
      this.size = size;
-     this.diskOfferingId = diskOfferingId;
-     this.state = VolumeState.Allocated;
-     this.uuid = UUID.randomUUID().toString();
- }
-
- public VolumeVO(String name, long dcId, long podId, long accountId, long domainId, Long instanceId, String folder, String path, long size, String vType) {
      this.name = name;
-     this.accountId = accountId;
-     this.domainId = domainId;
-     this.instanceId = instanceId;
-     this.folder = folder;
-     this.path = path;
-     this.size = size;
-     this.podId = podId;
-     this.dataCenterId = dcId;
-     this.volumeType = vType.toString();
-     this.state = VolumeState.Allocated;
-     this.recreatable = false;
+     this.templateId = templateId;
      this.uuid = UUID.randomUUID().toString();
  }
 
  // Copy Constructor
  public VolumeVO(VolumeVO that) {
-     this(that.getName(), that.getDataCenterId(), that.getPodId(), that.getAccountId(), that.getDomainId(), that.getInstanceId(), that.getFolder(), that.getPath(), that.getSize(), that
-             .getVolumeType());
+     this(that.getSize(), that.getVolumeType(), that.getName(), that.getTemplateId());
      this.recreatable = that.isRecreatable();
      this.state = that.getState();
      this.size = that.getSize();

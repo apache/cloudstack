@@ -21,11 +21,13 @@ package org.apache.cloudstack.storage.manager;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
+
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.StoragePool;
 
-public interface StoragePoolService {
-	StoragePool addStoragePool(long zoneId, long podId, long clusterId, long hostId, 
+public interface PrimaryDataStoreManager {
+	PrimaryDataStore addDataStore(long zoneId, long podId, long clusterId, long hostId, 
 			String URI, 
 			String storageType,
 			String poolName,
@@ -36,4 +38,5 @@ public interface StoragePoolService {
 	void disableStoragePool(long poolId);
 	Map<String, List<String>> getSupportedPrimaryStorages(long zoneId, HypervisorType hypervisor);
 	Map<String, List<String>> getSupportedSecondaryStorages(long zoneId);
+	PrimaryDataStore getDataStore(String id);
 }

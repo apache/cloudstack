@@ -21,6 +21,7 @@ import java.util.List;
 import org.apache.cloudstack.storage.volume.Volume;
 import org.apache.cloudstack.storage.volume.VolumeEvent;
 import org.apache.cloudstack.storage.volume.VolumeState;
+import org.apache.cloudstack.storage.volume.disktype.VolumeDiskType;
 import org.apache.cloudstack.storage.volume.type.VolumeType;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -77,5 +78,5 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<VolumeSt
     
     List<Long> listPoolIdsByVolumeCount(long dcId, Long podId, Long clusterId, long accountId);
 
-    VolumeVO allocVolume(long size, VolumeType type);
+    VolumeVO allocVolume(long size, VolumeType type, String volName, Long templateId);
 }

@@ -41,7 +41,7 @@ import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class StoragePoolManagerImpl implements StoragePoolService {
+public class PrimaryDataStoreManagerImpl implements PrimaryDataStoreManager {
 	@Inject(adapter = StorageProvider.class)
 	protected Adapters<StorageProvider> _storageProviders;
 	@Inject
