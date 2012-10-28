@@ -325,6 +325,10 @@
                     (category, instance, component, name, value) VALUES
                     ('Hidden', 'DEFAULT', 'management-server', 'init',
                     'false')</sqlCommand>
+                  <sqlCommand>INSERT INTO `cloud`.`configuration`
+                    (category, instance, component, name, value) VALUES
+                    ('Advanced', 'DEFAULT', 'management-server', 'integration.api.port',
+                    '8096')</sqlCommand>
                 </configuration>
               </execution>
             </executions>
