@@ -25,9 +25,13 @@ import java.util.LinkedList;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.storage.datastore.provider.DefaultPrimaryDatastoreProviderImpl;
+import org.apache.cloudstack.storage.datastore.provider.PrimaryDataStoreProvider;
 import org.apache.cloudstack.storage.volume.VolumeMotionService;
 import org.apache.cloudstack.storage.volume.VolumeService;
 import org.apache.cloudstack.storage.volume.db.VolumeDao;
+import org.apache.cloudstack.storage.volume.disktype.VHD;
+import org.apache.cloudstack.storage.volume.disktype.VMDK;
 import org.apache.cloudstack.storage.volume.disktype.VolumeDiskTypeHelper;
 import org.apache.cloudstack.storage.volume.type.VolumeTypeHelper;
 import org.junit.Before;
@@ -36,11 +40,13 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.mockito.Mockito.*;
 
 
+import com.cloud.utils.component.ComponentInject;
 import com.cloud.utils.db.DB;
 
 
@@ -86,5 +92,16 @@ public class volumeServiceTest {
 	public void test1() {
 		System.out.println(volTypeHelper.getType("Root"));
 		System.out.println(volDiskTypeHelper.getDiskType("vmdk"));
+		assertFalse(new VMDK().equals(new VHD()));
+		VMDK vmdk = new VMDK();
+		assertTrue(vmdk.equals(vmdk));
+		VMDK newvmdk = new VMDK();
+		assertTrue(vmdk.equals(newvmdk));
+	}
+	
+	@Test
+	public void testStaticBean() {
+		DefaultPrimaryDatastoreProviderImpl provider = ComponentInject.inject(DefaultPrimaryDatastoreProviderImpl.class);
+		assertNotNull(provider.driver);
 	}
 }

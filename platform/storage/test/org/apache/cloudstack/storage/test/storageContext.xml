@@ -13,6 +13,7 @@
   <context:annotation-config />
   <context:component-scan base-package="org.apache.cloudstack.storage" />
   <context:component-scan base-package="com.cloud.utils.db" />
+  <context:component-scan base-package="com.cloud.utils.component" />
   <context:component-scan base-package="com.cloud.storage.dao" />
  
    <context:component-scan base-package=" com.cloud.upgrade.dao" />

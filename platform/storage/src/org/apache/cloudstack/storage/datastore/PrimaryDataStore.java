@@ -18,11 +18,15 @@
  */
 package org.apache.cloudstack.storage.datastore;
 
+import java.util.List;
+
 import org.apache.cloudstack.storage.volume.Volume;
 import org.apache.cloudstack.storage.volume.disktype.VolumeDiskType;
 
 public interface PrimaryDataStore {
 	Volume getVolume(long id);
+	List<Volume> getVolumes();
 	boolean deleteVolume(long id);
 	Volume createVolume(long id, VolumeDiskType diskType);
+	List<VolumeDiskType> getSupportedDiskTypes();
 }
