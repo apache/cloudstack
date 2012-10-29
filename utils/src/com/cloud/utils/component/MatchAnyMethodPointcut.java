@@ -14,24 +14,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.utils;
+package com.cloud.utils.component;
 
-import javax.inject.Inject;
+import java.lang.reflect.Method;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.aop.support.StaticMethodMatcherPointcut;
 
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations="classpath:/com/cloud/utils/QualifierTestContext.xml")
-public class QualifierTest {
-
-	@Inject
-	DummyInterface _dummy;
-	
-	@Test
-	public void test() {
-		_dummy.foo();
-	}
+public class MatchAnyMethodPointcut extends StaticMethodMatcherPointcut {
+	public boolean matches(Method method, Class<?> cls) {
+		return true;
+    }
 }

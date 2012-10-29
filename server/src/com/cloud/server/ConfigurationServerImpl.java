@@ -116,7 +116,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
     private final NetworkOfferingDao _networkOfferingDao;
     private final DataCenterDao _dataCenterDao;
     private final NetworkDao _networkDao;
-    private final VlanDao _vlanDao;
+    private final VlanDao _vlanDao;    
     private String _domainSuffix;
     private final DomainDao _domainDao;
     private final AccountDao _accountDao;

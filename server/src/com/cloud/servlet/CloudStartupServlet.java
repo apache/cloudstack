@@ -39,6 +39,7 @@ public class CloudStartupServlet extends HttpServlet implements ServletContextLi
     
 	@Override
     public void init() throws ServletException {
+		
 	    // Save Configuration Values
         //ComponentLocator loc = ComponentLocator.getLocator(ConfigurationServer.Name);
 	    ConfigurationServer c = (ConfigurationServer)ComponentLocator.getComponent(ConfigurationServer.Name);

@@ -18,10 +18,12 @@ package com.cloud.utils.db;
 
 import java.lang.reflect.Method;
 
+import org.aopalliance.intercept.MethodInterceptor;
+import org.aopalliance.intercept.MethodInvocation;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
 
-public class TransactionContextBuilder {
+public class TransactionContextBuilder implements MethodInterceptor {
 	public TransactionContextBuilder() {
 	}
 	
@@ -39,6 +41,23 @@ public class TransactionContextBuilder {
 			return ret;
         }
         return call.proceed();
+	}
+
+	@Override
+	public Object invoke(MethodInvocation method) throws Throwable {
+		Method targetMethod = method.getMethod();
+		
+        if(needToIntercept(targetMethod)) {
+			Transaction txn = Transaction.open(targetMethod.getName());
+			Object ret = null;
+			try {
+				 ret = method.proceed();
+			} finally {
+				txn.close();
+			}
+			return ret;
+        }
+        return method.proceed();
 	}
 	
 	private boolean needToIntercept(Method method) {

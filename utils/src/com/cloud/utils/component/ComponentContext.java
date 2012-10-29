@@ -17,7 +17,14 @@
 
 package com.cloud.utils.component;
 
+import org.springframework.aop.Advisor;
+import org.springframework.aop.framework.ProxyFactory;
+import org.springframework.aop.support.DefaultPointcutAdvisor;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.stereotype.Component;
+
+import com.cloud.utils.db.TransactionContextBuilder;
 
 /**
  * 
@@ -25,10 +32,11 @@ import org.springframework.context.ApplicationContext;
  * are not recommended to be used outside, they exist to help wire Spring Framework
  *
  */
-public class ComponentContext {
+@Component
+public class ComponentContext implements ApplicationContextAware {
 	private static ApplicationContext s_appContext;  
 
-    public static void setApplicationContext(ApplicationContext applicationContext) {  
+    public void setApplicationContext(ApplicationContext applicationContext) {  
         s_appContext = applicationContext;  
     }  
   
@@ -36,8 +44,24 @@ public class ComponentContext {
         return s_appContext;  
     }  
     
-    public <T> T getCompanent(String name) {
+    public static  <T> T getCompanent(String name) {
     	assert(s_appContext != null);
     	return (T)s_appContext.getBean(name);
+    }
+    
+    public static <T> T getCompanent(Class<T> beanType) {
+    	assert(s_appContext != null);
+    	return (T)s_appContext.getBean(beanType);
+    }
+    
+    public static<T> T inject(Object instance) {
+    	Advisor advisor = new DefaultPointcutAdvisor(new MatchAnyMethodPointcut(),
+    			new TransactionContextBuilder());
+    	ProxyFactory pf = new ProxyFactory();
+    	
+        pf.setTarget(instance);
+        pf.addAdvisor(advisor);
+        
+        return (T)pf.getProxy();
     }
 }
