@@ -2584,6 +2584,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements
             Connect conn = LibvirtConnection.getConnection();
 
             List<DiskDef> disks = getDisks(conn, vmName);
+            List<InterfaceDef> ifaces = getInterfaces(conn, vmName);
+
             destroy_network_rules_for_vm(conn, vmName);
             String result = stopVM(conn, vmName, defineOps.UNDEFINE_VM);
             if (result == null) {
@@ -2599,11 +2601,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements
                         }
                     }
                 }
-            }
-
-            List<InterfaceDef> ifaces = getInterfaces(conn, vmName);
-            for(InterfaceDef iface: ifaces){
-                _vifDriver.unplug(iface);
+                for (InterfaceDef iface: ifaces) {
+                    _vifDriver.unplug(iface);
+                }
             }
 
             final String result2 = cleanupVnet(conn, cmd.getVnet());
