@@ -3806,6 +3806,15 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (!(network.getState() == Network.State.Implemented || network.getState() == Network.State.Setup)) {
             throw new InvalidParameterValueException("Network is not in the right state to be restarted. Correct states are: " + Network.State.Implemented + ", " + Network.State.Setup);
         }
+        
+        if (network.getBroadcastDomainType() == BroadcastDomainType.Lswitch ) {
+        	/** 
+        	 * Unable to restart these networks now.
+        	 * TODO Restarting a SDN based network requires updating the nics and the configuration
+        	 * in the controller. This requires a non-trivial rewrite of the restart procedure.
+        	 */
+        	throw new InvalidParameterException("Unable to restart a running SDN network.");
+        }
 
         // don't allow clenaup=true for the network in Basic zone
         DataCenter zone = _configMgr.getZone(network.getDataCenterId());
