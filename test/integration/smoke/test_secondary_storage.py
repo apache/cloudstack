@@ -241,7 +241,6 @@ class TestSecStorageServices(cloudstackTestCase):
                                         self.apiclient,
                                         systemvmtype='secondarystoragevm',
                                         zoneid=self.zone.id,
-                                        podid=self.pod.id
                                         )
             if not isinstance(list_ssvm_response, list):
                 # Sleep to ensure SSVMs are Up and Running
