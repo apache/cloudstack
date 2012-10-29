@@ -54,19 +54,16 @@
       <groupId>org.apache.axis</groupId>
       <artifactId>axis</artifactId>
       <version>${cs.axis.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.axis</groupId>
       <artifactId>axis-jaxrpc</artifactId>
       <version>${cs.axis.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>wsdl4j</groupId>
       <artifactId>wsdl4j</artifactId>
       <version>1.4</version>
-      <scope>runtime</scope>
     </dependency>
   </dependencies>
 </project>
