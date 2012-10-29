@@ -350,7 +350,7 @@ class deployDataCenters():
         return apiKey, securityKey
 
     def getCfg(self):
-        if self.config:
+        if self.config is not None:
             return self.config
         return None
 

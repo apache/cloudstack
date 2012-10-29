@@ -18,9 +18,9 @@
 """
 import marvin
 from nose.plugins.attrib import attr
-from integration.lib.base import *
-from integration.lib.utils import *
-from integration.lib.common import *
+from marvin.integration.lib.base import *
+from marvin.integration.lib.utils import *
+from marvin.integration.lib.common import *
 
 #Import Local Modules
 from marvin.cloudstackTestCase import *

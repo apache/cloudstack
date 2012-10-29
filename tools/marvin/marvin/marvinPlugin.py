@@ -102,11 +102,11 @@ class MarvinPlugin(Plugin):
         self._injectClients(cls)
         
     def setClient(self, client):
-        if client:
+        if client is not None:
             self.testclient = client
 
     def setConfig(self, config):
-        if config:
+        if config is not None:
             self.config = config
 
     def _injectClients(self, test):
