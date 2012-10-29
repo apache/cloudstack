@@ -382,6 +382,12 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
                     accountId = owner.getId();
                 }
             }
+            else { //domainId == null
+            	if (accountName != null) {            		
+                    throw new InvalidParameterValueException("could not find account " + accountName + " because domain is not specified", null);            		
+            	}
+            	
+            }
         } else {
             if (accountName != null && !accountName.equals(caller.getAccountName())) {
                 throw new PermissionDeniedException("Can't list account " + accountName + " projects; unauthorized");
