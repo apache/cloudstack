@@ -32,6 +32,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -85,6 +86,7 @@ import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
+import com.cloud.server.auth.UserAuthenticator;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -96,6 +98,7 @@ import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;
@@ -342,30 +345,13 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         } catch (SQLException ex) {
         }
 
-        // insert admin user
+        // insert admin user, but leave the account disabled until we set a
+        // password with the user authenticator
         long id = 2;
         String username = "admin";
         String firstname = "admin";
         String lastname = "cloud";
-        String password = "password";
-
-        MessageDigest md5 = null;
-        try {
-            md5 = MessageDigest.getInstance("MD5");
-        } catch (NoSuchAlgorithmException e) {
-            return;
-        }
-
-        md5.reset();
-        BigInteger pwInt = new BigInteger(1, md5.digest(password.getBytes()));
-        String pwStr = pwInt.toString(16);
-        int padding = 32 - pwStr.length();
-        StringBuffer sb = new StringBuffer();
-        for (int i = 0; i < padding; i++) {
-            sb.append('0'); // make sure the MD5 password is 32 digits long
-        }
-        sb.append(pwStr);
-
+        
         // create an account for the admin user first
         insertSql = "INSERT INTO `cloud`.`account` (id, account_name, type, domain_id) VALUES (" + id + ", '" + username + "', '1', '1')";
         txn = Transaction.currentTxn();
@@ -376,8 +362,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         }
 
         // now insert the user
-        insertSql = "INSERT INTO `cloud`.`user` (id, username, password, account_id, firstname, lastname, created) " +
-                "VALUES (" + id + ",'" + username + "','" + sb.toString() + "', 2, '" + firstname + "','" + lastname + "',now())";
+        insertSql = "INSERT INTO `cloud`.`user` (id, username, account_id, firstname, lastname, created, state) " +
+                "VALUES (" + id + ",'" + username + "', 2, '" + firstname + "','" + lastname + "',now(), 'disabled')";
 
         txn = Transaction.currentTxn();
         try {

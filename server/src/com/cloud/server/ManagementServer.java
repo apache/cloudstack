@@ -95,4 +95,6 @@ public interface ManagementServer extends ManagementService {
     Pair<List<StoragePoolVO>, Integer> searchForStoragePools(Criteria c);
 
     String getHashKey();
+    
+    public void enableAdminUser(String password);
 }
