@@ -384,7 +384,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
             }
             else { //domainId == null
             	if (accountName != null) {            		
-                    throw new InvalidParameterValueException("could not find account " + accountName + " because domain is not specified", null);            		
+                    throw new InvalidParameterValueException("could not find account " + accountName + " because domain is not specified");            		
             	}
             	
             }
