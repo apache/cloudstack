@@ -2320,12 +2320,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements
             _vms.put(vmName, State.Stopping);
         }
 
+        List<InterfaceDef> ifaces = null;
+
         Domain dm = null;
         Connect dconn = null;
         Domain destDomain = null;
         Connect conn = null;
         try {
             conn = LibvirtConnection.getConnection();
+            ifaces = getInterfaces(conn, vmName);
             dm = conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName
                     .getBytes()));
             dconn = new Connect("qemu+tcp://" + cmd.getDestinationIp()
@@ -2364,6 +2367,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements
             }
         } else {
             destroy_network_rules_for_vm(conn, vmName);
+            for (InterfaceDef iface : ifaces) {
+                _vifDriver.unplug(iface);
+            }
             cleanupVM(conn, vmName,
                     getVnetId(VirtualMachineName.getVnet(vmName)));
         }
