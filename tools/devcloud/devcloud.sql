@@ -26,8 +26,7 @@ INSERT INTO `cloud`.`configuration` (instance, name,value) VALUE('DEFAULT','cons
 INSERT INTO `cloud`.`configuration` (instance, name,value) VALUE('DEFAULT','ssvm.ram.size','100');
 INSERT INTO `cloud`.`configuration` (instance, name,value) VALUE('DEFAULT','ssvm.cpu.mhz','100');
 INSERT INTO `cloud`.`configuration` (instance, name, value) VALUE('DEFAULT', 'system.vm.use.local.storage', 'true');
-INSERT INTO `cloud`.`configuration` (instance, name, value) VALUE('DEFAULT', 'integration.api.port', '8096');
 UPDATE `cloud`.`configuration` SET value='10' where name = 'storage.overprovisioning.factor';
 UPDATE `cloud`.`configuration` SET value='10' where name = 'cpu.overprovisioning.factor';
 UPDATE `cloud`.`configuration` SET value='10' where name = 'mem.overprovisioning.factor';
-UPDATE `cloud`.`vm_template` SET unique_name="tiny Linux",name="tiny Linux",url="http://nfs1.lab.vmops.com/templates/ttylinux_pv.vhd",checksum="046e134e642e6d344b34648223ba4bc1",display_text="tiny Linux" where id=5;
+UPDATE `cloud`.`vm_template` SET unique_name="tiny Linux",name="tiny Linux",url="https://github.com/downloads/bhaisaab/incubator-cloudstack/ttylinux_pv.vhd",checksum="046e134e642e6d344b34648223ba4bc1",display_text="tiny Linux" where id=5;
