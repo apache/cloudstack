@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
-
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.SynchronousQueue;
@@ -48,6 +47,7 @@ import com.cloud.agent.api.MaintainAnswer;
 import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.PingCommand;
+import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.ShutdownCommand;
 import com.cloud.agent.api.StartupAnswer;
 import com.cloud.agent.api.StartupCommand;
@@ -491,6 +491,10 @@ public class Agent implements HandlerFactory, IAgentControl {
                         cancelTasks();
                         _reconnectAllowed = false;
                         answer = new Answer(cmd, true, null);
+                    } else if (cmd instanceof ReadyCommand && ((ReadyCommand)cmd).getDetails() != null) {
+                		s_logger.debug("Not ready to connect to mgt server: " + ((ReadyCommand)cmd).getDetails());
+                		System.exit(1);
+                    	return;
                     } else if (cmd instanceof MaintainCommand) {
                           s_logger.debug("Received maintainCommand" );
                           cancelTasks();
@@ -513,6 +517,9 @@ public class Agent implements HandlerFactory, IAgentControl {
                         }
 
                     } else {
+                        if (cmd instanceof ReadyCommand) {
+                            processReadyCommand((ReadyCommand)cmd);
+                        }
                         _inProgress.incrementAndGet();
                         try {
                             answer = _resource.executeRequest(cmd);
@@ -576,6 +583,19 @@ public class Agent implements HandlerFactory, IAgentControl {
             setLastPingResponseTime();
         }
     }
+    
+    
+    public void processReadyCommand(Command cmd) {
+
+        final ReadyCommand ready = (ReadyCommand) cmd;
+        
+        s_logger.info("Proccess agent ready command, agent id = " + ready.getHostId());
+        if (ready.getHostId() != null) {
+            setId(ready.getHostId());
+        }
+        s_logger.info("Ready command is processed: agent id = " + getId());
+
+    }
 
     public void processOtherTask(Task task) {
         final Object obj = task.get();
@@ -601,6 +621,7 @@ public class Agent implements HandlerFactory, IAgentControl {
             } catch (final ClosedChannelException e) {
                 s_logger.warn("Unable to send request: " + request.toString());
             }
+            
         } else if (obj instanceof Request) {
             final Request req = (Request) obj;
             final Command command = req.getCommand();

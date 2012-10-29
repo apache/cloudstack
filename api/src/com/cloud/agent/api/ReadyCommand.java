@@ -23,10 +23,16 @@ public class ReadyCommand extends Command {
 	}
 
 	private Long dcId;
+	private Long hostId;
 	
 	public ReadyCommand(Long dcId) {
 		super();
 		this.dcId = dcId;
+	}
+	
+	public ReadyCommand(Long dcId, Long hostId) {
+	    this(dcId);
+	    this.hostId = hostId;
 	}
 	
 	public void setDetails(String details) {
@@ -46,4 +52,7 @@ public class ReadyCommand extends Command {
 		return true;
 	}
 
+    public Long getHostId() {
+        return hostId;
+    }
 }
