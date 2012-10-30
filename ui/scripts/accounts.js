@@ -787,24 +787,19 @@
             firstname: { label: 'label.first.name' },
             lastname: { label: 'label.last.name' }
           },
-          dataProvider: function(args) {
-            var array1 = [];
-            if(args.filterBy != null) {
-              if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
-                switch(args.filterBy.search.by) {
-                case "name":
-                  if(args.filterBy.search.value.length > 0)
-                    array1.push("&keyword=" + args.filterBy.search.value);
-                  break;
-                }
-              }
-            }
-
+          dataProvider: function(args) {    
             var accountObj = args.context.accounts[0];
+						
 						if(isAdmin() || isDomainAdmin()) {
+						  var data = {
+							  domainid: accountObj.domainid,
+								account: accountObj.name								
+							};
+							listViewDataProvider(args, data);		
+							
 							$.ajax({
-								url: createURL("listUsers&domainid=" + accountObj.domainid + "&account=" + todb(accountObj.name) + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
-								dataType: "json",
+								url: createURL('listUsers'),
+								data: data,
 								success: function(json) {
 									args.response.success({
 										actionFilter: userActionfilter,
