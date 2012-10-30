@@ -467,9 +467,17 @@
         //create new network starts here
         if(args.data["new-network"] == "create-new-network") {
           var isCreateNetworkSuccessful = true;
+					
+					var data = {
+					  networkOfferingId: args.data["new-network-networkofferingid"],
+						name: args.data["new-network-name"],
+						displayText: args.data["new-network-name"],
+						zoneId: selectedZoneObj.id
+					};
+					
           $.ajax({
-            url: createURL("createNetwork&networkOfferingId="+args.data["new-network-networkofferingid"]+"&name="+todb(args.data["new-network-name"])+"&displayText="+todb(args.data["new-network-name"])+"&zoneId="+selectedZoneObj.id),
-            dataType: "json",
+            url: createURL('createNetwork'),
+            data: data,
             async: false,
             success: function(json) {
               newNetwork = json.createnetworkresponse.network;
