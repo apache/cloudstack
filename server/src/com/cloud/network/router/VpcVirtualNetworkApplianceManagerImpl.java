@@ -301,9 +301,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         result = result && _itMgr.removeVmFromNetwork(router, network, null);
         
         if (result) {
-            if (result) {
-                _routerDao.removeRouterFromGuestNetwork(router.getId(), network.getId());
-            }
+            _routerDao.removeRouterFromGuestNetwork(router.getId(), network.getId());
         }
         return result;
     }
