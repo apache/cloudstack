@@ -161,34 +161,51 @@
               },
 
               action: function(args) {
-                var array1 = [];
-                array1.push("&name=" + args.data.name);
-                array1.push("&displaytext=" + todb(args.data.description));
-                array1.push("&storageType=" + todb(args.data.storageType));
-                array1.push("&cpuNumber=" + args.data.cpuNumber);
-                array1.push("&cpuSpeed="+ args.data.cpuSpeed);
-                array1.push("&memory=" + args.data.memory);
+                var data = {
+								  issystem: false,
+								  name: args.data.name,
+									displaytext: args.data.description,
+									storageType: args.data.storageType,
+									cpuNumber: args.data.cpuNumber,
+									cpuSpeed: args.data.cpuSpeed,
+									memory: args.data.memory
+								};															
+               
+                if(args.data.networkRate != null && args.data.networkRate.length > 0) {
+								  $.extend(data, {
+									  networkrate: args.data.networkRate
+									});
+								}
 
-                if(args.data.networkRate != null && args.data.networkRate.length > 0)
-                  array1.push("&networkrate=" + args.data.networkRate);
-
-                array1.push("&offerha=" + (args.data.offerHA == "on"));
-
-                if(args.data.storageTags != null && args.data.storageTags.length > 0)
-                  array1.push("&tags=" + todb(args.data.storageTags));
-
-                if(args.data.hostTags != null && args.data.hostTags.length > 0)
-                  array1.push("&hosttags=" + todb(args.data.hostTags));
-
-                array1.push("&limitcpuuse=" + (args.data.cpuCap == "on"));
-
-                if(args.$form.find('.form-item[rel=domainId]').css("display") != "none")
-                  array1.push("&domainid=" + args.data.domainId);
+                $.extend(data, {
+                  offerha: (args.data.offerHA == "on")
+                });								
+								
+                if(args.data.storageTags != null && args.data.storageTags.length > 0) {
+								  $.extend(data, {
+									  tags: args.data.storageTags
+									});								
+                }
+								
+                if(args.data.hostTags != null && args.data.hostTags.length > 0) {
+								  $.extend(data, {
+									  hosttags: args.data.hostTags
+									});								
+                }
+								
+								$.extend(data, {
+								  limitcpuuse: (args.data.cpuCap == "on")
+								});
+                
+                if(args.$form.find('.form-item[rel=domainId]').css("display") != "none") {
+								  $.extend(data, {
+									  domainid: args.data.domainId
+									});								
+								}
 
                 $.ajax({
-                  url: createURL("createServiceOffering&issystem=false"+array1.join("")),
-                  dataType: "json",
-                  async: true,
+                  url: createURL('createServiceOffering'),
+                  data: data,                 
                   success: function(json) {
                     var item = json.createserviceofferingresponse.serviceoffering;
                     args.response.success({data: item});
@@ -208,22 +225,16 @@
           },
 
           dataProvider: function(args) {					 
-						var array1 = [];  
-						if(args.filterBy != null) {          
-							if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
-								switch(args.filterBy.search.by) {
-								case "name":
-									if(args.filterBy.search.value.length > 0)
-										array1.push("&keyword=" + args.filterBy.search.value);
-									break;
-								}
-							}
-						}
+						var data = {};
+						listViewDataProvider(args, data);						
+						
+						$.extend(data, {
+						  issystem: false
+						});
 						
             $.ajax({
-              url: createURL("listServiceOfferings&issystem=false&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
-              dataType: "json",
-              async: true,
+              url: createURL('listServiceOfferings'),
+              data: data,              
               success: function(json) {
                 var items = json.listserviceofferingsresponse.serviceoffering;
                 args.response.success({
@@ -243,12 +254,14 @@
               edit: {
                 label: 'label.edit',
                 action: function(args) {
-                  var array1 = [];
-                  array1.push("&name=" + todb(args.data.name));
-                  array1.push("&displaytext=" + todb(args.data.displaytext));
+                  var data = {
+									  id: args.context.serviceOfferings[0].id,
+									  name: args.data.name,
+										displaytext: args.data.displaytext
+									};                
                   $.ajax({
-                    url: createURL("updateServiceOffering&id=" + args.context.serviceOfferings[0].id + array1.join("")),
-                    dataType: "json",
+                    url: createURL('updateServiceOffering'),
+                    data: data,
                     success: function(json) {
                       var item = json.updateserviceofferingresponse.serviceoffering;
                       args.response.success({data: item});
@@ -271,9 +284,12 @@
                   }
                 },
                 action: function(args) {
+								  var data = {
+									  id: args.context.serviceOfferings[0].id
+									};								
                   $.ajax({
-                    url: createURL("deleteServiceOffering&id=" + args.context.serviceOfferings[0].id),
-                    dataType: "json",
+                    url: createURL('deleteServiceOffering'),
+                    data: data,
                     async: true,
                     success: function(json) {
                       args.response.success();
@@ -340,10 +356,14 @@
                   }
                 ],
 
-                dataProvider: function(args) {								  							
+                dataProvider: function(args) {			
+                  var data = {
+									  issystem: false,
+										id: args.context.serviceOfferings[0].id
+									};								
 									$.ajax({
-										url: createURL("listServiceOfferings&issystem=false&id=" + args.context.serviceOfferings[0].id),
-										dataType: "json",
+										url: createURL('listServiceOfferings'),
+										data: data,
 										async: true,
 										success: function(json) {										  
 											var item = json.listserviceofferingsresponse.serviceoffering[0];
