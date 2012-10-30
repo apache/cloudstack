@@ -62,7 +62,7 @@ done
 #Damn Small Linux ISO type
 if [[ $HV == "kvm" ]]; then
     ostypeid=$(mysql -ucloud -Dcloud -pcloud -h$DB_SVR -s -N -r -e"select uuid from guest_os where display_name='CentOS 5.5 (64-bit)'")
-else:
+else
     ostypeid=$(mysql -ucloud -Dcloud -pcloud -h$DB_SVR -s -N -r -e"select uuid from guest_os where display_name='CentOS 5.3 (64-bit)'")
 fi
 if [[ $ostypeid == "" ]]; then
