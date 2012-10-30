@@ -888,29 +888,39 @@
               action: function(args) {
                 var accountObj = args.context.accounts[0];
 
-                var array1 = [];
-                array1.push("&username=" + todb(args.data.username));
-
+                var data = {
+								  username: args.data.username									
+								};
+								
                 var password = args.data.password;
-                if (md5Hashed)
-                  password = $.md5(password);
-                else
-                  password = todb(password);
-                array1.push("&password=" + password);
-
-                array1.push("&email=" + todb(args.data.email));
-                array1.push("&firstname=" + todb(args.data.firstname));
-                array1.push("&lastname=" + todb(args.data.lastname));
-                if(args.data.timezone != null && args.data.timezone.length > 0)
-                  array1.push("&timezone=" + todb(args.data.timezone));
-
-                array1.push("&domainid=" + accountObj.domainid);
-                array1.push("&account=" + todb(accountObj.name));
-                array1.push("&accounttype=" + accountObj.accounttype);
-
+                if (md5Hashed) {
+                  password = $.md5(password);     
+                }									
+								$.extend(data, {
+                  password: password
+                });			
+               
+								$.extend(data, {
+								  email: args.data.email,
+									firstname: args.data.firstname,
+									lastname: args.data.lastname
+								});
+								
+                if(args.data.timezone != null && args.data.timezone.length > 0) {
+								  $.extend(data, {
+									  timezone: args.data.timezone
+									});								
+								}
+               
+								$.extend(data, {
+								  domainid: accountObj.domainid,
+                  account: accountObj.name,
+									accounttype: accountObj.accounttype
+								});
+								
                 $.ajax({
-                  url: createURL("createUser" + array1.join("")),
-                  dataType: "json",
+                  url: createURL('createUser'),
+                  data: data,
                   success: function(json) {
                     var item = json.createuserresponse.user;
                     args.response.success({data: item});
