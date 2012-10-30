@@ -164,7 +164,7 @@
                   </fileset>
                 </copy>
                 <copy
-                  todir="${basedir}/target/generated-webapp/WEB-INF/lib/scripts">
+                  todir="${basedir}/target/generated-webapp/WEB-INF/classes/scripts">
                   <fileset dir="${basedir}/../scripts" />
                 </copy>
                 <copy
@@ -191,7 +191,49 @@
                     </filterreader>
                   </filterchain>
                 </copy>
-                <copy overwrite="true" file="../console-proxy/dist/systemvm.iso" todir="${basedir}/target/generated-webapp/WEB-INF/lib/vms"/>  
+                <copy overwrite="true" todir="${basedir}/target/generated-webapp/WEB-INF/classes">
+                  <fileset dir="${basedir}/tomcatconf">
+                    <include name="*.in" />
+                  </fileset>
+                  <globmapper from="*.in" to="*" />
+                  <filterchain>
+                    <filterreader classname="org.apache.tools.ant.filters.ReplaceTokens">
+                      <param type="propertiesfile" value="${basedir}/../build/replace.properties" />
+                    </filterreader>
+                  </filterchain>
+                </copy>
+                <copy overwrite="true" todir="${basedir}/target/utilities/bin">
+                  <fileset dir="${basedir}/../setup/bindir">
+                    <include name="*.in" />
+                  </fileset>
+                  <globmapper from="*.in" to="*" />
+                  <filterchain>
+                    <filterreader classname="org.apache.tools.ant.filters.ReplaceTokens">
+                      <param type="propertiesfile" value="${basedir}/../build/replace.properties" />
+                    </filterreader>
+                  </filterchain>
+                </copy>
+                <copy overwrite="true" todir="${basedir}/target/utilities/bin">
+                  <fileset dir="${basedir}/bindir">
+                    <include name="*.in" />
+                  </fileset>
+                  <globmapper from="*.in" to="*" />
+                  <filterchain>
+                    <filterreader classname="org.apache.tools.ant.filters.ReplaceTokens">
+                      <param type="propertiesfile" value="${basedir}/../build/replace.properties" />
+                    </filterreader>
+                  </filterchain>
+                </copy>
+                <copy overwrite="true" todir="${basedir}/target/utilities/scripts/db">
+                  <fileset dir="${basedir}/../setup/db">
+                    <include name="**/*" />
+                  </fileset>
+                  <filterchain>
+                    <filterreader classname="org.apache.tools.ant.filters.ReplaceTokens">
+                      <param type="propertiesfile" value="${basedir}/../build/replace.properties" />
+                    </filterreader>
+                  </filterchain>
+                </copy>
               </target>
             </configuration>
           </execution>
@@ -211,6 +253,39 @@
                   </target>
                 </configuration>
               </execution>
+        </executions>
+      </plugin>
+      <!-- there are the jasypt libs requires by some of the python scripts -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>2.5.1</version>
+        <executions>
+          <execution>
+            <id>copy</id>
+            <phase>package</phase>
+            <goals>
+              <goal>copy</goal>
+            </goals>
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>org.jasypt</groupId>
+                  <artifactId>jasypt</artifactId>
+                  <version>1.9.0</version>`
+                  <overWrite>false</overWrite>
+                  <outputDirectory>${project.build.directory}/pythonlibs</outputDirectory>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>org.jasypt</groupId>
+                  <artifactId>jasypt</artifactId>
+                  <version>1.8</version>`
+                  <overWrite>false</overWrite>
+                  <outputDirectory>${project.build.directory}/pythonlibs</outputDirectory>
+                </artifactItem>
+              </artifactItems>
+            </configuration>
+          </execution>
         </executions>
       </plugin>
     </plugins>
