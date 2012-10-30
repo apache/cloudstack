@@ -88,6 +88,12 @@
         <configuration>
           <excludes>
             <exclude>com/cloud/upgrade/*</exclude>
+            <exclude>com/cloud/async/*</exclude>
+            <exclude>com/cloud/cluster/*</exclude>
+            <exclude>com/cloud/snapshot/*</exclude>
+            <exclude>com/cloud/storage/dao/*</exclude>
+            <exclude>com/cloud/vm/dao/*</exclude>
+            <exclude>com/cloud/vpc/*</exclude>
           </excludes>
         </configuration>
       </plugin>

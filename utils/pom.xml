@@ -161,6 +161,7 @@
         <configuration>
           <excludes>
             <exclude>com/cloud/utils/testcase/*TestCase*</exclude>
+            <exclude>com/cloud/utils/db/*Test*</exclude>
           </excludes>
         </configuration>
       </plugin>      

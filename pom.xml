@@ -81,7 +81,6 @@
     <cs.jstl.version>1.2</cs.jstl.version>
     <cs.selenium.server.version>1.0-20081010.060147</cs.selenium.server.version>
     <cs.vmware.api.version>4.1</cs.vmware.api.version>
-    <skipTests>true</skipTests>
 
   </properties>
 
