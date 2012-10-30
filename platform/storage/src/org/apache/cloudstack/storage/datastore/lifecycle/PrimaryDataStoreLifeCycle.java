@@ -16,16 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.datastore;
+package org.apache.cloudstack.storage.datastore.lifecycle;
 
-import java.util.List;
+import java.util.Map;
 
-import org.apache.cloudstack.storage.volume.Volume;
-import org.apache.cloudstack.storage.volume.disktype.VolumeDiskType;
-
-public interface PrimaryDataStore {
-	Volume getVolume(long id);
-	List<Volume> getVolumes();
-	boolean deleteVolume(long id);
-	Volume createVolume(long id, VolumeDiskType diskType);
+public interface PrimaryDataStoreLifeCycle {
+	public boolean registerDataStore(Map<String, String> dsInfos);
+	public boolean attach(long scope);
+	public boolean dettach(long dataStoreId);
+	public boolean unmanaged(long dataStoreId);
+	public boolean maintain(long dataStoreId);
+	public boolean cancelMaintain(long dataStoreId);
+	public boolean deleteDataStore(long dataStoreId);
 }

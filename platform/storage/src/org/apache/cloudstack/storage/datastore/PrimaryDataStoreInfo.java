@@ -18,14 +18,14 @@
  */
 package org.apache.cloudstack.storage.datastore;
 
-import java.util.List;
-
-import org.apache.cloudstack.storage.volume.Volume;
 import org.apache.cloudstack.storage.volume.disktype.VolumeDiskType;
 
-public interface PrimaryDataStore {
-	Volume getVolume(long id);
-	List<Volume> getVolumes();
-	boolean deleteVolume(long id);
-	Volume createVolume(long id, VolumeDiskType diskType);
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+
+public interface PrimaryDataStoreInfo {
+	public boolean isHypervisorSupported(HypervisorType hypervisor);
+	public boolean isLocalStorageSupported();
+	public boolean isVolumeDiskTypeSupported(VolumeDiskType diskType);
+	public long getCapacity();
+	public long getAvailableCapacity();
 }

@@ -29,6 +29,7 @@ import java.util.Map;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.storage.datastore.DataStoreStatus;
+import org.springframework.stereotype.Component;
 
 import com.cloud.storage.StoragePoolDetailVO;
 import com.cloud.storage.dao.StoragePoolDetailsDao;
@@ -44,6 +45,7 @@ import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+@Component
 public class PrimaryDataStoreDaoImpl extends GenericDaoBase<DataStoreVO, Long>  implements PrimaryDataStoreDao {
     protected final SearchBuilder<DataStoreVO> AllFieldSearch;
 	protected final SearchBuilder<DataStoreVO> DcPodSearch;

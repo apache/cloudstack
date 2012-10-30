@@ -4,6 +4,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.storage.datastore.db.DataStoreVO;
 import org.apache.cloudstack.storage.datastore.driver.PrimaryDataStoreDriver;
 import org.apache.cloudstack.storage.volume.Volume;
 import org.apache.cloudstack.storage.volume.db.VolumeDao;
@@ -12,12 +13,14 @@ import org.apache.cloudstack.storage.volume.disktype.VolumeDiskType;
 
 public class DefaultPrimaryDataStoreImpl implements PrimaryDataStore {
 	protected PrimaryDataStoreDriver driver;
-	protected List<VolumeDiskType> supportedDiskTypes;
+	protected DataStoreVO pdsv;
+	protected PrimaryDataStoreInfo pdsInfo;
 	@Inject
-	VolumeDao volumeDao;
-	public DefaultPrimaryDataStoreImpl(PrimaryDataStoreDriver driver, List<VolumeDiskType> types) {
+	public VolumeDao volumeDao;
+	public DefaultPrimaryDataStoreImpl(PrimaryDataStoreDriver driver, DataStoreVO pdsv, PrimaryDataStoreInfo pdsInfo) {
 		this.driver = driver;
-		this.supportedDiskTypes = types;
+		this.pdsv = pdsv;
+		this.pdsInfo = pdsInfo;
 	}
 	
 	@Override
@@ -46,7 +49,7 @@ public class DefaultPrimaryDataStoreImpl implements PrimaryDataStore {
 			return null;
 		}
 		
-		if (!this.getSupportedDiskTypes().contains(diskType)) {
+		if (!pdsInfo.isVolumeDiskTypeSupported(diskType)) {
 			return null;
 		}
 		
@@ -54,10 +57,5 @@ public class DefaultPrimaryDataStoreImpl implements PrimaryDataStore {
 		this.driver.createVolume(vol);
 		vol.update();
 		return vol;
-	}
-
-	@Override
-	public List<VolumeDiskType> getSupportedDiskTypes() {
-		return this.supportedDiskTypes;
 	}
 }

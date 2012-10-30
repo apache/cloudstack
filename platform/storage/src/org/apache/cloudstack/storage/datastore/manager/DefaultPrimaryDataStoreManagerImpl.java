@@ -16,16 +16,29 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.datastore;
+package org.apache.cloudstack.storage.datastore.manager;
 
-import java.util.List;
+import javax.inject.Inject;
 
-import org.apache.cloudstack.storage.volume.Volume;
-import org.apache.cloudstack.storage.volume.disktype.VolumeDiskType;
+import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreProviderDao;
+import org.apache.cloudstack.storage.datastore.lifecycle.PrimaryDataStoreLifeCycle;
+import org.springframework.stereotype.Component;
 
-public interface PrimaryDataStore {
-	Volume getVolume(long id);
-	List<Volume> getVolumes();
-	boolean deleteVolume(long id);
-	Volume createVolume(long id, VolumeDiskType diskType);
+@Component
+public class DefaultPrimaryDataStoreManagerImpl implements PrimaryDataStoreManager {
+	@Inject
+	PrimaryDataStoreProviderDao dataStoreProviderDao;
+	@Override
+	public PrimaryDataStore getPrimaryDataStore(long dataStoreId) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public PrimaryDataStoreLifeCycle getPrimaryDataStoreLifeCycle(long dataStoreId) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

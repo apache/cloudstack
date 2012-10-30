@@ -25,6 +25,7 @@ import java.util.LinkedList;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.storage.datastore.DefaultPrimaryDataStoreImpl;
 import org.apache.cloudstack.storage.datastore.provider.DefaultPrimaryDatastoreProviderImpl;
 import org.apache.cloudstack.storage.datastore.provider.PrimaryDataStoreProvider;
 import org.apache.cloudstack.storage.volume.VolumeMotionService;
@@ -102,6 +103,10 @@ public class volumeServiceTest {
 	@Test
 	public void testStaticBean() {
 		DefaultPrimaryDatastoreProviderImpl provider = ComponentInject.inject(DefaultPrimaryDatastoreProviderImpl.class);
-		assertNotNull(provider.driver);
+		assertNotNull(provider.dataStoreDao);
+		
+		DefaultPrimaryDataStoreImpl dpdsi = new DefaultPrimaryDataStoreImpl(null, null, null);
+		ComponentInject.inject(dpdsi);
+		assertNotNull(dpdsi.volumeDao);
 	}
 }
