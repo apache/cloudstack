@@ -22,13 +22,13 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.BaseListProjectAndAccountResourcesCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.SSHKeyPairResponse;
 import com.cloud.user.SSHKeyPair;
+import com.cloud.utils.Pair;
 
 @Implementation(description="List registered keypairs", responseObject=SSHKeyPairResponse.class) 
 public class ListSSHKeyPairsCmd extends BaseListProjectAndAccountResourcesCmd {
@@ -66,16 +66,16 @@ public class ListSSHKeyPairsCmd extends BaseListProjectAndAccountResourcesCmd {
     
 	@Override
 	public void execute() {
-		List<? extends SSHKeyPair> resultList = _mgr.listSSHKeyPairs(this);
+	    Pair<List<? extends SSHKeyPair>, Integer> resultList = _mgr.listSSHKeyPairs(this);
 		List<SSHKeyPairResponse> responses = new ArrayList<SSHKeyPairResponse>();
-		for (SSHKeyPair result : resultList) {
+		for (SSHKeyPair result : resultList.first()) {
 			SSHKeyPairResponse r = new SSHKeyPairResponse(result.getName(), result.getFingerprint());
 			r.setObjectName("sshkeypair");
 			responses.add(r);
 		}
 		
         ListResponse<SSHKeyPairResponse> response = new ListResponse<SSHKeyPairResponse>();
-        response.setResponses(responses);
+        response.setResponses(responses, resultList.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
 	}

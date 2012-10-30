@@ -122,6 +122,13 @@ public class ApiServlet extends HttpServlet {
         //
         utf8Fixup(req, params);
 
+        // logging the request start and end in management log for easy debugging
+        String reqStr = "";
+        if (s_logger.isDebugEnabled()) {
+            reqStr = auditTrailSb.toString() + " " + req.getQueryString();
+            s_logger.debug("===START=== " + reqStr);
+        }
+        
         try {
             HttpSession session = req.getSession(false);
             Object[] responseTypeParam = params.get("response");
@@ -335,6 +342,9 @@ public class ApiServlet extends HttpServlet {
             }
         } finally {
             s_accessLogger.info(auditTrailSb.toString());
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("===END=== " + reqStr);
+            }
             // cleanup user context to prevent from being peeked in other request context
             UserContext.unregisterContext();
         }

@@ -3,45 +3,60 @@
 <!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
 %BOOK_ENTITIES;
 ]>
-
 <!-- Licensed to the Apache Software Foundation (ASF) under one
- or more contributor license agreements.  See the NOTICE file
- distributed with this work for additional information
- regarding copyright ownership.  The ASF licenses this file
- to you under the Apache License, Version 2.0 (the
- "License"); you may not use this file except in compliance
- with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing,
- software distributed under the License is distributed on an
- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- KIND, either express or implied.  See the License for the
- specific language governing permissions and limitations
- under the License.
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+  http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
 -->
-
 <section id="set-projects-creator-permissions">
-    <title>Setting Project Creator Permissions</title>
-    <para>You can configure &PRODUCT; to allow any user to create a new project, or you can restrict that ability to just &PRODUCT; administrators.</para>
-    <orderedlist>
-        <listitem><para>Log in as administrator to the &PRODUCT; UI.</para></listitem>
-        <listitem><para>In the left navigation, click Global Settings.</para></listitem>
-        <listitem><para>In the search box, type allow.user.create.projects.</para></listitem>
-        <listitem><para>Click the edit button to set the parameter. <inlinemediaobject>
-            <imageobject>
-                <imagedata fileref="./images/edit-icon.png" />
-            </imageobject>
-            <textobject><phrase>editbutton.png: Edits parameters</phrase></textobject>
-        </inlinemediaobject></para><informaltable>
-            <tgroup cols="2" align="left" colsep="1" rowsep="1">
-                <tbody>
-                    <row>
-                        <entry><para>allow.user.create.projects</para></entry>
-                        <entry><para>Set to true to allow end users to create projects. Set to false if you want only the &PRODUCT; root administrator and domain administrators to create projects.</para></entry>
-                    </row>
-                </tbody></tgroup></informaltable></listitem>
-        <listitem><para>Restart the Management Server.</para><programlisting># service cloud-management restart</programlisting></listitem>
-    </orderedlist>
+  <title>Setting Project Creator Permissions</title>
+  <para>You can configure &PRODUCT; to allow any user to create a new project, or you can restrict
+    that ability to just &PRODUCT; administrators.</para>
+  <orderedlist>
+    <listitem>
+      <para>Log in as administrator to the &PRODUCT; UI.</para>
+    </listitem>
+    <listitem>
+      <para>In the left navigation, click Global Settings.</para>
+    </listitem>
+    <listitem>
+      <para>In the search box, type allow.user.create.projects.</para>
+    </listitem>
+    <listitem>
+      <para>Click the edit button to set the parameter.<inlinemediaobject>
+          <imageobject>
+            <imagedata fileref="./images/edit-icon.png"/>
+          </imageobject>
+          <textobject>
+            <phrase>editbutton.png: Edits parameters</phrase>
+          </textobject>
+        </inlinemediaobject></para>
+      <informaltable>
+        <tgroup cols="2" align="left" colsep="1" rowsep="1">
+          <tbody>
+            <row>
+              <entry><para>allow.user.create.projects</para></entry>
+              <entry><para>Set to true to allow end users to create projects. Set to false if you
+                  want only the &PRODUCT; root administrator and domain administrators to create
+                  projects.</para></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </listitem>
+    <listitem>
+      <para>Restart the Management Server.</para>
+      <programlisting># service cloud-management restart</programlisting>
+    </listitem>
+  </orderedlist>
 </section>

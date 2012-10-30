@@ -31,6 +31,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.NetworkACLResponse;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.utils.Pair;
 
 @Implementation(description="Lists all network ACLs", responseObject=NetworkACLResponse.class)
 public class ListNetworkACLsCmd extends BaseListTaggedResourcesCmd {
@@ -79,15 +80,15 @@ public class ListNetworkACLsCmd extends BaseListTaggedResourcesCmd {
     
     @Override
     public void execute(){
-        List<? extends FirewallRule> result = _networkACLService.listNetworkACLs(this);
+        Pair<List<? extends FirewallRule>,Integer> result = _networkACLService.listNetworkACLs(this);
         ListResponse<NetworkACLResponse> response = new ListResponse<NetworkACLResponse>();
         List<NetworkACLResponse> aclResponses = new ArrayList<NetworkACLResponse>();
         
-        for (FirewallRule acl : result) {
+        for (FirewallRule acl : result.first()) {
             NetworkACLResponse ruleData = _responseGenerator.createNetworkACLResponse(acl);
             aclResponses.add(ruleData);
         }
-        response.setResponses(aclResponses);
+        response.setResponses(aclResponses, result.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response); 
     }

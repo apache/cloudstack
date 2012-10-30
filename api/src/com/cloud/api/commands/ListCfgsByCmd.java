@@ -28,6 +28,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.response.ConfigurationResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.configuration.Configuration;
+import com.cloud.utils.Pair;
 
 @Implementation(description = "Lists all configurations.", responseObject = ConfigurationResponse.class)
 public class ListCfgsByCmd extends BaseListCmd {
@@ -78,16 +79,16 @@ public class ListCfgsByCmd extends BaseListCmd {
 
     @Override
     public void execute() {
-        List<? extends Configuration> result = _mgr.searchForConfigurations(this);
+        Pair<List<? extends Configuration>, Integer> result = _mgr.searchForConfigurations(this);
         ListResponse<ConfigurationResponse> response = new ListResponse<ConfigurationResponse>();
         List<ConfigurationResponse> configResponses = new ArrayList<ConfigurationResponse>();
-        for (Configuration cfg : result) {
+        for (Configuration cfg : result.first()) {
             ConfigurationResponse cfgResponse = _responseGenerator.createConfigurationResponse(cfg);
             cfgResponse.setObjectName("configuration");
             configResponses.add(cfgResponse);
         }
 
-        response.setResponses(configResponses);
+        response.setResponses(configResponses, result.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

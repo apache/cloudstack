@@ -34,6 +34,7 @@ import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.ProjectResponse;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.projects.Project;
+import com.cloud.utils.Pair;
 
 @Implementation(description="Lists projects and provides detailed information for listed projects", responseObject=ProjectResponse.class, since="3.0.0")
 public class ListProjectsCmd extends BaseListAccountResourcesCmd {
@@ -106,16 +107,16 @@ public class ListProjectsCmd extends BaseListAccountResourcesCmd {
 
     @Override
     public void execute(){
-        List<? extends Project> projects = _projectService.listProjects(id, name, displayText, state, 
+        Pair<List<? extends Project>, Integer> projects = _projectService.listProjects(id, name, displayText, state, 
                 this.getAccountName(), this.getDomainId(), this.getKeyword(), this.getStartIndex(), this.getPageSizeVal(),
                 this.listAll(), this.isRecursive(), getTags());
         ListResponse<ProjectResponse> response = new ListResponse<ProjectResponse>();
         List<ProjectResponse> projectResponses = new ArrayList<ProjectResponse>();
-        for (Project project : projects) {
+        for (Project project : projects.first()) {
             ProjectResponse projectResponse = _responseGenerator.createProjectResponse(project);
             projectResponses.add(projectResponse);
         }
-        response.setResponses(projectResponses);
+        response.setResponses(projectResponses, projects.second());
         response.setResponseName(getCommandName());
         
         this.setResponseObject(response);

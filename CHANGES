@@ -1,0 +1,37 @@
+Apache CloudStack (Incubating) CHANGES
+======================================
+
+Full release notes for each release are located in the project's documentation website:  http://incubator.apache.org/cloudstack/docs
+
+Version 4.0.0-incubating
+------------------------
+
+This is the first release of CloudStack from within the Apache Software Foundation.
+
+Build Tool Changes:
+
+ * The project now uses a combination of maven3 and ant for building
+ * License header auditing is now implemented via the Apache RAT Maven plugin
+ * Some integrations have been disabled in the default build, due to the license types of our dependencies (See README.md for details on how to build with the optional capabilities)
+
+New Features:
+
+ * Inter-VLAN Routing (VPC)
+ * Site-to-Site VPN
+ * Local Storage Support for Data Volumes
+ * Virtual Resource Tagging
+ * Secure Console Access on XenServer
+ * Added the ability to create a VM without immediately starting it (via API)
+ * Upload an Existing Volume to a Virtual Machine
+ * Dedicated High-Availability Hosts
+ * Support for Amazon Web Services API (formerly a separate package)
+ * AWS API Extensions to include Tagging
+ * Support for Nicira NVP (L2)
+ * Ceph RBD Support for KVM
+ * Support for Caringo as Secondary Storage
+ * KVM Hypervisor support upgraded to work with Ubuntu 12.04 and RHEL 6.3
+
+Security Fixes:
+
+ * CVE-2012-4501: Apache CloudStack configuration vulnerability
+

@@ -26,6 +26,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.StaticRouteResponse;
 import com.cloud.network.vpc.StaticRoute;
+import com.cloud.utils.Pair;
 
 @Implementation(description="Lists all static routes", responseObject=StaticRouteResponse.class)
 public class ListStaticRoutesCmd extends BaseListTaggedResourcesCmd {
@@ -68,15 +69,15 @@ public class ListStaticRoutesCmd extends BaseListTaggedResourcesCmd {
     
     @Override
     public void execute(){
-        List<? extends StaticRoute> result = _vpcService.listStaticRoutes(this);
+        Pair<List<? extends StaticRoute>, Integer> result = _vpcService.listStaticRoutes(this);
         ListResponse<StaticRouteResponse> response = new ListResponse<StaticRouteResponse>();
         List<StaticRouteResponse> routeResponses = new ArrayList<StaticRouteResponse>();
         
-        for (StaticRoute route : result) {
+        for (StaticRoute route : result.first()) {
             StaticRouteResponse ruleData = _responseGenerator.createStaticRouteResponse(route);
             routeResponses.add(ruleData);
         }
-        response.setResponses(routeResponses);
+        response.setResponses(routeResponses, result.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response); 
     }

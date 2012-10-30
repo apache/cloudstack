@@ -659,4 +659,11 @@ public class SqlGenerator {
     public Field[] getEmbeddedFields() {
         return _embeddeds.toArray(new Field[_embeddeds.size()]);
     }
+
+    public String buildCountSql() {
+        StringBuilder sql = new StringBuilder();
+
+        return sql.append("SELECT COUNT(*) FROM ").append(buildTableReferences()).
+                append(" WHERE ").append(buildDiscriminatorClause().first()).toString();
+    }
 }

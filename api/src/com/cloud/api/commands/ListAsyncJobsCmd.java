@@ -27,6 +27,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.response.AsyncJobResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.async.AsyncJob;
+import com.cloud.utils.Pair;
 
 @Implementation(description="Lists all pending asynchronous jobs for the account.", responseObject=AsyncJobResponse.class)
 public class ListAsyncJobsCmd extends BaseListAccountResourcesCmd {
@@ -58,14 +59,14 @@ public class ListAsyncJobsCmd extends BaseListAccountResourcesCmd {
 
     @Override
     public void execute(){
-        List<? extends AsyncJob> result = _mgr.searchForAsyncJobs(this);
+        Pair<List<? extends AsyncJob>, Integer> result = _mgr.searchForAsyncJobs(this);
         ListResponse<AsyncJobResponse> response = new ListResponse<AsyncJobResponse>();
         List<AsyncJobResponse> jobResponses = new ArrayList<AsyncJobResponse>();
-        for (AsyncJob job : result) {
+        for (AsyncJob job : result.first()) {
             jobResponses.add(_responseGenerator.createAsyncJobResponse(job));
         }
 
-        response.setResponses(jobResponses);
+        response.setResponses(jobResponses, result.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

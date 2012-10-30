@@ -1,3 +1,8 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
 <!-- Licensed to the Apache Software Foundation (ASF) under one
  or more contributor license agreements.  See the NOTICE file
  distributed with this work for additional information
@@ -16,8 +21,8 @@
  under the License.
 -->
 
-    <section id="alerts">
-        <title>Alerts</title>
+<appendix id="alerts">
+    <title>Alerts</title>
         <para>The following is the list of alert type numbers. The current alerts can be found by calling listAlerts.</para>
         <programlisting>MEMORY = 0</programlisting>
         <programlisting>CPU = 1</programlisting>
@@ -45,5 +50,4 @@
         <programlisting>DIRECT_ATTACHED_PUBLIC_IP = 23;</programlisting>
         <programlisting>LOCAL_STORAGE = 24;</programlisting>
         <programlisting>RESOURCE_LIMIT_EXCEEDED = 25; //Generated when the resource limit exceeds the limit. Currently used for recurring snapshots only</programlisting>
-    </section>
-
+</appendix>

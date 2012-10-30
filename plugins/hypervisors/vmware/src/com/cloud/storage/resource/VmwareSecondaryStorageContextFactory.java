@@ -17,6 +17,7 @@
 package com.cloud.storage.resource;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import com.cloud.hypervisor.vmware.util.VmwareContext;
@@ -60,10 +61,11 @@ public class VmwareSecondaryStorageContextFactory {
 	
 	public static void invalidate(VmwareContext context) {
 		synchronized(s_contextMap) {
-			for(Map.Entry<String, VmwareContext> entry : s_contextMap.entrySet()) {
-				if(entry.getValue() == context) {
-					s_contextMap.remove(entry.getKey());
-				}
+            for(Iterator<Map.Entry<String, VmwareContext>> entryIter = s_contextMap.entrySet().iterator(); entryIter.hasNext();) {
+                Map.Entry<String, VmwareContext> entry = entryIter.next();
+                if(entry.getValue() == context) {
+                    entryIter.remove();
+                }
 			}
 		}
 		

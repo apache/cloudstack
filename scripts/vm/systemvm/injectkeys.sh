@@ -23,7 +23,7 @@
 
 #set -x
 
-TMP=${HOME}/tmp
+TMP=/tmp
 MOUNTPATH=${HOME}/systemvm_mnt
 TMPDIR=${TMP}/cloud/systemvm
 
@@ -80,7 +80,6 @@ systemvmpath=$3
 command -v mkisofs > /dev/null   || (echo "$(basename $0): mkisofs not found, please install or ensure PATH is accurate" ; exit 4)
 
 inject_into_iso systemvm.iso $newpubkey
-#inject_into_iso systemvm-premium.iso $newpubkey
 
 [ $? -ne 0 ] && exit 5
 

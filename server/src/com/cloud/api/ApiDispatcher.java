@@ -33,6 +33,8 @@ import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.commands.ListEventsCmd;
 import com.cloud.async.AsyncCommandQueued;
 import com.cloud.async.AsyncJobManager;
+import com.cloud.configuration.Config;
+import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.AccountLimitException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -44,6 +46,8 @@ import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.utils.DateUtil;
+import com.cloud.utils.IdentityProxy;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.exception.CSExceptionErrorCode;
@@ -59,6 +63,7 @@ public class ApiDispatcher {
     ComponentLocator _locator;
     AsyncJobManager _asyncMgr;
     IdentityDao _identityDao;
+    Long _createSnapshotQueueSizeLimit;
 
     // singleton class
     private static ApiDispatcher s_instance = new ApiDispatcher();
@@ -71,6 +76,18 @@ public class ApiDispatcher {
         _locator = ComponentLocator.getLocator(ManagementServer.Name);
         _asyncMgr = _locator.getManager(AsyncJobManager.class);
         _identityDao = _locator.getDao(IdentityDao.class);
+        ConfigurationDao configDao = _locator.getDao(ConfigurationDao.class);
+        Map<String, String> configs = configDao.getConfiguration();
+        String strSnapshotLimit = configs.get(Config.ConcurrentSnapshotsThresholdPerHost.key());
+        if (strSnapshotLimit != null) {
+            Long snapshotLimit = NumbersUtil.parseLong(strSnapshotLimit, 1L);
+            if (snapshotLimit <= 0) {
+                s_logger.debug("Global config parameter " + Config.ConcurrentSnapshotsThresholdPerHost.toString()
+                        + " is less or equal 0; defaulting to unlimited");
+            } else {
+                _createSnapshotQueueSizeLimit = snapshotLimit;
+            }
+        }
     }
 
     public void dispatchCreateCmd(BaseAsyncCreateCmd cmd, Map<String, String> params) {
@@ -131,7 +148,19 @@ public class ApiDispatcher {
 
                 // Synchronise job on the object if needed
                 if (asyncCmd.getJob() != null && asyncCmd.getSyncObjId() != null && asyncCmd.getSyncObjType() != null) {
-                    _asyncMgr.syncAsyncJobExecution(asyncCmd.getJob(), asyncCmd.getSyncObjType(), asyncCmd.getSyncObjId().longValue());
+                    Long queueSizeLimit = null;
+                    if (asyncCmd.getSyncObjType() != null && asyncCmd.getSyncObjType().equalsIgnoreCase(BaseAsyncCmd.snapshotHostSyncObject)) {
+                        queueSizeLimit = _createSnapshotQueueSizeLimit;
+                    } else {
+                        queueSizeLimit = 1L;
+                    }
+                    
+                    if (queueSizeLimit != null) {
+                        _asyncMgr.syncAsyncJobExecution(asyncCmd.getJob(), asyncCmd.getSyncObjType(), 
+                                asyncCmd.getSyncObjId().longValue(), queueSizeLimit);
+                    } else {
+                        s_logger.trace("The queue size is unlimited, skipping the synchronizing");
+                    }
                 }
             }
 

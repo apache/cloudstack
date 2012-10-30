@@ -1,0 +1,103 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+<section id="create-vpn-connection-vpc">
+  <title>Creating a VPN Connection</title>
+  <orderedlist>
+    <listitem>
+      <para>Log in to the &PRODUCT; UI as an administrator or end user.</para>
+    </listitem>
+    <listitem>
+      <para>In the left navigation, choose Network.</para>
+    </listitem>
+    <listitem>
+      <para>In the Select view, select VPC.</para>
+      <para>All the VPCs that you create for the account are listed in the page.</para>
+    </listitem>
+    <listitem>
+      <para>Click the Configure button of the VPC to which you want to deploy the VMs.</para>
+      <para>The VPC page is displayed where all the tiers you created are listed in a
+        diagram.</para>
+    </listitem>
+    <listitem>
+      <para>Click the Settings icon.</para>
+      <para>The following options are displayed.</para>
+      <itemizedlist>
+        <listitem>
+          <para>IP Addresses</para>
+        </listitem>
+        <listitem>
+          <para>Gateways</para>
+        </listitem>
+        <listitem>
+          <para>Site-to-Site VPN</para>
+        </listitem>
+        <listitem>
+          <para>Network ASLs</para>
+        </listitem>
+      </itemizedlist>
+    </listitem>
+    <listitem>
+      <para>Select Site-to-Site VPN.</para>
+      <para>The Site-to-Site VPN page is displayed.</para>
+    </listitem>
+    <listitem>
+      <para>From the Select View drop-down, ensure that VPN Connection is selected.</para>
+    </listitem>
+    <listitem>
+      <para>Click Create VPN Connection.</para>
+      <para> The Create VPN Connection dialog is displayed:</para>
+      <mediaobject>
+        <imageobject>
+          <imagedata fileref="./images/create-vpn-connection.png"/>
+        </imageobject>
+        <textobject>
+          <phrase>createvpnconnection.png: creating a vpn connection to the customer
+            gateway.</phrase>
+        </textobject>
+      </mediaobject>
+    </listitem>
+    <listitem>
+      <para>Select the desired customer gateway, then click OK to confirm.</para>
+      <para>Within a few moments, the VPN Connection is displayed.</para>
+      <para>The following information on the VPN connection is displayed:</para>
+      <itemizedlist>
+        <listitem>
+          <para>IP Address</para>
+        </listitem>
+        <listitem>
+          <para>Gateway</para>
+        </listitem>
+        <listitem>
+          <para>State</para>
+        </listitem>
+        <listitem>
+          <para>IPSec Preshared Key</para>
+        </listitem>
+        <listitem>
+          <para>IKE Policy</para>
+        </listitem>
+        <listitem>
+          <para>ESP Policy</para>
+        </listitem>
+      </itemizedlist>
+    </listitem>
+  </orderedlist>
+</section>

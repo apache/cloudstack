@@ -87,6 +87,10 @@ echo "Recreating Database cloud_usage."
 mysql --user=root --password=$3 < create-database-premium.sql > /dev/null 2>/dev/null
 handle_error create-database-premium.sql
 
+echo "Recreating Database simulator."
+mysql --user=root --password=$3 < create-database-simulator.sql > /dev/null 2>/dev/null
+handle_error create-database-simulator.sql
+
 mysql --user=cloud --password=cloud cloud < create-schema.sql
 if [ $? -ne 0 ]; then
   printf "Error: Cannot execute create-schema.sql\n"

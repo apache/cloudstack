@@ -179,6 +179,7 @@ under the License.
         <dao name="OvsTunnelAccountDao" class="com.cloud.network.ovs.dao.OvsTunnelNetworkDaoImpl" singleton="false"/>
         <dao name="NiciraNvpDao" class="com.cloud.network.dao.NiciraNvpDaoImpl" singleton="false"/>
         <dao name="NiciraNvpNicMappingDao" class="com.cloud.network.dao.NiciraNvpNicMappingDaoImpl" singleton="false"/>
+        <dao name="NiciraNvpRouterMappingDao" class="com.cloud.network.dao.NiciraNvpRouterMappingDaoImpl" singleton="false"/>
         <dao name="ElasticLbVmMapDao" class="com.cloud.network.lb.dao.ElasticLbVmMapDaoImpl" singleton="false"/>
     </management-server>
 

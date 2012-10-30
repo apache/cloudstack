@@ -116,6 +116,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CSExceptionErrorCode;
 import com.cloud.uuididentity.dao.IdentityDao;
 
+
 public class ApiServer implements HttpRequestHandler {
     private static final Logger s_logger = Logger.getLogger(ApiServer.class.getName());
     private static final Logger s_accessLogger = Logger.getLogger("apiserver." + ApiServer.class.getName());
@@ -299,7 +300,7 @@ public class ApiServer implements HttpRequestHandler {
         if (apiPort != null) {
             ListenerThread listenerThread = new ListenerThread(this, apiPort);
             listenerThread.start();
-        }
+        } 
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
@@ -515,14 +516,9 @@ public class ApiServer implements HttpRequestHandler {
 
             ctx.setAccountId(asyncCmd.getEntityOwnerId());
 
-            AsyncJobVO job = new AsyncJobVO();
-            job.setInstanceId((objectId == null) ? asyncCmd.getInstanceId() : objectId);
-            job.setInstanceType(asyncCmd.getInstanceType());
-            job.setUserId(callerUserId);
-            job.setAccountId(caller.getId());
-
-            job.setCmd(cmdObj.getClass().getName());
-            job.setCmdInfo(ApiGsonHelper.getBuilder().create().toJson(params));
+            Long instanceId = (objectId == null) ? asyncCmd.getInstanceId() : objectId;            
+            AsyncJobVO job = new AsyncJobVO(callerUserId, caller.getId(), cmdObj.getClass().getName(), 
+                    ApiGsonHelper.getBuilder().create().toJson(params), instanceId, asyncCmd.getInstanceType());
 
             long jobId = _asyncMgr.submitAsyncJob(job);
 

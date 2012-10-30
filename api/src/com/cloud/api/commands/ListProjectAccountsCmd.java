@@ -31,6 +31,7 @@ import com.cloud.api.response.ProjectAccountResponse;
 import com.cloud.api.response.ProjectResponse;
 import com.cloud.projects.ProjectAccount;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 
 @Implementation(description="Lists project's accounts", responseObject=ProjectResponse.class, since="3.0.0")
 public class ListProjectAccountsCmd extends BaseListCmd {
@@ -78,14 +79,15 @@ public class ListProjectAccountsCmd extends BaseListCmd {
 
     @Override
     public void execute(){
-        List<? extends ProjectAccount> projectAccounts = _projectService.listProjectAccounts(projectId, accountName, role, this.getStartIndex(), this.getPageSizeVal());
+        Pair<List<? extends ProjectAccount>, Integer> projectAccounts = _projectService.listProjectAccounts(projectId,
+                accountName, role, this.getStartIndex(), this.getPageSizeVal());
         ListResponse<ProjectAccountResponse> response = new ListResponse<ProjectAccountResponse>();
         List<ProjectAccountResponse> projectResponses = new ArrayList<ProjectAccountResponse>();
-        for (ProjectAccount projectAccount : projectAccounts) {
+        for (ProjectAccount projectAccount : projectAccounts.first()) {
             ProjectAccountResponse projectAccountResponse = _responseGenerator.createProjectAccountResponse(projectAccount);
             projectResponses.add(projectAccountResponse);
         }
-        response.setResponses(projectResponses);
+        response.setResponses(projectResponses, projectAccounts.second());
         response.setResponseName(getCommandName());
         
         this.setResponseObject(response);

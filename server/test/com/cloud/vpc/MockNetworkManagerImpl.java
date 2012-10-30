@@ -268,7 +268,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager{
      * @see com.cloud.network.NetworkService#searchPhysicalNetworks(java.lang.Long, java.lang.Long, java.lang.String, java.lang.Long, java.lang.Long, java.lang.String)
      */
     @Override
-    public List<? extends PhysicalNetwork> searchPhysicalNetworks(Long id, Long zoneId, String keyword, Long startIndex, Long pageSize, String name) {
+    public Pair<List<? extends PhysicalNetwork>, Integer> searchPhysicalNetworks(Long id, Long zoneId, String keyword, Long startIndex, Long pageSize, String name) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -322,7 +322,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager{
      * @see com.cloud.network.NetworkService#listNetworkServiceProviders(java.lang.Long, java.lang.String, java.lang.String, java.lang.Long, java.lang.Long)
      */
     @Override
-    public List<? extends PhysicalNetworkServiceProvider> listNetworkServiceProviders(Long physicalNetworkId, String name, String state, Long startIndex, Long pageSize) {
+    public Pair<List<? extends PhysicalNetworkServiceProvider>, Integer> listNetworkServiceProviders(Long physicalNetworkId, String name, String state, Long startIndex, Long pageSize) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -430,7 +430,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager{
      * @see com.cloud.network.NetworkService#listTrafficTypes(java.lang.Long)
      */
     @Override
-    public List<? extends PhysicalNetworkTrafficType> listTrafficTypes(Long physicalNetworkId) {
+    public Pair<List<? extends PhysicalNetworkTrafficType>, Integer> listTrafficTypes(Long physicalNetworkId) {
         // TODO Auto-generated method stub
         return null;
     }

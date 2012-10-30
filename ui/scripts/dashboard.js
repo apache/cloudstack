@@ -31,6 +31,9 @@
           instances: function(data) {
             $.ajax({
               url: createURL('listVirtualMachines'),
+              data: {
+                listAll: true
+              },
               success: function(json) {
                 var instances = json.listvirtualmachinesresponse.virtualmachine ?
                   json.listvirtualmachinesresponse.virtualmachine : [];

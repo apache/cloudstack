@@ -19,12 +19,6 @@
 	var domainObjs;
 	var rootDomainId;
 
-  var systemAccountId = 1;
-  var adminAccountId = 2;
-
-  var systemUserId = 1;
-  var adminUserId = 2;
-
   cloudStack.sections.accounts = {
     title: 'label.accounts',
     id: 'accounts',
@@ -85,13 +79,15 @@
                 fields: {
                   username: {
                     label: 'label.username',
-                    validation: { required: true }
+                    validation: { required: true },
+                    docID: 'helpAccountUsername'
                   },
                   password: {
                     label: 'label.password',
                     validation: { required: true },
                     isPassword: true,
-                    id: 'password'
+                    id: 'password',
+                    docID: 'helpAccountPassword'
                   },
                   'password-confirm': {
                     label: 'label.confirm.password',
@@ -99,22 +95,27 @@
                       required: true,
                       equalTo: '#password'
                     },
-                    isPassword: true
+                    isPassword: true,
+                    docID: 'helpAccountConfirmPassword'
                   },
                   email: {
                     label: 'label.email',
-                    validation: { required: true, email:true }
+                    validation: { required: true, email:true },
+                    docID: 'helpAccountEmail'
                   },
                   firstname: {
                     label: 'label.first.name',
-                    validation: { required: true }
+                    validation: { required: true },
+                    docID: 'helpAccountFirstName'
                   },
                   lastname: {
                     label: 'label.last.name',
-                    validation: { required: true }
+                    validation: { required: true },
+                    docID: 'helpAccountLastName'
                   },
                   domainid: {
                     label: 'label.domain',
+                    docID: 'helpAccountDomain',
                     validation: { required: true },
                     select: function(args) {
                       var data = {};
@@ -145,10 +146,12 @@
                     }
                   },
                   account: {
-                    label: 'label.account'
+                    label: 'label.account',
+                    docID: 'helpAccountAccount'
                   },
                   accounttype: {
                     label: 'label.type',
+                    docID: 'helpAccountType',
                     validation: { required: true },
                     select: function(args) {
                       var items = [];
@@ -159,6 +162,7 @@
                   },
                   timezone: {
                     label: 'label.timezone',
+                    docID: 'helpAccountTimezone',
                     select: function(args) {
                       var items = [];
                       items.push({id: "", description: ""});
@@ -169,54 +173,69 @@
                   },
                   networkdomain: {
                     label: 'label.network.domain',
+                    docID: 'helpAccountNetworkDomain',
                     validation: { required: false }
                   }
                 }
               },
 
               action: function(args) {
-                var array1 = [];
-                array1.push("&username=" + todb(args.data.username));
-                var errorMsg = "";
+                var data = {
+								  username: args.data.username									
+								};															               
+               
                 var password = args.data.password;
-                if (md5Hashed)
-                  password = $.md5(password);
-								else
-                  password = todb(password);
-                array1.push("&password=" + password);
-
-                array1.push("&email=" + todb(args.data.email));
-                array1.push("&firstname=" + todb(args.data.firstname));
-                array1.push("&lastname=" + todb(args.data.lastname));
-
-                array1.push("&domainid=" + args.data.domainid);
+                if (md5Hashed) {
+                  password = $.md5(password);		
+                }									
+								$.extend(data, {
+                  password: password
+                });								
+								
+                $.extend(data, {
+								  email: args.data.email,
+                  firstname: args.data.firstname,
+                  lastname: args.data.lastname,
+                  domainid: args.data.domainid									
+								});								              
 
                 var account = args.data.account;
-                if(account == null || account.length == 0)
+                if(account == null || account.length == 0) {
                   account = args.data.username;
-                array1.push("&account=" + todb(account));
-
+								}
+								$.extend(data, {
+								  account: account
+								});
+               
                 var accountType = args.data.accounttype;							
-                if (args.data.accounttype == "1" && args.data.domainid != rootDomainId) //if account type is admin, but domain is not Root domain
-                  accountType = "2"; // Change accounttype from root-domain("1") to domain-admin("2")
-                array1.push("&accounttype=" + accountType);
+                if (args.data.accounttype == "1" && args.data.domainid != rootDomainId) { //if account type is admin, but domain is not Root domain
+                  accountType = "2"; // Change accounttype from root-domain("1") to domain-admin("2") 
+								}
+								$.extend(data, {
+								  accounttype: accountType
+								});
+               
+                if(args.data.timezone != null && args.data.timezone.length > 0) {
+								  $.extend(data, {
+									  timezone: args.data.timezone
+									});                  
+								}
 
-                if(args.data.timezone != null && args.data.timezone.length > 0)
-                  array1.push("&timezone=" + todb(args.data.timezone));
-
-                if(args.data.networkdomain != null && args.data.networkdomain.length > 0)
-                  array1.push("&networkdomain=" + todb(args.data.networkdomain));
+                if(args.data.networkdomain != null && args.data.networkdomain.length > 0) {
+								  $.extend(data, {
+									  networkdomain: args.data.networkdomain
+									});                  
+								}
 
                 $.ajax({
-                  url: createURL("createAccount" + array1.join("")),
-                  dataType: "json",
+                  url: createURL('createAccount'),
+                  data: data,
                   success: function(json) {
                     var item = json.createaccountresponse.account;
                     args.response.success({data:item});
                   },
-                  error: function(XMLHttpResponse) {
-                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                    args.response.error(errorMsg);
+                  error: function(XMLHttpResponse) {                    
+                    args.response.error(parseXMLHttpResponse(XMLHttpResponse));
                   }
                 });
               },
@@ -232,23 +251,18 @@
           },
 
           dataProvider: function(args) {
-            var array1 = [];
-            if(args.filterBy != null) {
-              if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
-                switch(args.filterBy.search.by) {
-                case "name":
-                  if(args.filterBy.search.value.length > 0)
-                    array1.push("&keyword=" + args.filterBy.search.value);
-                  break;
-                }
-              }
-            }
-
-            if("domains" in args.context)
-              array1.push("&domainid=" + args.context.domains[0].id);
+            var data = {};
+						listViewDataProvider(args, data);			
+						
+            if("domains" in args.context) {
+						  $.extend(data, {
+							  domainid: args.context.domains[0].id
+							});
+						}
+						
             $.ajax({
-              url: createURL("listAccounts" + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + '&listAll=true'),
-              dataType: "json",
+              url: createURL('listAccounts'),
+              data: data,
               async: true,
               success: function(json) {
                 var items = json.listaccountsresponse.account;
@@ -267,82 +281,133 @@
             actions: {
               edit: {
                 label: 'message.edit.account',
-                action: function(args) {
-                  var errorMsg = "";
+                compactLabel: 'label.edit',
+                action: function(args) {                  
                   var accountObj = args.context.accounts[0];
 
-                  var array1 = [];
-                  array1.push("&newname=" + todb(args.data.name));
-                  array1.push("&networkdomain=" + todb(args.data.networkdomain));
+                  var data = {
+									  domainid: accountObj.domainid,
+										account: accountObj.name,
+										newname: args.data.name,
+										networkdomain: args.data.networkdomain
+									};
+                
                   $.ajax({
-                    url: createURL("updateAccount&domainid=" + accountObj.domainid + "&account=" + accountObj.name + array1.join("")),
-                    dataType: "json",
+                    url: createURL('updateAccount'),
+                    data: data,
                     async: false,
                     success: function(json) {
                       accountObj = json.updateaccountresponse.account;
                     },
                     error: function(json) {
-                      errorMsg = parseXMLHttpResponse(json);
+                      var errorMsg = parseXMLHttpResponse(json);
                       args.response.error(errorMsg);
-                    }
+                    } 
+                  });
+
+									if(args.data.vmLimit != null) {
+									  var data = {
+										  resourceType: 0,
+											max: args.data.vmLimit,
+											domainid: accountObj.domainid,
+											account: accountObj.name											
+										};									
+										$.ajax({
+											url: createURL('updateResourceLimit'),
+											data: data,
+											async: false,
+											success: function(json) {
+												accountObj["vmLimit"] = args.data.vmLimit;
+											}
+										});
+									}
+
+									if(args.data.ipLimit != null) {
+									  var data = {
+										  resourceType: 1,
+											max: args.data.ipLimit,
+											domainid: accountObj.domainid,
+											account: accountObj.name		
+										};									
+										$.ajax({
+											url: createURL('updateResourceLimit'),
+											data: data,
+											async: false,
+											success: function(json) {
+												accountObj["ipLimit"] = args.data.ipLimit;
+											}
+										});
+									}
+
+									if(args.data.volumeLimit != null) {
+									  var data = {
+										  resourceType: 2,
+											max: args.data.volumeLimit,
+											domainid: accountObj.domainid,
+											account: accountObj.name	
+										};									
+										$.ajax({
+											url: createURL('updateResourceLimit'),
+											data: data,
+											async: false,
+											success: function(json) {
+												accountObj["volumeLimit"] = args.data.volumeLimit;
+											}
+										});
+									}
+
+									if(args.data.snapshotLimit != null) {
+									  var data = {
+										  resourceType: 3,
+											max: args.data.snapshotLimit,
+											domainid: accountObj.domainid,
+											account: accountObj.name	
+										};									
+										$.ajax({
+											url: createURL('updateResourceLimit'),
+											data: data,
+											async: false,
+											success: function(json) {
+												accountObj["snapshotLimit"] = args.data.snapshotLimit;
+											}
+										});
+									}
  
-                  });
+                  if(args.data.templateLimit != null) {
+									  var data = {
+										  resourceType: 4,
+											max: args.data.templateLimit,
+											domainid: accountObj.domainid,
+											account: accountObj.name	
+										};									
+										$.ajax({
+											url: createURL('updateResourceLimit'),
+											data: data,
+											async: false,
+											success: function(json) {
+												accountObj["templateLimit"] = args.data.templateLimit;
+											}
+										});
+                  }
+									
+									if(args.data.vpcLimit != null) {
+									  var data = {
+										  resourceType: 7,
+											max: args.data.vpcLimit,
+											domainid: accountObj.domainid,
+											account: accountObj.name	
+										};
+									
+										$.ajax({
+											url: createURL('updateResourceLimit'),
+											data: data,
+											async: false,
+											success: function(json) {
+												accountObj["vpcLimit"] = args.data.vpcLimit;
+											}
+										});
+									}
 
-                  $.ajax({
-                    url: createURL("updateResourceLimit&resourceType=0&max=" + todb(args.data.vmLimit) + "&account=" + accountObj.name + "&domainid=" + accountObj.domainid),
-                    dataType: "json",
-                    async: false,
-                    success: function(json) {
-                      accountObj["vmLimit"] = args.data.vmLimit;
-                    }
-                  });
-
-                  $.ajax({
-                    url: createURL("updateResourceLimit&resourceType=1&max=" + todb(args.data.ipLimit) + "&account=" + accountObj.name + "&domainid=" + accountObj.domainid),
-                    dataType: "json",
-                    async: false,
-                    success: function(json) {
-                      accountObj["ipLimit"] = args.data.ipLimit;
-                    }
-                  });
-
-                  $.ajax({
-                    url: createURL("updateResourceLimit&resourceType=2&max=" + todb(args.data.volumeLimit) + "&account=" + accountObj.name + "&domainid=" + accountObj.domainid),
-                    dataType: "json",
-                    async: false,
-                    success: function(json) {
-                      accountObj["volumeLimit"] = args.data.volumeLimit;
-                    }
-                  });
-
-                  $.ajax({
-                    url: createURL("updateResourceLimit&resourceType=3&max=" + todb(args.data.snapshotLimit) + "&account=" + accountObj.name + "&domainid=" + accountObj.domainid),
-                    dataType: "json",
-                    async: false,
-                    success: function(json) {
-                      accountObj["snapshotLimit"] = args.data.snapshotLimit;
-                    }
-                  });
-
-                  $.ajax({
-                    url: createURL("updateResourceLimit&resourceType=4&max=" + todb(args.data.templateLimit) + "&account=" + accountObj.name + "&domainid=" + accountObj.domainid),
-                    dataType: "json",
-                    async: false,
-                    success: function(json) {
-                      accountObj["templateLimit"] = args.data.templateLimit;
-                    }
-                  });
-                  
-                  $.ajax({
-                    url: createURL("updateResourceLimit&resourceType=7&max=" + todb(args.data.vpcLimit) + "&account=" + accountObj.name + "&domainid=" + accountObj.domainid),
-                    dataType: "json",
-                    async: false,
-                    success: function(json) {
-                      accountObj["vpcLimit"] = args.data.vpcLimit;
-                    }
-                  });
-
-                  if(errorMsg == "")
                   args.response.success({data: accountObj});
                 }
               },
@@ -359,9 +424,14 @@
                 },
                 action: function(args) {
                   var accountObj = args.context.accounts[0];
+									var data = {
+									  domainid: accountObj.domainid,
+										account: accountObj.name
+									};
+									
                   $.ajax({
-                    url: createURL("updateResourceCount&domainid=" + accountObj.domainid + "&account=" + accountObj.name),
-                    dataType: "json",
+                    url: createURL('updateResourceCount'),
+                    data: data,
                     async: true,
                     success: function(json) {
                       //var resourcecounts= json.updateresourcecountresponse.resourcecount;   //do nothing
@@ -391,9 +461,15 @@
                 },
                 action: function(args) {
                   var accountObj = args.context.accounts[0];
+									var data = {
+									  lock: false,
+										domainid: accountObj.domainid,
+										account: accountObj.name
+									};
+									
                   $.ajax({
-                    url: createURL("disableAccount&lock=false&domainid=" + accountObj.domainid + "&account=" + accountObj.name),
-                    dataType: "json",
+                    url: createURL('disableAccount'),
+                    data: data,
                     async: true,
                     success: function(json) {
                       var jid = json.disableaccountresponse.jobid;
@@ -429,9 +505,15 @@
                 },
                 action: function(args) {
                   var accountObj = args.context.accounts[0];
+									var data = {
+									  lock: true,
+										domainid: accountObj.domainid,
+										account: accountObj.name
+									};
+									
                   $.ajax({
-                    url: createURL("disableAccount&lock=true&domainid=" + accountObj.domainid + "&account=" + accountObj.name),
-                    dataType: "json",
+                    url: createURL('disableAccount'),
+                    data: data,
                     async: true,
                     success: function(json) {
                       var jid = json.disableaccountresponse.jobid;
@@ -467,9 +549,13 @@
                 },
                 action: function(args) {
                   var accountObj = args.context.accounts[0];
+									var data = {
+									  domainid: accountObj.domainid,
+										account: accountObj.name
+									};									
                   $.ajax({
-                    url: createURL("enableAccount&domainid=" + accountObj.domainid + "&account=" + accountObj.name),
-                    dataType: "json",
+                    url: createURL('enableAccount'),
+                    data: data,
                     async: true,
                     success: function(json) {
                       args.response.success({data: json.enableaccountresponse.account});
@@ -496,9 +582,12 @@
                   }
                 },
                 action: function(args) {
+								  var data = {
+									  id: args.context.accounts[0].id
+									};								
                   $.ajax({
-                    url: createURL("deleteAccount&id=" + args.context.accounts[0].id),
-                    dataType: "json",
+                    url: createURL('deleteAccount'),
+                    data: data,
                     async: true,
                     success: function(json) {
                       var jid = json.deleteaccountresponse.jobid;
@@ -552,27 +641,57 @@
                     },
                     vmLimit: {
                       label: 'label.instance.limits',
-                      isEditable: true
+                      isEditable: function(context) {											  
+											  if (context.accounts[0].accounttype == roleTypeUser || context.accounts[0].accounttype == roleTypeDomainAdmin) //updateResourceLimits is only allowed on account whose type is user or domain-admin
+												  return true;
+												else
+												  return false;
+											}
                     },
                     ipLimit: {
                       label: 'label.ip.limits',
-                      isEditable: true
+                      isEditable: function(context) {											  
+											  if (context.accounts[0].accounttype == roleTypeUser || context.accounts[0].accounttype == roleTypeDomainAdmin) //updateResourceLimits is only allowed on account whose type is user or domain-admin
+												  return true;
+												else
+												  return false;
+											}
                     },
                     volumeLimit: {
                       label: 'label.volume.limits',
-                      isEditable: true
+                      isEditable: function(context) {											  
+											  if (context.accounts[0].accounttype == roleTypeUser || context.accounts[0].accounttype == roleTypeDomainAdmin) //updateResourceLimits is only allowed on account whose type is user or domain-admin
+												  return true;
+												else
+												  return false;
+											}
                     },
                     snapshotLimit: {
                       label: 'label.snapshot.limits',
-                      isEditable: true
+                      isEditable: function(context) {											  
+											  if (context.accounts[0].accounttype == roleTypeUser || context.accounts[0].accounttype == roleTypeDomainAdmin) //updateResourceLimits is only allowed on account whose type is user or domain-admin
+												  return true;
+												else
+												  return false;
+											}
                     },
                     templateLimit: {
                       label: 'label.template.limits',
-                      isEditable: true
+                      isEditable: function(context) {											  
+											  if (context.accounts[0].accounttype == roleTypeUser || context.accounts[0].accounttype == roleTypeDomainAdmin) //updateResourceLimits is only allowed on account whose type is user or domain-admin
+												  return true;
+												else
+												  return false;
+											}
                     },
                     vpcLimit: {
                       label: 'VPC limits',
-                      isEditable: true
+                      isEditable: function(context) {											  
+											  if (context.accounts[0].accounttype == roleTypeUser || context.accounts[0].accounttype == roleTypeDomainAdmin) //updateResourceLimits is only allowed on account whose type is user or domain-admin
+												  return true;
+												else
+												  return false;
+											}
                     },
 
                     vmtotal: { label: 'label.total.of.vm' },
@@ -599,15 +718,21 @@
                 ],
 
                 dataProvider: function(args) {
+								  var data = {
+									  id: args.context.accounts[0].id
+									};								
 									$.ajax({
-										url: createURL("listAccounts&id=" + args.context.accounts[0].id),
-										dataType: "json",										
+										url: createURL('listAccounts'),
+										data: data,					
 										success: function(json) {		
 											var accountObj = json.listaccountsresponse.account[0];
-
+                      var data = {
+											  domainid: accountObj.domainid,
+												account: accountObj.name
+											};
 											$.ajax({
-												url: createURL("listResourceLimits&domainid=" + accountObj.domainid + "&account=" + todb(accountObj.name)),
-												dataType: "json",												
+												url: createURL('listResourceLimits'),
+												data: data,											
 												success: function(json) {
 													var limits = json.listresourcelimitsresponse.resourcelimit;													
 													if (limits != null) {
@@ -717,16 +842,19 @@
                 fields: {
                   username: {
                     label: 'label.username',
-                    validation: { required: true }
+                    validation: { required: true },
+                    docID: 'helpUserUsername'
                   },
                   password: {
                     label: 'label.password',
                     isPassword: true,
                     validation: { required: true },
-                    id: 'password'
+                    id: 'password',
+                    docID: 'helpUserPassword'
                   },
                   'password-confirm': {
                     label: 'label.confirm.password',
+                    docID: 'helpUserConfirmPassword',
                     validation: {
                       required: true,
                       equalTo: '#password'
@@ -735,18 +863,22 @@
                   },
                   email: {
                     label: 'label.email',
+                    docID: 'helpUserEmail',
                     validation: { required: true, email: true }
                   },
                   firstname: {
                     label: 'label.first.name',
+                    docID: 'helpUserFirstName',
                     validation: { required: true }
                   },
                   lastname: {
                     label: 'label.last.name',
+                    docID: 'helpUserLastName',
                     validation: { required: true }
                   },
                   timezone: {
                     label: 'label.timezone',
+                    docID: 'helpUserTimezone',
                     select: function(args) {
                       var items = [];
                       items.push({id: "", description: ""});
@@ -1097,12 +1229,8 @@
     if (jsonObj.state == 'Destroyed') return [];
 
     if(isAdmin()) {
-      if(jsonObj.id != systemAccountId && jsonObj.id != adminAccountId) {
-        //allowedActions.push("edit");
-        if (jsonObj.accounttype == roleTypeUser || jsonObj.accounttype == roleTypeDomainAdmin) {
-          //allowedActions.push("updateResourceLimits");
-          allowedActions.push("edit");
-        }
+		  allowedActions.push("edit"); //updating networkdomain is allowed on any account, including system-generated default admin account 
+      if(!(jsonObj.domain == "ROOT" && jsonObj.name == "admin" && jsonObj.accounttype == 1)) { //if not system-generated default admin account    
         if(jsonObj.state == "enabled") {
           allowedActions.push("disable");
           allowedActions.push("lock");
@@ -1127,7 +1255,7 @@
       allowedActions.push("edit");
       allowedActions.push("changePassword");
       allowedActions.push("generateKeys");
-      if(jsonObj.id != systemUserId && jsonObj.id != adminUserId) {
+      if(!(jsonObj.domain == "ROOT" && jsonObj.account == "admin" && jsonObj.accounttype == 1)) { //if not system-generated default admin account user 
         if(jsonObj.state == "enabled")
           allowedActions.push("disable");
         if(jsonObj.state == "disabled")

@@ -32,17 +32,21 @@
       <listitem><para>In the left navigation, click Projects.</para></listitem>
       <listitem><para>In Select View, choose Projects.</para></listitem>
         <listitem><para>Click the name of the project.</para></listitem>
-        <listitem><para>Click one of the buttons:<inlinemediaobject>
+        <listitem><para>Click one of the buttons:</para><para>To delete, use <inlinemediaobject>
             <imageobject>
                 <imagedata fileref="./images/delete-button.png" />
             </imageobject>
-            <textobject><phrase>deletebutton.png: Removes a member</phrase></textobject>
-        </inlinemediaobject></para>
-            <para><inlinemediaobject>
+            <textobject>
+                <phrase>deletebutton.png: Removes a project</phrase>
+            </textobject>
+        </inlinemediaobject></para>                       
+            <para>To suspend, use<inlinemediaobject>
                 <imageobject>
                     <imagedata fileref="./images/suspend-icon.png" />
                 </imageobject>
-                <textobject><phrase>deletebutton.png: Removes a member</phrase></textobject>
+                <textobject>
+                    <phrase>deletebutton.png: suspends a project</phrase>
+                </textobject>
             </inlinemediaobject></para></listitem>
    </orderedlist>
 </section>

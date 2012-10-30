@@ -209,7 +209,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
     }
 
     @Override
-    public boolean destroy(Network config) {
+    public boolean destroy(Network config, ReservationContext context) {
         return true;
     }
 

@@ -104,10 +104,11 @@ public interface NetworkElement extends Adapter {
     /**
      * The network is being destroyed.
      * @param network
+     * @param context TODO
      * @return
      * @throws ConcurrentOperationException
      */
-    boolean destroy(Network network) throws ConcurrentOperationException, ResourceUnavailableException;
+    boolean destroy(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException;
     
     /**
      * Check if the instances of this Element are configured to be used on the physical network referred by this provider.

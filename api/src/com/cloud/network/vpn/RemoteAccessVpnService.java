@@ -24,21 +24,23 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VpnUser;
+import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 
 public interface RemoteAccessVpnService {
 
     RemoteAccessVpn createRemoteAccessVpn(long vpnServerAddressId, String ipRange, boolean openFirewall, long networkId) 
             throws NetworkRuleConflictException;
-    void destroyRemoteAccessVpn(long vpnServerAddressId) throws ResourceUnavailableException;
+    void destroyRemoteAccessVpn(long vpnServerAddressId, Account caller) throws ResourceUnavailableException;
     RemoteAccessVpn startRemoteAccessVpn(long vpnServerAddressId, boolean openFirewall) throws ResourceUnavailableException;
 
     VpnUser addVpnUser(long vpnOwnerId, String userName, String password);
-    boolean removeVpnUser(long vpnOwnerId, String userName);
+    boolean removeVpnUser(long vpnOwnerId, String userName, Account caller);
     List<? extends VpnUser> listVpnUsers(long vpnOwnerId, String userName);
-    boolean applyVpnUsers(long vpnOwnerId);
+    boolean applyVpnUsers(long vpnOwnerId, String userName);
     
-    List<? extends RemoteAccessVpn> searchForRemoteAccessVpns(ListRemoteAccessVpnsCmd cmd);
-    List<? extends VpnUser> searchForVpnUsers(ListVpnUsersCmd cmd);
+    Pair<List<? extends RemoteAccessVpn>, Integer> searchForRemoteAccessVpns(ListRemoteAccessVpnsCmd cmd);
+    Pair<List<? extends VpnUser>, Integer> searchForVpnUsers(ListVpnUsersCmd cmd);
     
     List<? extends RemoteAccessVpn> listRemoteAccessVpns(long networkId);
     

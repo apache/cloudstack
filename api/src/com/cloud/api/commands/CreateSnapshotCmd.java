@@ -19,6 +19,7 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.IdentityMapper;
@@ -60,6 +61,8 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
     @IdentityMapper(entityTableName="snapshot_policy")
     @Parameter(name = ApiConstants.POLICY_ID, type = CommandType.LONG, description = "policy id of the snapshot, if this is null, then use MANUAL_POLICY.")
     private Long policyId;
+        
+    private String syncObjectType = BaseAsyncCmd.snapshotHostSyncObject;
 
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
@@ -88,7 +91,16 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
             return Snapshot.MANUAL_POLICY_ID;
         }
     }
+    
+    private Long getHostId() {
+        Volume volume = _entityMgr.findById(Volume.class, getVolumeId());
+        if (volume == null) {
+            throw new InvalidParameterValueException("Unable to find volume by id");
+        }
+        return _snapshotService.getHostIdForSnapshotOperation(volume);
+    }
 
+    
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
@@ -160,5 +172,22 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create snapshot due to an internal error creating snapshot for volume " + volumeId);
         }
+    }
+    
+    
+    @Override
+    public String getSyncObjType() {
+        if (getSyncObjId() != null) {
+            return syncObjectType;
+        }
+        return null;
+    }
+
+    @Override
+    public Long getSyncObjId() {
+        if (getHostId() != null) {
+            return getHostId();
+        }
+        return null;
     }
 }

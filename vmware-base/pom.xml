@@ -24,7 +24,7 @@
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
-    <version>4.0.0-SNAPSHOT</version>
+    <version>4.1.0-SNAPSHOT</version>
   </parent>
   <dependencies>
     <dependency>
@@ -39,18 +39,21 @@
     </dependency>
     <dependency>
       <groupId>com.cloud.com.vmware</groupId>
-      <artifactId>vmware-vim</artifactId>
-      <version>1.0</version>
+      <artifactId>vmware-vim25</artifactId>
+      <version>${cs.vmware.api.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.cloud.com.vmware</groupId>
-      <artifactId>vmware-vim25</artifactId>
-      <version>1.0</version>
+      <artifactId>vmware-vim</artifactId>
+      <version>${cs.vmware.api.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.cloud.com.vmware</groupId>
       <artifactId>vmware-apputils</artifactId>
-      <version>1.0</version>
+      <version>${cs.vmware.api.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.axis</groupId>
@@ -61,6 +64,11 @@
       <groupId>org.apache.axis</groupId>
       <artifactId>axis-jaxrpc</artifactId>
       <version>${cs.axis.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>wsdl4j</groupId>
+      <artifactId>wsdl4j</artifactId>
+      <version>1.4</version>
     </dependency>
   </dependencies>
   <build>

@@ -68,10 +68,12 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.DomainManager;
 import com.cloud.user.ResourceLimitService;
+import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
@@ -283,7 +285,8 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         txn.commit();
         
         if (updateResult) {
-            if (!cleanupProject(project, _accountDao.findById(caller.getId()), callerUserId)) {
+            //pass system caller when clenaup projects account
+            if (!cleanupProject(project, _accountDao.findById(Account.ACCOUNT_ID_SYSTEM), User.UID_SYSTEM)) {
                 s_logger.warn("Failed to cleanup project's id=" + project.getId() + " resources, not removing the project yet");
                 return false;
             } else {
@@ -352,7 +355,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
     }
     
     @Override
-    public List<? extends Project> listProjects(Long id, String name, String displayText, String state, 
+    public Pair<List<? extends Project>, Integer> listProjects(Long id, String name, String displayText, String state, 
             String accountName, Long domainId, String keyword, Long startIndex, Long pageSize, boolean listAll, 
             boolean isRecursive, Map<String, String> tags) {
         Account caller = UserContext.current().getCaller();
@@ -378,6 +381,12 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
                     }
                     accountId = owner.getId();
                 }
+            }
+            else { //domainId == null
+            	if (accountName != null) {            		
+                    throw new InvalidParameterValueException("could not find account " + accountName + " because domain is not specified");            		
+            	}
+            	
             }
         } else {
             if (accountName != null && !accountName.equals(caller.getAccountName())) {
@@ -468,8 +477,9 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
                 count++;
             }
         }
-        
-        return _projectDao.search(sc, searchFilter);
+
+        Pair<List<ProjectVO>, Integer> result = _projectDao.searchAndCount(sc, searchFilter);
+        return new Pair<List<? extends Project>, Integer>(result.first(), result.second());
     }
     
     @Override
@@ -513,6 +523,11 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
     @Override
     public ProjectVO findByProjectAccountId(long projectAccountId) {
         return _projectDao.findByProjectAccountId(projectAccountId);
+    }
+    
+    @Override
+    public ProjectVO findByProjectAccountIdIncludingRemoved(long projectAccountId) {
+        return _projectDao.findByProjectAccountIdIncludingRemoved(projectAccountId);
     }
     
     @Override
@@ -735,7 +750,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
     
     
     @Override
-    public List<? extends ProjectAccount> listProjectAccounts(long projectId, String accountName, String role, Long startIndex, Long pageSizeVal) {
+    public Pair<List<? extends ProjectAccount>, Integer> listProjectAccounts(long projectId, String accountName, String role, Long startIndex, Long pageSizeVal) {
         Account caller = UserContext.current().getCaller();
         
         //check that the project exists
@@ -773,8 +788,9 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         if (accountName != null) {
             sc.setJoinParameters("accountSearch", "accountName", accountName);
         }
-        
-        return _projectAccountDao.search(sc, searchFilter);
+
+        Pair<List<ProjectAccountVO>, Integer> result = _projectAccountDao.searchAndCount(sc, searchFilter);
+        return new Pair<List<? extends ProjectAccount>, Integer>(result.first(), result.second());
     }
     
     public ProjectInvitation createAccountInvitation(Project project, Long accountId) { 
@@ -846,8 +862,9 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
     }
     
     @Override
-    public List<? extends ProjectInvitation> listProjectInvitations(Long id, Long projectId, String accountName, Long domainId, String state, boolean activeOnly, Long startIndex, Long pageSizeVal, boolean isRecursive, boolean listAll) {
-    	Account caller = UserContext.current().getCaller();
+    public Pair<List<? extends ProjectInvitation>, Integer> listProjectInvitations(Long id, Long projectId,
+            String accountName, Long domainId, String state, boolean activeOnly, Long startIndex, Long pageSizeVal, boolean isRecursive, boolean listAll) {
+        Account caller = UserContext.current().getCaller();
         List<Long> permittedAccounts = new ArrayList<Long>();
         
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(domainId, isRecursive, null);
@@ -885,8 +902,9 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
             sc.setParameters("state", ProjectInvitation.State.Pending);
             sc.setParameters("created", new Date((DateUtil.currentGMTTime().getTime()) - _invitationTimeOut));
         }
-        
-        return _projectInvitationDao.search(sc, searchFilter);
+
+        Pair<List<ProjectInvitationVO>, Integer> result = _projectInvitationDao.searchAndCount(sc, searchFilter);
+        return new Pair<List<? extends ProjectInvitation>, Integer>(result.first(), result.second());
     }
     
     @Override @DB

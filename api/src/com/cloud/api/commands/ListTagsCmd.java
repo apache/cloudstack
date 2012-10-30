@@ -27,6 +27,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.ResourceTagResponse;
 import com.cloud.server.ResourceTag;
+import com.cloud.utils.Pair;
 
 @Implementation(description = "List resource tag(s)", responseObject = ResourceTagResponse.class, since = "Burbank")
 public class ListTagsCmd extends BaseListProjectAndAccountResourcesCmd{
@@ -55,14 +56,14 @@ public class ListTagsCmd extends BaseListProjectAndAccountResourcesCmd{
     @Override
     public void execute() {
       
-      List<? extends ResourceTag> tags = _taggedResourceService.listTags(this);
+      Pair<List<? extends ResourceTag>, Integer> tags = _taggedResourceService.listTags(this);
       ListResponse<ResourceTagResponse> response = new ListResponse<ResourceTagResponse>();
       List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
-      for (ResourceTag tag : tags) {
+      for (ResourceTag tag : tags.first()) {
           ResourceTagResponse tagResponse = _responseGenerator.createResourceTagResponse(tag, false);
           tagResponses.add(tagResponse);
       }
-      response.setResponses(tagResponses);
+      response.setResponses(tagResponses, tags.second());
       
       response.setResponseName(getCommandName());
       this.setResponseObject(response);

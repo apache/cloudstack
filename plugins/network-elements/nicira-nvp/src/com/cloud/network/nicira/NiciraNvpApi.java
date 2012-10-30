@@ -14,23 +14,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-/** Licensed to the Apache Software Foundation (ASF) under one
- *  or more contributor license agreements.  See the NOTICE file
- *  distributed with this work for additional information
- *  regarding copyright ownership.  The ASF licenses this file
- *  to you under the Apache License, Version 2.0 (the
- *  "License"); you may not use this file except in compliance
- *  with the License.  You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing,
- *  software distributed under the License is distributed on an
- *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- *  KIND, either express or implied.  See the License for the
- *  specific language governing permissions and limitations
- *  under the License.
- */
 package com.cloud.network.nicira;
 
 import java.io.IOException;
@@ -78,6 +61,7 @@ import com.google.gson.reflect.TypeToken;
 
 public class NiciraNvpApi {
     private static final Logger s_logger = Logger.getLogger(NiciraNvpApi.class);
+    private final static String _protocol = "https";
     
     private String _name;
     private String _host;
@@ -117,7 +101,7 @@ public class NiciraNvpApi {
         String url;
         
         try {
-            url = new URL("https", _host, "/ws.v1/login").toString();
+            url = new URL(_protocol, _host, "/ws.v1/login").toString();
         } catch (MalformedURLException e) {
             s_logger.error("Unable to build Nicira API URL", e);
             throw new NiciraNvpApiException("Unable to build Nicira API URL", e);
@@ -180,7 +164,7 @@ public class NiciraNvpApi {
             
         NiciraNvpList<LogicalSwitchPort> lspl = executeRetrieveObject(new TypeToken<NiciraNvpList<LogicalSwitchPort>>(){}.getType(), uri, params);
                 
-        if (lspl == null || lspl.getResult_count() != 1) {
+        if (lspl == null || lspl.getResultCount() != 1) {
             throw new NiciraNvpApiException("Unexpected response from API");
         }
         
@@ -210,11 +194,112 @@ public class NiciraNvpApi {
         return lspl;
     }
     
+    public LogicalRouterConfig createLogicalRouter(LogicalRouterConfig logicalRouterConfig) throws NiciraNvpApiException {
+    	String uri = "/ws.v1/lrouter";
+    	
+    	LogicalRouterConfig lrc = executeCreateObject(logicalRouterConfig, new TypeToken<LogicalRouterConfig>(){}.getType(), uri, Collections.<String,String>emptyMap());
+    	
+    	return lrc;
+    }
+
+    public void deleteLogicalRouter(String logicalRouterUuid) throws NiciraNvpApiException {
+    	String uri = "/ws.v1/lrouter/" + logicalRouterUuid;
+    	
+    	executeDeleteObject(uri);
+    }
+    
+    public LogicalRouterPort createLogicalRouterPort(String logicalRouterUuid, LogicalRouterPort logicalRouterPort) throws NiciraNvpApiException {
+    	String uri = "/ws.v1/lrouter/" + logicalRouterUuid + "/lport";
+    	
+    	LogicalRouterPort lrp = executeCreateObject(logicalRouterPort, new TypeToken<LogicalRouterPort>(){}.getType(), uri, Collections.<String,String>emptyMap());
+    	return lrp;    	
+    }
+    
+    public void deleteLogicalRouterPort(String logicalRouterUuid, String logicalRouterPortUuid) throws NiciraNvpApiException {
+    	String uri = "/ws.v1/lrouter/" + logicalRouterUuid + "/lport/" +  logicalRouterPortUuid;
+    	
+    	executeDeleteObject(uri);
+    }
+
+    public void modifyLogicalRouterPort(String logicalRouterUuid, LogicalRouterPort logicalRouterPort) throws NiciraNvpApiException {
+    	String uri = "/ws.v1/lrouter/" + logicalRouterUuid + "/lport/" +  logicalRouterPort.getUuid();
+    	
+    	executeUpdateObject(logicalRouterPort, uri, Collections.<String,String>emptyMap());
+    }
+    
+    public void modifyLogicalRouterPortAttachment(String logicalRouterUuid, String logicalRouterPortUuid, Attachment attachment) throws NiciraNvpApiException {
+        String uri = "/ws.v1/lrouter/" + logicalRouterUuid + "/lport/" + logicalRouterPortUuid + "/attachment";
+        executeUpdateObject(attachment, uri, Collections.<String,String>emptyMap());
+    }
+    
+    public NatRule createLogicalRouterNatRule(String logicalRouterUuid, NatRule natRule) throws NiciraNvpApiException {
+    	String uri = "/ws.v1/lrouter/" + logicalRouterUuid + "/nat";
+    	
+    	if (natRule instanceof SourceNatRule) {
+    		return executeCreateObject(natRule, new TypeToken<SourceNatRule>(){}.getType(), uri, Collections.<String,String>emptyMap());
+    	}
+    	else if (natRule instanceof DestinationNatRule) {
+    		return executeCreateObject(natRule, new TypeToken<DestinationNatRule>(){}.getType(), uri, Collections.<String,String>emptyMap());
+    	}
+    	
+    	throw new NiciraNvpApiException("Unknown NatRule type");
+    }
+    
+    public void modifyLogicalRouterNatRule(String logicalRouterUuid, NatRule natRule) throws NiciraNvpApiException {
+    	String uri = "/ws.v1/lrouter/" + logicalRouterUuid + "/nat/" + natRule.getUuid();
+    	
+    	executeUpdateObject(natRule, uri, Collections.<String,String>emptyMap());
+    }
+    
+    public void deleteLogicalRouterNatRule(String logicalRouterUuid, String natRuleUuid) throws NiciraNvpApiException {
+    	String uri = "/ws.v1/lrouter/" + logicalRouterUuid + "/nat/" + natRuleUuid;
+    	
+    	executeDeleteObject(uri);
+    }
+    
+    public NiciraNvpList<LogicalRouterPort> findLogicalRouterPortByGatewayServiceAndVlanId(String logicalRouterUuid, String gatewayServiceUuid, long vlanId) throws NiciraNvpApiException {
+    	String uri = "/ws.v1/lrouter/" + logicalRouterUuid + "/lport";
+        Map<String,String> params = new HashMap<String,String>();
+        params.put("attachment_gwsvc_uuid", gatewayServiceUuid);
+        params.put("attachment_vlan", "0");
+        params.put("fields","*");
+        
+        return executeRetrieveObject(new TypeToken<NiciraNvpList<LogicalRouterPort>>(){}.getType(), uri, params);
+    }
+    
+    public LogicalRouterConfig findOneLogicalRouterByUuid(String logicalRouterUuid) throws NiciraNvpApiException {
+    	String uri = "/ws.v1/lrouter/" + logicalRouterUuid;
+    	
+    	return executeRetrieveObject(new TypeToken<LogicalRouterConfig>(){}.getType(), uri, Collections.<String,String>emptyMap());
+    }
+    
+    public void updateLogicalRouterPortConfig(String logicalRouterUuid, LogicalRouterPort logicalRouterPort) throws NiciraNvpApiException {
+    	String uri = "/ws.v1/lrouter/" + logicalRouterUuid + "/lport" + logicalRouterPort.getUuid();
+    	
+    	executeUpdateObject(logicalRouterPort, uri, Collections.<String,String>emptyMap());
+    }
+    
+    public NiciraNvpList<NatRule> findNatRulesByLogicalRouterUuid(String logicalRouterUuid) throws NiciraNvpApiException {
+    	String uri = "/ws.v1/lrouter/" + logicalRouterUuid + "/nat";
+        Map<String,String> params = new HashMap<String,String>();
+        params.put("fields","*");
+        
+    	return executeRetrieveObject(new TypeToken<NiciraNvpList<NatRule>>(){}.getType(), uri, params);
+    }
+    
+    public NiciraNvpList<LogicalRouterPort> findLogicalRouterPortByGatewayServiceUuid(String logicalRouterUuid, String l3GatewayServiceUuid) throws NiciraNvpApiException {
+    	String uri = "/ws.v1/lrouter/" + logicalRouterUuid + "/lport";
+    	Map<String,String> params = new HashMap<String,String>();
+    	params.put("fields", "*");
+    	params.put("attachment_gwsvc_uuid", l3GatewayServiceUuid);
+    	
+    	return executeRetrieveObject(new TypeToken<NiciraNvpList<LogicalRouterPort>>(){}.getType(), uri, params);
+    }
     
     private <T> void executeUpdateObject(T newObject, String uri, Map<String,String> parameters) throws NiciraNvpApiException {
         String url;
         try {
-            url = new URL("https", _host, uri).toString();
+            url = new URL(_protocol, _host, uri).toString();
         } catch (MalformedURLException e) {
             s_logger.error("Unable to build Nicira API URL", e);
             throw new NiciraNvpApiException("Connection to NVP Failed");
@@ -244,7 +329,7 @@ public class NiciraNvpApi {
     private <T> T executeCreateObject(T newObject, Type returnObjectType, String uri, Map<String,String> parameters) throws NiciraNvpApiException {
         String url;
         try {
-            url = new URL("https", _host, uri).toString();
+            url = new URL(_protocol, _host, uri).toString();
         } catch (MalformedURLException e) {
             s_logger.error("Unable to build Nicira API URL", e);
             throw new NiciraNvpApiException("Unable to build Nicira API URL", e);
@@ -282,7 +367,7 @@ public class NiciraNvpApi {
     private void executeDeleteObject(String uri) throws NiciraNvpApiException {
         String url;
         try {
-            url = new URL("https", _host, uri).toString();
+            url = new URL(_protocol, _host, uri).toString();
         } catch (MalformedURLException e) {
             s_logger.error("Unable to build Nicira API URL", e);
             throw new NiciraNvpApiException("Unable to build Nicira API URL", e);
@@ -303,7 +388,7 @@ public class NiciraNvpApi {
     private <T> T executeRetrieveObject(Type returnObjectType, String uri, Map<String,String> parameters) throws NiciraNvpApiException {
         String url;
         try {
-            url = new URL("https", _host, uri).toString();
+            url = new URL(_protocol, _host, uri).toString();
         } catch (MalformedURLException e) {
             s_logger.error("Unable to build Nicira API URL", e);
             throw new NiciraNvpApiException("Unable to build Nicira API URL", e);

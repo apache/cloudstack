@@ -25,6 +25,15 @@ under the License.
 <% long now = System.currentTimeMillis(); %>
 <script language="javascript">
 dictionary = {
+'label.quickview': '<fmt:message key="label.quickview"/>',
+'label.migrate.to.host': '<fmt:message key="label.migrate.to.host"/>',
+'label.migrate.to.storage': '<fmt:message key="label.migrate.to.storage"/>',
+'label.stop': '<fmt:message key="label.stop"/>',
+'label.reboot': '<fmt:message key="label.reboot"/>',
+'label.destroy': '<fmt:message key="label.destroy"/>',
+'label.restore': '<fmt:message key="label.restore"/>',
+'label.broadcast.uri': '<fmt:message key="label.broadcast.uri"/>',
+'label.isolation.uri': '<fmt:message key="label.isolation.uri"/>',
 'message.zoneWizard.enable.local.storage': '<fmt:message key="message.zoneWizard.enable.local.storage"/>',
 'label.edit.tags': '<fmt:message key="label.edit.tags"/>',  
 'label.local.storage.enabled': '<fmt:message key="label.local.storage.enabled"/>',
@@ -1406,6 +1415,11 @@ dictionary = {
 'label.add.network.ACL': '<fmt:message key="label.add.network.ACL" />',
 'label.private.Gateway': '<fmt:message key="label.private.Gateway" />',
 'label.VPC.router.details': '<fmt:message key="label.VPC.router.details" />',
-'label.VMs.in.tier': '<fmt:message key="label.VMs.in.tier" />'
+'label.VMs.in.tier': '<fmt:message key="label.VMs.in.tier" />',
+'label.add.NiciraNvp.device': '<fmt:message key="label.add.NiciraNvp.device" />',
+'label.delete.NiciraNvp': '<fmt:message key="label.delete.NiciraNvp" />',
+'label.nicira.controller.address': '<fmt:message key="label.nicira.controller.address" />',
+'label.nicira.transportzoneuuid': '<fmt:message key="label.nicira.transportzoneuuid" />',
+'label.nicira.l3gatewayserviceuuid': '<fmt:message key="label.nicira.l3gatewayserviceuuid" />'
 };
 </script>

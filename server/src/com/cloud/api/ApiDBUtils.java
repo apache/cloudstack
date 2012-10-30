@@ -322,11 +322,12 @@ public class ApiDBUtils {
     }
 
     public static List<UserVmVO> searchForUserVMs(Criteria c, List<Long> permittedAccounts) {
-        return _userVmMgr.searchForUserVMs(c, _accountDao.findById(Account.ACCOUNT_ID_SYSTEM), null, false, permittedAccounts, false, null, null);
+        return _userVmMgr.searchForUserVMs(c, _accountDao.findById(Account.ACCOUNT_ID_SYSTEM),
+                null, false, permittedAccounts, false, null, null).first();
     }
 
     public static List<? extends StoragePoolVO> searchForStoragePools(Criteria c) {
-        return _ms.searchForStoragePools(c);
+        return _ms.searchForStoragePools(c).first();
     }
 
     // ///////////////////////////////////////////////////////////
@@ -731,6 +732,10 @@ public class ApiDBUtils {
     
     public static Project findProjectByProjectAccountId(long projectAccountId) {
         return _projectMgr.findByProjectAccountId(projectAccountId);
+    }
+    
+    public static Project findProjectByProjectAccountIdIncludingRemoved(long projectAccountId) {
+        return _projectMgr.findByProjectAccountIdIncludingRemoved(projectAccountId);
     }
     
     public static Project findProjectById(long projectId) {

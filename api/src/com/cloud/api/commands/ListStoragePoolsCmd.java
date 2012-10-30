@@ -26,11 +26,11 @@ import com.cloud.api.BaseListCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.StoragePoolResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.storage.StoragePool;
+import com.cloud.utils.Pair;
 
 @Implementation(description="Lists storage pools.", responseObject=StoragePoolResponse.class)
 public class ListStoragePoolsCmd extends BaseListCmd {
@@ -114,16 +114,16 @@ public class ListStoragePoolsCmd extends BaseListCmd {
 
     @Override
     public void execute(){
-        List<? extends StoragePool> pools = _mgr.searchForStoragePools(this);
+        Pair<List<? extends StoragePool>, Integer> pools = _mgr.searchForStoragePools(this);
         ListResponse<StoragePoolResponse> response = new ListResponse<StoragePoolResponse>();
         List<StoragePoolResponse> poolResponses = new ArrayList<StoragePoolResponse>();
-        for (StoragePool pool : pools) {
+        for (StoragePool pool : pools.first()) {
             StoragePoolResponse poolResponse = _responseGenerator.createStoragePoolResponse(pool);
             poolResponse.setObjectName("storagepool");
             poolResponses.add(poolResponse);
         }
 
-        response.setResponses(poolResponses);
+        response.setResponses(poolResponses, pools.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

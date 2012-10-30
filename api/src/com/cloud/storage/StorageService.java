@@ -32,6 +32,8 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 
 public interface StorageService{
     /**
@@ -71,7 +73,6 @@ public interface StorageService{
      */
     Volume createVolume(CreateVolumeCmd cmd);
 
-    boolean deleteVolume(long volumeId) throws ConcurrentOperationException;
 
     /**
      * Delete the storage pool
@@ -114,7 +115,7 @@ public interface StorageService{
 
     Volume migrateVolume(Long volumeId, Long storagePoolId) throws ConcurrentOperationException;
 
-    List<? extends Volume> searchForVolumes(ListVolumesCmd cmd);
+    Pair<List<? extends Volume>, Integer> searchForVolumes(ListVolumesCmd cmd);
 
     /**
      * Uploads the volume to secondary storage
@@ -124,5 +125,7 @@ public interface StorageService{
      * @return Volume object
      */
     Volume uploadVolume(UploadVolumeCmd cmd)	throws ResourceAllocationException;
+
+    boolean deleteVolume(long volumeId, Account caller) throws ConcurrentOperationException;
 
 }

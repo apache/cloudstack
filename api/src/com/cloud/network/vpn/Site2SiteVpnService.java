@@ -31,10 +31,10 @@ import com.cloud.api.commands.ResetVpnConnectionCmd;
 import com.cloud.api.commands.UpdateVpnCustomerGatewayCmd;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.IpAddress;
 import com.cloud.network.Site2SiteCustomerGateway;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.Site2SiteVpnGateway;
+import com.cloud.utils.Pair;
 
 public interface Site2SiteVpnService {
     Site2SiteVpnGateway createVpnGateway(CreateVpnGatewayCmd cmd);
@@ -46,8 +46,8 @@ public interface Site2SiteVpnService {
     boolean deleteVpnGateway(DeleteVpnGatewayCmd deleteVpnGatewayCmd);
     boolean deleteVpnConnection(DeleteVpnConnectionCmd deleteVpnConnectionCmd) throws ResourceUnavailableException;
     Site2SiteVpnConnection resetVpnConnection(ResetVpnConnectionCmd resetVpnConnectionCmd) throws ResourceUnavailableException;
-    List<Site2SiteCustomerGateway> searchForCustomerGateways(ListVpnCustomerGatewaysCmd listVpnCustomerGatewaysCmd);
-    List<Site2SiteVpnGateway> searchForVpnGateways(ListVpnGatewaysCmd listVpnGatewaysCmd);
-    List<Site2SiteVpnConnection> searchForVpnConnections(ListVpnConnectionsCmd listVpnConnectionsCmd);
+    Pair<List<? extends Site2SiteCustomerGateway>, Integer> searchForCustomerGateways(ListVpnCustomerGatewaysCmd listVpnCustomerGatewaysCmd);
+    Pair<List<? extends Site2SiteVpnGateway>, Integer> searchForVpnGateways(ListVpnGatewaysCmd listVpnGatewaysCmd);
+    Pair<List<? extends Site2SiteVpnConnection>, Integer> searchForVpnConnections(ListVpnConnectionsCmd listVpnConnectionsCmd);
     Site2SiteCustomerGateway updateCustomerGateway(UpdateVpnCustomerGatewayCmd updateVpnCustomerGatewayCmd);
 }

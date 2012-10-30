@@ -36,19 +36,20 @@
       /**
        * Dashboard
        */
-      dashboard: {},
-      //'dashboard-user': {},
+      dashboard: {},      
       instances: {},
       storage: {},
       network: {},
       templates: {},
       events: {},
+			projects: {},
       accounts: {},
-      domains: {},
-      system: {},
-      projects: {},
-      'global-settings': {},
-      configuration: {}
+			
+      domains: {}, //domain-admin and root-admin only
+			
+      system: {},  //root-admin only     
+      'global-settings': {}, //root-admin only     
+      configuration: {} //root-admin only    
     }
   });
 

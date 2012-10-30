@@ -21,6 +21,7 @@ import java.util.Map;
 
 import com.cloud.api.commands.ListTagsCmd;
 import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.utils.Pair;
 
 public interface TaggedResourceService {
     
@@ -46,7 +47,7 @@ public interface TaggedResourceService {
      * @param listTagsCmd
      * @return
      */
-    List<? extends ResourceTag> listTags(ListTagsCmd listTagsCmd);
+    Pair<List<? extends ResourceTag>, Integer> listTags(ListTagsCmd listTagsCmd);
 
     /**
      * @param resourceIds

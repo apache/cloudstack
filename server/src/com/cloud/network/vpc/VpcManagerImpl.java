@@ -95,6 +95,7 @@ import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
@@ -614,7 +615,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
     @ActionEvent(eventType = EventTypes.EVENT_VPC_DELETE, eventDescription = "deleting VPC")
     public boolean deleteVpc(long vpcId) throws ConcurrentOperationException, ResourceUnavailableException {
         UserContext.current().setEventDetails(" Id: " + vpcId);
-        Account caller = UserContext.current().getCaller();
+        UserContext ctx = UserContext.current();
 
         // Verify vpc id
         Vpc vpc = getVpc(vpcId);
@@ -623,15 +624,14 @@ public class VpcManagerImpl implements VpcManager, Manager{
         }
         
         //verify permissions
-        _accountMgr.checkAccess(caller, null, false, vpc);
-        
-        return destroyVpc(vpc);
+        _accountMgr.checkAccess(ctx.getCaller(), null, false, vpc);
+
+        return destroyVpc(vpc, ctx.getCaller(), ctx.getCallerUserId());
     }
 
     @Override
     @DB
-    public boolean destroyVpc(Vpc vpc) throws ConcurrentOperationException, ResourceUnavailableException {
-        UserContext ctx = UserContext.current();
+    public boolean destroyVpc(Vpc vpc, Account caller, Long callerUserId) throws ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Destroying vpc " + vpc);
         
         //don't allow to delete vpc if it's in use by existing networks
@@ -662,7 +662,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
         }
         
         //cleanup vpc resources
-        if (!cleanupVpcResources(vpc.getId(), ctx.getCaller(), ctx.getCallerUserId())) {
+        if (!cleanupVpcResources(vpc.getId(), caller, callerUserId)) {
             s_logger.warn("Failed to cleanup resources for vpc " + vpc);
             return false;
         }
@@ -891,7 +891,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
             //do cleanup
             if (!result && destroyOnFailure) {
                 s_logger.debug("Destroying vpc " + vpc + " that failed to start");
-                if (destroyVpc(vpc)) {
+                if (destroyVpc(vpc, caller, callerUser.getId())) {
                     s_logger.warn("Successfully destroyed vpc " + vpc + " that failed to start");
                 } else {
                     s_logger.warn("Failed to destroy vpc " + vpc + " that failed to start");
@@ -929,7 +929,8 @@ public class VpcManagerImpl implements VpcManager, Manager{
 
         //shutdown provider
         s_logger.debug("Shutting down vpc " + vpc);
-        boolean success = getVpcElement().shutdownVpc(vpc);
+        ReservationContext context = new ReservationContextImpl(null, null, _accountMgr.getActiveUser(ctx.getCallerUserId()), caller);
+        boolean success = getVpcElement().shutdownVpc(vpc, context);
 
         //TODO - shutdown all vpc resources here (ACLs, gateways, etc)
         if (success) {
@@ -1387,7 +1388,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
     }
 
     @Override
-    public List<PrivateGateway> listPrivateGateway(ListPrivateGatewaysCmd cmd) {
+    public Pair<List<PrivateGateway>, Integer> listPrivateGateway(ListPrivateGatewaysCmd cmd) {
         String ipAddress = cmd.getIpAddress();
         String vlan = cmd.getVlan();
         Long vpcId = cmd.getVpcId();
@@ -1441,14 +1442,14 @@ public class VpcManagerImpl implements VpcManager, Manager{
         if (vlan != null) {
             sc.setJoinParameters("networkSearch", "vlan", BroadcastDomainType.Vlan.toUri(vlan));
         }
-       
-        List<VpcGatewayVO> vos = _vpcGatewayDao.search(sc, searchFilter);
-        List<PrivateGateway> privateGtws = new ArrayList<PrivateGateway>(vos.size());
-        for (VpcGateway vo : vos) {
+
+        Pair<List<VpcGatewayVO>, Integer> vos = _vpcGatewayDao.searchAndCount(sc, searchFilter);
+        List<PrivateGateway> privateGtws = new ArrayList<PrivateGateway>(vos.first().size());
+        for (VpcGateway vo : vos.first()) {
             privateGtws.add(getPrivateGatewayProfile(vo));
         }
-        
-        return privateGtws;
+
+        return new Pair<List<PrivateGateway>, Integer>(privateGtws, vos.second());
     }
     
     @Override
@@ -1608,7 +1609,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
     }
 
     @Override
-    public List<? extends StaticRoute> listStaticRoutes(ListStaticRoutesCmd cmd) {
+    public Pair<List<? extends StaticRoute>, Integer> listStaticRoutes(ListStaticRoutesCmd cmd) {
         Long id = cmd.getId();
         Long gatewayId = cmd.getGatewayId();
         Long vpcId = cmd.getVpcId();
@@ -1673,10 +1674,11 @@ public class VpcManagerImpl implements VpcManager, Manager{
                 count++;
             }   
         }
-        
-        return _staticRouteDao.search(sc, searchFilter);
+
+        Pair<List<StaticRouteVO>, Integer> result = _staticRouteDao.searchAndCount(sc, searchFilter);
+        return new Pair<List<? extends StaticRoute>, Integer>(result.first(), result.second());
     }
-    
+
     protected void detectRoutesConflict(StaticRoute newRoute) throws NetworkRuleConflictException {
         List<? extends StaticRoute> routes = _staticRouteDao.listByGatewayIdAndNotRevoked(newRoute.getVpcGatewayId());
         assert (routes.size() >= 1) : "For static routes, we now always first persist the route and then check for " +
@@ -1735,7 +1737,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
                     s_logger.info("Found " + inactiveVpcs.size() + " removed VPCs to cleanup");
                     for (VpcVO vpc : inactiveVpcs) {
                         s_logger.debug("Cleaning up " + vpc);
-                        destroyVpc(vpc); 
+                        destroyVpc(vpc, _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM), User.UID_SYSTEM); 
                     }
                 } catch (Exception e) {
                     s_logger.error("Exception ", e);

@@ -26,10 +26,10 @@ import com.cloud.api.BaseListCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.PodResponse;
 import com.cloud.dc.Pod;
+import com.cloud.utils.Pair;
 
 @Implementation(description="Lists all Pods.", responseObject=PodResponse.class)
 public class ListPodsByCmd extends BaseListCmd {
@@ -93,16 +93,16 @@ public class ListPodsByCmd extends BaseListCmd {
 
     @Override
     public void execute(){
-        List<? extends Pod> result = _mgr.searchForPods(this);
+        Pair<List<? extends Pod>, Integer> result = _mgr.searchForPods(this);
         ListResponse<PodResponse> response = new ListResponse<PodResponse>();
         List<PodResponse> podResponses = new ArrayList<PodResponse>();
-        for (Pod pod : result) {
+        for (Pod pod : result.first()) {
             PodResponse podResponse = _responseGenerator.createPodResponse(pod, showCapacities);
             podResponse.setObjectName("pod");
             podResponses.add(podResponse);
         }
 
-        response.setResponses(podResponses);
+        response.setResponses(podResponses, result.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

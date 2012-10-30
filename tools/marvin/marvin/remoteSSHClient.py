@@ -18,6 +18,8 @@
 import paramiko 
 import time
 import cloudstackException
+import contextlib
+from contextlib import closing
 
 class remoteSSHClient(object):
     def __init__(self, host, port, user, passwd, retries = 10):
@@ -67,8 +69,11 @@ class remoteSSHClient(object):
         except IOError, e:
             raise e
 
+    def close(self):
+        self.ssh.close()
+
             
 if __name__ == "__main__":
-    ssh = remoteSSHClient("192.168.137.2", 22, "root", "password")
-    print ssh.execute("ls -l")
-    print ssh.execute("rm x")
+    with contextlib.closing(remoteSSHClient("10.223.75.10", 22, "root",
+                                            "password")) as ssh:
+        print ssh.execute("ls -l")

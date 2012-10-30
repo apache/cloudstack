@@ -298,13 +298,13 @@ public class MockAccountManagerImpl implements Manager, AccountManager, AccountS
 	}
 
     @Override
-    public List<? extends Account> searchForAccounts(ListAccountsCmd cmd) {
+    public Pair<List<? extends Account>, Integer> searchForAccounts(ListAccountsCmd cmd) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public List<? extends UserAccount> searchForUsers(ListUsersCmd cmd) throws PermissionDeniedException {
+    public Pair<List<? extends UserAccount>, Integer> searchForUsers(ListUsersCmd cmd) throws PermissionDeniedException {
         // TODO Auto-generated method stub
         return null;
     }

@@ -119,28 +119,31 @@ public class AsyncJobVO implements AsyncJob {
     @Transient
     private boolean fromPreviousSession = false;
 
+    
     public AsyncJobVO() {
-    	this.uuid = UUID.randomUUID().toString();
+        this.uuid = UUID.randomUUID().toString();
     }
     
-    public AsyncJobVO(long userId, long accountId, String cmd, String cmdInfo) {
+    public AsyncJobVO(long userId, long accountId, String cmd, String cmdInfo, Long instanceId, Type instanceType) {
     	this.userId = userId;
     	this.accountId = accountId;
     	this.cmd = cmd;
     	this.cmdInfo = cmdInfo;
     	this.callbackType = CALLBACK_POLLING;
     	this.uuid = UUID.randomUUID().toString();
+        this.instanceId = instanceId;
     }
     
     public AsyncJobVO(long userId, long accountId, String cmd, String cmdInfo,
-    	int callbackType, String callbackAddress) {
+    	int callbackType, String callbackAddress, Long instanceId, Type instanceType) {
     	
-    	this(userId, accountId, cmd, cmdInfo);
+    	this(userId, accountId, cmd, cmdInfo, instanceId, instanceType);
     	this.callbackType = callbackType;
     	this.callbackAddress = callbackAddress;
     	this.uuid = UUID.randomUUID().toString();
     }
-    
+
+
     @Override
     public Long getId() {
 		return id;

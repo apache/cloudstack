@@ -82,7 +82,7 @@ public interface NetworkService {
     PhysicalNetwork createPhysicalNetwork(Long zoneId, String vnetRange, String networkSpeed, 
             List<String> isolationMethods, String broadcastDomainRange, Long domainId, List<String> tags, String name);
 
-    List<? extends PhysicalNetwork> searchPhysicalNetworks(Long id, Long zoneId, String keyword, 
+    Pair<List<? extends PhysicalNetwork>, Integer> searchPhysicalNetworks(Long id, Long zoneId, String keyword, 
             Long startIndex, Long pageSize, String name);
 
     PhysicalNetwork updatePhysicalNetwork(Long id, String networkSpeed, List<String> tags, 
@@ -97,7 +97,7 @@ public interface NetworkService {
     PhysicalNetworkServiceProvider addProviderToPhysicalNetwork(Long physicalNetworkId, String providerName,
             Long destinationPhysicalNetworkId, List<String> enabledServices);
 
-    List<? extends PhysicalNetworkServiceProvider> listNetworkServiceProviders(Long physicalNetworkId, String name,
+    Pair<List<? extends PhysicalNetworkServiceProvider>, Integer> listNetworkServiceProviders(Long physicalNetworkId, String name,
             String state, Long startIndex, Long pageSize);
 
     PhysicalNetworkServiceProvider updateNetworkServiceProvider(Long id, String state, List<String> enabledServices);
@@ -123,7 +123,7 @@ public interface NetworkService {
 
     boolean deletePhysicalNetworkTrafficType(Long id);
 
-    List<? extends PhysicalNetworkTrafficType> listTrafficTypes(Long physicalNetworkId);
+    Pair<List<? extends PhysicalNetworkTrafficType>, Integer> listTrafficTypes(Long physicalNetworkId);
 
     PhysicalNetwork getDefaultPhysicalNetworkByZoneAndTrafficType(long zoneId, TrafficType trafficType);
 

@@ -15,59 +15,39 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import pymysql
+import mysql
+import contextlib
+from mysql import connector
+from mysql.connector import errors
+from contextlib import closing
 import cloudstackException
 import sys
 import os
-import traceback
+
 class dbConnection(object):
     def __init__(self, host="localhost", port=3306, user='cloud', passwd='cloud', db='cloud'):
         self.host = host
         self.port = port
-        self.user = user
+        self.user = str(user) #Workaround: http://bugs.mysql.com/?id=67306
         self.passwd = passwd
         self.database = db
         
-        try:
-            self.db = pymysql.Connect(host=host, port=port, user=user, passwd=passwd, db=db)
-        except:
-            traceback.print_exc()
-            raise cloudstackException.InvalidParameterException(sys.exc_info())
-        
-    def __copy__(self):
-        return dbConnection(self.host, self.port, self.user, self.passwd, self.database)
-    
-    def close(self):
-        try:
-            self.db.close()
-        except:
-            pass
-    
-    def execute(self, sql=None):
+    def execute(self, sql=None, params=None):
         if sql is None:
             return None
-        
+
         resultRow = []
-        cursor = None
-        try:
-            # commit to restart the transaction, else we don't get fresh data
-            self.db.commit()
-            cursor = self.db.cursor()
-            cursor.execute(sql)
-        
-            result = cursor.fetchall()
-            if result is not None:
-                for r in result:
-                    resultRow.append(r)
-            return resultRow
-        except pymysql.MySQLError, e:
-            raise cloudstackException.dbException("db Exception:%s"%e) 
-        except:
-            raise cloudstackException.internalError(sys.exc_info())
-        finally:
-            if cursor is not None:
-                cursor.close()
-        
+        with contextlib.closing(mysql.connector.connect(host=self.host, port=self.port, user=self.user, password=self.passwd, db=self.database)) as conn:
+            conn.autocommit = True
+            with contextlib.closing(conn.cursor(buffered=True)) as cursor:
+                cursor.execute(sql, params)
+                try:
+                    resultRow = cursor.fetchall()
+                except errors.InterfaceError:
+                    #Raised on empty result - DML
+                    resultRow = []
+        return resultRow
+
     def executeSqlFromFile(self, fileName=None):
         if fileName is None:
             raise cloudstackException.InvalidParameterException("file can't not none")

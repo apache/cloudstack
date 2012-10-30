@@ -41,11 +41,11 @@ systemjars = {
 	(
 		"commons-collections.jar",
 		# "commons-daemon.jar",
-		"commons-dbcp.jar",
+		#"commons-dbcp.jar",
 		"commons-codec.jar",
 		"commons-logging.jar",
 		"commons-logging-api.jar",
-		"commons-pool.jar",
+		#"commons-pool.jar",
 		"commons-httpclient.jar",
 		"ws-commons-util.jar",
 		"mysql-connector-java.jar",

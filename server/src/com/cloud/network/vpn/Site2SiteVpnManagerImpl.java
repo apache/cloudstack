@@ -67,6 +67,7 @@ import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
@@ -468,12 +469,14 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
         }
 
         checkCustomerGatewayCidrList(guestCidrList);
-        
+
         long accountId = gw.getAccountId();
-        if (_customerGatewayDao.findByGatewayIp(gatewayIp) != null) {
+        Site2SiteCustomerGatewayVO existedGw = _customerGatewayDao.findByGatewayIp(gatewayIp);
+        if (existedGw != null && existedGw.getId() != gw.getId()) {
             throw new InvalidParameterValueException("The customer gateway with ip " + gatewayIp + " already existed in the system!");
         }
-        if (_customerGatewayDao.findByNameAndAccountId(name, accountId) != null) {
+        existedGw = _customerGatewayDao.findByNameAndAccountId(name, accountId);
+        if (existedGw != null && existedGw.getId() != gw.getId()) {
             throw new InvalidParameterValueException("The customer gateway with name " + name + " already existed!");
         }
 
@@ -566,7 +569,7 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
     }
 
     @Override
-    public List<Site2SiteCustomerGateway> searchForCustomerGateways(ListVpnCustomerGatewaysCmd cmd) {
+    public Pair<List<? extends Site2SiteCustomerGateway>, Integer> searchForCustomerGateways(ListVpnCustomerGatewaysCmd cmd) {
         Long id = cmd.getId();
         Long domainId = cmd.getDomainId();
         boolean isRecursive = cmd.isRecursive();
@@ -598,13 +601,12 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
             sc.addAnd("id", SearchCriteria.Op.EQ, id);
         }
 
-        List<Site2SiteCustomerGateway> results = new ArrayList<Site2SiteCustomerGateway>();
-        results.addAll(_customerGatewayDao.search(sc, searchFilter));
-        return results;
+        Pair<List<Site2SiteCustomerGatewayVO>, Integer> result = _customerGatewayDao.searchAndCount(sc, searchFilter);
+        return new Pair<List<? extends Site2SiteCustomerGateway>, Integer> (result.first(), result.second());
     }
 
     @Override
-    public List<Site2SiteVpnGateway> searchForVpnGateways(ListVpnGatewaysCmd cmd) {
+    public Pair<List<? extends Site2SiteVpnGateway>, Integer> searchForVpnGateways(ListVpnGatewaysCmd cmd) {
         Long id = cmd.getId();
         Long vpcId = cmd.getVpcId();
         
@@ -643,13 +645,12 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
             sc.addAnd("vpcId", SearchCriteria.Op.EQ, vpcId);
         }
 
-        List<Site2SiteVpnGateway> results = new ArrayList<Site2SiteVpnGateway>();
-        results.addAll(_vpnGatewayDao.search(sc, searchFilter));
-        return results;
+        Pair<List<Site2SiteVpnGatewayVO>, Integer> result = _vpnGatewayDao.searchAndCount(sc, searchFilter);
+        return new Pair<List<? extends Site2SiteVpnGateway>, Integer>(result.first(), result.second());
     }
 
     @Override
-    public List<Site2SiteVpnConnection> searchForVpnConnections(ListVpnConnectionsCmd cmd) {
+    public Pair<List<? extends Site2SiteVpnConnection>, Integer> searchForVpnConnections(ListVpnConnectionsCmd cmd) {
         Long id = cmd.getId();
         Long vpcId = cmd.getVpcId();
 
@@ -693,9 +694,8 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
             sc.setJoinParameters("gwSearch", "vpcId", vpcId);
         }
 
-        List<Site2SiteVpnConnection> results = new ArrayList<Site2SiteVpnConnection>();
-        results.addAll(_vpnConnectionDao.search(sc, searchFilter));
-        return results;
+        Pair<List<Site2SiteVpnConnectionVO>, Integer> result = _vpnConnectionDao.searchAndCount(sc, searchFilter);
+        return new Pair<List<? extends Site2SiteVpnConnection>, Integer>(result.first(), result.second());
     }
 
     @Override

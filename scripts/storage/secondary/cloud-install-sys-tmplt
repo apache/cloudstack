@@ -33,7 +33,7 @@ failed() {
 mflag=
 fflag=
 ext="vhd"
-templateId=1
+templateId=
 hyper=
 msKey=password
 DISKSPACE=5120000  #free disk space required in kilobytes
@@ -143,21 +143,24 @@ else
     fi
 fi
 
-if [ "$hyper" == "kvm" ]
+if [ "$templateId" == "" ]
 then
-   ext="qcow2"
-   templateId=(`mysql -h $dbHost --user=$dbUser --password=$dbPassword --skip-column-names -U cloud -e "select max(id) from cloud.vm_template where type = \"SYSTEM\" and hypervisor_type = \"KVM\" and removed is null"`)
-elif [ "$hyper" == "xenserver" ]
-then
-   ext="vhd"
-   templateId=(`mysql -h $dbHost --user=$dbUser --password=$dbPassword --skip-column-names -U cloud -e "select max(id) from cloud.vm_template where type = \"SYSTEM\" and hypervisor_type = \"XenServer\" and removed is null"`)
-elif [ "$hyper" == "vmware" ]
-then
-   ext="ova"
-   templateId=(`mysql -h $dbHost --user=$dbUser --password=$dbPassword --skip-column-names -U cloud -e "select max(id) from cloud.vm_template where type = \"SYSTEM\" and hypervisor_type = \"VMware\" and removed is null"`)
-else
-   usage
-   failed 2
+   if [ "$hyper" == "kvm" ]
+   then
+      ext="qcow2"
+      templateId=(`mysql -h $dbHost --user=$dbUser --password=$dbPassword --skip-column-names -U cloud -e "select max(id) from cloud.vm_template where type = \"SYSTEM\" and hypervisor_type = \"KVM\" and removed is null"`)
+   elif [ "$hyper" == "xenserver" ]
+   then
+      ext="vhd"
+      templateId=(`mysql -h $dbHost --user=$dbUser --password=$dbPassword --skip-column-names -U cloud -e "select max(id) from cloud.vm_template where type = \"SYSTEM\" and hypervisor_type = \"XenServer\" and removed is null"`)
+   elif [ "$hyper" == "vmware" ]
+   then
+      ext="ova"
+      templateId=(`mysql -h $dbHost --user=$dbUser --password=$dbPassword --skip-column-names -U cloud -e "select max(id) from cloud.vm_template where type = \"SYSTEM\" and hypervisor_type = \"VMware\" and removed is null"`)
+   else
+      usage
+      failed 2
+   fi
 fi
 
 if [ ! $templateId ]

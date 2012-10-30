@@ -769,14 +769,14 @@
         if (field.range) {
           var $range = $('<div>').addClass('range').appendTo($td);
 
-          $(field.range).each(function() {
+          $(field.range).each(function() {  //e.g. field.range = ['privateport', 'privateendport'];
             var $input = $('<input>')
                   .attr({
                     name: this,
                     type: 'text'
                   })
-                  .addClass(!field.isOptional ? 'required' : null)
-                  .attr('disabled', field.isDisabled ? 'disabled' : false)
+                  //.addClass(!field.isOptional ? 'required' : null)          //field.range[0] might be required while field.range[1] is optional (e.g. private start port is required while private end port is optional), so "isOptional" property should be on field.range level instead of field level.
+                  //.attr('disabled', field.isDisabled ? 'disabled' : false)  //field.range[0] might be enabled while field.range[1] is disabled  (e.g. private start port is enabled while private end port is disabled),  so "isDisabled" property should be on field.range level instead of field level.
                   .appendTo(
                     $('<div>').addClass('range-item').appendTo($range)
                   );

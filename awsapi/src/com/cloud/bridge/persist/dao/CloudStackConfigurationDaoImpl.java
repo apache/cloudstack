@@ -52,7 +52,12 @@ public class CloudStackConfigurationDaoImpl extends GenericDaoBase<CloudStackCon
 			txn.start();
 			SearchCriteria<CloudStackConfigurationVO> sc = NameSearch.create();
 			sc.setParameters("name", name);
-			return findOneBy(sc).getValue();
+			CloudStackConfigurationVO configItem = findOneBy(sc);
+			if (configItem == null) {
+				s_logger.warn("No configuration item found with name " + name);
+				return null;
+			}
+			return configItem.getValue();
         }finally {
 		
 		}

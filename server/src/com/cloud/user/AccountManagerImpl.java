@@ -74,15 +74,10 @@ import com.cloud.network.IpAddress;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.RemoteAccessVpnVO;
-import com.cloud.network.Site2SiteCustomerGatewayVO;
-import com.cloud.network.Site2SiteVpnConnectionVO;
 import com.cloud.network.VpnUserVO;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
-import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
-import com.cloud.network.dao.Site2SiteVpnConnectionDao;
-import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.dao.SecurityGroupDao;
@@ -577,7 +572,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             for (VolumeVO volume : volumes) {
                 if (!volume.getState().equals(Volume.State.Destroy)) {
                     try {
-                        _storageMgr.deleteVolume(volume.getId());
+                        _storageMgr.deleteVolume(volume.getId(), caller);
                     } catch (Exception ex) {
                         s_logger.warn("Failed to cleanup volumes as a part of account id=" + accountId + " cleanup due to Exception: ", ex);
                         accountCleanupNeeded = true;
@@ -590,12 +585,12 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             List<VpnUserVO> vpnUsers = _vpnUser.listByAccount(accountId);
 
             for (VpnUserVO vpnUser : vpnUsers) {
-                _remoteAccessVpnMgr.removeVpnUser(accountId, vpnUser.getUsername());
+                _remoteAccessVpnMgr.removeVpnUser(accountId, vpnUser.getUsername(), caller);
             }
 
             try {
                 for (RemoteAccessVpnVO vpn : remoteAccessVpns) {
-                    _remoteAccessVpnMgr.destroyRemoteAccessVpn(vpn.getServerAddressId());
+                    _remoteAccessVpnMgr.destroyRemoteAccessVpn(vpn.getServerAddressId(), caller);
                 }
             } catch (ResourceUnavailableException ex) {
                 s_logger.warn("Failed to cleanup remote access vpn resources as a part of account id=" + accountId + " cleanup due to Exception: ", ex);
@@ -613,7 +608,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             if (networks != null) {
                 for (NetworkVO network : networks) {
 
-                    ReservationContext context = new ReservationContextImpl(null, null, getActiveUser(callerUserId), account);
+                    ReservationContext context = new ReservationContextImpl(null, null, getActiveUser(callerUserId), caller);
 
                     if (!_networkMgr.destroyNetwork(network.getId(), context)) {
                         s_logger.warn("Unable to destroy network " + network + " as a part of account id=" + accountId + " cleanup.");
@@ -631,7 +626,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             List<? extends Vpc> vpcs = _vpcMgr.getVpcsForAccount(account.getId());
             for (Vpc vpc : vpcs) {
 
-                if (!_vpcMgr.destroyVpc(vpc)) {
+                if (!_vpcMgr.destroyVpc(vpc, caller, callerUserId)) {
                     s_logger.warn("Unable to destroy VPC " + vpc + " as a part of account id=" + accountId + " cleanup.");
                     accountCleanupNeeded = true;
                     vpcsDeleted = false;
@@ -839,6 +834,10 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         if (account == null || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
             throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain id=" + domainId + " to create user");
         }
+        
+        if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
+            throw new PermissionDeniedException("Account id : " + account.getId() + " is a system account, can't add a user to it");
+        }
 
         if (!_userAccountDao.validateUsernameInDomain(userName, domainId)) {
             throw new CloudRuntimeException("The user " + userName + " already exists in domain " + domainId);
@@ -881,6 +880,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             throw new InvalidParameterValueException("unable to find user by id");
         }
 
+        //don't allow updating system account
         if (account != null && (account.getId() == Account.ACCOUNT_ID_SYSTEM)) {
             throw new PermissionDeniedException("user id : " + id + " is system account, update is not allowed");
         }
@@ -1159,9 +1159,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             throw new InvalidParameterValueException("Unable to find account by accountId: " + accountId + " OR by name: " + accountName + " in domain " + domainId);
         }
 
-        // Don't allow to modify system account
         if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
-            throw new InvalidParameterValueException("Can not modify system account");
+            throw new PermissionDeniedException("Account id : " + accountId + " is a system account, enable is not allowed");
         }
 
         // Check if user performing the action is allowed to modify this account
@@ -1191,13 +1190,12 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         if (account == null || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
             throw new InvalidParameterValueException("Unable to find active account by accountId: " + accountId + " OR by name: " + accountName + " in domain " + domainId);
         }
+        
+        if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
+            throw new PermissionDeniedException("Account id : " + accountId + " is a system account, lock is not allowed");
+        }
 
         checkAccess(caller, null, true, account);
-
-        // don't allow modify system account
-        if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
-            throw new InvalidParameterValueException("can not lock system account");
-        }
 
         if (lockAccount(account.getId())) {
             return _accountDao.findById(account.getId());
@@ -1220,6 +1218,10 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
         if (account == null || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
             throw new InvalidParameterValueException("Unable to find account by accountId: " + accountId + " OR by name: " + accountName + " in domain " + domainId);
+        }
+        
+        if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
+            throw new PermissionDeniedException("Account id : " + accountId + " is a system account, disable is not allowed");
         }
 
         checkAccess(caller, null, true, account);
@@ -1713,7 +1715,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             String singleSignOnTolerance = _configDao.getValue("security.singlesignon.tolerance.millis");
             if (singleSignOnTolerance == null) {
                 // the SSO tolerance is gone (how much time before/after system time we'll allow the login request to be
-// valid),
+                // valid),
                 // don't authenticate
                 return null;
             }
@@ -1798,6 +1800,12 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         }
 
         if (user != null) {
+            //don't allow to authenticate system user
+            if (user.getId() == User.UID_SYSTEM) {
+                s_logger.error("Failed to authenticate user: " + username + " in domain " + domainId);
+                return null;
+            }
+            
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("User: " + username + " in domain " + domainId + " has successfully logged in");
             }
@@ -1862,24 +1870,25 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             }
 
             UserAccount userAccount = _userAccountDao.getUserAccount(username, domainId);
-            UserAccountVO user = _userAccountDao.findById(userAccount.getId());
-            if (user != null) {
-                if ((user.getState().toString()).equals("enabled")) {
-                    if (!isInternalAccount(user.getType())) {
+            if (userAccount != null) {
+                if (userAccount.getState().equalsIgnoreCase(Account.State.enabled.toString())) {
+                    if (!isInternalAccount(userAccount.getType())) {
                         //Internal accounts are not disabled
-                        int attemptsMade = user.getLoginAttempts() + 1;
+                        int attemptsMade = userAccount.getLoginAttempts() + 1;
                         if (attemptsMade < _allowedLoginAttempts) {
                             updateLoginAttempts(userAccount.getId(), attemptsMade, false);
                             s_logger.warn("Login attempt failed. You have " + ( _allowedLoginAttempts - attemptsMade ) + " attempt(s) remaining");
                         } else {
                             updateLoginAttempts(userAccount.getId(), _allowedLoginAttempts, true);
-                            s_logger.warn("User " + user.getUsername() + " has been disabled due to multiple failed login attempts." +
+                            s_logger.warn("User " + userAccount.getUsername() + " has been disabled due to multiple failed login attempts." +
                                     " Please contact admin.");
                         }
                     }
                 } else {
-                    s_logger.info("User " + user.getUsername() + " is disabled/locked");
+                    s_logger.info("User " + userAccount.getUsername() + " is disabled/locked");
                 }
+            } else {
+                s_logger.warn("Authentication failure: No user with name " + username + " for domainId " + domainId);
             }
             return null;
         }
@@ -1894,8 +1903,14 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     public String[] createApiKeyAndSecretKey(RegisterCmd cmd) {
         Long userId = cmd.getId();
 
-        if (getUserIncludingRemoved(userId) == null) {
-            throw new InvalidParameterValueException("unable to find user for id : " + userId);
+        User user = getUserIncludingRemoved(userId);
+        if (user == null) {            
+            throw new InvalidParameterValueException("unable to find user by id");
+        }
+        
+        //don't allow updating system user
+        if (user.getId() == User.UID_SYSTEM) {
+            throw new PermissionDeniedException("user id : " + user.getId() + " is system account, update is not allowed");
         }
 
         // generate both an api key and a secret key, update the user table with the keys, return the keys to the user
@@ -1965,7 +1980,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     }
 
     @Override
-    public List<AccountVO> searchForAccounts(ListAccountsCmd cmd) {
+    public Pair<List<? extends Account>, Integer> searchForAccounts(ListAccountsCmd cmd) {
         Account caller = UserContext.current().getCaller();
         Long domainId = cmd.getDomainId();
         Long accountId = cmd.getId();
@@ -2007,7 +2022,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 if (domainId == null) {
                     domainId = caller.getDomainId();
                 }
-            } else if (domainId != null) {
+            } else if (isAdmin(caller.getType()) && domainId != null) {
                 listForDomain = true;
             } else {
                 accountId = caller.getAccountId();
@@ -2080,11 +2095,12 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             }
         }
 
-        return _accountDao.search(sc, searchFilter);
+        Pair<List<AccountVO>, Integer> result = _accountDao.searchAndCount(sc, searchFilter);
+        return new Pair<List<? extends Account>, Integer>(result.first(), result.second());
     }
 
     @Override
-    public List<UserAccountVO> searchForUsers(ListUsersCmd cmd) throws PermissionDeniedException {
+    public Pair<List<? extends UserAccount>, Integer> searchForUsers(ListUsersCmd cmd) throws PermissionDeniedException {
         Account caller = UserContext.current().getCaller();
 
         Long domainId = cmd.getDomainId();
@@ -2114,7 +2130,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         if (id != null && id == 1) {
             // system user should NOT be searchable
             List<UserAccountVO> emptyList = new ArrayList<UserAccountVO>();
-            return emptyList;
+            return new Pair<List<? extends UserAccount>, Integer>(emptyList, 0);
         } else if (id != null) {
             sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         } else {
@@ -2177,7 +2193,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             sc.setParameters("state", state);
         }
 
-        return _userAccountDao.search(sc, searchFilter);
+        Pair<List<UserAccountVO>, Integer> result = _userAccountDao.searchAndCount(sc, searchFilter);
+        return new Pair<List<? extends UserAccount>, Integer>(result.first(), result.second());
     }
 
     @Override

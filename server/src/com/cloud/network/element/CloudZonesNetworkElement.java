@@ -129,7 +129,7 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
     }
 
     @Override
-    public boolean destroy(Network config) throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean destroy(Network config, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
         return false; // assume that the agent will remove userdata etc
     }
 

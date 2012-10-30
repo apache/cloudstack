@@ -633,7 +633,8 @@
           title: 'label.add.new.gateway',
           desc: 'message.add.new.gateway.to.vpc',
           fields: {
-					  physicalnetworkid: { 
+					  physicalnetworkid: {
+              docID: 'helpVPCGatewayPhysicalNetwork',
 						  label: 'label.physical.network',
               select: function(args) {               
 								$.ajax({
@@ -652,10 +653,22 @@
 								});
               }							
 						},
-            vlan: { label: 'label.vlan', validation: { required: true }},
-            ipaddress: { label: 'label.ip.address', validation: { required: true }},
-            gateway: { label: 'label.gateway', validation: { required: true }},
-            netmask: { label: 'label.netmask', validation: { required: true }}
+            vlan: {
+              label: 'label.vlan', validation: { required: true },
+              docID: 'helpVPCGatewayVLAN'
+            },
+            ipaddress: {
+              label: 'label.ip.address', validation: { required: true },
+              docID: 'helpVPCGatewayIP'
+            },
+            gateway: {
+              label: 'label.gateway', validation: { required: true },
+              docID: 'helpVPCGatewayGateway'
+            },
+            netmask: {
+              label: 'label.netmask', validation: { required: true },
+              docID: 'helpVPCGatewayNetmask'
+            }
           }
         },
         action: function(args) {
@@ -1956,11 +1969,14 @@
           createForm: {
             title: 'label.add.new.tier',
             fields: {
-              name: { label: 'label.name',
-                      validation: { required: true }
-                    },
+              name: {
+                label: 'label.name',
+                validation: { required: true },
+                docID: 'helpTierName'
+              },
               networkOfferingId: {
                 label: 'label.network.offering',
+                docID: 'helpTierNetworkOffering',
                 validation: { required: true },
                 dependsOn: 'zoneId',
                 select: function(args) {
@@ -2025,10 +2041,12 @@
               },
               gateway: {
                 label: 'label.gateway',
+                docID: 'helpTierGateway',
                 validation: { required: true }
               },
               netmask: {
                 label: 'label.netmask',
+                docID: 'helpTierNetmask',
                 validation: { required: true }
               }
             }

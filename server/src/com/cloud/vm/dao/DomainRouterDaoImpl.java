@@ -41,6 +41,7 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 
 @Local(value = { DomainRouterDao.class })
@@ -66,6 +67,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         AllFieldsSearch.and("host", AllFieldsSearch.entity().getHostId(), Op.EQ);
         AllFieldsSearch.and("lastHost", AllFieldsSearch.entity().getLastHostId(), Op.EQ);
         AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), Op.EQ);
+        AllFieldsSearch.and("states", AllFieldsSearch.entity().getState(), Op.IN);
         SearchBuilder<RouterNetworkVO> joinRouterNetwork = _routerNetworkDao.createSearchBuilder();
         joinRouterNetwork.and("networkId", joinRouterNetwork.entity().getNetworkId(), Op.EQ);
         AllFieldsSearch.join("networkRouter", joinRouterNetwork, joinRouterNetwork.entity().getRouterId(), AllFieldsSearch.entity().getId(), JoinType.INNER);
@@ -174,6 +176,21 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     public List<DomainRouterVO> listByHostId(Long hostId) {
         SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
         sc.setParameters("host", hostId);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<DomainRouterVO> listByPodId(Long podId) {
+        SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
+        sc.setParameters("podId", podId);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<DomainRouterVO> listByPodIdAndStates(Long podId, State... states) {
+        SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
+        sc.setParameters("podId", podId);
+        sc.setParameters("states", (Object[]) states);
         return listBy(sc);
     }
 

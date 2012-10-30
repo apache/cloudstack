@@ -125,7 +125,7 @@ public class ElasticLoadBalancerElement extends AdapterBase implements LoadBalan
     }
 
     @Override
-    public boolean destroy(Network network) throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean destroy(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
         // TODO  kill all loadbalancer vms by calling the ElasticLoadBalancerManager
         return false;
     }

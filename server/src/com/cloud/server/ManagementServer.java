@@ -92,7 +92,7 @@ public interface ManagementServer extends ManagementService {
 
     public long getMemoryOrCpuCapacityByHost(Long hostId, short capacityType);
 
-    List<? extends StoragePoolVO> searchForStoragePools(Criteria c);
+    Pair<List<StoragePoolVO>, Integer> searchForStoragePools(Criteria c);
 
     String getHashKey();
 }

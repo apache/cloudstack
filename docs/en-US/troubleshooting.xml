@@ -22,13 +22,14 @@
  under the License.
 -->
 
-<section id="troubleshooting">
-    <para><xref linkend="troubleshooting-alerts" />Alert Type Numbers</para>
-    <para><xref linkend="troubleshooting-dataloss-on-exported-primary-storage" />Data Loss on Exported Primary Storage</para>
-    <para><xref linkend="troubleshooting-lb-rules-fails" />Load balancer rules fail after changing network offering</para>
-    <para><xref linkend="troubleshooting-maintenance-mode-not-working-on-vCenter" />Maintenance mode not working on vCenter</para>
-    <para><xref linkend="troubleshooting-recover-lost-virtual-router" />Recovering a Lost Virtual Router</para>
-    <para><xref linkend="troubleshooting-unable-to-deploy-vms" />Unable to deploy VMs from uploaded vSphere template</para>
-    <para><xref linkend="troubleshooting-unable-to-power-on-vm" />Unable to power on virtual machine on VMware</para>
-    <para><xref linkend="troubleshooting-working-with-server-logs" />Working with Server Logs</para>
-</section>
+<chapter id="troubleshooting">
+  <title>Troubleshooting</title>
+  <xi:include href="events.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="troubleshooting-working-with-server-logs.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="troubleshooting-dataloss-on-exported-primary-storage.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="troubleshooting-recover-lost-virtual-router.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="troubleshooting-maintenance-mode-not-working-on-vCenter.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="troubleshooting-unable-to-deploy-vms.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="troubleshooting-unable-to-power-on-vm.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="troubleshooting-lb-rules-fails.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+</chapter>

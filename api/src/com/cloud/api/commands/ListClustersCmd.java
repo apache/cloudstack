@@ -29,6 +29,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.response.ClusterResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.org.Cluster;
+import com.cloud.utils.Pair;
 
 @Implementation(description="Lists clusters.", responseObject=ClusterResponse.class)
 public class ListClustersCmd extends BaseListCmd {
@@ -127,16 +128,16 @@ public class ListClustersCmd extends BaseListCmd {
     
     @Override
     public void execute(){
-        List<? extends Cluster> result = _mgr.searchForClusters(this);
+        Pair<List<? extends Cluster>, Integer> result = _mgr.searchForClusters(this);
         ListResponse<ClusterResponse> response = new ListResponse<ClusterResponse>();
         List<ClusterResponse> clusterResponses = new ArrayList<ClusterResponse>();
-        for (Cluster cluster : result) {
+        for (Cluster cluster : result.first()) {
             ClusterResponse clusterResponse = _responseGenerator.createClusterResponse(cluster,showCapacities);
             clusterResponse.setObjectName("cluster");
             clusterResponses.add(clusterResponse);
         }
 
-        response.setResponses(clusterResponses);
+        response.setResponses(clusterResponses, result.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

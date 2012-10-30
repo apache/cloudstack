@@ -26,7 +26,9 @@ import com.cloud.api.commands.ListSnapshotsCmd;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.Snapshot;
+import com.cloud.storage.Volume;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 
 public interface SnapshotService {
 
@@ -38,7 +40,7 @@ public interface SnapshotService {
      * @return list of snapshots
      * @throws PermissionDeniedException
      */
-    List<? extends Snapshot> listSnapshots(ListSnapshotsCmd cmd);
+    Pair<List<? extends Snapshot>, Integer> listSnapshots(ListSnapshotsCmd cmd);
 
     /**
      * Delete specified snapshot from the specified. If no other policies are assigned it calls destroy snapshot. This
@@ -97,4 +99,10 @@ public interface SnapshotService {
      * @return the Snapshot that was created
      */
     Snapshot createSnapshot(Long volumeId, Long policyId, Long snapshotId, Account snapshotOwner);
+
+    /**
+     * @param vol
+     * @return
+     */
+    Long getHostIdForSnapshotOperation(Volume vol);
 }

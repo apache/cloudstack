@@ -29,6 +29,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.Site2SiteVpnConnectionResponse;
 import com.cloud.network.Site2SiteVpnConnection;
+import com.cloud.utils.Pair;
 
 @Implementation(description="Lists site to site vpn connection gateways", responseObject=Site2SiteVpnConnectionResponse.class)
 public class ListVpnConnectionsCmd extends BaseListProjectAndAccountResourcesCmd {
@@ -72,20 +73,19 @@ public class ListVpnConnectionsCmd extends BaseListProjectAndAccountResourcesCmd
 
     @Override
     public void execute(){
-        List<Site2SiteVpnConnection> conns = _s2sVpnService.searchForVpnConnections(this);
+        Pair<List<? extends Site2SiteVpnConnection>, Integer> conns = _s2sVpnService.searchForVpnConnections(this);
         ListResponse<Site2SiteVpnConnectionResponse> response = new ListResponse<Site2SiteVpnConnectionResponse>();
         List<Site2SiteVpnConnectionResponse> connResponses = new ArrayList<Site2SiteVpnConnectionResponse>();
-        if (conns != null && !conns.isEmpty()) {
-        	for (Site2SiteVpnConnection conn : conns) {
-                if (conn == null) {
-                    continue;
-                }
-            	Site2SiteVpnConnectionResponse site2SiteVpnConnectonRes = _responseGenerator.createSite2SiteVpnConnectionResponse(conn);
-            	site2SiteVpnConnectonRes.setObjectName("vpnconnection");
-                connResponses.add(site2SiteVpnConnectonRes);
+        for (Site2SiteVpnConnection conn : conns.first()) {
+            if (conn == null) {
+                continue;
             }
+        	Site2SiteVpnConnectionResponse site2SiteVpnConnectonRes = _responseGenerator.createSite2SiteVpnConnectionResponse(conn);
+        	site2SiteVpnConnectonRes.setObjectName("vpnconnection");
+            connResponses.add(site2SiteVpnConnectonRes);
         }
-        response.setResponses(connResponses);
+        
+        response.setResponses(connResponses, conns.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

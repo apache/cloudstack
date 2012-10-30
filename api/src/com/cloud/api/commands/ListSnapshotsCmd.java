@@ -30,6 +30,7 @@ import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.SnapshotResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.storage.Snapshot;
+import com.cloud.utils.Pair;
 
 
 @Implementation(description="Lists all available snapshots for the account.", responseObject=SnapshotResponse.class)
@@ -98,15 +99,15 @@ public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
 
     @Override
     public void execute(){
-        List<? extends Snapshot> result = _snapshotService.listSnapshots(this);
+        Pair<List<? extends Snapshot>, Integer> result = _snapshotService.listSnapshots(this);
         ListResponse<SnapshotResponse> response = new ListResponse<SnapshotResponse>();
         List<SnapshotResponse> snapshotResponses = new ArrayList<SnapshotResponse>();
-        for (Snapshot snapshot : result) {
+        for (Snapshot snapshot : result.first()) {
             SnapshotResponse snapshotResponse = _responseGenerator.createSnapshotResponse(snapshot);
             snapshotResponse.setObjectName("snapshot");
             snapshotResponses.add(snapshotResponse);
         }
-        response.setResponses(snapshotResponses);
+        response.setResponses(snapshotResponses, result.second());
         response.setResponseName(getCommandName());
         
         this.setResponseObject(response);

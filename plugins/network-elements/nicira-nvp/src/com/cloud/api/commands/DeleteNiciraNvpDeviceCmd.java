@@ -19,6 +19,7 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
@@ -26,6 +27,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.PlugService;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -36,9 +38,9 @@ import com.cloud.user.UserContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Implementation(responseObject=SuccessResponse.class, description=" delete a nicira nvp device")
-public class DeleteNiciraNvpDeviceCmd extends BaseCmd {
+public class DeleteNiciraNvpDeviceCmd extends BaseAsyncCmd {
     private static final Logger s_logger = Logger.getLogger(DeleteNiciraNvpDeviceCmd.class.getName());
-    private static final String s_name = "addniciranvpdevice";
+    private static final String s_name = "deleteniciranvpdeviceresponse";
     @PlugService NiciraNvpElementService _niciraNvpElementService;
 
     /////////////////////////////////////////////////////
@@ -88,5 +90,15 @@ public class DeleteNiciraNvpDeviceCmd extends BaseCmd {
     public long getEntityOwnerId() {
         return UserContext.current().getCaller().getId();
     }
+
+	@Override
+	public String getEventType() {
+		return EventTypes.EVENT_EXTERNAL_LB_DEVICE_DELETE;
+	}
+
+	@Override
+	public String getEventDescription() {
+		return "Deleting Nicira Nvp Controller";
+	}
 
 }

@@ -29,6 +29,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.response.GuestOSCategoryResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.storage.GuestOsCategory;
+import com.cloud.utils.Pair;
 
 @Implementation(description="Lists all supported OS categories for this cloud.", responseObject=GuestOSCategoryResponse.class)
 public class ListGuestOsCategoriesCmd extends BaseListCmd {
@@ -72,10 +73,10 @@ public class ListGuestOsCategoriesCmd extends BaseListCmd {
     
     @Override
     public void execute(){
-        List<? extends GuestOsCategory> result = _mgr.listGuestOSCategoriesByCriteria(this);
+        Pair<List<? extends GuestOsCategory>, Integer> result = _mgr.listGuestOSCategoriesByCriteria(this);
         ListResponse<GuestOSCategoryResponse> response = new ListResponse<GuestOSCategoryResponse>();
         List<GuestOSCategoryResponse> osCatResponses = new ArrayList<GuestOSCategoryResponse>();
-        for (GuestOsCategory osCategory : result) {
+        for (GuestOsCategory osCategory : result.first()) {
             GuestOSCategoryResponse categoryResponse = new GuestOSCategoryResponse();
             categoryResponse.setId(osCategory.getId());
             categoryResponse.setName(osCategory.getName());
@@ -84,7 +85,7 @@ public class ListGuestOsCategoriesCmd extends BaseListCmd {
             osCatResponses.add(categoryResponse);
         }
 
-        response.setResponses(osCatResponses);
+        response.setResponses(osCatResponses, result.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

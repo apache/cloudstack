@@ -29,6 +29,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.response.FirewallResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.utils.Pair;
 
 @Implementation(description="Lists all firewall rules for an IP address.", responseObject=FirewallResponse.class)
 public class ListFirewallRulesCmd extends BaseListTaggedResourcesCmd {
@@ -69,16 +70,16 @@ public class ListFirewallRulesCmd extends BaseListTaggedResourcesCmd {
     
     @Override
     public void execute(){
-        List<? extends FirewallRule> result = _firewallService.listFirewallRules(this);
+        Pair<List<? extends FirewallRule>, Integer> result = _firewallService.listFirewallRules(this);
         ListResponse<FirewallResponse> response = new ListResponse<FirewallResponse>();
         List<FirewallResponse> fwResponses = new ArrayList<FirewallResponse>();
         
-        for (FirewallRule fwRule : result) {
+        for (FirewallRule fwRule : result.first()) {
             FirewallResponse ruleData = _responseGenerator.createFirewallResponse(fwRule);
             ruleData.setObjectName("firewallrule");
             fwResponses.add(ruleData);
         }
-        response.setResponses(fwResponses);
+        response.setResponses(fwResponses, result.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response); 
     }

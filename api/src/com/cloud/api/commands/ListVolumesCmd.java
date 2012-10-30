@@ -30,6 +30,7 @@ import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.VolumeResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.storage.Volume;
+import com.cloud.utils.Pair;
 
 
 @Implementation(description="Lists all volumes.", responseObject=VolumeResponse.class)
@@ -117,17 +118,17 @@ public class ListVolumesCmd extends BaseListTaggedResourcesCmd {
     
     @Override
     public void execute(){
-        List<? extends Volume> volumes = _storageService.searchForVolumes(this);
+        Pair<List<? extends Volume>, Integer> volumes = _storageService.searchForVolumes(this);
 
         ListResponse<VolumeResponse> response = new ListResponse<VolumeResponse>();
         List<VolumeResponse> volResponses = new ArrayList<VolumeResponse>();
-        for (Volume volume : volumes) {
+        for (Volume volume : volumes.first()) {
             VolumeResponse volResponse = _responseGenerator.createVolumeResponse(volume);
             volResponse.setObjectName("volume");
             volResponses.add(volResponse);
         }
 
-        response.setResponses(volResponses);
+        response.setResponses(volResponses, volumes.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

@@ -1,0 +1,103 @@
+#!/bin/sh
+
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+# An example hook script to prepare the commit log message.
+# Called by "git commit" with the name of the file that has the
+# commit message, followed by the description of the commit
+# message's source.  The hook's purpose is to edit the commit
+# message file.  If the hook fails with a non-zero status,
+# the commit is aborted.
+#
+# To enable this hook, rename this file to "prepare-commit-msg".
+
+# This hook includes three examples.  The first comments out the
+# "Conflicts:" part of a merge commit.
+#
+# The second includes the output of "git diff --name-status -r"
+# into the message, just before the "git status" output.  It is
+# commented because it doesn't cope with --amend or with squashed
+# commits.
+#
+# The third example adds a Signed-off-by line to the message, that can
+# still be edited.  This is rarely a good idea.
+
+#case "$2,$3" in
+#  merge,)
+#    /usr/bin/perl -i.bak -ne 's/^/# /, s/^# #/#/ if /^Conflicts/ .. /#/; print' "$1" ;;
+
+# ,|template,)
+#   /usr/bin/perl -i.bak -pe '
+#      print "\n" . `git diff --cached --name-status -r`
+#	 if /^#/ && $first++ == 0' "$1" ;;
+
+#  *) ;;
+#esac
+
+# SOB=$(git var GIT_AUTHOR_IDENT | sed -n 's/^\(.*>\).*$/Signed-off-by: \1/p')
+# grep -qs "^$SOB" "$1" || echo "$SOB" >> "$1"
+
+run_generic_commit () {
+local file=$1
+cat <<EOF > $file
+################################# 80 chars #####################################
+# The following is an example of how to fill out the above form. Please limit
+# your formatting to 80 cols.
+#
+# Summary: One line description of commit, followed by blank line
+#
+# Detail: Multi-line description, followed by blank line
+#
+# BUG-ID: CLOUDSTACK-9999
+# Reviewed-by: Bar Barlington <bar@example.com>, Foo McFooson <foo@example.com>
+# Reported-by: Baz Bazelli <baz@example.com>
+# Signed-off-by: You <you@yourdomain.com>
+#
+$ORIGINAL
+EOF
+
+SOB=$(git var GIT_AUTHOR_IDENT)
+
+sed -i "1s/^/################################# 80 chars #####################################\n\
+Summary: \n\n\
+Detail: \n\n\
+BUG-ID : \n\
+Reviewed-by: \n\
+Reported-by: \n\
+Signed-off-by: ${SOB}\n\n/" $file
+
+}
+
+case "$2,$3" in
+  merge,*)
+  ;;
+
+  template,*)
+  ;;
+
+  message,*)
+  ;;
+
+  squash,*)
+  ;;
+
+  *)
+  run_generic_commit $1
+  ;;
+esac
+

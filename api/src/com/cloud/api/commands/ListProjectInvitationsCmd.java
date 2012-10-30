@@ -29,6 +29,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.ProjectInvitationResponse;
 import com.cloud.projects.ProjectInvitation;
+import com.cloud.utils.Pair;
 
 @Implementation(description = "Lists projects and provides detailed information for listed projects", responseObject = ProjectInvitationResponse.class, since = "3.0.0")
 public class ListProjectInvitationsCmd extends BaseListAccountResourcesCmd {
@@ -82,15 +83,16 @@ public class ListProjectInvitationsCmd extends BaseListAccountResourcesCmd {
 
     @Override
     public void execute() {
-        List<? extends ProjectInvitation> invites = _projectService.listProjectInvitations(id, projectId, this.getAccountName(), this.getDomainId(), state, activeOnly, this.getStartIndex(), this.getPageSizeVal(),
+        Pair<List<? extends ProjectInvitation>, Integer> invites = _projectService.listProjectInvitations(id, projectId,
+                this.getAccountName(), this.getDomainId(), state, activeOnly, this.getStartIndex(), this.getPageSizeVal(),
                 this.isRecursive(), this.listAll());
         ListResponse<ProjectInvitationResponse> response = new ListResponse<ProjectInvitationResponse>();
         List<ProjectInvitationResponse> projectInvitationResponses = new ArrayList<ProjectInvitationResponse>();
-        for (ProjectInvitation invite : invites) {
+        for (ProjectInvitation invite : invites.first()) {
             ProjectInvitationResponse projectResponse = _responseGenerator.createProjectInvitationResponse(invite);
             projectInvitationResponses.add(projectResponse);
         }
-        response.setResponses(projectInvitationResponses);
+        response.setResponses(projectInvitationResponses, invites.second());
         response.setResponseName(getCommandName());
 
         this.setResponseObject(response);

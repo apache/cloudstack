@@ -29,6 +29,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.RemoteAccessVpnResponse;
 import com.cloud.network.RemoteAccessVpn;
+import com.cloud.utils.Pair;
 
 @Implementation(description="Lists remote access vpns", responseObject=RemoteAccessVpnResponse.class)
 public class ListRemoteAccessVpnsCmd extends BaseListProjectAndAccountResourcesCmd {
@@ -64,15 +65,15 @@ public class ListRemoteAccessVpnsCmd extends BaseListProjectAndAccountResourcesC
 
     @Override
     public void execute(){
-        List<? extends RemoteAccessVpn> vpns = _ravService.searchForRemoteAccessVpns(this);
+        Pair<List<? extends RemoteAccessVpn>, Integer> vpns = _ravService.searchForRemoteAccessVpns(this);
         ListResponse<RemoteAccessVpnResponse> response = new ListResponse<RemoteAccessVpnResponse>();
         List<RemoteAccessVpnResponse> vpnResponses = new ArrayList<RemoteAccessVpnResponse>();
-        if (vpns != null && !vpns.isEmpty()) {
-            for (RemoteAccessVpn vpn : vpns) {
+        if (vpns.first() != null && !vpns.first().isEmpty()) {
+            for (RemoteAccessVpn vpn : vpns.first()) {
                 vpnResponses.add(_responseGenerator.createRemoteAccessVpnResponse(vpn));
             }
         }
-        response.setResponses(vpnResponses);
+        response.setResponses(vpnResponses, vpns.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

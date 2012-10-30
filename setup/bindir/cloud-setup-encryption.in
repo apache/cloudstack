@@ -63,7 +63,7 @@ class DBDeployer(object):
     dbDotProperties = {}
     dbDotPropertiesIndex = 0
     encryptionKeyFile = '@MSCONF@/key'
-    encryptionJarPath = '@JAVADIR@/cloud-jasypt-1.8.jar'
+    encryptionJarPath = '@JAVADIR@/cloud-jasypt-1.8.jar:@JAVADIR@/jasypt-1.8.jar:@JAVADIR@/jasypt-1.9.0.jar'
     success = False
     magicString = 'This_is_a_magic_string_i_think_no_one_will_duplicate'
 
@@ -184,7 +184,7 @@ for example:
                         
     def processEncryptionStuff(self):
         def encrypt(input):
-            cmd = ['java','-classpath',self.encryptionJarPath,'org.jasypt.intf.cli.JasyptPBEStringEncryptionCLI', 'encrypt.sh', 'input=%s'%input, 'password=%s'%self.mgmtsecretkey,'verbose=false']
+            cmd = ['java','-classpath',self.encryptionJarPath,'org.jasypt.intf.cli.JasyptPBEStringEncryptionCLI', 'encrypt.sh', 'input=\'%s\''%input, 'password=%s'%self.mgmtsecretkey,'verbose=false']
             return runCmd(cmd).strip('\n')
         
         def saveMgmtServerSecretKey():

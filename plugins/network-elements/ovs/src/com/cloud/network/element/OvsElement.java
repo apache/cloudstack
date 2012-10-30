@@ -47,7 +47,7 @@ public class OvsElement extends AdapterBase implements NetworkElement {
     OvsTunnelManager _ovsTunnelMgr;
 
     @Override
-    public boolean destroy(Network network)
+    public boolean destroy(Network network, ReservationContext context)
             throws ConcurrentOperationException, ResourceUnavailableException {
         return true;
     }

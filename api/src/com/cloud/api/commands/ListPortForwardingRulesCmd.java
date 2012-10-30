@@ -29,6 +29,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.response.FirewallRuleResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.network.rules.PortForwardingRule;
+import com.cloud.utils.Pair;
 
 @Implementation(description="Lists all port forwarding rules for an IP address.", responseObject=FirewallRuleResponse.class)
 public class ListPortForwardingRulesCmd extends BaseListTaggedResourcesCmd {
@@ -71,16 +72,16 @@ public class ListPortForwardingRulesCmd extends BaseListTaggedResourcesCmd {
     
     @Override
     public void execute(){
-        List<? extends PortForwardingRule> result = _rulesService.listPortForwardingRules(this);
+        Pair<List<? extends PortForwardingRule>, Integer> result = _rulesService.listPortForwardingRules(this);
         ListResponse<FirewallRuleResponse> response = new ListResponse<FirewallRuleResponse>();
         List<FirewallRuleResponse> fwResponses = new ArrayList<FirewallRuleResponse>();
         
-        for (PortForwardingRule fwRule : result) {
+        for (PortForwardingRule fwRule : result.first()) {
             FirewallRuleResponse ruleData = _responseGenerator.createPortForwardingRuleResponse(fwRule);
             ruleData.setObjectName("portforwardingrule");
             fwResponses.add(ruleData);
         }
-        response.setResponses(fwResponses);
+        response.setResponses(fwResponses, result.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response); 
     }

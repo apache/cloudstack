@@ -58,13 +58,13 @@
 usage.execution.timezone = PST
 usage.aggregation.timezone = GMT
                         </programlisting>
-                        <para>Valid values for the time zone are specified in <xref linkend="appendix-a-time-zones"/></para>
+                        <para>Valid values for the time zone are specified in <xref linkend="time-zones"/></para>
                         <para>Default: GMT</para>
                     </entry>                    
                 </row>
                 <row>
                     <entry><para>usage.execution.timezone</para></entry>
-                    <entry><para>The time zone of usage.stats.job.exec.time.  Valid values for the time zone are specified in <xref linkend="appendix-a-time-zones"/></para>
+                    <entry><para>The time zone of usage.stats.job.exec.time.  Valid values for the time zone are specified in <xref linkend="time-zones"/></para>
                         <para>Default: The time zone of the management server.</para>
                     </entry>                    
                 </row>

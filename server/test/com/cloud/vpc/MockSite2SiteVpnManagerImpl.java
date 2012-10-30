@@ -41,6 +41,7 @@ import com.cloud.network.Site2SiteVpnConnectionVO;
 import com.cloud.network.Site2SiteVpnGateway;
 import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.network.vpn.Site2SiteVpnService;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.DomainRouterVO;
 
@@ -132,7 +133,7 @@ public class MockSite2SiteVpnManagerImpl implements Site2SiteVpnManager, Site2Si
      * @see com.cloud.network.vpn.Site2SiteVpnService#searchForCustomerGateways(com.cloud.api.commands.ListVpnCustomerGatewaysCmd)
      */
     @Override
-    public List<Site2SiteCustomerGateway> searchForCustomerGateways(ListVpnCustomerGatewaysCmd listVpnCustomerGatewaysCmd) {
+    public Pair<List<? extends Site2SiteCustomerGateway>, Integer> searchForCustomerGateways(ListVpnCustomerGatewaysCmd listVpnCustomerGatewaysCmd) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -141,7 +142,7 @@ public class MockSite2SiteVpnManagerImpl implements Site2SiteVpnManager, Site2Si
      * @see com.cloud.network.vpn.Site2SiteVpnService#searchForVpnGateways(com.cloud.api.commands.ListVpnGatewaysCmd)
      */
     @Override
-    public List<Site2SiteVpnGateway> searchForVpnGateways(ListVpnGatewaysCmd listVpnGatewaysCmd) {
+    public Pair<List<? extends Site2SiteVpnGateway>, Integer> searchForVpnGateways(ListVpnGatewaysCmd listVpnGatewaysCmd) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -150,7 +151,7 @@ public class MockSite2SiteVpnManagerImpl implements Site2SiteVpnManager, Site2Si
      * @see com.cloud.network.vpn.Site2SiteVpnService#searchForVpnConnections(com.cloud.api.commands.ListVpnConnectionsCmd)
      */
     @Override
-    public List<Site2SiteVpnConnection> searchForVpnConnections(ListVpnConnectionsCmd listVpnConnectionsCmd) {
+    public Pair<List<? extends Site2SiteVpnConnection>, Integer> searchForVpnConnections(ListVpnConnectionsCmd listVpnConnectionsCmd) {
         // TODO Auto-generated method stub
         return null;
     }

@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.network.firewall;
 
+
 import java.util.List;
 
 import com.cloud.api.commands.ListNetworkACLsCmd;
@@ -23,6 +24,7 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 
 public interface NetworkACLService {
     FirewallRule getNetworkACL(long ruleId);
@@ -43,6 +45,6 @@ public interface NetworkACLService {
      * @param listNetworkACLsCmd
      * @return
      */
-    List<? extends FirewallRule> listNetworkACLs(ListNetworkACLsCmd cmd);
+    Pair<List<? extends FirewallRule>, Integer> listNetworkACLs(ListNetworkACLsCmd cmd);
     
 }

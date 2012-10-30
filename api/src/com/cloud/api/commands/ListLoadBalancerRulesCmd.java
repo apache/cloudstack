@@ -29,6 +29,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.LoadBalancerResponse;
 import com.cloud.network.rules.LoadBalancer;
+import com.cloud.utils.Pair;
 
 @Implementation(description = "Lists load balancer rules.", responseObject = LoadBalancerResponse.class)
 public class ListLoadBalancerRulesCmd extends BaseListTaggedResourcesCmd {
@@ -94,17 +95,17 @@ public class ListLoadBalancerRulesCmd extends BaseListTaggedResourcesCmd {
 
     @Override
     public void execute() {
-        List<? extends LoadBalancer> loadBalancers = _lbService.searchForLoadBalancers(this);
+        Pair<List<? extends LoadBalancer>, Integer> loadBalancers = _lbService.searchForLoadBalancers(this);
         ListResponse<LoadBalancerResponse> response = new ListResponse<LoadBalancerResponse>();
         List<LoadBalancerResponse> lbResponses = new ArrayList<LoadBalancerResponse>();
         if (loadBalancers != null) {
-            for (LoadBalancer loadBalancer : loadBalancers) {
+            for (LoadBalancer loadBalancer : loadBalancers.first()) {
                 LoadBalancerResponse lbResponse = _responseGenerator.createLoadBalancerResponse(loadBalancer);
                 lbResponse.setObjectName("loadbalancerrule");
                 lbResponses.add(lbResponse);
             }
         }
-        response.setResponses(lbResponses);
+        response.setResponses(lbResponses, loadBalancers.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

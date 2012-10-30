@@ -65,7 +65,7 @@ public class EC2MainServlet extends HttpServlet{
     		}
     		logger.info("Value of EC2 API Flag ::" + value);
 		}catch(Exception e){
-		    throw new ServletException("Error initializing awsapi: " + e.getMessage());
+		    throw new ServletException("Error initializing awsapi: " + e.getMessage(), e);
 		}
 	}
 	

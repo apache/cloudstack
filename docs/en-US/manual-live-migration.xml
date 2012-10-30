@@ -31,7 +31,7 @@
             <listitem><para>The destination host must be in the same cluster as the original host.</para></listitem>
             <listitem><para>The VM must not be using local disk storage.</para></listitem>    
             <listitem><para>The destination host must have enough available capacity. If not, the VM will remain in the "migrating" state until memory becomes available.</para></listitem>
-            <listitem><para>(OVM) If the VM is running on the OVM hypervisor, it must not have an ISO attached. Live migration of a VM with attached ISO is not supported in OVM.</para></listitem>                
+            <!--            <listitem><para>(OVM) If the VM is running on the OVM hypervisor, it must not have an ISO attached. Live migration of a VM with attached ISO is not supported in OVM.</para></listitem> -->
         </itemizedlist>
         <para>To manually live migrate a virtual machine</para>
         <orderedlist>

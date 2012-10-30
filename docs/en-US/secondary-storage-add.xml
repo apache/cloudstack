@@ -23,6 +23,26 @@
 -->
 
 <section id="secondary-storage-add">
+    <title>Add Secondary Storage</title>
+    <section id="sys-require-secondary-storage">
+    <title>System Requirements for Secondary Storage</title>
+    <itemizedlist>
+        <listitem><para>NFS storage appliance or Linux NFS server</para></listitem>
+        <listitem><para>(Optional) OpenStack Object Storage (Swift) (see http://swift.openstack.org)</para></listitem>
+        <listitem><para>100GB minimum capacity</para></listitem>
+        <listitem><para>A secondary storage device must be located in the same zone as the guest VMs it serves.</para></listitem>
+        <listitem><para>Each Secondary Storage server must be available to all hosts in the zone.</para></listitem>
+    </itemizedlist>
+    </section>
+    <section id="adding-secondary-storage">
     <title>Adding Secondary Storage</title>
-    <para>TODO</para>
+    <para>When you create a new zone, the first secondary storage is added as part of that procedure. You can add secondary storage servers at any time to add more servers to an existing zone.</para>
+    <warning><para>Be sure there is nothing stored on the server. Adding the server to &PRODUCT; will destroy any existing data.</para></warning>
+    <orderedlist>
+        <listitem><para>If you are going to use Swift for cloud-wide secondary storage, you must add the Swift storage to &PRODUCT; before you add the local zone secondary storage servers. See <xref linkend="zone-add" />.</para></listitem>
+        <listitem><para>To prepare for local zone secondary storage, you should have created and mounted an NFS share during Management Server installation. <phrase condition="install">See <xref linkend="prepare-nfs-shares" />.</phrase><phrase condition="admin">See Preparing NFS Shares in the Installation Guide.</phrase></para></listitem>
+        <listitem><para>Make sure you prepared the system VM template during Management Server installation. <phrase condition="install">See <xref linkend="prepare-system-vm-template" />.</phrase><phrase condition="admin">See Prepare the System VM Template in the Installation Guide.</phrase></para></listitem>
+        <listitem><para>Now that the secondary storage server for per-zone storage is prepared, add it to &PRODUCT;. Secondary storage is added as part of the procedure for adding a new zone. See <xref linkend="zone-add" />.</para></listitem>
+    </orderedlist>
+    </section>
 </section>

@@ -1,0 +1,82 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+    
+    http://www.apache.org/licenses/LICENSE-2.0
+    
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+
+<section id="sect-source-buildrpm">
+    <title>Building RPMs</title>
+    <para>
+       While we have defined, and you have presumably already installed the
+       bootstrap prerequisites, there are a number of build time prerequisites
+       that need to be resolved. &PRODUCT; uses maven for dependency resolution.
+       You can resolve the buildtime depdencies for CloudStack by running the
+       following command:
+       <programlisting><prompt>$</prompt> <command>mvn</command> -P deps</programlisting>
+    </para>
+    <para>
+       Now that we have resolved the dependencies we can move on to building &PRODUCT;
+       and packaging them into RPMs by issuing the following command. 
+       <programlisting><prompt>$</prompt> <command>./waf</command> rpm</programlisting>
+    </para>
+    <para>
+       Once this completes, you should find assembled RPMs in
+       <filename>artifacts/rpmbuild/RPMS/x86_64</filename>
+    </para>
+    <section id="sect-source-buildrpm-repo">
+       <title>Creating a yum repo</title>
+       <para>
+          While RPMs is an ideal packaging format - it's most easily consumed from 
+          yum repositories over a network. We'll move into the directory with the
+          newly created RPMs by issuing the following command: 
+          <programlisting><prompt>$</prompt> <command>cd</command> artifacts/rpmbuild/RPMS/x86_64</programlisting>
+       </para>
+       <para>
+          Next we'll issue a command to create the repository metadata by
+          issuing the following command: 
+          <programlisting><prompt>$</prompt> <command>createrepo</command> ./</programlisting>
+       </para>
+       <para>
+          The files and directories within our current working directory can now
+          be uploaded to a web server and serve as a yum repository
+       </para>
+    </section>
+    <section id="sect-source-buildrpm-repo2">
+       <title>Configuring your systems to use your new yum repository</title>
+       <para>
+          Now that your yum repository is populated with RPMs and metadata
+          we need to configure our machines that need to install CloudStack.
+          We will create a file at <filename>/etc/yum.repos.d/cloudstack.repo</filename>
+          with the following content: 
+<programlisting>
+[apache-cloudstack]
+name=Apache CloudStack
+baseurl=http://<replaceable>webserver.tld/path/to/repo</replaceable>
+enabled=1
+gpgcheck=0
+</programlisting>
+      </para>
+      <para>
+         Completing this step will allow you to easily install CloudStack on a number of 
+         machines across the network. 
+      </para>
+   </section>
+</section>

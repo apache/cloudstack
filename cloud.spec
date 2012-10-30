@@ -38,7 +38,11 @@ Group:     System Environment/Libraries
 Source0:   %{name}-%{_ver}.tar.bz2
 BuildRoot: %{_tmppath}/%{name}-%{_ver}-%{release}-build
 
+%if 0%{?fedora} >= 17
+BuildRequires: java-1.7.0-openjdk-devel
+%else
 BuildRequires: java-1.6.0-openjdk-devel
+%endif
 BuildRequires: tomcat6
 BuildRequires: ws-commons-util
 BuildRequires: jpackage-utils
@@ -76,7 +80,7 @@ CloudStack management server.
 Summary:   CloudStack server library
 Requires: java >= 1.6.0
 Obsoletes: vmops-server < %{version}-%{release}
-Requires: %{name}-utils = %{version}, %{name}-core = %{version}, %{name}-deps = %{version}, tomcat6-servlet-2.5-api
+Requires: %{name}-utils = %{version}, %{name}-core = %{version}, %{name}-deps = %{version}, %{name}-scripts = %{version}, tomcat6-servlet-2.5-api
 Group:     System Environment/Libraries
 %description server
 The CloudStack server libraries provide a set of Java classes for CloudStack.
@@ -95,6 +99,7 @@ Requires: nfs-utils
 Requires: wget
 # there is a fsimage.so in the source code, which adds xen-libs as a dependence, needs to supress it, as rhel doesn't have this pacakge
 AutoReqProv: no
+Provides: cloud-agent-scripts = %{version}-%{release}
 Obsoletes: cloud-agent-scripts < %{version}-%{release}
 Group:     System Environment/Libraries
 %description scripts
@@ -274,7 +279,7 @@ Requires: %{name}-utils = %{version}, %{name}-core = %{version}, %{name}-deps = 
 Requires: %{name}-setup = %{version}
 Requires: %{name}-client = %{version}
 Requires: jsvc
-License:   GPLv3+
+License:   Apache License 2.0
 Group:     System Environment/Libraries
 %description usage
 The CloudStack usage monitor provides usage accounting across the entire cloud for
@@ -285,6 +290,7 @@ Summary:   CloudStack CloudBridge
 Group:     System Environment/Libraries
 Requires: java >= 1.6.0
 Requires: tomcat6
+Requires: %{name}-deps = %{version}
 %if 0%{?fedora} > 15
 Requires: apache-commons-lang
 %endif
@@ -330,15 +336,10 @@ if [ "$1" == "0" ] ; then
     /sbin/service %{name}-management stop > /dev/null 2>&1 || true
 fi
 
-%pre client
+%pre aws-api
 id %{name} > /dev/null 2>&1 || /usr/sbin/useradd -M -c "CloudStack unprivileged user" \
      -r -s /bin/sh -d %{_sharedstatedir}/%{name}/management %{name}|| true
 
-# set max file descriptors for cloud user to 4096
-sed -i /"cloud hard nofile"/d /etc/security/limits.conf
-sed -i /"cloud soft nofile"/d /etc/security/limits.conf
-echo "cloud hard nofile 4096" >> /etc/security/limits.conf
-echo "cloud soft nofile 4096" >> /etc/security/limits.conf
 rm -rf %{_localstatedir}/cache/%{name}
 # user harcoded here, also hardcoded on wscript
 
@@ -387,32 +388,33 @@ else
     /sbin/service %{name}-agent condrestart >/dev/null 2>&1 || true
 fi
 
-%post client
-if [ "$1" == "1" ] ; then
-    /sbin/chkconfig --add %{name}-management > /dev/null 2>&1 || true
-    /sbin/chkconfig --level 345 %{name}-management on > /dev/null 2>&1 || true
+if [ -x /etc/sysconfig/modules/kvm.modules ] ; then
+    /bin/sh /etc/sysconfig/modules/kvm.modules
 fi
 
-if [ "$1" == "1" ] ; then
-    root=/usr/share/cloud/bridge
-    target=/usr/share/cloud/management/
+%post client
+    /sbin/chkconfig --add %{name}-management > /dev/null 2>&1 || true
+    /sbin/chkconfig --level 345 %{name}-management on > /dev/null 2>&1 || true
 
-    if [ ! -e $target/webapps/awsapi ]; then
-        ln -s $root/webapps/awsapi $target/webapps/awsapi
+    root=/usr/share/cloud/bridge
+    target=/usr/share/cloud/management
+
+    mkdir -p $target/webapps7080
+    if [ ! -h $target/webapps7080/awsapi ]; then
+        ln -sf $root/webapps7080/awsapi $target/webapps7080/awsapi
     fi
 
-    jars=`ls $root/lib`
-    for j in $jars
-    do
-        cp -f $root/lib/$j $root/webapps/awsapi/WEB-INF/lib/
-    done
+#    jars=`ls $root/lib`
+#    for j in $jars
+#    do
+#        cp -f $root/lib/$j $root/webapps/awsapi/WEB-INF/lib/
+#    done
 
     confs="cloud-bridge.properties ec2-service.properties"
     for c in $confs
     do
         cp -f $root/conf/$c $target/conf
     done
-fi
 
 %files utils
 %defattr(0644,root,root,0755)
@@ -421,14 +423,14 @@ fi
 %attr(0755,root,root) %{_bindir}/cloud-sccs
 %attr(0755,root,root) %{_bindir}/cloud-gitrevs
 %doc %{_docdir}/%{name}-%{version}/version-info
-%doc %{_docdir}/%{name}-%{version}/sccs-info
-%doc %{_docdir}/%{name}-%{version}/configure-info
-%doc README.html
-%doc debian/copyright
+%doc LICENSE
+%doc NOTICE
 
 %files client-ui
 %defattr(0644,root,root,0755)
 %{_datadir}/%{name}/management/webapps/client/*
+%doc LICENSE
+%doc NOTICE
 
 %files server
 %defattr(0644,root,root,0755)
@@ -446,6 +448,8 @@ fi
 %{_javadir}/%{name}-plugin-elb.jar
 %{_javadir}/%{name}-plugin-nicira-nvp.jar
 %config(noreplace) %{_sysconfdir}/%{name}/server/*
+%doc LICENSE
+%doc NOTICE
 
 %files scripts
 %defattr(-,root,root,-)
@@ -453,10 +457,23 @@ fi
 # maintain the following list in sync with files scripts
 %{_libdir}/%{name}/common/vms/systemvm.zip
 %{_libdir}/%{name}/common/vms/systemvm.iso
-
+%doc LICENSE
+%doc NOTICE
 
 %files deps
 %defattr(0644,root,root,0755)
+%{_javadir}/axiom-*.jar
+%{_javadir}/axis2-*.jar
+%{_javadir}/antlr*.jar
+%{_javadir}/XmlSchema-*.jar
+%{_javadir}/json-simple*.jar
+%{_javadir}/neethi*.jar
+%{_javadir}/woden*.jar
+%{_javadir}/xercesImpl*.jar
+%{_javadir}/xml-apis*.jar
+%{_javadir}/dom4j*.jar
+%{_javadir}/javassist*.jar
+%{_javadir}/commons-fileupload*.jar
 %{_javadir}/commons-codec-1.6.jar
 %{_javadir}/commons-dbcp-1.4.jar
 %{_javadir}/commons-pool-1.6.jar
@@ -484,9 +501,14 @@ fi
 %{_javadir}/jstl-1.2.jar
 %{_javadir}/javax.persistence-2.0.0.jar
 %{_javadir}/bcprov-jdk16-1.45.jar
+%doc LICENSE
+%doc NOTICE
+
 %files core
 %defattr(0644,root,root,0755)
 %{_javadir}/%{name}-core.jar
+%doc LICENSE
+%doc NOTICE
 
 %files python
 %defattr(0644,root,root,0755)
@@ -494,6 +516,8 @@ fi
 %attr(0755,root,root) %{_bindir}/cloud-external-ipallocator.py
 %attr(0755,root,root) %{_initrddir}/cloud-ipallocator
 %dir %attr(0770,root,root) %{_localstatedir}/log/%{name}/ipallocator
+%doc LICENSE
+%doc NOTICE
 
 %files setup
 %attr(0755,root,root) %{_bindir}/%{name}-setup-databases
@@ -507,6 +531,8 @@ fi
 %{_datadir}/%{name}/setup/db/*.sql
 %{_datadir}/%{name}/setup/*.sh
 %{_datadir}/%{name}/setup/server-setup.xml
+%doc LICENSE
+%doc NOTICE
 
 %files client
 %defattr(0644,root,root,0775)
@@ -530,12 +556,16 @@ fi
 %dir %attr(0770,root,%{name}) %{_localstatedir}/cache/%{name}/management/temp
 %dir %attr(0770,root,%{name}) %{_localstatedir}/log/%{name}/management
 %dir %attr(0770,root,%{name}) %{_localstatedir}/log/%{name}/agent
+%doc LICENSE
+%doc NOTICE
 
 %files agent-libs
 %defattr(0644,root,root,0755)
 %{_javadir}/%{name}-agent.jar
 %{_javadir}/%{name}-plugin-hypervisor-kvm.jar
 %{_javadir}/libvirt-0.4.9.jar
+%doc LICENSE
+%doc NOTICE
 
 %files agent
 %defattr(0644,root,root,0755)
@@ -546,6 +576,8 @@ fi
 %attr(0755,root,root) %{_initrddir}/%{name}-agent
 %attr(0755,root,root) %{_bindir}/%{name}-setup-agent
 %dir %attr(0770,root,root) %{_localstatedir}/log/%{name}/agent
+%doc LICENSE
+%doc NOTICE
 
 %files cli
 %{_bindir}/%{name}-tool
@@ -555,9 +587,13 @@ fi
 %dir %{_prefix}/lib*/python*/site-packages/%{name}tool
 %{_prefix}/lib*/python*/site-packages/%{name}tool/*
 %{_prefix}/lib*/python*/site-packages/%{name}apis.py
+%doc LICENSE
+%doc NOTICE
 
 %files baremetal-agent
 %attr(0755,root,root) %{_bindir}/cloud-setup-baremetal
+%doc LICENSE
+%doc NOTICE
 
 %files usage
 %defattr(0644,root,root,0775)
@@ -567,6 +603,8 @@ fi
 %config(noreplace) %{_sysconfdir}/%{name}/usage/usage-components.xml
 %config(noreplace) %{_sysconfdir}/%{name}/usage/log4j-%{name}_usage.xml
 %config(noreplace) %attr(0640,root,%{name}) %{_sysconfdir}/%{name}/usage/db.properties
+%doc LICENSE
+%doc NOTICE
 
 %files aws-api
 %defattr(0644,cloud,cloud,0755)
@@ -575,6 +613,8 @@ fi
 %attr(0644,root,root) %{_datadir}/cloud/setup/bridge/db/*
 %attr(0755,root,root) %{_bindir}/cloudstack-aws-api-register
 %attr(0755,root,root) %{_bindir}/cloud-setup-bridge
+%doc LICENSE
+%doc NOTICE
 
 %changelog
 * Fri Sep 14 2012 Marcus Sorensen <shadowsor@gmail.com> 4.0.1

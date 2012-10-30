@@ -42,9 +42,10 @@
 				}			
 				return hiddenFields;
 			},			
-      fields: {        
-        displayname: { label: 'label.display.name' },
+      fields: {      
+				name: { label: 'label.name' },
 				instancename: { label: 'label.internal.name' },
+				displayname: { label: 'label.display.name' },
         zonename: { label: 'label.zone.name' },
         state: {
           label: 'label.state',         
@@ -56,7 +57,84 @@
           }
         }
       },
+			
+			advSearchFields: {
+				name: { label: 'Name' },
+				zoneid: { 
+					label: 'Zone',							
+					select: function(args) {							  					
+						$.ajax({
+							url: createURL('listZones'),
+							data: {
+								listAll: true
+							},
+							success: function(json) {									  
+								var zones = json.listzonesresponse.zone;
 
+								args.response.success({
+									data: $.map(zones, function(zone) {
+										return {
+											id: zone.id,
+											description: zone.name
+										};
+									})
+								});
+							}
+						});
+					}						
+				},	
+				
+				domainid: {					
+				  label: 'Domain',					
+					select: function(args) {
+					  if(isAdmin() || isDomainAdmin()) {
+							$.ajax({
+								url: createURL('listDomains'),
+								data: { 
+									listAll: true,
+									details: 'min'
+								},
+								success: function(json) {
+									var array1 = [{id: '', description: ''}];
+									var domains = json.listdomainsresponse.domain;
+									if(domains != null && domains.length > 0) {
+										for(var i = 0; i < domains.length; i++) {
+											array1.push({id: domains[i].id, description: domains[i].path});
+										}
+									}
+									args.response.success({
+										data: array1
+									});
+								}
+							});
+						}
+						else {
+						  args.response.success({
+								data: null
+							});
+						}
+					},
+					isHidden: function(args) {
+					  if(isAdmin() || isDomainAdmin())
+						  return false;
+						else
+						  return true;
+					}
+				},		
+        account: { 
+				  label: 'Account',
+          isHidden: function(args) {
+					  if(isAdmin() || isDomainAdmin())
+						  return false;
+						else
+						  return true;
+					}			
+				},
+				
+				tagKey: { label: 'Tag Key' },
+				tagValue: { label: 'Tag Value' }						
+			},						
+			
       // List view actions
       actions: {
         // Add instance wizard
@@ -75,235 +153,54 @@
           notification: {
             poll: pollAsyncJobResult
           }
-        },
-        start: {
-          label: 'label.action.start.instance' ,
-          action: function(args) {
-            $.ajax({
-              url: createURL("startVirtualMachine&id=" + args.context.instances[0].id),
-              dataType: "json",
-              async: true,
-              success: function(json) {
-                var jid = json.startvirtualmachineresponse.jobid;
-                args.response.success(
-                  {_custom:
-                   {jobId: jid,
-                    getUpdatedItem: function(json) {
-                      return json.queryasyncjobresultresponse.jobresult.virtualmachine;
-                    },
-                    getActionFilter: function() {
-                      return vmActionfilter;
-                    }
-                   }
-                  }
-                );
-              }
-            });
-          },
-          messages: {
-            confirm: function(args) {
-              return 'message.action.start.instance';
-            },
-            notification: function(args) {
-              return 'label.action.start.instance';
-            },
-						complete: function(args) {						  
-							if(args.password != null) {
-								alert('Password of the VM is ' + args.password);
-							}
-							return 'label.action.start.instance';
-						}			
-          },
-          notification: {
-            poll: pollAsyncJobResult
-          }
-        },
-        stop: {
-          label: 'label.action.stop.instance',
-          addRow: 'false',
-          createForm: {
-            title: 'label.action.stop.instance',
-            desc: 'message.action.stop.instance',
-            fields: {
-              forced: {
-                label: 'force.stop',
-                isBoolean: true,
-                isChecked: false
-              }
-            }
-          },
-          action: function(args) {
-            var array1 = [];
-            array1.push("&forced=" + (args.data.forced == "on"));
-            $.ajax({
-              url: createURL("stopVirtualMachine&id=" + args.context.instances[0].id + array1.join("")),
-              dataType: "json",
-              async: true,
-              success: function(json) {
-                var jid = json.stopvirtualmachineresponse.jobid;
-                args.response.success(
-                  {_custom:
-                   {jobId: jid,
-                    getUpdatedItem: function(json) {
-                      return json.queryasyncjobresultresponse.jobresult.virtualmachine;
-                    },
-                    getActionFilter: function() {
-                      return vmActionfilter;
-                    }
-                   }
-                  }
-                );
-              }
-            });
-          },
-          messages: {
-            confirm: function(args) {
-              return 'message.action.stop.instance';
-            },
-
-            notification: function(args) {
-              return 'label.action.stop.instance';
-            }
-          },
-          notification: {
-            poll: pollAsyncJobResult
-          }
-        },
-        restart: {
-          label: 'instances.actions.reboot.label',
-          action: function(args) {
-            $.ajax({
-              url: createURL("rebootVirtualMachine&id=" + args.context.instances[0].id),
-              dataType: "json",
-              async: true,
-              success: function(json) {
-                var jid = json.rebootvirtualmachineresponse.jobid;
-                args.response.success(
-                  {_custom:
-                   {jobId: jid,
-                    getUpdatedItem: function(json) {
-                      return json.queryasyncjobresultresponse.jobresult.virtualmachine;
-                    },
-                    getActionFilter: function() {
-                      return vmActionfilter;
-                    }
-                   }
-                  }
-                );
-              }
-            });
-          },
-          messages: {
-            confirm: function(args) {
-              return 'message.action.reboot.instance';
-            },
-            notification: function(args) {
-              return 'instances.actions.reboot.label';
-            }
-          },
-          notification: {
-            poll: pollAsyncJobResult
-          }
-        },
-        destroy: {
-          label: 'label.action.destroy.instance',
-          messages: {
-            confirm: function(args) {
-              return 'message.action.destroy.instance';
-            },            
-            notification: function(args) {
-              return 'label.action.destroy.instance';
-            }
-          },
-          action: function(args) {
-            $.ajax({
-              url: createURL("destroyVirtualMachine&id=" + args.context.instances[0].id),
-              dataType: "json",
-              async: true,
-              success: function(json) {
-                var jid = json.destroyvirtualmachineresponse.jobid;
-                args.response.success(
-                  {_custom:
-                   {jobId: jid,
-                    getUpdatedItem: function(json) {
-                      return json.queryasyncjobresultresponse.jobresult.virtualmachine;
-                    },
-                    getActionFilter: function() {
-                      return vmActionfilter;
-                    }
-                   }
-                  }
-                );
-              }
-            });
-          },
-          notification: {
-            poll: pollAsyncJobResult
-          }
-        },
-        restore: {     
-					label: 'label.action.restore.instance',
-					messages: {
-						confirm: function(args) {
-							return 'message.action.restore.instance';
-						},
-						notification: function(args) {
-							return 'label.action.restore.instance';
-						}
-					},					
-          action: function(args) {
-            $.ajax({
-              url: createURL("recoverVirtualMachine&id=" + args.context.instances[0].id),
-              dataType: "json",
-              async: true,
-              success: function(json) {
-                var item = json.recovervirtualmachineresponse.virtualmachine;
-                args.response.success({data:item});
-              }
-            });
-          }
         }
       },
 
       dataProvider: function(args) {
-        var array1 = [];
-        if(args.filterBy != null) {
-          if(args.filterBy.kind != null) {
-            switch(args.filterBy.kind) {
-            case "all":
-              array1.push("&listAll=true");
-              break;
-            case "mine":
-              if (!args.context.projects) array1.push("&domainid=" + g_domainid + "&account=" + g_account);
-              break;
-            case "running":
-              array1.push("&listAll=true&state=Running");
-              break;
-            case "stopped":
-              array1.push("&listAll=true&state=Stopped");
-              break;
-            case "destroyed":
-              array1.push("&listAll=true&state=Destroyed");
-              break;
-            }
-          }
-          if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
-            switch(args.filterBy.search.by) {
-            case "name":
-              if(args.filterBy.search.value.length > 0)
-                array1.push("&keyword=" + args.filterBy.search.value);
-              break;
-            }
-          }
-        }
-
-        if("hosts" in args.context)
-          array1.push("&hostid=" + args.context.hosts[0].id);
-
+			  var data = {};
+				listViewDataProvider(args, data);		
+				        				
+				if(args.filterBy != null) {	//filter dropdown
+					if(args.filterBy.kind != null) {
+						switch(args.filterBy.kind) {
+						case "all":						  						
+							break;
+						case "mine":
+							if (!args.context.projects) {
+							  $.extend(data, {
+								  domainid: g_domainid, 
+									account: g_account
+								});		
+              }								
+							break;
+						case "running":
+						  $.extend(data, {
+							  state: 'Running'
+							});						
+							break;
+						case "stopped":
+						  $.extend(data, {
+							  state: 'Stopped'
+							});	
+							break;
+						case "destroyed":
+						  $.extend(data, {
+							  state: 'Destroyed'
+							});									
+							break;
+						}
+					}					
+				}
+								
+        if("hosts" in args.context) {          
+					$.extend(data, {
+					  hostid: args.context.hosts[0].id
+					});
+				}
+					 							
         $.ajax({
-          url: createURL("listVirtualMachines&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
-          dataType: "json",
-          async: true,
+          url: createURL('listVirtualMachines'),
+          data: data,          
           success: function(json) {
             var items = json.listvirtualmachinesresponse.virtualmachine;
 
@@ -402,6 +299,7 @@
           },
           stop: {
             label: 'label.action.stop.instance',
+            compactLabel: 'label.stop',
             createForm: {
               title: 'Stop instance',
               desc: 'message.action.stop.instance',
@@ -451,6 +349,7 @@
           },
           restart: {
             label: 'label.action.reboot.instance',
+            compactLabel: 'label.reboot',
             action: function(args) {
               $.ajax({
                 url: createURL("rebootVirtualMachine&id=" + args.context.instances[0].id),
@@ -487,6 +386,7 @@
           },
           destroy: {
             label: 'label.action.destroy.instance',
+            compactLabel: 'label.destroy',
             messages: {
               confirm: function(args) {
                 return 'message.action.destroy.instance';
@@ -523,6 +423,7 @@
           },
           restore: {
             label: 'label.action.restore.instance',
+            compactLabel: 'label.restore',
             messages: {
               confirm: function(args) {
                 return 'message.action.restore.instance';
@@ -550,19 +451,23 @@
           },
 
           edit: {
-            label: 'Edit',
+            label: 'label.edit',
             action: function(args) {
-              var array1 = [];							
-							if(args.data.displayname != args.context.instances[0].displayname)
-                array1.push("&displayName=" + args.data.displayname);
-								
-              array1.push("&group=" + args.data.group);
-              array1.push("&ostypeid=" + args.data.guestosid);
-              //array1.push("&haenable=" + haenable);
+						  var data = {
+							  id: args.context.instances[0].id,
+							  group: args.data.group,
+								ostypeid: args.data.guestosid
+							};
+						             						
+							if(args.data.displayname != args.context.instances[0].displayname) {
+							  $.extend(data, {
+								  displayName: args.data.displayname
+								});							
+							}								
 
               $.ajax({
-                url: createURL("updateVirtualMachine&id=" + args.context.instances[0].id + array1.join("")),
-                dataType: "json",
+                url: createURL('updateVirtualMachine'),
+                data: data,
                 success: function(json) {
                   var item = json.updatevirtualmachineresponse.virtualmachine;
                   args.response.success({data:item});
@@ -848,31 +753,19 @@
                 url: { label: 'image.directory', validation: { required: true } }
               }
             },
-            action: function(args) {
-              /*
-               var isValid = true;
-               isValid &= validateString("Name", $thisDialog.find("#create_template_name"), $thisDialog.find("#create_template_name_errormsg"));
-               isValid &= validateString("Display Text", $thisDialog.find("#create_template_desc"), $thisDialog.find("#create_template_desc_errormsg"));
-               isValid &= validateString("Image Directory", $thisDialog.find("#image_directory"), $thisDialog.find("#image_directory_errormsg"), false); //image directory is required when creating template from VM whose hypervisor is BareMetal
-               if (!isValid)
-               return;
-               $thisDialog.dialog("close");
-               */
-
-              var array1 = [];
-              array1.push("&name=" + todb(args.data.name));
-              array1.push("&displayText=" + todb(args.data.displayText));
-              array1.push("&osTypeId=" + args.data.osTypeId);
-
-              //array1.push("&isPublic=" + args.data.isPublic);
-              array1.push("&isPublic=" + (args.data.isPublic=="on"));  //temporary, before Brian fixes it.
-
-              array1.push("&url=" + todb(args.data.url));
-
+            action: function(args) {              
+              var data = {
+							  virtualmachineid: args.context.instances[0].id,
+							  name: args.data.name,
+								displayText: args.data.displayText,
+								osTypeId: args.data.osTypeId,
+								isPublic: (args.data.isPublic=="on"),
+								url: args.data.url
+							};
+												
               $.ajax({
-                url: createURL("createTemplate&virtualmachineid=" + args.context.instances[0].id + array1.join("")),
-                dataType: "json",
-                async: true,
+                url: createURL('createTemplate'),
+                data: data,                
                 success: function(json) {
                   var jid = json.createtemplateresponse.jobid;
                   args.response.success(
@@ -897,6 +790,7 @@
 
           migrate: {
             label: 'label.migrate.instance.to.host',
+            compactLabel: 'label.migrate.to.host',
             messages: {
               confirm: function(args) {
                 return 'message.migrate.instance.to.host';
@@ -975,6 +869,7 @@
 
           migrateToAnotherStorage: {
             label: 'label.migrate.instance.to.ps',
+            compactLabel: 'label.migrate.to.storage',
             messages: {
               confirm: function(args) {
                 return 'message.migrate.instance.to.ps';
@@ -1079,14 +974,14 @@
             fields: [
               {  
                 displayname: { label: 'label.display.name', isEditable: true },		
-                instancename: { label: 'label.internal.name' },								
+                name: { label: 'label.host.name' },								
                 state: { 
 								  label: 'label.state',
 									pollAgainIfValueIsIn: { 
 										'Starting': 1,
 										'Stopping': 1
 									},
-									pollAgainFn: function(context) { //???	
+									pollAgainFn: function(context) { 
                     var toClearInterval = false; 								  
 										$.ajax({
 											url: createURL("listVirtualMachines&id=" + context.instances[0].id),

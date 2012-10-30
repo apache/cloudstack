@@ -52,9 +52,6 @@ import com.cloud.vm.InstanceGroupVMMapVO;
 import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.InstanceGroupVMMapDao;
-import com.xensource.xenapi.Connection;
-import com.xensource.xenapi.Pool;
-import com.xensource.xenapi.Session;
 
 public class Db21to22MigrationUtil {
     private ClusterDao _clusterDao;

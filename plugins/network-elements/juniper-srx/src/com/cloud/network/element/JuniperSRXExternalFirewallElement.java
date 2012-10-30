@@ -203,7 +203,7 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
     }
 
     @Override
-    public boolean destroy(Network config) {
+    public boolean destroy(Network config, ReservationContext context) {
         return true;
     }
 
