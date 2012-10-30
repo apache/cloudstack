@@ -788,7 +788,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements
             String pif = getPif(bridge);
             if(_publicBridgeName != null && bridge.equals(_publicBridgeName)){
                 _pifs.put("public", pif);
-            } else if (_guestBridgeName != null) {
+            }
+            if (_guestBridgeName != null && bridge.equals(_guestBridgeName)) {
                 _pifs.put("private", pif);
             }
             _pifs.put(bridge, pif);
