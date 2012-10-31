@@ -341,9 +341,10 @@
       <id>developer</id>
       <modules>
         <module>developer</module>
-	    <module>tools/apidoc</module>
-	    <module>tools/devcloud</module>
-	    <module>tools/marvin</module>
+        <module>tools/apidoc</module>
+        <module>tools/devcloud</module>
+        <module>tools/marvin</module>
+        <module>tools/cli</module>
       </modules>
     </profile>
     <profile>
