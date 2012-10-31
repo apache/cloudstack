@@ -16,23 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.datastore.db;
+package org.apache.cloudstack.storage.image.format;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
-import javax.persistence.TableGenerator;
+import org.apache.cloudstack.storage.BaseType;
+import org.springframework.stereotype.Component;
 
-@Entity
-@Table(name="data_store_provider")
-public class PrimaryDataStoreProviderVO {
-    @Id
-    @TableGenerator(name="data_store_provider_sq", table="sequence", pkColumnName="name", valueColumnName="value", pkColumnValue="data_store_provider_seq", allocationSize=1)
-    @Column(name="id", updatable=false, nullable = false)
-	private long id;
-    
-    public long getId() {
-    	return id;
-    }
+@Component
+public class ISO extends BaseType implements ImageFormat {
+	private final String type = "ISO";
+	@Override
+	public String toString() {
+		return type;
+	}
 }

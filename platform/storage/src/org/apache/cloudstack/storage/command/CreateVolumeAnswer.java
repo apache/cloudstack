@@ -16,23 +16,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.datastore.db;
+package org.apache.cloudstack.storage.command;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
-import javax.persistence.TableGenerator;
+import com.cloud.agent.api.Answer;
 
-@Entity
-@Table(name="data_store_provider")
-public class PrimaryDataStoreProviderVO {
-    @Id
-    @TableGenerator(name="data_store_provider_sq", table="sequence", pkColumnName="name", valueColumnName="value", pkColumnValue="data_store_provider_seq", allocationSize=1)
-    @Column(name="id", updatable=false, nullable = false)
-	private long id;
-    
-    public long getId() {
-    	return id;
-    }
+public class CreateVolumeAnswer extends Answer {
+	private String volumeUuid;
+	protected CreateVolumeAnswer() {
+		super();
+	}
+	
+	public CreateVolumeAnswer(String volumeUuid) {
+		this.volumeUuid = volumeUuid;
+	}
+	
+	public String getVolumeUuid() {
+		return this.volumeUuid;
+	}
 }

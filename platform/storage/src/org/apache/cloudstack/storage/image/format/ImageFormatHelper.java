@@ -16,23 +16,29 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.datastore.db;
+package org.apache.cloudstack.storage.image.format;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
-import javax.persistence.TableGenerator;
+import java.util.List;
 
-@Entity
-@Table(name="data_store_provider")
-public class PrimaryDataStoreProviderVO {
-    @Id
-    @TableGenerator(name="data_store_provider_sq", table="sequence", pkColumnName="name", valueColumnName="value", pkColumnValue="data_store_provider_seq", allocationSize=1)
-    @Column(name="id", updatable=false, nullable = false)
-	private long id;
-    
-    public long getId() {
-    	return id;
-    }
+import javax.inject.Inject;
+
+import org.springframework.stereotype.Component;
+
+@Component
+public class ImageFormatHelper {
+	private static List<ImageFormat> formats;
+	private static final ImageFormat defaultFormat = new Unknown();
+	@Inject
+	public void setFormats(List<ImageFormat> formats) {
+		ImageFormatHelper.formats = formats;
+	}
+	
+	public static ImageFormat getFormat(String format) {
+		for(ImageFormat fm : formats) {
+			if (fm.equals(format)) {
+				return fm;
+			}
+		}
+		return ImageFormatHelper.defaultFormat;
+	}
 }

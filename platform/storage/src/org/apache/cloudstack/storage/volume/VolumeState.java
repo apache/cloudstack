@@ -18,6 +18,8 @@
  */
 package org.apache.cloudstack.storage.volume;
 
+import org.apache.cloudstack.storage.volume.db.VolumeVO;
+
 import com.cloud.utils.fsm.StateMachine2;
 
 public enum VolumeState {
@@ -36,7 +38,7 @@ public enum VolumeState {
         _description = description;
     }
 
-    public static StateMachine2<VolumeState, VolumeEvent, Volume> getStateMachine() {
+    public static StateMachine2<VolumeState, VolumeEvent, VolumeVO> getStateMachine() {
         return s_fsm;
     }
 
@@ -44,7 +46,7 @@ public enum VolumeState {
         return _description;
     }
 
-    private final static StateMachine2<VolumeState, VolumeEvent, Volume> s_fsm = new StateMachine2<VolumeState, VolumeEvent, Volume>();
+    private final static StateMachine2<VolumeState, VolumeEvent, VolumeVO> s_fsm = new StateMachine2<VolumeState, VolumeEvent, VolumeVO>();
     static {
         s_fsm.addTransition(Allocated, VolumeEvent.CreateRequested, Creating);
         s_fsm.addTransition(Allocated, VolumeEvent.DestroyRequested, Destroy);

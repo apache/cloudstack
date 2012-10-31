@@ -1,5 +1,5 @@
 package org.apache.cloudstack.storage.datastore.provider;
 
 public interface PrimaryDataStoreProviderManager {
-	public PrimaryDataStoreProvider getDataStoreProvider(String providerUuid);
+	public PrimaryDataStoreProvider getDataStoreProvider(Long providerId);
 }

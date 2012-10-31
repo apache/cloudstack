@@ -8,17 +8,21 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class VolumeTypeHelper {
-	@Inject
-	private List<VolumeType> types;
-	private VolumeType defaultType = new Unknown();
+	static private List<VolumeType> types;
+	private static VolumeType defaultType = new Unknown();
 	
-	public VolumeType getType(String type) {
+	@Inject
+	public void setTypes(List<VolumeType> types) {
+		VolumeTypeHelper.types = types;
+	}
+	
+	public static VolumeType getType(String type) {
 		for (VolumeType ty : types) {
 			if (ty.equals(type)) {
 				return ty;
 			}
 		}
-		return defaultType;
+		return VolumeTypeHelper.defaultType;
 	}
 	
 }

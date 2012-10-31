@@ -39,10 +39,11 @@ import com.cloud.api.Identity;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.fsm.StateObject;
 
 @Entity
 @Table(name = "volumes")
-public class VolumeVO implements Identity {
+public class VolumeVO implements Identity, StateObject<VolumeState>{
  @Id
  @TableGenerator(name = "volume_sq", table = "sequence", pkColumnName = "name", valueColumnName = "value", pkColumnValue = "volume_seq", allocationSize = 1)
  @GeneratedValue(strategy = GenerationType.TABLE)

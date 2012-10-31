@@ -73,6 +73,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected final SearchBuilder<HostVO> IdStatusSearch;
     protected final SearchBuilder<HostVO> TypeDcSearch;
     protected final SearchBuilder<HostVO> TypeDcStatusSearch;
+    protected final SearchBuilder<HostVO> TypeClusterStatusSearch;
     protected final SearchBuilder<HostVO> MsStatusSearch;
     protected final SearchBuilder<HostVO> DcPrivateIpAddressSearch;
     protected final SearchBuilder<HostVO> DcStorageIpAddressSearch;
@@ -157,7 +158,14 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         TypeDcStatusSearch.and("status", TypeDcStatusSearch.entity().getStatus(), SearchCriteria.Op.EQ);
         TypeDcStatusSearch.and("resourceState", TypeDcStatusSearch.entity().getResourceState(), SearchCriteria.Op.EQ);
         TypeDcStatusSearch.done();
-
+        
+        TypeClusterStatusSearch = createSearchBuilder();
+        TypeClusterStatusSearch.and("type", TypeClusterStatusSearch.entity().getType(), SearchCriteria.Op.EQ);
+        TypeClusterStatusSearch.and("cluster", TypeClusterStatusSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
+        TypeClusterStatusSearch.and("status", TypeClusterStatusSearch.entity().getStatus(), SearchCriteria.Op.EQ);
+        TypeClusterStatusSearch.and("resourceState", TypeClusterStatusSearch.entity().getResourceState(), SearchCriteria.Op.EQ);
+        TypeClusterStatusSearch.done();
+        
         IdStatusSearch = createSearchBuilder();
         IdStatusSearch.and("id", IdStatusSearch.entity().getId(), SearchCriteria.Op.EQ);
         IdStatusSearch.and("states", IdStatusSearch.entity().getStatus(), SearchCriteria.Op.IN);
@@ -763,5 +771,16 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         sc.setParameters("zoneId", zoneId);
         return findOneBy(sc);
     }
+
+	@Override
+	public List<HostVO> findHypervisorHostInCluster(long clusterId) {
+		 SearchCriteria<HostVO> sc = TypeClusterStatusSearch.create();
+		 sc.setParameters("type", Host.Type.Routing);
+		 sc.setParameters("cluster", clusterId);
+		 sc.setParameters("status", Status.Up);
+		 sc.setParameters("resourceState", ResourceState.Enabled);
+		
+		return listBy(sc);
+	}
 
 }

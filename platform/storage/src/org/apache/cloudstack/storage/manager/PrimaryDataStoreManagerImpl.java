@@ -26,6 +26,7 @@ import org.apache.cloudstack.platform.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.platform.subsystem.api.storage.DataStore.StoreType;
 import org.apache.cloudstack.platform.subsystem.api.storage.DataStoreLifeCycle;
 import org.apache.cloudstack.platform.subsystem.api.storage.StorageProvider;
+import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
 
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
@@ -124,6 +125,18 @@ public class PrimaryDataStoreManagerImpl implements PrimaryDataStoreManager {
         _storagePoolDao.update(spool.getId(), spool);
         spool = _storagePoolDao.findById(spool.getId());
         return spool;
+	}
+
+	@Override
+	public PrimaryDataStore addDataStore(long zoneId, long podId, long clusterId, long hostId, String URI, String storageType, String poolName, String storageProviderName, Map<String, String> params) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public PrimaryDataStore getDataStore(String id) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

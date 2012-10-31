@@ -8,17 +8,22 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class VolumeDiskTypeHelper {
-	@Inject
-	protected List<VolumeDiskType> diskTypes;
-	protected VolumeDiskType defaultType = new Unknown();
 	
-	public VolumeDiskType getDiskType(String type) {
+	static private List<VolumeDiskType> diskTypes;
+	static final private VolumeDiskType defaultType = new Unknown();
+	
+	@Inject
+	public void setDiskTypes(List<VolumeDiskType> diskTypes) {
+		VolumeDiskTypeHelper.diskTypes = diskTypes;
+	}
+	
+	public static VolumeDiskType getDiskType(String type) {
 		for (VolumeDiskType diskType : diskTypes) {
 			if (diskType.equals(type)) {
 				return diskType;
 			}
 		}
 		
-		return defaultType;
+		return VolumeDiskTypeHelper.defaultType;
 	}
 }

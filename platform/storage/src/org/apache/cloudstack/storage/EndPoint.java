@@ -1,5 +1,8 @@
 package org.apache.cloudstack.storage;
 
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
+
 public interface EndPoint {
-	public String getEndPoint();
+	public Answer sendMessage(Command cmd);
 }

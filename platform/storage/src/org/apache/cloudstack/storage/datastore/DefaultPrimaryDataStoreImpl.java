@@ -1,22 +1,38 @@
 package org.apache.cloudstack.storage.datastore;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.storage.EndPoint;
+import org.apache.cloudstack.storage.HypervisorHostEndPoint;
 import org.apache.cloudstack.storage.datastore.db.DataStoreVO;
 import org.apache.cloudstack.storage.datastore.driver.PrimaryDataStoreDriver;
 import org.apache.cloudstack.storage.volume.Volume;
+import org.apache.cloudstack.storage.volume.VolumeEvent;
 import org.apache.cloudstack.storage.volume.db.VolumeDao;
 import org.apache.cloudstack.storage.volume.db.VolumeVO;
 import org.apache.cloudstack.storage.volume.disktype.VolumeDiskType;
+import org.apache.log4j.Logger;
+
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
+import com.cloud.utils.component.ComponentInject;
+import com.cloud.utils.exception.CloudRuntimeException;
+
+import edu.emory.mathcs.backport.java.util.Collections;
 
 public class DefaultPrimaryDataStoreImpl implements PrimaryDataStore {
+	private static final Logger s_logger = Logger.getLogger(DefaultPrimaryDataStoreImpl.class);
 	protected PrimaryDataStoreDriver driver;
 	protected DataStoreVO pdsv;
 	protected PrimaryDataStoreInfo pdsInfo;
 	@Inject
-	public VolumeDao volumeDao;
+	private VolumeDao volumeDao;
+	@Inject
+	private HostDao hostDao;
 	public DefaultPrimaryDataStoreImpl(PrimaryDataStoreDriver driver, DataStoreVO pdsv, PrimaryDataStoreInfo pdsInfo) {
 		this.driver = driver;
 		this.pdsv = pdsv;
@@ -53,9 +69,50 @@ public class DefaultPrimaryDataStoreImpl implements PrimaryDataStore {
 			return null;
 		}
 		
-		vol.setVolumeDiskType(diskType);
-		this.driver.createVolume(vol);
-		vol.update();
-		return vol;
+		boolean result = vol.stateTransit(VolumeEvent.CreateRequested);
+		if (!result) {
+			return null;
+		}
+		
+		try {
+			vol.setVolumeDiskType(diskType);
+			result = this.driver.createVolume(vol);
+			vol.update();
+			return vol;
+		} catch (Exception e) {
+			result = false;
+			s_logger.debug("Failed to create volume: " + e.toString());
+			throw new CloudRuntimeException(e.toString());
+		} finally {
+			if (result == true) {
+				vol.stateTransit(VolumeEvent.OperationSucceeded);
+			} else {
+				vol.stateTransit(VolumeEvent.OperationFailed);
+			}
+		}
+		
+	}
+
+	@Override
+	public List<EndPoint> getEndPoints() {
+		Long clusterId = pdsv.getClusterId();
+		if (clusterId == null) {
+			return null;
+		}
+		List<EndPoint> endpoints = new ArrayList<EndPoint>();
+		List<HostVO> hosts = hostDao.findHypervisorHostInCluster(clusterId);
+		for (HostVO host : hosts) {
+			HypervisorHostEndPoint ep = new HypervisorHostEndPoint(host.getId());
+			ComponentInject.inject(ep);
+			endpoints.add(ep);
+		}
+		Collections.shuffle(endpoints);
+		return endpoints;
+	}
+
+	@Override
+	public PrimaryDataStoreInfo getDataStoreInfo() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

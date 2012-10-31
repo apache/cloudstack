@@ -18,6 +18,7 @@
  */
 package org.apache.cloudstack.storage.volume;
 
+import org.apache.cloudstack.storage.volume.disktype.VolumeDiskType;
 import org.apache.cloudstack.storage.volume.type.VolumeType;
 
 public interface VolumeService {
@@ -34,7 +35,7 @@ public interface VolumeService {
      *            
      * @return the volume object
      */
-    Volume createVolume(long volumeId, long dataStoreId);
+    Volume createVolume(long volumeId, long dataStoreId, VolumeDiskType diskType);
 
     /**
      * Delete volume

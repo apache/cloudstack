@@ -20,7 +20,10 @@ package org.apache.cloudstack.storage.volume;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
+import org.apache.cloudstack.storage.datastore.manager.PrimaryDataStoreManager;
 import org.apache.cloudstack.storage.volume.db.VolumeDao;
+import org.apache.cloudstack.storage.volume.disktype.VolumeDiskType;
 import org.apache.cloudstack.storage.volume.type.VolumeType;
 import org.springframework.stereotype.Service;
 
@@ -30,10 +33,12 @@ import com.cloud.utils.db.DB;
 public class VolumeServiceImpl implements VolumeService {
 	@Inject
 	VolumeDao volDao;
+	@Inject
+	PrimaryDataStoreManager dataStoreMgr;
 	@Override
-	public Volume createVolume(long volumeId, long dataStoreId) {
-		// TODO Auto-generated method stub
-		return null;
+	public Volume createVolume(long volumeId, long dataStoreId, VolumeDiskType diskType) {
+		PrimaryDataStore dataStore = dataStoreMgr.getPrimaryDataStore(dataStoreId);
+		return dataStore.createVolume(volumeId, diskType);
 	}
 
 	@DB

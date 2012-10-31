@@ -82,7 +82,7 @@ public class DataStoreVO implements Identity {
     private DataStoreStatus status;
     
     @Column(name="storage_provider", updatable=true, nullable=false)
-    private String storageProvider;
+    private Long storageProvider;
     
     @Column(name="storage_type", nullable=false)
     private String storageType;
@@ -147,11 +147,11 @@ public class DataStoreVO implements Identity {
 		return availableBytes;
 	}
 
-	public String getStorageProvider() {
+	public Long getStorageProviderId() {
 		return storageProvider;
 	}
 	
-	public void setStorageProvider(String provider) {
+	public void setStorageProviderId(Long provider) {
 		storageProvider = provider;
 	}
 	

@@ -16,21 +16,15 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.epselector;
+package org.apache.cloudstack.storage.datastore.provider;
 
-import java.util.List;
+import org.springframework.stereotype.Component;
 
-import org.apache.cloudstack.platform.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.platform.subsystem.api.storage.DataStoreEndPoint;
-import org.apache.cloudstack.platform.subsystem.api.storage.DataStoreEndPointSelector;
-import org.apache.cloudstack.platform.subsystem.api.storage.StorageEvent;
+@Component
+public class PrimaryDataStoreProviderManagerImpl implements PrimaryDataStoreProviderManager {
 
-public class DefaultNfsSecondaryEndPointSelector implements DataStoreEndPointSelector {
-	protected DataStore _ds;
-    public DefaultNfsSecondaryEndPointSelector(DataStore ds) {
-    	_ds = ds;
-    }
-	public List<DataStoreEndPoint> getEndPoints(StorageEvent event) {
+	@Override
+	public PrimaryDataStoreProvider getDataStoreProvider(Long providerId) {
 		// TODO Auto-generated method stub
 		return null;
 	}

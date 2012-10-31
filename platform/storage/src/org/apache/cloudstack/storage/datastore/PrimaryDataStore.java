@@ -20,6 +20,7 @@ package org.apache.cloudstack.storage.datastore;
 
 import java.util.List;
 
+import org.apache.cloudstack.storage.EndPoint;
 import org.apache.cloudstack.storage.volume.Volume;
 import org.apache.cloudstack.storage.volume.disktype.VolumeDiskType;
 
@@ -28,4 +29,6 @@ public interface PrimaryDataStore {
 	List<Volume> getVolumes();
 	boolean deleteVolume(long id);
 	Volume createVolume(long id, VolumeDiskType diskType);
+	List<EndPoint> getEndPoints();
+	PrimaryDataStoreInfo getDataStoreInfo();
 }

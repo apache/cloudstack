@@ -19,5 +19,4 @@
 package org.apache.cloudstack.storage.volume.type;
 
 public interface VolumeType {
-	boolean equals(String type);
 }
