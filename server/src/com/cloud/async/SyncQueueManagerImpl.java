@@ -187,11 +187,14 @@ public class SyncQueueManagerImpl implements SyncQueueManager {
 				
 				_syncQueueItemDao.expunge(itemVO.getId());
 				
-				queueVO.setLastUpdated(DateUtil.currentGMTTime());
-                //decrement the count
-				assert (queueVO.getQueueSize() > 0) : "Count reduce happens when it's already <= 0!";
-                queueVO.setQueueSize(queueVO.getQueueSize() - 1);
-				_syncQueueDao.update(queueVO.getId(), queueVO);
+				//if item is active, reset queue information
+				if (itemVO.getLastProcessMsid() != null) {
+				    queueVO.setLastUpdated(DateUtil.currentGMTTime());
+	                //decrement the count
+	                assert (queueVO.getQueueSize() > 0) : "Count reduce happens when it's already <= 0!";
+	                queueVO.setQueueSize(queueVO.getQueueSize() - 1);
+	                _syncQueueDao.update(queueVO.getId(), queueVO);
+				}
 			}
     		txt.commit();
     	} catch(Exception e) {
@@ -273,5 +276,13 @@ public class SyncQueueManagerImpl implements SyncQueueManager {
     
     private boolean queueReadyToProcess(SyncQueueVO queueVO) {
         return queueVO.getQueueSize() < queueVO.getQueueSizeLimit();
+    }
+    
+    @Override
+    public void purgeAsyncJobQueueItemId(long asyncJobId) {
+        Long itemId = _syncQueueItemDao.getQueueItemIdByContentIdAndType(asyncJobId, SyncQueueItem.AsyncJobContentType);
+        if (itemId != null) {
+            purgeItem(itemId);
+        }
     }
 }

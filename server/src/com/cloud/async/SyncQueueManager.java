@@ -30,4 +30,6 @@ public interface SyncQueueManager extends Manager {
     
 	public List<SyncQueueItemVO> getActiveQueueItems(Long msid, boolean exclusive);
     public List<SyncQueueItemVO> getBlockedQueueItems(long thresholdMs, boolean exclusive);
+
+    void purgeAsyncJobQueueItemId(long asyncJobId);
 }

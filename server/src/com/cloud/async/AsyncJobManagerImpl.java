@@ -270,7 +270,7 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
 		Random random = new Random();
 
         for(int i = 0; i < 5; i++) {
-            queue = _queueMgr.queue(syncObjType, syncObjId, "AsyncJob", job.getId(), queueSizeLimit);
+            queue = _queueMgr.queue(syncObjType, syncObjId, SyncQueueItem.AsyncJobContentType, job.getId(), queueSizeLimit);
             if(queue != null) {
                 break;
             }
@@ -598,60 +598,73 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
 		return new Runnable() {
 			@Override
             public void run() {
-				GlobalLock scanLock = GlobalLock.getInternLock("AsyncJobManagerGC");
-				try {
-					if(scanLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION)) {
-						try {
-							reallyRun();
-						} finally {
-							scanLock.unlock();
-						}
-					}
-				} finally {
-					scanLock.releaseRef();
-				}
-			}
-			
-			private void reallyRun() {
-				try {
-					s_logger.trace("Begin cleanup expired async-jobs");
-					
-					Date cutTime = new Date(DateUtil.currentGMTTime().getTime() - _jobExpireSeconds*1000);
-					
-					// limit to 100 jobs per turn, this gives cleanup throughput as 600 jobs per minute
-					// hopefully this will be fast enough to balance potential growth of job table
-					List<AsyncJobVO> l = _jobDao.getExpiredJobs(cutTime, 100);
-					if(l != null && l.size() > 0) {
-						for(AsyncJobVO job : l) {
-							_jobDao.expunge(job.getId());
-						}
-					}
-					
-					// forcely cancel blocking queue items if they've been staying there for too long
-				    List<SyncQueueItemVO> blockItems = _queueMgr.getBlockedQueueItems(_jobCancelThresholdSeconds*1000, false);
-				    if(blockItems != null && blockItems.size() > 0) {
-				        for(SyncQueueItemVO item : blockItems) {
-				            if(item.getContentType().equalsIgnoreCase("AsyncJob")) {
-                                completeAsyncJob(item.getContentId(), AsyncJobResult.STATUS_FAILED, 0, getResetResultResponse("Job is cancelled as it has been blocking others for too long"));
+                GlobalLock scanLock = GlobalLock.getInternLock("AsyncJobManagerGC");
+                try {
+                    if(scanLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION)) {
+                        try {
+                            reallyRun();
+                        } finally {
+                            scanLock.unlock();
+                        }
+                    }
+                } finally {
+                    scanLock.releaseRef();
+                }
+            }
+            
+            public void reallyRun() {
+                try {
+                    s_logger.trace("Begin cleanup expired async-jobs");
+
+                    Date cutTime = new Date(DateUtil.currentGMTTime().getTime() - _jobExpireSeconds*1000);
+
+                    // limit to 100 jobs per turn, this gives cleanup throughput as 600 jobs per minute
+                    // hopefully this will be fast enough to balance potential growth of job table
+                    List<AsyncJobVO> l = _jobDao.getExpiredJobs(cutTime, 100);
+                    if(l != null && l.size() > 0) {
+                        for(AsyncJobVO job : l) {
+                            expungeAsyncJob(job);
+                        }
+                    }
+
+                    // forcefully cancel blocking queue items if they've been staying there for too long
+                    List<SyncQueueItemVO> blockItems = _queueMgr.getBlockedQueueItems(_jobCancelThresholdSeconds*1000, false);
+                    if(blockItems != null && blockItems.size() > 0) {
+                        for(SyncQueueItemVO item : blockItems) {
+                            if(item.getContentType().equalsIgnoreCase(SyncQueueItem.AsyncJobContentType)) {
+                                completeAsyncJob(item.getContentId(), AsyncJobResult.STATUS_FAILED, 0,
+                                        getResetResultResponse("Job is cancelled as it has been blocking others for too long"));
                             }
-				        
-				            // purge the item and resume queue processing
-				            _queueMgr.purgeItem(item.getId());
-				        }
-				    }
-					
-					s_logger.trace("End cleanup expired async-jobs");
-				} catch(Throwable e) {
-					s_logger.error("Unexpected exception when trying to execute queue item, ", e);
-				} finally {
-					StackMaid.current().exitCleanup();
-				}
-			}
-		};
-	}
-	
-	private long getMsid() {
-		if(_clusterMgr != null) {
+
+                            // purge the item and resume queue processing
+                            _queueMgr.purgeItem(item.getId());
+                        }
+                    }
+
+                    s_logger.trace("End cleanup expired async-jobs");
+                } catch(Throwable e) {
+                    s_logger.error("Unexpected exception when trying to execute queue item, ", e);
+                } finally {
+                    StackMaid.current().exitCleanup();
+                }
+            }
+
+           
+        };
+    }
+    
+    @DB
+    protected void expungeAsyncJob(AsyncJobVO job) {
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        _jobDao.expunge(job.getId());
+        //purge corresponding sync queue item
+        _queueMgr.purgeAsyncJobQueueItemId(job.getId());
+        txn.commit();
+    }
+
+    private long getMsid() {
+        if(_clusterMgr != null) {
             return _clusterMgr.getManagementNodeId();
         }
 		
@@ -666,7 +679,7 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
                 }
 
                 String contentType = item.getContentType();
-                if(contentType != null && contentType.equals("AsyncJob")) {
+                if(contentType != null && contentType.equalsIgnoreCase(SyncQueueItem.AsyncJobContentType)) {
                     Long jobId = item.getContentId();
                     if(jobId != null) {
                         s_logger.warn("Mark job as failed as its correspoding queue-item has been discarded. job id: " + jobId);
