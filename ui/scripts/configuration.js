@@ -1072,26 +1072,12 @@
           },
 
           dataProvider: function(args) {					  
-						var array1 = [];  
-						if(args.filterBy != null) {          
-							if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
-								switch(args.filterBy.search.by) {
-								case "name":
-									if(args.filterBy.search.value.length > 0)
-										array1.push("&keyword=" + args.filterBy.search.value);
-									break;
-								}
-							}
-						}
+						var data = {};
+						listViewDataProvider(args, data);		
 					
             $.ajax({
-              url: createURL('listNetworkOfferings' + array1.join("")),
-              data: {
-                page: args.page,
-                pagesize: pageSize
-              },
-              dataType: "json",
-              async: true,
+              url: createURL('listNetworkOfferings'),
+              data: data,
               success: function(json) {
                 var items = json.listnetworkofferingsresponse.networkoffering;
 																
@@ -1787,13 +1773,16 @@
 							edit: {
                 label: 'label.edit',
                 action: function(args) {
-                  var array1 = [];
-                  array1.push("&name=" + todb(args.data.name));
-                  array1.push("&displaytext=" + todb(args.data.displaytext));
-									array1.push("&availability=" + args.data.availability);								
+                  var data = {
+									  id: args.context.networkOfferings[0].id,
+										name: args.data.name,
+										displaytext: args.data.displaytext,
+										availability: args.data.availability
+									};
+                					
                   $.ajax({
-                    url: createURL("updateNetworkOffering&id=" + args.context.networkOfferings[0].id + array1.join("")),
-                    dataType: "json",
+                    url: createURL('updateNetworkOffering'),
+                    data: data,
                     success: function(json) {										 									
 											//if availability is being updated from Required to Optional
 										  if(args.context.networkOfferings[0].availability == "Required" && args.data.availability == "Optional") 
