@@ -3072,10 +3072,9 @@
                             $.ajax({
                               url: createURL('removeVpnUser'),
                               data: {
-                                username: args.context.multiRule[0].username,
-                                id: args.context.multiRule[0].domainid,
-                                account: args.context.ipAddresses[0].account,
-                                domainid: args.context.ipAddresses[0].domainid
+															  domainid: args.context.multiRule[0].domainid,
+																account: args.context.multiRule[0].account,
+                                username: args.context.multiRule[0].username    
                               },
                               dataType: 'json',
                               async: true,
