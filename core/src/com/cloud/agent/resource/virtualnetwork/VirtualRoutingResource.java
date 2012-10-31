@@ -264,8 +264,35 @@ public class VirtualRoutingResource implements Manager {
 
         return new SetPortForwardingRulesAnswer(cmd, results, endResult);
     }
+
+    protected Answer SetVPCStaticNatRules(SetStaticNatRulesCommand cmd) {
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        String[] results = new String[cmd.getRules().length];
+        int i = 0;
+        boolean endResult = true;
+
+        for (StaticNatRuleTO rule : cmd.getRules()) {
+            String args = rule.revoked() ? " -D" : " -A";
+            args += " -l " + rule.getSrcIp();
+            args += " -r " + rule.getDstIp();
+
+            String result = routerProxy("vpc_staticnat.sh", routerIp, args);
+            
+            if(result == null) {
+                results[i++] = null;
+            } else {
+                results[i++] = "Failed";
+                endResult = false;
+            }
+        }
+        return new SetStaticNatRulesAnswer(cmd, results, endResult);
+
+    }
     
     private Answer execute(SetStaticNatRulesCommand cmd) {
+        if ( cmd.getVpcId() != null ) {
+            return SetVPCStaticNatRules(cmd);
+        }
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         String[] results = new String[cmd.getRules().length];
         int i = 0;
