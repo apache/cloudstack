@@ -814,9 +814,18 @@ change_password() {
 	fi
 }
 
+set_etc_hosts() {
+  if [ -f /etc/hosts ]; then
+    host=`hostname -s`;
+    grep -q $host /etc/hosts || echo "127.0.0.1 $host" >> /etc/hosts;
+  fi
+}
+
 start() {
   # Clear /tmp for file lock
   rm -f /tmp/*.lock
+  # fix lookups for our hostname (iptables, etc)
+  set_etc_hosts
   local hyp=$(hypervisor)
   [ $? -ne 0 ] && log_it "Failed to detect hypervisor type, bailing out of early init" && exit 10
   log_it "Detected that we are running inside $hyp guest"
