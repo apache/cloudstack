@@ -69,16 +69,21 @@ class cloudConnection(object):
 
         try:
             self.connection = urllib2.urlopen("http://%s:%d/client/api?%s"%(self.mgtSvr, self.port, requestUrl))
-            self.logging.debug("sending GET request: %s"%requestUrl)
+            if self.logging is not None:
+                self.logging.debug("sending GET request: %s"%requestUrl)
             response = self.connection.read()
-            self.logging.info("got response: %s"%response)
+            if self.logging is not None:
+                self.logging.info("got response: %s"%response)
         except IOError, e:
             if hasattr(e, 'reason'):
-                self.logging.critical("failed to reach %s because of %s"%(self.mgtSvr, e.reason))
+                if self.logging is not None:
+                    self.logging.critical("failed to reach %s because of %s"%(self.mgtSvr, e.reason))
             elif hasattr(e, 'code'):
-                self.logging.critical("server returned %d error code"%e.code)
+                if self.logging is not None:
+                    self.logging.critical("server returned %d error code"%e.code)
         except httplib.HTTPException, h:
-            self.logging.debug("encountered http Exception %s"%h.args)
+            if self.logging is not None:
+                self.logging.debug("encountered http Exception %s"%h.args)
             if self.retries > 0:
                 self.retries = self.retries - 1
                 self.make_request_with_auth(command, requests)
@@ -95,9 +100,11 @@ class cloudConnection(object):
         requestUrl = "&".join(["=".join([request[0], urllib.quote_plus(str(request[1]))]) for request in requests])
 
         self.connection = urllib2.urlopen("http://%s:%d/client/api?%s"%(self.mgtSvr, self.port, requestUrl))
-        self.logging.debug("sending GET request without auth: %s"%requestUrl)
+        if self.logging is not None:
+            self.logging.debug("sending GET request without auth: %s"%requestUrl)
         response = self.connection.read()
-        self.logging.info("got response: %s"%response)
+        if self.logging is not None:
+            self.logging.info("got response: %s"%response)
         return response
     
     def pollAsyncJob(self, jobId, response):
@@ -114,7 +121,8 @@ class cloudConnection(object):
                 return asyncResonse
             
             time.sleep(5)
-            self.logging.debug("job: %s still processing, will timeout in %ds"%(jobId, timeout))
+            if self.logging is not None:
+                self.logging.debug("job: %s still processing, will timeout in %ds"%(jobId, timeout))
             timeout = timeout - 5
             
         raise cloudstackException.cloudstackAPIException("asyncquery", "Async job timeout %s"%jobId)
