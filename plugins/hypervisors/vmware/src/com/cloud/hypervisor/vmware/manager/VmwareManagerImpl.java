@@ -344,6 +344,34 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         return _netMgr.getDefaultGuestTrafficLabel(dcId, hypervisorType);
     }
 
+    private void prepareHost(HostMO hostMo, String privateTrafficLabel) throws Exception {
+        // For ESX host, we need to enable host firewall to allow VNC access
+        HostFirewallSystemMO firewallMo = hostMo.getHostFirewallSystemMO();
+        if(firewallMo != null) {
+            if(hostMo.getHostType() == VmwareHostType.ESX) {
+                firewallMo.enableRuleset("vncServer");
+                firewallMo.refreshFirewall();
+            }
+        }
+
+        // prepare at least one network on the vswitch to enable OVF importing
+        String vSwitchName = privateTrafficLabel;
+        String vlanId = null;
+        String[] tokens = privateTrafficLabel.split(",");
+        if(tokens.length == 2) {
+            vSwitchName = tokens[0].trim();
+            vlanId = tokens[1].trim();
+        }
+
+        s_logger.info("Preparing network on host " + hostMo.getContext().toString() + " for " + privateTrafficLabel);
+        if(!_nexusVSwitchActive) {
+            HypervisorHostHelper.prepareNetwork(vSwitchName, "cloud.private", hostMo, vlanId, null, null, 180000, false);
+        }
+        else {
+            HypervisorHostHelper.prepareNetwork(vSwitchName, "cloud.private", hostMo, vlanId, null, null, 180000);
+        }
+    }
+    
     @Override
     public List<ManagedObjectReference> addHostToPodCluster(VmwareContext serviceContext, long dcId, Long podId, Long clusterId,
             String hostInventoryPath) throws Exception {
@@ -365,30 +393,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
                 // For ESX host, we need to enable host firewall to allow VNC access
                 HostMO hostMo = new HostMO(serviceContext, hosts[0]);
-                HostFirewallSystemMO firewallMo = hostMo.getHostFirewallSystemMO();
-                if(firewallMo != null) {
-                    if(hostMo.getHostType() == VmwareHostType.ESX) {
-
-                        firewallMo.enableRuleset("vncServer");
-                        firewallMo.refreshFirewall();
-                    }
-                }
-
-                // prepare at least one network on the vswitch to enable OVF importing
-                String vlanId = null;
-                if(privateTrafficLabel != null) {
-                    String[] tokens = privateTrafficLabel.split(",");
-                    if(tokens.length == 2)
-                        vlanId = tokens[1];
-                }
-
-                if(!_nexusVSwitchActive) {
-                    HypervisorHostHelper.prepareNetwork(_privateNetworkVSwitchName, "cloud.private", hostMo, vlanId, null, null, 180000, false);
-                }
-                else {
-                    s_logger.info("Preparing Network on " + privateTrafficLabel);
-                    HypervisorHostHelper.prepareNetwork(privateTrafficLabel, "cloud.private", hostMo, vlanId, null, null, 180000);
-                }
+                prepareHost(hostMo, privateTrafficLabel);
                 returnedHostList.add(hosts[0]);
                 return returnedHostList;
             } else if(mor.getType().equals("ClusterComputeResource")) {
@@ -404,60 +409,14 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                 for(ManagedObjectReference morHost: hosts) {
                     // For ESX host, we need to enable host firewall to allow VNC access
                     HostMO hostMo = new HostMO(serviceContext, morHost);
-                    HostFirewallSystemMO firewallMo = hostMo.getHostFirewallSystemMO();
-                    if(firewallMo != null) {
-                        if(hostMo.getHostType() == VmwareHostType.ESX) {
-                            firewallMo.enableRuleset("vncServer");
-                            firewallMo.refreshFirewall();
-                        }
-                    }
-
-                    String vlanId = null;
-                    if(privateTrafficLabel != null) {
-                        String[] tokens = privateTrafficLabel.split(",");
-                        if(tokens.length == 2)
-                            vlanId = tokens[1];
-                    }
-
-
-                    s_logger.info("Calling prepareNetwork : " + hostMo.getContext().toString());
-                    // prepare at least one network on the vswitch to enable OVF importing
-                    if(!_nexusVSwitchActive) {
-                        HypervisorHostHelper.prepareNetwork(_privateNetworkVSwitchName, "cloud.private", hostMo, vlanId, null, null, 180000, false);
-                    }
-                    else {
-                        s_logger.info("Preparing Network on " + privateTrafficLabel);
-                        HypervisorHostHelper.prepareNetwork(privateTrafficLabel, "cloud.private", hostMo, vlanId, null, null, 180000);
-                    }
+                    prepareHost(hostMo, privateTrafficLabel);
                     returnedHostList.add(morHost);
                 }
                 return returnedHostList;
             } else if(mor.getType().equals("HostSystem")) {
                 // For ESX host, we need to enable host firewall to allow VNC access
                 HostMO hostMo = new HostMO(serviceContext, mor);
-                HostFirewallSystemMO firewallMo = hostMo.getHostFirewallSystemMO();
-                if(firewallMo != null) {
-                    if(hostMo.getHostType() == VmwareHostType.ESX) {
-                        firewallMo.enableRuleset("vncServer");
-                        firewallMo.refreshFirewall();
-                    }
-                }
-
-                String vlanId = null;
-                if(privateTrafficLabel != null) {
-                    String[] tokens = privateTrafficLabel.split(",");
-                    if(tokens.length == 2)
-                        vlanId = tokens[1];
-                }
-
-                // prepare at least one network on the vswitch to enable OVF importing
-                if(!_nexusVSwitchActive) {
-                    HypervisorHostHelper.prepareNetwork(_privateNetworkVSwitchName, "cloud.private", hostMo, vlanId, null, null, 180000, false);
-                }
-                else {
-                    s_logger.info("Preparing Network on " + privateTrafficLabel);
-                    HypervisorHostHelper.prepareNetwork(privateTrafficLabel, "cloud.private", hostMo, vlanId, null, null, 180000);
-                }
+                prepareHost(hostMo, privateTrafficLabel);
                 returnedHostList.add(mor);
                 return returnedHostList;
             } else {
