@@ -28,7 +28,7 @@
     <orderedlist>
         <listitem><para>Open your favorite Web browser and go to this URL. Substitute the IP address of your own Management Server:</para>
             <programlisting>http://&lt;management-server-ip-address&gt;:8080/client</programlisting>
-            <para>On a fresh Management Server installation, a guided tour splash screen appears. On later visits, you’ll see a login screen where you can enter a user ID and password and proceed to your Dashboard.</para>
+            <para>After logging into a fresh Management Server installation, a guided tour splash screen appears. On later visits, you’ll be taken directly into the Dashboard.</para>
         </listitem>
         <listitem><para>If you see the first-time splash screen, choose one of the following.</para>
             <itemizedlist>
