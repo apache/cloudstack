@@ -35,7 +35,7 @@
             <listitem><para>First use vCenter to exit the vCenter maintenance mode.</para>
             <para>This makes the host ready for &PRODUCT; to reactivate it.</para></listitem>
             <listitem><para>Then use &PRODUCT;'s administrator UI to cancel the &PRODUCT; maintenance mode</para>
-           <para>When the host comes back online, the VMs that were migrated off of it are migrated back to it and new VMs can be added.</para></listitem>
+           <para>When the host comes back online, the VMs that were migrated off of it may be migrated back to it manually and new VMs can be added.</para></listitem>
           </orderedlist></listitem>
        </orderedlist>
 </section>
