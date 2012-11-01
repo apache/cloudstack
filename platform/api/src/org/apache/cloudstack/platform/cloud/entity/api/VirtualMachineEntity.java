@@ -20,7 +20,7 @@ package org.apache.cloudstack.platform.cloud.entity.api;
 
 import java.util.List;
 
-import org.apache.cloudstack.platform.entity.api.CloudEntity;
+import org.apache.cloudstack.platform.entity.api.CloudStackEntity;
 
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
@@ -31,36 +31,64 @@ import com.cloud.vm.VirtualMachine;
  * Platform.  
  *
  */
-public interface VirtualMachineEntity extends VirtualMachine, CloudEntity {
+public interface VirtualMachineEntity extends VirtualMachine, CloudStackEntity {
 
+    /**
+     * @return List of uuids for volumes attached to this virtual machine.
+     */
+    List<String> listVolumeUuids();
 
-    List<VolumeEntity> getVolumes();
+    /**
+     * @return List of volumes attached to this virtual machine.
+     */
+    List<VolumeEntity> listVolumes();
 
-    List<NicEntity> getNics();
+    /**
+     * @return List of uuids for nics attached to this virtual machine.
+     */
+    List<String> listNicUuids();
 
+    /**
+     * @return List of nics attached to this virtual machine.
+     */
+    List<NicEntity> listNics();
+
+    /**
+     * @return the template this virtual machine is based off.
+     */
     TemplateEntity getTemplate();
 
     /**
      * @return the list of tags associated with the virtual machine
      */
-    List<String> getTags();
+    List<String> listTags();
+
+    void addTag();
+
+    void delTag();
 
     /**
      * Start the virtual machine with a given deploy destination
+     * @param plannerToUse the Deployment Planner that should be used 
      * @param dest destination to which to deploy the machine
      * @param exclude list of areas to exclude
-     * @param plannerToUse the Deployment Planner that should be used 
+     * @return a reservation id
      */
-    void startIn(DeployDestination dest, ExcludeList exclude, String plannerToUse);
+    String reserve(String plannerToUse, DeployDestination dest, ExcludeList exclude);
 
     /**
      * Migrate this VM to a certain destination.
      * 
-     * @param dest
-     * @param exclude
-     * @param plannerToUse
+     * @param reservationId reservation id from reserve call.
      */
-    void migrateTo(DeployDestination dest, ExcludeList exclude);
+    void migrateTo(String reservationId);
+
+    /**
+     * Deploy this virtual machine according to the reservation from before.
+     * @param reservationId reservation id from reserve call.
+     * 
+     */
+    void deploy(String reservationId);
 
     /**
      * Stop the virtual machine
@@ -90,7 +118,7 @@ public interface VirtualMachineEntity extends VirtualMachine, CloudEntity {
     /**
      * Take a VM snapshot
      */
-    void takeSnapshotOf();
+    SnapshotEntity takeSnapshotOf();
 
     /**
      * Attach volume to this VM

@@ -22,10 +22,11 @@ import java.net.URL;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.platform.cloud.entity.api.NetworkEntity;
+import org.apache.cloudstack.platform.cloud.entity.api.TemplateEntity;
 import org.apache.cloudstack.platform.cloud.entity.api.VirtualMachineEntity;
 import org.apache.cloudstack.platform.cloud.entity.api.VolumeEntity;
 
-import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.hypervisor.Hypervisor;
 
 public interface OrchestrationService {
@@ -44,7 +45,7 @@ public interface OrchestrationService {
      * @param details extra details to store for the VM
      * @return VirtualMachine
      */
-    VirtualMachineEntity create(String name, 
+    VirtualMachineEntity createVirtualMachine(String name, 
             String template,
             String hostName,
             int cpu, 
@@ -56,7 +57,7 @@ public interface OrchestrationService {
             Map<String, String> details,
             String owner);
 
-    VirtualMachineEntity createFromScratch(String uuid,
+    VirtualMachineEntity createVirtualMachineFromScratch(String uuid,
             String iso,
             String os,
             String hypervisor,
@@ -69,30 +70,15 @@ public interface OrchestrationService {
             Map<String, String> details,
             String owner);
 
-    /**
-     * Make reservations for a VM
-     * @param vm uuid of the VM
-     * @param planner DeploymentPlanner to use
-     * @param until time specified in seconds before reservation expires.  null means to reserve forever.
-     * @return reservation id
-     */
-    String reserve(String vm, String planner, Long until) throws InsufficientCapacityException;
+    NetworkEntity createNetwork(String externaId, String name, String cidr, String gateway);
 
-    /**
-     * Deploy the reservation
-     * @param reservationId  reservation id during the deployment
-     * @return job Id
-     * @throws CloudRuntimeException if error 
-     */
-    String deploy(String reservationId);
-
-    void joinNetwork(String network1, String network2);
-
-    void createNetwork();
-
-    void destroyNetwork();
+    void destroyNetwork(String networkUuid);
 
     VolumeEntity createVolume();
 
-    void registerTemplate(String name, URL path, String os, Hypervisor hypervisor);
+    void destroyVolume(String volumeEntity);
+
+    TemplateEntity registerTemplate(String name, URL path, String os, Hypervisor hypervisor);
+
+
 }

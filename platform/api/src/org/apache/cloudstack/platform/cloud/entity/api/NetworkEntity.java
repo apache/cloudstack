@@ -18,10 +18,22 @@
  */
 package org.apache.cloudstack.platform.cloud.entity.api;
 
-import org.apache.cloudstack.platform.entity.api.CloudEntity;
+import java.util.List;
+
+import org.apache.cloudstack.platform.entity.api.CloudStackEntity;
 
 import com.cloud.network.Network;
 
-public interface NetworkEntity extends CloudEntity, Network {
-    void connectTo(NetworkEntity network);
+public interface NetworkEntity extends CloudStackEntity, Network {
+    void routeTo(NetworkEntity network);
+
+    List<EdgeService> listEdgeServicesTo();
+
+    List<String> listVirtualMachineUuids();
+
+    List<VirtualMachineEntity> listVirtualMachines();
+
+    List<NicEntity> listNics();
+
+    void addIpRange();
 }

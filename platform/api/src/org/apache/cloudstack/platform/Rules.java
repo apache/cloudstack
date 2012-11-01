@@ -38,6 +38,7 @@ import com.cloud.utils.StringUtils;
 public class Rules {
     public static List<String> whenUsing() {
         List<String> rules = new ArrayList<String>();
+        rules.add("Always be prepared to handle RuntimeExceptions.");
         return rules;
     }
 
@@ -45,6 +46,7 @@ public class Rules {
         List<String> rules = new ArrayList<String>();
         rules.add("You may think you're the greatest developer in the " +
                 "world but every change to the API must be reviewed and approved. ");
+        rules.add("Every API must have unit tests written against it.  And not it's unit tests");
         rules.add("");
 
 

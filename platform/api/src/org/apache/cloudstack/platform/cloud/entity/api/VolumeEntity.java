@@ -18,11 +18,11 @@
  */
 package org.apache.cloudstack.platform.cloud.entity.api;
 
-import org.apache.cloudstack.platform.entity.api.CloudEntity;
+import org.apache.cloudstack.platform.entity.api.CloudStackEntity;
 
 import com.cloud.storage.Volume;
 
-public interface VolumeEntity extends CloudEntity, Volume {
+public interface VolumeEntity extends CloudStackEntity, Volume {
 
     /**
      * Take a snapshot of the volume

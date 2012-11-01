@@ -18,11 +18,11 @@
  */
 package org.apache.cloudstack.platform.cloud.entity.api;
 
-import org.apache.cloudstack.platform.entity.api.CloudEntity;
+import org.apache.cloudstack.platform.entity.api.CloudStackEntity;
 
 import com.cloud.storage.Snapshot;
 
-public interface SnapshotEntity extends CloudEntity, Snapshot {
+public interface SnapshotEntity extends CloudStackEntity, Snapshot {
     /**
      * Make a reservation for backing up this snapshot
      * @param expiration time in seconds to expire the reservation

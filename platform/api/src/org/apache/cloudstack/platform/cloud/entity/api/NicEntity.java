@@ -18,12 +18,12 @@
  */
 package org.apache.cloudstack.platform.cloud.entity.api;
 
-import org.apache.cloudstack.platform.entity.api.CloudEntity;
+import org.apache.cloudstack.platform.entity.api.CloudStackEntity;
 
 /**
  * @author ahuang
  *
  */
-public interface NicEntity extends CloudEntity {
+public interface NicEntity extends CloudStackEntity {
 
 }

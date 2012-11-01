@@ -18,10 +18,10 @@
  */
 package org.apache.cloudstack.platform.cloud.entity.api;
 
-import org.apache.cloudstack.platform.entity.api.CloudEntity;
+import org.apache.cloudstack.platform.entity.api.CloudStackEntity;
 
 import com.cloud.template.VirtualMachineTemplate;
 
-public interface TemplateEntity extends CloudEntity, VirtualMachineTemplate {
+public interface TemplateEntity extends CloudStackEntity, VirtualMachineTemplate {
 
 }

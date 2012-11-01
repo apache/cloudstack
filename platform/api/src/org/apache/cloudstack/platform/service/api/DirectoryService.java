@@ -21,9 +21,14 @@ package org.apache.cloudstack.platform.service.api;
 import java.net.URI;
 import java.util.List;
 
+import com.cloud.utils.component.PluggableService;
+
 public interface DirectoryService {
     void registerService(String serviceName, URI endpoint);
     void unregisterService(String serviceName, URI endpoint);
     List<URI> getEndPoints(String serviceName);
     URI getLoadBalancedEndPoint(String serviceName);
+
+    List<PluggableService> listServices();
+
 }
