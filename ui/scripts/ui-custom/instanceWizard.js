@@ -137,8 +137,8 @@
                   )
                   .append(
                     $('<div>').addClass('select-desc')
-                      .append($('<div>').addClass('name').html(this[fields.name]))
-                      .append($('<div>').addClass('desc').html(this[fields.desc]))
+                      .append($('<div>').addClass('name').html(_s(this[fields.name])))
+                      .append($('<div>').addClass('desc').html(_s(this[fields.desc])))
                   )
                   .data('json-obj', this);
 
