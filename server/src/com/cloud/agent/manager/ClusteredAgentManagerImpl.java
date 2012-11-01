@@ -305,16 +305,26 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
             }
             AgentAttache attache = findAttache(hostId);
             if (attache != null) {
+                //don't process disconnect if the host is being rebalanced
                 if (_clusterMgr.isAgentRebalanceEnabled()) {
-                    //don't process disconnect if the host is being rebalanced
                     HostTransferMapVO transferVO = _hostTransferDao.findById(hostId);
                     if (transferVO != null) {
                         if (transferVO.getFutureOwner() == _nodeId && transferVO.getState() == HostTransferState.TransferStarted) {
-                            s_logger.debug("Not processing disconnect event as the host is being connected to " + _nodeId);
+                            s_logger.debug("Not processing " + Event.AgentDisconnected + " event for the host id="
+                                    + hostId +" as the host is being connected to " + _nodeId);
                             return true;
                         }
                     }
                 }
+                
+                //don't process disconnect if the disconnect came for the host via delayed cluster notification,
+                //but the host has already reconnected to the current management server
+                if (!attache.forForward()) {
+                    s_logger.debug("Not processing " + Event.AgentDisconnected + " event for the host id="
+                            + hostId +" as the host is directly connected to the current management server " + _nodeId);
+                    return true;
+                }
+                
                 return super.handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected, false);
             }
 
