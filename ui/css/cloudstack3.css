@@ -7266,8 +7266,9 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   border-radius: 5px;
   border-radius: 5px 5px 5px 5px;
   width: 74px;
+  text-indent: 0px;
   text-align: center;
-  padding: 6px 9px 4px 0px;
+  padding: 6px 0px 4px;
   background: url(../images/bg-gradients.png) repeat-x 0px -220px;
   /*+placement:shift 4px 0px;*/
   position: relative;
@@ -7389,8 +7390,16 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   border-left: none;
   border-right: 1px solid #CFC9C9;
   height: 15px;
-  overflow: hidden;
+  overflow: auto;
   padding-right: 0;
+}
+
+.multi-edit .data .data-body .data-item > table tbody tr td span {
+  overflow-x: auto;
+  overflow-y: hidden;
+  width: 70px;
+  display: block;
+  float: left;
 }
 
 .multi-edit .data .data-body .data-item table tbody tr td.blank {
@@ -7437,6 +7446,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 .multi-edit .data .data-body .data-item tr td .expand {
   width: 14px;
   height: 15px;
+  display: block;
   cursor: pointer;
   background: #FFFFFF url(../images/sprites.png) -541px -499px;
   border: 1px solid #D0D0D0;
