@@ -28,6 +28,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupVMMAgentCommand;
@@ -54,6 +55,7 @@ import com.cloud.utils.nio.NioClient;
 import com.cloud.utils.nio.Task;
 import com.cloud.utils.nio.Task.Type;
 
+@Component
 @Local(value=Discoverer.class)
 public class HypervServerDiscoverer extends DiscovererBase implements Discoverer, HandlerFactory{
     private static final Logger s_logger = Logger.getLogger(HypervServerDiscoverer.class);

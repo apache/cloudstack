@@ -26,6 +26,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.ConfigurationVO;
 import com.cloud.utils.crypt.DBEncryptionUtil;
@@ -36,6 +37,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+@Component
 @Local(value={ConfigurationDao.class})
 public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String> implements ConfigurationDao {
     private static final Logger s_logger = Logger.getLogger(ConfigurationDaoImpl.class);

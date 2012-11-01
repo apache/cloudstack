@@ -29,6 +29,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
+import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Config;
 import com.cloud.agent.api.StartupCommand;
@@ -53,6 +54,7 @@ import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.ssh.SSHCmdHelper;
 
+@Component
 @Local(value = Discoverer.class)
 public class OvmDiscoverer extends DiscovererBase implements Discoverer,
 		ResourceStateAdapter {

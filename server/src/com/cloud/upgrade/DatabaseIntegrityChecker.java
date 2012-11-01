@@ -24,6 +24,7 @@ import java.sql.SQLException;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.maint.Version;
 import com.cloud.upgrade.dao.VersionDao;
@@ -34,6 +35,7 @@ import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+@Component
 @Local(value = {SystemIntegrityChecker.class})
 public class DatabaseIntegrityChecker implements SystemIntegrityChecker {
 	private final Logger s_logger = Logger.getLogger(DatabaseIntegrityChecker.class);

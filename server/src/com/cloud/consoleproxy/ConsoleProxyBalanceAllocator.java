@@ -25,6 +25,8 @@ import java.util.Random;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ComponentLocator;
@@ -32,6 +34,7 @@ import com.cloud.vm.ConsoleProxyVO;
 
 import edu.emory.mathcs.backport.java.util.Collections;
 
+@Component
 @Local(value={ConsoleProxyAllocator.class})
 public class ConsoleProxyBalanceAllocator implements ConsoleProxyAllocator {
 	

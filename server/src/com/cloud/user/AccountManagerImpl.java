@@ -38,6 +38,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.acl.ControlledEntity;
 import com.cloud.acl.SecurityChecker;
@@ -142,6 +143,7 @@ import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
+@Component
 @Local(value = { AccountManager.class, AccountService.class })
 public class AccountManagerImpl implements AccountManager, AccountService, Manager {
     public static final Logger s_logger = Logger.getLogger(AccountManagerImpl.class);

@@ -45,6 +45,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.CreateLogicalSwitchPortAnswer;
@@ -110,6 +111,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
 
+@Component
 @Local(value = NetworkElement.class)
 public class NiciraNvpElement extends AdapterBase implements ConnectivityProvider, NiciraNvpElementService, ResourceStateAdapter {
     private static final Logger s_logger = Logger.getLogger(NiciraNvpElement.class);

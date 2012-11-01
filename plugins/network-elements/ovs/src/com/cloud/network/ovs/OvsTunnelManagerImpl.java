@@ -27,6 +27,7 @@ import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -63,6 +64,7 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 
+@Component
 @Local(value={OvsTunnelManager.class})
 public class OvsTunnelManagerImpl implements OvsTunnelManager {
 	public static final Logger s_logger = 

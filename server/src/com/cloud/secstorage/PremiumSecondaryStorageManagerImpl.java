@@ -24,6 +24,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Command;
 import com.cloud.configuration.Config;
@@ -47,6 +48,7 @@ import com.cloud.vm.SystemVmLoadScanner.AfterScanAction;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 
+@Component
 @Local(value = { SecondaryStorageVmManager.class })
 public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerImpl {
     private static final Logger s_logger = Logger.getLogger(PremiumSecondaryStorageManagerImpl.class);

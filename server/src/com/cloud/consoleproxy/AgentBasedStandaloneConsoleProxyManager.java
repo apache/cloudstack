@@ -21,12 +21,14 @@ import java.util.List;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.vm.UserVmVO;
 
+@Component
 @Local(value={ConsoleProxyManager.class})
 public class AgentBasedStandaloneConsoleProxyManager extends
 AgentBasedConsoleProxyManager {

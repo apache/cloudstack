@@ -29,6 +29,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.dao.ConfigurationDao;
 
@@ -38,6 +39,7 @@ import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+@Component
 @Local(value=IpAddrAllocator.class)
 public class ExteralIpAddressAllocator implements IpAddrAllocator{
 	private static final Logger s_logger = Logger.getLogger(ExteralIpAddressAllocator.class);

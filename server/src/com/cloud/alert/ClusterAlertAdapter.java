@@ -22,6 +22,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.ClusterNodeJoinEventArgs;
@@ -33,6 +34,7 @@ import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.events.EventArgs;
 import com.cloud.utils.events.SubscriptionMgr;
 
+@Component
 @Local(value = AlertAdapter.class)
 public class ClusterAlertAdapter implements AlertAdapter {
 

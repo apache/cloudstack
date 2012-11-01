@@ -26,10 +26,12 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor;
 
+@Component
 @Local(value=Discoverer.class)
 public class DummyHostDiscoverer implements Discoverer {
     private static final Logger s_logger = Logger.getLogger(DummyHostDiscoverer.class);

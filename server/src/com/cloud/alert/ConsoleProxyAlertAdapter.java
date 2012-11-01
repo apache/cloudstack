@@ -22,6 +22,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.alert.AlertAdapter;
 import com.cloud.alert.AlertManager;
@@ -34,6 +35,7 @@ import com.cloud.utils.events.SubscriptionMgr;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.dao.ConsoleProxyDao;
 
+@Component
 @Local(value=AlertAdapter.class)
 public class ConsoleProxyAlertAdapter implements AlertAdapter {
 	

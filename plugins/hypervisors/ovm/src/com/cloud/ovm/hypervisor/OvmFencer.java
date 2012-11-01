@@ -23,6 +23,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.FenceAnswer;
@@ -38,6 +39,7 @@ import com.cloud.utils.component.Inject;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.resource.ResourceManager;
 
+@Component
 @Local(value=FenceBuilder.class)
 public class OvmFencer implements FenceBuilder {
 	private static final Logger s_logger = Logger.getLogger(OvmFencer.class);

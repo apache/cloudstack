@@ -26,6 +26,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.commands.CreateStorageNetworkIpRangeCmd;
 import com.cloud.api.commands.DeleteStorageNetworkIpRangeCmd;
@@ -57,6 +58,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
+@Component
 @Local(value = {StorageNetworkManager.class, StorageNetworkService.class})
 public class StorageNetworkManagerImpl implements StorageNetworkManager, StorageNetworkService {
 	private static final Logger s_logger = Logger.getLogger(StorageNetworkManagerImpl.class);

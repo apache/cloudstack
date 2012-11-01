@@ -18,6 +18,9 @@ package com.cloud.tags.dao;
 
 import java.util.List;
 import javax.ejb.Local;
+
+import org.springframework.stereotype.Component;
+
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.tags.ResourceTagVO;
@@ -26,7 +29,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
-
+@Component
 @Local(value = { ResourceTagDao.class })
 public class ResourceTagsDaoImpl extends GenericDaoBase<ResourceTagVO, Long> implements ResourceTagDao{
     final SearchBuilder<ResourceTagVO> AllFieldsSearch;

@@ -29,6 +29,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -87,6 +88,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.MacAddress;
 
+@Component
 @Local(value = {NetworkUsageManager.class})
 public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceStateAdapter {
     public enum NetworkUsageResourceName {

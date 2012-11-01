@@ -38,6 +38,7 @@ import com.cloud.utils.component.ComponentLocator;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
+@Component
 @Local(value=HostAllocator.class)
 public class RandomAllocator implements HostAllocator {
     private static final Logger s_logger = Logger.getLogger(RandomAllocator.class);

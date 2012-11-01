@@ -26,6 +26,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.commands.ListPortForwardingRulesCmd;
 import com.cloud.configuration.ConfigurationManager;
@@ -80,6 +81,7 @@ import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 
+@Component
 @Local(value = { RulesManager.class, RulesService.class })
 public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     private static final Logger s_logger = Logger.getLogger(RulesManagerImpl.class);

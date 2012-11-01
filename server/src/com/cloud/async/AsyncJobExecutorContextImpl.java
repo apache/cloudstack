@@ -21,6 +21,8 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.async.dao.AsyncJobDao;
 import com.cloud.event.dao.EventDao;
@@ -39,6 +41,7 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 
+@Component
 @Local(value={AsyncJobExecutorContext.class})
 public class AsyncJobExecutorContextImpl implements AsyncJobExecutorContext {
 	private String _name;

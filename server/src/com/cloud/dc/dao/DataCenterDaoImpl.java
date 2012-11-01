@@ -25,6 +25,7 @@ import javax.naming.ConfigurationException;
 import javax.persistence.TableGenerator;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterLinkLocalIpAddressVO;
@@ -50,6 +51,7 @@ import com.cloud.utils.net.NetUtils;
  *    || mac.address.prefix | prefix to attach to all public and private mac addresses | number | 06 ||
  *  }
  **/
+@Component
 @Local(value={DataCenterDao.class})
 public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implements DataCenterDao {
     private static final Logger s_logger = Logger.getLogger(DataCenterDaoImpl.class);

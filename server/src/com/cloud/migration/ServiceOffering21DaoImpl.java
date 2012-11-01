@@ -18,8 +18,11 @@ package com.cloud.migration;
 
 import javax.ejb.Local;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.utils.db.GenericDaoBase;
 
+@Component
 @Local(value={ServiceOffering21Dao.class})
 public class ServiceOffering21DaoImpl extends GenericDaoBase<ServiceOffering21VO, Long> implements ServiceOffering21Dao {
 }

@@ -24,6 +24,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.commands.CreateVpnConnectionCmd;
 import com.cloud.api.commands.CreateVpnCustomerGatewayCmd;
@@ -80,6 +81,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DomainRouterVO;
 
+@Component
 @Local(value = { Site2SiteVpnManager.class, Site2SiteVpnService.class } )
 public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
     private static final Logger s_logger = Logger.getLogger(Site2SiteVpnManagerImpl.class);

@@ -22,6 +22,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -62,6 +63,7 @@ import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
+@Component
 @Local(value = { ConsoleProxyManager.class })
 public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, VirtualMachineGuru<ConsoleProxyVO>, AgentHook {
     private static final Logger s_logger = Logger.getLogger(AgentBasedConsoleProxyManager.class);

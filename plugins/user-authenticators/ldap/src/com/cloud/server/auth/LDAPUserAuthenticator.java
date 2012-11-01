@@ -31,6 +31,7 @@ import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiConstants.LDAPParams;
 import com.cloud.configuration.Config;
@@ -42,6 +43,7 @@ import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 
 
+@Component
 @Local(value={UserAuthenticator.class})
 public class LDAPUserAuthenticator extends DefaultUserAuthenticator {
     public static final Logger s_logger = Logger.getLogger(LDAPUserAuthenticator.class);

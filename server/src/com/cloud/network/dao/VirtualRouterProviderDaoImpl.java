@@ -20,6 +20,8 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.network.element.VirtualRouterProviderVO;
 import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
 import com.cloud.utils.db.DB;
@@ -27,6 +29,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
+@Component
 @Local(value=VirtualRouterProviderDao.class) @DB(txn=false)
 public class VirtualRouterProviderDaoImpl extends GenericDaoBase<VirtualRouterProviderVO, Long> implements VirtualRouterProviderDao {
     final SearchBuilder<VirtualRouterProviderVO> AllFieldsSearch;

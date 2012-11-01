@@ -29,6 +29,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.acl.SecurityChecker.AccessType;
 import com.cloud.alert.AlertManager;
@@ -81,6 +82,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 import edu.emory.mathcs.backport.java.util.Arrays;
 
+@Component
 @Local(value = { ResourceLimitService.class })
 public class ResourceLimitManagerImpl implements ResourceLimitService, Manager {
     public static final Logger s_logger = Logger.getLogger(ResourceLimitManagerImpl.class);

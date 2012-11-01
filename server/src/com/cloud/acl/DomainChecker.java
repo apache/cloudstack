@@ -18,6 +18,8 @@ package com.cloud.acl;
 
 import javax.ejb.Local;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.api.BaseCmd;
 import com.cloud.dc.DataCenter;
 import com.cloud.domain.Domain;
@@ -39,6 +41,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
 
+@Component
 @Local(value=SecurityChecker.class)
 public class DomainChecker extends AdapterBase implements SecurityChecker {
     

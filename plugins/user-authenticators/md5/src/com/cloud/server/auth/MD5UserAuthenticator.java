@@ -21,6 +21,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.server.ManagementServer;
 import com.cloud.user.UserAccount;
@@ -32,6 +33,7 @@ import com.cloud.utils.component.ComponentLocator;
  * comparing it against the local database.
  * 
  */
+@Component
 @Local(value={UserAuthenticator.class})
 public class MD5UserAuthenticator extends DefaultUserAuthenticator {
 	public static final Logger s_logger = Logger.getLogger(MD5UserAuthenticator.class);

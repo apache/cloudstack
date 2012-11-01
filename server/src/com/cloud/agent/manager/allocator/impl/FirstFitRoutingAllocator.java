@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.ejb.Local;
 import org.apache.log4j.NDC;
+import org.springframework.stereotype.Component;
+
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
@@ -28,6 +30,7 @@ import com.cloud.host.Host.Type;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
+@Component
 @Local(value={HostAllocator.class})
 public class FirstFitRoutingAllocator extends FirstFitAllocator {
     @Override

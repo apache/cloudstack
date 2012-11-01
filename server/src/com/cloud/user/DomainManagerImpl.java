@@ -25,6 +25,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.commands.ListDomainChildrenCmd;
 import com.cloud.api.commands.ListDomainsCmd;
@@ -57,6 +58,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
+@Component
 @Local(value = { DomainManager.class, DomainService.class })
 public class DomainManagerImpl implements DomainManager, DomainService, Manager {
     public static final Logger s_logger = Logger.getLogger(DomainManagerImpl.class);

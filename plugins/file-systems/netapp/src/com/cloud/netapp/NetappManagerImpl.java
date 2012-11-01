@@ -37,6 +37,7 @@ import netapp.manage.NaProtocolException;
 import netapp.manage.NaServer;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
@@ -49,6 +50,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+@Component
 @Local(value = { NetappManager.class })
 public class NetappManagerImpl implements NetappManager
 {   

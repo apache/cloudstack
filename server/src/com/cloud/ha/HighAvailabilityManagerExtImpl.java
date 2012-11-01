@@ -23,6 +23,8 @@ import java.util.concurrent.TimeUnit;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.server.ManagementServer;
@@ -31,6 +33,7 @@ import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.Transaction;
 
+@Component
 @Local(value={HighAvailabilityManager.class})
 public class HighAvailabilityManagerExtImpl extends HighAvailabilityManagerImpl {
 	

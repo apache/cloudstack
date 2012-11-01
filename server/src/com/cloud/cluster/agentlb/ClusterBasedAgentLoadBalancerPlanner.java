@@ -28,6 +28,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -38,7 +39,7 @@ import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteriaService;
 
-
+@Component
 @Local(value=AgentLoadBalancerPlanner.class)
 public class ClusterBasedAgentLoadBalancerPlanner implements AgentLoadBalancerPlanner{
     private static final Logger s_logger = Logger.getLogger(AgentLoadBalancerPlanner.class);

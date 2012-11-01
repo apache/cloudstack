@@ -28,6 +28,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.api.ApiDBUtils;
@@ -83,6 +84,7 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
+@Component
 @Local(value=DeploymentPlanner.class)
 public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
     private static final Logger s_logger = Logger.getLogger(FirstFitPlanner.class);

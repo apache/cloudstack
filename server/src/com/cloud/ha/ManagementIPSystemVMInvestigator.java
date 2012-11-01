@@ -23,6 +23,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -34,6 +35,7 @@ import com.cloud.vm.Nic;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 
+@Component
 @Local(value={Investigator.class})
 public class ManagementIPSystemVMInvestigator extends AbstractInvestigatorImpl {
     private static final Logger s_logger = Logger.getLogger(ManagementIPSystemVMInvestigator.class);

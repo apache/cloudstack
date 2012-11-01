@@ -18,12 +18,15 @@ package com.cloud.ha;
 
 import javax.ejb.Local;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VMInstanceVO;
 
+@Component
 @Local(value=Investigator.class)
 public class VmwareInvestigator extends AdapterBase implements Investigator {
     protected VmwareInvestigator() {

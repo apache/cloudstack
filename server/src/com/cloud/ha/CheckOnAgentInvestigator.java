@@ -19,6 +19,7 @@ package com.cloud.ha;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.CheckVirtualMachineAnswer;
@@ -32,6 +33,7 @@ import com.cloud.utils.component.Inject;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 
+@Component
 @Local(value=Investigator.class)
 public class CheckOnAgentInvestigator extends AdapterBase implements Investigator {
     private final static Logger s_logger = Logger.getLogger(CheckOnAgentInvestigator.class);

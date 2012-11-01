@@ -39,6 +39,7 @@ import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.acl.SecurityChecker;
 import com.cloud.alert.AlertManager;
@@ -166,6 +167,7 @@ import com.cloud.vm.dao.NicDao;
 
 import edu.emory.mathcs.backport.java.util.Arrays;
 
+@Component
 @Local(value = { ConfigurationManager.class, ConfigurationService.class })
 public class ConfigurationManagerImpl implements ConfigurationManager, ConfigurationService {
     public static final Logger s_logger = Logger.getLogger(ConfigurationManagerImpl.class.getName());

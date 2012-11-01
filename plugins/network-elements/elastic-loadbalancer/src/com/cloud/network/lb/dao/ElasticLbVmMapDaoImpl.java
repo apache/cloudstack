@@ -20,6 +20,8 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.network.ElasticLbVmMapVO;
 import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.dao.LoadBalancerDao;
@@ -35,6 +37,7 @@ import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.DomainRouterDaoImpl;
 
+@Component
 @Local(value={ElasticLbVmMapDao.class})
 public class ElasticLbVmMapDaoImpl extends GenericDaoBase<ElasticLbVmMapVO, Long> implements ElasticLbVmMapDao {
     protected final DomainRouterDao _routerDao = ComponentLocator.inject(DomainRouterDaoImpl.class);

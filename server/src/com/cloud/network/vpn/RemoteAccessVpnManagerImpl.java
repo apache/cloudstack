@@ -24,6 +24,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.commands.ListRemoteAccessVpnsCmd;
 import com.cloud.api.commands.ListVpnUsersCmd;
@@ -80,6 +81,7 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.net.NetUtils;
 
+@Component
 @Local(value = RemoteAccessVpnService.class)
 public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manager {
     private final static Logger s_logger = Logger.getLogger(RemoteAccessVpnManagerImpl.class);

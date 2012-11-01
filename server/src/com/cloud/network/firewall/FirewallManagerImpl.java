@@ -27,6 +27,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.commands.ListFirewallRulesCmd;
 import com.cloud.configuration.Config;
@@ -81,6 +82,7 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.dao.UserVmDao;
 
+@Component
 @Local(value = { FirewallService.class, FirewallManager.class})
 public class FirewallManagerImpl implements FirewallService, FirewallManager, Manager {
     private static final Logger s_logger = Logger.getLogger(FirewallManagerImpl.class);

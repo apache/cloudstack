@@ -27,6 +27,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.agent.api.SecurityGroupRulesCmd;
 import com.cloud.agent.manager.Commands;
 import com.cloud.configuration.Config;
@@ -44,6 +46,7 @@ import com.cloud.network.security.SecurityRule.SecurityRuleType;
  * Same as the base class -- except it uses the abstracted security group work queue
  *
  */
+@Component
 @Local(value={ SecurityGroupManager.class, SecurityGroupService.class })
 public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl{
     SecurityGroupWorkQueue _workQueue = new LocalSecurityGroupWorkQueue();

@@ -29,6 +29,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.ExternalNetworkResourceUsageAnswer;
@@ -75,6 +76,7 @@ import com.cloud.vm.NicVO;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 
+@Component
 @Local(value = { ExternalLoadBalancerUsageManager.class })
 public class ExternalLoadBalancerUsageManagerImpl implements ExternalLoadBalancerUsageManager {
 

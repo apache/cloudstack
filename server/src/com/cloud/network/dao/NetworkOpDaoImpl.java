@@ -18,6 +18,8 @@ package com.cloud.network.dao;
 
 import java.util.List;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.utils.db.Attribute;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.GenericDaoBase;
@@ -27,7 +29,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.UpdateBuilder;
 
-
+@Component
 public class NetworkOpDaoImpl extends GenericDaoBase<NetworkOpVO, Long> implements GenericDao<NetworkOpVO, Long> {
     protected final SearchBuilder<NetworkOpVO> AllFieldsSearch;
     protected final GenericSearchBuilder<NetworkOpVO, Integer> ActiveNicsSearch;

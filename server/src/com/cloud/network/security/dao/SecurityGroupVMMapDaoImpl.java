@@ -20,6 +20,8 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.network.IPAddressVO;
@@ -33,6 +35,7 @@ import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.vm.VirtualMachine.State;
 
+@Component
 @Local(value={SecurityGroupVMMapDao.class})
 public class SecurityGroupVMMapDaoImpl extends GenericDaoBase<SecurityGroupVMMapVO, Long> implements SecurityGroupVMMapDao {
     private SearchBuilder<SecurityGroupVMMapVO> ListByIpAndVmId;

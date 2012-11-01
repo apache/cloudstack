@@ -23,6 +23,8 @@ import java.util.Set;
 
 import javax.ejb.Local;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -40,6 +42,7 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
+@Component
 @Local(value=NetworkElement.class)
 public class SecurityGroupElement extends AdapterBase implements NetworkElement {
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();

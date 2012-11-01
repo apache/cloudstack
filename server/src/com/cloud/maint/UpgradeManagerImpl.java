@@ -37,6 +37,7 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.maint.dao.AgentUpgradeDao;
@@ -51,6 +52,7 @@ import com.cloud.utils.component.ComponentLocator;
  *    2. Spread out a release update to agents so that the entire system
  *       does not come down at the same time.
  */
+@Component
 @Local(UpgradeManager.class)
 public class UpgradeManagerImpl implements UpgradeManager {
 	private final static Logger s_logger = Logger.getLogger(UpgradeManagerImpl.class);

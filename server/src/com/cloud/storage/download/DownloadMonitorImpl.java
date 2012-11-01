@@ -30,6 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -107,6 +108,7 @@ import com.cloud.vm.dao.SecondaryStorageVmDao;
 import edu.emory.mathcs.backport.java.util.Collections;
 
 
+@Component
 @Local(value={DownloadMonitor.class})
 public class DownloadMonitorImpl implements  DownloadMonitor {
     static final Logger s_logger = Logger.getLogger(DownloadMonitorImpl.class);

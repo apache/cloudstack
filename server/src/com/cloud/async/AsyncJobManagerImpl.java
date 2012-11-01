@@ -36,6 +36,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDispatcher;
 import com.cloud.api.ApiGsonHelper;
@@ -74,6 +75,7 @@ import com.cloud.utils.net.MacAddress;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
+@Component
 @Local(value={AsyncJobManager.class})
 public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListener {
     public static final Logger s_logger = Logger.getLogger(AsyncJobManagerImpl.class.getName());

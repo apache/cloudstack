@@ -22,6 +22,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.StartupCommandProcessor;
@@ -33,6 +34,7 @@ import com.cloud.exception.ConnectionException;
 import com.cloud.host.dao.HostDao;
 import com.cloud.utils.component.Inject;
 
+@Component
 @Local(value={AgentAuthorizer.class, StartupCommandProcessor.class})
 public class BasicAgentAuthManager implements AgentAuthorizer, StartupCommandProcessor {
     private static final Logger s_logger = Logger.getLogger(BasicAgentAuthManager.class);

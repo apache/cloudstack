@@ -24,6 +24,8 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupPxeServerCommand;
@@ -46,6 +48,7 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfile.Param;
 
+@Component
 @Local(value = {PxeServerManager.class})
 public class PxeServerManagerImpl implements PxeServerManager, ResourceStateAdapter {
 	private static final org.apache.log4j.Logger s_logger = Logger.getLogger(PxeServerManagerImpl.class);

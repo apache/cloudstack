@@ -32,6 +32,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -75,6 +76,7 @@ import com.cloud.vm.dao.SecondaryStorageVmDao;
 /**
  * Monitors the progress of upload.
  */
+@Component
 @Local(value={UploadMonitor.class})
 public class UploadMonitorImpl implements UploadMonitor {
 

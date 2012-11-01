@@ -26,6 +26,7 @@ import java.util.TreeSet;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -76,6 +77,7 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 
+@Component
 @Local(value = NetworkGuru.class)
 public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
     private static final Logger s_logger = Logger.getLogger(GuestNetworkGuru.class);

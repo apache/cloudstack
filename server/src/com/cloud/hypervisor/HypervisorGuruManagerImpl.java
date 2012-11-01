@@ -23,6 +23,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Command;
 import com.cloud.host.Host;
@@ -33,6 +34,7 @@ import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 
+@Component
 @Local(value = { HypervisorGuruManager.class } )
 public class HypervisorGuruManagerImpl implements HypervisorGuruManager {
     public static final Logger s_logger = Logger.getLogger(HypervisorGuruManagerImpl.class.getName());

@@ -28,6 +28,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.configuration.Config;
@@ -36,6 +37,7 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.ComponentLocator;
 
+@Component
 @Local(value={ClusterServiceAdapter.class})
 public class ClusterServiceServletAdapter implements ClusterServiceAdapter {
 

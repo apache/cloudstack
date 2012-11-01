@@ -20,12 +20,13 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.network.LBStickinessPolicyVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchCriteria;
 
-
-
+@Component
 @Local(value = { LBStickinessPolicyDao.class })
 public class LBStickinessPolicyDaoImpl extends
         GenericDaoBase<LBStickinessPolicyVO, Long> implements

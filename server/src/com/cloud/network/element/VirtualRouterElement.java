@@ -25,6 +25,7 @@ import java.util.Set;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.commands.ConfigureVirtualRouterElementCmd;
 import com.cloud.api.commands.ListVirtualRouterElementsCmd;
@@ -88,6 +89,7 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.google.gson.Gson;
 
+@Component
 @Local(value = NetworkElement.class)
 public class VirtualRouterElement extends AdapterBase implements VirtualRouterElementService, DhcpServiceProvider, 
     UserDataServiceProvider, SourceNatServiceProvider, StaticNatServiceProvider, FirewallServiceProvider,

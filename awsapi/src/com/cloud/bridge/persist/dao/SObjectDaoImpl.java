@@ -23,6 +23,8 @@ import java.util.Set;
 
 import javax.ejb.Local;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.bridge.model.SBucket;
 import com.cloud.bridge.model.SBucketVO;
 import com.cloud.bridge.model.SObjectItemVO;
@@ -35,6 +37,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 
+@Component
 @Local(value={SObjectDao.class})
 public class SObjectDaoImpl extends GenericDaoBase<SObjectVO, Long> implements SObjectDao {
     protected final SObjectItemDao itemDao = ComponentLocator.inject(SObjectItemDaoImpl.class);

@@ -18,6 +18,8 @@ package com.cloud.ovm.hypervisor;
 
 import javax.ejb.Local;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruBase;
@@ -28,6 +30,7 @@ import com.cloud.utils.component.Inject;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
+@Component
 @Local(value=HypervisorGuru.class)
 public class OvmGuru extends HypervisorGuruBase implements HypervisorGuru {
 	@Inject GuestOSDao _guestOsDao;

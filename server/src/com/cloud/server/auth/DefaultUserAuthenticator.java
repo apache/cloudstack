@@ -21,10 +21,13 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.springframework.stereotype.Component;
+
 /**
  * Use this UserAuthenticator if users are already authenticated outside
  * 
  */
+@Component
 @Local(value={UserAuthenticator.class})
 public abstract class DefaultUserAuthenticator implements UserAuthenticator {
 	private String _name = null;

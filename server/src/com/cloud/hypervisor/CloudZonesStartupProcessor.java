@@ -23,6 +23,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.StartupCommandProcessor;
@@ -57,6 +58,7 @@ import com.cloud.utils.net.NetUtils;
  * Creates a host record and supporting records such as pod and ip address
  *
  */
+@Component
 @Local(value=StartupCommandProcessor.class)
 public class CloudZonesStartupProcessor implements StartupCommandProcessor {
     private static final Logger s_logger = Logger.getLogger(CloudZonesStartupProcessor.class);

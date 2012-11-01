@@ -18,6 +18,8 @@ package com.cloud.upgrade;
 
 import javax.ejb.Local;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.upgrade.dao.DbUpgrade;
 import com.cloud.upgrade.dao.Upgrade217to218;
 import com.cloud.upgrade.dao.Upgrade218to224DomainVlans;
@@ -43,6 +45,7 @@ import com.cloud.upgrade.dao.VersionDaoImpl;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.SystemIntegrityChecker;
 
+@Component
 @Local(value = { SystemIntegrityChecker.class })
 public class PremiumDatabaseUpgradeChecker extends DatabaseUpgradeChecker {
     public PremiumDatabaseUpgradeChecker() {

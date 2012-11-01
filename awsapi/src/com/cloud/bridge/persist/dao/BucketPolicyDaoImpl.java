@@ -20,6 +20,8 @@ package com.cloud.bridge.persist.dao;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import com.cloud.bridge.model.BucketPolicyVO;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.GenericDaoBase;
@@ -27,6 +29,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 
+@Component
 @Local(value={BucketPolicyDao.class})
 public class BucketPolicyDaoImpl extends GenericDaoBase<BucketPolicyVO, Long> implements BucketPolicyDao{
     public static final Logger logger = Logger.getLogger(BucketPolicyDaoImpl.class);

@@ -18,6 +18,9 @@ package com.cloud.network.dao;
 
 import java.util.List;
 import javax.ejb.Local;
+
+import org.springframework.stereotype.Component;
+
 import com.cloud.network.ExternalLoadBalancerDeviceVO;
 import com.cloud.network.ExternalLoadBalancerDeviceVO.LBDeviceAllocationState;
 import com.cloud.network.ExternalLoadBalancerDeviceVO.LBDeviceState;
@@ -27,6 +30,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
+@Component
 @Local(value=ExternalLoadBalancerDeviceDao.class) @DB(txn=false)
 public class ExternalLoadBalancerDeviceDaoImpl extends GenericDaoBase<ExternalLoadBalancerDeviceVO, Long> implements ExternalLoadBalancerDeviceDao {
     final SearchBuilder<ExternalLoadBalancerDeviceVO> physicalNetworkIdSearch;

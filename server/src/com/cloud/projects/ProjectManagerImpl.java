@@ -39,6 +39,7 @@ import javax.mail.internet.InternetAddress;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.acl.SecurityChecker.AccessType;
 import com.cloud.configuration.Config;
@@ -88,6 +89,7 @@ import com.sun.mail.smtp.SMTPMessage;
 import com.sun.mail.smtp.SMTPSSLTransport;
 import com.sun.mail.smtp.SMTPTransport;
 
+@Component
 @Local(value = { ProjectService.class, ProjectManager.class })
 public class ProjectManagerImpl implements ProjectManager, Manager{
     public static final Logger s_logger = Logger.getLogger(ProjectManagerImpl.class);

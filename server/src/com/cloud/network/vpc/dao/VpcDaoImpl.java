@@ -20,6 +20,8 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.server.ResourceTag.TaggedResourceType;
@@ -34,7 +36,7 @@ import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 
-
+@Component
 @Local(value = VpcDao.class)
 @DB(txn = false)
 public class VpcDaoImpl extends GenericDaoBase<VpcVO, Long> implements VpcDao{

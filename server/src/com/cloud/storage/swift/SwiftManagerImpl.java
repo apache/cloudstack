@@ -26,6 +26,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -60,6 +61,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 
 
+@Component
 @Local(value = { SwiftManager.class })
 public class SwiftManagerImpl implements SwiftManager {
     private static final Logger s_logger = Logger.getLogger(SwiftManagerImpl.class);

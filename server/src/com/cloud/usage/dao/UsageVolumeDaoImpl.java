@@ -26,12 +26,14 @@ import java.util.TimeZone;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.usage.UsageVolumeVO;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.Transaction;
 
+@Component
 @Local(value={UsageVolumeDao.class})
 public class UsageVolumeDaoImpl extends GenericDaoBase<UsageVolumeVO, Long> implements UsageVolumeDao {
 	public static final Logger s_logger = Logger.getLogger(UsageVolumeDaoImpl.class.getName());

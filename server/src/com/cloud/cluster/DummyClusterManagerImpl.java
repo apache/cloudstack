@@ -22,6 +22,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.Answer;
@@ -32,6 +33,7 @@ import com.cloud.host.Status.Event;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.MacAddress;
 
+@Component
 @Local(value={ClusterManager.class})
 public class DummyClusterManagerImpl implements ClusterManager {
     private static final Logger s_logger = Logger.getLogger(DummyClusterManagerImpl.class);

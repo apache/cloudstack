@@ -32,6 +32,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.SecStorageSetupCommand;
 import com.cloud.utils.Ternary;
@@ -39,6 +40,7 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.security.CertificateHelper;
 
+@Component
 @Local(value=KeystoreManager.class)
 public class KeystoreManagerImpl implements KeystoreManager {
     private static final Logger s_logger = Logger.getLogger(KeystoreManagerImpl.class);

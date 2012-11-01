@@ -20,6 +20,8 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.network.VpnUser.State;
 import com.cloud.network.VpnUserVO;
 import com.cloud.utils.db.GenericDaoBase;
@@ -28,6 +30,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 
+@Component
 @Local(value={VpnUserDao.class})
 public class VpnUserDaoImpl extends GenericDaoBase<VpnUserVO, Long> implements VpnUserDao {
     private final SearchBuilder<VpnUserVO> AccountSearch;

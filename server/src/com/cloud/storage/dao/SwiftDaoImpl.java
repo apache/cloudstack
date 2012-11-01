@@ -22,6 +22,7 @@ import java.util.List;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.storage.SwiftVO;
@@ -31,7 +32,7 @@ import com.cloud.utils.db.GenericDaoBase;
  * 
  * 
  */
-
+@Component
 @Local (value={SwiftDao.class})
 public class SwiftDaoImpl extends GenericDaoBase<SwiftVO, Long> implements SwiftDao {
     public static final Logger s_logger = Logger.getLogger(SwiftDaoImpl.class.getName());

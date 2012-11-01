@@ -21,9 +21,12 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.host.HostVO;
 import com.cloud.vm.VMInstanceVO;
 
+@Component
 @Local(value=FenceBuilder.class)
 public class VmwareFencer implements FenceBuilder {
     String _name;

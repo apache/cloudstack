@@ -25,8 +25,10 @@ import java.util.List;
 import java.util.TimeZone;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.async.SyncQueueItemVO;
 import com.cloud.async.SyncQueueVO;
@@ -38,11 +40,13 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 
+@Component
 @Local(value = { SyncQueueItemDao.class })
 public class SyncQueueItemDaoImpl extends GenericDaoBase<SyncQueueItemVO, Long> implements SyncQueueItemDao {
     private static final Logger s_logger = Logger.getLogger(SyncQueueItemDaoImpl.class);
     
-    private final SyncQueueDao _syncQueueDao = new SyncQueueDaoImpl();
+    // private final SyncQueueDao _syncQueueDao = new SyncQueueDaoImpl();
+    @Inject private SyncQueueDao _syncQueueDao;
 
 	@Override
 	public SyncQueueItemVO getNextQueueItem(long queueId) {

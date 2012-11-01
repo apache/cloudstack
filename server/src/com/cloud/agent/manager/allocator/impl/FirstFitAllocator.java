@@ -26,6 +26,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.capacity.CapacityManager;
@@ -63,6 +64,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 /**
  * An allocator that tries to find a fit on a computing host.  This allocator does not care whether or not the host supports routing.
  */
+@Component
 @Local(value={HostAllocator.class})
 public class FirstFitAllocator implements HostAllocator {
     private static final Logger s_logger = Logger.getLogger(FirstFitAllocator.class);

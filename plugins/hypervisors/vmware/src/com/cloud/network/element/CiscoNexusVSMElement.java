@@ -25,6 +25,7 @@ import java.util.Set;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.commands.DeleteCiscoNexusVSMCmd;
 import com.cloud.api.commands.EnableCiscoNexusVSMCmd;
@@ -59,6 +60,7 @@ import com.cloud.exception.ResourceInUseException;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.server.ManagementService;
 
+@Component
 @Local(value = NetworkElement.class)
 public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl implements CiscoNexusVSMElementService, NetworkElement, Manager {
 

@@ -16,10 +16,11 @@
 // under the License.
 package com.cloud.storage.dao;
 
-
 import java.util.List;
 
 import javax.ejb.Local;
+
+import org.springframework.stereotype.Component;
 
 import com.cloud.host.HostVO;
 import com.cloud.storage.VMTemplateHostVO;
@@ -27,6 +28,8 @@ import com.cloud.storage.VolumeHostVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+
+@Component
 @Local(value={VolumeHostDao.class})
 public class VolumeHostDaoImpl extends GenericDaoBase<VolumeHostVO, Long> implements VolumeHostDao {
 

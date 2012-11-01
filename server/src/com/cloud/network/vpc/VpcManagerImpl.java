@@ -31,6 +31,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.acl.ControlledEntity.ACLType;
 import com.cloud.api.commands.ListPrivateGatewaysCmd;
@@ -116,6 +117,7 @@ import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.dao.DomainRouterDao;
 
 
+@Component
 @Local(value = { VpcManager.class, VpcService.class })
 public class VpcManagerImpl implements VpcManager, Manager{
     private static final Logger s_logger = Logger.getLogger(VpcManagerImpl.class);

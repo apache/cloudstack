@@ -28,6 +28,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.cluster.dao.StackMaidDao;
 import com.cloud.configuration.Config;
@@ -42,6 +43,7 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
 
+@Component
 @Local(value=CheckPointManager.class)
 public class CheckPointManagerImpl implements CheckPointManager, Manager, ClusterManagerListener {
     private static final Logger s_logger = Logger.getLogger(CheckPointManagerImpl.class);

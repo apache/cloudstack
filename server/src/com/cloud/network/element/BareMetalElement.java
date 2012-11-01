@@ -23,6 +23,7 @@ import java.util.Set;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.baremetal.ExternalDhcpManager;
 import com.cloud.deploy.DeployDestination;
@@ -48,6 +49,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
 
+@Component
 @Local(value=NetworkElement.class)
 public class BareMetalElement extends AdapterBase implements NetworkElement {
 	private static final Logger s_logger = Logger.getLogger(BareMetalElement.class);

@@ -22,6 +22,8 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
@@ -32,6 +34,7 @@ import com.cloud.utils.component.Inject;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.ConsoleProxyDao;
 
+@Component
 @Local(value={ConsoleProxyManager.class})
 public class StaticConsoleProxyManager extends AgentBasedConsoleProxyManager implements ConsoleProxyManager {
     String _ip = null;

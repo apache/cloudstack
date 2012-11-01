@@ -27,6 +27,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.manager.allocator.PodAllocator;
 import com.cloud.capacity.CapacityVO;
@@ -58,6 +59,7 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
+@Component
 @Local(value = PodAllocator.class)
 public class UserConcentratedAllocator implements PodAllocator {
     private final static Logger s_logger = Logger.getLogger(UserConcentratedAllocator.class);

@@ -23,8 +23,11 @@ import java.util.Random;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.vm.SecondaryStorageVmVO;
 
+@Component
 @Local(value={SecondaryStorageVmAllocator.class})
 public class SecondaryStorageVmDefaultAllocator implements SecondaryStorageVmAllocator {
 	

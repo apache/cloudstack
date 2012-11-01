@@ -27,6 +27,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
@@ -57,6 +58,7 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.VMInstanceDao;
 
+@Component
 @Local(value=Discoverer.class)
 public class BareMetalDiscoverer extends DiscovererBase implements Discoverer, ResourceStateAdapter {
 	private static final Logger s_logger = Logger.getLogger(BareMetalDiscoverer.class);

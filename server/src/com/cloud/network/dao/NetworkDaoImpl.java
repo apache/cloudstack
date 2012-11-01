@@ -23,6 +23,8 @@ import java.util.Random;
 import javax.ejb.Local;
 import javax.persistence.TableGenerator;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.acl.ControlledEntity.ACLType;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
@@ -55,6 +57,7 @@ import com.cloud.utils.db.SequenceFetcher;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.net.NetUtils;
 
+@Component
 @Local(value = NetworkDao.class)
 @DB(txn = false)
 public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements NetworkDao {

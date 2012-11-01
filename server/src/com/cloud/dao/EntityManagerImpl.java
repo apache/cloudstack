@@ -23,6 +23,8 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.springframework.stereotype.Component;
+
 import net.sf.ehcache.Cache;
 
 import com.cloud.utils.component.Manager;
@@ -32,6 +34,7 @@ import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
+@Component
 @Local(value=EntityManager.class)
 @SuppressWarnings("unchecked")
 public class EntityManagerImpl implements EntityManager, Manager {

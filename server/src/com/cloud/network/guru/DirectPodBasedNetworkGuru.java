@@ -21,6 +21,7 @@ import java.net.URI;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.ZoneConfig;
 import com.cloud.dc.DataCenter;
@@ -56,6 +57,7 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
+@Component
 @Local(value = NetworkGuru.class)
 public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
     private static final Logger s_logger = Logger.getLogger(DirectPodBasedNetworkGuru.class);

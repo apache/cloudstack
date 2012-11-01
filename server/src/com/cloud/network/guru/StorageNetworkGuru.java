@@ -19,6 +19,7 @@ package com.cloud.network.guru;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.dc.Pod;
 import com.cloud.dc.StorageNetworkIpAddressVO;
@@ -48,6 +49,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.Nic.ReservationStrategy;
 
+@Component
 @Local(value = NetworkGuru.class)
 public class StorageNetworkGuru extends PodBasedNetworkGuru implements NetworkGuru {
 	private static final Logger s_logger = Logger.getLogger(StorageNetworkGuru.class);

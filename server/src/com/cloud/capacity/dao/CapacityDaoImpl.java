@@ -27,6 +27,7 @@ import java.util.Map;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
@@ -47,6 +48,7 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+@Component
 @Local(value = { CapacityDao.class })
 public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements CapacityDao {
     private static final Logger s_logger = Logger.getLogger(CapacityDaoImpl.class);

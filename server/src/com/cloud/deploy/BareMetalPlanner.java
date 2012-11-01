@@ -23,6 +23,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.capacity.CapacityManager;
 import com.cloud.configuration.Config;
@@ -46,6 +47,7 @@ import com.cloud.utils.component.Inject;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
+@Component
 @Local(value=DeploymentPlanner.class)
 public class BareMetalPlanner implements DeploymentPlanner {
 	private static final Logger s_logger = Logger.getLogger(BareMetalPlanner.class);

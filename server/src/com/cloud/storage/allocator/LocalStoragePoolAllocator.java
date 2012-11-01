@@ -25,6 +25,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
@@ -61,6 +62,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 // Rush to make LocalStoragePoolAllocator use static allocation status, we should revisit the overall
 // allocation process to make it more reliable in next release. The code put in here is pretty ugly
 //
+@Component
 @Local(value = StoragePoolAllocator.class)
 public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
     private static final Logger s_logger = Logger.getLogger(LocalStoragePoolAllocator.class);

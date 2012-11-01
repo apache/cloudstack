@@ -23,9 +23,11 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.utils.component.Inject;
 
+@Component
 @Local(value={ClusterFenceManager.class})
 public class ClusterFenceManagerImpl implements ClusterFenceManager, ClusterManagerListener {
     private static final Logger s_logger = Logger.getLogger(ClusterFenceManagerImpl.class);

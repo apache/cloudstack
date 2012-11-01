@@ -27,6 +27,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -65,6 +66,7 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SSHCmdHelper;
 
+@Component
 @Local(value=Discoverer.class)
 public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 		Listener, ResourceStateAdapter {

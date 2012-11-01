@@ -25,6 +25,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.commands.ListTagsCmd;
 import com.cloud.domain.Domain;
@@ -70,6 +71,7 @@ import com.cloud.uuididentity.dao.IdentityDao;
 import com.cloud.vm.dao.UserVmDao;
 
 
+@Component
 @Local(value = { TaggedResourceService.class})
 public class TaggedResourceManagerImpl implements TaggedResourceService, Manager{
     public static final Logger s_logger = Logger.getLogger(TaggedResourceManagerImpl.class);

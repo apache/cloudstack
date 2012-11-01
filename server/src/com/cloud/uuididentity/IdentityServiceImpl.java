@@ -21,12 +21,15 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.IdentityService;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.uuididentity.dao.IdentityDao;
 
+@Component
 @Local(value = { IdentityService.class })
 public class IdentityServiceImpl implements Manager, IdentityService {
     private String _name;

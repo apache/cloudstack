@@ -24,6 +24,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.acl.SecurityChecker.AccessType;
 import com.cloud.api.commands.ListNetworkACLsCmd;
@@ -65,6 +66,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
 
+@Component
 @Local(value = { NetworkACLService.class, NetworkACLManager.class})
 public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
     String _name;
