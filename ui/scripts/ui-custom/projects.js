@@ -543,8 +543,9 @@
       var $cancel = $('<div>').addClass('button cancel').html(_l('label.cancel'));
 
       // Get project data
-      var loadData = function(complete) {
+      var loadData = function(complete, options) {
         cloudStack.projects.dataProvider({
+          projectName: options ? options.projectName : null,
           context: cloudStack.context,
           response: {
             success: function(args) {
@@ -585,7 +586,9 @@
       // Search form
       $searchForm.submit(function() {
         $list.find('li').remove();
-        loadData();
+        loadData(null, {
+          projectName: $(this).find('input[type=text]').val()
+        });
 
         return false;
       });

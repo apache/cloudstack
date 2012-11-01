@@ -569,13 +569,18 @@
     // Project listing data provider
     dataProvider: function(args) {
       var user = args.context.users[0];
+      var data = {
+        accountId: user.userid,
+        listAll: true
+      };
+
+      if (args.projectName) {
+        data.keyword = args.projectName;
+      }
 
       $.ajax({
         url: createURL('listProjects', { ignoreProject: true }),
-        data: {
-          accountId: user.userid,
-          listAll: true
-        },
+        data: data,
         dataType: 'json',
         async: true,
         success: function(data) {
