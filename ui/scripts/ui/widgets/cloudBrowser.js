@@ -349,6 +349,11 @@
     'cloudBrowser',
     {
       'breadcrumb': function($target, $browser, data) {
+
+        if ($ ('#browser').hasClass('panel-highlight')) {
+          return false;
+          }
+
         $browser.cloudBrowser('selectPanel', { panel: data.panel });
       }
     }
