@@ -284,8 +284,14 @@ class CloudStackShell(cmd.Cmd):
 
 
 def main():
-    grammar = ['list',  'create', 'delete', 'update', 'disable', 'enable',
-               'add', 'remove']
+    grammar = ['create', 'list', 'delete', 'update',
+               'enable', 'disable', 'add', 'remove', 'attach', 'detach',
+               'assign', 'authorize', 'change', 'register',
+               'start', 'restart', 'reboot', 'stop', 'reconnect',
+               'cancel', 'destroy', 'revoke',
+               'copy', 'extract', 'migrate', 'restore',
+               'get', 'prepare', 'deploy', 'upload']
+
     self = CloudStackShell
     for rule in grammar:
         setattr(self, 'completions_' + rule, map(lambda x: x.replace(rule, ''),
