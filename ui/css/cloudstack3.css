@@ -7181,6 +7181,10 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   border-top: none;
 }
 
+.multi-edit table th {
+  min-width: 120px;
+}
+
 .detail-group .multi-edit table td {
   border-left: 1px solid #CDCCCC;
 }
@@ -7397,7 +7401,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 .multi-edit .data .data-body .data-item > table tbody tr td span {
   overflow-x: auto;
   overflow-y: hidden;
-  width: 70px;
+  max-width: 88px;
   display: block;
   float: left;
 }
@@ -7410,6 +7414,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 }
 
 .multi-edit .data .data-body .data-item table tbody tr td.name span {
+  width: 53px;
   color: #4C5D78;
   font-weight: bold;
 }
