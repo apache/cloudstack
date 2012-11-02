@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.springframework.stereotype.Component;
@@ -30,7 +31,6 @@ import com.cloud.host.HostVO;
 import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.resource.ResourceManager;
 import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.Inject;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.ConsoleProxyDao;
 

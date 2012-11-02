@@ -19,6 +19,7 @@ package com.cloud.consoleproxy;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -49,7 +50,6 @@ import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.network.Network;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.Inject;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.UserVmVO;

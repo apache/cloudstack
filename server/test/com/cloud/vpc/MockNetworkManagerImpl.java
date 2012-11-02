@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -78,7 +79,6 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Adapters;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
@@ -95,7 +95,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager{
     NetworkServiceMapDao  _ntwkSrvcDao;
     @Inject
     NetworkOfferingServiceMapDao  _ntwkOfferingSrvcDao;
-    @Inject(adapter = NetworkElement.class)
+    @com.cloud.utils.component.Inject(adapter = NetworkElement.class)
     Adapters<NetworkElement> _networkElements;
     
     private static HashMap<String, String> s_providerToNetworkElementMap = new HashMap<String, String>();

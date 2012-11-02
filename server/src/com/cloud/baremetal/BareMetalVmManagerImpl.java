@@ -23,9 +23,11 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.StopAnswer;
@@ -81,7 +83,6 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -102,6 +103,7 @@ import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfile.Param;
 
+@Component
 @Local(value={BareMetalVmManager.class, BareMetalVmService.class})
 public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMetalVmManager, BareMetalVmService, Manager,
 		StateListener<State, VirtualMachine.Event, VirtualMachine> {
@@ -110,7 +112,7 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
 	@Inject PxeServerManager _pxeMgr;
 	@Inject ResourceManager _resourceMgr;
 	
-    @Inject (adapter=TemplateAdapter.class)
+	@com.cloud.utils.component.Inject (adapter=TemplateAdapter.class)
     protected Adapters<TemplateAdapter> _adapters;
 
 	@Override

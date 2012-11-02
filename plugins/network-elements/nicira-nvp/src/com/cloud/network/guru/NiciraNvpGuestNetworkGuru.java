@@ -38,6 +38,7 @@ import java.net.URISyntaxException;
 import java.util.List;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
@@ -73,7 +74,6 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.resource.ResourceManager;
 import com.cloud.user.Account;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.component.Inject;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;

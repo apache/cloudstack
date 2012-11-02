@@ -32,9 +32,11 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.acl.SecurityChecker.AccessType;
 import com.cloud.agent.AgentManager;
@@ -135,7 +137,6 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -152,7 +153,7 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
-
+@Component
 @Local(value={TemplateManager.class, TemplateService.class})
 public class TemplateManagerImpl implements TemplateManager, Manager, TemplateService {
     private final static Logger s_logger = Logger.getLogger(TemplateManagerImpl.class);
@@ -209,7 +210,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     ScheduledExecutorService _swiftTemplateSyncExecutor;
     
 
-    @Inject (adapter=TemplateAdapter.class)
+    @com.cloud.utils.component.Inject (adapter=TemplateAdapter.class)
     protected Adapters<TemplateAdapter> _adapters;
     
     private TemplateAdapter getAdapter(HypervisorType type) {

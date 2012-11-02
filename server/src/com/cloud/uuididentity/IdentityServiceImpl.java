@@ -19,13 +19,13 @@ package com.cloud.uuididentity;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.IdentityService;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.uuididentity.dao.IdentityDao;
 

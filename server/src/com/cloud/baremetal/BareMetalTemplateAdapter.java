@@ -20,6 +20,7 @@ import java.util.Date;
 import java.util.List;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
@@ -43,7 +44,6 @@ import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.template.TemplateAdapter;
 import com.cloud.template.TemplateAdapterBase;
 import com.cloud.user.Account;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 

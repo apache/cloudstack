@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import javax.inject.Inject;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.Listener;
@@ -43,7 +45,6 @@ import com.cloud.host.Status.Event;
 import com.cloud.host.dao.HostDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.ConnectionConcierge;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria2;

@@ -29,6 +29,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -36,7 +37,6 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.SecStorageSetupCommand;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.security.CertificateHelper;
 

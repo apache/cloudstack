@@ -24,6 +24,7 @@ import java.net.UnknownHostException;
 import java.util.List;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
@@ -51,7 +52,6 @@ import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.user.Account;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 

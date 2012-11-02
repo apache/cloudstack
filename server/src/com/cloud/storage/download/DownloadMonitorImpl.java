@@ -28,6 +28,7 @@ import java.util.Timer;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -92,7 +93,6 @@ import com.cloud.storage.template.TemplateConstants;
 import com.cloud.storage.template.TemplateInfo;
 import com.cloud.user.Account;
 import com.cloud.user.ResourceLimitService;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;

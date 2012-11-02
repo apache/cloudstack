@@ -19,6 +19,7 @@ package com.cloud.alert;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -31,7 +32,6 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.storage.secondary.SecStorageVmAlertEventArgs;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.events.SubscriptionMgr;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.dao.SecondaryStorageVmDao;

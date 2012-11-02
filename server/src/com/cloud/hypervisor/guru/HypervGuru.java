@@ -17,6 +17,7 @@
 package com.cloud.hypervisor.guru;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -28,7 +29,6 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
-import com.cloud.utils.component.Inject;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 

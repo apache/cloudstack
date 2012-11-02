@@ -33,7 +33,6 @@ import com.cloud.bridge.persist.dao.CloudStackConfigurationDao;
 import com.cloud.bridge.persist.dao.CloudStackConfigurationDaoImpl;
 import com.cloud.bridge.util.ConfigurationHelper;
 import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 

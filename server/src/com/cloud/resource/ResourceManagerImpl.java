@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -133,7 +134,6 @@ import com.cloud.utils.StringUtils;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.cisco.n1kv.vsm.NetconfHelper;
 import com.cloud.utils.component.Adapters;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria;
@@ -204,13 +204,13 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     protected HighAvailabilityManager        _haMgr;
     @Inject 
     protected StorageService                 _storageSvr;
-    @Inject(adapter = Discoverer.class)
+    @com.cloud.utils.component.Inject(adapter = Discoverer.class)
     protected Adapters<? extends Discoverer> _discoverers;
     @Inject
     protected ClusterManager                 _clusterMgr;
     @Inject
     protected StoragePoolHostDao             _storagePoolHostDao;
-    @Inject(adapter = PodAllocator.class)
+    @com.cloud.utils.component.Inject(adapter = PodAllocator.class)
     protected Adapters<PodAllocator> _podAllocators = null;
     @Inject
     protected VMTemplateDao  _templateDao;

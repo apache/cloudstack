@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.TreeSet;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -76,7 +77,6 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.Adapters;
-import com.cloud.utils.component.Inject;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
@@ -106,9 +106,9 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
     @Inject protected AccountManager _accountMgr;
     @Inject protected StorageManager _storageMgr;
 
-    @Inject(adapter=StoragePoolAllocator.class)
+    @com.cloud.utils.component.Inject(adapter=StoragePoolAllocator.class)
     protected Adapters<StoragePoolAllocator> _storagePoolAllocators;
-    @Inject(adapter=HostAllocator.class)
+    @com.cloud.utils.component.Inject(adapter=HostAllocator.class)
     protected Adapters<HostAllocator> _hostAllocators;
     protected String _allocationAlgorithm = "random";
 

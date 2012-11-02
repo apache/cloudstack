@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -48,7 +49,6 @@ import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ServerResource;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.nio.HandlerFactory;
 import com.cloud.utils.nio.Link;
 import com.cloud.utils.nio.NioClient;

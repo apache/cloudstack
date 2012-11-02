@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -66,7 +67,6 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.Inject;
 import com.vmware.vim25.ClusterDasConfigInfo;
 import com.vmware.vim25.ManagedObjectReference;
 

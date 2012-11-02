@@ -27,6 +27,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -67,7 +68,6 @@ import com.cloud.user.AccountManager;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
@@ -120,9 +120,9 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
     @Inject
     ClusterDetailsDao _clusterDetailsDao;
     long _serverId;
-    @Inject(adapter = Investigator.class)
+    @com.cloud.utils.component.Inject(adapter = Investigator.class)
     Adapters<Investigator> _investigators;
-    @Inject(adapter = FenceBuilder.class)
+    @com.cloud.utils.component.Inject(adapter = FenceBuilder.class)
     Adapters<FenceBuilder> _fenceBuilders;
     @Inject
     AgentManager _agentMgr;

@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.StringTokenizer;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import netapp.manage.NaAPIFailedException;
@@ -45,7 +46,6 @@ import com.cloud.exception.ResourceInUseException;
 import com.cloud.netapp.dao.LunDao;
 import com.cloud.netapp.dao.PoolDao;
 import com.cloud.netapp.dao.VolumeDao;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;

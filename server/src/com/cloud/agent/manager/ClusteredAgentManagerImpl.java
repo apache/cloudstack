@@ -38,6 +38,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
@@ -79,7 +80,6 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteria2;
@@ -114,7 +114,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     @Inject
     protected HostTransferMapDao _hostTransferDao;
     
-    @Inject(adapter = AgentLoadBalancerPlanner.class)
+    @com.cloud.utils.component.Inject(adapter = AgentLoadBalancerPlanner.class)
     protected Adapters<AgentLoadBalancerPlanner> _lbPlanners;
     
     @Inject

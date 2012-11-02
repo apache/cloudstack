@@ -84,12 +84,8 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     protected SearchBuilder<VMInstanceVO> NetworkTypeSearch;
     protected GenericSearchBuilder<VMInstanceVO, String> DistinctHostNameSearch;
     
-/*    
     ResourceTagsDaoImpl _tagsDao = ComponentLocator.inject(ResourceTagsDaoImpl.class);
     NicDao _nicDao = ComponentLocator.inject(NicDaoImpl.class);
-*/
-    @Inject ResourceTagsDaoImpl _tagsDao;
-    @Inject NicDao _nicDao;
     
     protected final Attribute _updateTimeAttr;
     
@@ -106,10 +102,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     		                                                            " AND host.pod_id = ? AND host.cluster_id = ? AND host.type = 'Routing' " +
     		                                                            " GROUP BY host.id ORDER BY 2 ASC ";
 
-/*    
     protected final HostDaoImpl _hostDao = ComponentLocator.inject(HostDaoImpl.class);
- */
-    @Inject protected HostDao _hostDao;
     
     protected VMInstanceDaoImpl() {
 

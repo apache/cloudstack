@@ -19,6 +19,7 @@ package com.cloud.network.guru;
 import java.util.List;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -39,7 +40,6 @@ import com.cloud.network.ovs.OvsTunnelManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
-import com.cloud.utils.component.Inject;
 import com.cloud.vm.Nic.ReservationStrategy;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;

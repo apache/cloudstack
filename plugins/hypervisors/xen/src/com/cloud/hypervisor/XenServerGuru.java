@@ -17,6 +17,7 @@
 package com.cloud.hypervisor;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.springframework.stereotype.Component;
 
@@ -27,7 +28,6 @@ import com.cloud.storage.Storage;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
-import com.cloud.utils.component.Inject;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 

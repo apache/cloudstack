@@ -17,6 +17,7 @@
 package com.cloud.network.guru;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -40,7 +41,6 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.net.Ip4Address;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.NicProfile;

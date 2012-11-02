@@ -25,7 +25,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Volume;
 import com.cloud.storage.dao.VMTemplateZoneDao;
-import com.cloud.utils.component.Inject;
 
 public class SecondaryStorageManagerImpl implements SecondaryStorageManager {
 	public DataStore getStore(Volume volume) {

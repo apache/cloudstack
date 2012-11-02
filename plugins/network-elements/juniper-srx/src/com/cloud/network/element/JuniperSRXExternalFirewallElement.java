@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -82,7 +83,6 @@ import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.resource.ServerResource;
 import com.cloud.server.api.response.ExternalFirewallResponse;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;

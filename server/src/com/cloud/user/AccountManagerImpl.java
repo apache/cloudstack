@@ -34,6 +34,7 @@ import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.commons.codec.binary.Base64;
@@ -118,7 +119,6 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -230,7 +230,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
     UserVO _systemUser;
     AccountVO _systemAccount;
-    @Inject(adapter = SecurityChecker.class)
+    @com.cloud.utils.component.Inject(adapter = SecurityChecker.class)
     Adapters<SecurityChecker> _securityCheckers;
     int _cleanupInterval;
 

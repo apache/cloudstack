@@ -28,6 +28,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.mail.Authenticator;
 import javax.mail.Message.RecipientType;
 import javax.mail.MessagingException;
@@ -73,7 +74,6 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria;
 import com.sun.mail.smtp.SMTPMessage;

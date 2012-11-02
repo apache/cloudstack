@@ -32,6 +32,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.naming.Context;
 import javax.naming.NamingException;
@@ -154,7 +155,6 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
@@ -211,7 +211,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     ClusterDao _clusterDao;
     @Inject
     AlertManager _alertMgr;
-    @Inject(adapter = SecurityChecker.class)
+    @com.cloud.utils.component.Inject(adapter = SecurityChecker.class)
     Adapters<SecurityChecker> _secChecker;
     @Inject
     CapacityDao _capacityDao;

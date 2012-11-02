@@ -24,6 +24,7 @@ import java.util.Map;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.deploy.DeploymentPlan;

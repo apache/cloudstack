@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -113,7 +114,6 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteria2;
@@ -173,7 +173,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     private int _mgmt_port = 8250;
 
     private String _name;
-    @Inject(adapter = SecondaryStorageVmAllocator.class)
+    @com.cloud.utils.component.Inject(adapter = SecondaryStorageVmAllocator.class)
     private Adapters<SecondaryStorageVmAllocator> _ssVmAllocators;
 
     @Inject

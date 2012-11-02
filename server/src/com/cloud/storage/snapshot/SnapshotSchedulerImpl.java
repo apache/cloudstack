@@ -24,6 +24,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -54,7 +55,6 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.TestClock;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;

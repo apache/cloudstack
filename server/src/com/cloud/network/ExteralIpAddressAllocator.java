@@ -26,6 +26,7 @@ import java.net.URLConnection;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -36,7 +37,6 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component

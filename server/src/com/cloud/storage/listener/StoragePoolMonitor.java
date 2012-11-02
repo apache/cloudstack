@@ -39,7 +39,6 @@ import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.Inject;
 
 public class StoragePoolMonitor implements Listener {
     private static final Logger s_logger = Logger.getLogger(StoragePoolMonitor.class);

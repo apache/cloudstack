@@ -38,6 +38,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -189,7 +190,6 @@ import com.cloud.utils.AnnotationHelper;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Adapters;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -272,9 +272,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     RemoteAccessVpnService _vpnMgr;
     @Inject
     PodVlanMapDao _podVlanMapDao;
-    @Inject(adapter = NetworkGuru.class)
+    @com.cloud.utils.component.Inject(adapter = NetworkGuru.class)
     Adapters<NetworkGuru> _networkGurus;
-    @Inject(adapter = NetworkElement.class)
+    @com.cloud.utils.component.Inject(adapter = NetworkElement.class)
     Adapters<NetworkElement> _networkElements;
     @Inject
     NetworkDomainDao _networkDomainDao;

@@ -34,6 +34,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -142,7 +143,6 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
@@ -230,10 +230,10 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     @Inject
     protected NetworkDao _networkDao;
 
-    @Inject(adapter = DeploymentPlanner.class)
+    @com.cloud.utils.component.Inject(adapter = DeploymentPlanner.class)
     protected Adapters<DeploymentPlanner> _planners;
 
-    @Inject(adapter = HostAllocator.class)
+    @com.cloud.utils.component.Inject(adapter = HostAllocator.class)
     protected Adapters<HostAllocator> _hostAllocators;
 
     @Inject

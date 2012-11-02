@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -54,7 +55,6 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.utils.component.Inject;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.UserVmManager;

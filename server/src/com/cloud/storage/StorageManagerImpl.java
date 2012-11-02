@@ -42,6 +42,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -178,7 +179,6 @@ import com.cloud.utils.Ternary;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -330,9 +330,9 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
     @Inject
     protected ResourceTagDao _resourceTagDao;
 
-    @Inject(adapter = StoragePoolAllocator.class)
+    @com.cloud.utils.component.Inject(adapter = StoragePoolAllocator.class)
     protected Adapters<StoragePoolAllocator> _storagePoolAllocators;
-    @Inject(adapter = StoragePoolDiscoverer.class)
+    @com.cloud.utils.component.Inject(adapter = StoragePoolDiscoverer.class)
     protected Adapters<StoragePoolDiscoverer> _discoverers;
 
 

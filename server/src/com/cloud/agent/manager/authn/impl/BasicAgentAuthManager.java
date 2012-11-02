@@ -19,6 +19,7 @@ package com.cloud.agent.manager.authn.impl;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -32,7 +33,6 @@ import com.cloud.agent.manager.authn.AgentAuthorizer;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.ConnectionException;
 import com.cloud.host.dao.HostDao;
-import com.cloud.utils.component.Inject;
 
 @Component
 @Local(value={AgentAuthorizer.class, StartupCommandProcessor.class})

@@ -18,6 +18,7 @@ package com.cloud.baremetal;
 
 import java.util.Map;
 
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.agent.AgentManager;
@@ -26,7 +27,6 @@ import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.host.Host;
 import com.cloud.host.dao.HostDao;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.UserVmVO;

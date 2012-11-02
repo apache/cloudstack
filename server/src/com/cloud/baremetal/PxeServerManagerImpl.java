@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -41,7 +42,6 @@ import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.Adapters;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.UserVmVO;
@@ -58,7 +58,7 @@ public class PxeServerManagerImpl implements PxeServerManager, ResourceStateAdap
 	@Inject AgentManager _agentMgr;
 	@Inject ExternalDhcpManager exDhcpMgr;
 	@Inject ResourceManager _resourceMgr;
-	@Inject(adapter=PxeServerService.class)
+	@com.cloud.utils.component.Inject(adapter=PxeServerService.class)
 	protected Adapters<PxeServerService> _services;
 	
 	@Override

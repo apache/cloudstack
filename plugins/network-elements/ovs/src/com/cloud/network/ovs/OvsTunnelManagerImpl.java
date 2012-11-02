@@ -23,6 +23,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
@@ -50,7 +51,6 @@ import com.cloud.network.ovs.dao.OvsTunnelInterfaceDao;
 import com.cloud.network.ovs.dao.OvsTunnelInterfaceVO;
 import com.cloud.network.ovs.dao.OvsTunnelNetworkDao;
 import com.cloud.network.ovs.dao.OvsTunnelNetworkVO;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;

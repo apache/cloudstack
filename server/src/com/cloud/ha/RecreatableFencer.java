@@ -19,6 +19,7 @@ package com.cloud.ha;
 import java.util.List;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -28,7 +29,6 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.utils.component.Inject;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 

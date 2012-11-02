@@ -20,12 +20,12 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.utils.component.Inject;
 
 @Component
 @Local(value={ClusterFenceManager.class})

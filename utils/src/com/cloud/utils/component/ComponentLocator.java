@@ -37,6 +37,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.management.InstanceAlreadyExistsException;
 import javax.management.MBeanRegistrationException;
 import javax.management.MalformedObjectNameException;
@@ -484,8 +485,28 @@ public class ComponentLocator implements ComponentLocatorMBean {
             for (Field field : fields) {
                 Inject inject = field.getAnnotation(Inject.class);
                 if (inject == null) {
+                	com.cloud.utils.component.Inject oldInject = field.getAnnotation(com.cloud.utils.component.Inject.class);
+                	if(inject != null) {
+                        Class<?> fc = field.getType();
+                        Object instance = null;
+                        if (Manager.class.isAssignableFrom(fc)) {
+                            s_logger.trace("Manager: " + fc.getName());
+                            instance = locator.getManager(fc);
+                        } else if (GenericDao.class.isAssignableFrom(fc)) {
+                            s_logger.trace("Dao:" + fc.getName());
+                            instance = locator.getDao((Class<? extends GenericDao<?, ? extends Serializable>>)fc);
+                        } else if (Adapters.class.isAssignableFrom(fc)) {
+                            s_logger.trace("Adapter" + fc.getName());
+                            instance = locator.getAdapters(oldInject.adapter());
+                        } else {
+                            s_logger.trace("Other:" + fc.getName());
+                            instance = locator.getManager(fc);
+                        }
+                	}
+                	
                     continue;
                 }
+                
                 Class<?> fc = field.getType();
                 Object instance = null;
                 if (Manager.class.isAssignableFrom(fc)) {
@@ -494,9 +515,6 @@ public class ComponentLocator implements ComponentLocatorMBean {
                 } else if (GenericDao.class.isAssignableFrom(fc)) {
                     s_logger.trace("Dao:" + fc.getName());
                     instance = locator.getDao((Class<? extends GenericDao<?, ? extends Serializable>>)fc);
-                } else if (Adapters.class.isAssignableFrom(fc)) {
-                    s_logger.trace("Adapter" + fc.getName());
-                    instance = locator.getAdapters(inject.adapter());
                 } else {
                     s_logger.trace("Other:" + fc.getName());
                     instance = locator.getManager(fc);

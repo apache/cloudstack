@@ -17,6 +17,7 @@
 package com.cloud.acl;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.springframework.stereotype.Component;
 
@@ -39,7 +40,6 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.utils.component.Inject;
 
 @Component
 @Local(value=SecurityChecker.class)
