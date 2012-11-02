@@ -64,3 +64,4 @@ awsapi/modules/*
 .settings/
 db.properties.override
 awsapi/overlays/
+*.egg-info/
