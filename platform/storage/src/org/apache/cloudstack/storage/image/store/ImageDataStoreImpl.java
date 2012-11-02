@@ -20,9 +20,30 @@ package org.apache.cloudstack.storage.image.store;
 
 import org.apache.cloudstack.storage.image.Template;
 
-public interface ImageDataStore {
-	Template registerTemplate(long templateId);
-	String grantAccess(long templateId, long endPointId);
-	boolean revokeAccess(long templateId, long endPointId);
-	boolean deleteTemplate(long templateId);
+public class ImageDataStoreImpl implements ImageDataStore {
+
+	@Override
+	public Template registerTemplate(long templateId) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String grantAccess(long templateId, long endPointId) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public boolean revokeAccess(long templateId, long endPointId) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean deleteTemplate(long templateId) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
 }

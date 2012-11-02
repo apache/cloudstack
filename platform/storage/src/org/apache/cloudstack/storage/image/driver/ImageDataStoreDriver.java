@@ -16,13 +16,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.image.store;
+package org.apache.cloudstack.storage.image.driver;
 
 import org.apache.cloudstack.storage.image.Template;
 
-public interface ImageDataStore {
-	Template registerTemplate(long templateId);
+public interface ImageDataStoreDriver {
+	boolean registerTemplate(Template template);
 	String grantAccess(long templateId, long endPointId);
 	boolean revokeAccess(long templateId, long endPointId);
-	boolean deleteTemplate(long templateId);
+	boolean deleteTemplate(Template template);
 }
