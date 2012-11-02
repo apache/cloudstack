@@ -956,7 +956,8 @@
 										dataType: "json",
 										async: true,
 										success: function(json) {								  
-											var jsonObj = json.listnetworksresponse.network[0];   
+											var jsonObj = json.listnetworksresponse.network[0];  
+                      addExtraPropertiesToGuestNetworkObject(jsonObj);												
 											args.response.success(
 												{
 													actionFilter: cloudStack.actionFilter.guestNetwork,

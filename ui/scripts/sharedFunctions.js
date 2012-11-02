@@ -454,6 +454,29 @@ function listViewDataProvider(args, data) {
 	});	
 }
 
+//used by infrastruct page and network page	
+var addExtraPropertiesToGuestNetworkObject = function(jsonObj) {  
+	jsonObj.networkdomaintext = jsonObj.networkdomain;
+	jsonObj.networkofferingidText = jsonObj.networkofferingid;
+
+	if(jsonObj.acltype == "Domain") {
+		if(jsonObj.domainid == rootAccountId)
+			jsonObj.scope = "All";
+		else
+			jsonObj.scope = "Domain (" + jsonObj.domain + ")";
+	}
+	else if (jsonObj.acltype == "Account"){
+		if(jsonObj.project != null)
+			jsonObj.scope = "Account (" + jsonObj.domain + ", " + jsonObj.project + ")";
+		else
+			jsonObj.scope = "Account (" + jsonObj.domain + ", " + jsonObj.account + ")";
+	}
+
+	if(jsonObj.vlan == null && jsonObj.broadcasturi != null) {
+		jsonObj.vlan = jsonObj.broadcasturi.replace("vlan://", "");   	
+	}
+}	
+
 //find service object in network object
 function ipFindNetworkServiceByName(pName, networkObj) {    
     if(networkObj == null)

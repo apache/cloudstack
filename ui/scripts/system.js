@@ -10406,28 +10406,6 @@
 		}
   }
 	
-	var addExtraPropertiesToGuestNetworkObject = function(jsonObj) {  
-		jsonObj.networkdomaintext = jsonObj.networkdomain;
-		jsonObj.networkofferingidText = jsonObj.networkofferingid;
-
-		if(jsonObj.acltype == "Domain") {
-			if(jsonObj.domainid == rootAccountId)
-				jsonObj.scope = "All";
-			else
-				jsonObj.scope = "Domain (" + jsonObj.domain + ")";
-		}
-		else if (jsonObj.acltype == "Account"){
-			if(jsonObj.project != null)
-				jsonObj.scope = "Account (" + jsonObj.domain + ", " + jsonObj.project + ")";
-			else
-				jsonObj.scope = "Account (" + jsonObj.domain + ", " + jsonObj.account + ")";
-		}
-
-		if(jsonObj.vlan == null && jsonObj.broadcasturi != null) {
-			jsonObj.vlan = jsonObj.broadcasturi.replace("vlan://", "");   	
-		}
-  }	
-	
 	var addExtraPropertiesToRouterInstanceObject = function(jsonObj) {  		
 		if(jsonObj.isredundantrouter == true)
 			jsonObj["redundantRouterState"] = jsonObj.redundantstate;
