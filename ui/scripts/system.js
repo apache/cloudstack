@@ -207,10 +207,19 @@
             $.ajax({
               url: createURL('listClusters'),
               success: function(json) {
-                dataFns.hostCount($.extend(data, {
+                /*
+								dataFns.hostCount($.extend(data, {
                   clusterCount: json.listclustersresponse.count ?
                     json.listclustersresponse.count : 0
                 }));
+								*/
+								
+								//uncomment the 4 lines above and remove the following 4 lines after "count" in listHosts API is fixed.
+								dataFns.primaryStorageCount($.extend(data, {
+                  clusterCount: json.listclustersresponse.count ?
+                    json.listclustersresponse.count : 0
+                }));
+								
               }
             });
           },
@@ -234,10 +243,19 @@
             $.ajax({
               url: createURL('listStoragePools'),
               success: function(json) {
-                dataFns.secondaryStorageCount($.extend(data, {
+                /*
+								dataFns.secondaryStorageCount($.extend(data, {
                   primaryStorageCount: json.liststoragepoolsresponse.count ?
                     json.liststoragepoolsresponse.count : 0
                 }));
+								*/
+								
+								//uncomment the 4 lines above and remove the following 4 lines after "count" in listHosts API is fixed.
+								dataFns.systemVmCount($.extend(data, {
+                  primaryStorageCount: json.liststoragepoolsresponse.count ?
+                    json.liststoragepoolsresponse.count : 0
+                }));
+								
               }
             });
           },
@@ -337,7 +355,9 @@
           });
         };
        
-        dataFns.zoneCount({});
+        //dataFns.zoneCount({});  
+				dataFns.podCount({});     //uncomment the line above and remove this line after "count" in listZones API is fixed.
+				
       }
     },
 
