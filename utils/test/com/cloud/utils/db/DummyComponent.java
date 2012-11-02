@@ -16,29 +16,12 @@
 // under the License.
 package com.cloud.utils.db;
 
-
-import javax.annotation.PostConstruct;
-import javax.inject.Inject;
-
-import junit.framework.Assert;
-
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 @Component
-@DB
-public class DbAnnotatedBase {
-    private static final Logger s_logger = Logger.getLogger(DbAnnotatedBase.class);
+public class DummyComponent {
 
-    @Inject DummyComponent _dummy;
-    
-    @PostConstruct
-    public void initTest() {
-    	Assert.assertTrue(true);
-    }
-    
-    public void MethodWithClassDbAnnotated() {
-    	s_logger.info("called");
-    	_dummy.sayHello();
-    }
+	public void sayHello() {
+		System.out.println("Hello, world");
+	}
 }
