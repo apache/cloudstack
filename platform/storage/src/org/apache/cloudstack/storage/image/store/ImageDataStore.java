@@ -19,10 +19,13 @@
 package org.apache.cloudstack.storage.image.store;
 
 import org.apache.cloudstack.storage.image.Template;
+import org.apache.cloudstack.storage.image.downloader.ImageDownloader;
 
 public interface ImageDataStore {
 	Template registerTemplate(long templateId);
 	String grantAccess(long templateId, long endPointId);
 	boolean revokeAccess(long templateId, long endPointId);
 	boolean deleteTemplate(long templateId);
+	boolean needDownloadToCacheStorage();
+	ImageDownloader getImageDownloader();
 }

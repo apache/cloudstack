@@ -18,14 +18,37 @@
  */
 package org.apache.cloudstack.storage.image.store;
 
+import javax.inject.Inject;
+
 import org.apache.cloudstack.storage.image.Template;
+import org.apache.cloudstack.storage.image.db.ImageDataDao;
+import org.apache.cloudstack.storage.image.db.ImageDataVO;
+import org.apache.cloudstack.storage.image.downloader.ImageDownloader;
+import org.apache.cloudstack.storage.image.driver.ImageDataStoreDriver;
 
 public class ImageDataStoreImpl implements ImageDataStore {
-
+	@Inject
+	ImageDataDao imageDao;
+	ImageDataStoreDriver driver;
+	ImageDownloader downloader;
+	boolean needDownloadToCacheStorage = false;
+	
+	
+	public ImageDataStoreImpl(ImageDataStoreDriver driver, boolean needDownloadToCacheStorage, ImageDownloader downloader) {
+		this.driver = driver;
+		this.needDownloadToCacheStorage = needDownloadToCacheStorage;
+		this.downloader = downloader;
+	}
+	
 	@Override
 	public Template registerTemplate(long templateId) {
-		// TODO Auto-generated method stub
-		return null;
+		ImageDataVO idv = imageDao.findById(templateId);
+		Template template = new Template(this, idv);
+		if (driver.registerTemplate(template)) {
+			return template;
+		} else {
+			return null;
+		}
 	}
 
 	@Override
@@ -44,6 +67,17 @@ public class ImageDataStoreImpl implements ImageDataStore {
 	public boolean deleteTemplate(long templateId) {
 		// TODO Auto-generated method stub
 		return false;
+	}
+
+	@Override
+	public boolean needDownloadToCacheStorage() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public ImageDownloader getImageDownloader() {
+		return this.downloader;
 	}
 
 }

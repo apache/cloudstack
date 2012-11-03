@@ -28,4 +28,11 @@ public class Template {
 		this.dataStore = dataStore;
 		this.imageVO = imageVO;
 	}
+	
+	public ImageDataStore getImageDataStore() {
+		return this.dataStore;
+	}
+	
+	public String getTemplate
+	
 }

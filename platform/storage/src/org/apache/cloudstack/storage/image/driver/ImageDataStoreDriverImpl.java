@@ -24,8 +24,8 @@ public class ImageDataStoreDriverImpl implements ImageDataStoreDriver {
 
 	@Override
 	public boolean registerTemplate(Template template) {
-		// TODO Auto-generated method stub
-		return false;
+		//TODO: check the availability of template 
+		return true;
 	}
 
 	@Override

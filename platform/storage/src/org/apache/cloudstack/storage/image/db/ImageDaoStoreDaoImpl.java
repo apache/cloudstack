@@ -16,8 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.platform.subsystem.api.storage;
+package org.apache.cloudstack.storage.image.db;
 
-public interface Template extends DataObject {
+import com.cloud.utils.db.GenericDaoBase;
+
+public class ImageDaoStoreDaoImpl extends GenericDaoBase<ImageDataStoreVO, Long> implements ImageDaoStoreDao {
 
 }

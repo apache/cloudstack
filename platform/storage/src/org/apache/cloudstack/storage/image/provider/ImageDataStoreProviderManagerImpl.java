@@ -16,26 +16,22 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.image.manager;
+package org.apache.cloudstack.storage.image.provider;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.storage.datastore.db.DataStoreVO;
-import org.apache.cloudstack.storage.image.db.ImageDaoStoreDao;
-import org.apache.cloudstack.storage.image.db.ImageDataDao;
-import org.apache.cloudstack.storage.image.db.ImageDataStoreVO;
-import org.apache.cloudstack.storage.image.store.ImageDataStore;
+import org.apache.cloudstack.storage.image.db.ImageDataStoreProviderDao;
 
-public class ImageDataStoreManagerImpl implements ImageDataStoreManager {
+
+public class ImageDataStoreProviderManagerImpl implements ImageDataStoreProviderManager {
+
 	@Inject
-	ImageDaoStoreDao dataStoreDao;
-	@Inject
-	ImageDataDao imageDataDao;
+	ImageDataStoreProviderDao providerDao;
 	@Override
-	public ImageDataStore getImageDataStore(long dataStoreId) {
-		ImageDataStoreVO dataStore = dataStoreDao.findById(dataStoreId);
-		// TODO Auto-generated method stub
+	public ImageDataStoreProvider getProvider(long providerId) {
+		
 		return null;
 	}
+
 
 }

@@ -19,7 +19,7 @@
 package org.apache.cloudstack.storage.image;
 
 public interface ImageService {
-	long registerTemplate(String templateUrl, long accountId);
+	boolean registerTemplate(long templateId, long imageStoreId);
 	boolean deleteTemplate(long templateId);
 	long registerIso(String isoUrl, long accountId);
 	boolean deleteIso(long isoId);
