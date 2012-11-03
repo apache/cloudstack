@@ -32,7 +32,7 @@
       Anyone contributing to CloudStack should be on this mailing list.</para>
     <para>You can also report bugs in CloudStack using the <ulink
         url="https://issues.apache.org/jira/secure/CreateIssue!default.jspa">Apache Defect Tracking
-        System</ulink></para>
+        System</ulink>.</para>
     <para>To posts to the lists, you'll need to be subscribed. See the <ulink
         url="http://incubator.apache.org/cloudstack/mailing-lists.html">CloudStack Web site</ulink>
       for instructions.</para>
@@ -92,11 +92,11 @@
                   <tbody>
                     <row>
                       <entry><para>Name</para></entry>
-                      <entry><para>systemvm-vmware-3.0.5</para></entry>
+                      <entry><para>systemvm-vmware-3.0.0</para></entry>
                     </row>
                     <row>
                       <entry><para>Description</para></entry>
-                      <entry><para>systemvm-vmware-3.0.5</para></entry>
+                      <entry><para>systemvm-vmware-3.0.0</para></entry>
                     </row>
                     <row>
                       <entry><para>URL</para></entry>
@@ -560,8 +560,8 @@
                     </row>
                     <row>
                       <entry><para>VMware</para></entry>
-                      <entry><para>Name: systemvm-vmware-3.0.5</para>
-                        <para>Description: systemvm-vmware-3.0.5</para>
+                      <entry><para>Name: systemvm-vmware-3.0.0</para>
+                        <para>Description: systemvm-vmware-3.0.0</para>
                         <para>URL:
                           http://download.cloud.com/templates/burbank/burbank-systemvm-08012012.ova</para>
                         <para>Zone: Choose the zone where this hypervisor is used</para>
