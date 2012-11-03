@@ -876,6 +876,12 @@
           }
         });
 
+         $wizard.find('div.data-disk-offering div.custom-size input[type=text]').bind('change',function() {
+                var old =   $wizard.find('div.data-disk-offering div.custom-size input[type=text]').val();
+                $wizard.find('div.data-disk-offering span.custom-disk-size').html(_s(old));
+         });
+
+
         return $wizard.dialog({
           title: _l('label.vm.add'),
           width: 800,
