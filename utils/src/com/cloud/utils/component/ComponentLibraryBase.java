@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.ComponentLocator.ComponentInfo;
+import com.cloud.utils.component.LegacyComponentLocator.ComponentInfo;
 import com.cloud.utils.db.GenericDao;
 
 public abstract class ComponentLibraryBase implements ComponentLibrary {

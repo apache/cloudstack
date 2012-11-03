@@ -45,7 +45,7 @@ public class ComponentContext implements ApplicationContextAware {
         return s_appContext;  
     }  
     
-    public static  <T> T getCompanent(String name) {
+    public static <T> T getCompanent(String name) {
     	assert(s_appContext != null);
     	return (T)s_appContext.getBean(name);
     }

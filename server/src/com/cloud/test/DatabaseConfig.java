@@ -54,7 +54,7 @@ import com.cloud.service.dao.ServiceOfferingDaoImpl;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.dao.DiskOfferingDaoImpl;
 import com.cloud.utils.PropertiesUtil;
-import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.component.LegacyComponentLocator;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.net.NfsUtils;
@@ -76,10 +76,10 @@ public class DatabaseConfig {
     private static HashSet<String> fieldNames = new HashSet<String>();
     
     // Maintain an IPRangeConfig object to handle IP related logic
-    private final IPRangeConfig iprc = ComponentLocator.inject(IPRangeConfig.class);
+    private final IPRangeConfig iprc = LegacyComponentLocator.inject(IPRangeConfig.class);
     
     // Maintain a PodZoneConfig object to handle Pod/Zone related logic
-    private final PodZoneConfig pzc = ComponentLocator.inject(PodZoneConfig.class);
+    private final PodZoneConfig pzc = LegacyComponentLocator.inject(PodZoneConfig.class);
     
     // Global variables to store network.throttling.rate and multicast.throttling.rate from the configuration table
     // Will be changed from null to a non-null value if the value existed in the configuration table
@@ -359,7 +359,7 @@ public class DatabaseConfig {
             s_logger.error("error starting database config, missing initial data file");
         } else {
             try {
-                DatabaseConfig config = ComponentLocator.inject(DatabaseConfig.class, args[0]);
+                DatabaseConfig config = LegacyComponentLocator.inject(DatabaseConfig.class, args[0]);
                 config.doVersionCheck();
                 config.doConfig();
                 System.exit(0);
@@ -918,7 +918,7 @@ public class DatabaseConfig {
         }
         
         ServiceOfferingVO serviceOffering = new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, ha, displayText, useLocalStorage, false, null, false, null, false);
-        ServiceOfferingDaoImpl dao = ComponentLocator.inject(ServiceOfferingDaoImpl.class);
+        ServiceOfferingDaoImpl dao = LegacyComponentLocator.inject(ServiceOfferingDaoImpl.class);
         try {
             dao.persist(serviceOffering);
         } catch (Exception e) {
@@ -967,7 +967,7 @@ public class DatabaseConfig {
         }
         DiskOfferingVO diskOffering = new DiskOfferingVO(domainId, name, displayText, diskSpace , tags, false);
         diskOffering.setUseLocalStorage(local);
-        DiskOfferingDaoImpl offering = ComponentLocator.inject(DiskOfferingDaoImpl.class);
+        DiskOfferingDaoImpl offering = LegacyComponentLocator.inject(DiskOfferingDaoImpl.class);
         try {
             offering.persist(diskOffering);
         } catch (Exception e) {

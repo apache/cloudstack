@@ -27,3 +27,4 @@ import java.lang.annotation.Target;
 public @interface Inject {
     Class<? extends Adapter> adapter() default Adapter.class;
 }
+

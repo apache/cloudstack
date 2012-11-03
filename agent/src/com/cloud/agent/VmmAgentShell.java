@@ -46,7 +46,7 @@ import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.backoff.BackoffAlgorithm;
 import com.cloud.utils.backoff.impl.ConstantTimeBackoff;
 import com.cloud.utils.component.Adapters;
-import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.component.LegacyComponentLocator;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.MacAddress;
 import com.cloud.utils.nio.HandlerFactory;
@@ -317,7 +317,7 @@ public class VmmAgentShell implements IAgentShell, HandlerFactory {
     
     private void init(String[] args) throws ConfigurationException{
     	
-        final ComponentLocator locator = ComponentLocator.getLocator("agent");
+        final LegacyComponentLocator locator = LegacyComponentLocator.getLocator("agent");
         
         final Class<?> c = this.getClass();
         _version = c.getPackage().getImplementationVersion();

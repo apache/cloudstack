@@ -19,7 +19,7 @@ package com.cloud.utils.component;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.utils.component.ComponentLocator.ComponentInfo;
+import com.cloud.utils.component.LegacyComponentLocator.ComponentInfo;
 import com.cloud.utils.db.GenericDao;
 
 /**

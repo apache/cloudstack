@@ -95,6 +95,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager{
     NetworkServiceMapDao  _ntwkSrvcDao;
     @Inject
     NetworkOfferingServiceMapDao  _ntwkOfferingSrvcDao;
+    
     @com.cloud.utils.component.Inject(adapter = NetworkElement.class)
     Adapters<NetworkElement> _networkElements;
     

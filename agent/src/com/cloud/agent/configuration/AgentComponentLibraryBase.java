@@ -21,7 +21,7 @@ import java.util.Map;
 
 import com.cloud.utils.component.Adapter;
 import com.cloud.utils.component.ComponentLibraryBase;
-import com.cloud.utils.component.ComponentLocator.ComponentInfo;
+import com.cloud.utils.component.LegacyComponentLocator.ComponentInfo;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.db.GenericDao;

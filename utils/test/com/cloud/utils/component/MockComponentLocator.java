@@ -33,7 +33,7 @@ import com.cloud.utils.db.GenericDao;
 /**
  * defining mock components.
  */
-public class MockComponentLocator extends ComponentLocator {
+public class MockComponentLocator extends LegacyComponentLocator {
     MockComponentLibrary _library = new MockComponentLibrary();
 
     public MockComponentLocator(String server) {

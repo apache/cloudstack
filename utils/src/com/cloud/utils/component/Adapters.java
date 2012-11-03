@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.utils.EnumerationImpl;
-import com.cloud.utils.component.ComponentLocator.ComponentInfo;
+import com.cloud.utils.component.LegacyComponentLocator.ComponentInfo;
 
 /**
  * the iterator even during dynamic reloading.
