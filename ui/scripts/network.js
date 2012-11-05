@@ -791,7 +791,7 @@
                 }
               });
 
-              var hiddenTabs = [];
+              var hiddenTabs = ['egressRules']; // Disable egress UI, for now
               
               if (!networkOfferingHavingELB) {
                 hiddenTabs.push("addloadBalancer");
