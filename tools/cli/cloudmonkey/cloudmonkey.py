@@ -51,6 +51,7 @@ class CloudStackShell(cmd.Cmd):
     intro = "☁ Apache CloudStack CLI. Type help or ? to list commands.\n"
     ruler = "-"
     config_file = os.path.expanduser('~/.cloudmonkey_config')
+    grammar = []
 
     # datastructure {'list': {'users': ['listUsers', [params], docstring]}}
     cache_verbs = {}
@@ -123,6 +124,9 @@ class CloudStackShell(cmd.Cmd):
 
     def emptyline(self):
         pass
+
+    def set_grammar(self, grammar):
+        self.grammar = grammar
 
     def print_shell(self, *args):
         try:
@@ -362,10 +366,12 @@ def main():
         grammar_handler.__name__ = 'do_' + rule
         setattr(self, grammar_handler.__name__, grammar_handler)
 
+    shell = CloudStackShell()
+    shell.set_grammar(grammar)
     if len(sys.argv) > 1:
-        CloudStackShell().onecmd(' '.join(sys.argv[1:]))
+        shell.onecmd(' '.join(sys.argv[1:]))
     else:
-        CloudStackShell().cmdloop()
+        shell.cmdloop()
 
 if __name__ == "__main__":
     main()
