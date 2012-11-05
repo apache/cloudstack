@@ -43,7 +43,7 @@
     <section id="configure-package-repository-deb">
         <title>DEB package repository</title>
         <para>You can add a DEB package repository to your apt sources with the following commands. Please note that only packages for Ubuntu 12.04 LTS (precise) are being built at this time.</para>
-        <para>Use your preferred editor and open (or create) <filename>/etc/apt/sources.list.d/cloudstack</filename>. Add the community provided repository to the file:</para>
+        <para>Use your preferred editor and open (or create) <filename>/etc/apt/sources.list.d/cloudstack.list</filename>. Add the community provided repository to the file:</para>
 <programlisting>deb http://cloudstack.apt-get.eu/ubuntu precise 4.0</programlisting>
         <para>We now have to add the public key to the trusted keys.</para>
         <programlisting language="Bash"><prompt>$</prompt> <command>wget</command> -O - http://cloudstack.apt-get.eu/release.asc|apt-key add -</programlisting>
