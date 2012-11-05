@@ -1,0 +1,71 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+  http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+<section id="vlan-allocation-eg">
+  <title>VLAN Allocation Example</title>
+  <para>VLANs are required for public and guest traffic. The following is an example of a VLAN
+    allocation scheme:</para>
+  <informaltable>
+    <tgroup cols="3" align="left" colsep="1" rowsep="1">
+      <thead>
+        <row>
+          <entry><para>VLAN IDs</para></entry>
+          <entry><para>Traffic type</para></entry>
+          <entry><para>Scope</para></entry>
+        </row>
+      </thead>
+      <tbody>
+        <row>
+          <entry><para>less than 500</para></entry>
+          <entry><para>Management traffic. Reserved for administrative purposes.</para></entry>
+          <entry><para>&PRODUCT; software can access this, hypervisors, system VMs.</para></entry>
+        </row>
+        <row>
+          <entry><para>500-599</para></entry>
+          <entry><para>VLAN carrying public traffic.</para></entry>
+          <entry><para>&PRODUCT; accounts.</para></entry>
+        </row>
+        <row>
+          <entry><para>600-799</para></entry>
+          <entry><para>VLANs carrying guest traffic.</para></entry>
+          <entry><para>&PRODUCT; accounts. Account-specific VLAN is chosen from this
+            pool.</para></entry>
+        </row>
+        <row>
+          <entry><para>800-899</para></entry>
+          <entry><para>VLANs carrying guest traffic.</para></entry>
+          <entry><para>&PRODUCT; accounts. Account-specific VLAN chosen by &PRODUCT; admin to assign
+              to that account.</para></entry>
+        </row>
+        <row>
+          <entry><para>900-999</para></entry>
+          <entry><para>VLAN carrying guest traffic</para></entry>
+          <entry><para>&PRODUCT; accounts. Can be scoped by project, domain, or all
+            accounts.</para></entry>
+        </row>
+        <row>
+          <entry><para>greater than 1000</para></entry>
+          <entry><para>Reserved for future use</para></entry>
+          <entry></entry>
+        </row>
+      </tbody>
+    </tgroup>
+  </informaltable>
+</section>

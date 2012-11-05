@@ -1,0 +1,113 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+  http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+<section id="basic-adv-networking">
+  <title>Basic and Advanced Networking</title>
+  <para>&PRODUCT; provides two styles of networking:.</para>
+  <formalpara>
+    <title>Basic</title>
+    <para>For AWS-style networking. Provides a single network where guest isolation can be provided
+      through layer-3 means such as security groups (IP address source filtering). </para>
+  </formalpara>
+  <formalpara>
+    <title>Advanced</title>
+    <para>For more sophisticated network topologies. This network model provides the most
+      flexibility in defining guest networks, but requires more configuration steps than basic
+      networking.</para>
+  </formalpara>
+  <para>Each zone has either basic or advanced networking. Once the choice of networking model for a
+    zone has been made and configured in &PRODUCT;, it can not be changed. A zone is either
+    basic or advanced for its entire lifetime.</para>
+  <para>The following table compares the networking features in the two networking models.</para>
+  <informaltable>
+    <tgroup cols="3" align="left" colsep="1" rowsep="1">
+      <thead>
+        <row>
+          <entry><para>Networking Feature</para></entry>
+          <entry><para>Basic Network</para></entry>
+          <entry><para>Advanced Network</para></entry>
+        </row>
+      </thead>
+      <tbody>
+        <row>
+          <entry><para>Number of networks</para></entry>
+          <entry><para>Single network</para></entry>
+          <entry><para>Multiple networks</para></entry>
+        </row>
+        <row>
+          <entry><para>Firewall type</para></entry>
+          <entry><para>Physical</para></entry>
+          <entry><para>Physical and Virtual</para></entry>
+        </row>
+        <row>
+          <entry><para>Load balancer</para></entry>
+          <entry><para>Physical</para></entry>
+          <entry><para>Physical and Virtual</para></entry>
+        </row>
+        <row>
+          <entry><para>Isolation type</para></entry>
+          <entry><para>Layer 3</para></entry>
+          <entry><para>Layer 2 and Layer 3</para></entry>
+        </row>
+        <row>
+          <entry><para>VPN support</para></entry>
+          <entry><para>No</para></entry>
+          <entry><para>Yes</para></entry>
+        </row>
+        <row>
+          <entry><para>Port forwarding</para></entry>
+          <entry><para>Physical</para></entry>
+          <entry><para>Physical and Virtual</para></entry>
+        </row>
+        <row>
+          <entry><para>1:1 NAT</para></entry>
+          <entry><para>Physical</para></entry>
+          <entry><para>Physical and Virtual</para></entry>
+        </row>
+        <row>
+          <entry><para>Source NAT</para></entry>
+          <entry><para>No</para></entry>
+          <entry><para>Physical and Virtual</para></entry>
+        </row>
+        <row>
+          <entry><para>Userdata</para></entry>
+          <entry><para>Yes</para></entry>
+          <entry><para>Yes</para></entry>
+        </row>
+        <row>
+          <entry><para>Network usage monitoring</para></entry>
+          <entry><para>sFlow / netFlow at physical router</para></entry>
+          <entry><para>Hypervisor and Virtual Router</para></entry>
+        </row>
+        <row>
+          <entry><para>DNS and DHCP</para></entry>
+          <entry><para>Yes</para></entry>
+          <entry><para>Yes</para></entry>
+        </row>
+      </tbody>
+    </tgroup>
+  </informaltable>
+  <para>The two types of networking may be in use in the same cloud. However, a given zone must use
+    either Basic Networking or Advanced Networking.</para>
+  <para>Different types of network traffic can be segmented on the same physical network. Guest
+    traffic can also be segmented by account. To isolate traffic, you can use separate VLANs. If you
+    are using separate VLANs on a single physical network, make sure the VLAN tags are in separate
+    numerical ranges.</para>
+</section>

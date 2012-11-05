@@ -1,0 +1,65 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+  http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+<section id="set-zone-vlan-run-vm-max">
+  <title>Setting Zone VLAN and Running VM Maximums</title>
+  <para>In the external networking case, every VM in a zone must have a unique guest IP address.
+    There are two variables that you need to consider in determining how to configure &PRODUCT;
+    to support this: how many Zone VLANs do you expect to have and how many VMs do you expect to
+    have running in the Zone at any one time.</para>
+  <para>Use the following table to determine how to configure &PRODUCT; for your
+    deployment.</para>
+  <informaltable>
+    <tgroup cols="3" align="left" colsep="1" rowsep="1">
+      <thead>
+        <row>
+          <entry><para>guest.vlan.bits</para></entry>
+          <entry><para>Maximum Running VMs per Zone</para></entry>
+          <entry><para>Maximum Zone VLANs</para></entry>
+        </row>
+      </thead>
+      <tbody>
+        <row>
+          <entry><para>12</para></entry>
+          <entry><para>4096</para></entry>
+          <entry><para>4094</para></entry>
+        </row>
+        <row>
+          <entry><para>11</para></entry>
+          <entry><para>8192</para></entry>
+          <entry><para>2048</para></entry>
+        </row>
+        <row>
+          <entry><para>10</para></entry>
+          <entry><para>16384</para></entry>
+          <entry><para>1024</para></entry>
+        </row>
+        <row>
+          <entry><para>10</para></entry>
+          <entry><para>32768</para></entry>
+          <entry><para>512</para></entry>
+        </row>
+      </tbody>
+    </tgroup>
+  </informaltable>
+  <para>Based on your deployment's needs, choose the appropriate value of guest.vlan.bits. Set it as
+    described in Edit the Global Configuration Settings (Optional) section and restart the
+    Management Server.</para>
+</section>

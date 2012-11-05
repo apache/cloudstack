@@ -1,0 +1,49 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+	or more contributor license agreements.  See the NOTICE file
+	distributed with this work for additional information
+	regarding copyright ownership.  The ASF licenses this file
+	to you under the Apache License, Version 2.0 (the
+	"License"); you may not use this file except in compliance
+	with the License.  You may obtain a copy of the License at
+	http://www.apache.org/licenses/LICENSE-2.0
+	Unless required by applicable law or agreed to in writing,
+	software distributed under the License is distributed on an
+	"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+	KIND, either express or implied.  See the License for the
+	specific language governing permissions and limitations
+	under the License.
+-->
+<section id="dell62xx-layer2">
+  <title>Dell 62xx</title>
+  <para>The following steps show how a Dell 62xx is configured for pod-level layer-2
+    switching.</para>
+  <orderedlist>
+    <listitem>
+      <para>Configure all the VLANs in the database.</para>
+      <programlisting>vlan database
+vlan 300-999
+exit</programlisting>
+    </listitem>
+    <listitem>
+      <para>VLAN 201 is used to route untagged private IP addresses for pod 1, and pod 1 is connected to this layer-2 switch.</para>
+      <programlisting>interface range ethernet all
+switchport mode general
+switchport general allowed vlan add 300-999 tagged
+exit</programlisting>
+    </listitem>
+  </orderedlist>
+  <para>The statements configure all Ethernet ports to function as follows:</para>
+  <itemizedlist>
+    <listitem>
+      <para>All ports are configured the same way.</para>
+    </listitem>
+    <listitem>
+      <para>All VLANs (300-999) are passed through all the ports of the layer-2 switch.</para>
+    </listitem>
+  </itemizedlist>
+</section>
