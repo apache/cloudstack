@@ -159,7 +159,7 @@
     <module>patches</module>
     <module>client</module>
     <module>test</module>
-    <module>platform</module>
+    <module>engine</module>
     <module>framework</module>
     <module>tools/devcloud</module>
   </modules>
