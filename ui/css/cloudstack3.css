@@ -9544,7 +9544,8 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 .tooltip-box {
   width: 15%;
   height: auto;
-  display: inline-block, padding: 4px;
+  display: inline-block;
+  padding: 4px;
   background: #FFFFFF;
   border: 1px solid #BEB8B8;
   padding: 10px;
