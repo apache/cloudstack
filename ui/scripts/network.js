@@ -4068,6 +4068,7 @@
                       var item = json.listroutersresponse.router[0];
                       
                       args.response.success({
+                        actionFilter: cloudStack.sections.system.routerActionFilter,
                         data:item
                       });
                     }

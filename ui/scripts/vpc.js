@@ -251,8 +251,27 @@
     routerDetailView: function() {
       return {
         title: 'VPC router details',
+        updateContext: function(args) {
+          var router;
+          
+          $.ajax({
+            url: createURL("listRouters&listAll=true&vpcid=" +args.context.vpc[0].id),
+            dataType: "json",
+            async: false,
+            success: function(json) {
+              router = json.listroutersresponse.router[0];
+            }
+          });
+          
+          return {
+            routers: [router]
+          };
+        },
+        actions: cloudStack.sections.system.subsections.virtualRouters
+          .listView.detailView.actions,
         tabs: {
-          routerDetails: cloudStack.sections.network.sections.vpc.listView.detailView.tabs.router
+          routerDetails: cloudStack.sections.network.sections.vpc
+            .listView.detailView.tabs.router
         }
       };
     },

@@ -10353,7 +10353,7 @@
     return allowedActions;
   }
 
-  var routerActionfilter = function(args) {
+  var routerActionfilter = cloudStack.sections.system.routerActionFilter = function(args) {
     var jsonObj = args.context.item;
     var allowedActions = [];
 
