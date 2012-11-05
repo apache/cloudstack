@@ -295,7 +295,7 @@ def main():
     self = CloudStackShell
     for rule in grammar:
         setattr(self, 'completions_' + rule, map(lambda x: x.replace(rule, ''),
-                                                 filter(lambda x: rule in x,
+                                                 filter(lambda x: x.startswith(rule),
                                                         completions)))
 
         def add_grammar(rule):
