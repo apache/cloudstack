@@ -283,10 +283,13 @@ class CloudStackShell(cmd.Cmd):
         separator = rline[1]
         params = rline[2]
 
+        if verb not in self.grammar:
+            return []
+
         autocompletions = []
         search_string = ""
 
-        if not verb in self.cache_verbs:
+        if verb not in self.cache_verbs:
             self.cache_verb_miss(verb)
 
         if separator != " ":   # Complete verb subjects
@@ -352,14 +355,15 @@ def main():
                 if not rule in self.cache_verbs:
                     self.cache_verb_miss(rule)
                 try:
-                    res = self.cache_verbs[rule][args.partition(" ")[0]]
+                    args_partition = args.partition(" ")
+                    res = self.cache_verbs[rule][args_partition[0]]
                 except KeyError, e:
                     self.print_shell("Error: no such command on %s" % rule)
                     return
                 if '--help' in args:
                     self.print_shell(res[2])
                     return
-                self.default(res[0])
+                self.default(res[0] + " " + args_partition[2])
             return grammar_closure
 
         grammar_handler = add_grammar(rule)
