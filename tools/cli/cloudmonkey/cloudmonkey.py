@@ -66,7 +66,7 @@ class CloudStackShell(cmd.Cmd):
             for key in self.config_fields.keys():
                 setattr(self, key, self.config_fields[key])
             config = self.write_config()
-            print "Set your api and secret keys using the set command!"
+            print("Set your api and secret keys, host, port etc. using the set command!")
 
         for key in self.config_fields.keys():
             setattr(self, key, config.get('CLI', key))
