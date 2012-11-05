@@ -762,6 +762,7 @@
             tabFilter: function(args) {
               var networkOfferingHavingELB = false;
               var hasNetworkACL = false;
+              var isVPC = false;
               
               $.ajax({
                 url: createURL("listNetworkOfferings&id=" + args.context.networks[0].networkofferingid),
@@ -769,6 +770,10 @@
                 async: false,
                 success: function(json) {
                   var networkoffering = json.listnetworkofferingsresponse.networkoffering[0];
+
+                  if (networkoffering.forvpc) {
+                    isVPC = true;
+                  }
 
                   $(networkoffering.service).each(function(){
                     var thisService = this;
@@ -792,7 +797,7 @@
                 hiddenTabs.push("addloadBalancer");
               }
 
-              if (!hasNetworkACL) {
+              if (!hasNetworkACL || isVPC) {
                 hiddenTabs.push('egressRules');
               }
               
@@ -3414,6 +3419,7 @@
                   }
                 })
               },
+              
               egressRules: {
                 title: 'label.egress.rule',
                 custom: function(args) {
