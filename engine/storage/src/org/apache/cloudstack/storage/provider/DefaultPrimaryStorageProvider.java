@@ -14,8 +14,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreConfigurator;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore.StoreType;
-import org.apache.cloudstack.storage.datastoreconfigurator.NfsDataStoreConfigurator;
-import org.apache.cloudstack.storage.datastoreconfigurator.XenNfsDataStoreConfigurator;
 
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
@@ -45,7 +43,7 @@ public class DefaultPrimaryStorageProvider implements StorageProvider {
 	
 	public DefaultPrimaryStorageProvider() {
 		Map<String, DataStoreConfigurator> dscs = new HashMap<String, DataStoreConfigurator>();
-		DataStoreConfigurator nfsdc = new XenNfsDataStoreConfigurator();
+		DataStoreConfigurator nfsdc = null;
 		dscs.put(nfsdc.getProtocol(), nfsdc);
 	
 		_supportedProtocols.put(HypervisorType.XenServer, dscs);

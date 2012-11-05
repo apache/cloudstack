@@ -32,8 +32,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreConfigurator;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore.StoreType;
-import org.apache.cloudstack.storage.datastoreconfigurator.NfsSecondaryStorageConfigurator;
-import org.apache.cloudstack.storage.datastoreconfigurator.XenNfsDataStoreConfigurator;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.hypervisor.Hypervisor;
@@ -45,7 +43,7 @@ public class DefaultNfsSecondaryStorageProvider implements StorageProvider {
 	protected Map<HypervisorType, Map<String, DataStoreConfigurator>> _supportedProtocols;
 	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
 		Map<String, DataStoreConfigurator> dscs = new HashMap<String, DataStoreConfigurator>();
-		DataStoreConfigurator nfsdc = new NfsSecondaryStorageConfigurator();
+		DataStoreConfigurator nfsdc = null;
 		dscs.put(nfsdc.getProtocol(), nfsdc);
 	
 		_supportedProtocols.put(HypervisorType.XenServer, dscs);
