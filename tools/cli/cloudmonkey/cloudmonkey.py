@@ -140,10 +140,10 @@ class CloudStackShell(cmd.Cmd):
                         print colored.cyan(arg),
                     elif 'name =' in arg:
                         print colored.magenta(arg),
-                    elif ':' in arg:
-                        print colored.blue(arg),
                     elif 'Error' in arg:
                         print colored.red(arg),
+                    elif ':' in arg:
+                        print colored.blue(arg),
                     else:
                         print arg,
                 else:
