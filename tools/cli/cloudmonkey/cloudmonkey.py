@@ -270,7 +270,8 @@ class CloudStackShell(cmd.Cmd):
                 doc = api_mod.__doc__
             except AttributeError, e:
                 self.print_shell("Error: API attribute %s not found!" % e)
-            params = filter(lambda x: '__' not in x, dir(api_cmd()))
+            params = filter(lambda x: '__' not in x and 'required' not in x,
+                            dir(api_cmd()))
             api_name_lower = api_name.replace(verb, '').lower()
             self.cache_verbs[verb][api_name_lower] = [api_name, params, doc]
 
