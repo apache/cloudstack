@@ -1614,7 +1614,8 @@
             }
           });
 
-          var hiddenTabs = [];
+          var hiddenTabs = ['ipAddresses']; // Disable IP address tab; it is redundant with 'view all' button
+          
           if(networkOfferingHavingELB == false)
             hiddenTabs.push("addloadBalancer");
           return hiddenTabs;
