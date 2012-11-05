@@ -230,7 +230,7 @@ class CloudStackShell(cmd.Cmd):
         return api_mod
 
     def default(self, args):
-        args = args.split(" ")
+        args = args.strip().split(" ")
         api_name = args[0]
 
         try:
