@@ -4030,52 +4030,50 @@
 									});									
 								}
               },
-                  
-             router: {
-                  title: 'VPC Router Details',
-                  fields:[
-                       {
-                         name: {label:'label.name'}
-                       },
-                       {
-                          id:{ label:'label.id'},
-                          zonename: { label: 'label.zone'},
-                          dns1: {label: 'label.dns'},
-                          gateway: {label:'label.gateway'},
-                          publicip: {label: 'label.public.ip'},
-                          guestipaddress:{ label: 'label.guest.ip'},
-                          linklocalip: {label: 'label.linklocal.ip'},
-                          state: { label:'label.state'},
-                          serviceofferingname: {label:'label.service.offering'},
-                          isredundantrouter:{
-                                label: 'label.redundant.router',
-                                converter: function(booleanValue) {
-                                      if (booleanValue == true) {
-                                          return "<font color='red'>Yes</font>";
-                                        }
-                                      return "No";
-                                  }
-                              },
-                          account: {label:'label.account'},
-                          domain: {label: 'label.domain'}
+              router: {
+                title: 'VPC Router Details',
+                fields:[
+                  {
+                    name: {label:'label.name'}
+                  },
+                  {
+                    id:{ label:'label.id'},
+                    zonename: { label: 'label.zone'},
+                    dns1: {label: 'label.dns'},
+                    gateway: {label:'label.gateway'},
+                    publicip: {label: 'label.public.ip'},
+                    guestipaddress:{ label: 'label.guest.ip'},
+                    linklocalip: {label: 'label.linklocal.ip'},
+                    state: { label:'label.state'},
+                    serviceofferingname: {label:'label.service.offering'},
+                    isredundantrouter:{
+                      label: 'label.redundant.router',
+                      converter: function(booleanValue) {
+                        if (booleanValue == true) {
+                          return "<font color='red'>Yes</font>";
                         }
-                      ],
-                        dataProvider: function(args) {
-                             $.ajax ({
-                                  url:createURL("listRouters&listAll=true&vpcid=" +args.context.vpc[0].id),
-                                  dataType: "json",
-                                  async: true,
-                                  success:function(json) {
-                                      var item = json.listroutersresponse.router[0];
-                                      args.response.success ({
-                                           data:item
-                                          })
-                                  }
-
-                               });
-                         }
-
+                        return "No";
+                      }
+                    },
+                    account: {label:'label.account'},
+                    domain: {label: 'label.domain'}
+                  }
+                ],
+                dataProvider: function(args) {
+                  $.ajax({
+                    url: createURL("listRouters&listAll=true&vpcid=" +args.context.vpc[0].id),
+                    dataType: "json",
+                    async: true,
+                    success: function(json) {
+                      var item = json.listroutersresponse.router[0];
+                      
+                      args.response.success({
+                        data:item
+                      });
                     }
+                  });
+                }
+              }
             }
           }								
         }
