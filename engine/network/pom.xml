@@ -33,7 +33,7 @@
       <artifactId>cloud-engine-api</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <depdency>
+    <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-engine-components-api</artifactId>
       <version>${project.version}</version>

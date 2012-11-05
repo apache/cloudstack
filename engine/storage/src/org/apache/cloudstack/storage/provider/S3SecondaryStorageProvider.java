@@ -23,10 +23,10 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.platform.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.platform.subsystem.api.storage.DataStoreConfigurator;
-import org.apache.cloudstack.platform.subsystem.api.storage.StorageProvider;
-import org.apache.cloudstack.platform.subsystem.api.storage.DataStore.StoreType;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreConfigurator;
+import org.apache.cloudstack.engine.subsystem.api.storage.StorageProvider;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore.StoreType;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.StoragePool;

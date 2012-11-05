@@ -22,9 +22,11 @@ import java.net.URL;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.cloudstack.platform.cloud.entity.api.VirtualMachineEntity;
-import org.apache.cloudstack.platform.cloud.entity.api.VolumeEntity;
-import org.apache.cloudstack.platform.service.api.OrchestrationService;
+import org.apache.cloudstack.engine.cloud.entity.api.NetworkEntity;
+import org.apache.cloudstack.engine.cloud.entity.api.TemplateEntity;
+import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntity;
+import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
+import org.apache.cloudstack.engine.service.api.OrchestrationService;
 
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.hypervisor.Hypervisor;
@@ -69,12 +71,45 @@ public class CloudOrchestrator implements OrchestrationService {
 
     }
 
+    @Override
     public VolumeEntity createVolume() {
         // TODO Auto-generated method stub
         return null;
     }
 
-    public void registerTemplate(String name, URL path, String os, Hypervisor hypervisor) {
+    @Override
+    public TemplateEntity registerTemplate(String name, URL path, String os, Hypervisor hypervisor) {
+        return null;
+    }
+
+    @Override
+    public VirtualMachineEntity createVirtualMachine(String name, String template, String hostName, int cpu, int speed, long memory, List<String> networks, List<String> rootDiskTags, List<String> computeTags,
+            Map<String, String> details, String owner) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public VirtualMachineEntity createVirtualMachineFromScratch(String uuid, String iso, String os, String hypervisor, String hostName, int cpu, int speed, long memory, List<String> networks, List<String> computeTags,
+            Map<String, String> details, String owner) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public NetworkEntity createNetwork(String externaId, String name, String cidr, String gateway) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public void destroyNetwork(String networkUuid) {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public void destroyVolume(String volumeEntity) {
         // TODO Auto-generated method stub
 
     }

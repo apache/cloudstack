@@ -18,8 +18,8 @@
  */
 package org.apache.cloudstack.storage.image;
 
-import org.apache.cloudstack.platform.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.platform.subsystem.api.storage.TemplateProfile;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateProfile;
 
 
 import com.cloud.api.commands.RegisterTemplateCmd;

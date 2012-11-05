@@ -20,7 +20,7 @@ package org.apache.cloudstack.storage;
 
 import java.util.Date;
 
-import org.apache.cloudstack.platform.subsystem.api.storage.DataObjectBackupStorageOperationState;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectBackupStorageOperationState;
 
 import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;

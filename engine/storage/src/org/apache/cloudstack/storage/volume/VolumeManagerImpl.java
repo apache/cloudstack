@@ -18,7 +18,7 @@
  */
 package org.apache.cloudstack.storage.volume;
 
-import org.apache.cloudstack.platform.subsystem.api.storage.VolumeProfile;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeProfile;
 
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.Volume;

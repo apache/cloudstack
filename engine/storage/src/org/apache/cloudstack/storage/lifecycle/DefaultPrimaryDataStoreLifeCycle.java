@@ -3,11 +3,11 @@ package org.apache.cloudstack.storage.lifecycle;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.cloudstack.platform.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.platform.subsystem.api.storage.DataStoreDriver;
-import org.apache.cloudstack.platform.subsystem.api.storage.DataStoreEndPoint;
-import org.apache.cloudstack.platform.subsystem.api.storage.DataStoreEndPointSelector;
-import org.apache.cloudstack.platform.subsystem.api.storage.DataStoreLifeCycle;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreEndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreEndPointSelector;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;

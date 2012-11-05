@@ -26,12 +26,9 @@ public interface ComputeOrchestrator {
      * @param vm vm
      * @param reservationId
      */
-    @Ipc(topic="cs.compute.start", response="cs.compute.start.response")
-    void start(@IpcParam String vm, @IpcParam String reservationId, Handler handler);
+    void start(String vm, String reservationId, Handler handler);
 
-    @Ipc(topic="cs.compute.cancel")
-    void cancel(@IpcParam String reservationId);
+    void cancel(String reservationId);
 
-    @Ipc(topic="cs.compute.stop")
-    void stop(@IpcParam String vm, @IpcParam String reservationId);
+    void stop(String vm, String reservationId);
 }

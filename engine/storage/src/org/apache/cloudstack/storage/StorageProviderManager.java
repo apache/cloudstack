@@ -1,7 +1,7 @@
 package org.apache.cloudstack.storage;
 
-import org.apache.cloudstack.platform.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.platform.subsystem.api.storage.StorageProvider;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.StorageProvider;
 
 public interface StorageProviderManager {
 	StorageProvider getProvider(String uuid);

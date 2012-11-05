@@ -21,12 +21,12 @@ package org.apache.cloudstack.storage;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.cloudstack.platform.subsystem.api.storage.DataObjectBackupStorageOperationState;
-import org.apache.cloudstack.platform.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.platform.subsystem.api.storage.StorageProvider;
-import org.apache.cloudstack.platform.subsystem.api.storage.TemplateProfile;
-import org.apache.cloudstack.platform.subsystem.api.storage.VolumeProfile;
-import org.apache.cloudstack.platform.subsystem.api.storage.VolumeStrategy;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectBackupStorageOperationState;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.StorageProvider;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateProfile;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeProfile;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeStrategy;
 import org.apache.cloudstack.storage.image.ImageManager;
 import org.apache.cloudstack.storage.manager.BackupStorageManager;
 import org.apache.cloudstack.storage.manager.SecondaryStorageManager;

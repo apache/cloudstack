@@ -20,10 +20,10 @@ package org.apache.cloudstack.storage.image;
 
 import java.util.List;
 
-import org.apache.cloudstack.platform.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.platform.subsystem.api.storage.SnapshotProfile;
-import org.apache.cloudstack.platform.subsystem.api.storage.TemplateStrategy;
-import org.apache.cloudstack.platform.subsystem.api.storage.VolumeProfile;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotProfile;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateStrategy;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeProfile;
 import org.apache.cloudstack.storage.manager.SecondaryStorageManager;
 
 import com.cloud.storage.TemplateProfile;

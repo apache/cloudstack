@@ -1,18 +1,18 @@
 package org.apache.cloudstack.storage.datastore;
 
-import org.apache.cloudstack.platform.subsystem.api.storage.BackupStrategy;
-import org.apache.cloudstack.platform.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.platform.subsystem.api.storage.DataStoreDriver;
-import org.apache.cloudstack.platform.subsystem.api.storage.DataStoreEndPointSelector;
-import org.apache.cloudstack.platform.subsystem.api.storage.DataStoreLifeCycle;
-import org.apache.cloudstack.platform.subsystem.api.storage.FileSystem;
-import org.apache.cloudstack.platform.subsystem.api.storage.SnapshotProfile;
-import org.apache.cloudstack.platform.subsystem.api.storage.SnapshotStrategy;
-import org.apache.cloudstack.platform.subsystem.api.storage.StorageProvider;
-import org.apache.cloudstack.platform.subsystem.api.storage.TemplateProfile;
-import org.apache.cloudstack.platform.subsystem.api.storage.TemplateStrategy;
-import org.apache.cloudstack.platform.subsystem.api.storage.VolumeProfile;
-import org.apache.cloudstack.platform.subsystem.api.storage.VolumeStrategy;
+import org.apache.cloudstack.engine.subsystem.api.storage.BackupStrategy;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreEndPointSelector;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
+import org.apache.cloudstack.engine.subsystem.api.storage.FileSystem;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotProfile;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy;
+import org.apache.cloudstack.engine.subsystem.api.storage.StorageProvider;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateProfile;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateStrategy;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeProfile;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeStrategy;
 
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.storage.Snapshot;

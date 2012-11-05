@@ -4,8 +4,8 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.platform.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.platform.subsystem.api.storage.StorageProvider;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.StorageProvider;
 
 import com.cloud.utils.component.Manager;
 

@@ -22,14 +22,14 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
-import org.apache.cloudstack.platform.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.platform.subsystem.api.storage.DataStoreDriver;
-import org.apache.cloudstack.platform.subsystem.api.storage.DataStoreEndPoint;
-import org.apache.cloudstack.platform.subsystem.api.storage.DataStoreEndPointSelector;
-import org.apache.cloudstack.platform.subsystem.api.storage.StorageEvent;
-import org.apache.cloudstack.platform.subsystem.api.storage.StorageProvider;
-import org.apache.cloudstack.platform.subsystem.api.storage.TemplateProfile;
-import org.apache.cloudstack.platform.subsystem.api.storage.TemplateStrategy;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreEndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreEndPointSelector;
+import org.apache.cloudstack.engine.subsystem.api.storage.StorageEvent;
+import org.apache.cloudstack.engine.subsystem.api.storage.StorageProvider;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateProfile;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateStrategy;
 import org.apache.cloudstack.storage.image.ImageManager;
 import org.apache.log4j.Logger;
 

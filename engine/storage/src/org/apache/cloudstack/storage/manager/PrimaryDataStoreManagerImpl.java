@@ -22,10 +22,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.cloudstack.platform.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.platform.subsystem.api.storage.DataStore.StoreType;
-import org.apache.cloudstack.platform.subsystem.api.storage.DataStoreLifeCycle;
-import org.apache.cloudstack.platform.subsystem.api.storage.StorageProvider;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
+import org.apache.cloudstack.engine.subsystem.api.storage.StorageProvider;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore.StoreType;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
 
 import com.cloud.dc.ClusterVO;

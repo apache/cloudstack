@@ -18,12 +18,12 @@
  */
 package org.apache.cloudstack.storage.driver;
 
-import org.apache.cloudstack.platform.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.platform.subsystem.api.storage.DataStoreDriver;
-import org.apache.cloudstack.platform.subsystem.api.storage.DataStoreEndPoint;
-import org.apache.cloudstack.platform.subsystem.api.storage.TemplateProfile;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreEndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateProfile;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateStrategy;
 
-import org.apache.cloudstack.platform.subsystem.api.storage.TemplateStrategy;
 import com.cloud.agent.api.storage.DownloadProgressCommand;
 import com.cloud.agent.api.storage.DownloadProgressCommand.RequestType;
 import com.cloud.agent.api.storage.DownloadCommand;

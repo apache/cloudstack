@@ -18,15 +18,10 @@
  */
 package org.apache.cloudstack.compute;
 
+import java.util.logging.Handler;
+
 
 public class ComputeOrchestratorImpl implements ComputeOrchestrator {
-
-    @Override
-    public void start(String vm, String reservationId) {
-        // Retrieve the VM
-        // Locate the HypervisorGuru based on the VM type
-        // Call HypervisorGuru to start the VM
-    }
 
     @Override
     public void cancel(String reservationId) {
@@ -37,5 +32,11 @@ public class ComputeOrchestratorImpl implements ComputeOrchestrator {
         // Retrieve the VM
         // Locate the HypervisorGuru based on the VM type
         // Call HypervisorGuru to stop the VM
+    }
+
+    @Override
+    public void start(String vm, String reservationId, Handler handler) {
+        // TODO Auto-generated method stub
+
     }
 }

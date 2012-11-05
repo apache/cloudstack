@@ -18,8 +18,8 @@
  */
 package org.apache.cloudstack.storage.lifecycle;
 
-import org.apache.cloudstack.platform.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.platform.subsystem.api.storage.DataStoreLifeCycle;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
 
 public class DefaultNfsSecondaryLifeCycle implements DataStoreLifeCycle {
 	protected DataStore _ds;
