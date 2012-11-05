@@ -6816,6 +6816,10 @@ label.error {
   width: 98%;
 }
 
+.multi-wizard.zone-wizard .multi-edit table th {
+  max-width: 97px;
+}
+
 .multi-wizard.zone-wizard .multi-edit .data {
   width: 102%;
   float: left;
