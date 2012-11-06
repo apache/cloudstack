@@ -187,7 +187,8 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     private int _mgmt_port = 8250;
 
     private String _name;
-    private Adapters<ConsoleProxyAllocator> _consoleProxyAllocators;
+    @Inject
+    private List<ConsoleProxyAllocator> _consoleProxyAllocators;
 
     @Inject
     private ConsoleProxyDao _consoleProxyDao;
@@ -806,11 +807,10 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
     private ConsoleProxyAllocator getCurrentAllocator() {
         // for now, only one adapter is supported
-        Enumeration<ConsoleProxyAllocator> it = _consoleProxyAllocators.enumeration();
-        if (it.hasMoreElements()) {
-            return it.nextElement();
-        }
-
+    	for(ConsoleProxyAllocator allocator : _consoleProxyAllocators) {
+    		return allocator;
+    	}
+    	
         return null;
     }
 
@@ -1511,11 +1511,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
         value = agentMgrConfigs.get("port");
         _mgmt_port = NumbersUtil.parseInt(value, 8250);
-
-        _consoleProxyAllocators = locator.getAdapters(ConsoleProxyAllocator.class);
-        if (_consoleProxyAllocators == null || !_consoleProxyAllocators.isSet()) {
-            throw new ConfigurationException("Unable to get proxy allocators");
-        }
 
         _listener = new ConsoleProxyListener(this);
         _agentMgr.registerForHostEvents(_listener, true, true, false);

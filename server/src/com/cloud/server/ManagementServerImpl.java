@@ -305,7 +305,9 @@ public class ManagementServerImpl implements ManagementServer {
     private final SSHKeyPairDao _sshKeyPairDao;
     private final LoadBalancerDao _loadbalancerDao;
     private final HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
-    private final Adapters<HostAllocator> _hostAllocators;
+    
+    @Inject
+    private List<HostAllocator> _hostAllocators;
     private final ConfigurationManager _configMgr;
     private final ResourceTagDao _resourceTagDao;
     
@@ -386,11 +388,6 @@ public class ManagementServerImpl implements ManagementServer {
         _resourceTagDao = locator.getDao(ResourceTagDao.class);
 
         _hypervisorCapabilitiesDao = locator.getDao(HypervisorCapabilitiesDao.class);
-
-        _hostAllocators = locator.getAdapters(HostAllocator.class);
-        if (_hostAllocators == null || !_hostAllocators.isSet()) {
-            s_logger.error("Unable to find HostAllocators");
-        }
 
         String value = _configs.get("event.purge.interval");
         int cleanup = NumbersUtil.parseInt(value, 60 * 60 * 24); // 1 day.
@@ -961,15 +958,14 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         List<Host> suitableHosts = new ArrayList<Host>();
-        Enumeration<HostAllocator> enHost = _hostAllocators.enumeration();
 
         VirtualMachineProfile<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
 
         DataCenterDeployment plan = new DataCenterDeployment(srcHost.getDataCenterId(), srcHost.getPodId(), srcHost.getClusterId(), null, null, null);
         ExcludeList excludes = new ExcludeList();
         excludes.addHost(srcHostId);
-        while (enHost.hasMoreElements()) {
-            final HostAllocator allocator = enHost.nextElement();
+        
+        for(HostAllocator allocator : _hostAllocators) {
             suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, HostAllocator.RETURN_UPTO_ALL, false);
             if (suitableHosts != null && !suitableHosts.isEmpty()) {
                 break;

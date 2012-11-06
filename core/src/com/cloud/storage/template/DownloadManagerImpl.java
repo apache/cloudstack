@@ -63,7 +63,7 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.Adapter;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.ComponentLocator.ComponentInfo;
+import com.cloud.utils.component.LegacyComponentLocator.ComponentInfo;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;

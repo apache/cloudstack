@@ -16,6 +16,9 @@
 // under the License.
 package com.cloud.utils.db;
 
+import java.util.List;
+import java.util.Map;
+
 import javax.inject.Inject;
 
 import org.junit.Test;
@@ -28,11 +31,14 @@ import com.cloud.utils.component.ComponentContext;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations="classpath:/com/cloud/utils/db/transactioncontextBuilderTest.xml")
 public class TransactionContextBuilderTest {
+
 	@Inject
 	DbAnnotatedBaseDerived _derived; 
 	
-	@Inject
 	DbAnnotatedBase _base;
+	
+	@Inject
+	List<DbAnnotatedBase> _list;
 	
 	@Test
 	public void test() {
@@ -42,5 +48,16 @@ public class TransactionContextBuilderTest {
 		// test @DB injection on dynamically constructed objects
 		DbAnnotatedBase base = ComponentContext.inject(new DbAnnotatedBase());
 		base.MethodWithClassDbAnnotated();
+
+/*		
+		Map<String, DbAnnotatedBase> components = ComponentContext.getApplicationContext().getBeansOfType(DbAnnotatedBase.class);
+		for(Map.Entry<String, DbAnnotatedBase> entry : components.entrySet()) {
+			System.out.println(entry.getKey());
+			entry.getValue().MethodWithClassDbAnnotated();
+		}
+*/
+		for(DbAnnotatedBase entry : _list) {
+			entry.MethodWithClassDbAnnotated();
+		}
 	}
 }

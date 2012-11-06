@@ -120,10 +120,11 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
     @Inject
     ClusterDetailsDao _clusterDetailsDao;
     long _serverId;
-    @com.cloud.utils.component.Inject(adapter = Investigator.class)
-    Adapters<Investigator> _investigators;
-    @com.cloud.utils.component.Inject(adapter = FenceBuilder.class)
-    Adapters<FenceBuilder> _fenceBuilders;
+
+    @Inject
+    List<Investigator> _investigators;
+    @Inject
+    List<FenceBuilder> _fenceBuilders;
     @Inject
     AgentManager _agentMgr;
     @Inject
@@ -164,11 +165,8 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
             return null;
         }
 
-        final Enumeration<Investigator> en = _investigators.enumeration();
         Status hostState = null;
-        Investigator investigator = null;
-        while (en.hasMoreElements()) {
-            investigator = en.nextElement();
+        for(Investigator investigator : _investigators) {
             hostState = investigator.isAgentAlive(host);
             if (hostState != null) {
                 if (s_logger.isDebugEnabled()) {
@@ -419,22 +417,20 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
                     return null;
                 }
 
-                Enumeration<Investigator> en = _investigators.enumeration();
                 Investigator investigator = null;
-                while (en.hasMoreElements()) {
-                    investigator = en.nextElement();
+                for(Investigator it : _investigators) {
+                	investigator = it;
                     alive = investigator.isVmAlive(vm, host);
                     s_logger.info(investigator.getName() + " found " + vm + "to be alive? " + alive);
                     if (alive != null) {
                         break;
                     }
                 }
+                
                 boolean fenced = false;
                 if (alive == null) {
                     s_logger.debug("Fencing off VM that we don't know the state of");
-                    Enumeration<FenceBuilder> enfb = _fenceBuilders.enumeration();
-                    while (enfb.hasMoreElements()) {
-                        FenceBuilder fb = enfb.nextElement();
+                    for(FenceBuilder fb : _fenceBuilders) {
                         Boolean result = fb.fenceOff(vm, host);
                         s_logger.info("Fencer " + fb.getName() + " returned " + result);
                         if (result != null && result) {
@@ -442,6 +438,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
                             break;
                         }
                     }
+                    
                 } else if (!alive) {
                     fenced = true;
                 } else {
@@ -696,9 +693,6 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
         ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
 
         _serverId = ((ManagementServer) ComponentLocator.getComponent(ManagementServer.Name)).getId();
-
-        _investigators = locator.getAdapters(Investigator.class);
-        _fenceBuilders = locator.getAdapters(FenceBuilder.class);
 
         Map<String, String> params = new HashMap<String, String>();
         final ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);

@@ -218,7 +218,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
 
     protected int _pingInterval;
     protected long _pingTimeout;
-    protected AgentMonitor _monitor = null;
+    @Inject protected AgentMonitor _monitor = null;
 
     protected ExecutorService _executor;
     
@@ -272,7 +272,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         long lastPing = (System.currentTimeMillis() >> 10) - _pingTimeout;
         _hostDao.markHostsAsDisconnected(_nodeId, lastPing);
 
-        _monitor = ComponentLocator.inject(AgentMonitor.class, _nodeId, _hostDao, _vmDao, _dcDao, _podDao, this, _alertMgr, _pingTimeout);
+        // _monitor = ComponentLocator.inject(AgentMonitor.class, _nodeId, _hostDao, _vmDao, _dcDao, _podDao, this, _alertMgr, _pingTimeout);
         registerForHostEvents(_monitor, true, true, false);
 
         _executor = new ThreadPoolExecutor(threads, threads, 60l, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("AgentTaskPool"));

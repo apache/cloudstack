@@ -121,6 +121,9 @@ public class ClusterManagerImpl implements ClusterManager {
     private final ExecutorService _executor;
 
     private ClusterServiceAdapter _currentServiceAdapter;
+   
+    @Inject
+    private List<ClusterServiceAdapter> _serviceAdapters;
 
     private ManagementServerHostDao _mshostDao;
     private ManagementServerHostPeerDao _mshostPeerDao;
@@ -1306,14 +1309,10 @@ public class ClusterManagerImpl implements ClusterManager {
         // notification task itself in turn works as a task dispatcher
         _executor.execute(getClusterPduNotificationTask());
 
-        Adapters<ClusterServiceAdapter> adapters = locator.getAdapters(ClusterServiceAdapter.class);
-        if (adapters == null || !adapters.isSet()) {
+        if (_serviceAdapters == null) {
             throw new ConfigurationException("Unable to get cluster service adapters");
         }
-        Enumeration<ClusterServiceAdapter> it = adapters.enumeration();
-        if(it.hasMoreElements()) {
-            _currentServiceAdapter = it.nextElement();
-        }
+        _currentServiceAdapter = _serviceAdapters.get(0);
 
         if(_currentServiceAdapter == null) {
             throw new ConfigurationException("Unable to set current cluster service adapter");

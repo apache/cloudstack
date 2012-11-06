@@ -17,8 +17,10 @@
 package com.cloud.hypervisor;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -42,19 +44,21 @@ public class HypervisorGuruManagerImpl implements HypervisorGuruManager {
     @Inject HostDao _hostDao;
     
 	String _name;
+	
+	@Inject List<HypervisorGuru> _hvGuruList;
     Map<HypervisorType, HypervisorGuru> _hvGurus = new HashMap<HypervisorType, HypervisorGuru>();
 	
 	@Override
 	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
 		_name = name;
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
-
-        Adapters<HypervisorGuru> hvGurus = locator.getAdapters(HypervisorGuru.class);
-        for (HypervisorGuru guru : hvGurus) {
-            _hvGurus.put(guru.getHypervisorType(), guru);
-        }
-		
-		return true;
+ 		return true;
+	}
+	
+	@PostConstruct
+	public void init() {
+		for(HypervisorGuru guru : _hvGuruList) {
+			_hvGurus.put(guru.getHypervisorType(), guru);
+		}
 	}
 
 	@Override

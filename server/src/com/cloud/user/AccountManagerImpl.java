@@ -222,7 +222,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     @Inject
     Site2SiteVpnManager _vpnMgr;
 
-    private Adapters<UserAuthenticator> _userAuthenticators;
+    @Inject
+    private List<UserAuthenticator> _userAuthenticators;
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AccountChecker"));
 
@@ -230,8 +231,9 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
     UserVO _systemUser;
     AccountVO _systemAccount;
-    @com.cloud.utils.component.Inject(adapter = SecurityChecker.class)
-    Adapters<SecurityChecker> _securityCheckers;
+    
+    @Inject
+    List<SecurityChecker> _securityCheckers;
     int _cleanupInterval;
 
     @Override
@@ -257,11 +259,6 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
         String value = configs.get(Config.AccountCleanupInterval.key());
         _cleanupInterval = NumbersUtil.parseInt(value, 60 * 60 * 24); // 1 day.
-
-        _userAuthenticators = locator.getAdapters(UserAuthenticator.class);
-        if (_userAuthenticators == null || !_userAuthenticators.isSet()) {
-            s_logger.error("Unable to find an user authenticator.");
-        }
 
         return true;
     }
@@ -1825,8 +1822,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         }
 
         boolean authenticated = false;
-        for (Enumeration<UserAuthenticator> en = _userAuthenticators.enumeration(); en.hasMoreElements();) {
-            UserAuthenticator authenticator = en.nextElement();
+        for(UserAuthenticator authenticator : _userAuthenticators) {
             if (authenticator.authenticate(username, password, domainId, requestParameters)) {
                 authenticated = true;
                 break;

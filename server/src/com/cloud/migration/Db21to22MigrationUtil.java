@@ -23,6 +23,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 
+import javax.inject.Inject;
+
 import org.apache.log4j.xml.DOMConfigurator;
 
 import com.cloud.configuration.Resource;
@@ -54,16 +56,17 @@ import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.InstanceGroupVMMapDao;
 
 public class Db21to22MigrationUtil {
-    private ClusterDao _clusterDao;
-    private HostDao _hostDao;
-    private AccountDao _accountDao;
-    private DomainDao _domainDao;
-    private ResourceCountDao _resourceCountDao;
-    private InstanceGroupDao _vmGroupDao;
-    private InstanceGroupVMMapDao _groupVMMapDao;
-    private ConfigurationDao _configurationDao;
-    private DataCenterDao _zoneDao;
-    private ResourceManager _resourceMgr;
+	
+	@Inject private ClusterDao _clusterDao;
+	@Inject private HostDao _hostDao;
+	@Inject private AccountDao _accountDao;
+	@Inject private DomainDao _domainDao;
+	@Inject private ResourceCountDao _resourceCountDao;
+	@Inject private InstanceGroupDao _vmGroupDao;
+	@Inject private InstanceGroupVMMapDao _groupVMMapDao;
+	@Inject private ConfigurationDao _configurationDao;
+	@Inject private DataCenterDao _zoneDao;
+	@Inject private ResourceManager _resourceMgr;
     
     private void doMigration() {
         setupComponents();
@@ -171,16 +174,6 @@ public class Db21to22MigrationUtil {
     }
 
     private void setupComponents() {
-    	ComponentLocator locator = ComponentLocator.getLocator("migration", "migration-components.xml", "log4j-cloud.xml");
-
-        _accountDao = locator.getDao(AccountDao.class);
-        _domainDao = locator.getDao(DomainDao.class);
-        _resourceCountDao = locator.getDao(ResourceCountDao.class);
-        _vmGroupDao = locator.getDao(InstanceGroupDao.class);
-        _groupVMMapDao = locator.getDao(InstanceGroupVMMapDao.class);
-        _configurationDao = locator.getDao(ConfigurationDao.class);
-        _zoneDao = locator.getDao(DataCenterDao.class);
-        _resourceMgr = locator.getManager(ResourceManager.class);
     }
     
     private void setupInstanceGroups() {

@@ -50,6 +50,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+import javax.inject.Inject;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
@@ -80,6 +81,7 @@ import org.apache.http.protocol.ResponseContent;
 import org.apache.http.protocol.ResponseDate;
 import org.apache.http.protocol.ResponseServer;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.ExceptionResponse;
@@ -116,6 +118,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CSExceptionErrorCode;
 import com.cloud.uuididentity.dao.IdentityDao;
 
+@Component
 public class ApiServer implements HttpRequestHandler {
     private static final Logger s_logger = Logger.getLogger(ApiServer.class.getName());
     private static final Logger s_accessLogger = Logger.getLogger("apiserver." + ApiServer.class.getName());
@@ -133,6 +136,8 @@ public class ApiServer implements HttpRequestHandler {
     private AsyncJobManager _asyncMgr = null;
     private Account _systemAccount = null;
     private User _systemUser = null;
+    
+    @Inject List<PluggableService> _pluggableServices;
 
     private static int _workerCount = 0;
 
@@ -187,9 +192,7 @@ public class ApiServer implements HttpRequestHandler {
     private String[] getPluggableServicesApiConfigs() {
         List<String> pluggableServicesApiConfigs = new ArrayList<String>();
 
-        ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
-        List<PluggableService> services = locator.getAllPluggableServices();
-        for (PluggableService service : services) {
+        for (PluggableService service : _pluggableServices) {
             pluggableServicesApiConfigs.add(service.getPropertiesFile());
         }
         return pluggableServicesApiConfigs.toArray(new String[0]);
