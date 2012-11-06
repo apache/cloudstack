@@ -22,4 +22,5 @@ import org.apache.cloudstack.storage.image.store.ImageDataStore;
 
 public interface ImageDataStoreProvider {
 	ImageDataStore getImageDataStore(long imageStoreId);
+	public String getName();
 }

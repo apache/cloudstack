@@ -32,5 +32,13 @@ public class Template {
     public ImageDataStore getImageDataStore() {
         return this.dataStore;
     }
+    
+    public void setImageDataStoreId(long dataStoreId) {
+    	imageVO.setImageDataStoreId(dataStoreId);
+    }
+    
+    public long getImageDataStoreId() {
+    	return imageVO.getImageDataStoreId();
+    }
 
 }

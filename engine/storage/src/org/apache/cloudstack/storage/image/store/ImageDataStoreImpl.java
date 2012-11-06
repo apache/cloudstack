@@ -22,6 +22,8 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.storage.image.Template;
 import org.apache.cloudstack.storage.image.db.ImageDataDao;
+import org.apache.cloudstack.storage.image.db.ImageDataStoreDao;
+import org.apache.cloudstack.storage.image.db.ImageDataStoreVO;
 import org.apache.cloudstack.storage.image.db.ImageDataVO;
 import org.apache.cloudstack.storage.image.downloader.ImageDownloader;
 import org.apache.cloudstack.storage.image.driver.ImageDataStoreDriver;
@@ -31,13 +33,15 @@ public class ImageDataStoreImpl implements ImageDataStore {
 	ImageDataDao imageDao;
 	ImageDataStoreDriver driver;
 	ImageDownloader downloader;
+	ImageDataStoreVO imageDataStoreVO;
 	boolean needDownloadToCacheStorage = false;
 	
 	
-	public ImageDataStoreImpl(ImageDataStoreDriver driver, boolean needDownloadToCacheStorage, ImageDownloader downloader) {
+	public ImageDataStoreImpl(ImageDataStoreVO dataStoreVO, ImageDataStoreDriver driver, boolean needDownloadToCacheStorage, ImageDownloader downloader) {
 		this.driver = driver;
 		this.needDownloadToCacheStorage = needDownloadToCacheStorage;
 		this.downloader = downloader;
+		this.imageDataStoreVO = dataStoreVO;
 	}
 	
 	@Override
@@ -45,6 +49,7 @@ public class ImageDataStoreImpl implements ImageDataStore {
 		ImageDataVO idv = imageDao.findById(templateId);
 		Template template = new Template(this, idv);
 		if (driver.registerTemplate(template)) {
+			template.setImageDataStoreId(imageDataStoreVO.getId());
 			return template;
 		} else {
 			return null;
@@ -53,8 +58,8 @@ public class ImageDataStoreImpl implements ImageDataStore {
 
 	@Override
 	public String grantAccess(long templateId, long endPointId) {
-		// TODO Auto-generated method stub
-		return null;
+		ImageDataVO idv = imageDao.findById(templateId);
+		return idv.getUrl();
 	}
 
 	@Override

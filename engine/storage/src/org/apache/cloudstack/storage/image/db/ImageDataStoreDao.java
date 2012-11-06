@@ -20,6 +20,6 @@ package org.apache.cloudstack.storage.image.db;
 
 import com.cloud.utils.db.GenericDao;
 
-public interface ImageDaoStoreDao extends GenericDao<ImageDataStoreVO, Long> {
+public interface ImageDataStoreDao extends GenericDao<ImageDataStoreVO, Long> {
 
 }

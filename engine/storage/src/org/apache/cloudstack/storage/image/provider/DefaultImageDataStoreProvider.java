@@ -16,26 +16,38 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.image.manager;
+package org.apache.cloudstack.storage.image.provider;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.storage.datastore.db.DataStoreVO;
 import org.apache.cloudstack.storage.image.db.ImageDataStoreDao;
-import org.apache.cloudstack.storage.image.db.ImageDataDao;
+import org.apache.cloudstack.storage.image.db.ImageDataStoreProviderDao;
 import org.apache.cloudstack.storage.image.db.ImageDataStoreVO;
+import org.apache.cloudstack.storage.image.driver.ImageDataStoreDriver;
+import org.apache.cloudstack.storage.image.driver.ImageDataStoreDriverImpl;
 import org.apache.cloudstack.storage.image.store.ImageDataStore;
+import org.apache.cloudstack.storage.image.store.ImageDataStoreImpl;
+import org.springframework.stereotype.Component;
 
-public class ImageDataStoreManagerImpl implements ImageDataStoreManager {
+@Component
+public class DefaultImageDataStoreProvider implements ImageDataStoreProvider {
+	private final String providerName = "DefaultProvider";
 	@Inject
-	ImageDataStoreDao dataStoreDao;
+	ImageDataStoreProviderDao providerDao;
 	@Inject
-	ImageDataDao imageDataDao;
+	ImageDataStoreDao imageStoreDao;
+	
 	@Override
-	public ImageDataStore getImageDataStore(long dataStoreId) {
-		ImageDataStoreVO dataStore = dataStoreDao.findById(dataStoreId);
-		// TODO Auto-generated method stub
-		return null;
+	public ImageDataStore getImageDataStore(long imageStoreId) {
+		ImageDataStoreVO idsv = imageStoreDao.findById(imageStoreId);
+		ImageDataStoreDriver driver = new ImageDataStoreDriverImpl();
+		ImageDataStore ids = new ImageDataStoreImpl(idsv, driver, false, null);
+		return ids;
+	}
+
+	@Override
+	public String getName() {
+		return providerName;
 	}
 
 }

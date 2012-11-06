@@ -16,38 +16,20 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.image.driver;
+package org.apache.cloudstack.storage.image;
 
-import org.apache.cloudstack.storage.image.Template;
-
-public class ImageDataStoreDriverImpl implements ImageDataStoreDriver {
-	
-	public ImageDataStoreDriverImpl() {
-	}
-	@Override
-	public boolean registerTemplate(Template template) {
-		//TODO: check the availability of template 
-		return true;
-	}
+public class ImageMotionServiceImpl implements ImageMotionService {
 
 	@Override
-	public String grantAccess(long templateId, long endPointId) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public boolean revokeAccess(long templateId, long endPointId) {
+	public boolean copyTemplate(String templateUri, String destTemplateUri) {
 		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
-	public boolean deleteTemplate(Template template) {
+	public boolean copyIso(String isoUri, String destIsoUri) {
 		// TODO Auto-generated method stub
 		return false;
 	}
-
-	
 
 }

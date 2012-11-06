@@ -18,6 +18,32 @@
  */
 package org.apache.cloudstack.storage.image.db;
 
-public interface ImageDataStoreProviderVO {
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import javax.persistence.TableGenerator;
 
+@Entity
+@Table(name="image_data_store_provider")
+public class ImageDataStoreProviderVO {
+    @Id
+    @TableGenerator(name="image_data_store_provider_sq", table="sequence", pkColumnName="name", valueColumnName="value", pkColumnValue="image_data_store_provider_seq", allocationSize=1)
+    @Column(name="id", nullable = false)
+    private long id;
+    
+    @Column(name="name", nullable = false)
+    private String name;
+    
+    public long getId() {
+    	return this.id;
+    }
+    
+    public String getName() {
+    	return this.name;
+    }
+    
+    public void setName(String name) {
+    	this.name = name;
+    }
 }

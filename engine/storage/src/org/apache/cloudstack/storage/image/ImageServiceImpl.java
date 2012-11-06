@@ -22,15 +22,16 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.storage.image.downloader.ImageDownloader;
 import org.apache.cloudstack.storage.image.manager.ImageDataStoreManager;
+import org.apache.cloudstack.storage.image.provider.ImageDataStoreProviderManager;
 import org.apache.cloudstack.storage.image.store.ImageDataStore;
 
 public class ImageServiceImpl implements ImageService {
 
 	@Inject
-	ImageDataStoreManager imageStoreMgr;
+	ImageDataStoreProviderManager imageStoreProviderMgr;
 	@Override
 	public boolean registerTemplate(long templateId, long imageStoreId) {
-		ImageDataStore ids = imageStoreMgr.getImageDataStore(imageStoreId);
+		ImageDataStore ids = imageStoreProviderMgr.getDataStore(imageStoreId);
 		Template template = ids.registerTemplate(templateId);
 		if (ids.needDownloadToCacheStorage()) {
 			ImageDownloader imageDl = ids.getImageDownloader();
@@ -59,8 +60,8 @@ public class ImageServiceImpl implements ImageService {
 
 	@Override
 	public String grantTemplateAccess(long templateId, long endpointId) {
-		// TODO Auto-generated method stub
-		return null;
+		ImageDataStore ids = imageStoreProviderMgr.getDataStoreFromTemplateId(templateId);
+		return ids.grantAccess(templateId, endpointId);
 	}
 
 	@Override

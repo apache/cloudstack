@@ -129,6 +129,9 @@ public class ImageDataVO implements Identity {
     @Column(name="enable_sshkey")
     private boolean enableSshKey;
     
+    @Column(name="image_data_store_id")
+    private long imageDataStoreId;
+    
     @Transient
     Map details;
 
@@ -376,6 +379,14 @@ public class ImageDataVO implements Identity {
 	
 	public void setEnableSshKey(boolean enable) {
 		enableSshKey = enable;
+	}
+	
+	public long getImageDataStoreId() {
+		return this.imageDataStoreId;
+	}
+	
+	public void setImageDataStoreId(long dataStoreId) {
+		this.imageDataStoreId = dataStoreId;
 	}
 
 }
