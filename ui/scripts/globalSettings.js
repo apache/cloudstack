@@ -30,16 +30,14 @@
           actions: {
             edit: {
               label: 'label.change.value',
-              action: function(args) {           
-                var name = args.data.jsonObj.name;
-                var value = args.data.value;
-
+              action: function(args) {    
+								var data = {
+								  name: args.data.jsonObj.name,
+									value: args.data.value
+								};								
                 $.ajax({
-                  url: createURL(
-                    'updateConfiguration&name=' + name + '&value=' + value
-                  ),
-                  dataType: 'json',
-                  async: true,
+                  url: createURL('updateConfiguration'),
+                  data: data,                  
                   success: function(json) {                
                     var item = json.updateconfigurationresponse.configuration;
                     if(item.category == "Usage")
@@ -95,22 +93,12 @@
             maxguestslimit: { label: 'label.max.guest.limit' }
           },
           dataProvider: function(args) {					  
-						var array1 = [];  
-						if(args.filterBy != null) {          
-							if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
-								switch(args.filterBy.search.by) {
-								case "name":
-									if(args.filterBy.search.value.length > 0)
-										array1.push("&keyword=" + args.filterBy.search.value);
-									break;
-								}
-							}
-						}				
-					  
+						var data = {};
+						listViewDataProvider(args, data);					
+										  
             $.ajax({
-              url: createURL("listHypervisorCapabilities&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
-              dataType: "json",
-              async: true,
+              url: createURL('listHypervisorCapabilities'),
+              data: data,              
               success: function(json) {
                 var items = json.listhypervisorcapabilitiesresponse.hypervisorCapabilities;
                 args.response.success({data:items});
@@ -127,11 +115,14 @@
               edit: {
                 label: 'label.edit',
                 action: function(args) {
-                  var array1 = [];
-                  array1.push("&maxguestslimit=" + todb(args.data.maxguestslimit));
+                  var data = {
+									  id: args.context.hypervisorCapabilities[0].id,
+										maxguestslimit: args.data.maxguestslimit
+									};
+                  
                   $.ajax({
-                    url: createURL("updateHypervisorCapabilities&id=" + args.context.hypervisorCapabilities[0].id + array1.join("")),
-                    dataType: "json",
+                    url: createURL('updateHypervisorCapabilities'),
+                    data: data,
                     success: function(json) {
                       var item = json.updatehypervisorcapabilitiesresponse['null'];
                       args.response.success({data: item});

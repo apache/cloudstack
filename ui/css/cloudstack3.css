@@ -6816,6 +6816,12 @@ label.error {
   width: 98%;
 }
 
+.multi-wizard.zone-wizard .multi-edit table th,
+.multi-wizard.zone-wizard .multi-edit table td {
+  min-width: 97px;
+  max-width: 97px;
+}
+
 .multi-wizard.zone-wizard .multi-edit .data {
   width: 102%;
   float: left;
@@ -7181,12 +7187,21 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   border-top: none;
 }
 
+.multi-edit table th {
+  min-width: 120px;
+}
+
 .detail-group .multi-edit table td {
   border-left: 1px solid #CDCCCC;
 }
 
 .detail-view .multi-edit input {
   width: 70%;
+}
+
+.detail-view .multi-edit select {
+  width: 93%;
+  font-size: 10px;
 }
 
 .multi-edit input {
@@ -7202,9 +7217,10 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 }
 
 .multi-edit .range input {
-  width: 70px;
+  width: 41px;
   margin-left: 13px;
   position: relative;
+  float: left;
 }
 
 .multi-edit .range label {
@@ -7266,8 +7282,9 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   border-radius: 5px;
   border-radius: 5px 5px 5px 5px;
   width: 74px;
+  text-indent: 0px;
   text-align: center;
-  padding: 6px 9px 4px 0px;
+  padding: 6px 0px 4px;
   background: url(../images/bg-gradients.png) repeat-x 0px -220px;
   /*+placement:shift 4px 0px;*/
   position: relative;
@@ -7389,8 +7406,16 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   border-left: none;
   border-right: 1px solid #CFC9C9;
   height: 15px;
-  overflow: hidden;
+  overflow: auto;
   padding-right: 0;
+}
+
+.multi-edit .data .data-body .data-item > table tbody tr td span {
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 88px;
+  display: block;
+  float: left;
 }
 
 .multi-edit .data .data-body .data-item table tbody tr td.blank {
@@ -7401,6 +7426,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 }
 
 .multi-edit .data .data-body .data-item table tbody tr td.name span {
+  width: 53px;
   color: #4C5D78;
   font-weight: bold;
 }
@@ -7437,6 +7463,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 .multi-edit .data .data-body .data-item tr td .expand {
   width: 14px;
   height: 15px;
+  display: block;
   cursor: pointer;
   background: #FFFFFF url(../images/sprites.png) -541px -499px;
   border: 1px solid #D0D0D0;
@@ -8025,7 +8052,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   max-width: 98px;
   max-height: 21px;
   padding: 7px;
-  font-size: 14px;
+  font-size: 10px;
   position: absolute;
   overflow: hidden;
   color: #485563;
@@ -9525,7 +9552,8 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 .tooltip-box {
   width: 15%;
   height: auto;
-  display: inline-block, padding: 4px;
+  display: inline-block;
+  padding: 4px;
   background: #FFFFFF;
   border: 1px solid #BEB8B8;
   padding: 10px;
@@ -10329,6 +10357,13 @@ div.ui-dialog div.acl div.multi-edit div.data div.data-body div.data-item table 
 .ui-dialog div.autoscaler {
   overflow: auto;
   max-height: 600px;
+}
+
+div.container div.panel div#details-tab-network.detail-group div div.multi-edit table.multi-edit tbody tr td,
+div.container div.panel div#details-tab-network.detail-group div div.multi-edit table.multi-edit thead tr th {
+  min-width: 80px;
+  max-width: 80px;
+  font-size: 10px;
 }
 
 .ui-dialog div.autoscaler .detail-actions {

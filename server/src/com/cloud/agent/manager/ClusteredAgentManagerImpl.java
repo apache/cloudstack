@@ -270,7 +270,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     }
 
     @Override
-    protected boolean handleDisconnectWithoutInvestigation(AgentAttache attache, Status.Event event) {
+    protected boolean handleDisconnectWithoutInvestigation(AgentAttache attache, Status.Event event, boolean transitState) {
         return handleDisconnect(attache, event, false, true);
     }
     
@@ -282,7 +282,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     protected boolean handleDisconnect(AgentAttache agent, Status.Event event, boolean investigate, boolean broadcast) {
         boolean res;
         if (!investigate) {
-            res = super.handleDisconnectWithoutInvestigation(agent, event);
+            res = super.handleDisconnectWithoutInvestigation(agent, event, true);
         } else {
             res = super.handleDisconnectWithInvestigation(agent, event);
         }
@@ -305,7 +305,27 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
             }
             AgentAttache attache = findAttache(hostId);
             if (attache != null) {
-                handleDisconnect(attache, Event.AgentDisconnected, false, false);
+                //don't process disconnect if the host is being rebalanced
+                if (_clusterMgr.isAgentRebalanceEnabled()) {
+                    HostTransferMapVO transferVO = _hostTransferDao.findById(hostId);
+                    if (transferVO != null) {
+                        if (transferVO.getFutureOwner() == _nodeId && transferVO.getState() == HostTransferState.TransferStarted) {
+                            s_logger.debug("Not processing " + Event.AgentDisconnected + " event for the host id="
+                                    + hostId +" as the host is being connected to " + _nodeId);
+                            return true;
+                        }
+                    }
+                }
+                
+                //don't process disconnect if the disconnect came for the host via delayed cluster notification,
+                //but the host has already reconnected to the current management server
+                if (!attache.forForward()) {
+                    s_logger.debug("Not processing " + Event.AgentDisconnected + " event for the host id="
+                            + hostId +" as the host is directly connected to the current management server " + _nodeId);
+                    return true;
+                }
+                
+                return super.handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected, false);
             }
 
             return true;
@@ -571,6 +591,12 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                             logD(data, "Cancel request received");
                         }
                         agent.cancel(cancel.getSequence());
+                        final Long current = agent._currentSequence;
+                        //if the request is the current request, always have to trigger sending next request in sequence,
+                        //otherwise the agent queue will be blocked
+                        if (req.executeInSequence() && (current != null && current == Request.getSequence(data))) {
+                            agent.sendNext(Request.getSequence(data));
+                        }
                         return;
                     }
 
@@ -853,7 +879,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                                     continue;
                                 }
                                 
-                                if (transferMap.getInitialOwner() != _nodeId || attache.forForward()) {
+                                if (transferMap.getInitialOwner() != _nodeId || attache == null || attache.forForward()) {
                                     s_logger.debug("Management server " + _nodeId + " doesn't own host id=" + hostId + " any more, skipping rebalance for the host");
                                     iterator.remove();
                                     _hostTransferDao.completeAgentTransfer(hostId);
@@ -936,9 +962,24 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
             HostVO host = _hostDao.findById(hostId);
             try {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Loading directly connected host " + host.getId() + "(" + host.getName() + ") to the management server " + _nodeId + " as a part of rebalance process");
+                    s_logger.debug("Disconnecting host " + host.getId() + "(" + host.getName() + " as a part of rebalance process without notification");
                 }
-                result = loadDirectlyConnectedHost(host, true);
+
+                AgentAttache attache = findAttache(hostId);
+                if (attache != null) {
+                    result = handleDisconnect(attache, Event.AgentDisconnected, false, false);
+                }
+
+                if (result) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Loading directly connected host " + host.getId() + "(" + host.getName() + ") to the management server " + _nodeId + " as a part of rebalance process");
+                    }
+                    result = loadDirectlyConnectedHost(host, true);
+                } else {
+                    s_logger.warn("Failed to disconnect " + host.getId() + "(" + host.getName() + 
+                            " as a part of rebalance process without notification");
+                }
+                
             } catch (Exception ex) {
                 s_logger.warn("Failed to load directly connected host " + host.getId() + "(" + host.getName() + ") to the management server " + _nodeId + " as a part of rebalance process due to:", ex);
                 result = false;
@@ -1002,7 +1043,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         try {
             s_logger.debug("Management server " + _nodeId + " failed to rebalance agent " + hostId);
             _hostTransferDao.completeAgentTransfer(hostId);
-            handleDisconnectWithoutInvestigation(findAttache(hostId), Event.RebalanceFailed);
+            handleDisconnectWithoutInvestigation(findAttache(hostId), Event.RebalanceFailed, true);
         } catch (Exception ex) {
             s_logger.warn("Failed to reconnect host id=" + hostId + " as a part of failed rebalance task cleanup");
         }
@@ -1019,7 +1060,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         synchronized (_agents) {
             ClusteredDirectAgentAttache attache = (ClusteredDirectAgentAttache)_agents.get(hostId);
             if (attache != null && attache.getQueueSize() == 0 && attache.getNonRecurringListenersSize() == 0) {
-            	handleDisconnectWithoutInvestigation(attache, Event.StartAgentRebalance);
+            	handleDisconnectWithoutInvestigation(attache, Event.StartAgentRebalance, true);
                 ClusteredAgentAttache forwardAttache = (ClusteredAgentAttache)createAttache(hostId);
                 if (forwardAttache == null) {
                     s_logger.warn("Unable to create a forward attache for the host " + hostId + " as a part of rebalance process");

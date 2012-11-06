@@ -54,9 +54,9 @@
     <section id="sect-source-verify-md5">
         <title>MD5</title>
         <para>
-           In addition to the cryptographic signature, the &PRODUCT; provides a number 
-           of cryptographic hashes to aid in assurance of validity of the downloaded
-           release. You can verify this hash by executing the following command:
+            In addition to the cryptographic signature, &PRODUCT; has an MD5 checksum
+            that you can use to verify the download matches the release. 
+           You can verify this hash by executing the following command:
            <programlisting><prompt>$</prompt> <command>gpg</command> --print-md MD5 apache-cloudstack-4.0.0-incubating-src.tar.bz2 | <command>diff</command> - apache-cloudstack-4.0.0-incubating-src.tar.bz2.md5</programlisting>
          </para>
          <para>

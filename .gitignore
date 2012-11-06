@@ -33,6 +33,7 @@ dist/
 cloud-*.tar.bz2
 *.log
 *.pyc
+*.egginfo/
 build.number
 api.log.*.gz
 cloud.log.*.*
@@ -45,6 +46,7 @@ deps/awsapi-lib/
 git-remote-https.exe.stackdump
 *.swp
 tools/devcloud/devcloudbox/.vagrant
+tools/cli/cloudmonkey/marvin/
 *.jar
 *.war
 *.mar

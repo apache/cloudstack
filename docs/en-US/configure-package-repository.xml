@@ -42,8 +42,8 @@
     </note>
     <section id="configure-package-repository-deb">
         <title>DEB package repository</title>
-        <para>You can add a DEB package repository to your apt sources with the following commands. Please note that currently only packages for Ubuntu 12.04 LTS (precise) are being build.</para>
-        <para>Use your preferred editor and open (or create) <filename>/etc/apt/sources.list.d/cloudstack</filename>. Add the community provided repository to the file:</para>
+        <para>You can add a DEB package repository to your apt sources with the following commands. Please note that only packages for Ubuntu 12.04 LTS (precise) are being built at this time.</para>
+        <para>Use your preferred editor and open (or create) <filename>/etc/apt/sources.list.d/cloudstack.list</filename>. Add the community provided repository to the file:</para>
 <programlisting>deb http://cloudstack.apt-get.eu/ubuntu precise 4.0</programlisting>
         <para>We now have to add the public key to the trusted keys.</para>
         <programlisting language="Bash"><prompt>$</prompt> <command>wget</command> -O - http://cloudstack.apt-get.eu/release.asc|apt-key add -</programlisting>
@@ -53,20 +53,17 @@
     </section>
     <section id="configure-package-repository-rpm">
         <title>RPM package repository</title>
-        <para>If you're using an RPM-based system, you'll want to add the Yum repository so that you can install CloudStack with Yum.</para>
+        <para>There is a RPM package repository for &PRODUCT; so you can easily install on RHEL based platforms.</para>
+        <para>If you're using an RPM-based system, you'll want to add the Yum repository so that you can install &PRODUCT; with Yum.</para>
         <para>Yum repository information is found under <filename>/etc/yum.repos.d</filename>. You'll see several <filename>.repo</filename> files in this directory, each one denoting a specific repository.</para>
-        <para>To add the CloudStack repository, visit the <ulink url="http://incubator.apache.org/cloudstack/downloads.html">downloads page</ulink> for the repository information. It will look something like this:</para>
+        <para>To add the &PRODUCT; repository, create <filename>/etc/yum.repos.d/cloudstack.repo</filename> and insert the following information.</para>
         <programlisting>
 [cloudstack]
 name=cloudstack
-baseurl=<replaceable>http://server.url/downloads/rpm/stable/</replaceable>
+baseurl=<replaceable>http://cloudstack.apt-get.eu/rhel/4.0/</replaceable>
 enabled=1
-gpgcheck=1
+gpgcheck=0
         </programlisting>
-        <para>Next you'll want to add the GPG key:</para>
-<screen>
-<command>$ rpm --import http://server.url/downloads/RPM-GPG-KEY.txt</command>
-</screen>
         <para>Now you should be able to install CloudStack using Yum.</para>
     </section>
 </section>

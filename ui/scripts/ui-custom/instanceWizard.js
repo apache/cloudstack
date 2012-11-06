@@ -137,8 +137,8 @@
                   )
                   .append(
                     $('<div>').addClass('select-desc')
-                      .append($('<div>').addClass('name').html(this[fields.name]))
-                      .append($('<div>').addClass('desc').html(this[fields.desc]))
+                      .append($('<div>').addClass('name').html(_s(this[fields.name])))
+                      .append($('<div>').addClass('desc').html(_s(this[fields.desc])))
                   )
                   .data('json-obj', this);
 
@@ -875,6 +875,12 @@
             );
           }
         });
+
+         $wizard.find('div.data-disk-offering div.custom-size input[type=text]').bind('change',function() {
+                var old =   $wizard.find('div.data-disk-offering div.custom-size input[type=text]').val();
+                $wizard.find('div.data-disk-offering span.custom-disk-size').html(_s(old));
+         });
+
 
         return $wizard.dialog({
           title: _l('label.vm.add'),

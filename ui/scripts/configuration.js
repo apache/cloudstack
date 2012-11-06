@@ -161,34 +161,51 @@
               },
 
               action: function(args) {
-                var array1 = [];
-                array1.push("&name=" + args.data.name);
-                array1.push("&displaytext=" + todb(args.data.description));
-                array1.push("&storageType=" + todb(args.data.storageType));
-                array1.push("&cpuNumber=" + args.data.cpuNumber);
-                array1.push("&cpuSpeed="+ args.data.cpuSpeed);
-                array1.push("&memory=" + args.data.memory);
+                var data = {
+								  issystem: false,
+								  name: args.data.name,
+									displaytext: args.data.description,
+									storageType: args.data.storageType,
+									cpuNumber: args.data.cpuNumber,
+									cpuSpeed: args.data.cpuSpeed,
+									memory: args.data.memory
+								};															
+               
+                if(args.data.networkRate != null && args.data.networkRate.length > 0) {
+								  $.extend(data, {
+									  networkrate: args.data.networkRate
+									});
+								}
 
-                if(args.data.networkRate != null && args.data.networkRate.length > 0)
-                  array1.push("&networkrate=" + args.data.networkRate);
-
-                array1.push("&offerha=" + (args.data.offerHA == "on"));
-
-                if(args.data.storageTags != null && args.data.storageTags.length > 0)
-                  array1.push("&tags=" + todb(args.data.storageTags));
-
-                if(args.data.hostTags != null && args.data.hostTags.length > 0)
-                  array1.push("&hosttags=" + todb(args.data.hostTags));
-
-                array1.push("&limitcpuuse=" + (args.data.cpuCap == "on"));
-
-                if(args.$form.find('.form-item[rel=domainId]').css("display") != "none")
-                  array1.push("&domainid=" + args.data.domainId);
+                $.extend(data, {
+                  offerha: (args.data.offerHA == "on")
+                });								
+								
+                if(args.data.storageTags != null && args.data.storageTags.length > 0) {
+								  $.extend(data, {
+									  tags: args.data.storageTags
+									});								
+                }
+								
+                if(args.data.hostTags != null && args.data.hostTags.length > 0) {
+								  $.extend(data, {
+									  hosttags: args.data.hostTags
+									});								
+                }
+								
+								$.extend(data, {
+								  limitcpuuse: (args.data.cpuCap == "on")
+								});
+                
+                if(args.$form.find('.form-item[rel=domainId]').css("display") != "none") {
+								  $.extend(data, {
+									  domainid: args.data.domainId
+									});								
+								}
 
                 $.ajax({
-                  url: createURL("createServiceOffering&issystem=false"+array1.join("")),
-                  dataType: "json",
-                  async: true,
+                  url: createURL('createServiceOffering'),
+                  data: data,                 
                   success: function(json) {
                     var item = json.createserviceofferingresponse.serviceoffering;
                     args.response.success({data: item});
@@ -208,22 +225,16 @@
           },
 
           dataProvider: function(args) {					 
-						var array1 = [];  
-						if(args.filterBy != null) {          
-							if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
-								switch(args.filterBy.search.by) {
-								case "name":
-									if(args.filterBy.search.value.length > 0)
-										array1.push("&keyword=" + args.filterBy.search.value);
-									break;
-								}
-							}
-						}
+						var data = {};
+						listViewDataProvider(args, data);						
+						
+						$.extend(data, {
+						  issystem: false
+						});
 						
             $.ajax({
-              url: createURL("listServiceOfferings&issystem=false&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
-              dataType: "json",
-              async: true,
+              url: createURL('listServiceOfferings'),
+              data: data,              
               success: function(json) {
                 var items = json.listserviceofferingsresponse.serviceoffering;
                 args.response.success({
@@ -243,12 +254,14 @@
               edit: {
                 label: 'label.edit',
                 action: function(args) {
-                  var array1 = [];
-                  array1.push("&name=" + todb(args.data.name));
-                  array1.push("&displaytext=" + todb(args.data.displaytext));
+                  var data = {
+									  id: args.context.serviceOfferings[0].id,
+									  name: args.data.name,
+										displaytext: args.data.displaytext
+									};                
                   $.ajax({
-                    url: createURL("updateServiceOffering&id=" + args.context.serviceOfferings[0].id + array1.join("")),
-                    dataType: "json",
+                    url: createURL('updateServiceOffering'),
+                    data: data,
                     success: function(json) {
                       var item = json.updateserviceofferingresponse.serviceoffering;
                       args.response.success({data: item});
@@ -271,9 +284,12 @@
                   }
                 },
                 action: function(args) {
+								  var data = {
+									  id: args.context.serviceOfferings[0].id
+									};								
                   $.ajax({
-                    url: createURL("deleteServiceOffering&id=" + args.context.serviceOfferings[0].id),
-                    dataType: "json",
+                    url: createURL('deleteServiceOffering'),
+                    data: data,
                     async: true,
                     success: function(json) {
                       args.response.success();
@@ -340,10 +356,14 @@
                   }
                 ],
 
-                dataProvider: function(args) {								  							
+                dataProvider: function(args) {			
+                  var data = {
+									  issystem: false,
+										id: args.context.serviceOfferings[0].id
+									};								
 									$.ajax({
-										url: createURL("listServiceOfferings&issystem=false&id=" + args.context.serviceOfferings[0].id),
-										dataType: "json",
+										url: createURL('listServiceOfferings'),
+										data: data,
 										async: true,
 										success: function(json) {										  
 											var item = json.listserviceofferingsresponse.serviceoffering[0];
@@ -508,35 +528,52 @@
               },
 
               action: function(args) {
-                var array1 = [];
-                array1.push("&name=" + args.data.name);
-                array1.push("&displaytext=" + todb(args.data.description));
-								array1.push("&systemvmtype=" + todb(args.data.systemvmtype));
-                array1.push("&storageType=" + todb(args.data.storageType));
-                array1.push("&cpuNumber=" + args.data.cpuNumber);
-                array1.push("&cpuSpeed="+ args.data.cpuSpeed);
-                array1.push("&memory=" + args.data.memory);
+                var data = {
+								  issystem: true,
+								  name: args.data.name,
+									displaytext: args.data.description,
+									systemvmtype: args.data.systemvmtype,
+									storageType: args.data.storageType,
+									cpuNumber: args.data.cpuNumber,
+									cpuSpeed: args.data.cpuSpeed,
+									memory: args.data.memory
+								};		
 
-                if(args.data.networkRate != null && args.data.networkRate.length > 0)
-                  array1.push("&networkrate=" + args.data.networkRate);
+                if(args.data.networkRate != null && args.data.networkRate.length > 0) {
+								  $.extend(data, {
+									  networkrate: args.data.networkRate
+									});								
+								}
 
-                array1.push("&offerha=" + (args.data.offerHA == "on"));
+								$.extend(data, {
+								  offerha: (args.data.offerHA == "on")
+								});								
+               
+                if(args.data.storageTags != null && args.data.storageTags.length > 0) {
+								  $.extend(data, {
+									  tags: args.data.storageTags
+									});		
+								}
 
-                if(args.data.storageTags != null && args.data.storageTags.length > 0)
-                  array1.push("&tags=" + todb(args.data.storageTags));
+                if(args.data.hostTags != null && args.data.hostTags.length > 0) {
+								  $.extend(data, {
+									  hosttags: args.data.hostTags
+									});								
+								}
 
-                if(args.data.hostTags != null && args.data.hostTags.length > 0)
-                  array1.push("&hosttags=" + todb(args.data.hostTags));
-
-                array1.push("&limitcpuuse=" + (args.data.cpuCap == "on"));
-
-                if(args.$form.find('.form-item[rel=domainId]').css("display") != "none")
-                  array1.push("&domainid=" + args.data.domainId);
+								$.extend(data, {
+								  limitcpuuse: (args.data.cpuCap == "on")
+								});
+                
+                if(args.$form.find('.form-item[rel=domainId]').css("display") != "none") {
+								  $.extend(data, {
+									  domainid: args.data.domainId
+									});								
+								}
 
                 $.ajax({
-                  url: createURL("createServiceOffering&issystem=true"+array1.join("")),
-                  dataType: "json",
-                  async: true,
+                  url: createURL('createServiceOffering'),
+                  data: data,                 
                   success: function(json) {
                     var item = json.createserviceofferingresponse.serviceoffering;
                     args.response.success({data: item});
@@ -556,22 +593,16 @@
           },
 
           dataProvider: function(args) {					  
-						var array1 = [];  
-						if(args.filterBy != null) {          
-							if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
-								switch(args.filterBy.search.by) {
-								case "name":
-									if(args.filterBy.search.value.length > 0)
-										array1.push("&keyword=" + args.filterBy.search.value);
-									break;
-								}
-							}
-						}
-					
+						var data = {};
+						listViewDataProvider(args, data);			
+
+            $.extend(data, {
+              issystem: true
+            });						
+											
             $.ajax({
-              url: createURL("listServiceOfferings&issystem=true&page=" + args.page + "&pagesize=" + pageSize  + array1.join("")),
-              dataType: "json",
-              async: true,
+              url: createURL('listServiceOfferings'),
+              data: data,             
               success: function(json) {
                 var items = json.listserviceofferingsresponse.serviceoffering;
                 args.response.success({data:items});
@@ -588,12 +619,14 @@
               edit: {
                 label: 'label.edit',
                 action: function(args) {
-                  var array1 = [];
-                  array1.push("&name=" + todb(args.data.name));
-                  array1.push("&displaytext=" + todb(args.data.displaytext));
+                  var data = {
+									  id: args.context.systemServiceOfferings[0].id,
+										name: args.data.name,
+                    displaytext: args.data.displaytext
+									};                 
                   $.ajax({
-                    url: createURL("updateServiceOffering&id=" + args.context.systemServiceOfferings[0].id + array1.join("")),
-                    dataType: "json",
+                    url: createURL('updateServiceOffering'),
+                    data: data,
                     success: function(json) {
                       var item = json.updateserviceofferingresponse.serviceoffering;
                       args.response.success({data: item});
@@ -616,10 +649,12 @@
                   }
                 },
                 action: function(args) {
+								  var data = {
+									  id: args.context.systemServiceOfferings[0].id
+									};								
                   $.ajax({
-                    url: createURL("deleteServiceOffering&id=" + args.context.systemServiceOfferings[0].id),
-                    dataType: "json",
-                    async: true,
+                    url: createURL('deleteServiceOffering'),
+                    data: data,                    
                     success: function(json) {
                       args.response.success();
                     },
@@ -703,11 +738,14 @@
                   }
                 ],
 
-                dataProvider: function(args) {								  
+                dataProvider: function(args) {		
+                  var data = {
+									  issystem: true,
+										id: args.context.systemServiceOfferings[0].id
+									};								
 									$.ajax({
-										url: createURL("listServiceOfferings&issystem=true&id=" + args.context.systemServiceOfferings[0].id),
-										dataType: "json",
-										async: true,
+										url: createURL('listServiceOfferings'),
+										data: data,										
 										success: function(json) {										  
 											var item = json.listserviceofferingsresponse.serviceoffering[0];
 											args.response.success({
@@ -750,22 +788,12 @@
           reorder: cloudStack.api.actions.sort('updateDiskOffering', 'diskOfferings'),
 
           dataProvider: function(args) {					  
-						var array1 = [];  
-						if(args.filterBy != null) {          
-							if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
-								switch(args.filterBy.search.by) {
-								case "name":
-									if(args.filterBy.search.value.length > 0)
-										array1.push("&keyword=" + args.filterBy.search.value);
-									break;
-								}
-							}
-						}				
-					
+						var data = {};
+						listViewDataProvider(args, data);						
+											
             $.ajax({
-              url: createURL("listDiskOfferings&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
-              dataType: "json",
-              async: true,
+              url: createURL('listDiskOfferings'),
+              data: data,             
               success: function(json) {
                 var items = json.listdiskofferingsresponse.diskoffering;
                 args.response.success({data:items});
@@ -860,25 +888,35 @@
               },
 
               action: function(args) {
-                var array1 = [];
-                array1.push("&name=" + args.data.name);
-                array1.push("&displaytext=" + todb(args.data.description));
+                var data = {
+								  isMirrored: false,
+									name: args.data.name,
+									displaytext: args.data.description,
+									storageType: args.data.storageType,
+									customized: (args.data.isCustomized=="on")
+								};																
+               
+                if(args.$form.find('.form-item[rel=disksize]').css("display") != "none") {
+								  $.extend(data, {
+									  disksize: args.data.disksize
+									});		
+								}
 
-                array1.push("&storageType=" + todb(args.data.storageType));
-                array1.push("&customized=" + (args.data.isCustomized=="on"));
-                if(args.$form.find('.form-item[rel=disksize]').css("display") != "none")
-                  array1.push("&disksize=" + args.data.disksize);
+                if(args.data.tags != null && args.data.tags.length > 0) {
+								  $.extend(data, {
+									  tags: args.data.tags
+									});	
+								}
 
-                if(args.data.tags != null && args.data.tags.length > 0)
-                  array1.push("&tags=" + todb(args.data.tags));
-
-                if(args.$form.find('.form-item[rel=domainId]').css("display") != "none")
-                  array1.push("&domainid=" + args.data.domainId);
+                if(args.$form.find('.form-item[rel=domainId]').css("display") != "none") {
+								  $.extend(data, {
+									  domainid: args.data.domainId
+									});		
+								}
 
                 $.ajax({
-                  url: createURL("createDiskOffering&isMirrored=false" + array1.join("")),
-                  dataType: "json",
-                  async: true,
+                  url: createURL('createDiskOffering'),
+                  data: data,                  
                   success: function(json) {
                     var item = json.creatediskofferingresponse.diskoffering;
                     args.response.success({data: item});
@@ -903,12 +941,14 @@
               edit: {
                 label: 'label.edit',
                 action: function(args) {
-                  var array1 = [];
-                  array1.push("&name=" + todb(args.data.name));
-                  array1.push("&displaytext=" + todb(args.data.displaytext));
+                  var data = {
+									  id: args.context.diskOfferings[0].id,
+										name: args.data.name,
+										displaytext: args.data.displaytext
+									};									
                   $.ajax({
-                    url: createURL("updateDiskOffering&id=" + args.context.diskOfferings[0].id + array1.join("")),
-                    dataType: "json",
+                    url: createURL('updateDiskOffering'),
+                    data: data,
                     success: function(json) {
                       var item = json.updatediskofferingresponse.diskoffering;
                       args.response.success({data: item});
@@ -931,10 +971,12 @@
                   }
                 },
                 action: function(args) {
+								  var data = {
+									  id: args.context.diskOfferings[0].id
+									};								
                   $.ajax({
-                    url: createURL("deleteDiskOffering&id=" + args.context.diskOfferings[0].id),
-                    dataType: "json",
-                    async: true,
+                    url: createURL('deleteDiskOffering'),
+                    data: data,                    
                     success: function(json) {
                       args.response.success();
                     },
@@ -990,10 +1032,12 @@
                 ],
 
                 dataProvider: function(args) {								 
+									var data = {
+									  id: args.context.diskOfferings[0].id
+									};
 									$.ajax({
-										url: createURL("listDiskOfferings&id=" + args.context.diskOfferings[0].id),
-										dataType: "json",
-										async: true,
+										url: createURL('listDiskOfferings'),
+										data: data,										
 										success: function(json) {
 											var item = json.listdiskofferingsresponse.diskoffering[0];
 											args.response.success({
@@ -1028,26 +1072,12 @@
           },
 
           dataProvider: function(args) {					  
-						var array1 = [];  
-						if(args.filterBy != null) {          
-							if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
-								switch(args.filterBy.search.by) {
-								case "name":
-									if(args.filterBy.search.value.length > 0)
-										array1.push("&keyword=" + args.filterBy.search.value);
-									break;
-								}
-							}
-						}
+						var data = {};
+						listViewDataProvider(args, data);		
 					
             $.ajax({
-              url: createURL('listNetworkOfferings' + array1.join("")),
-              data: {
-                page: args.page,
-                pagesize: pageSize
-              },
-              dataType: "json",
-              async: true,
+              url: createURL('listNetworkOfferings'),
+              data: data,
               success: function(json) {
                 var items = json.listnetworkofferingsresponse.networkoffering;
 																
@@ -1743,13 +1773,16 @@
 							edit: {
                 label: 'label.edit',
                 action: function(args) {
-                  var array1 = [];
-                  array1.push("&name=" + todb(args.data.name));
-                  array1.push("&displaytext=" + todb(args.data.displaytext));
-									array1.push("&availability=" + args.data.availability);								
+                  var data = {
+									  id: args.context.networkOfferings[0].id,
+										name: args.data.name,
+										displaytext: args.data.displaytext,
+										availability: args.data.availability
+									};
+                					
                   $.ajax({
-                    url: createURL("updateNetworkOffering&id=" + args.context.networkOfferings[0].id + array1.join("")),
-                    dataType: "json",
+                    url: createURL('updateNetworkOffering'),
+                    data: data,
                     success: function(json) {										 									
 											//if availability is being updated from Required to Optional
 										  if(args.context.networkOfferings[0].availability == "Required" && args.data.availability == "Optional") 

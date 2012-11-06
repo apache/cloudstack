@@ -37,8 +37,8 @@ var ERROR_INTERNET_CANNOT_CONNECT = 12029;
 var ERROR_VMOPS_ACCOUNT_ERROR = 531;
 
 // Default password is MD5 hashed.  Set the following variable to false to disable this.
-var md5Hashed = true;
-var md5HashedLogin = true;
+var md5Hashed = false;
+var md5HashedLogin = false;
 
 //page size for API call (e.g."listXXXXXXX&pagesize=N" )
 var pageSize = 20;
@@ -453,6 +453,29 @@ function listViewDataProvider(args, data) {
 		pagesize: pageSize		
 	});	
 }
+
+//used by infrastruct page and network page	
+var addExtraPropertiesToGuestNetworkObject = function(jsonObj) {  
+	jsonObj.networkdomaintext = jsonObj.networkdomain;
+	jsonObj.networkofferingidText = jsonObj.networkofferingid;
+
+	if(jsonObj.acltype == "Domain") {
+		if(jsonObj.domainid == rootAccountId)
+			jsonObj.scope = "All";
+		else
+			jsonObj.scope = "Domain (" + jsonObj.domain + ")";
+	}
+	else if (jsonObj.acltype == "Account"){
+		if(jsonObj.project != null)
+			jsonObj.scope = "Account (" + jsonObj.domain + ", " + jsonObj.project + ")";
+		else
+			jsonObj.scope = "Account (" + jsonObj.domain + ", " + jsonObj.account + ")";
+	}
+
+	if(jsonObj.vlan == null && jsonObj.broadcasturi != null) {
+		jsonObj.vlan = jsonObj.broadcasturi.replace("vlan://", "");   	
+	}
+}	
 
 //find service object in network object
 function ipFindNetworkServiceByName(pName, networkObj) {    

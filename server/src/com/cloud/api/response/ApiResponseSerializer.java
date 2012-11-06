@@ -33,8 +33,8 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseGsonHelper;
 import com.cloud.api.ApiServer;
 import com.cloud.api.BaseCmd;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.api.ResponseObject;
+import com.cloud.utils.IdentityProxy;
 import com.cloud.utils.encoding.URLEncoder;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.uuididentity.dao.IdentityDao;
@@ -70,7 +70,7 @@ public class ApiResponseSerializer {
             	
             StringBuilder sb = new StringBuilder();
 
-            sb.append("{ \"" + result.getResponseName() + "\" : ");
+            sb.append("{ \"").append(result.getResponseName()).append("\" : ");
             if (result instanceof ListResponse) {
                 List<? extends ResponseObject> responses = ((ListResponse) result).getResponses();
                 if ((responses != null) && !responses.isEmpty()) {
@@ -80,19 +80,20 @@ public class ApiResponseSerializer {
                     jsonStr = unescape(jsonStr);
 
                     if (count != null && count != 0) {
-                        sb.append("{ \"" + ApiConstants.COUNT + "\":" + count + " ,\"" + responses.get(0).getObjectName() + "\" : [  " + jsonStr);
+                        sb.append("{ \"").append(ApiConstants.COUNT).append("\":").append(count).append(" ,\"").
+                        append(responses.get(0).getObjectName()).append("\" : [  ").append(jsonStr);
                     }
                     for (int i = 1; i < ((ListResponse) result).getResponses().size(); i++) {
                         jsonStr = gson.toJson(responses.get(i));
                         jsonStr = unescape(jsonStr);
-                        sb.append(", " + jsonStr);
+                        sb.append(", ").append(jsonStr);
                     }
                     sb.append(" ] }");
                 } else {
                     sb.append("{ }");
                 }
             } else if (result instanceof SuccessResponse) {
-                sb.append("{ \"success\" : \"" + ((SuccessResponse) result).getSuccess() + "\"} ");
+                sb.append("{ \"success\" : \"").append(((SuccessResponse) result).getSuccess()).append("\"} ");
             } else if (result instanceof ExceptionResponse) {            	
             	String jsonErrorText = gson.toJson((ExceptionResponse) result);
             	jsonErrorText = unescape(jsonErrorText);
@@ -104,7 +105,7 @@ public class ApiResponseSerializer {
                     if (result instanceof AsyncJobResponse || result instanceof CreateCmdResponse) {
                         sb.append(jsonStr);
                     } else {
-                        sb.append(" { \"" + result.getObjectName() + "\" : " + jsonStr + " } ");
+                        sb.append(" { \"").append(result.getObjectName()).append("\" : ").append(jsonStr).append(" } ");
                     }
                 } else {
                     sb.append("{ }");
@@ -119,13 +120,14 @@ public class ApiResponseSerializer {
     private static String toXMLSerializedString(ResponseObject result) {
         StringBuilder sb = new StringBuilder();
         sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
-        sb.append("<" + result.getResponseName() + " cloud-stack-version=\"" + ApiDBUtils.getVersion() + "\">");
+        sb.append("<").append(result.getResponseName()).append(" cloud-stack-version=\"").append(ApiDBUtils.getVersion()).append("\">");
 
         if (result instanceof ListResponse) {
             Integer count = ((ListResponse) result).getCount();
 
             if (count != null && count != 0) {
-                sb.append("<" + ApiConstants.COUNT + ">" + ((ListResponse) result).getCount() + "</" + ApiConstants.COUNT + ">");
+                sb.append("<").append(ApiConstants.COUNT).append(">").append(((ListResponse) result).getCount()).
+                append("</").append(ApiConstants.COUNT).append(">");
             }
             List<? extends ResponseObject> responses = ((ListResponse) result).getResponses();
             if ((responses != null) && !responses.isEmpty()) {
@@ -141,17 +143,17 @@ public class ApiResponseSerializer {
             }
         }
 
-        sb.append("</" + result.getResponseName() + ">");
+        sb.append("</").append(result.getResponseName()).append(">");
         return sb.toString();
     }
 
     private static void serializeResponseObjXML(StringBuilder sb, ResponseObject obj) {
         if (!(obj instanceof SuccessResponse) && !(obj instanceof ExceptionResponse)) {
-            sb.append("<" + obj.getObjectName() + ">");
+            sb.append("<").append(obj.getObjectName()).append(">");
         }
         serializeResponseObjFieldsXML(sb, obj);
         if (!(obj instanceof SuccessResponse) && !(obj instanceof ExceptionResponse)) {
-            sb.append("</" + obj.getObjectName() + ">");
+            sb.append("</").append(obj.getObjectName()).append(">");
         }
     }
 
@@ -221,24 +223,24 @@ public class ApiResponseSerializer {
                         	if(id != null && !id.isEmpty()) {
                         		// If this is the first IdentityProxy field encountered, put in a uuidList tag.
                         		if (!usedUuidList) {
-                        			sb.append("<" + serializedName.value() + ">");
+                        			sb.append("<").append(serializedName.value()).append(">");
                         			usedUuidList = true;
                         		}
-                        		sb.append("<" + "uuid" + ">" + id + "</" + "uuid" + ">");                        		
+                        		sb.append("<uuid>").append(id).append("</uuid>");                        		
                         	}
                         	// Append the new idFieldName property also.
                         	String idFieldName = idProxy.getidFieldName();
                         	if (idFieldName != null) {
-                        		sb.append("<" + "uuidProperty" + ">" + idFieldName + "</" + "uuidProperty" + ">");                        		
+                        		sb.append("<uuidProperty>").append(idFieldName).append("</uuidProperty>");                        		
                         	}
                         }                        
                     }
                     if (usedUuidList) {
                     	// close the uuidList.
-                    	sb.append("</" + serializedName.value() + ">");
+                    	sb.append("</").append(serializedName.value()).append(">");
                     }
                 } else if (fieldValue instanceof Date) {
-                    sb.append("<" + serializedName.value() + ">" + BaseCmd.getDateString((Date) fieldValue) + "</" + serializedName.value() + ">");                
+                    sb.append("<").append(">").append(BaseCmd.getDateString((Date) fieldValue)).append("</").append(serializedName.value()).append(">");                
                 } else if (fieldValue instanceof IdentityProxy) {                	
                 	IdentityProxy idProxy = (IdentityProxy)fieldValue;
                 	String id = (idProxy.getValue() != null ? String.valueOf(idProxy.getValue()) : "");
@@ -251,14 +253,14 @@ public class ApiResponseSerializer {
                 		}
                 	}
                 	if(id != null && !id.isEmpty())
-                		sb.append("<" + serializedName.value() + ">" + id + "</" + serializedName.value() + ">");
+                		sb.append("<").append(serializedName.value()).append(">").append(id).append("</").append(serializedName.value()).append(">");
                 } else {
                     String resultString = escapeSpecialXmlChars(fieldValue.toString());
                     if (!(obj instanceof ExceptionResponse)) {
                         resultString = encodeParam(resultString);
                     }
                     
-                    sb.append("<" + serializedName.value() + ">" + resultString + "</" + serializedName.value() + ">");
+                    sb.append("<").append(serializedName.value()).append(">").append(resultString).append("</").append(serializedName.value()).append(">");
                 }
             }
         }

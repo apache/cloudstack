@@ -921,7 +921,18 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         }
         
         if (password != null) {
-            user.setPassword(password);
+            String encodedPassword = null;
+            for (Enumeration<UserAuthenticator> en = _userAuthenticators.enumeration(); en.hasMoreElements();) {
+                UserAuthenticator authenticator = en.nextElement();
+                encodedPassword = authenticator.encode(password);
+                if (encodedPassword != null) {
+                    break;
+                }
+            }
+            if (encodedPassword == null) {
+            	throw new CloudRuntimeException("Failed to encode password");
+            }
+            user.setPassword(encodedPassword);
         }
         if (email != null) {
             user.setEmail(email);
@@ -1670,7 +1681,20 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Creating user: " + userName + ", accountId: " + accountId + " timezone:" + timezone);
         }
-        UserVO user = _userDao.persist(new UserVO(accountId, userName, password, firstName, lastName, email, timezone));
+        
+        String encodedPassword = null;
+        for (Enumeration<UserAuthenticator> en = _userAuthenticators.enumeration(); en.hasMoreElements();) {
+            UserAuthenticator authenticator = en.nextElement();
+            encodedPassword = authenticator.encode(password);
+            if (encodedPassword != null) {
+                break;
+            }
+        }
+        if (encodedPassword == null) {
+        	throw new CloudRuntimeException("Failed to encode password");
+        }
+
+        UserVO user = _userDao.persist(new UserVO(accountId, userName, encodedPassword, firstName, lastName, email, timezone));
 
         return user;
     }

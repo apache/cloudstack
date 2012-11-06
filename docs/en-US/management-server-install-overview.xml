@@ -23,23 +23,21 @@
 -->
 
 <section id="management-server-installation-overview">
-        <title>Management Server Installation Overview</title>
-        <para>This section describes installing the Management Server. There are two slightly different installation flows, depending on how many Management Server nodes will be in your cloud:</para>
-        <itemizedlist>
-            <listitem><para>A single Management Server node, with MySQL on the same node.</para></listitem>
-            <listitem><para>Multiple Management Server nodes, with MySQL on a node separate from the Management Servers.</para></listitem>
-        </itemizedlist>
-        <para>In either case, each machine must meet the system requirements described in System Requirements.</para> 
-        <warning><para>For the sake of security, be sure the public Internet can not access port 8096 or port 8250 on the Management Server.</para></warning>
-        <para>
-            The procedure for installing the Management Server is:
-        </para>
-            <orderedlist>
+    <title>Management Server Installation Overview</title>
+    <para>This section describes installing the Management Server. There are two slightly different installation flows, depending on how many Management Server nodes will be in your cloud:</para>
+    <itemizedlist>
+        <listitem><para>A single Management Server node, with MySQL on the same node.</para></listitem>
+        <listitem><para>Multiple Management Server nodes, with MySQL on a node separate from the Management Servers.</para></listitem>
+    </itemizedlist>
+    <para>In either case, each machine must meet the system requirements described in System Requirements.</para> 
+    <warning><para>For the sake of security, be sure the public Internet can not access port 8096 or port 8250 on the Management Server.</para></warning>
+    <para>The procedure for installing the Management Server is:</para>
+    <orderedlist>
                 <listitem>
       <para>Prepare the Operating System</para>
     </listitem>
     <listitem>
-      <para>Download and install vhd-util.</para>
+      <para>(XenServer only) Download and install vhd-util.</para>
     </listitem>
                 <listitem><para>Install the First Management Server</para></listitem>
                 <listitem><para>Install and Configure the MySQL database</para></listitem>

@@ -27,7 +27,7 @@
         <listitem><para>addNetworkServiceProvider</para></listitem>
         <listitem>
             <itemizedlist>
-                <listitem><para>name = "NiciraNVP"</para></listitem>
+                <listitem><para>name = "NiciraNvp"</para></listitem>
                 <listitem><para>physicalnetworkid = &lt;the uuid of the physical network&gt;</para></listitem>
             </itemizedlist>
         </listitem>

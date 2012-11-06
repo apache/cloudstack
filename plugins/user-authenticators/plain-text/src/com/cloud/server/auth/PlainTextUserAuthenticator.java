@@ -87,4 +87,10 @@ public class PlainTextUserAuthenticator extends DefaultUserAuthenticator {
 		_userAccountDao = locator.getDao(UserAccountDao.class);
 		return true;
 	}
+
+	@Override
+	public String encode(String password) {
+		// Plaintext so no encoding at all
+		return password; 
+	}
 }

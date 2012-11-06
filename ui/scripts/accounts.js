@@ -787,24 +787,19 @@
             firstname: { label: 'label.first.name' },
             lastname: { label: 'label.last.name' }
           },
-          dataProvider: function(args) {
-            var array1 = [];
-            if(args.filterBy != null) {
-              if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
-                switch(args.filterBy.search.by) {
-                case "name":
-                  if(args.filterBy.search.value.length > 0)
-                    array1.push("&keyword=" + args.filterBy.search.value);
-                  break;
-                }
-              }
-            }
-
+          dataProvider: function(args) {    
             var accountObj = args.context.accounts[0];
+						
 						if(isAdmin() || isDomainAdmin()) {
+						  var data = {
+							  domainid: accountObj.domainid,
+								account: accountObj.name								
+							};
+							listViewDataProvider(args, data);		
+							
 							$.ajax({
-								url: createURL("listUsers&domainid=" + accountObj.domainid + "&account=" + todb(accountObj.name) + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
-								dataType: "json",
+								url: createURL('listUsers'),
+								data: data,
 								success: function(json) {
 									args.response.success({
 										actionFilter: userActionfilter,
@@ -893,29 +888,39 @@
               action: function(args) {
                 var accountObj = args.context.accounts[0];
 
-                var array1 = [];
-                array1.push("&username=" + todb(args.data.username));
-
+                var data = {
+								  username: args.data.username									
+								};
+								
                 var password = args.data.password;
-                if (md5Hashed)
-                  password = $.md5(password);
-                else
-                  password = todb(password);
-                array1.push("&password=" + password);
-
-                array1.push("&email=" + todb(args.data.email));
-                array1.push("&firstname=" + todb(args.data.firstname));
-                array1.push("&lastname=" + todb(args.data.lastname));
-                if(args.data.timezone != null && args.data.timezone.length > 0)
-                  array1.push("&timezone=" + todb(args.data.timezone));
-
-                array1.push("&domainid=" + accountObj.domainid);
-                array1.push("&account=" + todb(accountObj.name));
-                array1.push("&accounttype=" + accountObj.accounttype);
-
+                if (md5Hashed) {
+                  password = $.md5(password);     
+                }									
+								$.extend(data, {
+                  password: password
+                });			
+               
+								$.extend(data, {
+								  email: args.data.email,
+									firstname: args.data.firstname,
+									lastname: args.data.lastname
+								});
+								
+                if(args.data.timezone != null && args.data.timezone.length > 0) {
+								  $.extend(data, {
+									  timezone: args.data.timezone
+									});								
+								}
+               
+								$.extend(data, {
+								  domainid: accountObj.domainid,
+                  account: accountObj.name,
+									accounttype: accountObj.accounttype
+								});
+								
                 $.ajax({
-                  url: createURL("createUser" + array1.join("")),
-                  dataType: "json",
+                  url: createURL('createUser'),
+                  data: data,
                   success: function(json) {
                     var item = json.createuserresponse.user;
                     args.response.success({data: item});
@@ -942,15 +947,17 @@
               edit: {
                 label: 'label.edit',
                 action: function(args) {
-                  var array1 = [];
-                  array1.push("&username=" + todb(args.data.username));
-                  array1.push("&email=" + todb(args.data.email));
-                  array1.push("&firstname=" + todb(args.data.firstname));
-                  array1.push("&lastname=" + todb(args.data.lastname));
-                  array1.push("&timezone=" + todb(args.data.timezone));
+                  var data = {
+									  id: args.context.users[0].id,
+									  username: args.data.username,
+										email: args.data.email,
+										firstname: args.data.firstname,
+										lastname: args.data.lastname,
+										timezone: args.data.timezone
+									};                                  
                   $.ajax({
-                    url: createURL("updateUser&id=" + args.context.users[0].id + array1.join("")),
-                    dataType: "json",
+                    url: createURL('updateUser'),
+                    data: data,
                     success: function(json) {
                       var item = json.updateuserresponse.user;
                       args.response.success({data:item});
@@ -993,11 +1000,15 @@
                   var password = args.data.newPassword;
                   if (md5Hashed)
                     password = $.md5(password);
-                  else
-                    password = todb(password);
+                  
+									var data = {
+									  id: args.context.users[0].id,
+										password: password 
+									};
+									
                   $.ajax({
-                    url: createURL("updateUser&id=" + args.context.users[0].id + "&password=" + password),
-                    dataType: "json",
+                    url: createURL('updateUser'),
+                    data: data,
                     async: true,
                     success: function(json) {
                       args.response.success({data: json.updateuserresponse.user});
@@ -1022,10 +1033,12 @@
                   }
                 },
                 action: function(args) {
+								  var data = {
+									  id: args.context.users[0].id
+									};								
                   $.ajax({
-                    url: createURL("registerUserKeys&id=" + args.context.users[0].id),
-                    dataType: "json",
-                    async: true,
+                    url: createURL('registerUserKeys'),
+                    data: data,                    
                     success: function(json) {
                       args.response.success({data: json.registeruserkeysresponse.userkeys});
                     }
@@ -1049,10 +1062,12 @@
                   }
                 },
                 action: function(args) {
+								  var data = {
+									  id: args.context.users[0].id
+									};								
                   $.ajax({
-                    url: createURL("disableUser&id=" + args.context.users[0].id),
-                    dataType: "json",
-                    async: true,
+                    url: createURL('disableUser'),
+                    data: data,                   
                     success: function(json) {
                       var jid = json.disableuserresponse.jobid;
                       args.response.success(
@@ -1086,10 +1101,12 @@
                   }
                 },
                 action: function(args) {
+								  var data = {
+									  id: args.context.users[0].id 
+									};								
                   $.ajax({
-                    url: createURL("enableUser&id=" + args.context.users[0].id),
-                    dataType: "json",
-                    async: true,
+                    url: createURL('enableUser'),
+                    data: data,                   
                     success: function(json) {
                       args.response.success({data: json.enableuserresponse.user});
                     },
@@ -1116,10 +1133,12 @@
                   }
                 },
                 action: function(args) {
+								  var data = {
+									  id: args.context.users[0].id
+									};								
                   $.ajax({
-                    url: createURL("deleteUser&id=" + args.context.users[0].id),
-                    dataType: "json",
-                    async: true,
+                    url: createURL('deleteUser'),
+                    data: data,                    
                     success: function(json) {
 										  args.response.success();
 										}

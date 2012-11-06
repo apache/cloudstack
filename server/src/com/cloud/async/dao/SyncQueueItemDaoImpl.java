@@ -33,13 +33,25 @@ import com.cloud.async.SyncQueueItemVO;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 
 @Local(value = { SyncQueueItemDao.class })
 public class SyncQueueItemDaoImpl extends GenericDaoBase<SyncQueueItemVO, Long> implements SyncQueueItemDao {
     private static final Logger s_logger = Logger.getLogger(SyncQueueItemDaoImpl.class);
+    final GenericSearchBuilder<SyncQueueItemVO, Long> queueIdSearch;
+    
+    protected SyncQueueItemDaoImpl() {
+        super();
+        queueIdSearch = createSearchBuilder(Long.class);
+        queueIdSearch.and("contentId", queueIdSearch.entity().getContentId(), Op.EQ);
+        queueIdSearch.and("contentType", queueIdSearch.entity().getContentType(), Op.EQ);
+        queueIdSearch.selectField(queueIdSearch.entity().getId());
+        queueIdSearch.done();
+    }
 
 
     @Override
@@ -131,5 +143,16 @@ public class SyncQueueItemDaoImpl extends GenericDaoBase<SyncQueueItemVO, Long> 
         if(exclusive)
             return lockRows(sc, null, true);
         return listBy(sc, null);
+    }
+
+
+    @Override
+    public Long getQueueItemIdByContentIdAndType(long contentId, String contentType) {
+        SearchCriteria<Long> sc = queueIdSearch.create();
+        sc.setParameters("contentId", contentId);
+        sc.setParameters("contentType", contentType);
+        List<Long> id = customSearch(sc, null);
+
+        return id.size() == 0 ? null : id.get(0);
     }
 }

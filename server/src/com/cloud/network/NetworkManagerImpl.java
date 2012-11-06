@@ -2105,7 +2105,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         List<NicVO> nics = _nicDao.listByVmId(vmProfile.getId());
 
         // we have to implement default nics first - to ensure that default network elements start up first in multiple
-        // nics case)(need for setting DNS on Dhcp to domR's Ip4 address)
+        //nics case
+        // (need for setting DNS on Dhcp to domR's Ip4 address)
         Collections.sort(nics, new Comparator<NicVO>() {
 
             @Override
@@ -2204,6 +2205,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
+    @DB
     public void release(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, boolean forced) throws
             ConcurrentOperationException, ResourceUnavailableException {
         List<NicVO> nics = _nicDao.listByVmId(vmProfile.getId());
@@ -2211,19 +2213,32 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             releaseNic(vmProfile, nic);
         }
     }
+
+
     @Override
+    @DB
     public void releaseNic(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, Nic nic) 
             throws ConcurrentOperationException, ResourceUnavailableException {
         NicVO nicVO = _nicDao.findById(nic.getId());
         releaseNic(vmProfile, nicVO);
     }
 
-
-    protected void releaseNic(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, NicVO nic) 
+    @DB
+    protected void releaseNic(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, NicVO nicVO) 
             throws ConcurrentOperationException, ResourceUnavailableException {
-        NetworkVO network = _networksDao.findById(nic.getNetworkId());
-        if (nic.getState() == Nic.State.Reserved || nic.getState() == Nic.State.Reserving) {
-            Nic.State originalState = nic.getState();
+        //lock the nic
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        
+        NicVO nic = _nicDao.lockRow(nicVO.getId(), true);
+        if (nic == null) {
+            throw new ConcurrentOperationException("Unable to acquire lock on nic " + nic);
+        }
+        
+        Nic.State originalState = nic.getState();
+        NetworkVO network = _networksDao.findById(nicVO.getNetworkId());
+        
+        if (originalState == Nic.State.Reserved || originalState == Nic.State.Reserving) {
             if (nic.getReservationStrategy() == Nic.ReservationStrategy.Start) {
                 NetworkGuru guru = _networkGurus.get(network.getGuruName());
                 nic.setState(Nic.State.Releasing);
@@ -2239,6 +2254,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                         _nicDao.update(nic.getId(), nic);
                     }
                 }
+                //commit the transaction before proceeding releasing nic profile on the network elements
+                txn.commit();
+                
                 // Perform release on network elements
                 for (NetworkElement element : _networkElements) {
                     if (s_logger.isDebugEnabled()) {
@@ -2252,6 +2270,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             } else {
                 nic.setState(Nic.State.Allocated);
                 updateNic(nic, network.getId(), -1);
+                txn.commit();
             }
         }
     }

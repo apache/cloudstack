@@ -177,6 +177,7 @@ import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.projects.ProjectManager;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.server.auth.UserAuthenticator;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -215,7 +216,9 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.SSHKeyPair;
 import com.cloud.user.SSHKeyPairVO;
 import com.cloud.user.User;
+import com.cloud.user.UserAccount;
 import com.cloud.user.UserContext;
+import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserDao;
@@ -338,6 +341,8 @@ public class ManagementServerImpl implements ManagementServer {
     private final StatsCollector _statsCollector;
 
     private final Map<String, Boolean> _availableIdsMap;
+    
+    private Adapters<UserAuthenticator> _userAuthenticators;
 
     private String _hashKey = null;
 
@@ -416,6 +421,11 @@ public class ManagementServerImpl implements ManagementServer {
         _availableIdsMap = new HashMap<String, Boolean>(availableIds.length);
         for (String id : availableIds) {
             _availableIdsMap.put(id, true);
+        }
+        
+        _userAuthenticators = locator.getAdapters(UserAuthenticator.class);
+        if (_userAuthenticators == null || !_userAuthenticators.isSet()) {
+            s_logger.error("Unable to find an user authenticator.");
         }
     }
 
@@ -3584,6 +3594,29 @@ public class ManagementServerImpl implements ManagementServer {
             return _vmInstanceDao.findById(systemVmId);
         } else {
             throw new CloudRuntimeException("Unable to upgrade system vm " + systemVm);
+        }
+
+    }
+    
+    public void enableAdminUser(String password) {
+        String encodedPassword = null;
+        
+        UserVO adminUser = _userDao.getUser(2);
+        if (adminUser.getState() == Account.State.disabled) {
+        	// This means its a new account, set the password using the authenticator
+        
+	        for (Enumeration<UserAuthenticator> en = _userAuthenticators.enumeration(); en.hasMoreElements();) {
+	            UserAuthenticator authenticator = en.nextElement();
+	            encodedPassword = authenticator.encode(password);
+	            if (encodedPassword != null) {
+	                break;
+	            }
+	        }
+	        
+	        adminUser.setPassword(encodedPassword);
+	        adminUser.setState(Account.State.enabled);
+	        _userDao.persist(adminUser);
+	        s_logger.info("Admin user enabled");
         }
 
     }
