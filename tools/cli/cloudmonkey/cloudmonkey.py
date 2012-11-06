@@ -54,7 +54,7 @@ completions = cloudstackAPI.__all__
 
 
 class CloudStackShell(cmd.Cmd):
-    intro = ("☁ Apache CloudStack cloudmonkey " + __version__ +
+    intro = ("☁ Apache CloudStack 🐵 cloudmonkey " + __version__ +
              ". Type help or ? to list commands.\n")
     ruler = "-"
     config_file = os.path.expanduser('~/.cloudmonkey_config')
@@ -77,7 +77,7 @@ class CloudStackShell(cmd.Cmd):
             for key in self.config_fields.keys():
                 setattr(self, key, self.config_fields[key])
             config = self.write_config()
-            print("🙉  Set your apiKey, secretKey, host, port, prompt, color,"
+            print("🐵 Set your apiKey, secretKey, host, port, prompt, color,"
                   " log_file, history_file using the set command!")
 
         for key in self.config_fields.keys():
@@ -318,13 +318,14 @@ class CloudStackShell(cmd.Cmd):
         """
         Set config for CloudStack CLI. Available options are:
         host, port, apiKey, secretKey, log_file, history_file
+        You may also edit your ~/.cloudmonkey_config instead of using set.
 
         Example:
         set host 192.168.56.2
-        set prompt 🙉 cloudmonkey>
+        set prompt 🐵 cloudmonkey>
         set log_file /var/log/cloudmonkey.log
         """
-        args = args.split(' ')
+        args = shlex.split(args.strip())
         if len(args) == 2:
             key, value = args
             # Note: keys and fields should have same names
