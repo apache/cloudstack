@@ -6075,7 +6075,7 @@
                     label: 'label.numretries',
                     defaultValue: '2'
                   },
-                  inline: {
+                 /* inline: {
                     label: 'Mode',
                     select: function(args) {
                       var items = [];
@@ -6083,7 +6083,7 @@
                       items.push({id: "true", description: "inline"});
                       args.response.success({data: items});
                     }
-                  },
+                  },*/
                   dedicated: {
                     label: 'label.dedicated',
                     isBoolean: true,
