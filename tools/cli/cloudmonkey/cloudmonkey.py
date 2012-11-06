@@ -266,12 +266,15 @@ class CloudStackShell(cmd.Cmd):
             try:
                 api_cmd_str = "%sCmd" % api_name
                 api_mod = self.get_api_module(api_name, [api_cmd_str])
-                api_cmd = getattr(api_mod, api_cmd_str)
+                api_cmd = getattr(api_mod, api_cmd_str)()
                 doc = api_mod.__doc__
             except AttributeError, e:
                 self.print_shell("Error: API attribute %s not found!" % e)
             params = filter(lambda x: '__' not in x and 'required' not in x,
-                            dir(api_cmd()))
+                            dir(api_cmd))
+            if len(api_cmd.required) > 0:
+                doc += "\nRequired args: %s" % " ".join(api_cmd.required)
+            doc += "\nArgs: %s" % " ".join(params)
             api_name_lower = api_name.replace(verb, '').lower()
             self.cache_verbs[verb][api_name_lower] = [api_name, params, doc]
 
