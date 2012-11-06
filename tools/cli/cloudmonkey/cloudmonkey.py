@@ -195,20 +195,6 @@ class CloudStackShell(cmd.Cmd):
         elif not (str(result) is None):
             self.print_shell(result)
 
-    def do_quit(self, s):
-        """
-        Quit Apache CloudStack CLI
-        """
-        self.print_shell("Bye!")
-        return True
-
-    def do_shell(self, args):
-        """
-        Execute shell commands using shell <command> or !<command>
-        Example: !ls or shell ls
-        """
-        os.system(args)
-
     def make_request(self, command, requests={}):
         conn = cloudConnection(self.host, port=int(self.port),
                                apiKey=self.apiKey, securityKey=self.secretKey,
@@ -346,6 +332,30 @@ class CloudStackShell(cmd.Cmd):
         return [s[offs:] for s in
                ['host', 'port', 'apiKey', 'secretKey', 'prompt', 'color',
                 'log_file', 'history_file'] if s.startswith(mline)]
+
+    def do_shell(self, args):
+        """
+        Execute shell commands using shell <command> or !<command>
+
+        Example:
+        !ls
+        shell ls
+        !for((i=0; i<10; i++)); do cloudmonkey create user account=admin \
+            email=test@test.tt firstname=user$i lastname=user$i \
+            password=password username=user$i; done
+        """
+        os.system(args)
+
+
+    def do_quit(self, args):
+        """
+        Quit Apache CloudStack CLI
+        """
+        self.print_shell("Bye!")
+        return self.do_EOF(args)
+
+    def do_EOF(self, args):
+        return True
 
 
 def main():
