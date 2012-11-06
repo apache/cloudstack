@@ -70,8 +70,8 @@ class CloudStackShell(cmd.Cmd):
             for key in self.config_fields.keys():
                 setattr(self, key, self.config_fields[key])
             config = self.write_config()
-            print("'🙉  Set your apiKey, secretKey, host, port, prompt, color, "
-                  "log_file, history_file using the set command!")
+            print("🙉  Set your apiKey, secretKey, host, port, prompt, color,"
+                  " log_file, history_file using the set command!")
 
         for key in self.config_fields.keys():
             setattr(self, key, config.get('CLI', key))
@@ -232,7 +232,8 @@ class CloudStackShell(cmd.Cmd):
         command = api_cmd()
         response = api_rsp()
         #FIXME: Parsing logic
-        args_dict = dict(map(lambda x: x.split("="),
+        args_dict = dict(map(lambda x: [x.partition("=")[0],
+                                        x.partition("=")[2]],
                              args[1:])[x] for x in range(len(args) - 1))
 
         for attribute in dir(command):
