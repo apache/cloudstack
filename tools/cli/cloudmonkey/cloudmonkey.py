@@ -43,13 +43,19 @@ except ImportError, e:
     import sys
     sys.exit()
 
+# Use following rules for versioning:
+# <cli major version>.<cloudstack minor version>.<cloudstack major version>
+# Example: For CloudStack 4.1.x, CLI version should be 0.1.4
+__version__ = "0.0.4"
+
 log_fmt = '%(asctime)s - %(filename)s:%(lineno)s - [%(levelname)s] %(message)s'
 logger = logging.getLogger(__name__)
 completions = cloudstackAPI.__all__
 
 
 class CloudStackShell(cmd.Cmd):
-    intro = "☁ Apache CloudStack CLI. Type help or ? to list commands.\n"
+    intro = ("☁ Apache CloudStack cloudmonkey " + __version__ +
+             ". Type help or ? to list commands.\n")
     ruler = "-"
     config_file = os.path.expanduser('~/.cloudmonkey_config')
     grammar = []
@@ -386,6 +392,9 @@ class CloudStackShell(cmd.Cmd):
         return self.do_EOF(args)
 
     def do_EOF(self, args):
+        """
+        Quit on Ctrl+d or EOF
+        """
         return True
 
 

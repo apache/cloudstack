@@ -16,6 +16,6 @@
 # under the License.
 
 try:
-    from cloudmonkey import *
+    from cloudmonkey import __version__
 except ImportError, e:
     print e
