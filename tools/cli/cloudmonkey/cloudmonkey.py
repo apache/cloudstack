@@ -27,6 +27,7 @@ try:
     import pdb
     import readline
     import rlcompleter
+    import shlex
     import sys
     import types
 
@@ -216,7 +217,7 @@ class CloudStackShell(cmd.Cmd):
         return api_mod
 
     def default(self, args):
-        args = args.strip().split(" ")
+        args = shlex.split(args.strip())
         api_name = args[0]
 
         try:
@@ -231,7 +232,6 @@ class CloudStackShell(cmd.Cmd):
 
         command = api_cmd()
         response = api_rsp()
-        #FIXME: Parsing logic
         args_dict = dict(map(lambda x: [x.partition("=")[0],
                                         x.partition("=")[2]],
                              args[1:])[x] for x in range(len(args) - 1))
