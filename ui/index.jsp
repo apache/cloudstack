@@ -533,7 +533,7 @@ under the License.
                 <li class="management">
                   <ul class="container">
                     <li traffic-type-id="management"
-                        title="Traffic between CloudStack's internal resources, including any components that communicate with the Management Server, such as hosts and CloudStack system VMs"
+                        title="<fmt:message key="label.zoneWizard.trafficType.management"/>"
                         class="traffic-type-draggable management">
                       <!-- Edit buttton -->
                       <div class="edit-traffic-type">
@@ -550,7 +550,7 @@ under the License.
                 <li class="public">
                   <ul class="container">
                     <li traffic-type-id="public"
-                        title="Traffic between the internet and virtual machines in the cloud."
+                        title="<fmt:message key="label.zoneWizard.trafficType.public"/>"
                         class="traffic-type-draggable public">
                       <!-- Edit buttton -->
                       <div class="edit-traffic-type">
@@ -567,7 +567,7 @@ under the License.
                 <li class="guest">
                   <ul class="container">
                     <li traffic-type-id="guest"
-                        title="Traffic between end-user virtual machines"
+                        title="<fmt:message key="label.zoneWizard.trafficType.guest"/>"
                         class="traffic-type-draggable guest">
                       <!-- Edit buttton -->
                       <div class="edit-traffic-type">
@@ -584,7 +584,7 @@ under the License.
                 <li class="storage">
                   <ul class="container">
                     <li traffic-type-id="storage"
-                        title="Traffic between primary and secondary storage servers, such as VM templates and snapshots"
+                        title="<fmt:message key="label.zoneWizard.trafficType.storage"/>"
                         class="traffic-type-draggable storage">
                       <!-- Edit buttton -->
                       <div class="edit-traffic-type">
