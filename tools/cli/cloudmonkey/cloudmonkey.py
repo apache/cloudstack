@@ -346,6 +346,36 @@ class CloudStackShell(cmd.Cmd):
         """
         os.system(args)
 
+    def do_help(self, args):
+        """
+        Show help docs for various topics
+
+        Example:
+        help list
+        help list users
+        ?list
+        ?list users
+        """
+        fields = args.partition(" ")
+        if fields[2] == "":
+            cmd.Cmd.do_help(self, args)
+        else:
+            verb = fields[0]
+            subject = fields[2].partition(" ")[0]
+            if verb not in self.cache_verbs:
+                self.cache_verb_miss(verb)
+            self.print_shell(self.cache_verbs[verb][subject][2])
+
+    def complete_help(self, text, line, begidx, endidx):
+        fields = line.partition(" ")
+        subfields = fields[2].partition(" ")
+
+        if subfields[1] != " ":
+            return cmd.Cmd.complete_help(self, text, line, begidx, endidx)
+        else:
+            line = fields[2]
+            text = subfields[2]
+            return self.completedefault(text, line, begidx, endidx)
 
     def do_quit(self, args):
         """
