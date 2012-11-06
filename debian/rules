@@ -16,77 +16,55 @@ export DH_VERBOSE=1
 # This has to be exported to make some magic below work.
 export DH_OPTIONS
 
-
-
-
-
-
 configure: configure-stamp
 configure-stamp:
 	dh_testdir
-	# Add here commands to configure the package.
-	./waf configure --prefix=/usr --libdir=/usr/lib --bindir=/usr/bin --javadir=/usr/share/java --sharedstatedir=/var/lib --localstatedir=/var --sysconfdir=/etc --mandir=/usr/share/man --libexecdir=/usr/bin --with-tomcat=/usr/share/tomcat6 --tomcat-user=cloud --fast 
-	./waf showconfig
+	cp packaging/debian/replace.properties build/replace.properties
+	echo VERSION=$VERSION >> build/replace.properties
 	touch configure-stamp
 
-
-#Architecture
-# build: build-arch build-indep
 build: build-arch
 
 build-arch: build-arch-stamp
 build-arch-stamp: configure-stamp  
-
-	# Add here commands to compile the arch part of the package.
-	./waf build
+	mvn package -Dsystemvm
 	touch $@
 
-# build-indep: build-indep-stamp
-# build-indep-stamp: configure-stamp  
-# 
-# 	# Add here commands to compile the indep part of the package.
-# 	#$(MAKE) doc
-# 	touch $@
-# 
 clean: 
 	dh_testdir
 	dh_testroot
 	rm -f build-arch-stamp build-indep-stamp configure-stamp
-
-	# Add here commands to clean up after the build process.
-	./waf distclean
-
 	dh_clean 
 
-install: install-arch
-# install: install-indep install-arch
-# install-indep:
-# 	dh_testdir
-# 	dh_testroot
-# 	dh_prep -i 
-# 	dh_installdirs -i
-# 
-# 	# Add here commands to install the indep part of the package into
-# 	# debian/<package>-doc.
-# 	#INSTALLDOC#
-# 
-# 	dh_install -i
-
-install-arch:
+install:
 	dh_testdir
 	dh_testroot
-	dh_prep -s 
+	dh_prep -s
+	mkdir -p debian/tmp/usr/bin
+	mkdir -p debian/tmp/usr/share/cloud/management
+	mkdir -p debian/tmp/var/log/cloud
+	mkdir debian/tmp/var/log/cloud/managament
+	mkdir debian/tmp/var/log/cloud/awsapi
+	mkdir debian/tmp/var/log/cloud/agent
+	mkdir debian/tmp/var/log/cloud/ipallocator
+	mkdir debian/tmp/var/log/cloud/usage
+	mkdir -p debian/tmp/etc/cloud
+	mkdir debian/tmp/etc/cloud/agent
+	mkdir debian/tmp/etc/cloud/server
+	mkdir debian/tmp/etc/cloud/management
+	mkdir debian/tmp/etc/cloud/usage
+	mkdir -p debian/tmp/var/cache/cloud
+	mkdir debian/tmp/var/cache/cloud/management
+	mkdir -p debian/tmp/usr/share/cloud
+	mkdir debian/tmp/usr/share/cloud/setup
+	mkdir -p debian/tmp/usr/share/cloud/management/webapps/client
+	
+	cp -r client/target/utilities/scripts/db/* debian/tmp/usr/share/cloud/setup/
+	cp -r client/target/cloud-client-ui-4.1.0-SNAPSHOT/* debian/tmp/usr/share/cloud/management/webapps/client/
 	dh_installdirs -s
-
-	# Add here commands to install the arch part of the package into
-	# debian/tmp.
-	# we put the build number again here, otherwise state checking will cause an almost-full recompile
-	./waf install --destdir=$(CURDIR)/debian/tmp install --nochown --build-number=$(BUILDNUMBER)
-
 	dh_install -s
-# Must not depend on anything. This is to be called by
-# binary-arch/binary-indep
-# in another 'make' thread.
+
+binary: binary-common
 binary-common:
 	dh_testdir
 	dh_testroot
@@ -95,39 +73,13 @@ binary-common:
 	dh_installdocs DISCLAIMER
 	dh_installdocs NOTICE
 	dh_installdocs INSTALL.md
-#	dh_installexamples
-#	dh_installmenu
-#	dh_installdebconf
-#	dh_installlogrotate
-#	dh_installemacsen
-#	dh_installpam
-#	dh_installmime
-#	dh_python
-#	dh_installinit
-#	dh_installcron
-#	dh_installinfo
 	dh_installman
 	dh_link
 	dh_strip
 	dh_compress
 	dh_fixperms
-#	dh_perl
 	dh_makeshlibs
 	dh_installdeb
-#	dh_shlibdeps
 	dh_gencontrol
 	dh_md5sums
-	mkdir -p ./artifacts/debs
-	dh_builddeb --destdir=$(CURDIR)/artifacts/debs
-# Build architecture independant packages using the common target.
-# binary-indep: build-indep install-indep
-# 	$(MAKE) -f debian/rules DH_OPTIONS=-i binary-common
-
-# Build architecture dependant packages using the common target.
-binary-arch: build-arch install-arch
-	$(MAKE) -f debian/rules DH_OPTIONS=-s binary-common
-
-# binary: binary-arch binary-indep
-binary: binary-arch
-# .PHONY: build clean binary-indep binary-arch binary install install-indep install-arch configure
-.PHONY: build clean binary-arch binary install install-arch configure
+	dh_builddeb
