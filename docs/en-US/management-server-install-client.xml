@@ -33,8 +33,9 @@
     packages will depend on everything you need to run the Management server.</para>
   <section id="vhd-util">
     <title>Downloading vhd-util</title>
+    <para>This procedure is required only for installations where XenServer is installed on the hypervisor hosts.</para>
     <para>Before setting up the Management Server, download vhd-util from <ulink
-        url="http://download.cloud.com.s3.amazonaws.com/tools/vhd-util">vhd-util</ulink></para>
+        url="http://download.cloud.com.s3.amazonaws.com/tools/vhd-util">vhd-util</ulink>.</para>
     <para>If the Management Server is RHEL or CentOS, copy vhd-util to
       /usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver.</para>
     <para>If the Management Server is Ubuntu, copy vhd-util to

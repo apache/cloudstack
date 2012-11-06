@@ -303,32 +303,16 @@
                 </configuration>
               </execution>
               <execution>
-                <id>prefill-schema</id>
+                <id>prefill-developer-schema</id>
                 <phase>process-test-resources</phase>
                 <goals>
                   <goal>execute</goal>
                 </goals>
                 <configuration>
-                  <sqlCommand>INSERT INTO `cloud`.`domain` (id, name,
-                    parent, path, owner) VALUES (1, 'ROOT', NULL, '/',
-                    2)</sqlCommand>
-                </configuration>
-              </execution>
-              <execution>
-                <id>prefill-configuration</id>
-                <phase>process-test-resources</phase>
-                <goals>
-                  <goal>execute</goal>
-                </goals>
-                <configuration>
-                  <sqlCommand>INSERT INTO `cloud`.`configuration`
-                    (category, instance, component, name, value) VALUES
-                    ('Hidden', 'DEFAULT', 'management-server', 'init',
-                    'false')</sqlCommand>
-                  <sqlCommand>INSERT INTO `cloud`.`configuration`
-                    (category, instance, component, name, value) VALUES
-                    ('Advanced', 'DEFAULT', 'management-server', 'integration.api.port',
-                    '8096')</sqlCommand>
+                  <autocommit>true</autocommit>
+                  <srcFiles>
+                    <srcFile>${basedir}/developer-prefill.sql</srcFile>
+                  </srcFiles>
                 </configuration>
               </execution>
             </executions>

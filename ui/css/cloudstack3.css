@@ -6816,6 +6816,12 @@ label.error {
   width: 98%;
 }
 
+.multi-wizard.zone-wizard .multi-edit table th,
+.multi-wizard.zone-wizard .multi-edit table td {
+  min-width: 97px;
+  max-width: 97px;
+}
+
 .multi-wizard.zone-wizard .multi-edit .data {
   width: 102%;
   float: left;
@@ -7193,6 +7199,11 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   width: 70%;
 }
 
+.detail-view .multi-edit select {
+  width: 93%;
+  font-size: 10px;
+}
+
 .multi-edit input {
   width: 85%;
 }
@@ -7206,9 +7217,10 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 }
 
 .multi-edit .range input {
-  width: 70px;
+  width: 41px;
   margin-left: 13px;
   position: relative;
+  float: left;
 }
 
 .multi-edit .range label {
@@ -9540,7 +9552,8 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 .tooltip-box {
   width: 15%;
   height: auto;
-  display: inline-block, padding: 4px;
+  display: inline-block;
+  padding: 4px;
   background: #FFFFFF;
   border: 1px solid #BEB8B8;
   padding: 10px;
@@ -10344,6 +10357,13 @@ div.ui-dialog div.acl div.multi-edit div.data div.data-body div.data-item table 
 .ui-dialog div.autoscaler {
   overflow: auto;
   max-height: 600px;
+}
+
+div.container div.panel div#details-tab-network.detail-group div div.multi-edit table.multi-edit tbody tr td,
+div.container div.panel div#details-tab-network.detail-group div div.multi-edit table.multi-edit thead tr th {
+  min-width: 80px;
+  max-width: 80px;
+  font-size: 10px;
 }
 
 .ui-dialog div.autoscaler .detail-actions {

@@ -32,6 +32,7 @@ linkend="sect-source-buildrpm"/> or <xref linkend="sect-source-builddebs"/> as
         appropriate. </para>
     </listitem>
     <listitem>
+      <para>This step is required only for installations where XenServer is installed on the hypervisor hosts.</para>
       <para>Download vhd-util from <ulink
           url="http://download.cloud.com.s3.amazonaws.com/tools/vhd-util">vhd-util</ulink></para>
       <para>If the Management Server is RHEL or CentOS, copy vhd-util to
@@ -41,21 +42,23 @@ linkend="sect-source-buildrpm"/> or <xref linkend="sect-source-builddebs"/> as
     </listitem>
     <listitem>
       <para> Ensure that necessary services are started and set to start on boot.
-        <programlisting><prompt>#</prompt> <command>service</command> rpcbind start
-<prompt>#</prompt> <command>service</command> nfs start
-<prompt>#</prompt> <command>chkconfig</command> nfs on
-<prompt>#</prompt> <command>chkconfig</command> rpcbind on            </programlisting>
+        <programlisting><prompt>#</prompt> service rpcbind start
+<prompt>#</prompt> service nfs start
+<prompt>#</prompt> chkconfig nfs on
+<prompt>#</prompt> chkconfig rpcbind on
+</programlisting>
       </para>
     </listitem>
     <listitem>
-      <para> Configure the database client. Note the absence of the --deploy-as argument in this
+      <para>Configure the database client. Note the absence of the --deploy-as argument in this
         case. (For more details about the arguments to this command, see <xref
           linkend="management-server-install-db-external"/>.) </para>
-      <programlisting><prompt>#</prompt> <command>cloud-setup-databases</command> cloud:<replaceable>dbpassword</replaceable>@<replaceable>dbhost</replaceable> -e <replaceable>encryption_type</replaceable> -m <replaceable>management_server_key</replaceable> -k <replaceable>database_key</replaceable>            </programlisting>
+      <programlisting><prompt>#</prompt> cloud-setup-databases cloud:<replaceable>dbpassword</replaceable>@<replaceable>dbhost</replaceable> -e <replaceable>encryption_type</replaceable> -m <replaceable>management_server_key</replaceable> -k <replaceable>database_key</replaceable>
+      </programlisting>
     </listitem>
     <listitem>
       <para>Configure the OS and start the Management Server:</para>
-      <programlisting><prompt>#</prompt> <command>cloud-setup-management</command></programlisting>
+      <programlisting><prompt>#</prompt> cloud-setup-management</programlisting>
       <para>The Management Server on this node should now be running.</para>
     </listitem>
     <listitem>

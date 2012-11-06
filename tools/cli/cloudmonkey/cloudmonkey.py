@@ -51,6 +51,10 @@ class CloudStackShell(cmd.Cmd):
     intro = "☁ Apache CloudStack CLI. Type help or ? to list commands.\n"
     ruler = "-"
     config_file = os.path.expanduser('~/.cloudmonkey_config')
+    grammar = []
+
+    # datastructure {'list': {'users': ['listUsers', [params], docstring]}}
+    cache_verbs = {}
 
     def __init__(self):
         self.config_fields = {'host': 'localhost', 'port': '8080',
@@ -66,7 +70,8 @@ class CloudStackShell(cmd.Cmd):
             for key in self.config_fields.keys():
                 setattr(self, key, self.config_fields[key])
             config = self.write_config()
-            print "Set your api and secret keys using the set command!"
+            print("Set your apiKey, secretKey, host, port, prompt, color, "
+                  "log_file, history_file using the set command!")
 
         for key in self.config_fields.keys():
             setattr(self, key, config.get('CLI', key))
@@ -120,6 +125,9 @@ class CloudStackShell(cmd.Cmd):
     def emptyline(self):
         pass
 
+    def set_grammar(self, grammar):
+        self.grammar = grammar
+
     def print_shell(self, *args):
         try:
             for arg in args:
@@ -136,10 +144,10 @@ class CloudStackShell(cmd.Cmd):
                         print colored.cyan(arg),
                     elif 'name =' in arg:
                         print colored.magenta(arg),
-                    elif ':' in arg:
-                        print colored.blue(arg),
                     elif 'Error' in arg:
                         print colored.red(arg),
+                    elif ':' in arg:
+                        print colored.blue(arg),
                     else:
                         print arg,
                 else:
@@ -212,18 +220,26 @@ class CloudStackShell(cmd.Cmd):
             return None
         return response
 
+    def get_api_module(self, api_name, api_class_strs=[]):
+        try:
+            api_mod = __import__("marvin.cloudstackAPI.%s" % api_name,
+                                 globals(), locals(), api_class_strs, -1)
+        except ImportError, e:
+            self.print_shell("Error: API %s not found!" % e)
+            return None
+        return api_mod
+
     def default(self, args):
-        args = args.split(" ")
+        args = args.strip().split(" ")
         api_name = args[0]
 
         try:
             api_cmd_str = "%sCmd" % api_name
             api_rsp_str = "%sResponse" % api_name
-            api_mod = __import__("marvin.cloudstackAPI.%s" % api_name,
-                                 globals(), locals(), [api_cmd_str], -1)
+            api_mod = self.get_api_module(api_name, [api_cmd_str, api_rsp_str])
             api_cmd = getattr(api_mod, api_cmd_str)
             api_rsp = getattr(api_mod, api_rsp_str)
-        except ImportError, e:
+        except AttributeError, e:
             self.print_shell("Error: API %s not found!" % e)
             return
 
@@ -243,10 +259,47 @@ class CloudStackShell(cmd.Cmd):
         except Exception as e:
             self.print_shell("🙈  Error on parsing and printing", e)
 
+    def cache_verb_miss(self, verb):
+        completions_found = filter(lambda x: x.startswith(verb), completions)
+        self.cache_verbs[verb] = {}
+        for api_name in completions_found:
+            try:
+                api_cmd_str = "%sCmd" % api_name
+                api_mod = self.get_api_module(api_name, [api_cmd_str])
+                api_cmd = getattr(api_mod, api_cmd_str)
+                doc = api_mod.__doc__
+            except AttributeError, e:
+                self.print_shell("Error: API attribute %s not found!" % e)
+            params = filter(lambda x: '__' not in x and 'required' not in x,
+                            dir(api_cmd()))
+            api_name_lower = api_name.replace(verb, '').lower()
+            self.cache_verbs[verb][api_name_lower] = [api_name, params, doc]
+
     def completedefault(self, text, line, begidx, endidx):
-        mline = line.partition(" ")[2]
-        offs = len(mline) - len(text)
-        return [s[offs:] for s in completions if s.startswith(mline)]
+        partitions = line.partition(" ")
+        verb = partitions[0]
+        rline = partitions[2].partition(" ")
+        subject = rline[0]
+        separator = rline[1]
+        params = rline[2]
+
+        if verb not in self.grammar:
+            return []
+
+        autocompletions = []
+        search_string = ""
+
+        if verb not in self.cache_verbs:
+            self.cache_verb_miss(verb)
+
+        if separator != " ":   # Complete verb subjects
+            autocompletions = self.cache_verbs[verb].keys()
+            search_string = subject
+        else:                  # Complete subject params
+            autocompletions = self.cache_verbs[verb][subject][1]
+            search_string = text
+
+        return [s for s in autocompletions if s.startswith(search_string)]
 
     def do_api(self, args):
         """
@@ -259,7 +312,9 @@ class CloudStackShell(cmd.Cmd):
             self.print_shell("Please use a valid syntax")
 
     def complete_api(self, text, line, begidx, endidx):
-        return self.completedefault(text, line, begidx, endidx)
+        mline = line.partition(" ")[2]
+        offs = len(mline) - len(text)
+        return [s[offs:] for s in completions if s.startswith(mline)]
 
     def do_set(self, args):
         """
@@ -284,6 +339,7 @@ class CloudStackShell(cmd.Cmd):
 
 
 def main():
+    # Add verbs in grammar
     grammar = ['create', 'list', 'delete', 'update',
                'enable', 'disable', 'add', 'remove', 'attach', 'detach',
                'assign', 'authorize', 'change', 'register',
@@ -294,13 +350,20 @@ def main():
 
     self = CloudStackShell
     for rule in grammar:
-        setattr(self, 'completions_' + rule, map(lambda x: x.replace(rule, ''),
-                                                 filter(lambda x: rule in x,
-                                                        completions)))
-
         def add_grammar(rule):
             def grammar_closure(self, args):
-                self.default(rule + args)
+                if not rule in self.cache_verbs:
+                    self.cache_verb_miss(rule)
+                try:
+                    args_partition = args.partition(" ")
+                    res = self.cache_verbs[rule][args_partition[0]]
+                except KeyError, e:
+                    self.print_shell("Error: no such command on %s" % rule)
+                    return
+                if '--help' in args:
+                    self.print_shell(res[2])
+                    return
+                self.default(res[0] + " " + args_partition[2])
             return grammar_closure
 
         grammar_handler = add_grammar(rule)
@@ -308,22 +371,12 @@ def main():
         grammar_handler.__name__ = 'do_' + rule
         setattr(self, grammar_handler.__name__, grammar_handler)
 
-        def add_completer(rule):
-            def completer_closure(self, text, line, begidx, endidx):
-                mline = line.partition(" ")[2]
-                offs = len(mline) - len(text)
-                return [s[offs:] for s in getattr(self, 'completions_' + rule)
-                        if s.startswith(mline)]
-            return completer_closure
-
-        completion_handler = add_completer(rule)
-        completion_handler.__name__ = 'complete_' + rule
-        setattr(self, completion_handler.__name__, completion_handler)
-
+    shell = CloudStackShell()
+    shell.set_grammar(grammar)
     if len(sys.argv) > 1:
-        CloudStackShell().onecmd(' '.join(sys.argv[1:]))
+        shell.onecmd(' '.join(sys.argv[1:]))
     else:
-        CloudStackShell().cmdloop()
+        shell.cmdloop()
 
 if __name__ == "__main__":
     main()

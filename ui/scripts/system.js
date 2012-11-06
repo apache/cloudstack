@@ -194,6 +194,10 @@
           podCount: function(data) {
             $.ajax({
               url: createURL('listPods'),
+							data: {
+							  page: 1,
+								pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
+							},
               success: function(json) {
                 dataFns.clusterCount($.extend(data, {
                   podCount: json.listpodsresponse.count ?
@@ -206,20 +210,24 @@
           clusterCount: function(data) {
             $.ajax({
               url: createURL('listClusters'),
-              success: function(json) {
-                /*
+							data: {
+							  page: 1,
+								pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
+							},
+              success: function(json) {                
 								dataFns.hostCount($.extend(data, {
                   clusterCount: json.listclustersresponse.count ?
                     json.listclustersresponse.count : 0
                 }));
-								*/
+																
+								//comment the 4 lines above and uncomment the following 4 lines if listHosts API still responds slowly.
 								
-								//uncomment the 4 lines above and remove the following 4 lines after "count" in listHosts API is fixed.
+								/*
 								dataFns.primaryStorageCount($.extend(data, {
                   clusterCount: json.listclustersresponse.count ?
                     json.listclustersresponse.count : 0
                 }));
-								
+								*/
               }
             });
           },
@@ -228,7 +236,9 @@
             $.ajax({
               url: createURL('listHosts'),
               data: {
-                type: 'routing'
+                type: 'routing',
+								page: 1,
+								pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
               },
               success: function(json) {
                 dataFns.primaryStorageCount($.extend(data, {
@@ -242,20 +252,24 @@
           primaryStorageCount: function(data) {
             $.ajax({
               url: createURL('listStoragePools'),
-              success: function(json) {
-                /*
+							data: {
+							  page: 1,
+								pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
+							},
+              success: function(json) {                
 								dataFns.secondaryStorageCount($.extend(data, {
                   primaryStorageCount: json.liststoragepoolsresponse.count ?
                     json.liststoragepoolsresponse.count : 0
                 }));
-								*/
+																
+								//comment the 4 lines above and uncomment the following 4 lines if listHosts API still responds slowly.
 								
-								//uncomment the 4 lines above and remove the following 4 lines after "count" in listHosts API is fixed.
+								/*
 								dataFns.systemVmCount($.extend(data, {
                   primaryStorageCount: json.liststoragepoolsresponse.count ?
                     json.liststoragepoolsresponse.count : 0
                 }));
-								
+								*/
               }
             });
           },
@@ -264,7 +278,9 @@
             $.ajax({
               url: createURL('listHosts'),
               data: {
-                type: 'SecondaryStorage'
+                type: 'SecondaryStorage',
+								page: 1,
+								pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
               },
               success: function(json) {
                 dataFns.systemVmCount($.extend(data, {
@@ -278,6 +294,10 @@
           systemVmCount: function(data) {
             $.ajax({
               url: createURL('listSystemVms'),
+							data: {
+							  page: 1,
+								pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
+							},
               success: function(json) {
                 dataFns.virtualRouterCount($.extend(data, {
                   systemVmCount: json.listsystemvmsresponse.count ?
@@ -291,14 +311,18 @@
             $.ajax({
               url: createURL('listRouters'),
               data: {
-                projectid: -1
+                projectid: -1,
+								page: 1,
+								pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
               },
               success: function(json) {
                 var total1 = json.listroutersresponse.count ? json.listroutersresponse.count : 0;								
 								$.ajax({
 								  url: createURL('listRouters'),
 									data: {
-									  listAll: true
+									  listAll: true,
+										page: 1,
+								    pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
 									},
 									success: function(json) {
 									  var total2 = json.listroutersresponse.count ? json.listroutersresponse.count : 0;		
@@ -10329,7 +10353,7 @@
     return allowedActions;
   }
 
-  var routerActionfilter = function(args) {
+  var routerActionfilter = cloudStack.sections.system.routerActionFilter = function(args) {
     var jsonObj = args.context.item;
     var allowedActions = [];
 
@@ -10405,28 +10429,6 @@
 			jsonObj.state = jsonObj.managedstate; //jsonObj.state == Unmanaged, PrepareUnmanaged, PrepareUnmanagedError
 		}
   }
-	
-	var addExtraPropertiesToGuestNetworkObject = function(jsonObj) {  
-		jsonObj.networkdomaintext = jsonObj.networkdomain;
-		jsonObj.networkofferingidText = jsonObj.networkofferingid;
-
-		if(jsonObj.acltype == "Domain") {
-			if(jsonObj.domainid == rootAccountId)
-				jsonObj.scope = "All";
-			else
-				jsonObj.scope = "Domain (" + jsonObj.domain + ")";
-		}
-		else if (jsonObj.acltype == "Account"){
-			if(jsonObj.project != null)
-				jsonObj.scope = "Account (" + jsonObj.domain + ", " + jsonObj.project + ")";
-			else
-				jsonObj.scope = "Account (" + jsonObj.domain + ", " + jsonObj.account + ")";
-		}
-
-		if(jsonObj.vlan == null && jsonObj.broadcasturi != null) {
-			jsonObj.vlan = jsonObj.broadcasturi.replace("vlan://", "");   	
-		}
-  }	
 	
 	var addExtraPropertiesToRouterInstanceObject = function(jsonObj) {  		
 		if(jsonObj.isredundantrouter == true)
