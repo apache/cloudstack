@@ -22,10 +22,11 @@ except ImportError:
     use_setuptools()
     from setuptools import setup, find_packages
 
-from cloudmonkey import __version__
-
-name = 'cloudmonkey'
-version = __version__
+# Use following rules for versioning:
+# <cli major version>.<cloudstack minor version>.<cloudstack major version>
+# Example: For CloudStack 4.1.x, CLI version should be 0.1.4
+version = "0.0.4"
+name = "cloudmonkey"
 
 setup(
     name = name,
@@ -36,9 +37,12 @@ setup(
     maintainer_email = "bhaisaab@apache.org",
     url = "http://incubator.apache.org/cloudstack",
     description = "Command Line Interface for Apache CloudStack",
+    long_description="cloudmonkey is a command line interface for Apache "
+                     "CloudStack powered by CloudStack Marvin testclient",
+    platforms=("Any",),
     license = 'ASL 2.0',
     packages=find_packages(),
-    install_requires=['clint'],
+    install_requires=['clint>=0.3.0'],
     include_package_data = True,
     zip_safe = False,
     classifiers = [

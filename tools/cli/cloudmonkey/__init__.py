@@ -15,11 +15,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# Use following rules for versioning:
-# <cli major version>.<cloudstack minor version>.<cloudstack major version>
-# Example: For CloudStack 4.1.x, CLI version should be 0.1.4
-__version__ = "0.0.4"
-
 try:
     from cloudmonkey import *
 except ImportError, e:
