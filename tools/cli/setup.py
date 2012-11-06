@@ -26,6 +26,12 @@ from cloudmonkey import __version__
 
 name = 'cloudmonkey'
 version = __version__
+requires = ['clint>=0.3.0',]
+
+try:
+    import readline
+except ImportError:
+    requires.append('readline')
 
 setup(
     name = name,
@@ -41,10 +47,7 @@ setup(
     platforms = ("Any",),
     license = 'ASL 2.0',
     packages = find_packages(),
-    install_requires = [
-        'clint>=0.3.0',
-        'readline',
-    ],
+    install_requires = requires,
     include_package_data = True,
     zip_safe = False,
     classifiers = [

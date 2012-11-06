@@ -25,8 +25,6 @@ try:
     import logging
     import os
     import pdb
-    import readline
-    import rlcompleter
     import shlex
     import sys
     import types
@@ -34,6 +32,7 @@ try:
     from clint.textui import colored
     from ConfigParser import ConfigParser, SafeConfigParser
 
+    from version import __version__
     from marvin.cloudstackConnection import cloudConnection
     from marvin.cloudstackException import cloudstackAPIException
     from marvin.cloudstackAPI import *
@@ -43,10 +42,17 @@ except ImportError, e:
     import sys
     sys.exit()
 
-# Use following rules for versioning:
-# <cli major version>.<cloudstack minor version>.<cloudstack major version>
-# Example: For CloudStack 4.1.x, CLI version should be 0.1.4
-__version__ = "0.0.4"
+# Fix autocompletion issue, can be put in .pythonstartup
+try:
+    import readline
+except ImportError, e:
+    print "Module readline not found, autocompletions will fail", e
+else:
+    import rlcompleter
+    if 'libedit' in readline.__doc__:
+        readline.parse_and_bind("bind ^I rl_complete")
+    else:
+        readline.parse_and_bind("tab: complete")
 
 log_fmt = '%(asctime)s - %(filename)s:%(lineno)s - [%(levelname)s] %(message)s'
 logger = logging.getLogger(__name__)
@@ -65,8 +71,8 @@ class CloudStackShell(cmd.Cmd):
 
     def __init__(self):
         self.config_fields = {'host': 'localhost', 'port': '8080',
-                              'apiKey': '', 'secretKey': '',
-                              'prompt': 'cloudmonkey> ', 'color': 'true',
+                              'apikey': '', 'secretkey': '',
+                              'prompt': '🐵 cloudmonkey>', 'color': 'true',
                               'log_file':
                               os.path.expanduser('~/.cloudmonkey_log'),
                               'history_file':
@@ -77,7 +83,7 @@ class CloudStackShell(cmd.Cmd):
             for key in self.config_fields.keys():
                 setattr(self, key, self.config_fields[key])
             config = self.write_config()
-            print("🐵 Set your apiKey, secretKey, host, port, prompt, color,"
+            print("Set your apikey, secretkey, host, port, prompt, color,"
                   " log_file, history_file using the set command!")
 
         for key in self.config_fields.keys():
@@ -92,12 +98,6 @@ class CloudStackShell(cmd.Cmd):
         # Update config if config_file does not exist
         if not os.path.exists(self.config_file):
             config = self.write_config()
-
-        # Fix autocompletion issue
-        if sys.platform == "darwin":
-            readline.parse_and_bind("bind ^I rl_complete")
-        else:
-            readline.parse_and_bind("tab: complete")
 
         # Enable history support
         try:
@@ -204,7 +204,7 @@ class CloudStackShell(cmd.Cmd):
 
     def make_request(self, command, requests={}):
         conn = cloudConnection(self.host, port=int(self.port),
-                               apiKey=self.apiKey, securityKey=self.secretKey,
+                               apiKey=self.apikey, securityKey=self.secretkey,
                                logging=logging.getLogger("cloudConnection"))
         try:
             response = conn.make_request(command, requests)
@@ -317,7 +317,7 @@ class CloudStackShell(cmd.Cmd):
     def do_set(self, args):
         """
         Set config for CloudStack CLI. Available options are:
-        host, port, apiKey, secretKey, log_file, history_file
+        host, port, apikey, secretkey, log_file, history_file
         You may also edit your ~/.cloudmonkey_config instead of using set.
 
         Example:
@@ -325,20 +325,17 @@ class CloudStackShell(cmd.Cmd):
         set prompt 🐵 cloudmonkey>
         set log_file /var/log/cloudmonkey.log
         """
-        args = shlex.split(args.strip())
-        if len(args) == 2:
-            key, value = args
-            # Note: keys and fields should have same names
-            setattr(self, key, value)
-            self.write_config()
-        else:
-            self.print_shell("Please use the syntax: set valid-key value")
+        args = args.strip().partition(" ")
+        key, value = (args[0], args[2])
+        # Note: keys and class attributes should have same names
+        setattr(self, key, value)
+        self.write_config()
 
     def complete_set(self, text, line, begidx, endidx):
         mline = line.partition(" ")[2]
         offs = len(mline) - len(text)
         return [s[offs:] for s in
-               ['host', 'port', 'apiKey', 'secretKey', 'prompt', 'color',
+               ['host', 'port', 'apikey', 'secretkey', 'prompt', 'color',
                 'log_file', 'history_file'] if s.startswith(mline)]
 
     def do_shell(self, args):

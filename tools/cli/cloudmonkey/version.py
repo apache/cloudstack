@@ -15,7 +15,8 @@
 # specific language governing permissions and limitations
 # under the License.
 
-try:
-    from version import __version__
-except ImportError, e:
-    print e
+# Use following rules for versioning:
+# <cli major version>.<cloudstack minor version>.<cloudstack major version>
+# Example: For CloudStack 4.1.x, CLI version should be 0.1.4
+__version__ = "0.0.4"
+
