@@ -7199,6 +7199,11 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   width: 70%;
 }
 
+.detail-view .multi-edit select {
+  width: 93%;
+  font-size: 10px;
+}
+
 .multi-edit input {
   width: 85%;
 }
