@@ -59,7 +59,7 @@ class CloudStackShell(cmd.Cmd):
     def __init__(self):
         self.config_fields = {'host': 'localhost', 'port': '8080',
                               'apiKey': '', 'secretKey': '',
-                              'prompt': '🙉 cloudmonkey> ', 'color': 'true',
+                              'prompt': 'cloudmonkey> ', 'color': 'true',
                               'log_file':
                               os.path.expanduser('~/.cloudmonkey_log'),
                               'history_file':
@@ -70,7 +70,7 @@ class CloudStackShell(cmd.Cmd):
             for key in self.config_fields.keys():
                 setattr(self, key, self.config_fields[key])
             config = self.write_config()
-            print("Set your apiKey, secretKey, host, port, prompt, color, "
+            print("'🙉  Set your apiKey, secretKey, host, port, prompt, color, "
                   "log_file, history_file using the set command!")
 
         for key in self.config_fields.keys():
@@ -303,7 +303,9 @@ class CloudStackShell(cmd.Cmd):
 
     def do_api(self, args):
         """
-        Make raw api calls. Syntax: api <apiName> <args>=<values>. Example:
+        Make raw api calls. Syntax: api <apiName> <args>=<values>.
+
+        Example:
         api listAccount listall=true
         """
         if len(args) > 0:
@@ -320,6 +322,11 @@ class CloudStackShell(cmd.Cmd):
         """
         Set config for CloudStack CLI. Available options are:
         host, port, apiKey, secretKey, log_file, history_file
+
+        Example:
+        set host 192.168.56.2
+        set prompt 🙉 cloudmonkey>
+        set log_file /var/log/cloudmonkey.log
         """
         args = args.split(' ')
         if len(args) == 2:
@@ -348,6 +355,7 @@ def main():
                'copy', 'extract', 'migrate', 'restore',
                'get', 'prepare', 'deploy', 'upload']
 
+    # Create handlers on the fly using closures
     self = CloudStackShell
     for rule in grammar:
         def add_grammar(rule):
