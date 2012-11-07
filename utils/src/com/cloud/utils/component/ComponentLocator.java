@@ -33,6 +33,10 @@ public class ComponentLocator {
     	return ComponentContext.getCompanent(ComponentLocator.class);
     }
     
+    public static ComponentLocator getLocator(String server, String configFileName, String log4jFilename) {
+        return ComponentContext.getCompanent(ComponentLocator.class);
+    }
+    
     public static Object getComponent(String componentName) {
     	return ComponentContext.getCompanent(componentName);
     }
