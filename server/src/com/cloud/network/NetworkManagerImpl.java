@@ -203,6 +203,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic;
+import com.cloud.vm.Nic.ReservationStrategy;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
@@ -3030,7 +3031,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
 
-        if (!_accountMgr.isAdmin(caller.getType()) || (!listAll && (projectId != null && projectId != -1 && domainId == null))) {
+        if (!_accountMgr.isAdmin(caller.getType()) || (!listAll && (projectId != null && projectId.longValue() != -1 && domainId == null))) {
             permittedAccounts.add(caller.getId());
             domainId = caller.getDomainId();
         }
@@ -3038,8 +3039,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         // set project information
         boolean skipProjectNetworks = true;
         if (projectId != null) {
-            if (projectId == -1) {
-                permittedAccounts.addAll(_projectMgr.listPermittedProjectAccounts(caller.getId()));
+            if (projectId.longValue() == -1) {
+                if (!_accountMgr.isAdmin(caller.getType())) {
+                    permittedAccounts.addAll(_projectMgr.listPermittedProjectAccounts(caller.getId()));
+                }
             } else {
                 permittedAccounts.clear();
                 Project project = _projectMgr.getProject(projectId);
