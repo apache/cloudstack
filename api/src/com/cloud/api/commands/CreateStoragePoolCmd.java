@@ -45,7 +45,7 @@ public class CreateStoragePoolCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @IdentityMapper(entityTableName="cluster")
-    @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.LONG, description="the cluster ID for the storage pool")
+    @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.LONG, required=true, description="the cluster ID for the storage pool")
     private Long clusterId;
 
     @Parameter(name=ApiConstants.DETAILS, type=CommandType.MAP, description="the details for the storage pool")
@@ -55,7 +55,7 @@ public class CreateStoragePoolCmd extends BaseCmd {
     private String storagePoolName;
 
     @IdentityMapper(entityTableName="host_pod_ref")
-    @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, description="the Pod ID for the storage pool")
+    @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, required=true, description="the Pod ID for the storage pool")
     private Long podId;
 
     @Parameter(name=ApiConstants.TAGS, type=CommandType.STRING, description="the tags for the storage pool")
