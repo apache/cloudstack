@@ -292,7 +292,8 @@ class CloudStackShell(cmd.Cmd):
             autocompletions = self.cache_verbs[verb].keys()
             search_string = subject
         else:                  # Complete subject params
-            autocompletions = self.cache_verbs[verb][subject][1]
+            autocompletions = map(lambda x: x + "=",
+                                  self.cache_verbs[verb][subject][1])
             search_string = text
 
         return [s for s in autocompletions if s.startswith(search_string)]
