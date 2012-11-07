@@ -32,7 +32,7 @@ Release:   %{_rel}%{dist}
 Release:   %{_rel}%{dist}
 %endif
 Version:   %{_ver}
-License:   Apache License 2.0
+License:   ASL 2.0
 Vendor:    Apache CloudStack <cloudstack-dev@incubator.apache.org>
 Packager:  Apache CloudStack <cloudstack-dev@incubator.apache.org>
 Group:     System Environment/Libraries
