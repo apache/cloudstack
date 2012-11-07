@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>22.4. Recovering a Lost Virtual Router</title><link rel="stylesheet" type="text/css" href="Common_Content/css/default.css" /><link rel="stylesheet" media="print" href="Common_Content/css/print.css" type="text/css" /><meta name="generator" content="publican 2.8" /><meta name="package" content="" /></head><body><div class="section" id="troubleshooting-recover-lost-virtual-router"><div class="titlepage"><div><div><h1 class="title" id="troubleshooting-recover-lost-virtual-router">22.4. Recovering a Lost Virtual Router </h1></div></div></div><div class="formalpara"><h5 class="formalpara" id="idm4374880">Symptom</h5>
+			A virtual router is running, but the host is disconnected. A virtual router no longer functions as expected.
+		</div><div class="formalpara"><h5 class="formalpara" id="idm31065424">Cause</h5>
+			The Virtual router is lost or down.
+		</div><div class="formalpara"><h5 class="formalpara" id="idm26800384">Solution</h5>
+			If you are sure that a virtual router is down forever, or no longer functions as expected, destroy it. You must create one afresh while keeping the backup router up and running (it is assumed this is in a redundant router setup):
+		</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+				Force stop the router. Use the stopRouter API with forced=true parameter to do so.
+			</div></li><li class="listitem"><div class="para">
+				Before you continue with destroying this router, ensure that the backup router is running. Otherwise the network connection will be lost.
+			</div></li><li class="listitem"><div class="para">
+				Destroy the router by using the destroyRouter API.
+			</div></li></ul></div><div class="para">
+		Recreate the missing router by using the restartNetwork API with cleanup=false parameter. For more information about redundant router setup, see Creating a New Network Offering.
+	</div><div class="para">
+		For more information about the API syntax, see the API Reference at <a href="http://docs.cloudstack.org/CloudStack_Documentation/API_Reference%3A_CloudStack">http://docs.cloudstack.org/CloudStack_Documentation/API_Reference%3A_CloudStack</a>API Reference.
+	</div></div></body></html>

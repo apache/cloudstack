@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>7.4. Adding a Cluster</title><link rel="stylesheet" type="text/css" href="Common_Content/css/default.css" /><link rel="stylesheet" media="print" href="Common_Content/css/print.css" type="text/css" /><meta name="generator" content="publican 2.8" /><meta name="package" content="" /></head><body><div class="section" id="cluster-add"><div class="titlepage"><div><div><h1 class="title" id="cluster-add">7.4. Adding a Cluster</h1></div></div></div><div class="para">
+		You need to tell CloudStack about the hosts that it will manage. Hosts exist inside clusters, so before you begin adding hosts to the cloud, you must add at least one cluster.
+	</div><div class="section" id="add-clusters-kvm-xenserver"><div class="titlepage"><div><div><h2 class="title" id="add-clusters-kvm-xenserver">7.4.1. Add Cluster: KVM or XenServer</h2></div></div></div><div class="para">
+		These steps assume you have already installed the hypervisor on the hosts and logged in to the CloudStack UI.
+	</div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				In the left navigation, choose Infrastructure. In Zones, click View More, then click the zone in which you want to add the cluster.
+			</div></li><li class="listitem"><div class="para">
+				Click the Compute tab.
+			</div></li><li class="listitem"><div class="para">
+				In the Clusters node of the diagram, click View All.
+			</div></li><li class="listitem"><div class="para">
+				Click Add Cluster.
+			</div></li><li class="listitem"><div class="para">
+				Choose the hypervisor type for this cluster.
+			</div></li><li class="listitem"><div class="para">
+				Choose the pod in which you want to create the cluster.
+			</div></li><li class="listitem"><div class="para">
+				Enter a name for the cluster. This can be text of your choosing and is not used by CloudStack.
+			</div></li><li class="listitem"><div class="para">
+				Click OK.
+			</div></li></ol></div></div><div class="section" id="add-clusters-vsphere"><div class="titlepage"><div><div><h2 class="title" id="add-clusters-vsphere">7.4.2. Add Cluster: vSphere</h2></div></div></div><div class="para">
+		Host management for vSphere is done through a combination of vCenter and the CloudStack admin UI. CloudStack requires that all hosts be in a CloudStack cluster, but the cluster may consist of a single host. As an administrator you must decide if you would like to use clusters of one host or of multiple hosts. Clusters of multiple hosts allow for features like live migration. Clusters also require shared storage such as NFS or iSCSI.
+	</div><div class="para">
+		For vSphere servers, we recommend creating the cluster of hosts in vCenter and then adding the entire cluster to CloudStack. Follow these requirements:
+	</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+				Do not put more than 8 hosts in a vSphere cluster
+			</div></li><li class="listitem"><div class="para">
+				Make sure the hypervisor hosts do not have any VMs already running before you add them to CloudStack.
+			</div></li></ul></div><div class="para">
+		To add a vSphere cluster to CloudStack:
+	</div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				Create the cluster of hosts in vCenter. Follow the vCenter instructions to do this. You will create a cluster that looks something like this in vCenter.
+			</div><div class="mediaobject"><img src="./images/vsphere-client.png" width="444" alt="vsphereclient.png: vSphere client" /></div></li><li class="listitem"><div class="para">
+				Log in to the UI.
+			</div></li><li class="listitem"><div class="para">
+				In the left navigation, choose Infrastructure. In Zones, click View More, then click the zone in which you want to add the cluster.
+			</div></li><li class="listitem"><div class="para">
+				Click the Compute tab, and click View All on Pods. Choose the pod to which you want to add the cluster.
+			</div></li><li class="listitem"><div class="para">
+				Click View Clusters.
+			</div></li><li class="listitem"><div class="para">
+				Click Add Cluster.
+			</div></li><li class="listitem"><div class="para">
+				In Hypervisor, choose VMware.
+			</div></li><li class="listitem"><div class="para">
+				Provide the following information in the dialog. The fields below make reference to values from vCenter.
+			</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+						Cluster Name. Enter the name of the cluster you created in vCenter. For example, "cloud.cluster.2.2.1"
+					</div></li><li class="listitem"><div class="para">
+						vCenter Host. Enter the hostname or IP address of the vCenter server.
+					</div></li><li class="listitem"><div class="para">
+						vCenter Username. Enter the username that CloudStack should use to connect to vCenter. This user must have all administrative privileges.
+					</div></li><li class="listitem"><div class="para">
+						vCenter Password. Enter the password for the user named above
+					</div></li><li class="listitem"><div class="para">
+						vCenter Datacenter. Enter the vCenter datacenter that the cluster is in. For example, "cloud.dc.VM".
+					</div></li><li class="listitem"><div class="mediaobject"><img src="./images/add-cluster.png" alt="addcluster.png: add cluster" /></div><div class="para">
+						There might be a slight delay while the cluster is provisioned. It will automatically display in the UI
+					</div></li></ul></div></li></ol></div></div></div></body></html>

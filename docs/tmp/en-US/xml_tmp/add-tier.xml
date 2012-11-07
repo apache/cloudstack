@@ -1,0 +1,89 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+<section id="add-tier">
+  <title>Adding Tiers</title>
+  <para>Tiers are distinct locations within a VPC that act as isolated networks, which do not have
+    access to other tiers by default. Tiers are set up on different VLANs that can communicate with
+    each other by using a virtual router. Tiers provide inexpensive, low latency network
+    connectivity to other tiers within the VPC.</para>
+  <orderedlist>
+    <listitem>
+      <para>Log in to the &PRODUCT; UI as an administrator or end user.</para>
+    </listitem>
+    <listitem>
+      <para>In the left navigation, choose Network.</para>
+    </listitem>
+    <listitem>
+      <para>In the Select view, select VPC.</para>
+      <para>All the VPC that you have created for the account is listed in the page.</para>
+      <note>
+        <para>The end users can see their own VPCs, while root and domain admin can see any VPC they
+          are authorized to see.</para>
+      </note>
+    </listitem>
+    <listitem>
+      <para>Click the Configure button of the VPC for which you want to set up tiers.</para>
+      <para>The Add new tier dialog is displayed, as follows:</para>
+      <mediaobject>
+        <imageobject>
+          <imagedata fileref="./images/add-tier.png"/>
+        </imageobject>
+        <textobject>
+          <phrase>add-tier.png: adding a tier to a vpc.</phrase>
+        </textobject>
+      </mediaobject>
+      <para>If you have already created tiers, the VPC diagram is displayed. Click Create Tier to
+        add a new tier.</para>
+    </listitem>
+    <listitem>
+      <para>Specify the following:</para>
+      <para>All the fields are mandatory.</para>
+      <itemizedlist>
+        <listitem>
+          <para><emphasis role="bold">Name</emphasis>: A unique name for the tier you create.</para>
+        </listitem>
+        <listitem>
+          <para><emphasis role="bold">Network Offering</emphasis>: The following default network
+            offerings are listed: DefaultIsolatedNetworkOfferingForVpcNetworksNoLB,
+            DefaultIsolatedNetworkOfferingForVpcNetworks</para>
+          <para>In a VPC, only one tier can be created by using LB-enabled network offering.</para>
+        </listitem>
+        <listitem>
+          <para><emphasis role="bold">Gateway</emphasis>: The gateway for the tier you create.
+            Ensure that the gateway is within the Super CIDR range that you specified while creating
+            the VPC, and is not overlapped with the CIDR of any existing tier within the VPC.</para>
+        </listitem>
+        <listitem>
+          <para><emphasis role="bold">Netmask</emphasis>: The netmask for the tier you create. </para>
+          <para>For example, if the VPC CIDR is 10.0.0.0/16 and the network tier CIDR is
+            10.0.1.0/24, the gateway of the tier is 10.0.1.1, and the netmask of the tier is
+            255.255.255.0.</para>
+        </listitem>
+      </itemizedlist>
+    </listitem>
+    <listitem>
+      <para>Click OK.</para>
+    </listitem>
+    <listitem>
+      <para>Continue with configuring access control list for the tier.</para>
+    </listitem>
+  </orderedlist>
+</section>

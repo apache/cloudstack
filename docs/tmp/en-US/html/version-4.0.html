@@ -1,0 +1,1788 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Chapter 3. Version 4.0.0-incubating</title><link rel="stylesheet" type="text/css" href="Common_Content/css/default.css" /><link rel="stylesheet" media="print" href="Common_Content/css/print.css" type="text/css" /><meta name="generator" content="publican 2.8" /><meta name="package" content="Apache_CloudStack-Release_Notes-4.0.0-incubating-en-US-1-" /><link rel="home" href="index.html" title="Version 4.0.0-incubating Release Notes" /><link rel="up" href="index.html" title="Version 4.0.0-incubating Release Notes" /><link rel="prev" href="upgrade-instructions.html" title="Chapter 2. Upgrade Instructions" /><link rel="next" href="api-changes-4.0.html" title="Chapter 4. API Changes from 3.0.2 to 4.0.0-incubating" /></head><body><p id="title"><a class="left" href="http://cloudstack.org"><img src="Common_Content/images/image_left.png" alt="Product Site" /></a><a class="right" href="http://docs.cloudstack.org"><img src="Common_Content/images/image_right.png" alt="Documentation Site" /></a></p><ul class="docnav"><li class="previous"><a accesskey="p" href="upgrade-instructions.html"><strong>Prev</strong></a></li><li class="next"><a accesskey="n" href="api-changes-4.0.html"><strong>Next</strong></a></li></ul><div class="chapter" id="version-4.0"><div class="titlepage"><div><div><h2 class="title">Chapter 3. Version 4.0.0-incubating</h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="version-4.0.html#what-new-in-4.0">3.1. What’s New in 4.0.0-incubating</a></span></dt><dt><span class="section"><a href="version-4.0.html#issues-fixed-4.0">3.2. Issues Fixed in 4.0.0-incubating</a></span></dt><dt><span class="section"><a href="version-4.0.html#known-issues-4.0">3.3. Known Issues in 4.0.0-incubating</a></span></dt></dl></div><div class="section" id="what-new-in-4.0"><div class="titlepage"><div><div><h2 class="title" id="what-new-in-4.0">3.1. What’s New in 4.0.0-incubating</h2></div></div></div><div class="para">
+				Apache CloudStack 4.0.0-incubating includes the following new features:
+			</div><div class="section" id="inter-vlan-routing"><div class="titlepage"><div><div><h3 class="title" id="inter-vlan-routing">3.1.1. Inter-VLAN Routing</h3></div></div></div><div class="para">
+					Inter-VLAN Routing is the capability to route network traffic between VLANs. This feature enables you to set up Virtual Private Clouds (VPC) that can hold multi-tier applications. These tiers are deployed on different VLANs that can communicate with each other. You can provision VLANs to the tiers your create, and VMs can be deployed on different tiers, such as Web, Application, or Database. The VLANs are connected to a virtual router, which facilitates communication between the VMs. In effect, you can segment VMs by means of VLANs into different networks that can host multi-tier applications. Such segmentation by means of VLANs logically separate application VMs for higher security and lower broadcasts, while remaining physically connected to the same device.
+				</div><div class="para">
+					This feature is supported on XenServer and VMware hypervisors.
+				</div></div><div class="section" id="site-to-site-vpn"><div class="titlepage"><div><div><h3 class="title" id="site-to-site-vpn">3.1.2. Site-to-Site VPN</h3></div></div></div><div class="para">
+					A Site-to-Site VPN connection helps you establish a secure connection from an enterprise datacenter to the cloud infrastructure. This allows users to access the guest VMs by establishing a VPN connection to the virtual router of the account from a device in the datacenter of the enterprise. Having this facility eliminates the need to establish VPN connections to individual VMs.
+				</div><div class="para">
+					The supported endpoints on the remote datacenters are:
+				</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+							Cisco ISR with IOS 12.4 or later
+						</div></li><li class="listitem"><div class="para">
+							Juniper J-Series routers with JunOS 9.5 or later
+						</div></li></ul></div></div><div class="section" id="local-storage-support"><div class="titlepage"><div><div><h3 class="title" id="local-storage-support">3.1.3. Local Storage Support for Data Volumes</h3></div></div></div><div class="para">
+					You can now create data volumes on local storage. The data volume is placed on the same XenServer host as the VM instance that is attached to the data volume. These local data volumes can be attached to virtual machines, detached, re-attached, and deleted just as with the other types of data volume. In earlier releases of CloudStack, only the root disk could be placed in local storage.
+				</div><div class="para">
+					Local storage is ideal for scenarios where persistence of data volumes and HA is not required. Some of the benefits include reduced disk I/O latency and cost reduction from using inexpensive local disks.
+				</div><div class="para">
+					In order for local volumes to be used, the feature must be enabled for the zone.
+				</div><div class="para">
+					You can create a data disk offering for local storage. When a user creates a new VM, they can select this disk offering in order to cause the data disk volume to be placed in local storage.
+				</div><div class="para">
+					You can not migrate a VM that has a volume in local storage to a different host, nor migrate the volume itself away to a different host. If you want to put a host into maintenance mode, you must first stop any VMs with local data volumes on that host.
+				</div><div class="para">
+					Local storage support for volumes is available for XenServer, KVM, and VMware hypervisors.
+				</div></div><div class="section" id="tags"><div class="titlepage"><div><div><h3 class="title" id="tags">3.1.4. Tags</h3></div></div></div><div class="para">
+					A tag is a key-value pair that stores metadata about a resource in the cloud. Tags are useful for categorizing resources. For example, you can tag a user VM with a value that indicates the user's city of residence. In this case, the key would be "city" and the value might be "Toronto" or "Tokyo." You can then request CloudStack to find all resources that have a given tag; for example, VMs for users in a given city.
+				</div><div class="para">
+					You can tag a user virtual machine, volume, snapshot, guest network, template, ISO, firewall rule, port forwarding rule, public IP address, security group, load balancer rule, project, VPC, network ACL, or static route. You can not tag a remote access VPN.
+				</div><div class="para">
+					You can work with tags through the UI or through the new API commands createTags, deleteTags, and listTags. You can define multiple tags for each resource. There is no limit on the number of tags you can define. Each tag can be up to 255 characters long. Users can define tags on the resources they own, and administrators can define tags on any resources in the cloud.
+				</div><div class="para">
+					A new optional input parameter, "tags," has been added to many of the list* API commands. The following example shows how to use this new parameter to find all the volumes having tag region=canada OR tag city=Toronto:
+				</div><pre class="programlisting">command=listVolumes
+&amp;listAll=true
+&amp;tags[0].key=region
+&amp;tags[0].value=canada
+&amp;tags[1].key=city
+&amp;tags[1].value=Toronto</pre><div class="para">
+					The following API commands have the new "tags" input parameter:
+				</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+							listVirtualMachines
+						</div></li><li class="listitem"><div class="para">
+							listVolumes
+						</div></li><li class="listitem"><div class="para">
+							listSnapshots
+						</div></li><li class="listitem"><div class="para">
+							listNetworks
+						</div></li><li class="listitem"><div class="para">
+							listTemplates
+						</div></li><li class="listitem"><div class="para">
+							listIsos
+						</div></li><li class="listitem"><div class="para">
+							listFirewallRules
+						</div></li><li class="listitem"><div class="para">
+							listPortForwardingRules
+						</div></li><li class="listitem"><div class="para">
+							listPublicIpAddresses
+						</div></li><li class="listitem"><div class="para">
+							listSecurityGroups
+						</div></li><li class="listitem"><div class="para">
+							listLoadBalancerRules
+						</div></li><li class="listitem"><div class="para">
+							listProjects
+						</div></li><li class="listitem"><div class="para">
+							listVPCs
+						</div></li><li class="listitem"><div class="para">
+							listNetworkACLs
+						</div></li><li class="listitem"><div class="para">
+							listStaticRoutes
+						</div></li></ul></div></div><div class="section" id="aws-tags"><div class="titlepage"><div><div><h3 class="title" id="aws-tags">3.1.5. AWS API Changes for Tags</h3></div></div></div><div class="para">
+					Some changes have been made to the Amazon Web Services API compatibility support in order to accommodate the new tagging feature.
+				</div><div class="para">
+					New APIs:
+				</div><div class="informaltable"><table border="1"><colgroup><col width="50%" align="left" class="1" /><col width="50%" align="left" class="2" /></colgroup><thead><tr><th align="left">
+									<div class="para">
+										New API
+									</div>
+
+								</th><th align="left">
+									<div class="para">
+										Description
+									</div>
+
+								</th></tr></thead><tbody><tr><td align="left">
+									<div class="para">
+										ec2-create-tags
+									</div>
+
+								</td><td align="left">
+									<div class="para">
+										Add tags to one or more resources.
+									</div>
+
+								</td></tr><tr><td align="left">
+									<div class="para">
+										ec2-delete-tags
+									</div>
+
+								</td><td align="left">
+									<div class="para">
+										Remove tags from one or more resources.
+									</div>
+
+								</td></tr><tr><td align="left">
+									ec2-describe-tags
+								</td><td align="left">
+									<div class="para">
+										Show currently defined tags.
+									</div>
+
+								</td></tr></tbody></table></div><div class="para">
+					Changed APIs:
+				</div><div class="informaltable"><table border="1"><colgroup><col width="33%" align="left" class="1" /><col width="67%" align="left" class="2" /></colgroup><thead><tr><th align="left">
+									<div class="para">
+										Changed API
+									</div>
+
+								</th><th align="left">
+									<div class="para">
+										Description
+									</div>
+
+								</th></tr></thead><tbody><tr><td align="left">
+									ec2-describe-images
+								</td><td align="left">
+									<div class="para">
+										Output now shows tags defined for each image.
+									</div>
+
+								</td></tr><tr><td align="left">
+									<div class="para">
+										ec2-describe-instances
+									</div>
+
+								</td><td align="left">
+									<div class="para">
+										Output now shows tags defined for each image.
+									</div>
+									 <div class="para">
+										The following filters can now be passed in to limit the output result set: tag-key, tag-value and tag:key
+									</div>
+
+								</td></tr><tr><td align="left">
+									<div class="para">
+										ec2-describe-snapshots
+									</div>
+
+								</td><td align="left">
+									<div class="para">
+										Output now shows tags defined for each image.
+									</div>
+									 <div class="para">
+										The following filters can now be passed in to limit the output result set: tag-key, tag-value and tag:key
+									</div>
+
+								</td></tr><tr><td align="left">
+									ec2-describe-volumes
+								</td><td align="left">
+									<div class="para">
+										Output now shows tags defined for each image.
+									</div>
+									 <div class="para">
+										The following filters can now be passed in to limit the output result set: tag-key, tag-value and tag:key
+									</div>
+
+								</td></tr></tbody></table></div></div><div class="section" id="secure-console-access-on-xenserver"><div class="titlepage"><div><div><h3 class="title" id="secure-console-access-on-xenserver">3.1.6. Secure Console Access on XenServer</h3></div></div></div><div class="para">
+					With the addition of Secure Console feature, users can now securely access the VM consoles on the XenServer hypervisor. You can either SSH or use the View Console option in the Management Server to securely connect to the VMs on the XenServer host. The Management Server uses the xapi API to stream the VM consoles. However, there is no change in the way you can access the console of a VM. This feature is supported on XenServer 5.6 and 6.0 versions.
+				</div></div><div class="section" id="release-note-stopped-vm"><div class="titlepage"><div><div><h3 class="title" id="release-note-stopped-vm">3.1.7. Stopped VM</h3></div></div></div><div class="para">
+					This release supports creating VMs without starting them on the backend. You can determine whether the VM needs to be started as part of the VM deployment. A VM can be deployed in two ways: create and start a VM (the default method); create a VM and leave it in the stopped state.
+				</div><div class="para">
+					A new request parameter, startVM, is introduced in the deployVm API to support the stopped VM feature. The possible values are:
+				</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+							true - The VM starts as a part of the VM deployment
+						</div></li><li class="listitem"><div class="para">
+							false - The VM is left in stopped state at the end of the VM deployment
+						</div></li></ul></div></div><div class="section" id="release-note-upload-existing-volume-to-vm"><div class="titlepage"><div><div><h3 class="title" id="release-note-upload-existing-volume-to-vm">3.1.8. Uploading an Existing Volume to a Virtual Machine</h3></div></div></div><div class="para">
+					Existing data can now be made accessible to a virtual machine. This is called uploading a volume to the VM. For example, this is useful to upload data from a local file system and attach it to a VM. Root administrators, domain administrators, and end users can all upload existing volumes to VMs. The upload is performed by using HTTP. The uploaded volume is placed in the zone's secondary storage.
+				</div><div class="para">
+					This functionality is supported for the following hypervisors:
+				</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+							Hypervisor : Disk Image Format
+						</div></li><li class="listitem"><div class="para">
+							XenServer : VHD
+						</div></li><li class="listitem"><div class="para">
+							VMware : OVA
+						</div></li><li class="listitem"><div class="para">
+							KVM : QCOW2
+						</div></li></ul></div></div><div class="section" id="dedicated-ha-hosts"><div class="titlepage"><div><div><h3 class="title" id="dedicated-ha-hosts">3.1.9. Dedicated High-Availability Hosts</h3></div></div></div><div class="para">
+					One or more hosts can now be designated for use only by high-availability (HA) enabled VMs that are restarted due to a host failure. Setting up a pool of such dedicated HA hosts as the recovery destination for all HA-enabled VMs make it easier to determine which VMs are restarted as part of the high-availability function. You can designate a host as a dedicated-HA restart node only if the Dedicated HA Hosts feature is enabled by setting the appropriate global configuration parameter.
+				</div></div><div class="section" id="support-for-aws-api"><div class="titlepage"><div><div><h3 class="title" id="support-for-aws-api">3.1.10. Support for Amazon Web Services API</h3></div></div></div><div class="para">
+					This release supports Amazon Web Services APIs, including Elastic Compute Cloud (EC2) API. Fidelity with the EC2 API and the installation experience for this functionality are both enhanced. In prior releases, users were required to install a separate component called CloudBridge, in addition to installing the Management Server. For new installations of CloudStack 4.0.0-incubating, this software is installed automatically along with CloudStack and runs in a more closely integrated fashion. The feature is disabled by default, but can be easily enabled by setting the appropriate global configuration parameter and performing a few setup steps.
+				</div></div><div class="section" id="nicira-nvp-plugin"><div class="titlepage"><div><div><h3 class="title" id="nicira-nvp-plugin">3.1.11. The Nicira NVP Plugin</h3></div></div></div><div class="para">
+					The Nicira NVP plug-in allows CloudStack to use the Nicira solution for virtualized network as a provider for CloudStack networks and services. In CloudStack 4.0.0-incubating this plug-in supports the Connectivity service. This service is responsible for creating Layer 2 networks supporting the networks created by guests. When a tenant creates a new network, instead of a traditional VLAN, a logical network will be created by sending the appropriate calls to the Nicira NVP Controller. The plug-in has been tested with Nicira NVP versions 2.1.0, 2.2.0 and 2.2.1.
+				</div></div><div class="section" id="castor-support"><div class="titlepage"><div><div><h3 class="title" id="castor-support">3.1.12. Support for CAStor Cluster</h3></div></div></div><div class="para">
+					CloudStack 4.0.0-incubating supports using a CAStor cluster as the back-end storage system for a CloudStack S3 front-end. The CAStor back-end storage for CloudStack extends the existing storage classes and allows the storage configuration attribute to point to a CAStor cluster. This feature makes use of the CloudStack server's local disk to spool files before writing them to CAStor when handling the PUT operations. However, a file must be successfully written into the CAStor cluster prior to the return of a success code to the S3 client to ensure that the transaction outcome is correctly reported.
+				</div><div class="para">
+					The S3 multipart file upload is not supported in this release. You are prompted with proper error message if a multipart upload is attempted.
+				</div></div><div class="section" id="clvm-support-kvm"><div class="titlepage"><div><div><h3 class="title" id="clvm-support-kvm">3.1.13. Clustered Logical Volume Manager Support for KVM</h3></div></div></div><div class="para">
+					This release adds Clustered Logical Volume Manager (CLVM) storage support for KVM hosts. With this support, you can use CLVM as primary storage.
+				</div><div class="para">
+					The CLVM support for KVM allows root and data disks (primary storage) to reside on Linux logical volumes. The administrators are required to configure CLVM on the KVM hosts independent of CloudStack. When the volume groups are available, an administrator can simply add primary storage of type CLVM, providing the volume group name. Then CloudStack creates and manages logical volumes as needed.
+				</div><div class="para">
+					CLVM also supports Snapshots. CloudStack creates an LVM snapshot, copy the applicable logical volume to the secondary storage in the qcow2 format, and then delete the LVM snapshot.
+				</div></div><div class="section" id="rbd-support-kvm"><div class="titlepage"><div><div><h3 class="title" id="rbd-support-kvm">3.1.14. Rados Block Device Support for KVM</h3></div></div></div><div class="para">
+					You can now use Rados Block Device (RBD) to run instances on Apache CloudStack 4.0.0-incubating. This can be done by adding a RBD pool as primary storage. Before using RBD, ensure that Qemu is compiled with RBD enabled, and the libvirt version is at least 0.10 with RBD enabled on the KVM host
+				</div><div class="para">
+					Create a disk offering for RBD so that you can ensure that StoragePoolAllocator chooses the RBD pool to deploy instances.
+				</div></div></div><div class="section" id="issues-fixed-4.0"><div class="titlepage"><div><div><h2 class="title" id="issues-fixed-4.0">3.2. Issues Fixed in 4.0.0-incubating</h2></div></div></div><div class="para">
+				Many bugs include a defect number that reflects the bug number that was held in the bug tracker run by Citrix (bugs.cloudstack.org). The Apache CloudStack project now uses <a href="https://issues.apache.org/jira/browse/CLOUDSTACK">Jira</a> to manage its bugs, so some of the bugs that are referenced here may not be available to view. However, we are still including them for completeness.
+			</div><div class="informaltable"><table border="1"><colgroup><col width="33%" align="left" class="1" /><col width="67%" align="left" class="2" /></colgroup><thead><tr><th align="left">
+								<div class="para">
+									Defect
+								</div>
+
+							</th><th align="left">
+								<div class="para">
+									Description
+								</div>
+
+							</th></tr></thead><tbody><tr><td align="left">
+								<div class="para">
+									Many
+								</div>
+							</td><td align="left">
+								<div class="para">
+									vSphere 5.0 now has GA support. Formerly only Beta support was provided.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-16135
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Creating volumes after upgrading from snapshot taken in 2.2.14 no longer deletes the snapshot physically from the secondary storage.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-16122
+								</div>
+							</td><td align="left">
+								<div class="para">
+									In a site-to-site VPN setup, alerts are generated when the VPC virtual router is rebooted with multiple vpn connections.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-16022
+								</div>
+							</td><td align="left">
+								<div class="para">
+									If host connection fails due to a database error, host now disconnects and the Managerment Server id is removed.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-16011
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Name of network offering is no longer truncated due to too-narrow field width in Add Guest Network dialog box.
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15978
+								</div>
+							</td><td align="left">
+								<div class="para">
+									When the virtual router and its host go down, the high availability mechanism now works for the virtual router.
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15921
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The 2.2.x security group script now accounts for the VMs created in the version 2.1 timeframe.
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15919
+								</div>
+							</td><td align="left">
+								<div class="para">
+									A level parameter is added to the listVolumes command; therefore queries return the response more quickly.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15904
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Upgrade from version 2.2.14 to CloudStack-3.0.5-0.2944-rhel5 works as expected. The upgrade script, /usr/share/cloud/setup/db/schema-2214to30-cleanup.sql, works as expected.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15879
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The database upgrade from version 3.0.4 to 3.0.5 works as expected.
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15807
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Network label for OVM now available in UI.
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15779
+								</div>
+							</td><td align="left">
+								<div class="para">
+									When the thumbnail is requested, the console session will not be terminated.
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15778
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Fetching a VM thumbnail now gets a thumbnail of appropriate visual dimensions.
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15734
+								</div>
+							</td><td align="left">
+								<div class="para">
+									KVM Snapshots no longer shows incorrect disk usage.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15733
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The domainId parameter for the listNetworks command now lists the resources belonging to the domain specified.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15676
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Stopping the router no longer fails with the null pointer exception.
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15648
+								</div>
+							</td><td align="left">
+								<div class="para">
+									If creating a volume from a snapshot fails, the error is reported on the UI but the volume is stuck in the creating state.
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15646
+								</div>
+							</td><td align="left">
+								<div class="para">
+									createFirewallRule API no longer causes null pointer exception.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15628
+								</div>
+							</td><td align="left">
+								<div class="para">
+									In a KVM host, the high availability mechanism no longer takes a long time to migrate VMs to another KVM host if there are multiple storage pools.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15627
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Metadata instance-id and vm-id for existing VMs stays the same after upgrade.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15621
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Solved difficulty with allocating disk volumes when running multiple VM deployment in parallel.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15603
+								</div>
+							</td><td align="left">
+								<div class="para">
+									CloudStack now stop the VMs when destroyVM command is called.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15586
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Public Vlan for an account no longer fails if multiple physical networks are present.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15582
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The dns-name filter is now supported for ec2-describe-instances in the Amazon Web Services API compatibility commands. The filter maps to the name of a user VM.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15503
+								</div>
+							</td><td align="left">
+								<div class="para">
+									An IP address which has static NAT rules can now be released. Subsequently, restarting this network after it was shutdown can succeed.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15464
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Can now delete static route whose state is set to Revoke.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15443
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Creating a firewall rule no longer fails with an internal server error.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15398
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Corrected technique for programming DNS on the user VMs.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15356
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Internal DNS 2 entry now correctly shown in UI.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15335
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The CloudBridge S3 Engine now connects to the database by using the deciphered password in the db.properties file.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15318
+								</div>
+							</td><td align="left">
+								<div class="para">
+									UI now correctly prevents the user from stopping a VM that is in the Starting state.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15307
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Fixed Japanese localization of instance statuses in the Instances menu.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15278
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The deployment planner no longer takes long time to locate a suitable host to deploy VMs when large number of clusters are present.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15274
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Creating a VLAN range using Zone ID without network ID now succeeds.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15243
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Now check to be sure source NAT and VPN have same provider.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15232
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Ensure that networks using external load balancer/firewall in 2.2.14 or earlier can properly upgrade.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15200
+								</div>
+							</td><td align="left">
+								<div class="para">
+									No exception when trying to attach the same volume while attaching the first volume is in progress.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15173
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Additional cluster can no longer be added with same VSM IP address as another cluster.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15167
+								</div>
+							</td><td align="left">
+								<div class="para">
+									AWS API calls now honor the admin account's ability to view or act on the resources owned by the regular users.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15163
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The minimum limit is not honored when there is not enough capacity to deploy all the VMs and the ec2-run-instances command with the -n &gt;n1 -n2&gt; option is used to deploy multiple VMs.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15157
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Can now add/enable service providers for multiple physical networks through the UI.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15145
+								</div>
+							</td><td align="left">
+								<div class="para">
+									AWS API call ec2-register has better error handling for negative cases.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15122
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Filters now supported for AWS API call ec2-describe-availability-zones.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15120
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Actions column in UI of Volume page now shows action links.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15099
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Buttons no longer overlap text on Account Deletion confirmation page in UI.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15095
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Ensures you can not create a VM with a CPU frequency greater than the host CPU frequency.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15094
+								</div>
+							</td><td align="left">
+								<div class="para">
+									CPU cap now set properly in VMware.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15077
+								</div>
+							</td><td align="left">
+								<div class="para">
+									NullPointerException is no longer observed while executing the command to list the public IP in a basic zone created with the default shared NetScaler EIP and ELB network offering.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15044
+								</div>
+							</td><td align="left">
+								<div class="para">
+									UI now provides option to view the list of instances which are part of the guest network.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15026
+								</div>
+							</td><td align="left">
+								<div class="para">
+									UI in Deploy VM dialog now lists only templates or ISOs depending on which is selected in previous dialog.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14989
+								</div>
+							</td><td align="left">
+								<div class="para">
+									In KVM, the Create Instance wizard now shows only templates from the current (KVM) zone.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14986, CS-14985
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Listing filters works as expected in the ec2-describe-volumes and ec2-describe-snapshots commands.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14964
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Automatically starting the Console Proxy no longer fails due to its missing volume on the primary storage
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14907
+								</div>
+							</td><td align="left">
+								<div class="para">
+									User is now correctly prevented from trying to download an uploaded volume which has not yet been moved to primary storage.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14879
+								</div>
+							</td><td align="left">
+								<div class="para">
+									When a user VM is stopped or terminated, the static NAT associated with this VM is now disabled. This public IP address is no longer owned by this account and can be associated to any other user VM.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14854
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Only the admin user can change the template permission to Public, so this option is removed from the UI for domain Admins and regular Users.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14817
+								</div>
+							</td><td align="left">
+								<div class="para">
+									While checking if network has any external provider, CloudStack will consider all providers in the network.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14796
+								</div>
+							</td><td align="left">
+								<div class="para">
+									When deploying a VM with ec2-run-instances, userdata is now encoded.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14770
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The API returns the keypair information when a VM is deployed with sshkey. This affects the API commands related to virtual machines (deployVirtualMachine, listVirtualMachines, ... *VirtualMachine), as well as the corresponding AWS APIs.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14724
+								</div>
+							</td><td align="left">
+								<div class="para">
+									UI no longer displays the dropdown list of isolation method choices if sdn.ovs.controller is false.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14345
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Logout API returns XML header.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14724
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Host IPs now associated with appropriate IPs according to traffic type.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14253
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Can now delete and re-create port forwarding rule on same firewall.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14724
+								</div>
+							</td><td align="left">
+								<div class="para">
+									UI no longer displays the dropdown list of isolation method choices if sdn.ovs.controller is false.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14452
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Data disk volumes are now automatically copied from one cluster to another.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-13539
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Windows VM can get IP after reboot.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-13537
+								</div>
+							</td><td align="left">
+								<div class="para">
+									When user tries to delete a domain that contains sub-domains, an error message is now sent to convey the reason for the delete failure.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-13153
+								</div>
+							</td><td align="left">
+								<div class="para">
+									System VMs support HTTP proxy.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-12642
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Added Close button to Select Project list view popup in UI.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-12510
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Deleting and reinserting host_details no longer causes deadlocks.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-12407
+								</div>
+							</td><td align="left">
+								<div class="para">
+									F5 and Netscaler - when dedicated is selected, capacity field is disabled.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-12111
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Email validation for edit user form.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-10928
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Network read/write values now always positive numbers.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15376, CS-15373
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The AWS APIs (EC2 and S3) now listen on the 7080 port and send request to CloudStack on the 8080 port just as any other clients of CloudStack.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-13944
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The CloudStack 2.2.x to 3.0.x database upgrade for multiple physical networks is now supported.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15300
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The admin accounts of a domain now honour the limits imposed on that domain just like the regular accounts do. A domain admin now is not allowed to create an unlimited number of instances, volumes, snapshots, and so on.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15396
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The CloudStack database now contain the UUD information after the 2.2.14 to 3.0.4 upgrade.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15450
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Upgrade from 2.2.14 to 3.0.4 no longer fails on a VMware host.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15449
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Running cloudstack-aws-api-register no longer fails with the "User registration failed with error: [Errno 113] No route to host" error.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15455
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The iptable rules are configured to open the awsapi port (7080) as part of the installation.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15429
+								</div>
+							</td><td align="left">
+								<div class="para">
+									While creating an instance with data volume, disk offering also is considered while checking the account limit on volume resources.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15414
+								</div>
+							</td><td align="left">
+								<div class="para">
+									After the 2.2.14 to 3.0.4 upgrade, the value of the global parameter xen.guest.network.device is now decrypted before setting the traffic label.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15382
+								</div>
+							</td><td align="left">
+								<div class="para">
+									During 2.2.14 to 3.0.4 upgrade, the hosts no longer go to the Alert state if destroyed networks existed with non-existent tags prior to upgrade.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15323
+								</div>
+							</td><td align="left">
+								<div class="para">
+									CloudStack supports the following Citrix XenServer hotfixes: XS602E003, XS602E004, and XS602E005.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15430
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Create snapshot now fails if creating a snapshot exceeds the snapshot resource limit for a domain admin or a user account.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14256
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Virtual Router no longer remains in starting state for subdomain or user on a KVM 3.0.1 prerlease host on RHEL 6.2.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-7495
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Implemented a variety of Xen management host improvements.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-8105
+								</div>
+							</td><td align="left">
+								<div class="para">
+									NFS v4 for primary storage now works as expected on KVM hosts.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-9989
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The error messages returned during VM deployment failure will have much more details than before.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-12584
+								</div>
+							</td><td align="left">
+								<div class="para">
+									You can no longer add security groups not supported by the hypervisor in use.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-12705
+								</div>
+							</td><td align="left">
+								<div class="para">
+									When creating a Network offering by using SRX as the service provider for SourceNAT servcies, an option is given in the CloudStack UI now to set the source_nat type to "per Zone"/"per account".
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-12782
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Assigning a VM from Basic to Advanced zone no longer ignores the network ID. A warning message is displayed for VM movements across zones.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-12591
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Broadcast Address on the Second Public IP NIC is now corrected.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-13272
+								</div>
+							</td><td align="left">
+								<div class="para">
+									When a user is deleted, all the associated properties, such as IPs and virtual routers, are now deleted.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-13377
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Creating template from a root disk of a stopped instance now provides an option to make it a "Featured template".
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-13500
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Reaching the first guest VM by using its public IP from the second guest VM no longer fails.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-13853
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The default gateway can no longer be 0.0.0.0 in the Secondary Storage VM (SSVM).
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-13863
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The queryAsyncJobResult command in XML format now returns the correct UUIDs.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-13867
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Corrected CSP xenserver-cloud-supp.tgz for XenServer 5.6 and 6.0.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-13904
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Labels and values for the service offerings CPU and memory are now consistent.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-13998
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The SSVM kernel panic issue is fixed on XenServer.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14090
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The issue is fixed where running the VMware snapshots randomly fails with the ArrayIndexOutOfBoundsException error.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14021
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The java.lang.OutOfMemoryError is fixed on the Management Server.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14025
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The Python Eggs are provided to easily package the test client for each branch of CloudStack.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14068
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Resetting the VM password through the CloudStack UI no longer causes any error.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14156
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The pod which has the administrator's virtual router is no longer selected while creating the virtual routers for guests.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14182
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The users can now delete their ISOs as normal users.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14185
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The listOSTypes API now filters out the types of operating system by using the keywords.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14204
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The cloud-setup-bonding.sh command no longer generates the "command not found" error.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14214
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The Specify VLAN option cannot be enabled now for an isolated Network offering with SourceNAT enabled.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14234
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Sending project invite email to an account now requires SMTP configured in CloudStack.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14237
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The garbage collector of the primary storage no longer fails when the first host in the cluster is not up.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14241
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Custom Volume Disk Offering is now matching the Global configuration value.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14270
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The listNetworks API no longer assumes that the broadcast type is always VLAN.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14319
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The internal name of the VM is no longer present in the error message that is displayed to a domain administrator.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14321
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The listVolumes API call now returns a valid value for the isExtractable parameter for the ISO-derived disk and data disk volumes.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14323
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Invalid API calls will now give valid response in json/xml format.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14339
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Custom Disk Size will now allow values larger than 100GB.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14357
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The ConsoleProxyLoadReportCommand is no longer fired continuously.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14421
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Fixed the issue of virtual router deployments. The DHCP entries can now be assigned to the router.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14555
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Unzipped downloaded template MD5SUM will no longer override the zipped template MD5SUM in the database.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14598
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The complete screen of the running VM is now displayed in the console proxy.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14600
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Windows or Linux based consoles are no longer lost upon rebooting VMs.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14784
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Multiple subnets with the same VLAN now work as expected.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-13303, 14874, 13897, 13944, 14088, 14190
+								</div>
+							</td><td align="left">
+								<div class="para">
+									A variety of upgrade issues have been fixed in release 3.0.3.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15080
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Setting a private network on a VLAN for VMWare environment is now supported.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15168
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The console proxy now works as expected and no exception is shown in the log after upgrading from version 2.2.14 to 3.0.2.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15172
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Version 3.0.2 now accepts the valid public key.
+								</div>
+							</td></tr></tbody></table></div></div><div class="section" id="known-issues-4.0"><div class="titlepage"><div><div><h2 class="title" id="known-issues-4.0">3.3. Known Issues in 4.0.0-incubating</h2></div></div></div><div class="informaltable"><table border="1"><colgroup><col width="33%" align="left" class="1" /><col width="67%" align="left" class="2" /></colgroup><thead><tr><th align="left">
+								<div class="para">
+									Issue ID
+								</div>
+
+							</th><th align="left">
+								<div class="para">
+									Description
+								</div>
+
+							</th></tr></thead><tbody><tr><td align="left">
+								<div class="para">
+									CLOUDSTACK-301
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Nexus 1000v DVS integration is not functional
+								</div>
+								 <div class="para">
+									This source code release includes some partial functionality to support the Cisco Nexus 1000v Distributed Virtual Switch within a VMware hypervisor environment. The functionality is not complete at this time.
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CLOUDSTACK-368
+								</div>
+							</td><td align="left">
+								<div class="para">
+									OVM - cannot create guest VM
+								</div>
+								 <div class="para">
+									This source code release has regressed from the CloudStack 2.2.x code and is unable to support Oracle VM (OVM).
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CLOUDSTACK-279
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Deleting a project fails when executed by the regular user. This works as expected for root/domain admin. To workaround, perform either of the following:
+								</div>
+								<div class="itemizedlist"><ul><li class="listitem"><div class="para">
+											Use the account cleanup thread which will eventually complete the project deletion.
+										</div></li><li class="listitem"><div class="para">
+											Execute the call as the root/domain admin on behalf of the regular user.
+										</div></li></ul></div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-16067
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The command=listTags&amp;key=city command does not work as expected. The command does not return tags for the resources of the account with the tag, city
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-16063
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The current values of volumes and snapshots are incorrect when using KVM as a host. To fix this, the database upgrade codes, volumes.size and snapshots.size, should be changed to show the virtual sizes.
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-16058
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Null pointer Exception while deleting the host after moving the host to maintenance state.
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-16045
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Only the root administrator can handle the API keys. The domain administrators are not allowed to create, delete, or retrieve API keys for the users in their domain.
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-16019
+								</div>
+							</td><td align="left">
+								<div class="para">
+									CIDR list in the Add VPN Customer Gateway dialog does not prompt the user that they can provide a comma separated CIDRs if multiple CIDRs have to be supplied.
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-16015
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Deleting a network is not supported when its network providers are disabled.
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-16012
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Unable to delete a zone in the UI because the necessary cleanup cannot be completed. When the hosts are removed, the expunge process fails to delete the volumes as no hosts are present to send the commands to. Therefore, the storage pool removal fails, and zone can't be cleaned and deleted.
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-16011
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Name of network offering might be truncated due to too-narrow field width in Add Guest Network dialog box.
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15789
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Invalid global setting prevents management server to restart. For example, if you configure the "project.invite.timeout" parameter to "300" and attempt to restart management server, it fails without throwing a warning or setting the value to the default.
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15749
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Restarting VPC is resulting in intermittent connection loss to the port forwarding and StaticNAT rules.
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15690
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The IpAssoc command failed as a part of starting the virtual router, but the final start result is reported as succes.
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15672, CS-15635
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The FQDN of the VM is not configured if it is deployed as a part of default shared network and isolated guest network (DefaultIsolatedNetworkOfferingWithSourceNatService).
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15634
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The FQDN of a VM that is deployed as a part of both a shared network and default isolated guest network has the suffix of the shared network instead of the default isolated guest network.
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15576
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Stopping a VM on XenServer creates a backlog of API commands. For example, the Attach volume calls become delayed while waiting for the stopVirtualMachine command to be executed.
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15569
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Misleading error message in the exception when creating a StaticNAT rule fails in a VPC.
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15566
+								</div>
+							</td><td align="left">
+								<div class="para">
+									External device such as Netscaler is not supported in VPC.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15557
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Intermittent traffic loss in the VPN connection if Juniper is the remote router and the life time is 300 seconds.
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15361
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Egress rules are not working in NetScaler loadbalancer.
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15163
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The minimum limit is not honored when there is not enough capacity to deploy all the VMs and the ec2-run-instances command with the -n &gt;n1 -n2&gt; option is used to deploy multiple VMs.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15105
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The cloud-sysvmadm script does not work if the integration.api.port parameter is set to any port other than 8096.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15092
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Connecting to the guest VMs through SSH is extremely slow, and it results in connection timeout.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15037
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Hairpin NAT is not supported when NetScaler is used for EIP.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15009
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The port_profile table will not be populated with port profile information. In this release, CloudStack directly connects to the VSM for all the port profile operations; therefore, no port profile information is cached.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14939
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Adding a VMware cluster is not supported when the Management Network is migrated to the Distributed Virtual Switch environment.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14780
+								</div>
+							</td><td align="left">
+								<div class="para">
+									You are allowed to ping the elastic IP address of the VM even though no ingress rule is set that allows the ICMP protocol.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14756
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Installing KVM on RHEL 6.2 will result in unreliable network performance. Workaround: blacklist vhost-net. Edit /etc/modprobe.d/blacklist-kvm.conf and include vhost-net.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14346
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The UpdateVirtualMachine API call does not check whether the VM is stopped. Therefore, stop the VM manually before issuing this call.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14303 (was 14537)
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The IP addresses for a shared network are still being consumed even if no services are defined for that network.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14296 (was 14530)
+								</div>
+							</td><td align="left">
+								<div class="para">
+									OVM: Network traffic labels are not supported.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14291 (was 14523)
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The EIP/ELB network offering for basic zones does not support multiple NetScalers.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14275 (was 14506)
+								</div>
+							</td><td align="left">
+								<div class="para">
+									F5: Unable to properly remove a F5 device.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14201 (was 14430)
+								</div>
+							</td><td align="left">
+								<div class="para">
+									VMWare: Template sizes are being reported different depending on whether the primary storage is using ISCSI or NFS.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-13758 (was 13963)
+								</div>
+							</td><td align="left">
+								<div class="para">
+									vSphere: template download from templates created off of the root volume does not work properly.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-13733 (was 13935)
+								</div>
+							</td><td align="left">
+								<div class="para">
+									vSphere: detaching an ISO from a restored VM instance fails.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-13682 (was 13883)
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Multiple NetScalers are not supported in Basic Networking.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-13599 (was 13359)
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Programming F5/NetScaler rules can be better optimized.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-13337 (was 13518)
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Security Groups are not supported in Advanced Networking
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-13173 (was 13336)
+								</div>
+							</td><td align="left">
+								<div class="para">
+									vSphere: cross cluster volume migration does not work properly.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-12714 (was 12840)
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Capacity view is not available for pods or clusters.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-12624 (was 12741)
+								</div>
+							</td><td align="left">
+								<div class="para">
+									vSphere: maintenance mode will not live migrate system VM to another host.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15476
+								</div>
+
+							</td><td align="left">
+								<div class="para">
+									The 2.2.14 to 4.0.0-incubating upgrade fails if multiple untagged physical networks exist before the upgrade.
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15407
+								</div>
+
+							</td><td align="left">
+								<div class="para">
+									After the 2.2.14 to 4.0.0-incubating upgrade, VLAN allocation on multiple physical networks does not happen as expected.
+								</div>
+								 <div class="para">
+									To workaround this issue, follow the instructions given below:
+								</div>
+								 <div class="orderedlist"><ol><li class="listitem"><div class="para">
+											Revert to your 2.2.14 setup.
+										</div></li><li class="listitem"><div class="para">
+											Stop all the VMs with the isolated virtual networks in your cloud setup.
+										</div></li><li class="listitem"><div class="para">
+											Run following query to find if any networks still have the NICs allocated:
+										</div><div class="orderedlist"><ol class="loweralpha"><li class="listitem"><div class="para">
+													Check if any virtual guest networks have the NICs allocated:
+												</div><pre class="programlisting">#SELECT DISTINCT op.id from `cloud`.`op_networks` op JOIN `cloud`.`networks` n on op.id=n.id WHERE nics_count != 0 AND guest_type = 'Virtual';</pre></li><li class="listitem"><div class="para">
+													If this returns any network IDs, then ensure the following:
+												</div><div class="orderedlist"><ol class="lowerroman"><li class="listitem"><div class="para">
+															All the VMs are stopped.
+														</div></li><li class="listitem"><div class="para">
+															No new VM is started.
+														</div></li><li class="listitem"><div class="para">
+															Shutdown the Management Server.
+														</div></li></ol></div></li><li class="listitem"><div class="para">
+													Remove the NICs count for the virtual network IDs returned in step (a), and set the NIC count to 0:
+												</div><pre class="programlisting">UPDATE `cloud`.`op_networks` SET nics_count = 0 WHERE id = <em class="replaceable"><code>enter id of virtual network</code></em></pre></li><li class="listitem"><div class="para">
+													Restart the Management Server, and wait for all the networks to shut down.
+												</div><div class="note"><div class="admonition_header"><h2>Note</h2></div><div class="admonition"><div class="para">
+														Networks shutdown is determined by the network.gc.interval and network.gc.wait parameters.
+													</div></div></div></li></ol></div></li><li class="listitem"><div class="para">
+											Ensure that all the networks are shut down and all the guest VNETs are free.
+										</div></li><li class="listitem"><div class="para">
+											Run the upgrade script.
+										</div><div class="para">
+											This allocates all your guest VNET ranges to the first physical network.
+										</div></li><li class="listitem"><div class="para">
+											By using the updatePhysicalNetwork API, reconfigure the VNET ranges for each physical network as desired.
+										</div></li><li class="listitem"><div class="para">
+											Start all the VMs.
+										</div></li></ol></div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14680
+								</div>
+
+							</td><td align="left">
+								<div class="para">
+									CloudStack and LDAP user validation cannot happen simultaneously because the user password is hashed and stored in the database, and LDAP requires the passwords in plain text.
+								</div>
+								 <div class="para">
+									To work with the LDAP user, the MD5 hash should be disabled in the login process by commenting the following variable in sharedFunctions.js file available at /usr/share/cloud/management/webapps/client/scripts, and restart the cloud-management service.
+								</div>
+								 
+<pre class="programlisting">var md5HashedLogin = false;</pre>
+								 <div class="para">
+									However, if md5HashedLogin is set to false, the end user can login with the LDAP credentials but not with the CloudStack user credentials.
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14346
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The UpdateVirtualMachine API call does not check whether the VM is stopped. Therefore, stop the VM manually before issuing this call.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15130
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Data disk volumes are not automatically copied from one cluster to another.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14780
+								</div>
+							</td><td align="left">
+								<div class="para">
+									You are allowed to ping the elastic IP address of the VM even though no ingress rule is set that allows the ICMP protocol.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-14939
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Adding a VMware cluster is not supported when the Management Network is migrated to the Distributed Virtual Switch environment.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15009
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The port_profile table will not be populated with port profile information. In this release, CloudStack directly connects to the VSM for all the port profile operations; therefore, no port profile information is cached.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15037
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Hairpin NAT is not supported when NetScaler is used for EIP.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15092
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Connecting to the guest VMs through SSH is extremely slow, and it results in connection timeout.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15105
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The cloud-sysvmadm script does not work if the integration.api.port parameter is set to any port other than 8096.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									CS-15163
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The minimum limit is not honored when there is not enough capacity to deploy all the VMs and the ec2-run-instances command with the -n &gt;n1 -n2&gt; option is used to deploy multiple VMs.
+								</div>
+							</td></tr></tbody></table></div></div></div><ul class="docnav"><li class="previous"><a accesskey="p" href="upgrade-instructions.html"><strong>Prev</strong>Chapter 2. Upgrade Instructions</a></li><li class="up"><a accesskey="u" href="#"><strong>Up</strong></a></li><li class="home"><a accesskey="h" href="index.html"><strong>Home</strong></a></li><li class="next"><a accesskey="n" href="api-changes-4.0.html"><strong>Next</strong>Chapter 4. API Changes from 3.0.2 to 4.0.0-incuba...</a></li></ul></body></html>

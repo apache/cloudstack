@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>7.3. Adding a Pod</title><link rel="stylesheet" type="text/css" href="Common_Content/css/default.css" /><link rel="stylesheet" media="print" href="Common_Content/css/print.css" type="text/css" /><meta name="generator" content="publican 2.8" /><meta name="package" content="Apache_CloudStack-Admin_Guide-4.0.0-incubating-en-US-1-" /><link rel="home" href="index.html" title="CloudStack Administrator's Guide" /><link rel="up" href="provisioning-steps.html" title="Chapter 7. Steps to Provisioning Your Cloud Infrastructure" /><link rel="prev" href="zone-add.html" title="7.2. Adding a Zone" /><link rel="next" href="cluster-add.html" title="7.4. Adding a Cluster" /></head><body><p id="title"><a class="left" href="http://cloudstack.org"><img src="Common_Content/images/image_left.png" alt="Product Site" /></a><a class="right" href="http://docs.cloudstack.org"><img src="Common_Content/images/image_right.png" alt="Documentation Site" /></a></p><ul class="docnav"><li class="previous"><a accesskey="p" href="zone-add.html"><strong>Prev</strong></a></li><li class="next"><a accesskey="n" href="cluster-add.html"><strong>Next</strong></a></li></ul><div xml:lang="en-US" class="section" id="pod-add" lang="en-US"><div class="titlepage"><div><div><h2 class="title" id="pod-add">7.3. Adding a Pod</h2></div></div></div><div class="para">
+		When you created a new zone, CloudStack adds the first pod for you. You can add more pods at any time using the procedure in this section.
+	</div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				Log in to the CloudStack UI. See <a class="xref" href="log-in.html">Section 5.1, “Log In to the UI”</a>.
+			</div></li><li class="listitem"><div class="para">
+				In the left navigation, choose Infrastructure. In Zones, click View More, then click the zone to which you want to add a pod.
+			</div></li><li class="listitem"><div class="para">
+				Click the Compute and Storage tab. In the Pods node of the diagram, click View All.
+			</div></li><li class="listitem"><div class="para">
+				Click Add Pod.
+			</div></li><li class="listitem"><div class="para">
+				Enter the following details in the dialog.
+			</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>Name.</strong></span> The name of the pod.
+					</div></li><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>Gateway.</strong></span> The gateway for the hosts in that pod.
+					</div></li><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>Netmask.</strong></span> The network prefix that defines the pod's subnet. Use CIDR notation.
+					</div></li><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>Start/End Reserved System IP.</strong></span> The IP range in the management network that CloudStack uses to manage various system VMs, such as Secondary Storage VMs, Console Proxy VMs, and DHCP. For more information, see System Reserved IP Addresses.
+					</div></li></ul></div></li><li class="listitem"><div class="para">
+				Click OK.
+			</div></li></ol></div></div><ul class="docnav"><li class="previous"><a accesskey="p" href="zone-add.html"><strong>Prev</strong>7.2. Adding a Zone</a></li><li class="up"><a accesskey="u" href="#"><strong>Up</strong></a></li><li class="home"><a accesskey="h" href="index.html"><strong>Home</strong></a></li><li class="next"><a accesskey="n" href="cluster-add.html"><strong>Next</strong>7.4. Adding a Cluster</a></li></ul></body></html>

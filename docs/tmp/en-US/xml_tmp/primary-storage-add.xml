@@ -1,0 +1,74 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
+<section id="primary-storage-add">
+    <title>Add Primary Storage</title>
+    <section id="sys-require-primary-storage">
+    <title>System Requirements for Primary Storage</title>
+    <para>Hardware requirements:</para>
+    <itemizedlist>
+        <listitem><para>Any standards-compliant iSCSI or NFS server that is supported by the underlying hypervisor.</para></listitem>
+        <listitem><para>The storage server should be a machine with a large number of disks. The disks should ideally be managed by a hardware RAID controller.</para></listitem>
+        <listitem><para>Minimum required capacity depends on your needs.</para></listitem>
+    </itemizedlist>
+    <para>When setting up primary storage, follow these restrictions:</para>
+    <itemizedlist>
+        <listitem><para>Primary storage cannot be added until a host has been added to the cluster.</para></listitem>
+        <listitem><para>If you do not provision shared primary storage, you must set the global configuration parameter system.vm.local.storage.required to true, or else you will not be able to start VMs.</para></listitem>
+    </itemizedlist>
+    </section>
+    <section id="adding-primary-storage">
+    <title>Adding Primary Stroage</title>
+    <para>When you create a new zone, the first primary storage is added as part of that procedure. You can add primary storage servers at any time, such as when adding a new cluster or adding more servers to an existing cluster.</para>
+    <warning><para>Be sure there is nothing stored on the server. Adding the server to &PRODUCT; will destroy any existing data.</para></warning>
+    <orderedlist>
+        <listitem><para>Log in to the &PRODUCT; UI (see <xref linkend="log-in" />).</para></listitem>
+        <listitem><para>In the left navigation, choose Infrastructure. In Zones, click View More, then click the zone in which you want to add the primary storage.</para></listitem>
+        <listitem><para>Click the Compute tab.</para></listitem>
+        <listitem><para>In the Primary Storage node of the diagram, click View All.</para></listitem>
+        <listitem><para>Click Add Primary Storage.</para></listitem>
+        <listitem>
+        <para>Provide the following information in the dialog. The information required varies depending on your choice in Protocol.</para>
+        <itemizedlist>
+            <listitem><para><emphasis role="bold">Pod.</emphasis> The pod for the storage device.</para></listitem>
+            <listitem><para><emphasis role="bold">Cluster.</emphasis> The cluster for the storage device.</para></listitem>
+            <listitem><para><emphasis role="bold">Name.</emphasis> The name of the storage device.</para></listitem>
+            <listitem><para><emphasis role="bold">Protocol.</emphasis> For XenServer, choose either NFS, iSCSI, or PreSetup.  For KVM, choose NFS or SharedMountPoint.  For vSphere choose either VMFS (iSCSI or FiberChannel) or NFS.</para></listitem>
+            <listitem><para><emphasis role="bold">Server (for NFS, iSCSI, or PreSetup).</emphasis> The IP address or DNS name of the storage device.</para></listitem>
+            <listitem><para><emphasis role="bold">Server (for VMFS).</emphasis> The IP address or DNS name of the vCenter server.</para></listitem>
+            <listitem><para><emphasis role="bold">Path (for NFS).</emphasis> In NFS this is the exported path from the server.</para></listitem>
+            <listitem><para><emphasis role="bold">Path (for VMFS).</emphasis> In vSphere this is a combination of the datacenter name and the datastore name.  The format is "/" datacenter name "/" datastore name.  For example, "/cloud.dc.VM/cluster1datastore".</para></listitem>
+            <listitem><para><emphasis role="bold">Path (for SharedMountPoint).</emphasis> With KVM this is the path on each host that is where this primary storage is mounted.  For example, "/mnt/primary".</para></listitem>
+            <listitem><para><emphasis role="bold">SR Name-Label (for PreSetup).</emphasis> Enter the name-label of the SR that has been set up outside &PRODUCT;.</para></listitem>
+            <listitem><para><emphasis role="bold">Target IQN (for iSCSI).</emphasis> In iSCSI this is the IQN of the target. For example, iqn.1986-03.com.sun:02:01ec9bb549-1271378984.</para></listitem>
+            <listitem><para><emphasis role="bold">Lun # (for iSCSI).</emphasis> In iSCSI this is the LUN number. For example, 3.</para></listitem>
+            <listitem><para><emphasis role="bold">Tags (optional).</emphasis> The comma-separated list of tags for this storage device.  It should be an equivalent set or superset of the tags on your disk offerings..</para></listitem>
+        </itemizedlist>
+        <para>The tag sets on primary storage across clusters in a Zone must be identical.  For example, if cluster A provides primary storage that has tags T1 and T2, all other clusters in the Zone must also provide primary storage that has tags T1 and T2.</para>
+        </listitem>
+        <listitem><para>Click OK.</para></listitem>
+    </orderedlist>
+
+    </section>
+</section>

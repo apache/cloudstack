@@ -1,0 +1,35 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
+<section id="migrate-datadisk-volume-new-storage-pool">
+    <title>Migrating a Data Disk Volume to a New Storage Pool</title>
+            <orderedlist>
+                <listitem><para>Log in to the &PRODUCT; UI as a user or admin.</para></listitem>
+                <listitem><para>Detach the data disk from the VM. See Detaching and Moving Volumes <xref linkend="detach-move-volumes"/>  (but skip the “reattach” step at the end. You will do that after migrating to new storage).</para></listitem>
+                <listitem><para>Call the &PRODUCT; API command migrateVolume and pass in the volume ID and the ID of any storage pool in the zone.</para></listitem>
+                <listitem><para>Watch for the volume status to change to Migrating, then back to Ready.</para></listitem>
+                <listitem><para>Attach the volume to any desired VM running in the same cluster as the new storage server. See Attaching a Volume <xref linkend="attaching-volume"/> </para></listitem>
+            </orderedlist>
+    </section>
+

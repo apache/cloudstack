@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>7.6. Add Primary Storage</title><link rel="stylesheet" type="text/css" href="Common_Content/css/default.css" /><link rel="stylesheet" media="print" href="Common_Content/css/print.css" type="text/css" /><meta name="generator" content="publican 2.8" /><meta name="package" content="Apache_CloudStack-Admin_Guide-4.0.0-incubating-en-US-1-" /><link rel="home" href="index.html" title="CloudStack Administrator's Guide" /><link rel="up" href="provisioning-steps.html" title="Chapter 7. Steps to Provisioning Your Cloud Infrastructure" /><link rel="prev" href="host-add.html" title="7.5. Adding a Host" /><link rel="next" href="secondary-storage-add.html" title="7.7. Add Secondary Storage" /></head><body><p id="title"><a class="left" href="http://cloudstack.org"><img src="Common_Content/images/image_left.png" alt="Product Site" /></a><a class="right" href="http://docs.cloudstack.org"><img src="Common_Content/images/image_right.png" alt="Documentation Site" /></a></p><ul class="docnav"><li class="previous"><a accesskey="p" href="host-add.html"><strong>Prev</strong></a></li><li class="next"><a accesskey="n" href="secondary-storage-add.html"><strong>Next</strong></a></li></ul><div xml:lang="en-US" class="section" id="primary-storage-add" lang="en-US"><div class="titlepage"><div><div><h2 class="title" id="primary-storage-add">7.6. Add Primary Storage</h2></div></div></div><div class="section" id="sys-require-primary-storage"><div class="titlepage"><div><div><h3 class="title" id="sys-require-primary-storage">7.6.1. System Requirements for Primary Storage</h3></div></div></div><div class="para">
+			Hardware requirements:
+		</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+					Any standards-compliant iSCSI or NFS server that is supported by the underlying hypervisor.
+				</div></li><li class="listitem"><div class="para">
+					The storage server should be a machine with a large number of disks. The disks should ideally be managed by a hardware RAID controller.
+				</div></li><li class="listitem"><div class="para">
+					Minimum required capacity depends on your needs.
+				</div></li></ul></div><div class="para">
+			When setting up primary storage, follow these restrictions:
+		</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+					Primary storage cannot be added until a host has been added to the cluster.
+				</div></li><li class="listitem"><div class="para">
+					If you do not provision shared primary storage, you must set the global configuration parameter system.vm.local.storage.required to true, or else you will not be able to start VMs.
+				</div></li></ul></div></div><div class="section" id="adding-primary-storage"><div class="titlepage"><div><div><h3 class="title" id="adding-primary-storage">7.6.2. Adding Primary Stroage</h3></div></div></div><div class="para">
+			When you create a new zone, the first primary storage is added as part of that procedure. You can add primary storage servers at any time, such as when adding a new cluster or adding more servers to an existing cluster.
+		</div><div class="warning"><div class="admonition_header"><h2>Warning</h2></div><div class="admonition"><div class="para">
+				Be sure there is nothing stored on the server. Adding the server to CloudStack will destroy any existing data.
+			</div></div></div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+					Log in to the CloudStack UI (see <a class="xref" href="log-in.html">Section 5.1, “Log In to the UI”</a>).
+				</div></li><li class="listitem"><div class="para">
+					In the left navigation, choose Infrastructure. In Zones, click View More, then click the zone in which you want to add the primary storage.
+				</div></li><li class="listitem"><div class="para">
+					Click the Compute tab.
+				</div></li><li class="listitem"><div class="para">
+					In the Primary Storage node of the diagram, click View All.
+				</div></li><li class="listitem"><div class="para">
+					Click Add Primary Storage.
+				</div></li><li class="listitem"><div class="para">
+					Provide the following information in the dialog. The information required varies depending on your choice in Protocol.
+				</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+							<span class="bold bold"><strong>Pod.</strong></span> The pod for the storage device.
+						</div></li><li class="listitem"><div class="para">
+							<span class="bold bold"><strong>Cluster.</strong></span> The cluster for the storage device.
+						</div></li><li class="listitem"><div class="para">
+							<span class="bold bold"><strong>Name.</strong></span> The name of the storage device.
+						</div></li><li class="listitem"><div class="para">
+							<span class="bold bold"><strong>Protocol.</strong></span> For XenServer, choose either NFS, iSCSI, or PreSetup. For KVM, choose NFS or SharedMountPoint. For vSphere choose either VMFS (iSCSI or FiberChannel) or NFS.
+						</div></li><li class="listitem"><div class="para">
+							<span class="bold bold"><strong>Server (for NFS, iSCSI, or PreSetup).</strong></span> The IP address or DNS name of the storage device.
+						</div></li><li class="listitem"><div class="para">
+							<span class="bold bold"><strong>Server (for VMFS).</strong></span> The IP address or DNS name of the vCenter server.
+						</div></li><li class="listitem"><div class="para">
+							<span class="bold bold"><strong>Path (for NFS).</strong></span> In NFS this is the exported path from the server.
+						</div></li><li class="listitem"><div class="para">
+							<span class="bold bold"><strong>Path (for VMFS).</strong></span> In vSphere this is a combination of the datacenter name and the datastore name. The format is "/" datacenter name "/" datastore name. For example, "/cloud.dc.VM/cluster1datastore".
+						</div></li><li class="listitem"><div class="para">
+							<span class="bold bold"><strong>Path (for SharedMountPoint).</strong></span> With KVM this is the path on each host that is where this primary storage is mounted. For example, "/mnt/primary".
+						</div></li><li class="listitem"><div class="para">
+							<span class="bold bold"><strong>SR Name-Label (for PreSetup).</strong></span> Enter the name-label of the SR that has been set up outside CloudStack.
+						</div></li><li class="listitem"><div class="para">
+							<span class="bold bold"><strong>Target IQN (for iSCSI).</strong></span> In iSCSI this is the IQN of the target. For example, iqn.1986-03.com.sun:02:01ec9bb549-1271378984.
+						</div></li><li class="listitem"><div class="para">
+							<span class="bold bold"><strong>Lun # (for iSCSI).</strong></span> In iSCSI this is the LUN number. For example, 3.
+						</div></li><li class="listitem"><div class="para">
+							<span class="bold bold"><strong>Tags (optional).</strong></span> The comma-separated list of tags for this storage device. It should be an equivalent set or superset of the tags on your disk offerings..
+						</div></li></ul></div><div class="para">
+					The tag sets on primary storage across clusters in a Zone must be identical. For example, if cluster A provides primary storage that has tags T1 and T2, all other clusters in the Zone must also provide primary storage that has tags T1 and T2.
+				</div></li><li class="listitem"><div class="para">
+					Click OK.
+				</div></li></ol></div></div></div><ul class="docnav"><li class="previous"><a accesskey="p" href="host-add.html"><strong>Prev</strong>7.5. Adding a Host</a></li><li class="up"><a accesskey="u" href="#"><strong>Up</strong></a></li><li class="home"><a accesskey="h" href="index.html"><strong>Home</strong></a></li><li class="next"><a accesskey="n" href="secondary-storage-add.html"><strong>Next</strong>7.7. Add Secondary Storage</a></li></ul></body></html>

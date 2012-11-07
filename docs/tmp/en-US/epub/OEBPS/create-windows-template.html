@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>12.10. Creating a Windows Template</title><link rel="stylesheet" type="text/css" href="Common_Content/css/default.css" /><link rel="stylesheet" media="print" href="Common_Content/css/print.css" type="text/css" /><meta name="generator" content="publican 2.8" /><meta name="package" content="" /></head><body><div class="section" id="create-windows-template"><div class="titlepage"><div><div><h1 class="title" id="create-windows-template">12.10. Creating a Windows Template</h1></div></div></div><div class="para">
+		Windows templates must be prepared with Sysprep before they can be provisioned on multiple machines. Sysprep allows you to create a generic Windows template and avoid any possible SID conflicts.
+	</div><div class="note"><div class="admonition_header"><h2>Note</h2></div><div class="admonition"><div class="para">
+			(XenServer) Windows VMs running on XenServer require PV drivers, which may be provided in the template or added after the VM is created. The PV drivers are necessary for essential management functions such as mounting additional volumes and ISO images, live migration, and graceful shutdown.
+		</div></div></div><div class="para">
+		An overview of the procedure is as follows:
+	</div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				Upload your Windows ISO.
+			</div><div class="para">
+				For more information, see <a class="xref" href="working-with-iso.html#add-iso">Section 10.11.1, “Adding an ISO”</a>
+			</div></li><li class="listitem"><div class="para">
+				Create a VM Instance with this ISO.
+			</div><div class="para">
+				For more information, see <a class="xref" href="creating-vms.html">Section 10.4, “Creating VMs”</a>
+			</div></li><li class="listitem"><div class="para">
+				Follow the steps in Sysprep for Windows Server 2008 R2 (below) or Sysprep for Windows Server 2003 R2, depending on your version of Windows Server
+			</div></li><li class="listitem"><div class="para">
+				The preparation steps are complete. Now you can actually create the template as described in Creating the Windows Template.
+			</div></li></ol></div><div class="section" id="sysprep-windows-server-2008R2"><div class="titlepage"><div><div><h2 class="title" id="sysprep-windows-server-2008R2">12.10.1. System Preparation for Windows Server 2008 R2</h2></div></div></div><div class="para">
+		For Windows 2008 R2, you run Windows System Image Manager to create a custom sysprep response XML file. Windows System Image Manager is installed as part of the Windows Automated Installation Kit (AIK). Windows AIK can be downloaded from the Microsoft Download Center at the following location:
+	</div><div class="para">
+		<a href="http://www.microsoft.com/en-us/download/details.aspx?id=9085">http://www.microsoft.com/en-us/download/details.aspx?id=9085</a>Microsoft Download Center.
+	</div><div class="para">
+		Use the following steps to run sysprep for Windows 2008 R2:
+	</div><div class="note"><div class="admonition_header"><h2>Note</h2></div><div class="admonition"><div class="para">
+			The steps outlined here are derived from the excellent guide by Charity Shelbourne, originally published at <a href="http://blogs.technet.com/askcore/archive/2008/10/31/automating-the-oobe-process-during-windows-server-2008-sysprep-mini-setup.aspx">http://blogs.technet.com/askcore/archive/2008/10/31/automating-the-oobe-process-during-windows-server-2008-sysprep-mini-setup.aspx</a>Windows Server 2008 Sysprep Mini-Setup
+		</div></div></div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				Download and install the Windows AIK
+			</div><div class="note"><div class="admonition_header"><h2>Note</h2></div><div class="admonition"><div class="para">
+					Windows AIK should not be installed on the Windows 2008 R2 VM you just created. Windows AIK should not be part of the template you create. It is only used to create the sysprep answer file.
+				</div></div></div></li><li class="listitem"><div class="para">
+				Copy the install.wim file in the \sources directory of the Windows 2008 R2 installation DVD to the hard disk. This is a very large file and may take a long time to copy. Windows AIK requires the WIM file to be writable.
+			</div></li><li class="listitem"><div class="para">
+				Start the Windows System Image Manager, which is part of the Windows AIK.
+			</div></li><li class="listitem"><div class="para">
+				In the Windows Image pane, right click “Select a Windows image or catalog file” to load the install.wim file you just copied.
+			</div></li><li class="listitem"><div class="para">
+				Select the Windows 2008 R2 Edition
+			</div><div class="para">
+				You may be prompted with a warning that the catalog file cannot be opened. Click Yes to create a new catalog file.
+			</div></li><li class="listitem"><div class="para">
+				In the Answer File pane, right click to create a new answer file.
+			</div></li><li class="listitem"><div class="para">
+				Generate the answer file from the Windows System Image Manager using the following steps:
+			</div><div class="orderedlist"><ol class="loweralpha"><li class="listitem"><div class="para">
+						The first page you need to automate is the Language and Country or Region Selection page. To automate this, expand Components in your Windows Image pane, right-click and add the Microsoft-Windows-International-Core setting to Pass 7 oobeSystem. In your Answer File pane, configure the InputLocale, SystemLocale, UILanguage, and UserLocale with the appropriate settings for your language and country or region. Should you have a question about any of these settings, you can right-click on the specific setting and select Help. This will open the appropriate CHM help file with more information, including examples on the setting you are attempting to configure.
+					</div><div class="mediaobject"><img src="./images/sysmanager.png" width="444" alt="sysmanager.png: System Image Manager" /></div></li><li class="listitem"><div class="para">
+						You need to automate the Software License Terms Selection page, otherwise known as the End-User License Agreement (EULA). To do this, expand the Microsoft-Windows-Shell-Setup component. High-light the OOBE setting, and add the setting to the Pass 7 oobeSystem. In Settings, set HideEULAPage true.
+					</div><div class="mediaobject"><img src="./images/software-license.png" width="444" alt="software-license.png: Depicts hiding the EULA page." /></div></li><li class="listitem"><div class="para">
+						Make sure the license key is properly set. If you use MAK key, you can just enter the MAK key on the Windows 2008 R2 VM. You need not input the MAK into the Windows System Image Manager. If you use KMS host for activation you need not enter the Product Key. Details of Windows Volume Activation can be found at <a href="http://technet.microsoft.com/en-us/library/bb892849.aspx">http://technet.microsoft.com/en-us/library/bb892849.aspx</a>
+					</div></li><li class="listitem"><div class="para">
+						You need to automate is the Change Administrator Password page. Expand the Microsoft-Windows-Shell-Setup component (if it is not still expanded), expand UserAccounts, right-click on AdministratorPassword, and add the setting to the Pass 7 oobeSystem configuration pass of your answer file. Under Settings, specify a password next to Value.
+					</div><div class="mediaobject"><img src="./images/change-admin-password.png" width="444" alt="change-admin-password.png: Depicts changing the administrator password" /></div><div class="para">
+						You may read the AIK documentation and set many more options that suit your deployment. The steps above are the minimum needed to make Windows unattended setup work.
+					</div></li></ol></div></li><li class="listitem"><div class="para">
+				Save the answer file as unattend.xml. You can ignore the warning messages that appear in the validation window.
+			</div></li><li class="listitem"><div class="para">
+				Copy the unattend.xml file into the c:\windows\system32\sysprep directory of the Windows 2008 R2 Virtual Machine
+			</div></li><li class="listitem"><div class="para">
+				Once you place the unattend.xml file in c:\windows\system32\sysprep directory, you run the sysprep tool as follows:
+			</div><pre class="programlisting">cd c:\Windows\System32\sysprep
+sysprep.exe /oobe /generalize /shutdown
+</pre><div class="para">
+				The Windows 2008 R2 VM will automatically shut down after sysprep is complete.
+			</div></li></ol></div></div><div class="section" id="sysprep-for-windows-server-2003R2"><div class="titlepage"><div><div><h2 class="title" id="sysprep-for-windows-server-2003R2">12.10.2. Sysprep for Windows Server 2003 R2</h2></div></div></div><div class="para">
+		Earlier versions of Windows have a different sysprep tool. Follow these steps for Windows Server 2003 R2.
+	</div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				Extract the content of \support\tools\deploy.cab on the Windows installation CD into a directory called c:\sysprep on the Windows 2003 R2 VM.
+			</div></li><li class="listitem"><div class="para">
+				Run c:\sysprep\setupmgr.exe to create the sysprep.inf file.
+			</div><div class="orderedlist"><ol class="loweralpha"><li class="listitem"><div class="para">
+						Select Create New to create a new Answer File.
+					</div></li><li class="listitem"><div class="para">
+						Enter “Sysprep setup” for the Type of Setup.
+					</div></li><li class="listitem"><div class="para">
+						Select the appropriate OS version and edition.
+					</div></li><li class="listitem"><div class="para">
+						On the License Agreement screen, select “Yes fully automate the installation”.
+					</div></li><li class="listitem"><div class="para">
+						Provide your name and organization.
+					</div></li><li class="listitem"><div class="para">
+						Leave display settings at default.
+					</div></li><li class="listitem"><div class="para">
+						Set the appropriate time zone.
+					</div></li><li class="listitem"><div class="para">
+						Provide your product key.
+					</div></li><li class="listitem"><div class="para">
+						Select an appropriate license mode for your deployment
+					</div></li><li class="listitem"><div class="para">
+						Select “Automatically generate computer name”.
+					</div></li><li class="listitem"><div class="para">
+						Type a default administrator password. If you enable the password reset feature, the users will not actually use this password. This password will be reset by the instance manager after the guest boots up.
+					</div></li><li class="listitem"><div class="para">
+						Leave Network Components at “Typical Settings”.
+					</div></li><li class="listitem"><div class="para">
+						Select the “WORKGROUP” option.
+					</div></li><li class="listitem"><div class="para">
+						Leave Telephony options at default.
+					</div></li><li class="listitem"><div class="para">
+						Select appropriate Regional Settings.
+					</div></li><li class="listitem"><div class="para">
+						Select appropriate language settings.
+					</div></li><li class="listitem"><div class="para">
+						Do not install printers.
+					</div></li><li class="listitem"><div class="para">
+						Do not specify “Run Once commands”.
+					</div></li><li class="listitem"><div class="para">
+						You need not specify an identification string.
+					</div></li><li class="listitem"><div class="para">
+						Save the Answer File as c:\sysprep\sysprep.inf.
+					</div></li></ol></div></li><li class="listitem"><div class="para">
+				Run the following command to sysprep the image:
+			</div><pre class="programlisting">c:\sysprep\sysprep.exe -reseal -mini -activated</pre><div class="para">
+				After this step the machine will automatically shut down
+			</div></li></ol></div></div></div></body></html>

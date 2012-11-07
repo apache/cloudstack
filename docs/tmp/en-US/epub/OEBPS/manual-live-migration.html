@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>10.9. Moving VMs Between Hosts (Manual Live Migration)</title><link rel="stylesheet" type="text/css" href="Common_Content/css/default.css" /><link rel="stylesheet" media="print" href="Common_Content/css/print.css" type="text/css" /><meta name="generator" content="publican 2.8" /><meta name="package" content="" /></head><body><div class="section" id="manual-live-migration"><div class="titlepage"><div><div><h1 class="title" id="manual-live-migration">10.9. Moving VMs Between Hosts (Manual Live Migration)</h1></div></div></div><div class="para">
+		The CloudPlatform administrator can move a running VM from one host to another without interrupting service to users or going into maintenance mode. This is called manual live migration, and can be done under the following conditions:
+	</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+				The root administrator is logged in. Domain admins and users can not perform manual live migration of VMs.
+			</div></li><li class="listitem"><div class="para">
+				The VM is running. Stopped VMs can not be live migrated.
+			</div></li><li class="listitem"><div class="para">
+				The destination host must be in the same cluster as the original host.
+			</div></li><li class="listitem"><div class="para">
+				The VM must not be using local disk storage.
+			</div></li><li class="listitem"><div class="para">
+				The destination host must have enough available capacity. If not, the VM will remain in the "migrating" state until memory becomes available.
+			</div></li></ul></div><div class="para">
+		To manually live migrate a virtual machine
+	</div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				Log in to the CloudPlatform UI as a user or admin.
+			</div></li><li class="listitem"><div class="para">
+				In the left navigation, click Instances.
+			</div></li><li class="listitem"><div class="para">
+				Choose the VM that you want to migrate.
+			</div></li><li class="listitem"><div class="para">
+				Click the Migrate Instance button 
+				<span class="inlinemediaobject"><img src="./images/migrate-instance.png" alt="Migrateinstance.png: button to migrate an instance" /></span>
+
+			</div></li><li class="listitem"><div class="para">
+				From the list of hosts, choose the one to which you want to move the VM.
+			</div></li><li class="listitem"><div class="para">
+				Click OK.
+			</div></li></ol></div></div></body></html>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Chapter 12. Working with Templates</title><link rel="stylesheet" type="text/css" href="Common_Content/css/default.css" /><link rel="stylesheet" media="print" href="Common_Content/css/print.css" type="text/css" /><meta name="generator" content="publican 2.8" /><meta name="package" content="" /></head><body><div class="chapter" id="working-with-templates"><div class="titlepage"><div><div><h1 class="title">Chapter 12. Working with Templates</h1></div></div></div><div class="para">
+		A template is a reusable configuration for virtual machines. When users launch VMs, they can choose from a list of templates in CloudStack.
+	</div><div class="para">
+		Specifically, a template is a virtual disk image that includes one of a variety of operating systems, optional additional software such as office applications, and settings such as access control to determine who can use the template. Each template is associated with a particular type of hypervisor, which is specified when the template is added to CloudStack.
+	</div><div class="para">
+		CloudStack ships with a default template. In order to present more choices to users, CloudStack administrators and users can create templates and add them to CloudStack.
+	</div><div class="section" id="create-templates-overview"><div class="titlepage"><div><div><h1 class="title" id="create-templates-overview">12.1. Creating Templates: Overview</h1></div></div></div><div class="para">
+		CloudStack ships with a default template for the CentOS operating system. There are a variety of ways to add more templates. Administrators and end users can add templates. The typical sequence of events is:
+	</div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				Launch a VM instance that has the operating system you want. Make any other desired configuration changes to the VM.
+			</div></li><li class="listitem"><div class="para">
+				Stop the VM.
+			</div></li><li class="listitem"><div class="para">
+				Convert the volume into a template.
+			</div></li></ol></div><div class="para">
+		There are other ways to add templates to CloudStack. For example, you can take a snapshot of the VM's volume and create a template from the snapshot, or import a VHD from another system into CloudStack
+	</div><div class="para">
+		The various techniques for creating templates are described in the next few sections.
+	</div></div></div></body></html>

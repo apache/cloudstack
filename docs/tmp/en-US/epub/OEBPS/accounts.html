@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Chapter 3. Accounts</title><link rel="stylesheet" type="text/css" href="Common_Content/css/default.css" /><link rel="stylesheet" media="print" href="Common_Content/css/print.css" type="text/css" /><meta name="generator" content="publican 2.8" /><meta name="package" content="" /></head><body><div class="chapter" id="accounts"><div class="titlepage"><div><div><h1 class="title">Chapter 3. Accounts</h1></div></div></div><div class="section" id="accounts-users-domains"><div class="titlepage"><div><div><h1 class="title" id="accounts-users-domains">3.1. Accounts, Users, and Domains</h1></div></div></div><div class="formalpara"><h5 class="formalpara" id="idm37521864">Accounts</h5>
+			An account typically represents a customer of the service provider or a department in a large organization. Multiple users can exist in an account.
+		</div><div class="formalpara"><h5 class="formalpara" id="idm20145824">Domains</h5>
+			Accounts are grouped by domains. Domains usually contain multiple accounts that have some logical relationship to each other and a set of delegated administrators with some authority over the domain and its subdomains. For example, a service provider with several resellers could create a domain for each reseller.
+		</div><div class="para">
+		For each account created, the Cloud installation creates three different types of user accounts: root administrator, domain administrator, and user.
+	</div><div class="formalpara"><h5 class="formalpara" id="idm5074824">Users</h5>
+			Users are like aliases in the account. Users in the same account are not isolated from each other, but they are isolated from users in other accounts. Most installations need not surface the notion of users; they just have one user per account. The same user cannot belong to multiple accounts.
+		</div><div class="para">
+		Username is unique in a domain across accounts in that domain. The same username can exist in other domains, including sub-domains. Domain name can repeat only if the full pathname from root is unique. For example, you can create root/d1, as well as root/foo/d1, and root/sales/d1.
+	</div><div class="para">
+		Administrators are accounts with special privileges in the system. There may be multiple administrators in the system. Administrators can create or delete other administrators, and change the password for any user in the system.
+	</div><div class="formalpara"><h5 class="formalpara" id="idm20904696">Domain Administrators</h5>
+			Domain administrators can perform administrative operations for users who belong to that domain. Domain administrators do not have visibility into physical servers or other domains.
+		</div><div class="formalpara"><h5 class="formalpara" id="idm26592168">Root Administrator</h5>
+			Root administrators have complete access to the system, including managing templates, service offerings, customer care administrators, and domains
+		</div><div class="para">
+		The resources belong to the account, not individual users in that account. For example, billing, resource limits, and so on are maintained by the account, not the users. A user can operate on any resource in the account provided the user has privileges for that operation. The privileges are determined by the role.
+	</div></div></div></body></html>

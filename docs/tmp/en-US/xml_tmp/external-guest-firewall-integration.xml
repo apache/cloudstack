@@ -1,0 +1,201 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+  http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+<section id="external-guest-firewall-integration">
+  <title>External Guest Firewall Integration for Juniper SRX (Optional)</title>
+  <note>
+    <para>Available only for guests using advanced networking.</para>
+  </note>
+  <para>&PRODUCT; provides for direct management of the Juniper SRX series of firewalls. This
+    enables &PRODUCT; to establish static NAT mappings from public IPs to guest VMs, and to use
+    the Juniper device in place of the virtual router for firewall services. You can have one or
+    more Juniper SRX per zone. This feature is optional. If Juniper integration is not provisioned,
+    &PRODUCT; will use the virtual router for these services.</para>
+  <para>The Juniper SRX can optionally be used in conjunction with an external load balancer.
+    External Network elements can be deployed in a side-by-side or inline configuration.</para>
+  <mediaobject>
+    <imageobject>
+      <imagedata fileref="./images/parallel-mode.png"/>
+    </imageobject>
+    <textobject>
+      <phrase>parallel-mode.png: adding a firewall and load balancer in parallel mode.</phrase>
+    </textobject>
+  </mediaobject>
+  <para>&PRODUCT; requires the Juniper to be configured as follows:</para>
+  <note>
+    <para>Supported SRX software version is 10.3 or higher.</para>
+  </note>
+  <orderedlist>
+    <listitem>
+      <para>Install your SRX appliance according to the vendor's instructions.</para>
+    </listitem>
+    <listitem>
+      <para>Connect one interface to the management network and one interface to the public network.
+        Alternatively, you can connect the same interface to both networks and a use a VLAN for the
+        public network.</para>
+    </listitem>
+    <listitem>
+      <para>Make sure "vlan-tagging" is enabled on the private interface.</para>
+    </listitem>
+    <listitem>
+      <para>Record the public and private interface names. If you used a VLAN for the public
+        interface, add a ".[VLAN TAG]" after the interface name. For example, if you are using
+        ge-0/0/3 for your public interface and VLAN tag 301, your public interface name would be
+        "ge-0/0/3.301". Your private interface name should always be untagged because the
+        &PRODUCT; software automatically creates tagged logical interfaces.</para>
+    </listitem>
+    <listitem>
+      <para>Create a public security zone and a private security zone. By default, these will
+        already exist and will be called "untrust" and "trust". Add the public interface to the
+        public zone and the private interface to the private zone. Note down the security zone
+        names.</para>
+    </listitem>
+    <listitem>
+      <para>Make sure there is a security policy from the private zone to the public zone that
+        allows all traffic.</para>
+    </listitem>
+    <listitem>
+      <para>Note the username and password of the account you want the &PRODUCT; software to log
+        in to when it is programming rules.</para>
+    </listitem>
+    <listitem>
+      <para>Make sure the "ssh" and "xnm-clear-text" system services are enabled.</para>
+    </listitem>
+    <listitem>
+      <para>If traffic metering is desired:</para>
+      <orderedlist>
+        <listitem>
+          <para>a. Create an incoming firewall filter and an outgoing firewall filter. These filters
+            should be the same names as your public security zone name and private security zone
+            name respectively. The filters should be set to be "interface-specific". For example,
+            here is the configuration where the public zone is "untrust" and the private zone is
+            "trust":</para>
+          <programlisting>root@cloud-srx# show firewall
+filter trust {
+    interface-specific;
+}
+filter untrust {
+    interface-specific;
+}</programlisting>
+        </listitem>
+        <listitem>
+          <para>Add the firewall filters to your public interface. For example, a sample
+            configuration output (for public interface ge-0/0/3.0, public security zone untrust, and
+            private security zone trust) is:</para>
+          <programlisting>ge-0/0/3 {
+    unit 0 {
+        family inet {
+            filter {
+                input untrust;
+                output trust;
+            }
+            address 172.25.0.252/16;
+        }
+    }
+}</programlisting>
+        </listitem>
+      </orderedlist>
+    </listitem>
+    <listitem>
+      <para>Make sure all VLANs are brought to the private interface of the SRX.</para>
+    </listitem>
+    <listitem>
+      <para>After the &PRODUCT; Management Server is installed, log in to the &PRODUCT; UI as
+        administrator.</para>
+    </listitem>
+    <listitem>
+      <para>In the left navigation bar, click Infrastructure.</para>
+    </listitem>
+    <listitem>
+      <para>In Zones, click View More.</para>
+    </listitem>
+    <listitem>
+      <para>Choose the zone you want to work with.</para>
+    </listitem>
+    <listitem>
+      <para>Click the Network tab.</para>
+    </listitem>
+    <listitem>
+      <para>In the Network Service Providers node of the diagram, click Configure. (You might have
+        to scroll down to see this.)</para>
+    </listitem>
+    <listitem>
+      <para>Click SRX.</para>
+    </listitem>
+    <listitem>
+      <para>Click the Add New SRX button (+) and provide the following:</para>
+      <itemizedlist>
+        <listitem>
+          <para>IP Address: The IP address of the SRX.</para>
+        </listitem>
+        <listitem>
+          <para>Username: The user name of the account on the SRX that &PRODUCT; should use.</para>
+        </listitem>
+        <listitem>
+          <para>Password: The password of the account.</para>
+        </listitem>
+        <listitem>
+          <para>Public Interface. The name of the public interface on the SRX. For example,
+            ge-0/0/2. A ".x" at the end of the interface indicates the VLAN that is in use.</para>
+        </listitem>
+        <listitem>
+          <para>Private Interface: The name of the private interface on the SRX. For example,
+            ge-0/0/1. </para>
+        </listitem>
+        <listitem>
+          <para>Usage Interface: (Optional) Typically, the public interface is used to meter
+            traffic. If you want to use a different interface, specify its name here</para>
+        </listitem>
+        <listitem>
+          <para>Number of Retries: The number of times to attempt a command on the SRX before
+            failing. The default value is 2.</para>
+        </listitem>
+        <listitem>
+          <para>Timeout (seconds): The time to wait for a command on the SRX before considering it
+            failed. Default is 300 seconds.</para>
+        </listitem>
+        <listitem>
+          <para>Public Network: The name of the public network on the SRX. For example,
+            trust.</para>
+        </listitem>
+        <listitem>
+          <para>Private Network: The name of the private network on the SRX. For example,
+            untrust.</para>
+        </listitem>
+        <listitem>
+          <para>Capacity: The number of networks the device can handle</para>
+        </listitem>
+        <listitem>
+          <para>Dedicated: When marked as dedicated, this device will be dedicated to a single
+            account. When Dedicated is checked, the value in the Capacity field has no significance
+            implicitly, its value is 1</para>
+        </listitem>
+      </itemizedlist>
+    </listitem>
+    <listitem>
+      <para>Click OK.</para>
+    </listitem>
+    <listitem>
+      <para>Click Global Settings. Set the parameter external.network.stats.interval to indicate how
+        often you want &PRODUCT; to fetch network usage statistics from the Juniper SRX. If you
+        are not using the SRX to gather network usage statistics, set to 0.</para>
+    </listitem>
+  </orderedlist>
+</section>

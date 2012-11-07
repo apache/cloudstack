@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>8.1. KVM Hypervisor Host Installation</title><link rel="stylesheet" type="text/css" href="Common_Content/css/default.css" /><link rel="stylesheet" media="print" href="Common_Content/css/print.css" type="text/css" /><meta name="generator" content="publican 2.8" /><meta name="package" content="Apache_CloudStack-Installation_Guide-4.0.0-incubating-en-US-1-" /><link rel="home" href="index.html" title="CloudStack Installation Guide" /><link rel="up" href="hypervisor-installation.html" title="Chapter 8. Hypervisor Installation" /><link rel="prev" href="hypervisor-installation.html" title="Chapter 8. Hypervisor Installation" /><link rel="next" href="citrix-xenserver-installation.html" title="8.2. Citrix XenServer Installation for CloudStack" /></head><body><p id="title"><a class="left" href="http://cloudstack.org"><img src="Common_Content/images/image_left.png" alt="Product Site" /></a><a class="right" href="http://docs.cloudstack.org"><img src="Common_Content/images/image_right.png" alt="Documentation Site" /></a></p><ul class="docnav"><li class="previous"><a accesskey="p" href="hypervisor-installation.html"><strong>Prev</strong></a></li><li class="next"><a accesskey="n" href="citrix-xenserver-installation.html"><strong>Next</strong></a></li></ul><div xml:lang="en-US" class="section" id="hypervisor-kvm-install-flow" lang="en-US"><div class="titlepage"><div><div><h2 class="title" id="hypervisor-kvm-install-flow">8.1. KVM Hypervisor Host Installation</h2></div></div></div><div xml:lang="en-US" class="section" id="hypervisor-kvm-requirements" lang="en-US"><div class="titlepage"><div><div><h3 class="title" id="hypervisor-kvm-requirements">8.1.1. System Requirements for KVM Hypervisor Hosts</h3></div></div></div><div class="para">
+		KVM is included with a variety of Linux-based operating systems. Although you are not required to run these distributions, the following are recommended:
+	</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+				CentOS / RHEL: 6.3
+			</div></li><li class="listitem"><div class="para">
+				Ubuntu: 12.04(.1)
+			</div></li></ul></div><div class="para">
+		The main requirement for KVM hypervisors is the libvirt and Qemu version. No matter what Linux distribution you are using, make sure the following requirements are met:
+	</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+				libvirt: 0.9.4 or higher
+			</div></li><li class="listitem"><div class="para">
+				Qemu/KVM: 1.0 or higher
+			</div></li></ul></div><div class="para">
+		In addition, the following hardware requirements apply:
+	</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+				Within a single cluster, the hosts must be of the same distribution version.
+			</div></li><li class="listitem"><div class="para">
+				All hosts within a cluster must be homogenous. The CPUs must be of the same type, count, and feature flags.
+			</div></li><li class="listitem"><div class="para">
+				Must support HVM (Intel-VT or AMD-V enabled)
+			</div></li><li class="listitem"><div class="para">
+				64-bit x86 CPU (more cores results in better performance)
+			</div></li><li class="listitem"><div class="para">
+				4 GB of memory
+			</div></li><li class="listitem"><div class="para">
+				At least 1 NIC
+			</div></li><li class="listitem"><div class="para">
+				When you deploy CloudStack, the hypervisor host must not have any VMs already running
+			</div></li></ul></div></div><div xml:lang="en-US" class="section" id="hypervisor-host-install-overview" lang="en-US"><div class="titlepage"><div><div><h3 class="title" id="hypervisor-host-install-overview">8.1.2. KVM Installation Overview</h3></div></div></div><div class="para">
+		If you want to use the Linux Kernel Virtual Machine (KVM) hypervisor to run guest virtual machines, install KVM on the host(s) in your cloud. The material in this section doesn't duplicate KVM installation docs. It provides the CloudStack-specific steps that are needed to prepare a KVM host to work with CloudStack.
+	</div><div class="warning"><div class="admonition_header"><h2>Warning</h2></div><div class="admonition"><div class="para">
+			Before continuing, make sure that you have applied the latest updates to your host.
+		</div></div></div><div class="warning"><div class="admonition_header"><h2>Warning</h2></div><div class="admonition"><div class="para">
+			It is NOT recommended to run services on this host not controlled by CloudStack.
+		</div></div></div><div class="para">
+		The procedure for installing a KVM Hypervisor Host is:
+	</div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				Prepare the Operating System
+			</div></li><li class="listitem"><div class="para">
+				Install and configure libvirt
+			</div></li><li class="listitem"><div class="para">
+				Configure Security Policies (AppArmor and SELinux)
+			</div></li><li class="listitem"><div class="para">
+				Install and configure the Agent
+			</div></li></ol></div></div><div xml:lang="en-US" class="section" id="hypervisor-host-install-prepare-os" lang="en-US"><div class="titlepage"><div><div><h3 class="title" id="hypervisor-host-install-prepare-os">8.1.3. Prepare the Operating System</h3></div></div></div><div class="para">
+		The OS of the Host must be prepared to host the CloudStack Agent and run KVM instances.
+	</div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				Log in to your OS as root.
+			</div></li><li class="listitem"><div class="para">
+				Check for a fully qualified hostname.
+			</div><pre class="programlisting">$ <span class="perl_BString">hostname</span> --fqdn</pre><div class="para">
+				This should return a fully qualified hostname such as "kvm1.lab.example.org". If it does not, edit /etc/hosts so that it does.
+			</div></li><li class="listitem"><div class="para">
+				Make sure that the machine can reach the Internet.
+			</div><pre class="programlisting">$ <span class="perl_BString">ping</span> www.cloudstack.org</pre></li><li class="listitem"><div class="para">
+				Turn on NTP for time synchronization.
+			</div><div class="note"><div class="admonition_header"><h2>Note</h2></div><div class="admonition"><div class="para">
+					NTP is required to synchronize the clocks of the servers in your cloud. Unsynchronized clocks can cause unexpected problems.
+				</div></div></div><div class="orderedlist"><ol class="loweralpha"><li class="listitem"><div class="para">
+						Install NTP
+					</div><pre class="programlisting">$ yum <span class="perl_BString">install</span> ntp</pre><pre class="programlisting">$ apt-get <span class="perl_BString">install</span> openntpd</pre></li></ol></div></li><li class="listitem"><div class="para">
+				Repeat all of these steps on every hypervisor host.
+			</div></li></ol></div></div><div xml:lang="en-US" class="section" id="hypervisor-host-install-agent" lang="en-US"><div class="titlepage"><div><div><h3 class="title" id="hypervisor-host-install-agent">8.1.4. Install and configure the Agent</h3></div></div></div><div class="para">
+		To manage KVM instances on the host CloudStack uses a Agent. This Agent communicates with the Management server and controls all the instances on the host.
+	</div><div class="para">
+		First we start by installing the agent:
+	</div><div class="para">
+		In RHEL or CentOS:
+	</div><pre class="programlisting">$ yum <span class="perl_BString">install</span> cloud-agent</pre><div class="para">
+		In Ubuntu:
+	</div><pre class="programlisting">$ apt-get <span class="perl_BString">install</span> cloud-agent</pre><div class="para">
+		The host is now ready to be added to a cluster. This is covered in a later section, see <a class="xref" href="host-add.html">Section 6.5, “Adding a Host”</a>. It is recommended that you continue to read the documentation before adding the host!
+	</div></div><div xml:lang="en-US" class="section" id="hypervisor-host-install-libvirt" lang="en-US"><div class="titlepage"><div><div><h3 class="title" id="hypervisor-host-install-libvirt">8.1.5. Install and Configure libvirt</h3></div></div></div><div class="para">
+		CloudStack uses libvirt for managing virtual machines. Therefore it is vital that libvirt is configured correctly. Libvirt is a dependency of cloud-agent and should already be installed.
+	</div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				In order to have live migration working libvirt has to listen for unsecured TCP connections. We also need to turn off libvirts attempt to use Multicast DNS advertising. Both of these settings are in <code class="filename">/etc/libvirt/libvirtd.conf</code>
+			</div><div class="para">
+				Set the following paramaters:
+			</div><pre class="programlisting">listen_tls = 0</pre><pre class="programlisting">listen_tcp = 1</pre><pre class="programlisting">tcp_port = 16059</pre><pre class="programlisting">auth_tcp = "none"</pre><pre class="programlisting">mdns_adv = 0</pre></li><li class="listitem"><div class="para">
+				Turning on "listen_tcp" in libvirtd.conf is not enough, we have to change the parameters as well:
+			</div><div class="para">
+				On RHEL or CentOS modify <code class="filename">/etc/sysconfig/libvirtd</code>:
+			</div><div class="para">
+				Uncomment the following line:
+			</div><pre class="programlisting">#LIBVIRTD_ARGS="--listen"</pre><div class="para">
+				On Ubuntu: modify <code class="filename">/etc/init/libvirt-bin.conf</code>
+			</div><div class="para">
+				Change the following line (at the end of the file):
+			</div><pre class="programlisting">exec /usr/sbin/libvirtd -d</pre><div class="para">
+				to (just add -l)
+			</div><pre class="programlisting">exec /usr/sbin/libvirtd -d -l</pre></li><li class="listitem"><div class="para">
+				Restart libvirt
+			</div><div class="para">
+				In RHEL or CentOS:
+			</div><pre class="programlisting"><code class="command">$ service libvirtd restart</code></pre><div class="para">
+				In Ubuntu:
+			</div><pre class="programlisting"><code class="command">$ service libvirt-bin restart</code></pre></li></ol></div></div><div xml:lang="en-US" class="section" id="hypervisor-host-install-security-policies" lang="en-US"><div class="titlepage"><div><div><h3 class="title" id="hypervisor-host-install-security-policies">8.1.6. Configure the Security Policies</h3></div></div></div><div class="para">
+		CloudStack does various things which can be blocked by security mechanisms like AppArmor and SELinux. These have to be disabled to ensure the Agent has all the required permissions.
+	</div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				Configure SELinux (RHEL and CentOS)
+			</div><div class="orderedlist"><ol class="loweralpha"><li class="listitem"><div class="para">
+						Check to see whether SELinux is installed on your machine. If not, you can skip this section.
+					</div><div class="para">
+						In RHEL or CentOS, SELinux is installed and enabled by default. You can verify this with:
+					</div><pre class="programlisting">$ rpm -qa <span class="perl_Keyword">|</span> <span class="perl_BString">grep</span> selinux</pre></li><li class="listitem"><div class="para">
+						Set the SELINUX variable in <code class="filename">/etc/selinux/config</code> to "permissive". This ensures that the permissive setting will be maintained after a system reboot.
+					</div><div class="para">
+						In RHEL or CentOS:
+					</div><pre class="programlisting">vi /etc/selinux/config</pre><div class="para">
+						Change the following line
+					</div><pre class="programlisting">SELINUX=enforcing</pre><div class="para">
+						to this
+					</div><pre class="programlisting">SELINUX=permissive</pre></li><li class="listitem"><div class="para">
+						Then set SELinux to permissive starting immediately, without requiring a system reboot.
+					</div><pre class="programlisting">$ setenforce permissive</pre></li></ol></div></li><li class="listitem"><div class="para">
+				Configure Apparmor (Ubuntu)
+			</div><div class="orderedlist"><ol class="loweralpha"><li class="listitem"><div class="para">
+						Check to see whether AppArmor is installed on your machine. If not, you can skip this section.
+					</div><div class="para">
+						In Ubuntu AppArmor is installed and enabled by default. You can verify this with:
+					</div><pre class="programlisting">$ dpkg --list <span class="perl_String">'apparmor'</span></pre></li><li class="listitem"><div class="para">
+						Disable the AppArmor profiles for libvirt
+					</div><pre class="programlisting">$ <span class="perl_BString">ln</span> -s /etc/apparmor.d/usr.sbin.libvirtd /etc/apparmor.d/disable/</pre><pre class="programlisting">$ <span class="perl_BString">ln</span> -s /etc/apparmor.d/usr.lib.libvirt.virt-aa-helper /etc/apparmor.d/disable/</pre><pre class="programlisting">$ apparmor_parser -R /etc/apparmor.d/usr.sbin.libvirtd</pre><pre class="programlisting">$ apparmor_parser -R /etc/apparmor.d/usr.lib.libvirt.virt-aa-helper</pre></li></ol></div></li></ol></div></div><div xml:lang="en-US" class="section" id="hypervisor-host-install-network" lang="en-US"><div class="titlepage"><div><div><h3 class="title" id="hypervisor-host-install-network">8.1.7. Configure the network bridges</h3></div></div></div><div class="warning"><div class="admonition_header"><h2>Warning</h2></div><div class="admonition"><div class="para">
+			This is a very important section, please make sure you read this thoroughly.
+		</div></div></div><div class="para">
+		In order to forward traffic to your instances you will need at least two bridges: <span class="emphasis"><em>public</em></span> and <span class="emphasis"><em>private</em></span>.
+	</div><div class="para">
+		By default these bridges are called <span class="emphasis"><em>cloudbr0</em></span> and <span class="emphasis"><em>cloudbr1</em></span>, but you do have to make sure they are available on each hypervisor.
+	</div><div class="para">
+		The most important factor is that you keep the configuration consistent on all your hypervisors.
+	</div><div class="section" id="hypervisor-host-install-network-vlan"><div class="titlepage"><div><div><h4 class="title" id="hypervisor-host-install-network-vlan">8.1.7.1. Network example</h4></div></div></div><div class="para">
+			There are many ways to configure your network. In the Basic networking mode you should have two (V)LAN's, one for your private network and one for the public network.
+		</div><div class="para">
+			We assume that the hypervisor has one NIC (eth0) with three tagged VLAN's:
+		</div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+					VLAN 100 for management of the hypervisor
+				</div></li><li class="listitem"><div class="para">
+					VLAN 200 for public network of the instances (cloudbr0)
+				</div></li><li class="listitem"><div class="para">
+					VLAN 300 for private network of the instances (cloudbr1)
+				</div></li></ol></div><div class="para">
+			On VLAN 100 we give the Hypervisor the IP-Address 192.168.42.11/24 with the gateway 192.168.42.1
+		</div><div class="note"><div class="admonition_header"><h2>Note</h2></div><div class="admonition"><div class="para">
+				The Hypervisor and Management server don't have to be in the same subnet!
+			</div></div></div></div><div class="section" id="hypervisor-host-install-network-configure"><div class="titlepage"><div><div><h4 class="title" id="hypervisor-host-install-network-configure">8.1.7.2. Configuring the network bridges</h4></div></div></div><div class="para">
+			It depends on the distribution you are using how to configure these, below you'll find examples for RHEL/CentOS and Ubuntu.
+		</div><div class="note"><div class="admonition_header"><h2>Note</h2></div><div class="admonition"><div class="para">
+				The goal is to have two bridges called 'cloudbr0' and 'cloudbr1' after this section. This should be used as a guideline only. The exact configuration will depend on your network layout.
+			</div></div></div><div class="section" id="hypervisor-host-install-network-configure-rhel"><div class="titlepage"><div><div><h5 class="title" id="hypervisor-host-install-network-configure-rhel">8.1.7.2.1. Configure in RHEL or CentOS</h5></div></div></div><div class="para">
+				The required packages were installed when libvirt was installed, we can proceed to configuring the network.
+			</div><div class="para">
+				First we configure eth0
+			</div><pre class="programlisting">vi /etc/sysconfig/network-scripts/ifcfg-eth0</pre><div class="para">
+				Make sure it looks similair to:
+			</div><pre class="programlisting">DEVICE=eth0
+HWADDR=00:04:xx:xx:xx:xx
+ONBOOT=yes
+HOTPLUG=no
+BOOTPROTO=none
+TYPE=Ethernet</pre><div class="para">
+				We now have to configure the three VLAN interfaces:
+			</div><pre class="programlisting">vi /etc/sysconfig/network-scripts/ifcfg-eth0.100</pre><pre class="programlisting">DEVICE=eth0.100
+HWADDR=00:04:xx:xx:xx:xx
+ONBOOT=yes
+HOTPLUG=no
+BOOTPROTO=none
+TYPE=Ethernet
+VLAN=yes
+IPADDR=192.168.42.11
+GATEWAY=192.168.42.1
+NETMASK=255.255.255.0</pre><pre class="programlisting">vi /etc/sysconfig/network-scripts/ifcfg-eth0.200</pre><pre class="programlisting">DEVICE=eth0.200
+HWADDR=00:04:xx:xx:xx:xx
+ONBOOT=yes
+HOTPLUG=no
+BOOTPROTO=none
+TYPE=Ethernet
+VLAN=yes
+BRIDGE=cloudbr0</pre><pre class="programlisting">vi /etc/sysconfig/network-scripts/ifcfg-eth0.300</pre><pre class="programlisting">DEVICE=eth0.300
+HWADDR=00:04:xx:xx:xx:xx
+ONBOOT=yes
+HOTPLUG=no
+BOOTPROTO=none
+TYPE=Ethernet
+VLAN=yes
+BRIDGE=cloudbr1</pre><div class="para">
+				Now we have the VLAN interfaces configured we can add the bridges on top of them.
+			</div><pre class="programlisting">vi /etc/sysconfig/network-scripts/ifcfg-cloudbr0</pre><div class="para">
+				Now we just configure it is a plain bridge without an IP-Adress
+			</div><pre class="programlisting">DEVICE=cloudbr0
+TYPE=Bridge
+ONBOOT=yes
+BOOTPROTO=none
+IPV6INIT=no
+IPV6_AUTOCONF=no
+DELAY=5
+STP=yes</pre><div class="para">
+				We do the same for cloudbr1
+			</div><pre class="programlisting">vi /etc/sysconfig/network-scripts/ifcfg-cloudbr1</pre><pre class="programlisting">DEVICE=cloudbr1
+TYPE=Bridge
+ONBOOT=yes
+BOOTPROTO=none
+IPV6INIT=no
+IPV6_AUTOCONF=no
+DELAY=5
+STP=yes</pre><div class="para">
+				With this configuration you should be able to restart the network, although a reboot is recommended to see if everything works properly.
+			</div><div class="warning"><div class="admonition_header"><h2>Warning</h2></div><div class="admonition"><div class="para">
+					Make sure you have an alternative way like IPMI or ILO to reach the machine in case you made a configuration error and the network stops functioning!
+				</div></div></div></div><div class="section" id="hypervisor-host-install-network-configure-ubuntu"><div class="titlepage"><div><div><h5 class="title" id="hypervisor-host-install-network-configure-ubuntu">8.1.7.2.2. Configure in Ubuntu</h5></div></div></div><div class="para">
+				All the required packages were installed when you installed libvirt, so we only have to configure the network.
+			</div><pre class="programlisting">vi /etc/network/interfaces</pre><div class="para">
+				Modify the interfaces file to look like this:
+			</div><pre class="programlisting">auto lo
+iface lo inet loopback
+
+# The primary network interface
+auto eth0.100
+iface eth0.100 inet static
+    address 192.168.42.11
+    netmask 255.255.255.240
+    gateway 192.168.42.1
+    dns-nameservers 8.8.8.8 8.8.4.4
+    dns-domain lab.example.org
+
+# Public network
+auto cloudbr0
+iface cloudbr0 inet manual
+    bridge_ports eth0.200
+    bridge_fd 5
+    bridge_stp off
+    bridge_maxwait 1
+
+# Private network
+auto cloudbr1
+iface cloudbr1 inet manual
+    bridge_ports eth0.300
+    bridge_fd 5
+    bridge_stp off
+    bridge_maxwait 1</pre><div class="para">
+				With this configuration you should be able to restart the network, although a reboot is recommended to see if everything works properly.
+			</div><div class="warning"><div class="admonition_header"><h2>Warning</h2></div><div class="admonition"><div class="para">
+					Make sure you have an alternative way like IPMI or ILO to reach the machine in case you made a configuration error and the network stops functioning!
+				</div></div></div></div></div></div><div xml:lang="en-US" class="section" id="hypervisor-host-install-firewall" lang="en-US"><div class="titlepage"><div><div><h3 class="title" id="hypervisor-host-install-firewall">8.1.8. Configuring the firewall</h3></div></div></div><div class="para">
+		The hypervisor needs to be able to communicate with other hypervisors and the management server needs to be able to reach the hypervisor.
+	</div><div class="para">
+		In order to do so we have to open the following TCP ports (if you are using a firewall):
+	</div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				22 (SSH)
+			</div></li><li class="listitem"><div class="para">
+				1798
+			</div></li><li class="listitem"><div class="para">
+				16509 (libvirt)
+			</div></li><li class="listitem"><div class="para">
+				5900 - 6100 (VNC consoles)
+			</div></li><li class="listitem"><div class="para">
+				49152 - 49216 (libvirt live migration)
+			</div></li></ol></div><div class="para">
+		It depends on the firewall you are using how to open these ports. Below you'll find examples how to open these ports in RHEL/CentOS and Ubuntu.
+	</div><div class="section" id="hypervisor-host-install-firewall-rhel"><div class="titlepage"><div><div><h4 class="title" id="hypervisor-host-install-firewall-rhel">8.1.8.1. Open ports in RHEL/CentOS</h4></div></div></div><div class="para">
+			RHEL and CentOS use iptables for firewalling the system, you can open extra ports by executing the following iptable commands:
+		</div><pre class="programlisting">$ iptables -I INPUT -p tcp -m tcp --dport 22 -j ACCEPT</pre><pre class="programlisting">$ iptables -I INPUT -p tcp -m tcp --dport 1798 -j ACCEPT</pre><pre class="programlisting">$ iptables -I INPUT -p tcp -m tcp --dport 16509 -j ACCEPT</pre><pre class="programlisting">$ iptables -I INPUT -p tcp -m tcp --dport 5900:6100 -j ACCEPT</pre><pre class="programlisting">$ iptables -I INPUT -p tcp -m tcp --dport 49152:49216 -j ACCEPT</pre><div class="para">
+			These iptable settings are not persistent accross reboots, we have to save them first.
+		</div><pre class="programlisting">$ iptables-save <span class="perl_Operator">&gt;</span> /etc/sysconfig/iptables</pre></div><div class="section" id="hypervisor-host-install-firewall-ubuntu"><div class="titlepage"><div><div><h4 class="title" id="hypervisor-host-install-firewall-ubuntu">8.1.8.2. Open ports in Ubuntu</h4></div></div></div><div class="para">
+			The default firewall under Ubuntu is UFW (Uncomplicated FireWall), which is a Python wrapper around iptables.
+		</div><div class="para">
+			To open the required ports, execute the following commands:
+		</div><pre class="programlisting">$ ufw allow proto tcp from any to any port 22</pre><pre class="programlisting">$ ufw allow proto tcp from any to any port 1798</pre><pre class="programlisting">$ ufw allow proto tcp from any to any port 16509</pre><pre class="programlisting">$ ufw allow proto tcp from any to any port 5900:6100</pre><pre class="programlisting">$ ufw allow proto tcp from any to any port 49152:49216</pre><div class="note"><div class="admonition_header"><h2>Note</h2></div><div class="admonition"><div class="para">
+				By default UFW is not enabled on Ubuntu. Executing these commands with the firewall disabled does not enable the firewall.
+			</div></div></div></div></div><div xml:lang="en-US" class="section" id="hypervisor-host-install-finish" lang="en-US"><div class="titlepage"><div><div><h3 class="title" id="hypervisor-host-install-finish">8.1.9. Add the host to CloudStack</h3></div></div></div><div class="para">
+		The host is now ready to be added to a cluster. This is covered in a later section, see <a class="xref" href="host-add.html">Section 6.5, “Adding a Host”</a>. It is recommended that you continue to read the documentation before adding the host!
+	</div></div></div><ul class="docnav"><li class="previous"><a accesskey="p" href="hypervisor-installation.html"><strong>Prev</strong>Chapter 8. Hypervisor Installation</a></li><li class="up"><a accesskey="u" href="#"><strong>Up</strong></a></li><li class="home"><a accesskey="h" href="index.html"><strong>Home</strong></a></li><li class="next"><a accesskey="n" href="citrix-xenserver-installation.html"><strong>Next</strong>8.2. Citrix XenServer Installation for CloudStack</a></li></ul></body></html>

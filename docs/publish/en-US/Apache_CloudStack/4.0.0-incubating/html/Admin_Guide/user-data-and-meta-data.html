@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>20.3. User Data and Meta Data</title><link rel="stylesheet" type="text/css" href="Common_Content/css/default.css" /><link rel="stylesheet" media="print" href="Common_Content/css/print.css" type="text/css" /><meta name="generator" content="publican 2.8" /><meta name="package" content="Apache_CloudStack-Admin_Guide-4.0.0-incubating-en-US-1-" /><script type="text/javascript" src="../../../../../toc.js"></script><script type="text/javascript">
+              addID('Apache_CloudStack');
+              
+	      addID('Apache_CloudStack.4.0.0-incubating');
+              
+              addID('Apache_CloudStack.4.0.0-incubating.books');
+	      addID('Apache_CloudStack.4.0.0-incubating.Admin_Guide');
+              </script><link rel="home" href="index.html" title="CloudStack Administrator's Guide" /><link rel="up" href="api-overview.html" title="Chapter 20. CloudStack API" /><link rel="prev" href="allocators.html" title="20.2. Allocators" /><link rel="next" href="tuning.html" title="Chapter 21. Tuning" /></head><body class="toc_embeded "><div id="tocdiv" class="toc"><iframe id="tocframe" class="toc" src="../../../../toc.html">This is an iframe, to view it upgrade your browser or enable iframe display.</iframe></div><p id="title"><a class="left" href="http://cloudstack.org"><img src="Common_Content/images/image_left.png" alt="Product Site" /></a><a class="right" href="http://docs.cloudstack.org"><img src="Common_Content/images/image_right.png" alt="Documentation Site" /></a></p><ul class="docnav"><li class="previous"><a accesskey="p" href="allocators.html"><strong>Prev</strong></a></li><li class="next"><a accesskey="n" href="tuning.html"><strong>Next</strong></a></li></ul><div xml:lang="en-US" class="section" id="user-data-and-meta-data" lang="en-US"><div class="titlepage"><div><div><h2 class="title" id="user-data-and-meta-data">20.3. User Data and Meta Data</h2></div></div></div><div class="para">
+		CloudStack provides API access to attach user data to a deployed VM. Deployed VMs also have access to instance metadata via the virtual router.
+	</div><div class="para">
+		User data can be accessed once the IP address of the virtual router is known. Once the IP address is known, use the following steps to access the user data:
+	</div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				Run the following command to find the virtual router.
+			</div><pre class="programlisting"># cat /var/lib/dhclient/dhclient-eth0.leases | grep dhcp-server-identifier | tail -1</pre></li><li class="listitem"><div class="para">
+				Access user data by running the following command using the result of the above command
+			</div><pre class="programlisting"># curl http://10.1.1.1/latest/user-data</pre></li></ol></div><div class="para">
+		Meta Data can be accessed similarly, using a URL of the form http://10.1.1.1/latest/meta-data/{metadata type}. (For backwards compatibility, the previous URL http://10.1.1.1/latest/{metadata type} is also supported.) For metadata type, use one of the following:
+	</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+				service-offering. A description of the VMs service offering
+			</div></li><li class="listitem"><div class="para">
+				availability-zone. The Zone name
+			</div></li><li class="listitem"><div class="para">
+				local-ipv4. The guest IP of the VM
+			</div></li><li class="listitem"><div class="para">
+				local-hostname. The hostname of the VM
+			</div></li><li class="listitem"><div class="para">
+				public-ipv4. The first public IP for the router. (E.g. the first IP of eth2)
+			</div></li><li class="listitem"><div class="para">
+				public-hostname. This is the same as public-ipv4
+			</div></li><li class="listitem"><div class="para">
+				instance-id. The instance name of the VM
+			</div></li></ul></div></div><ul class="docnav"><li class="previous"><a accesskey="p" href="allocators.html"><strong>Prev</strong>20.2. Allocators</a></li><li class="up"><a accesskey="u" href="#"><strong>Up</strong></a></li><li class="home"><a accesskey="h" href="index.html"><strong>Home</strong></a></li><li class="next"><a accesskey="n" href="tuning.html"><strong>Next</strong>Chapter 21. Tuning</a></li></ul></body></html>

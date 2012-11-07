@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Chapter 8. Service Offerings</title><link rel="stylesheet" type="text/css" href="Common_Content/css/default.css" /><link rel="stylesheet" media="print" href="Common_Content/css/print.css" type="text/css" /><meta name="generator" content="publican 2.8" /><meta name="package" content="" /></head><body><div class="chapter" id="offerings"><div class="titlepage"><div><div><h1 class="title">Chapter 8. Service Offerings</h1></div></div></div><div class="para">
+		In this chapter we discuss compute, disk, and system service offerings. Network offerings are discussed in the section on setting up networking for users.
+	</div><div class="section" id="compute-disk-service-offerings"><div class="titlepage"><div><div><h1 class="title" id="compute-disk-service-offerings">8.1. Compute and Disk Service Offerings</h1></div></div></div><div class="para">
+		A service offering is a set of virtual hardware features such as CPU core count and speed, memory, and disk size. The CloudStack administrator can set up various offerings, and then end users choose from the available offerings when they create a new VM. A service offering includes the following elements:
+	</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+				CPU, memory, and network resource guarantees
+			</div></li><li class="listitem"><div class="para">
+				How resources are metered
+			</div></li><li class="listitem"><div class="para">
+				How the resource usage is charged
+			</div></li><li class="listitem"><div class="para">
+				How often the charges are generated
+			</div></li></ul></div><div class="para">
+		For example, one service offering might allow users to create a virtual machine instance that is equivalent to a 1 GHz Intel® Core™ 2 CPU, with 1 GB memory at $0.20/hour, with network traffic metered at $0.10/GB. Based on the user’s selected offering, CloudStack emits usage records that can be integrated with billing systems. CloudStack separates service offerings into compute offerings and disk offerings. The computing service offering specifies:
+	</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+				Guest CPU
+			</div></li><li class="listitem"><div class="para">
+				Guest RAM
+			</div></li><li class="listitem"><div class="para">
+				Guest Networking type (virtual or direct)
+			</div></li><li class="listitem"><div class="para">
+				Tags on the root disk
+			</div></li></ul></div><div class="para">
+		The disk offering specifies:
+	</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+				Disk size (optional). An offering without a disk size will allow users to pick their own
+			</div></li><li class="listitem"><div class="para">
+				Tags on the data disk
+			</div></li></ul></div><div class="section" id="creating-compute-offerings"><div class="titlepage"><div><div><h2 class="title" id="creating-compute-offerings">8.1.1. Creating a New Compute Offering</h2></div></div></div><div class="para">
+		To create a new compute offering:
+	</div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				Log in with admin privileges to the CloudStack UI.
+			</div></li><li class="listitem"><div class="para">
+				In the left navigation bar, click Service Offerings.
+			</div></li><li class="listitem"><div class="para">
+				In Select Offering, choose Compute Offering.
+			</div></li><li class="listitem"><div class="para">
+				Click Add Compute Offering.
+			</div></li><li class="listitem"><div class="para">
+				In the dialog, make the following choices:
+			</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>Name</strong></span>: Any desired name for the service offering.
+					</div></li><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>Description</strong></span>: A short description of the offering that can be displayed to users
+					</div></li><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>Storage type</strong></span>: The type of disk that should be allocated. Local allocates from storage attached directly to the host where the system VM is running. Shared allocates from storage accessible via NFS.
+					</div></li><li class="listitem"><div class="para">
+						<span class="bold bold"><strong># of CPU cores</strong></span>: The number of cores which should be allocated to a system VM with this offering
+					</div></li><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>CPU (in MHz)</strong></span>: The CPU speed of the cores that the system VM is allocated. For example, “2000” would provide for a 2 GHz clock.
+					</div></li><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>Memory (in MB)</strong></span>: The amount of memory in megabytes that the system VM should be allocated. For example, “2048” would provide for a 2 GB RAM allocation.
+					</div></li><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>Network Rate</strong></span>: Allowed data transfer rate in MB per second.
+					</div></li><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>Offer HA</strong></span>: If yes, the administrator can choose to have the system VM be monitored and as highly available as possible.
+					</div></li><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>Storage Tags</strong></span>: The tags that should be associated with the primary storage used by the system VM.
+					</div></li><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>Host Tags</strong></span>: (Optional) Any tags that you use to organize your hosts
+					</div></li><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>CPU cap</strong></span>: Whether to limit the level of CPU usage even if spare capacity is available.
+					</div></li><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>Public</strong></span>: Indicate whether the service offering should be available all domains or only some domains. Choose Yes to make it available to all domains. Choose No to limit the scope to a subdomain; CloudStack will then prompt for the subdomain's name.
+					</div></li></ul></div></li><li class="listitem"><div class="para">
+				Click Add.
+			</div></li></ol></div></div><div class="section" id="creating-disk-offerings"><div class="titlepage"><div><div><h2 class="title" id="creating-disk-offerings">8.1.2. Creating a New Disk Offering</h2></div></div></div><div class="para">
+		To create a system service offering:
+	</div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				Log in with admin privileges to the CloudStack UI.
+			</div></li><li class="listitem"><div class="para">
+				In the left navigation bar, click Service Offerings.
+			</div></li><li class="listitem"><div class="para">
+				In Select Offering, choose Disk Offering.
+			</div></li><li class="listitem"><div class="para">
+				Click Add Disk Offering.
+			</div></li><li class="listitem"><div class="para">
+				In the dialog, make the following choices:
+			</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+						Name. Any desired name for the system offering.
+					</div></li><li class="listitem"><div class="para">
+						Description. A short description of the offering that can be displayed to users
+					</div></li><li class="listitem"><div class="para">
+						Custom Disk Size. If checked, the user can set their own disk size. If not checked, the root administrator must define a value in Disk Size.
+					</div></li><li class="listitem"><div class="para">
+						Disk Size. Appears only if Custom Disk Size is not selected. Define the volume size in GB.
+					</div></li><li class="listitem"><div class="para">
+						(Optional)Storage Tags. The tags that should be associated with the primary storage for this disk. Tags are a comma separated list of attributes of the storage. For example "ssd,blue". Tags are also added on Primary Storage. CloudStack matches tags on a disk offering to tags on the storage. If a tag is present on a disk offering that tag (or tags) must also be present on Primary Storage for the volume to be provisioned. If no such primary storage exists, allocation from the disk offering will fail..
+					</div></li><li class="listitem"><div class="para">
+						Public. Indicate whether the service offering should be available all domains or only some domains. Choose Yes to make it available to all domains. Choose No to limit the scope to a subdomain; CloudStack will then prompt for the subdomain's name.
+					</div></li></ul></div></li><li class="listitem"><div class="para">
+				Click Add.
+			</div></li></ol></div></div><div class="section" id="modify-delete-service-offerings"><div class="titlepage"><div><div><h2 class="title" id="modify-delete-service-offerings">8.1.3. Modifying or Deleting a Service Offering</h2></div></div></div><div class="para">
+		Service offerings cannot be changed once created. This applies to both compute offerings and disk offerings.
+	</div><div class="para">
+		A service offering can be deleted. If it is no longer in use, it is deleted immediately and permanently. If the service offering is still in use, it will remain in the database until all the virtual machines referencing it have been deleted. After deletion by the administrator, a service offering will not be available to end users that are creating new instances.
+	</div></div></div></div></body></html>

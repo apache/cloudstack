@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>21.2. Increase Management Server Maximum Memory</title><link rel="stylesheet" type="text/css" href="Common_Content/css/default.css" /><link rel="stylesheet" media="print" href="Common_Content/css/print.css" type="text/css" /><meta name="generator" content="publican 2.8" /><meta name="package" content="" /></head><body><div class="section" id="increase-management-server-max-memory"><div class="titlepage"><div><div><h1 class="title" id="increase-management-server-max-memory">21.2. Increase Management Server Maximum Memory</h1></div></div></div><div class="para">
+		If the Management Server is subject to high demand, the default maximum JVM memory allocation can be insufficient. To increase the memory:
+	</div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				Edit the Tomcat configuration file:
+			</div><pre class="programlisting">/etc/cloud/management/tomcat6.conf</pre></li><li class="listitem"><div class="para">
+				Change the command-line parameter -XmxNNNm to a higher value of N.
+			</div><div class="para">
+				For example, if the current value is -Xmx128m, change it to -Xmx1024m or higher.
+			</div></li><li class="listitem"><div class="para">
+				To put the new setting into effect, restart the Management Server.
+			</div><pre class="programlisting"># service cloud-management restart</pre></li></ol></div><div class="para">
+		For more information about memory issues, see "FAQ: Memory" at <a href="http://wiki.apache.org/tomcat/FAQ/Memory">Tomcat Wiki.</a>
+	</div></div></body></html>

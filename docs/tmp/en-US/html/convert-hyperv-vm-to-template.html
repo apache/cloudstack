@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>12.12. Converting a Hyper-V VM to a Template</title><link rel="stylesheet" type="text/css" href="Common_Content/css/default.css" /><link rel="stylesheet" media="print" href="Common_Content/css/print.css" type="text/css" /><meta name="generator" content="publican 2.8" /><meta name="package" content="Apache_CloudStack-Admin_Guide-4.0.0-incubating-en-US-1-" /><link rel="home" href="index.html" title="CloudStack Administrator's Guide" /><link rel="up" href="working-with-templates.html" title="Chapter 12. Working with Templates" /><link rel="prev" href="import-ami.html" title="12.11. Importing Amazon Machine Images" /><link rel="next" href="add-password-management-to-templates.html" title="12.13. Adding Password Management to Your Templates" /></head><body><p id="title"><a class="left" href="http://cloudstack.org"><img src="Common_Content/images/image_left.png" alt="Product Site" /></a><a class="right" href="http://docs.cloudstack.org"><img src="Common_Content/images/image_right.png" alt="Documentation Site" /></a></p><ul class="docnav"><li class="previous"><a accesskey="p" href="import-ami.html"><strong>Prev</strong></a></li><li class="next"><a accesskey="n" href="add-password-management-to-templates.html"><strong>Next</strong></a></li></ul><div xml:lang="en-US" class="section" id="convert-hyperv-vm-to-template" lang="en-US"><div class="titlepage"><div><div><h2 class="title" id="convert-hyperv-vm-to-template">12.12. Converting a Hyper-V VM to a Template</h2></div></div></div><div class="para">
+		To convert a Hyper-V VM to a XenServer-compatible CloudStack template, you will need a standalone XenServer host with an attached NFS VHD SR. Use whatever XenServer version you are using with CloudStack, but use XenCenter 5.6 FP1 or SP2 (it is backwards compatible to 5.6). Additionally, it may help to have an attached NFS ISO SR.
+	</div><div class="para">
+		For Linux VMs, you may need to do some preparation in Hyper-V before trying to get the VM to work in XenServer. Clone the VM and work on the clone if you still want to use the VM in Hyper-V. Uninstall Hyper-V Integration Components and check for any references to device names in /etc/fstab:
+	</div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				From the linux_ic/drivers/dist directory, run make uninstall (where "linux_ic" is the path to the copied Hyper-V Integration Components files).
+			</div></li><li class="listitem"><div class="para">
+				Restore the original initrd from backup in /boot/ (the backup is named *.backup0).
+			</div></li><li class="listitem"><div class="para">
+				Remove the "hdX=noprobe" entries from /boot/grub/menu.lst.
+			</div></li><li class="listitem"><div class="para">
+				Check /etc/fstab for any partitions mounted by device name. Change those entries (if any) to mount by LABEL or UUID (get that information with the "blkid" command)..
+			</div></li></ol></div><div class="para">
+		The next step is make sure the VM is not running in Hyper-V, then get the VHD into XenServer. There are two options for doing this.
+	</div><div class="para">
+		Option one:
+	</div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				Import the VHD using XenCenter. In XenCenter, go to Tools&gt;Virtual Appliance Tools&gt;Disk Image Import.
+			</div></li><li class="listitem"><div class="para">
+				Choose the VHD, then click Next.
+			</div></li><li class="listitem"><div class="para">
+				Name the VM, choose the NFS VHD SR under Storage, enable "Run Operating System Fixups" and choose the NFS ISO SR.
+			</div></li><li class="listitem"><div class="para">
+				Click Next, then Finish. A VM should be created.
+			</div></li></ol></div><div class="para">
+		Option two
+	</div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				Run XenConvert, under From choose VHD, under To choose XenServer. Click Next.
+			</div></li><li class="listitem"><div class="para">
+				Choose the VHD, then click Next.
+			</div></li><li class="listitem"><div class="para">
+				Input the XenServer host info, then click Next.
+			</div></li><li class="listitem"><div class="para">
+				Name the VM, then click Next, then Convert. A VM should be created
+			</div></li></ol></div><div class="para">
+		Once you have a VM created from the Hyper-V VHD, prepare it using the following steps:
+	</div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				Boot the VM, uninstall Hyper-V Integration Services, and reboot.
+			</div></li><li class="listitem"><div class="para">
+				Install XenServer Tools, then reboot.
+			</div></li><li class="listitem"><div class="para">
+				Prepare the VM as desired. For example, run sysprep on Windows VMs. See <a class="xref" href="create-windows-template.html">Section 12.10, “Creating a Windows Template”</a>
+			</div></li></ol></div><div class="para">
+		Either option above will create a VM in HVM mode. This is fine for Windows VMs, but Linux VMs may not perform optimally. Converting a Linux VM to PV mode will require additional steps and will vary by distribution.
+	</div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				Shut down the VM and copy the VHD from the NFS storage to a web server; for example, mount the NFS share on the web server and copy it, or from the XenServer host use sftp or scp to upload it to the web server.
+			</div></li><li class="listitem"><div class="para">
+				In CloudStack, create a new template using the following values:
+			</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+						URL. Give the URL for the VHD
+					</div></li><li class="listitem"><div class="para">
+						OS Type. Use the appropriate OS. For PV mode on CentOS, choose Other PV (32-bit) or Other PV (64-bit). This choice is available only for XenServer.
+					</div></li><li class="listitem"><div class="para">
+						Hypervisor. XenServer
+					</div></li><li class="listitem"><div class="para">
+						Format. VHD
+					</div></li></ul></div></li></ol></div><div class="para">
+		The template will be created, and you can create instances from it.
+	</div></div><ul class="docnav"><li class="previous"><a accesskey="p" href="import-ami.html"><strong>Prev</strong>12.11. Importing Amazon Machine Images</a></li><li class="up"><a accesskey="u" href="#"><strong>Up</strong></a></li><li class="home"><a accesskey="h" href="index.html"><strong>Home</strong></a></li><li class="next"><a accesskey="n" href="add-password-management-to-templates.html"><strong>Next</strong>12.13. Adding Password Management to Your Templat...</a></li></ul></body></html>

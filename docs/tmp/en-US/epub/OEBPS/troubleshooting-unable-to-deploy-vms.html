@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>22.6. Unable to deploy VMs from uploaded vSphere template</title><link rel="stylesheet" type="text/css" href="Common_Content/css/default.css" /><link rel="stylesheet" media="print" href="Common_Content/css/print.css" type="text/css" /><meta name="generator" content="publican 2.8" /><meta name="package" content="" /></head><body><div class="section" id="troubleshooting-unable-to-deploy-vms"><div class="titlepage"><div><div><h1 class="title" id="troubleshooting-unable-to-deploy-vms">22.6. Unable to deploy VMs from uploaded vSphere template</h1></div></div></div><div class="formalpara"><h5 class="formalpara" id="idm23419328">Symptom</h5>
+			When attempting to create a VM, the VM will not deploy.
+		</div><div class="formalpara"><h5 class="formalpara" id="idm30277336">Cause</h5>
+			If the template was created by uploading an OVA file that was created using vSphere Client, it is possible the OVA contained an ISO image. If it does, the deployment of VMs from the template will fail.
+		</div><div class="formalpara"><h5 class="formalpara" id="idm37539712">Solution</h5>
+			Remove the ISO and re-upload the template.
+		</div></div></body></html>

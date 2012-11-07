@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>14.3. Globally Configured Limits</title><link rel="stylesheet" type="text/css" href="Common_Content/css/default.css" /><link rel="stylesheet" media="print" href="Common_Content/css/print.css" type="text/css" /><meta name="generator" content="publican 2.8" /><meta name="package" content="" /></head><body><div class="section" id="globally-configured-limit"><div class="titlepage"><div><div><h1 class="title" id="globally-configured-limit">14.3. Globally Configured Limits</h1></div></div></div><div class="para">
+		In a zone, the guest virtual network has a 24 bit CIDR by default. This limits the guest virtual network to 254 running instances. It can be adjusted as needed, but this must be done before any instances are created in the zone. For example, 10.1.1.0/22 would provide for ~1000 addresses.
+	</div><div class="para">
+		The following table lists limits set in the Global Configuration:
+	</div><div class="informaltable"><table border="1"><colgroup><col width="50%" /><col width="50%" /></colgroup><thead><tr><th>
+						<div class="para">
+							Parameter Name
+						</div>
+					</th><th>
+						<div class="para">
+							Definition
+						</div>
+					</th></tr></thead><tbody><tr><td>
+						<div class="para">
+							max.account.public.ips
+						</div>
+					</td><td>
+						<div class="para">
+							Number of public IP addresses that can be owned by an account
+						</div>
+					</td></tr><tr><td>
+						<div class="para">
+							max.account.snapshots
+						</div>
+					</td><td>
+						<div class="para">
+							Number of snapshots that can exist for an account
+						</div>
+					</td></tr><tr><td>
+						<div class="para">
+							max.account.templates
+						</div>
+					</td><td>
+						<div class="para">
+							Number of templates that can exist for an account
+						</div>
+					</td></tr><tr><td>
+						<div class="para">
+							max.account.user.vms
+						</div>
+					</td><td>
+						<div class="para">
+							Number of virtual machine instances that can exist for an account
+						</div>
+					</td></tr><tr><td>
+						<div class="para">
+							max.account.volumes
+						</div>
+					</td><td>
+						<div class="para">
+							Number of disk volumes that can exist for an account
+						</div>
+					</td></tr><tr><td>
+						<div class="para">
+							max.template.iso.size
+						</div>
+					</td><td>
+						<div class="para">
+							Maximum size for a downloaded template or ISO in GB
+						</div>
+					</td></tr><tr><td>
+						<div class="para">
+							max.volume.size.gb
+						</div>
+					</td><td>
+						<div class="para">
+							Maximum size for a volume in GB
+						</div>
+					</td></tr><tr><td>
+						<div class="para">
+							network.throttling.rate
+						</div>
+					</td><td>
+						<div class="para">
+							Default data transfer rate in megabits per second allowed per user (supported on XenServer)
+						</div>
+					</td></tr><tr><td>
+						<div class="para">
+							snapshot.max.hourly
+						</div>
+					</td><td>
+						<div class="para">
+							Maximum recurring hourly snapshots to be retained for a volume. If the limit is reached, early snapshots from the start of the hour are deleted so that newer ones can be saved. This limit does not apply to manual snapshots. If set to 0, recurring hourly snapshots can not be scheduled
+						</div>
+					</td></tr><tr><td>
+						<div class="para">
+							snapshot.max.daily
+						</div>
+					</td><td>
+						<div class="para">
+							Maximum recurring daily snapshots to be retained for a volume. If the limit is reached, snapshots from the start of the day are deleted so that newer ones can be saved. This limit does not apply to manual snapshots. If set to 0, recurring daily snapshots can not be scheduled
+						</div>
+					</td></tr><tr><td>
+						<div class="para">
+							snapshot.max.weekly
+						</div>
+					</td><td>
+						<div class="para">
+							Maximum recurring weekly snapshots to be retained for a volume. If the limit is reached, snapshots from the beginning of the week are deleted so that newer ones can be saved. This limit does not apply to manual snapshots. If set to 0, recurring weekly snapshots can not be scheduled
+						</div>
+					</td></tr><tr><td>
+						<div class="para">
+							snapshot.max.monthly
+						</div>
+					</td><td>
+						<div class="para">
+							Maximum recurring monthly snapshots to be retained for a volume. If the limit is reached, snapshots from the beginning of the month are deleted so that newer ones can be saved. This limit does not apply to manual snapshots. If set to 0, recurring monthly snapshots can not be scheduled.
+						</div>
+					</td></tr></tbody></table></div><div class="para">
+		To modify global configuration parameters, use the global configuration screen in the CloudStack UI. See Setting Global Configuration Parameters
+	</div></div></body></html>

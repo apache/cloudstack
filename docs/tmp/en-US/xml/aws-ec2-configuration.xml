@@ -1,0 +1,90 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "Release_Notes.ent">
+%BOOK_ENTITIES;
+]>
+<section id="aws-ec2-configuration" lang="en-US">
+	<!--  Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+ --> <title>Enabling the AWS API Compatible Interface</title>
+	 <para>
+		The software that provides AWS API compatibility is installed along with CloudPlatform. However, you must enable the feature and perform some setup steps.
+	</para>
+	 <orderedlist>
+		<listitem>
+			<para>
+				Set the global configuration parameter enable.ec2.api to true. See <xref linkend="global-config" />.
+			</para>
+		</listitem>
+		 <listitem>
+			<para>
+				Create a set of &PRODUCT; service offerings with names that match the Amazon service offerings. You can do this through the &PRODUCT; UI as described in the Administration Guide.
+			</para>
+			 <warning>
+				<para>
+					Be sure you have included the Amazon default service offering, m1.small.
+				</para>
+			</warning>
+		</listitem>
+		 <listitem>
+			<para>
+				If you did not already do so when you set the configuration parameter in step 1, restart the Management Server.
+			</para>
+			 
+<programlisting># service cloud-management restart</programlisting>
+		</listitem>
+		 <listitem>
+			<para>
+				(Optional) The AWS API listens for requests on port 7080. If you prefer AWS API to listen on another port, you can change it as follows:
+			</para>
+			 <orderedlist numeration="loweralpha">
+				<listitem>
+					<para>
+						Edit the files /etc/cloud/management/server.xml, /etc/cloud/management/server-nonssl.xml, and /etc/cloud/management/server-ssl.xml.
+					</para>
+				</listitem>
+				 <listitem>
+					<para>
+						In each file, find the tag &lt;Service name="Catalina7080"&gt;. Under this tag, locate &lt;Connector executor="tomcatThreadPool-internal" port= ....&lt;.
+					</para>
+				</listitem>
+				 <listitem>
+					<para>
+						Change the port to whatever port you want to use, then save the files.
+					</para>
+				</listitem>
+				 <listitem>
+					<para>
+						Restart the Management Server.
+					</para>
+					 <note>
+						<para>
+							If you re-install CloudStack, you will have to make these changes again.
+						</para>
+					</note>
+
+				</listitem>
+
+			</orderedlist>
+
+		</listitem>
+
+	</orderedlist>
+
+</section>
+
+

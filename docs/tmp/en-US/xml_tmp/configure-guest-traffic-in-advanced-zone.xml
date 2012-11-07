@@ -1,0 +1,79 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+	or more contributor license agreements.  See the NOTICE file
+	distributed with this work for additional information
+	regarding copyright ownership.  The ASF licenses this file
+	to you under the Apache License, Version 2.0 (the
+	"License"); you may not use this file except in compliance
+	with the License.  You may obtain a copy of the License at
+	http://www.apache.org/licenses/LICENSE-2.0
+	Unless required by applicable law or agreed to in writing,
+	software distributed under the License is distributed on an
+	"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+	KIND, either express or implied.  See the License for the
+	specific language governing permissions and limitations
+	under the License.
+-->
+<section id="configure-guest-traffic-in-advanced-zone">
+  <title>Configure Guest Traffic in an Advanced Zone</title>
+  <para>These steps assume you have already logged in to the &PRODUCT; UI. To configure the base
+    guest network:</para>
+  <orderedlist>
+    <listitem>
+      <para>In the left navigation, choose Infrastructure. On Zones, click View More, then click the
+        zone to which you want to add a network.</para>
+    </listitem>
+    <listitem>
+      <para>Click the Network tab.</para>
+    </listitem>
+    <listitem>
+      <para>Click Add guest network.</para>
+      <para>The Add guest network window is displayed:</para>
+      <mediaobject>
+        <imageobject>
+          <imagedata fileref="./images/add-guest-network.png"/>
+        </imageobject>
+        <textobject>
+          <phrase>networksetupzone.png: Depicts network setup in a single zone</phrase>
+        </textobject>
+      </mediaobject>
+    </listitem>
+    <listitem>
+      <para>Provide the following information:</para>
+      <itemizedlist>
+        <listitem>
+          <para><emphasis role="bold">Name</emphasis>. The name of the network. This will be
+            user-visible</para>
+        </listitem>
+        <listitem>
+          <para><emphasis role="bold">Display Text</emphasis>: The description of the network. This
+            will be user-visible</para>
+        </listitem>
+        <listitem>
+          <para><emphasis role="bold">Zone</emphasis>: The zone in which you are configuring the
+            guest network.</para>
+        </listitem>
+        <listitem>
+          <para><emphasis role="bold">Network offering</emphasis>: If the administrator has
+            configured multiple network offerings, select the one you want to use for this
+            network</para>
+        </listitem>
+        <listitem>
+          <para><emphasis role="bold">Guest Gateway</emphasis>: The gateway that the guests should
+            use</para>
+        </listitem>
+        <listitem>
+          <para><emphasis role="bold">Guest Netmask</emphasis>: The netmask in use on the subnet the
+            guests will use</para>
+        </listitem>
+      </itemizedlist>
+    </listitem>
+    <listitem>
+      <para>Click OK.</para>
+    </listitem>
+  </orderedlist>
+</section>

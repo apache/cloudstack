@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>2.3. About Clusters</title><link rel="stylesheet" type="text/css" href="Common_Content/css/default.css" /><link rel="stylesheet" media="print" href="Common_Content/css/print.css" type="text/css" /><meta name="generator" content="publican 2.8" /><meta name="package" content="Apache_CloudStack-Admin_Guide-4.0.0-incubating-en-US-1-" /><script type="text/javascript" src="../../../../../toc.js"></script><script type="text/javascript">
+              addID('Apache_CloudStack');
+              
+	      addID('Apache_CloudStack.4.0.0-incubating');
+              
+              addID('Apache_CloudStack.4.0.0-incubating.books');
+	      addID('Apache_CloudStack.4.0.0-incubating.Admin_Guide');
+              </script><link rel="home" href="index.html" title="CloudStack Administrator's Guide" /><link rel="up" href="cloud-infrastructure-concepts.html" title="Chapter 2. Cloud Infrastructure Concepts" /><link rel="prev" href="about-pods.html" title="2.2. About Pods" /><link rel="next" href="about-hosts.html" title="2.4. About Hosts" /></head><body class="toc_embeded "><div id="tocdiv" class="toc"><iframe id="tocframe" class="toc" src="../../../../toc.html">This is an iframe, to view it upgrade your browser or enable iframe display.</iframe></div><p id="title"><a class="left" href="http://cloudstack.org"><img src="Common_Content/images/image_left.png" alt="Product Site" /></a><a class="right" href="http://docs.cloudstack.org"><img src="Common_Content/images/image_right.png" alt="Documentation Site" /></a></p><ul class="docnav"><li class="previous"><a accesskey="p" href="about-pods.html"><strong>Prev</strong></a></li><li class="next"><a accesskey="n" href="about-hosts.html"><strong>Next</strong></a></li></ul><div xml:lang="en-US" class="section" id="about-clusters" lang="en-US"><div class="titlepage"><div><div><h2 class="title" id="about-clusters">2.3. About Clusters</h2></div></div></div><div class="para">
+		A cluster provides a way to group hosts. To be precise, a cluster is a XenServer server pool, a set of KVM servers, , or a VMware cluster preconfigured in vCenter. The hosts in a cluster all have identical hardware, run the same hypervisor, are on the same subnet, and access the same shared primary storage. Virtual machine instances (VMs) can be live-migrated from one host to another within the same cluster, without interrupting service to the user.
+	</div><div class="para">
+		A cluster is the third-largest organizational unit within a CloudStack deployment. Clusters are contained within pods, and pods are contained within zones. Size of the cluster is limited by the underlying hypervisor, although the CloudStack recommends less in most cases; see Best Practices.
+	</div><div class="para">
+		A cluster consists of one or more hosts and one or more primary storage servers.
+	</div><div class="mediaobject"><img src="./images/cluster-overview.png" alt="cluster-overview.png: Structure of a simple cluster" /></div><div class="para">
+		CloudStack allows multiple clusters in a cloud deployment.
+	</div><div class="para">
+		Even when local storage is used exclusively, clusters are still required organizationally, even if there is just one host per cluster.
+	</div><div class="para">
+		When VMware is used, every VMware cluster is managed by a vCenter server. Administrator must register the vCenter server with CloudStack. There may be multiple vCenter servers per zone. Each vCenter server may manage multiple VMware clusters.
+	</div></div><ul class="docnav"><li class="previous"><a accesskey="p" href="about-pods.html"><strong>Prev</strong>2.2. About Pods</a></li><li class="up"><a accesskey="u" href="#"><strong>Up</strong></a></li><li class="home"><a accesskey="h" href="index.html"><strong>Home</strong></a></li><li class="next"><a accesskey="n" href="about-hosts.html"><strong>Next</strong>2.4. About Hosts</a></li></ul></body></html>

@@ -1,0 +1,732 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Chapter 4. API Changes from 3.0.2 to 4.0.0-incubating</title><link rel="stylesheet" type="text/css" href="Common_Content/css/default.css" /><link rel="stylesheet" media="print" href="Common_Content/css/print.css" type="text/css" /><meta name="generator" content="publican 2.8" /><meta name="package" content="Apache_CloudStack-Release_Notes-4.0.0-incubating-en-US-1-" /><link rel="home" href="index.html" title="Version 4.0.0-incubating Release Notes" /><link rel="up" href="index.html" title="Version 4.0.0-incubating Release Notes" /><link rel="prev" href="version-4.0.html" title="Chapter 3. Version 4.0.0-incubating" /></head><body><p id="title"><a class="left" href="http://cloudstack.org"><img src="Common_Content/images/image_left.png" alt="Product Site" /></a><a class="right" href="http://docs.cloudstack.org"><img src="Common_Content/images/image_right.png" alt="Documentation Site" /></a></p><ul class="docnav"><li class="previous"><a accesskey="p" href="version-4.0.html"><strong>Prev</strong></a></li><li class="next"></li></ul><div class="chapter" id="api-changes-4.0"><div class="titlepage"><div><div><h2 class="title">Chapter 4. API Changes from 3.0.2 to 4.0.0-incubating</h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="api-changes-4.0.html#new-api-commands-4.0">4.1. New API Commands in 4.0.0-incubating</a></span></dt><dt><span class="section"><a href="api-changes-4.0.html#changed-api-commands-4.0">4.2. Changed API Commands in 4.0.0-incubating</a></span></dt></dl></div><div class="section" id="new-api-commands-4.0"><div class="titlepage"><div><div><h2 class="title" id="new-api-commands-4.0">4.1. New API Commands in 4.0.0-incubating</h2></div></div></div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+						createCounter (Adds metric counter)
+					</div></li><li class="listitem"><div class="para">
+						deleteCounter (Deletes a counter)
+					</div></li><li class="listitem"><div class="para">
+						listCounters (List the counters)
+					</div></li><li class="listitem"><div class="para">
+						createCondition (Creates a condition)
+					</div></li><li class="listitem"><div class="para">
+						deleteCondition (Removes a condition)
+					</div></li><li class="listitem"><div class="para">
+						listConditions (List Conditions for the specific user)
+					</div></li><li class="listitem"><div class="para">
+						createTags. Add tags to one or more resources. Example: 
+<pre class="programlisting">command=createTags
+&amp;resourceIds=1,10,12
+&amp;resourceType=userVm
+&amp;tags[0].key=region
+&amp;tags[0].value=canada
+&amp;tags[1].key=city
+&amp;tags[1].value=Toronto</pre>
+					</div></li><li class="listitem"><div class="para">
+						deleteTags. Remove tags from one or more resources. Example: 
+<pre class="programlisting">command=deleteTags
+&amp;resourceIds=1,12
+&amp;resourceType=Snapshot
+&amp;tags[0].key=city</pre>
+					</div></li><li class="listitem"><div class="para">
+						listTags (Show currently defined resource tags)
+					</div></li><li class="listitem"><div class="para">
+						createVPC (Creates a VPC)
+					</div></li><li class="listitem"><div class="para">
+						listVPCs (Lists VPCs)
+					</div></li><li class="listitem"><div class="para">
+						deleteVPC (Deletes a VPC)
+					</div></li><li class="listitem"><div class="para">
+						updateVPC (Updates a VPC)
+					</div></li><li class="listitem"><div class="para">
+						restartVPC (Restarts a VPC)
+					</div></li><li class="listitem"><div class="para">
+						createVPCOffering (Creates VPC offering)
+					</div></li><li class="listitem"><div class="para">
+						updateVPCOffering (Updates VPC offering)
+					</div></li><li class="listitem"><div class="para">
+						deleteVPCOffering (Deletes VPC offering)
+					</div></li><li class="listitem"><div class="para">
+						listVPCOfferings (Lists VPC offerings)
+					</div></li><li class="listitem"><div class="para">
+						createPrivateGateway (Creates a private gateway)
+					</div></li><li class="listitem"><div class="para">
+						listPrivateGateways (List private gateways)
+					</div></li><li class="listitem"><div class="para">
+						deletePrivateGateway (Deletes a Private gateway)
+					</div></li><li class="listitem"><div class="para">
+						createNetworkACL (Creates a ACL rule the given network (the network has to belong to VPC))
+					</div></li><li class="listitem"><div class="para">
+						deleteNetworkACL (Deletes a Network ACL)
+					</div></li><li class="listitem"><div class="para">
+						listNetworkACLs (Lists all network ACLs)
+					</div></li><li class="listitem"><div class="para">
+						createStaticRoute (Creates a static route)
+					</div></li><li class="listitem"><div class="para">
+						deleteStaticRoute (Deletes a static route)
+					</div></li><li class="listitem"><div class="para">
+						listStaticRoutes (Lists all static routes)
+					</div></li><li class="listitem"><div class="para">
+						createVpnCustomerGateway (Creates site to site vpn customer gateway)
+					</div></li><li class="listitem"><div class="para">
+						createVpnGateway (Creates site to site vpn local gateway)
+					</div></li><li class="listitem"><div class="para">
+						createVpnConnection (Create site to site vpn connection)
+					</div></li><li class="listitem"><div class="para">
+						deleteVpnCustomerGateway (Delete site to site vpn customer gateway)
+					</div></li><li class="listitem"><div class="para">
+						deleteVpnGateway (Delete site to site vpn gateway)
+					</div></li><li class="listitem"><div class="para">
+						deleteVpnConnection (Delete site to site vpn connection)
+					</div></li><li class="listitem"><div class="para">
+						updateVpnCustomerGateway (Update site to site vpn customer gateway)
+					</div></li><li class="listitem"><div class="para">
+						resetVpnConnection (Reset site to site vpn connection)
+					</div></li><li class="listitem"><div class="para">
+						listVpnCustomerGateways (Lists site to site vpn customer gateways)
+					</div></li><li class="listitem"><div class="para">
+						listVpnGateways (Lists site 2 site vpn gateways)
+					</div></li><li class="listitem"><div class="para">
+						listVpnConnections (Lists site to site vpn connection gateways)
+					</div></li><li class="listitem"><div class="para">
+						markDefaultZoneForAccount (Marks a default zone for the current account)
+					</div></li><li class="listitem"><div class="para">
+						uploadVolume (Uploads a data disk)
+					</div></li></ul></div></div><div class="section" id="changed-api-commands-4.0"><div class="titlepage"><div><div><h2 class="title" id="changed-api-commands-4.0">4.2. Changed API Commands in 4.0.0-incubating</h2></div></div></div><div class="informaltable"><table border="1"><colgroup><col width="50%" align="left" class="1" /><col width="50%" align="left" class="2" /></colgroup><thead><tr><th align="left">
+								<div class="para">
+									API Commands
+								</div>
+							</th><th align="left">
+								<div class="para">
+									Description
+								</div>
+							</th></tr></thead><tbody><tr><td align="left">
+								<div class="para">
+									copyTemplate
+								</div>
+								 <div class="para">
+									prepareTemplate
+								</div>
+								 <div class="para">
+									registerTemplate
+								</div>
+								 <div class="para">
+									updateTemplate
+								</div>
+								 <div class="para">
+									createProject
+								</div>
+								 <div class="para">
+									activateProject
+								</div>
+								 <div class="para">
+									suspendProject
+								</div>
+								 <div class="para">
+									updateProject
+								</div>
+								 <div class="para">
+									listProjectAccounts
+								</div>
+								 <div class="para">
+									createVolume
+								</div>
+								 <div class="para">
+									migrateVolume
+								</div>
+								 <div class="para">
+									attachVolume
+								</div>
+								 <div class="para">
+									detachVolume
+								</div>
+								 <div class="para">
+									uploadVolume
+								</div>
+								 <div class="para">
+									createSecurityGroup
+								</div>
+								 <div class="para">
+									registerIso
+								</div>
+								 <div class="para">
+									copyIso
+								</div>
+								 <div class="para">
+									updateIso
+								</div>
+								 <div class="para">
+									createIpForwardingRule
+								</div>
+								 <div class="para">
+									listIpForwardingRules
+								</div>
+								 <div class="para">
+									createLoadBalancerRule
+								</div>
+								 <div class="para">
+									updateLoadBalancerRule
+								</div>
+								 <div class="para">
+									createSnapshot
+								</div>
+
+							</td><td align="left">
+								<div class="para">
+									The commands in this list have a single new response parameter, and no other changes.
+								</div>
+								 <div class="para">
+									New response parameter: tags(*)
+								</div>
+								 <div class="note"><div class="admonition_header"><h2>Note</h2></div><div class="admonition"><div class="para">
+										Many other commands also have the new tags(*) parameter in addition to other changes; those commands are listed separately.
+									</div></div></div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									rebootVirtualMachine
+								</div>
+								 <div class="para">
+									attachIso
+								</div>
+								 <div class="para">
+									detachIso
+								</div>
+								 <div class="para">
+									listLoadBalancerRuleInstances
+								</div>
+								 <div class="para">
+									resetPasswordForVirtualMachine
+								</div>
+								 <div class="para">
+									changeServiceForVirtualMachine
+								</div>
+								 <div class="para">
+									recoverVirtualMachine
+								</div>
+								 <div class="para">
+									startVirtualMachine
+								</div>
+								 <div class="para">
+									migrateVirtualMachine
+								</div>
+								 <div class="para">
+									deployVirtualMachine
+								</div>
+								 <div class="para">
+									assignVirtualMachine
+								</div>
+								 <div class="para">
+									updateVirtualMachine
+								</div>
+								 <div class="para">
+									restoreVirtualMachine
+								</div>
+								 <div class="para">
+									stopVirtualMachine
+								</div>
+								 <div class="para">
+									destroyVirtualMachine
+								</div>
+
+							</td><td align="left">
+								<div class="para">
+									The commands in this list have two new response parameters, and no other changes.
+								</div>
+								 <div class="para">
+									New response parameters: keypair, tags(*)
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									listSecurityGroups
+								</div>
+								 <div class="para">
+									listFirewallRules
+								</div>
+								 <div class="para">
+									listPortForwardingRules
+								</div>
+								 <div class="para">
+									listSnapshots
+								</div>
+								 <div class="para">
+									listIsos
+								</div>
+								 <div class="para">
+									listProjects
+								</div>
+								 <div class="para">
+									listTemplates
+								</div>
+								 <div class="para">
+									listLoadBalancerRules
+								</div>
+
+							</td><td align="left">
+								<div class="para">
+									The commands in this list have the following new parameters, and no other changes.
+								</div>
+								 <div class="para">
+									New request parameter: tags (optional)
+								</div>
+								 <div class="para">
+									New response parameter: tags(*)
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									listF5LoadBalancerNetworks
+								</div>
+								 <div class="para">
+									listNetscalerLoadBalancerNetworks
+								</div>
+								 <div class="para">
+									listSrxFirewallNetworks
+								</div>
+								 <div class="para">
+									updateNetwork
+								</div>
+
+							</td><td align="left">
+								<div class="para">
+									The commands in this list have three new response parameters, and no other changes.
+								</div>
+								 <div class="para">
+									New response parameters: canusefordeploy, vpcid, tags(*)
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									createZone
+								</div>
+								 <div class="para">
+									updateZone
+								</div>
+
+							</td><td align="left">
+								<div class="para">
+									The commands in this list have the following new parameters, and no other changes.
+								</div>
+								 <div class="para">
+									New request parameter: localstorageenabled (optional)
+								</div>
+								 <div class="para">
+									New response parameter: localstorageenabled
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									listZones
+								</div>
+							</td><td align="left">
+								<div class="para">
+									New response parameter: localstorageenabled
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									rebootRouter
+								</div>
+								 <div class="para">
+									changeServiceForRouter
+								</div>
+								 <div class="para">
+									startRouter
+								</div>
+								 <div class="para">
+									destroyRouter
+								</div>
+								 <div class="para">
+									stopRouter
+								</div>
+
+							</td><td align="left">
+								<div class="para">
+									The commands in this list have two new response parameters, and no other changes.
+								</div>
+								 <div class="para">
+									New response parameters: vpcid, nic(*)
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									updateAccount
+								</div>
+								 <div class="para">
+									disableAccount
+								</div>
+								 <div class="para">
+									listAccounts
+								</div>
+								 <div class="para">
+									markDefaultZoneForAccount
+								</div>
+								 <div class="para">
+									enableAccount
+								</div>
+
+							</td><td align="left">
+								<div class="para">
+									The commands in this list have three new response parameters, and no other changes.
+								</div>
+								 <div class="para">
+									New response parameters: vpcavailable, vpclimit, vpctotal
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									listRouters
+								</div>
+							</td><td align="left">
+								<div class="para">
+									New request parameters: forvpc (optional), vpcid (optional)
+								</div>
+								 <div class="para">
+									New response parameters: vpcid, nic(*)
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									listNetworkOfferings
+								</div>
+							</td><td align="left">
+								<div class="para">
+									New request parameters: forvpc (optional)
+								</div>
+								 <div class="para">
+									New response parameters: forvpc
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									listVolumes
+								</div>
+							</td><td align="left">
+								<div class="para">
+									New request parameters: details (optional), tags (optional)
+								</div>
+								 <div class="para">
+									New response parameters: tags(*)
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									addTrafficMonitor
+								</div>
+							</td><td align="left">
+								<div class="para">
+									New request parameters: excludezones (optional), includezones (optional)
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									createNetwork
+								</div>
+							</td><td align="left">
+								<div class="para">
+									New request parameters: vpcid (optional)
+								</div>
+								 <div class="para">
+									New response parameters: canusefordeploy, vpcid, tags(*)
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									listPublicIpAddresses
+								</div>
+							</td><td align="left">
+								<div class="para">
+									New request parameters: tags (optional), vpcid (optional)
+								</div>
+								 <div class="para">
+									New response parameters: vpcid, tags(*)
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									listNetworks
+								</div>
+							</td><td align="left">
+								<div class="para">
+									New request parameters: canusefordeploy (optional), forvpc (optional), tags (optional), vpcid (optional)
+								</div>
+								 <div class="para">
+									New response parameters: canusefordeploy, vpcid, tags(*)
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									restartNetwork
+								</div>
+							</td><td align="left">
+								<div class="para">
+									New response parameters: vpcid, tags(*)
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									enableStaticNat
+								</div>
+							</td><td align="left">
+								<div class="para">
+									New request parameter: networkid (optional)
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									createDiskOffering
+								</div>
+							</td><td align="left">
+								<div class="para">
+									New request parameter: storagetype (optional)
+								</div>
+								 <div class="para">
+									New response parameter: storagetype
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									listDiskOfferings
+								</div>
+							</td><td align="left">
+								<div class="para">
+									New response parameter: storagetype
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									updateDiskOffering
+								</div>
+							</td><td align="left">
+								<div class="para">
+									New response parameter: storagetype
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									createFirewallRule
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Changed request parameters: ipaddressid (old version - optional, new version - required)
+								</div>
+								 <div class="para">
+									New response parameter: tags(*)
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									listVirtualMachines
+								</div>
+							</td><td align="left">
+								<div class="para">
+									New request parameters: isoid (optional), tags (optional), templateid (optional)
+								</div>
+								 <div class="para">
+									New response parameters: keypair, tags(*)
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									updateStorageNetworkIpRange
+								</div>
+							</td><td align="left">
+								<div class="para">
+									New response parameters: id, endip, gateway, netmask, networkid, podid, startip, vlan, zoneid
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									reconnectHost
+								</div>
+							</td><td align="left">
+								<div class="para">
+									A new response parameter is added: hahost.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									addCluster
+								</div>
+							</td><td align="left">
+								<div class="para">
+									The following request parameters are added:
+								</div>
+								 <div class="itemizedlist"><ul><li class="listitem"><div class="para">
+											vsmipaddress (optional)
+										</div></li><li class="listitem"><div class="para">
+											vsmpassword (optional)
+										</div></li><li class="listitem"><div class="para">
+											vsmusername (optional)
+										</div></li></ul></div>
+								 <div class="para">
+									The following parameter is made mandatory: podid
+								</div>
+
+							</td></tr><tr><td align="left">
+								<div class="para">
+									listVolumes
+								</div>
+							</td><td align="left">
+								<div class="para">
+									A new response parameter is added: status
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									migrateVolume
+								</div>
+							</td><td align="left">
+								<div class="para">
+									A new response parameter is added: status
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									prepareHostForMaintenance
+								</div>
+							</td><td align="left">
+								<div class="para">
+									A new response parameter is added: hahost.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									addSecondaryStorage
+								</div>
+							</td><td align="left">
+								<div class="para">
+									A new response parameter is added: hahost.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									enableAccount
+								</div>
+							</td><td align="left">
+								<div class="para">
+									A new response parameter is added: defaultzoneid
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									attachVolume
+								</div>
+							</td><td align="left">
+								<div class="para">
+									A new response parameter is added: status
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									cancelHostMaintenance
+								</div>
+							</td><td align="left">
+								<div class="para">
+									A new response parameter is added: hahost
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									addSwift
+								</div>
+							</td><td align="left">
+								<div class="para">
+									A new response parameter is added: hahost
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									listSwifts
+								</div>
+							</td><td align="left">
+								<div class="para">
+									A new response parameter is added: hahost
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									listExternalLoadBalancers
+								</div>
+							</td><td align="left">
+								<div class="para">
+									A new response parameter is added: hahost
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									createVolume
+								</div>
+							</td><td align="left">
+								<div class="para">
+									A new response parameter is added: status
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									listCapabilities
+								</div>
+							</td><td align="left">
+								<div class="para">
+									A new response parameter is added: customdiskofferingmaxsize
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									disableAccount
+								</div>
+							</td><td align="left">
+								<div class="para">
+									A new response parameter is added: defaultzoneid
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									deployVirtualMachine
+								</div>
+							</td><td align="left">
+								<div class="para">
+									A new request parameter is added: startvm (optional)
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									deleteStoragePool
+								</div>
+							</td><td align="left">
+								<div class="para">
+									A new request parameter is added: forced (optional)
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									updateAccount
+								</div>
+							</td><td align="left">
+								<div class="para">
+									A new response parameter is added: defaultzoneid
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									addHost
+								</div>
+							</td><td align="left">
+								<div class="para">
+									A new response parameter is added: hahost
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									updateHost
+								</div>
+							</td><td align="left">
+								<div class="para">
+									A new response parameter is added: hahost
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									detachVolume
+								</div>
+							</td><td align="left">
+								<div class="para">
+									A new response parameter is added: status
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									listAccounts
+								</div>
+							</td><td align="left">
+								<div class="para">
+									A new response parameter is added: defaultzoneid
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									listHosts
+								</div>
+							</td><td align="left">
+								<div class="para">
+									A new response parameter is added: hahost
+								</div>
+								<div class="para">
+									A new request parameter is added: hahost (optional)
+								</div>
+							</td></tr></tbody></table></div></div></div><ul class="docnav"><li class="previous"><a accesskey="p" href="version-4.0.html"><strong>Prev</strong>Chapter 3. Version 4.0.0-incubating</a></li><li class="up"><a accesskey="u" href="#"><strong>Up</strong></a></li><li class="home"><a accesskey="h" href="index.html"><strong>Home</strong></a></li></ul></body></html>
