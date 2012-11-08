@@ -1991,8 +1991,8 @@
 													}).join(', '),
 
 													serviceCapabilities: $.map(item.service, function(service) {
-														return service.capability ? $.map(service.capability, function(capability) {
-															return capability.name + ': ' + capability.value;
+														return service.provider ? $.map(service.provider, function(capability) {
+															return service.name + ': ' + capability.name;
 														}).join(', ') : null;
 													}).join(', ')
 												})												
