@@ -30,6 +30,6 @@
   <xi:include href="hardware-firewall.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
   <xi:include href="management-server-lb.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
   <xi:include href="topology-req.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-  <!-- <xi:include href="guest-network-usage-integration.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/> -->
+  <xi:include href="guest-nw-usage-with-traffic-sentinel.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/> 
   <xi:include href="set-zone-vlan-run-vm-max.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
   </chapter>
