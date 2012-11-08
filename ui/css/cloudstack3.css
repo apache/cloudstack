@@ -7176,9 +7176,8 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 
 /*Multi-edit*/
 div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBalancer div.multi-edit form table.multi-edit thead tr th,
-div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBalancer div.multi-edit form table.multi-edit tbody tr td
-{
-  min-width:100px;
+div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBalancer div.multi-edit form table.multi-edit tbody tr td {
+  min-width: 100px;
 }
 
 .multi-edit {
@@ -7194,7 +7193,7 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
 }
 
 .multi-edit table th {
-  min-width: 120px;
+  min-width: 88px;
 }
 
 .detail-group .multi-edit table td {
