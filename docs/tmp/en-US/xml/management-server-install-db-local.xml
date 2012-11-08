@@ -101,35 +101,40 @@ binlog-format = 'ROW'</programlisting>
 					<para>
 						In dbpassword, specify the password to be assigned to the "cloud" user. You can choose to provide no password although that is not recommended.
 					</para>
+
 				</listitem>
 				 <listitem>
 					<para>
 						In deploy-as, specify the username and password of the user deploying the database. In the following command, it is assumed the root user is deploying the database and creating the "cloud" user.
 					</para>
+
 				</listitem>
 				 <listitem>
 					<para>
-						(Optional) For encryption_type, use file or web to indicate the technique used to pass in the database encryption password. Default: file. See About Password and Key Encryption.
+						(Optional) For encryption_type, use file or web to indicate the technique used to pass in the database encryption password. Default: file. See <xref linkend="about-password-encryption" />.
 					</para>
+
 				</listitem>
 				 <listitem>
 					<para>
-						(Optional) For management_server_key, substitute the default key that is used to encrypt confidential parameters in the &PRODUCT; properties file. Default: password. It is highly recommended that you replace this with a more secure value. See About Password and Key Encryption.
+						(Optional) For management_server_key, substitute the default key that is used to encrypt confidential parameters in the &PRODUCT; properties file. Default: password. It is highly recommended that you replace this with a more secure value. See <xref linkend="about-password-encryption" />.
 					</para>
+
 				</listitem>
 				 <listitem>
 					<para>
-						(Optional) For database_key, substitute the default key that is used to encrypt confidential parameters in the &PRODUCT; database. Default: password. It is highly recommended that you replace this with a more secure value. See About Password and Key Encryption.
+						(Optional) For database_key, substitute the default key that is used to encrypt confidential parameters in the &PRODUCT; database. Default: password. It is highly recommended that you replace this with a more secure value. See <xref linkend="about-password-encryption" />.
 					</para>
+
 				</listitem>
 
 			</itemizedlist>
 			 
 <programlisting language="Bash">cloud-setup-databases cloud:&lt;dbpassword&gt;@localhost \
-                --deploy-as=root:&lt;password&gt; \
-                -e &lt;encryption_type&gt; \
-                -m &lt;management_server_key&gt; \
-                -k &lt;database_key&gt;</programlisting>
+--deploy-as=root:&lt;password&gt; \
+-e &lt;encryption_type&gt; \
+-m &lt;management_server_key&gt; \
+-k &lt;database_key&gt;</programlisting>
 			 <para>
 				When this script is finished, you should see a message like “Successfully initialized the database.”
 			</para>
@@ -145,6 +150,7 @@ binlog-format = 'ROW'</programlisting>
 				<para>
 					This type of single-machine setup is recommended only for a trial installation.
 				</para>
+
 			</note>
 
 		</listitem>

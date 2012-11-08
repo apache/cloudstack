@@ -574,14 +574,14 @@ Done restarting router(s).
 						If you would like additional confirmation that the new system VM templates were correctly applied when these system VMs were rebooted, SSH into the System VM and check the version.
 					</div><div class="para">
 						Use one of the following techniques, depending on the hypervisor.
-					</div><div class="formalpara"><h5 class="formalpara" id="idm10488952">XenServer or KVM:</h5>
+					</div><div class="formalpara"><h5 class="formalpara" id="idp17486672">XenServer or KVM:</h5>
 							SSH in by using the link local IP address of the system VM. For example, in the command below, substitute your own path to the private key used to log in to the system VM and your own link local IP.
 						</div><div class="para">
 						Run the following commands on the XenServer or KVM host on which the system VM is present:
 					</div><pre class="programlisting"><code class="prompt">#</code> <code class="command">ssh</code> -i <em class="replaceable"><code>private-key-path</code></em> <em class="replaceable"><code>link-local-ip</code></em> -p 3922
 # cat /etc/cloudstack-release</pre><div class="para">
 						The output should be like the following:
-					</div><pre class="programlisting">Cloudstack Release 4.0.0-incubating Mon Oct 9 15:10:04 PST 2012</pre><div class="formalpara"><h5 class="formalpara" id="idm7482664">ESXi</h5>
+					</div><pre class="programlisting">Cloudstack Release 4.0.0-incubating Mon Oct 9 15:10:04 PST 2012</pre><div class="formalpara"><h5 class="formalpara" id="idp20120864">ESXi</h5>
 							SSH in using the private IP address of the system VM. For example, in the command below, substitute your own path to the private key used to log in to the system VM and your own private IP.
 						</div><div class="para">
 						Run the following commands on the Management Server:

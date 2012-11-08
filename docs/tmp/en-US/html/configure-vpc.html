@@ -4,7 +4,7 @@
 		CloudStack Virtual Private Cloud is a private, isolated part of CloudStack. A VPC can have its own virtual network topology that resembles a traditional physical network. You can launch VMs in the virtual network that can have private addresses in the range of your choice, for example: 10.0.0.0/16. You can define network tiers within your VPC network range, which in turn enables you to group similar kinds of instances based on IP address range.
 	</div><div class="para">
 		For example, if a VPC has the private range 10.0.0.0/16, its guest networks can have the network ranges 10.0.1.0/24, 10.0.2.0/24, 10.0.3.0/24, and so on.
-	</div><div class="formalpara"><h5 class="formalpara" id="idm2465312">Major Components of a VPC:</h5>
+	</div><div class="formalpara"><h5 class="formalpara" id="idp22264960">Major Components of a VPC:</h5>
 			A VPC is comprised of the following network components:
 		</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
 				<span class="bold bold"><strong>VPC</strong></span>: A VPC acts as a container for multiple isolated networks that can communicate with each other via its virtual router.
@@ -24,7 +24,7 @@
 				<span class="bold bold"><strong>Customer Gateway</strong></span>: The customer side of a VPN Connection. For more information, see <a class="xref" href="vpn.html#create-vpn-customer-gateway">Section 15.17.4.1, “Creating and Updating a VPN Customer Gateway”</a>.
 			</div></li><li class="listitem"><div class="para">
 				<span class="bold bold"><strong>NAT Instance</strong></span>: An instance that provides Port Address Translation for instances to access the Internet via the public gateway. For more information, see <a class="xref" href="configure-vpc.html#enable-disable-static-nat-vpc">Section 15.19.9, “Enabling or Disabling Static NAT on a VPC”</a>.
-			</div></li></ul></div><div class="formalpara"><h5 class="formalpara" id="idp18245304">Network Architecture in a VPC</h5>
+			</div></li></ul></div><div class="formalpara"><h5 class="formalpara" id="idp20947848">Network Architecture in a VPC</h5>
 			In a VPC, the following four basic options of network architectures are present:
 		</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
 				VPC with a public gateway only
@@ -34,7 +34,7 @@
 				VPC with public and private gateways and site-to-site VPN access
 			</div></li><li class="listitem"><div class="para">
 				VPC with a private gateway only and site-to-site VPN access
-			</div></li></ul></div><div class="formalpara"><h5 class="formalpara" id="idp11431504">Connectivity Options for a VPC</h5>
+			</div></li></ul></div><div class="formalpara"><h5 class="formalpara" id="idp39595544">Connectivity Options for a VPC</h5>
 			You can connect your VPC to:
 		</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
 				The Internet through the public gateway.
@@ -42,7 +42,7 @@
 				The corporate datacenter by using a site-to-site VPN connection through the VPN gateway.
 			</div></li><li class="listitem"><div class="para">
 				Both the Internet and your corporate datacenter by using both the public gateway and a VPN gateway.
-			</div></li></ul></div><div class="formalpara"><h5 class="formalpara" id="idp26490768">VPC Network Considerations</h5>
+			</div></li></ul></div><div class="formalpara"><h5 class="formalpara" id="idp18549888">VPC Network Considerations</h5>
 			Consider the following before you create a VPC:
 		</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
 				A VPC, by default, is created in the enabled state.

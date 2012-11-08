@@ -53,7 +53,7 @@
 			</para>
 			 <note>
 				<para>
-					On Ubuntu, you can also create a file /etc/mysql/conf.d/cloudstack.cnf and add these directives there. Don't forget to add [mysqld] on the first line of the file.
+					On Ubuntu, you can also create /etc/mysql/conf.d/cloudstack.cnf file and add these directives there. Don't forget to add [mysqld] on the first line of the file.
 				</para>
 
 			</note>
@@ -136,6 +136,7 @@ bind-address = 0.0.0.0</programlisting>
 			<para>
 				Return to the root shell on your first Management Server.
 			</para>
+
 		</listitem>
 		 <listitem>
 			<para>
@@ -146,35 +147,40 @@ bind-address = 0.0.0.0</programlisting>
 					<para>
 						In dbpassword, specify the password to be assigned to the cloud user. You can choose to provide no password.
 					</para>
+
 				</listitem>
 				 <listitem>
 					<para>
 						In deploy-as, specify the username and password of the user deploying the database. In the following command, it is assumed the root user is deploying the database and creating the cloud user.
 					</para>
+
 				</listitem>
 				 <listitem>
 					<para>
-						(Optional) For encryption_type, use file or web to indicate the technique used to pass in the database encryption password. Default: file. See About Password and Key Encryption.
+						(Optional) For encryption_type, use file or web to indicate the technique used to pass in the database encryption password. Default: file. See <xref linkend="about-password-encryption" />.
 					</para>
+
 				</listitem>
 				 <listitem>
 					<para>
 						(Optional) For management_server_key, substitute the default key that is used to encrypt confidential parameters in the &PRODUCT; properties file. Default: password. It is highly recommended that you replace this with a more secure value. See About Password and Key Encryption.
 					</para>
+
 				</listitem>
 				 <listitem>
 					<para>
-						(Optional) For database_key, substitute the default key that is used to encrypt confidential parameters in the &PRODUCT; database. Default: password. It is highly recommended that you replace this with a more secure value. See About Password and Key Encryption.
+						(Optional) For database_key, substitute the default key that is used to encrypt confidential parameters in the &PRODUCT; database. Default: password. It is highly recommended that you replace this with a more secure value. See <xref linkend="about-password-encryption" />.
 					</para>
+
 				</listitem>
 
 			</itemizedlist>
 			 
 <programlisting language="Bash">cloud-setup-databases cloud:&lt;dbpassword&gt;@&lt;ip address mysql server&gt; \
-                --deploy-as=root:&lt;password&gt; \
-                -e &lt;encryption_type&gt; \
-                -m &lt;management_server_key&gt; \
-                -k &lt;database_key&gt;</programlisting>
+--deploy-as=root:&lt;password&gt; \
+-e &lt;encryption_type&gt; \
+-m &lt;management_server_key&gt; \
+-k &lt;database_key&gt;</programlisting>
 			 <para>
 				When this script is finished, you should see a message like “Successfully initialized the database.”
 			</para>

@@ -23,8 +23,8 @@
 -->
 <section id="prepare-system-vm-template">
   <title>Prepare the System VM Template</title>
-  <para>Secondary storage must be seeded with a template that is used for &PRODUCT; system
-    VMs.</para>
+  <para>Secondary storage must be seeded with a template that is used for &PRODUCT; system VMs.
+    Citrix provides you with the necessary binary package of the system VM.</para>
   <note>
     <para>When copying and pasting a command, be sure the command has pasted as a single line before
       executing. Some document viewers may introduce unwanted line breaks in copied text.</para>
@@ -37,8 +37,8 @@
       <para>If your secondary storage mount point is not named /mnt/secondary, substitute your own
         mount point name.</para>
       <para>If you set the &PRODUCT; database encryption type to "web" when you set up the database,
-        you must now add the parameter -s &lt;management-server-secret-key&gt;. See About Password
-        and Key Encryption.</para>
+        you must now add the parameter -s &lt;management-server-secret-key&gt;. See <xref
+          linkend="about-password-encryption"/>.</para>
       <para>This process will require approximately 5 GB of free space on the local file system and
         up to 30 minutes each time it runs.</para>
       <itemizedlist>
@@ -57,8 +57,11 @@
       </itemizedlist>
     </listitem>
     <listitem>
-      <para>If you are using a separate NFS server, perform this step. If you are using the
-        Management Server as the NFS server, you MUST NOT perform this step.</para>
+      <para>If you are using a separate NFS server, perform this step.</para>
+      <note>
+        <para>Do not perform this step if you are using the Management Server as the NFS
+          server.</para>
+      </note>
       <para>When the script has finished, unmount secondary storage and remove the created
         directory.</para>
       <programlisting># umount /mnt/secondary

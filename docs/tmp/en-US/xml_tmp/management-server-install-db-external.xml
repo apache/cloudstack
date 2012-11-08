@@ -21,95 +21,120 @@
  specific language governing permissions and limitations
  under the License.
 -->
-
 <section id="management-server-install-db-external">
-    <title>Install the Database on a Separate Node</title>
-    <para>This section describes how to install MySQL on a standalone machine, separate from the Management Server.
-        This technique is intended for a deployment that includes several Management Server nodes.
-        If you have a single-node Management Server deployment, you will typically use the same node for MySQL.
-        See <xref linkend="management-server-install-db-local"/>.
-    </para>
-    <note>
-        <para>The management server doesn't require a specific distribution for the MySQL node.
-            You can use a distribution or Operating System of your choice.
-            Using the same distribution as the management server is recommended, but not required.
-            See <xref linkend="management-server-system-requirements"/>.
-        </para>
-    </note>
-    <orderedlist>
-        <listitem>
-            <para>Install MySQL from the package repository from your distribution:</para>
-            <para condition="community">On RHEL or CentOS:</para>
-            <programlisting language="Bash">yum install mysql-server</programlisting>
-            <para condition="community">On Ubuntu:</para>
-            <programlisting language="Bash">apt-get install mysql-server</programlisting>
-        </listitem>
-        <listitem><para>Edit the MySQL configuration (/etc/my.cnf or /etc/mysql/my.cnf, depending on your OS) 
-            and insert the following lines in the [mysqld] section. You can put these lines below the datadir 
-            line. The max_connections parameter should be set to 350 multiplied by the number of Management 
-            Servers you are deploying. This example assumes two Management Servers.</para>
-            <note>
-                <para>On Ubuntu, you can also create a file /etc/mysql/conf.d/cloudstack.cnf and add
-                    these directives there. Don't forget to add [mysqld] on the first line of the
-                    file.</para>
-            </note>
-            <programlisting language="Bash">innodb_rollback_on_timeout=1
+  <title>Install the Database on a Separate Node</title>
+  <para>This section describes how to install MySQL on a standalone machine, separate from the
+    Management Server. This technique is intended for a deployment that includes several Management
+    Server nodes. If you have a single-node Management Server deployment, you will typically use the
+    same node for MySQL. See <xref linkend="management-server-install-db-local"/>.</para>
+  <note>
+    <para>The management server doesn't require a specific distribution for the MySQL node. You can
+      use a distribution or Operating System of your choice. Using the same distribution as the
+      management server is recommended, but not required. See <xref
+        linkend="management-server-system-requirements"/>.</para>
+  </note>
+  <orderedlist>
+    <listitem>
+      <para>Install MySQL from the package repository from your distribution:</para>
+      <para condition="community">On RHEL or CentOS:</para>
+      <programlisting language="Bash">yum install mysql-server</programlisting>
+      <para condition="community">On Ubuntu:</para>
+      <programlisting language="Bash">apt-get install mysql-server</programlisting>
+    </listitem>
+    <listitem>
+      <para>Edit the MySQL configuration (/etc/my.cnf or /etc/mysql/my.cnf, depending on your OS)
+        and insert the following lines in the [mysqld] section. You can put these lines below the
+        datadir line. The max_connections parameter should be set to 350 multiplied by the number of
+        Management Servers you are deploying. This example assumes two Management Servers.</para>
+      <note>
+        <para>On Ubuntu, you can also create /etc/mysql/conf.d/cloudstack.cnf file and add these
+          directives there. Don't forget to add [mysqld] on the first line of the file.</para>
+      </note>
+      <programlisting language="Bash">innodb_rollback_on_timeout=1
 innodb_lock_wait_timeout=600
 max_connections=700
 log-bin=mysql-bin
 binlog-format = 'ROW'
-bind-address = 0.0.0.0            </programlisting>
+bind-address = 0.0.0.0</programlisting>
+    </listitem>
+    <listitem>
+      <para>Start or restart MySQL to put the new configuration into effect.</para>
+      <para>On RHEL/CentOS, MySQL doesn't automatically start after installation. Start it
+        manually.</para>
+      <programlisting language="Bash">service mysqld start</programlisting>
+      <para>On Ubuntu, restart MySQL.</para>
+      <programlisting language="Bash">service mysqld restart</programlisting>
+    </listitem>
+    <listitem>
+      <para>(CentOS and RHEL only; not required on Ubuntu)</para>
+      <warning>
+        <para>On RHEL and CentOS, MySQL does not set a root password by default. It is very strongly
+          recommended that you set a root password as a security precaution.</para>
+      </warning>
+      <para>Run the following command to secure your installation. You can answer "Y" to all
+        questions except "Disallow root login remotely?". Remote root login is required to set up
+        the databases.</para>
+      <programlisting language="Bash">mysql_secure_installation</programlisting>
+    </listitem>
+    <listitem>
+      <para>If a firewall is present on the system, open TCP port 3306 so external MySQL connections
+        can be established.</para>
+      <para>On Ubuntu, UFW is the default firewall. Open the port with this command:</para>
+      <programlisting language="Bash">ufw allow mysql</programlisting>
+      <para>On RHEL/CentOS:</para>
+      <orderedlist numeration="loweralpha">
+        <listitem>
+          <para>Edit the /etc/sysconfig/iptables file and add the following line at the beginning of
+            the INPUT chain.</para>
+          <programlisting language="Bash">-A INPUT -p tcp --dport 3306 -j ACCEPT</programlisting>
         </listitem>
         <listitem>
-            <para>Start or restart MySQL to put the new configuration into effect.</para>
-            <para>On RHEL/CentOS,
-                MySQL doesn't automatically start after installation. Start it manually.</para>
-            <programlisting language="Bash">service mysqld start</programlisting>
-            <para>On Ubuntu, restart MySQL.</para>
-            <programlisting language="Bash">service mysqld restart</programlisting>
+          <para>Now reload the iptables rules.</para>
+          <programlisting language="Bash">service iptables restart</programlisting>
+        </listitem>
+      </orderedlist>
+    </listitem>
+    <listitem>
+      <para>Return to the root shell on your first Management Server.</para>
+    </listitem>
+    <listitem>
+      <para>Set up the database. The following command creates the cloud user on the
+        database.</para>
+      <itemizedlist>
+        <listitem>
+          <para>In dbpassword, specify the password to be assigned to the cloud user. You can choose
+            to provide no password.</para>
         </listitem>
         <listitem>
-            <para>(CentOS and RHEL only; not required on Ubuntu)</para>
-            <warning>
-                <para>On RHEL and CentOS, MySQL does not set a root password by default. It is very
-                    strongly recommended that you set a root password as a security precaution. </para>
-            </warning>
-            <para>Run the following command to secure your installation. You can answer "Y" to all
-                questions except "Disallow root login remotely?". Remote root login is required to
-                set up the databases.</para>
-            <programlisting language="Bash">mysql_secure_installation</programlisting>
+          <para>In deploy-as, specify the username and password of the user deploying the database.
+            In the following command, it is assumed the root user is deploying the database and
+            creating the cloud user.</para>
         </listitem>
-        <listitem><para>If a firewall is present on the system, open TCP port 3306 so external MySQL connections can be established.</para>
-            <para>On Ubuntu, UFW is the default firewall. Open the port with this command:</para>
-            <programlisting language="Bash">ufw allow mysql</programlisting>
-            <para>On RHEL/CentOS:</para>
-            <orderedlist numeration="loweralpha">
-                <listitem>
-                    <para>Edit the /etc/sysconfig/iptables file and add the following line at the beginning of the INPUT chain.</para>
-                    <programlisting language="Bash">-A INPUT -p tcp --dport 3306 -j ACCEPT</programlisting>
-                </listitem>
-                <listitem>
-                    <para>Now reload the iptables rules.</para>
-                    <programlisting language="Bash">service iptables restart</programlisting>
-                </listitem>
-            </orderedlist>      
-        </listitem>
-        <listitem><para>Return to the root shell on your first Management Server.</para></listitem>
         <listitem>
-            <para>Set up the database. The following command creates the cloud user on the database.</para>
-            <itemizedlist>
-                <listitem><para>In dbpassword, specify the password to be assigned to the cloud user. You can choose to provide no password.</para></listitem>
-                <listitem><para>In deploy-as, specify the username and password of the user deploying the database. In the following command, it is assumed the root user is deploying the database and creating the cloud user.</para></listitem>
-                <listitem><para>(Optional) For encryption_type, use file or web to indicate the technique used to pass in the database encryption password. Default: file. See About Password and Key Encryption.</para></listitem>
-                <listitem><para>(Optional) For management_server_key, substitute the default key that is used to encrypt confidential parameters in the &PRODUCT; properties file. Default: password. It is highly recommended that you replace this with a more secure value. See About Password and Key Encryption.</para></listitem>
-                <listitem><para>(Optional) For database_key, substitute the default key that is used to encrypt confidential parameters in the &PRODUCT; database. Default: password. It is highly recommended that you replace this with a more secure value. See About Password and Key Encryption.</para></listitem>
-            </itemizedlist>
-            <programlisting language="Bash">cloud-setup-databases cloud:&lt;dbpassword&gt;@&lt;ip address mysql server&gt; \
-                --deploy-as=root:&lt;password&gt; \
-                -e &lt;encryption_type&gt; \
-                -m &lt;management_server_key&gt; \
-                -k &lt;database_key&gt;</programlisting>
-            <para>When this script is finished, you should see a message like “Successfully initialized the database.”</para>
+          <para>(Optional) For encryption_type, use file or web to indicate the technique used to
+            pass in the database encryption password. Default: file. See <xref
+              linkend="about-password-encryption"/>.</para>
         </listitem>
-    </orderedlist>
+        <listitem>
+          <para>(Optional) For management_server_key, substitute the default key that is used to
+            encrypt confidential parameters in the &PRODUCT; properties file. Default: password. It
+            is highly recommended that you replace this with a more secure value. See About Password
+            and Key Encryption.</para>
+        </listitem>
+        <listitem>
+          <para>(Optional) For database_key, substitute the default key that is used to encrypt
+            confidential parameters in the &PRODUCT; database. Default: password. It is highly
+            recommended that you replace this with a more secure value. See <xref
+              linkend="about-password-encryption"/>.</para>
+        </listitem>
+      </itemizedlist>
+      <programlisting language="Bash">cloud-setup-databases cloud:&lt;dbpassword&gt;@&lt;ip address mysql server&gt; \
+--deploy-as=root:&lt;password&gt; \
+-e &lt;encryption_type&gt; \
+-m &lt;management_server_key&gt; \
+-k &lt;database_key&gt;</programlisting>
+      <para>When this script is finished, you should see a message like “Successfully initialized
+        the database.”</para>
+    </listitem>
+  </orderedlist>
 </section>
