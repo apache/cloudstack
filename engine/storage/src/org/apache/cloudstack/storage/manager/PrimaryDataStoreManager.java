@@ -21,7 +21,7 @@ package org.apache.cloudstack.storage.manager;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.StoragePool;

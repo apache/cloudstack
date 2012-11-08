@@ -18,9 +18,10 @@
  */
 package org.apache.cloudstack.storage.volume;
 
-import org.apache.cloudstack.storage.datastore.PrimaryDataStoreInfo;
-import org.apache.cloudstack.storage.volume.disktype.VolumeDiskType;
-import org.apache.cloudstack.storage.volume.type.VolumeType;
+import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
+import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeType;
 
 public class VolumeInfo {
 	private long size;
@@ -32,12 +33,12 @@ public class VolumeInfo {
 	private VolumeType type;
 	private VolumeDiskType diskType;
 	
-	public VolumeInfo(Volume volume) {
+	public VolumeInfo(VolumeEntity volume) {
 		this.size = volume.getSize();
 		this.uuid = volume.getUuid();
 		this.baseTemplatePath = volume.getTemplatePath();
 		this.baseTemplateUuid = volume.getTemplateUuid();
-		this.dataStoreInfo = volume.getDataStoreInfo();
+		//this.dataStoreInfo = volume.getDataStoreInfo();
 		this.diskType = volume.getDiskType();
 		this.type = volume.getType();
 	}

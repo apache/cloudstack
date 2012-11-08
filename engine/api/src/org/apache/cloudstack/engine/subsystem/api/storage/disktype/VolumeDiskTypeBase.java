@@ -1,4 +1,4 @@
-package org.apache.cloudstack.storage.volume.disktype;
+package org.apache.cloudstack.engine.subsystem.api.storage.disktype;
 
 public class VolumeDiskTypeBase implements VolumeDiskType {
 	protected String type = "Unknown";

@@ -20,7 +20,7 @@ package org.apache.cloudstack.storage.datastore.manager;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.storage.datastore.db.DataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreProviderDao;

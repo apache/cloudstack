@@ -22,9 +22,18 @@ import static org.junit.Assert.*;
 
 import java.awt.List;
 import java.util.LinkedList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
+import org.apache.cloudstack.engine.subsystem.api.storage.disktype.QCOW2;
+import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VHD;
+import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VMDK;
+import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
+import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskTypeHelper;
+import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeTypeHelper;
 import org.apache.cloudstack.storage.datastore.DefaultPrimaryDataStoreImpl;
 import org.apache.cloudstack.storage.datastore.provider.DefaultPrimaryDatastoreProviderImpl;
 import org.apache.cloudstack.storage.datastore.provider.PrimaryDataStoreProvider;
@@ -34,15 +43,8 @@ import org.apache.cloudstack.storage.image.format.ImageFormatHelper;
 import org.apache.cloudstack.storage.image.format.OVA;
 import org.apache.cloudstack.storage.image.format.Unknown;
 import org.apache.cloudstack.storage.volume.VolumeMotionService;
-import org.apache.cloudstack.storage.volume.VolumeService;
 import org.apache.cloudstack.storage.volume.db.VolumeDao;
-import org.apache.cloudstack.storage.volume.disktype.QCOW2;
-import org.apache.cloudstack.storage.volume.disktype.VHD;
-import org.apache.cloudstack.storage.volume.disktype.VMDK;
-import org.apache.cloudstack.storage.volume.disktype.VolumeDiskType;
-import org.apache.cloudstack.storage.volume.disktype.VolumeDiskTypeHelper;
-import org.apache.cloudstack.storage.volume.type.Iso;
-import org.apache.cloudstack.storage.volume.type.VolumeTypeHelper;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -57,7 +59,6 @@ import org.mockito.Mockito.*;
 
 import com.cloud.utils.component.ComponentInject;
 import com.cloud.utils.db.DB;
-
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations="storageContext.xml")
@@ -93,7 +94,7 @@ public class volumeServiceTest {
 		fail("Not yet implemented");
 	}
 	
-	@Test
+	//@Test
 	public void test1() {
 		System.out.println(VolumeTypeHelper.getType("Root"));
 		System.out.println(VolumeDiskTypeHelper.getDiskType("vmdk"));
@@ -125,4 +126,5 @@ public class volumeServiceTest {
 		ComponentInject.inject(dpdsi);
 		//assertNotNull(dpdsi.volumeDao);
 	}
+
 }

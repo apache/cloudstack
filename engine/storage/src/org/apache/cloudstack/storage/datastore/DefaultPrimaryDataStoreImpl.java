@@ -6,15 +6,20 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.storage.EndPoint;
+import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
 import org.apache.cloudstack.storage.HypervisorHostEndPoint;
 import org.apache.cloudstack.storage.datastore.db.DataStoreVO;
 import org.apache.cloudstack.storage.datastore.driver.PrimaryDataStoreDriver;
-import org.apache.cloudstack.storage.volume.Volume;
+
+import org.apache.cloudstack.storage.volume.VolumeEntityImpl;
 import org.apache.cloudstack.storage.volume.VolumeEvent;
 import org.apache.cloudstack.storage.volume.db.VolumeDao;
 import org.apache.cloudstack.storage.volume.db.VolumeVO;
-import org.apache.cloudstack.storage.volume.disktype.VolumeDiskType;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.host.HostVO;
@@ -40,14 +45,14 @@ public class DefaultPrimaryDataStoreImpl implements PrimaryDataStore {
 	}
 	
 	@Override
-	public Volume getVolume(long id) {
+	public VolumeEntity getVolume(long id) {
 		VolumeVO volumeVO = volumeDao.findById(id);
-		Volume vol = new Volume(this, volumeVO);
+		VolumeEntity vol = new VolumeEntityImpl(this, volumeVO);
 		return vol;
 	}
 
 	@Override
-	public List<Volume> getVolumes() {
+	public List<VolumeEntity> getVolumes() {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -59,8 +64,9 @@ public class DefaultPrimaryDataStoreImpl implements PrimaryDataStore {
 	}
 
 	@Override
-	public Volume createVolume(long id, VolumeDiskType diskType) {
-		Volume vol = this.getVolume(id);
+	public VolumeEntity createVolume(long id, VolumeDiskType diskType) {
+		/*
+		VolumeEntity vol = this.getVolume(id);
 		if (vol == null) {
 			return null;
 		}
@@ -89,8 +95,8 @@ public class DefaultPrimaryDataStoreImpl implements PrimaryDataStore {
 			} else {
 				vol.stateTransit(VolumeEvent.OperationFailed);
 			}
-		}
-		
+		}*/
+		return null;
 	}
 
 	@Override

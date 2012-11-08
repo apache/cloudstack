@@ -19,10 +19,13 @@
 package org.apache.cloudstack.engine.cloud.entity.api;
 
 import org.apache.cloudstack.engine.entity.api.CloudStackEntity;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
+import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeType;
 
 import com.cloud.storage.Volume;
 
-public interface VolumeEntity extends CloudStackEntity, Volume {
+public interface VolumeEntity extends CloudStackEntity {
 
     /**
      * Take a snapshot of the volume
@@ -71,4 +74,13 @@ public interface VolumeEntity extends CloudStackEntity, Volume {
      * Destroy the volume
      */
     void destroy();
+    
+    long getSize();
+    
+    String getTemplatePath();
+    String getTemplateUuid();
+    VolumeDiskType getDiskType();
+    VolumeType getType();
+    PrimaryDataStore getDataStore();
+    void setUuid(String uuid);
 }

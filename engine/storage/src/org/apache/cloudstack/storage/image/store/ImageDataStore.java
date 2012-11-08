@@ -27,5 +27,6 @@ public interface ImageDataStore {
 	boolean revokeAccess(long templateId, long endPointId);
 	boolean deleteTemplate(long templateId);
 	boolean needDownloadToCacheStorage();
+	
 	ImageDownloader getImageDownloader();
 }

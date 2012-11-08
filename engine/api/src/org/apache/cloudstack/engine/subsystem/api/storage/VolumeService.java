@@ -16,17 +16,19 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.volume;
+package org.apache.cloudstack.engine.subsystem.api.storage;
 
-import org.apache.cloudstack.storage.volume.disktype.VolumeDiskType;
-import org.apache.cloudstack.storage.volume.type.VolumeType;
+import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
+import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
+import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeType;
+
 
 public interface VolumeService {
 
 	/**
 	 * 
 	 */
-	Volume allocateVolumeInDb(long size, VolumeType type,String volName, Long templateId);
+	VolumeEntity allocateVolumeInDb(long size, VolumeType type,String volName, Long templateId);
 	
     /**
      * Creates the volume based on the given criteria
@@ -35,7 +37,7 @@ public interface VolumeService {
      *            
      * @return the volume object
      */
-    Volume createVolume(long volumeId, long dataStoreId, VolumeDiskType diskType);
+	VolumeEntity createVolume(long volumeId, long dataStoreId, VolumeDiskType diskType);
 
     /**
      * Delete volume

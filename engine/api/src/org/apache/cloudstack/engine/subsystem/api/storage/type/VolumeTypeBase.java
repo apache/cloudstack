@@ -1,4 +1,4 @@
-package org.apache.cloudstack.storage.volume.type;
+package org.apache.cloudstack.engine.subsystem.api.storage.type;
 
 public class VolumeTypeBase implements VolumeType {
 	protected String type = "Unknown";

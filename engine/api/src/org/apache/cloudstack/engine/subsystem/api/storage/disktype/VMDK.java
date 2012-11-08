@@ -1,4 +1,4 @@
-package org.apache.cloudstack.storage.volume.disktype;
+package org.apache.cloudstack.engine.subsystem.api.storage.disktype;
 
 import org.springframework.stereotype.Component;
 

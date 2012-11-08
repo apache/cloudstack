@@ -20,11 +20,14 @@ package org.apache.cloudstack.storage.volume;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
+import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
+import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
+import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeType;
 import org.apache.cloudstack.storage.datastore.manager.PrimaryDataStoreManager;
 import org.apache.cloudstack.storage.volume.db.VolumeDao;
-import org.apache.cloudstack.storage.volume.disktype.VolumeDiskType;
-import org.apache.cloudstack.storage.volume.type.VolumeType;
+
 import org.springframework.stereotype.Service;
 
 import com.cloud.utils.db.DB;
@@ -36,7 +39,7 @@ public class VolumeServiceImpl implements VolumeService {
 	@Inject
 	PrimaryDataStoreManager dataStoreMgr;
 	@Override
-	public Volume createVolume(long volumeId, long dataStoreId, VolumeDiskType diskType) {
+	public VolumeEntity createVolume(long volumeId, long dataStoreId, VolumeDiskType diskType) {
 		PrimaryDataStore dataStore = dataStoreMgr.getPrimaryDataStore(dataStoreId);
 		return dataStore.createVolume(volumeId, diskType);
 	}
@@ -72,8 +75,9 @@ public class VolumeServiceImpl implements VolumeService {
 	}
 
 	@Override
-	public Volume allocateVolumeInDb(long size, VolumeType type, String volName, Long templateId) {
+	public VolumeEntity allocateVolumeInDb(long size, VolumeType type, String volName, Long templateId) {
 		volDao.allocVolume(size, type, volName, templateId);
 		return null;
 	}
+
 }

@@ -18,7 +18,7 @@
  */
 package org.apache.cloudstack.storage.datastore.manager;
 
-import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.storage.datastore.lifecycle.PrimaryDataStoreLifeCycle;
 
 public interface PrimaryDataStoreManager {

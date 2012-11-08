@@ -20,6 +20,7 @@ package org.apache.cloudstack.storage;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;

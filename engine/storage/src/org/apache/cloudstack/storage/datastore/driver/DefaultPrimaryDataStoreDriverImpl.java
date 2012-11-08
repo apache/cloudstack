@@ -2,10 +2,10 @@ package org.apache.cloudstack.storage.datastore.driver;
 
 import java.util.List;
 
-import org.apache.cloudstack.storage.EndPoint;
+import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.storage.command.CreateVolumeAnswer;
 import org.apache.cloudstack.storage.command.CreateVolumeCommand;
-import org.apache.cloudstack.storage.volume.Volume;
 import org.apache.cloudstack.storage.volume.VolumeInfo;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -17,7 +17,7 @@ public class DefaultPrimaryDataStoreDriverImpl implements
 		PrimaryDataStoreDriver {
 	private static final Logger s_logger = Logger.getLogger(DefaultPrimaryDataStoreDriverImpl.class);
 	@Override
-	public boolean createVolume(Volume vol) {
+	public boolean createVolume(VolumeEntity vol) {
 		//The default driver will send createvolume command to one of hosts which can access its datastore
 		List<EndPoint> endPoints = vol.getDataStore().getEndPoints();
 		int retries = 3;
@@ -45,19 +45,19 @@ public class DefaultPrimaryDataStoreDriverImpl implements
 	}
 
 	@Override
-	public boolean deleteVolume(Volume vo) {
+	public boolean deleteVolume(VolumeEntity vo) {
 		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
-	public String grantAccess(Volume vol, EndPoint ep) {
+	public String grantAccess(VolumeEntity vol, EndPoint ep) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public boolean revokeAccess(Volume vol, EndPoint ep) {
+	public boolean revokeAccess(VolumeEntity vol, EndPoint ep) {
 		// TODO Auto-generated method stub
 		return false;
 	}

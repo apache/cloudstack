@@ -1,4 +1,4 @@
-package org.apache.cloudstack.storage;
+package org.apache.cloudstack.engine.subsystem.api.storage;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;

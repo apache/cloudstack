@@ -24,9 +24,9 @@ import java.util.Map;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore.StoreType;
-import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
 
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;

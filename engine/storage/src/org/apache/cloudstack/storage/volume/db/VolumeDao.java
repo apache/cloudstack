@@ -18,19 +18,19 @@ package org.apache.cloudstack.storage.volume.db;
 
 import java.util.List;
 
-import org.apache.cloudstack.storage.volume.Volume;
+import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeType;
 import org.apache.cloudstack.storage.volume.VolumeEvent;
-import org.apache.cloudstack.storage.volume.VolumeState;
-import org.apache.cloudstack.storage.volume.disktype.VolumeDiskType;
-import org.apache.cloudstack.storage.volume.type.VolumeType;
+
+
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Volume;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.fsm.StateDao;
 
-public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<VolumeState, VolumeEvent, VolumeVO> {
+public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.State, VolumeEvent, VolumeVO> {
     
 	List<VolumeVO> findDetachedByAccount(long accountId);
 	

@@ -16,9 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.datastore;
+package org.apache.cloudstack.engine.subsystem.api.storage;
 
-import org.apache.cloudstack.storage.volume.disktype.VolumeDiskType;
+
+import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 

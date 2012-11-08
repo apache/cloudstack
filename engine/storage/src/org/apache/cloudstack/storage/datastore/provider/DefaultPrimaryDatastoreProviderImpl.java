@@ -2,9 +2,9 @@ package org.apache.cloudstack.storage.datastore.provider;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.storage.datastore.DefaultPrimaryDataStoreImpl;
-import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
-import org.apache.cloudstack.storage.datastore.PrimaryDataStoreInfo;
 import org.apache.cloudstack.storage.datastore.db.DataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.driver.DefaultPrimaryDataStoreDriverImpl;

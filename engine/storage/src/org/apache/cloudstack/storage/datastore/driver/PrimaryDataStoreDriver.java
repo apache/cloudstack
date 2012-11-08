@@ -1,11 +1,12 @@
 package org.apache.cloudstack.storage.datastore.driver;
 
-import org.apache.cloudstack.storage.EndPoint;
-import org.apache.cloudstack.storage.volume.Volume;
+import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+
 
 public interface PrimaryDataStoreDriver {
-	boolean createVolume(Volume vol);
-	boolean deleteVolume(Volume vo);
-	String grantAccess(Volume vol,  EndPoint ep);
-	boolean revokeAccess(Volume vol, EndPoint ep);
+	boolean createVolume(VolumeEntity vol);
+	boolean deleteVolume(VolumeEntity vo);
+	String grantAccess(VolumeEntity vol,  EndPoint ep);
+	boolean revokeAccess(VolumeEntity vol, EndPoint ep);
 }

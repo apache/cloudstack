@@ -18,9 +18,11 @@
  */
 package org.apache.cloudstack.storage.image.db;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.utils.db.GenericDaoBase;
 
-
+@Component
 public class ImageDataStoreProviderDaoImpl extends GenericDaoBase<ImageDataStoreProviderVO, Long> implements ImageDataStoreProviderDao {
 
 }

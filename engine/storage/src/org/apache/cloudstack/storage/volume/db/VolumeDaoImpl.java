@@ -25,18 +25,17 @@ import java.util.List;
 
 import javax.ejb.Local;
 
-import org.apache.cloudstack.storage.volume.Volume;
+import org.apache.cloudstack.engine.subsystem.api.storage.type.RootDisk;
+import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeType;
 import org.apache.cloudstack.storage.volume.VolumeEvent;
-import org.apache.cloudstack.storage.volume.VolumeState;
-import org.apache.cloudstack.storage.volume.disktype.VolumeDiskType;
-import org.apache.cloudstack.storage.volume.type.RootDisk;
-import org.apache.cloudstack.storage.volume.type.VolumeType;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Volume;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
@@ -75,7 +74,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     public List<VolumeVO> findDetachedByAccount(long accountId) {
     	SearchCriteria<VolumeVO> sc = DetachedAccountIdSearch.create();
     	sc.setParameters("accountId", accountId);
-    	sc.setParameters("destroyed", VolumeState.Destroy);
+    	sc.setParameters("destroyed", Volume.State.Destroy);
     	return listBy(sc);
     }
     
@@ -83,7 +82,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     public List<VolumeVO> findByAccount(long accountId) {
         SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("accountId", accountId);
-        sc.setParameters("state", VolumeState.Ready);
+        sc.setParameters("state", Volume.State.Ready);
         return listBy(sc);
     }
     
@@ -106,7 +105,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     public List<VolumeVO> findByPoolId(long poolId) {
         SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("poolId", poolId);
-        sc.setParameters("notDestroyed", VolumeState.Destroy);
+        sc.setParameters("notDestroyed", Volume.State.Destroy);
         sc.setParameters("vType", new RootDisk().toString());
 	    return listBy(sc);
 	}
@@ -115,7 +114,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     public List<VolumeVO> findCreatedByInstance(long id) {
         SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("instanceId", id);
-        sc.setParameters("state", VolumeState.Ready);
+        sc.setParameters("state", Volume.State.Ready);
         return listBy(sc);
     }
     
@@ -123,7 +122,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     public List<VolumeVO> findUsableVolumesForInstance(long instanceId) {
         SearchCriteria<VolumeVO> sc = InstanceStatesSearch.create();
         sc.setParameters("instance", instanceId);
-        sc.setParameters("states", VolumeState.Creating, VolumeState.Ready, VolumeState.Allocated);
+        sc.setParameters("states", Volume.State.Creating, Volume.State.Ready, Volume.State.Allocated);
         
         return listBy(sc);
     }
@@ -140,7 +139,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
 	public List<VolumeVO> findByInstanceIdDestroyed(long vmId) {
 		SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
 		sc.setParameters("instanceId", vmId);
-		sc.setParameters("destroyed", VolumeState.Destroy);
+		sc.setParameters("destroyed", Volume.State.Destroy);
 		return listBy(sc);
 	}
 	
@@ -148,7 +147,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
 	public List<VolumeVO> findReadyRootVolumesByInstance(long instanceId) {
 		SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
 		sc.setParameters("instanceId", instanceId);
-		sc.setParameters("state", VolumeState.Ready);
+		sc.setParameters("state", Volume.State.Ready);
 		sc.setParameters("vType", new RootDisk().toString());		
 		return listBy(sc);
 	}
@@ -158,7 +157,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
 		SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("accountId", accountId);
         sc.setParameters("pod", podId);
-        sc.setParameters("state", VolumeState.Ready);
+        sc.setParameters("state", Volume.State.Ready);
         
         return listIncludingRemovedBy(sc);
 	}
@@ -315,7 +314,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
 	public Long countAllocatedVolumesForAccount(long accountId) {
 	  	SearchCriteria<Long> sc = CountByAccount.create();
         sc.setParameters("account", accountId);
-		sc.setParameters("state", VolumeState.Destroy);
+		sc.setParameters("state", Volume.State.Destroy);
         return customSearch(sc, null).get(0);		
 	}
 
@@ -329,14 +328,14 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     @Override
     public List<VolumeVO> listVolumesToBeDestroyed() {
         SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
-        sc.setParameters("state", VolumeState.Destroy);
+        sc.setParameters("state", Volume.State.Destroy);
         
         return listBy(sc);
     }
 
 	@Override
-	public boolean updateState(VolumeState currentState,
-			VolumeEvent event, VolumeState nextState, VolumeVO vo,
+	public boolean updateState(Volume.State currentState,
+			VolumeEvent event, Volume.State nextState, VolumeVO vo,
 			Object data) {
 		
 	        Long oldUpdated = vo.getUpdatedCount();
@@ -397,7 +396,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     public Pair<Long, Long> getNonDestroyedCountAndTotalByPool(long poolId) {
         SearchCriteria<SumCount> sc = TotalSizeByPoolSearch.create();
         sc.setParameters("poolId", poolId);
-        sc.setParameters("state", VolumeState.Destroy);
+        sc.setParameters("state", Volume.State.Destroy);
         List<SumCount> results = customSearch(sc, null);
         SumCount sumCount = results.get(0);
         return new Pair<Long, Long>(sumCount.count, sumCount.sum);

@@ -31,11 +31,12 @@ import javax.persistence.TableGenerator;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
-import org.apache.cloudstack.storage.volume.VolumeState;
-import org.apache.cloudstack.storage.volume.disktype.Unknown;
-import org.apache.cloudstack.storage.volume.type.VolumeType;
+import org.apache.cloudstack.engine.subsystem.api.storage.disktype.Unknown;
+
+
 
 import com.cloud.api.Identity;
+import com.cloud.storage.Volume;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
@@ -43,7 +44,7 @@ import com.cloud.utils.fsm.StateObject;
 
 @Entity
 @Table(name = "volumes")
-public class VolumeVO implements Identity, StateObject<VolumeState>{
+public class VolumeVO implements Identity, StateObject<Volume.State>{
  @Id
  @TableGenerator(name = "volume_sq", table = "sequence", pkColumnName = "name", valueColumnName = "value", pkColumnValue = "volume_seq", allocationSize = 1)
  @GeneratedValue(strategy = GenerationType.TABLE)
@@ -130,7 +131,7 @@ public class VolumeVO implements Identity, StateObject<VolumeState>{
 
  @Column(name = "state")
  @Enumerated(value = EnumType.STRING)
- private VolumeState state;
+ private Volume.State state;
 
  @Column(name = "chain_info")
  String chainInfo;
@@ -346,7 +347,7 @@ public class VolumeVO implements Identity, StateObject<VolumeState>{
      return updated;
  }
 
- public VolumeState getState() {
+ public Volume.State getState() {
      return state;
  }
 
