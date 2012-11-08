@@ -979,7 +979,7 @@
                 custom: function(args) {
                   var context = args.context;
 
-                  return $('<div>').multiEdit(
+                  return $('<div>').addClass('loadBalancer').multiEdit(
                     {
                       context: context,
                       listView: $.extend(true, {}, cloudStack.sections.instances, {
