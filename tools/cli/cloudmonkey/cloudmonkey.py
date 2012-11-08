@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -428,7 +428,13 @@ def main():
                 if '--help' in args:
                     self.print_shell(res[2])
                     return
-                self.default(res[0] + " " + args_partition[2])
+                if '|' in args:
+                    prog_name = sys.argv[0]
+                    if '.py' in prog_name:
+                        prog_name = "python " + prog_name
+                    self.do_shell("%s %s %s" % (prog_name, rule, args))
+                else:
+                    self.default(res[0] + " " + args_partition[2])
             return grammar_closure
 
         grammar_handler = add_grammar(rule)
