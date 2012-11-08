@@ -289,6 +289,7 @@ public class RegionManagerImpl implements RegionManager, RegionService, Manager{
 
 	@Override
 	public boolean removeRegion(int id) {
+		//Remove complete row, instead of soft delete
 		RegionVO region = _regionDao.findById(id);
 		if(region != null){
 			return _regionDao.remove(id);
@@ -469,10 +470,10 @@ public class RegionManagerImpl implements RegionManager, RegionService, Manager{
 			//First delete in the Region where account is created
 			Region region = _regionDao.findById(regionId);
 			if (RegionsApiUtil.makeAPICall(region, command, params)) {
-				s_logger.debug("Successfully deleted user :"+userUUID+" in Region: "+region.getId());
+				s_logger.debug("Successfully deleted user :"+userUUID+" in source Region: "+region.getId());
 				return true;
 			} else {
-				s_logger.error("Error while deleting user :"+userUUID+" in Region: "+region.getId());
+				s_logger.error("Error while deleting user :"+userUUID+" in source Region: "+region.getId());
 				return false;
 			}
 		}

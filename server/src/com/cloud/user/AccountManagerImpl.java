@@ -1937,6 +1937,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
     @Override @DB
     public String[] createApiKeyAndSecretKey(RegisterCmd cmd) {
+    	//Send keys to other Regions
         Long userId = cmd.getId();
 
         if (getUserIncludingRemoved(userId) == null) {
@@ -2381,6 +2382,9 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 	@Override
 	public User findUser(String username, Long domainId) {
 		UserAccount userAccount = _userAccountDao.getUserAccount(username, domainId);
+		if(userAccount == null){
+			throw new InvalidParameterValueException("Unable to find user account by name: "+username);
+		}
 		User user = _userDao.findById(userAccount.getId());
 		if(user == null){
 			throw new InvalidParameterValueException("Unable to find user by name: "+username);
