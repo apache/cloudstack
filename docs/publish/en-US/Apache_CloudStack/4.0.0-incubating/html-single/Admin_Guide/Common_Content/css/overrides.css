@@ -1,0 +1,57 @@
+a:link {
+	color:#0066cc;
+}
+
+a:visited {
+	color:#6699cc;
+}
+
+h1 {
+	color:#3c6eb4;
+}
+
+.producttitle {
+	background: #3c6eb4 url(../images/h1-bg.png) top left repeat;
+}
+
+.section h1.title {
+	color:#3c6eb4;
+}
+
+
+h2,h3,h4,h5,h6 {
+	color:#3c6eb4
+}
+
+table {
+	border:1px solid #3c6eb4;
+}
+
+table th {
+	background-color:#3c6eb4;
+}
+
+table tr.even td {
+	background-color:#f5f5f5;
+}
+
+#title a {
+	height:54px;
+}
+
+.term{
+	color:#a70000;
+}
+
+.revhistory table th {
+	color:#3c6eb4;
+}
+
+.edition {
+	color: #3c6eb4;
+}
+
+span.remark{
+	background-color: #ffff00;
+}
+

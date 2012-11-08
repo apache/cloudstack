@@ -292,7 +292,8 @@ class CloudStackShell(cmd.Cmd):
             autocompletions = self.cache_verbs[verb].keys()
             search_string = subject
         else:                  # Complete subject params
-            autocompletions = self.cache_verbs[verb][subject][1]
+            autocompletions = map(lambda x: x + "=",
+                                  self.cache_verbs[verb][subject][1])
             search_string = text
 
         return [s for s in autocompletions if s.startswith(search_string)]
@@ -369,7 +370,12 @@ class CloudStackShell(cmd.Cmd):
             subject = fields[2].partition(" ")[0]
             if verb not in self.cache_verbs:
                 self.cache_verb_miss(verb)
-            self.print_shell(self.cache_verbs[verb][subject][2])
+
+            if subject in self.cache_verbs[verb]:
+                self.print_shell(self.cache_verbs[verb][subject][2])
+            else:
+                self.print_shell("Error: no such api (%s) on %s" %
+                                 (subject, verb))
 
     def complete_help(self, text, line, begidx, endidx):
         fields = line.partition(" ")
@@ -400,7 +406,7 @@ def main():
     # Add verbs in grammar
     grammar = ['create', 'list', 'delete', 'update',
                'enable', 'disable', 'add', 'remove', 'attach', 'detach',
-               'assign', 'authorize', 'change', 'register',
+               'assign', 'authorize', 'change', 'register', 'configure',
                'start', 'restart', 'reboot', 'stop', 'reconnect',
                'cancel', 'destroy', 'revoke',
                'copy', 'extract', 'migrate', 'restore',

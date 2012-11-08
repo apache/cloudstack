@@ -330,13 +330,6 @@
   </build>
 
   <profiles>
-
-    <profile>
-      <id>deps</id>
-      <modules>
-        <module>deps</module>
-      </modules>
-    </profile>
     <profile>
       <id>developer</id>
       <modules>

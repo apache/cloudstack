@@ -240,7 +240,8 @@ public class ApiResponseSerializer {
                     	sb.append("</").append(serializedName.value()).append(">");
                     }
                 } else if (fieldValue instanceof Date) {
-                    sb.append("<").append(">").append(BaseCmd.getDateString((Date) fieldValue)).append("</").append(serializedName.value()).append(">");                
+                    sb.append("<").append(serializedName.value()).append(">").append(BaseCmd.getDateString((Date) fieldValue)).
+                    append("</").append(serializedName.value()).append(">");    
                 } else if (fieldValue instanceof IdentityProxy) {                	
                 	IdentityProxy idProxy = (IdentityProxy)fieldValue;
                 	String id = (idProxy.getValue() != null ? String.valueOf(idProxy.getValue()) : "");

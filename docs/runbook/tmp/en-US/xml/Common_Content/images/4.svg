@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   version="1.0"
+   width="32"
+   height="32"
+   id="svg2">
+  <defs
+     id="defs15" />
+  <circle
+     cx="16"
+     cy="16"
+     r="14"
+     id="circle"
+     style="fill:#336699" />
+  <g
+     id="text2820"
+     style="font-size:10px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke:none;font-family:Droid Sans;-inkscape-font-specification:Droid Sans">
+    <path
+       d="m 20.078077,19.493301 -1.460937,0 0,2.515137 -2.498535,0 0,-2.515137 -5.013672,0 0,-1.784668 5.154785,-7.8359371 2.357422,0 0,7.6284181 1.460937,0 0,1.992187 m -3.959472,-1.992187 0,-2.058594 c -5e-6,-0.07193 -5e-6,-0.17431 0,-0.307129 0.0055,-0.138339 0.01106,-0.293287 0.0166,-0.464844 0.0055,-0.171541 0.01106,-0.348625 0.0166,-0.53125 0.01106,-0.182609 0.01936,-0.356925 0.0249,-0.522949 0.01106,-0.166007 0.01936,-0.309887 0.0249,-0.43164 0.01106,-0.12727 0.01936,-0.218579 0.0249,-0.273926 l -0.07471,0 c -0.09962,0.232431 -0.213058,0.478687 -0.340332,0.738769 -0.12175,0.2601 -0.262863,0.520191 -0.42334,0.780274 l -2.025391,3.071289 2.75586,0"
+       id="path2818"
+       style="font-size:17px;font-weight:bold;fill:#ffffff;-inkscape-font-specification:Bitstream Vera Sans Bold" />
+  </g>
+</svg>
