@@ -1446,7 +1446,10 @@
                              }
                             }
                           );
-                        }
+                        },
+                        error:function(json) {
+                         args.response.error(parseXMLHttpResponse(json));
+                            }
                       });
                     },
                     cancelAction: function() { //"Cancel" button is clicked
@@ -1466,7 +1469,10 @@
                              }
                             }
                           );
-                        }
+                        },
+                        error:function(json) {
+                         args.response.error(parseXMLHttpResponse(json));
+                            }
                       });
                     }
                   });
@@ -1489,7 +1495,10 @@
                      }
                     }
                   );
-                }
+                },
+                error:function(json) {
+                         args.response.error(parseXMLHttpResponse(json));
+                            }
               });
             },
             notification: {
