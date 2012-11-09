@@ -480,19 +480,43 @@ under the License.
                 <div class="section select-network-model">
                   <h3><fmt:message key="label.set.up.zone.type"/></h3>
                   <p><fmt:message key="message.please.select.a.configuration.for.your.zone"/></p>
-                  <div class="select-area">
+                  <div class="select-area basic-zone">
                     <div class="desc">
                       <fmt:message key="message.desc.basic.zone"/>
                     </div>
                     <input type="radio" name="network-model" value="Basic" checked="checked" />
                     <label><fmt:message key="label.basic"/></label>
                   </div>
-                  <div class="select-area">
+                  <div class="select-area advanced-zone disabled">
                     <div class="desc">
                       <fmt:message key="message.desc.advanced.zone"/>  
 										</div>
                     <input type="radio" name="network-model" value="Advanced" />
                     <label><fmt:message key="label.advanced"/></label>
+                    <!-- Isolation mode -->
+                    <div class="isolation-mode">
+                      <div class="title">
+                        <fmt:message key="label.isolation.mode"/>
+                      </div>
+                      
+                      <!-- VLAN -->
+                      <div class="select-area">
+                        <div class="desc">
+                          <fmt:message key="message.advanced.virtual"/>
+                        </div>
+                        <input type="radio" name="zone-isolation-mode" value="VLAN" disabled="disabled" checked="checked" />
+                        <label>VLAN</label>
+                      </div>
+
+                      <!-- Security groups -->
+                      <div class="select-area">
+                        <div class="desc">
+                          <fmt:message key="message.advanced.security.group"/>
+                        </div>
+                        <input type="radio" name="zone-isolation-mode" value="SG" disabled="disabled" />
+                        <label><fmt:message key="label.menu.security.groups"/></label>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

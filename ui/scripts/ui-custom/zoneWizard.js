@@ -153,6 +153,11 @@
     // Include zone network type
     if (groupedForms.zone) {
       groupedForms.zone.networkType = $forms.find('input[name=network-model]:checked').val();
+      
+      // Include zone isolation mode, supported for Advanced zones only
+      if (groupedForms.zone.networkType == 'Advanced') {
+        groupedForms.zone.isolationMode = $forms.find('input[name=zone-isolation-mode]:checked').val();
+      }
     }
 
     return groupedForms;
@@ -1160,8 +1165,15 @@
               disabled: 'disabled'
             });
 
+            var $selectArea = $target.closest('.select-area');
+
             if ($target.val() == 'Advanced') {
               $inputs.attr('disabled', false);
+              $selectArea.removeClass('disabled')
+                .find('.isolation-mode input').attr('disabled', false);
+            } else if ($target.val() == 'Basic') {
+              $selectArea.siblings('.advanced-zone').addClass('disabled')
+                .find('.isolation-mode input').attr('disabled', 'disabled');
             }
           }
 
