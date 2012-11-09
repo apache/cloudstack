@@ -3599,16 +3599,16 @@
                       defaultValue: '300',
                       docID: 'helpSRXTimeout'
                     },
-                    inline: {
-                      label: 'Mode',
-                      docID: 'helpSRXMode',
-                      select: function(args) {
-                        var items = [];
-                        items.push({id: "false", description: "side by side"});
-                        items.push({id: "true", description: "inline"});
-                        args.response.success({data: items});
-                      }
-                    },
+                    // inline: {
+                    //   label: 'Mode',
+                    //   docID: 'helpSRXMode',
+                    //   select: function(args) {
+                    //     var items = [];
+                    //     items.push({id: "false", description: "side by side"});
+                    //     items.push({id: "true", description: "inline"});
+                    //     args.response.success({data: items});
+                    //   }
+                    // },
                     publicnetwork: {
                       label: 'label.public.network',
                       defaultValue: 'untrusted',
