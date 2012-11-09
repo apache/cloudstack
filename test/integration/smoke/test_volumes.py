@@ -31,7 +31,7 @@ import urllib
 import time
 import tempfile
 
-_multiprocess_shared = True
+_multiprocess_shared_ = True
 
 class Services:
     """Test Volume Services

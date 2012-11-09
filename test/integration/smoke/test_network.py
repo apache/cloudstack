@@ -28,7 +28,7 @@ from nose.plugins.attrib import attr
 #Import System modules
 import time
 
-_multiprocess_shared = True
+_multiprocess_shared_ = True
 
 class Services:
     """Test Network Services

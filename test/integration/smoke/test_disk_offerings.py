@@ -25,7 +25,7 @@ from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
 from nose.plugins.attrib import attr
 
-_multiprocess_shared = True
+_multiprocess_shared_ = True
 
 class Services:
     """Test Disk offerings Services
