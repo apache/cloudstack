@@ -95,4 +95,4 @@ class TestCaseExecuteEngine(object):
             if self.format == "text":
                 unittest.TextTestRunner(stream=self.testResultLogFile, verbosity=2).run(self.suite)
             elif self.format == "xml":
-                xmlrunner.XMLTestRunner(output=self.xmlDir, verbose=True).run(self.suite)
+                xmlrunner.XMLTestRunner(output=self.xmlDir).run(self.suite)

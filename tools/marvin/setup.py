@@ -42,6 +42,6 @@ setup(name="Marvin",
           "mysql-connector-python",
           "paramiko",
           "nose",
-          "unittest-xml-reporting"
+          "unittest-xml-reporting>1.2"
       ],         
      )
