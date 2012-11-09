@@ -473,7 +473,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         script.add("-dname", dname);
         String result = script.execute();
         if (result != null) {
-            throw new IOException("Fail to generate certificate!");
+            throw new IOException("Fail to generate certificate!: " + result);
         }
     }
 
