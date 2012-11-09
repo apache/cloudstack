@@ -29,6 +29,7 @@ from random import random
 #Import System modules
 import time
 
+_multiprocess_shared = True
 
 class Services:
     """Test ISO Services

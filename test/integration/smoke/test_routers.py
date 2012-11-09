@@ -29,6 +29,7 @@ from nose.plugins.attrib import attr
 import time
 
 
+_multiprocess_shared = True
 class Services:
     """Test router Services
     """
