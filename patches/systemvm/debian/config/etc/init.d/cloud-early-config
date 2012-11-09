@@ -102,8 +102,8 @@ get_boot_params() {
   local hyp=$(hypervisor)
   [ $? -ne 0 ] && log_it "Failed to detect hypervisor type, bailing out of early init" && exit 10
 
-  case $hyp in 
-     xen-domU)
+  case $hyp in
+     xen-domU|xen-hvm)
           cat /proc/cmdline > /var/cache/cloud/cmdline
           sed -i "s/%/ /g" /var/cache/cloud/cmdline
           ;;
