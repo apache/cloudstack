@@ -3722,7 +3722,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             if (service == Service.Gateway) {
                 continue;
             }
-            svcRsp.setName(service.getName());response.setObjectName
+            svcRsp.setName(service.getName());
             List<ProviderResponse> providers = new ArrayList<ProviderResponse>();
             for (Provider provider : serviceProviderMap.get(service)) {
                 if (provider != null) {

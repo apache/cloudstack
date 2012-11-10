@@ -754,7 +754,7 @@ StaticNatServiceProvider {
                     }
                 }
 
-                SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(rulesTO);
+                SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(rulesTO, null);
                 answer = (SetStaticNatRulesAnswer) _agentMgr.send(lbDevice.getHostId(), cmd);
                 if (answer == null) {
                     return false;

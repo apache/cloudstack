@@ -1961,7 +1961,11 @@
                         });
                       }
                     }
-                    });
+                    if(args.context.ipAddresses[0].networkOfferingConserveMode == false) {
+                      /*
+                       (1) If IP is SourceNat, no StaticNat/VPN/PortForwarding/LoadBalancer can be enabled/added.
+                       */
+                      if (args.context.ipAddresses[0].issourcenat){
                         if(havingFirewallService == false) { //firewall is not supported in IP from VPC section (because ACL has already supported in tier from VPC section)
                           disallowedActions.push("firewall");
                         }
