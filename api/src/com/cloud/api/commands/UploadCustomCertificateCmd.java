@@ -28,25 +28,25 @@ import com.cloud.api.response.CustomCertificateResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 
-@Implementation(responseObject=CustomCertificateResponse.class, description="Uploads custom certificate")
+@Implementation(responseObject=CustomCertificateResponse.class, description="Uploads a custom certificate for the console proxy VMs to use for SSL. Can be used to upload a single certificate signed by a known CA. Can also be used, through multiple calls, to upload a chain of certificates from CA to the custom certificate itself.")
 public class UploadCustomCertificateCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UploadCustomCertificateCmd.class.getName());
 
     private static final String s_name = "uploadcustomcertificateresponse";
 
-    @Parameter(name=ApiConstants.CERTIFICATE,type=CommandType.STRING,required=true,description="the custom cert to be uploaded", length=65535)
+    @Parameter(name=ApiConstants.CERTIFICATE,type=CommandType.STRING,required=true,description="The certificate to be uploaded.", length=65535)
     private String certificate;
     
-    @Parameter(name=ApiConstants.ID,type=CommandType.INTEGER,required=false,description="the custom cert id in the chain")
+    @Parameter(name=ApiConstants.ID,type=CommandType.INTEGER,required=false,description="An integer providing the location in a chain that the certificate will hold. Usually, this can be left empty. When creating a chain, the top level certificate should have an ID of 1, with each step in the chain incrementing by one. Example, CA with id = 1, Intermediate CA with id = 2, Site certificate with ID = 3")
     private Integer index;
     
-    @Parameter(name=ApiConstants.NAME,type=CommandType.STRING,required=false,description="the alias of the certificate")
+    @Parameter(name=ApiConstants.NAME,type=CommandType.STRING,required=false,description="A name / alias for the certificate.")
     private String alias;
 
-    @Parameter(name=ApiConstants.PRIVATE_KEY,type=CommandType.STRING,required=false,description="the private key for the certificate", length=65535)
+    @Parameter(name=ApiConstants.PRIVATE_KEY,type=CommandType.STRING,required=false,description="The private key for the attached certificate.", length=65535)
     private String privateKey;
 
-    @Parameter(name=ApiConstants.DOMAIN_SUFFIX,type=CommandType.STRING,required=true,description="DNS domain suffix that the certificate is granted for")
+    @Parameter(name=ApiConstants.DOMAIN_SUFFIX,type=CommandType.STRING,required=true,description="DNS domain suffix that the certificate is granted for.")
     private String domainSuffix;
     
     public String getCertificate() {
