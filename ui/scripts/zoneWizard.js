@@ -1249,7 +1249,7 @@
       var data = args.data;
 
       var stepFns = {
-        addZone: function() {				
+        addZone: function() {		          
           message(dictionary['message.creating.zone']); 
 
           var array1 = [];
@@ -1258,6 +1258,13 @@
           if(networkType == "Advanced") {
             if(args.data.zone.guestcidraddress != null && args.data.zone.guestcidraddress.length > 0)
               array1.push("&guestcidraddress=" + todb(args.data.zone.guestcidraddress));
+						
+            if(args.data.zone.isolationMode != null) {
+              if(args.data.zone.isolationMode	== "SG")
+                array1.push("&securitygroupenabled=true");   
+              else if(args.data.zone.isolationMode	== "VLAN")
+							  array1.push("&securitygroupenabled=false");  
+            }									
           }
 
           array1.push("&name=" + todb(args.data.zone.name));
