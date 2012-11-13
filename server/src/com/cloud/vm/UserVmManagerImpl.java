@@ -3161,10 +3161,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         if (zone != null) {
             sc.setParameters("dataCenterId", zone);
-
-            if (state == null) {
-                sc.setParameters("stateNEQ", "Destroyed");
-            }
         }
         if (pod != null) {
             sc.setParameters("podId", pod);
