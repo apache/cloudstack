@@ -62,13 +62,16 @@
       var notification = action.notification ?
             action.notification : {};
       var messages = action.messages;
-      var messageArgs = { name: $detailView.find('tr.name td.value').html() };
       var id = args.id;
       var context = $detailView.data('view-args').context;
       var _custom = $detailView.data('_custom');
       var customAction = action.action.custom;
       var noAdd = action.noAdd;
       var noRefresh = additional.noRefresh;
+      var messageArgs = {
+        name: $detailView.find('tr.name td.value').html(),
+        context: context
+      };
 
       // Handle pre-action (occurs before any other behavior happens)
       if (preAction) {

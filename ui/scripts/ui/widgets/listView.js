@@ -23,7 +23,6 @@
       var listViewArgs = $instanceRow.closest('div.list-view').data('view-args');
       var notification = args.action.notification ? args.action.notification : {};
       var messages = args.action ? args.action.messages : {};
-      var messageArgs = { name: $instanceRow.find('td.name span').html() };
       var preAction = args.action ? args.action.preAction : {};
       var action = args.action ? args.action.action : {};
       var section;
@@ -32,6 +31,9 @@
         jsonObj: $instanceRow.data('jsonObj')
       };
       var $listView = $instanceRow.closest('.list-view');
+      var messageArgs = {
+        name: $instanceRow.find('td.name span').html()
+      };
 
       if (args.data) $.extend(true, data, args.data);
       if (listViewArgs) section = listViewArgs.section;
@@ -269,14 +271,17 @@
       };
 
       var context = $.extend({}, listViewArgs.context);
+      
       context[
         listViewArgs.activeSection
       ] = [$instanceRow.data('jsonObj')];
 
+      messageArgs.context = context;     
+
       if (!args.action.action.externalLink &&
           !args.action.createForm &&
           args.action.addRow != 'true' &&
-          !action.custom && !action.uiCustom)
+          !action.custom && !action.uiCustom) {
         cloudStack.dialog.confirm({
           message: messages.confirm(messageArgs),
           action: function() {
@@ -287,9 +292,9 @@
             });
           }
         });
-      else if (action.custom || action.uiCustom)
+      } else if (action.custom || action.uiCustom) {
         performAction();
-      else {
+      } else {
         var addRow = args.action.addRow == "false" ? false : true;
         var isHeader = args.action.isHeader;
         var createFormContext = $.extend({}, context);
