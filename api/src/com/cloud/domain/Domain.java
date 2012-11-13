@@ -23,6 +23,7 @@ import com.cloud.user.OwnedBy;
 /**
  * Domain defines the Domain object.
  */
+
 public interface Domain extends OwnedBy {
     public static final long ROOT_DOMAIN = 1L;
 

@@ -31,6 +31,7 @@ import java.util.regex.Matcher;
 import org.apache.log4j.Logger;
 
 import com.cloud.acl.ControlledEntity;
+import com.cloud.acl.Role;
 import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.commands.ListEventsCmd;
 import com.cloud.async.AsyncCommandQueued;
@@ -111,17 +112,8 @@ public class ApiDispatcher {
 
     	List<ControlledEntity> entitiesToAccess = new ArrayList<ControlledEntity>();
     	setupParameters(cmd, params, entitiesToAccess);
-        plugService(cmd);
 
-        if(!entitiesToAccess.isEmpty()){
-			 //owner
-			Account caller = UserContext.current().getCaller();
-			Account owner = s_instance._accountMgr.getActiveAccountById(cmd.getEntityOwnerId());
-			s_instance._accountMgr.checkAccess(caller, null, true, owner);
-			 
-			for(ControlledEntity entity : entitiesToAccess)
-			s_instance._accountMgr.checkAccess(caller, null, true, entity);
-        }
+        doAccessChecks(cmd, entitiesToAccess);
         
         try {
             UserContext ctx = UserContext.current();
@@ -162,10 +154,54 @@ public class ApiDispatcher {
         }
     }
 
-    public void dispatch(BaseCmd cmd, Map<String, String> params) {
+    private void doAccessChecks(BaseAsyncCreateCmd cmd,
+			List<ControlledEntity> entitiesToAccess) {
+
+		//owner
+		Account caller = UserContext.current().getCaller();
+		Account owner = s_instance._accountMgr.getActiveAccountById(cmd.getEntityOwnerId());
+
+		List<Role> callerRoles = determineRole(caller);
+		
+		List<Role> ownerRoles = determineRole(owner);
+		
+		//check permission to call this command for the caller
+		//this needs checking of static roles of the caller
+		checkACLOnCommand(cmd);
+		
+		//check that caller can access the owner account.
+		s_instance._accountMgr.checkAccess(caller, null, true, owner);
+		
+		checkACLOnEntities(caller, entitiesToAccess);
+
+	}
+    
+    
+    private void checkACLOnCommand(BaseAsyncCreateCmd cmd) {
+		// TODO Auto-generated method stub
+		//need to write an commandACLChecker adapter framework to check ACL on commands - default one will use the static roles by referring to commands.properties.
+    	//one can write another commandACLChecker to check access via custom roles.
+	}
+
+	private List<Role> determineRole(Account caller) {
+		// TODO Auto-generated method stub
+		List<Role> effectiveRoles = new ArrayList<Role>();
+		return effectiveRoles;
+		
+	}
+
+	private void checkACLOnEntities(Account caller, List<ControlledEntity> entitiesToAccess){
+		//checkACLOnEntities
+    	if(!entitiesToAccess.isEmpty()){
+			for(ControlledEntity entity : entitiesToAccess)
+			s_instance._accountMgr.checkAccess(caller, null, true, entity);
+       }
+
+    }
+
+	public void dispatch(BaseCmd cmd, Map<String, String> params) {
     	List<ControlledEntity> entitiesToAccess = new ArrayList<ControlledEntity>();
     	setupParameters(cmd, params, entitiesToAccess);
-        ApiDispatcher.plugService(cmd);
         
         if(!entitiesToAccess.isEmpty()){
 			 //owner
@@ -373,6 +409,13 @@ public class ApiDispatcher {
         }
 
         for (Field field : fields) {
+        	
+        	//plug Services
+        	PlugService plugServiceAnnotation = field.getAnnotation(PlugService.class);
+        	if(plugServiceAnnotation != null){
+        		plugService(field, cmd);
+        	}
+        	
             Parameter parameterAnnotation = field.getAnnotation(Parameter.class);
             if ((parameterAnnotation == null) || !parameterAnnotation.expose()) {
                 continue;
@@ -425,8 +468,13 @@ public class ApiDispatcher {
 	            if(checkAccess != null){
 	            	// Verify that caller can perform actions in behalf of vm owner
 	            	//acumulate all Controlled Entities together.
-	            	if(checkAccess.resourceType() != null){
-	            		 Class<?> entity = checkAccess.resourceType();
+	            	
+	            	//parse the array of resource types and in case of map check access on key or value or both as specified in @acl
+	            	//implement external dao for classes that need findByName
+	            	//for maps, specify access to be checkd on key or value.
+	            	
+	            	if(parameterAnnotation.resourceType() != null){
+	            		 Class<?>[] entity = parameterAnnotation.resourceType();
 	            				 
 	            		 if(ControlledEntity.class.isAssignableFrom(entity)){
 	                         if (s_logger.isDebugEnabled()) {
@@ -614,43 +662,29 @@ public class ApiDispatcher {
         return cal.getTime();
     }
 
-    public static void plugService(BaseCmd cmd) {
-
-        if (!ApiServer.isPluggableServiceCommand(cmd.getClass().getName())) {
-            return;
-        }
-        Class<?> clazz = cmd.getClass();
+    public static void plugService(Field field, BaseCmd cmd) {
         ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
-        do {
-            Field[] fields = clazz.getDeclaredFields();
-            for (Field field : fields) {
-                PlugService plugService = field.getAnnotation(PlugService.class);
-                if (plugService == null) {
-                    continue;
-                }
-                Class<?> fc = field.getType();
-                Object instance = null;
-                if (PluggableService.class.isAssignableFrom(fc)) {
-                    instance = locator.getPluggableService(fc);
-                }
 
-                if (instance == null) {
-                    throw new CloudRuntimeException("Unable to plug service " + fc.getSimpleName() + " in command " + clazz.getSimpleName());
-                }
+        Class<?> fc = field.getType();
+        Object instance = null;
+        if (PluggableService.class.isAssignableFrom(fc)) {
+            instance = locator.getPluggableService(fc);
+        }
 
-                try {
-                    field.setAccessible(true);
-                    field.set(cmd, instance);
-                } catch (IllegalArgumentException e) {
-                    s_logger.error("IllegalArgumentException at plugService for command " + cmd.getCommandName() + ", field " + field.getName());
-                    throw new CloudRuntimeException("Internal error at plugService for command " + cmd.getCommandName() + " [Illegal argumet at field " + field.getName() + "]");
-                } catch (IllegalAccessException e) {
-                    s_logger.error("Error at plugService for command " + cmd.getCommandName() + ", field " + field.getName() + " is not accessible.");
-                    throw new CloudRuntimeException("Internal error at plugService for command " + cmd.getCommandName() + " [field " + field.getName() + " is not accessible]");
-                }
-            }
-            clazz = clazz.getSuperclass();
-        } while (clazz != Object.class && clazz != null);
+        if (instance == null) {
+            throw new CloudRuntimeException("Unable to plug service " + fc.getSimpleName() + " in command " + cmd.getClass().getSimpleName());
+        }
+
+        try {
+            field.setAccessible(true);
+            field.set(cmd, instance);
+        } catch (IllegalArgumentException e) {
+            s_logger.error("IllegalArgumentException at plugService for command " + cmd.getCommandName() + ", field " + field.getName());
+            throw new CloudRuntimeException("Internal error at plugService for command " + cmd.getCommandName() + " [Illegal argumet at field " + field.getName() + "]");
+        } catch (IllegalAccessException e) {
+            s_logger.error("Error at plugService for command " + cmd.getCommandName() + ", field " + field.getName() + " is not accessible.");
+            throw new CloudRuntimeException("Internal error at plugService for command " + cmd.getCommandName() + " [field " + field.getName() + " is not accessible]");
+        }
     }
     
     

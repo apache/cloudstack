@@ -34,6 +34,7 @@ public interface Account extends ControlledEntity {
         enabled,
         locked
     }
+    
 
     public static final short ACCOUNT_TYPE_NORMAL = 0;
     public static final short ACCOUNT_TYPE_ADMIN = 1;
@@ -61,4 +62,5 @@ public interface Account extends ControlledEntity {
     public String getNetworkDomain();
     
     public Long getDefaultZoneId();
+    
 }

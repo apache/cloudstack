@@ -26,6 +26,6 @@ import java.lang.annotation.Target;
 @Target({ FIELD })
 public @interface ACL {
 	
-
-	Class<?> resourceType();
+	boolean checkKeyAccess() default false;
+	boolean checkValueAccess() default false;
 }

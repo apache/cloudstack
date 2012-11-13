@@ -82,6 +82,7 @@ import org.apache.http.protocol.ResponseServer;
 import org.apache.log4j.Logger;
 
 import com.cloud.acl.ControlledEntity;
+import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.ExceptionResponse;
 import com.cloud.api.response.ListResponse;
@@ -109,23 +110,22 @@ import com.cloud.user.UserVO;
 import com.cloud.utils.IdentityProxy;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CSExceptionErrorCode;
 import com.cloud.uuididentity.dao.IdentityDao;
+import com.cloud.acl.APIAccessChecker;
 
 
 public class ApiServer implements HttpRequestHandler {
     private static final Logger s_logger = Logger.getLogger(ApiServer.class.getName());
     private static final Logger s_accessLogger = Logger.getLogger("apiserver." + ApiServer.class.getName());
 
-    public static final short ADMIN_COMMAND = 1;
-    public static final short DOMAIN_ADMIN_COMMAND = 4;
-    public static final short RESOURCE_DOMAIN_ADMIN_COMMAND = 2;
-    public static final short USER_COMMAND = 8;
     public static boolean encodeApiResponse = false;
     public static String jsonContentType = "text/javascript";
     private Properties _apiCommands = null;
@@ -135,28 +135,14 @@ public class ApiServer implements HttpRequestHandler {
     private AsyncJobManager _asyncMgr = null;
     private Account _systemAccount = null;
     private User _systemUser = null;
-
     private static int _workerCount = 0;
-
     private static ApiServer s_instance = null;
-    private static List<String> s_userCommands = null;
-    private static List<String> s_resellerCommands = null; // AKA domain-admin
-    private static List<String> s_adminCommands = null;
-    private static List<String> s_resourceDomainAdminCommands = null;
-    private static List<String> s_allCommands = null;
-    private static List<String> s_pluggableServiceCommands = null;
     private static final DateFormat _dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
-
+    @Inject(adapter = APIAccessChecker.class)
+    protected Adapters<APIAccessChecker> _apiAccessCheckers;
+    
     private static ExecutorService _executor = new ThreadPoolExecutor(10, 150, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("ApiServer"));
 
-    static {
-        s_userCommands = new ArrayList<String>();
-        s_resellerCommands = new ArrayList<String>();
-        s_adminCommands = new ArrayList<String>();
-        s_resourceDomainAdminCommands = new ArrayList<String>();
-        s_allCommands = new ArrayList<String>();
-        s_pluggableServiceCommands = new ArrayList<String>();
-    }
 
     private ApiServer() {
     }
@@ -173,103 +159,10 @@ public class ApiServer implements HttpRequestHandler {
         return s_instance;
     }
 
-    public Properties get_apiCommands() {
-        return _apiCommands;
-    }
-
-    public static boolean isPluggableServiceCommand(String cmdClassName) {
-        if (s_pluggableServiceCommands != null) {
-            if (s_pluggableServiceCommands.contains(cmdClassName)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private String[] getPluggableServicesApiConfigs() {
-        List<String> pluggableServicesApiConfigs = new ArrayList<String>();
-
-        ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
-        List<PluggableService> services = locator.getAllPluggableServices();
-        for (PluggableService service : services) {
-            pluggableServicesApiConfigs.add(service.getPropertiesFile());
-        }
-        return pluggableServicesApiConfigs.toArray(new String[0]);
-    }
-
-    private void processConfigFiles(String[] apiConfig, boolean pluggableServicesConfig) {
-        try {
-            if (_apiCommands == null) {
-                _apiCommands = new Properties();
-            }
-            Properties preProcessedCommands = new Properties();
-            if (apiConfig != null) {
-                for (String configFile : apiConfig) {
-                    File commandsFile = PropertiesUtil.findConfigFile(configFile);
-                    if (commandsFile != null) {
-                        try {
-                            preProcessedCommands.load(new FileInputStream(commandsFile));
-                        } catch (FileNotFoundException fnfex) {
-                            // in case of a file within a jar in classpath, try to open stream using url
-                            InputStream stream = PropertiesUtil.openStreamFromURL(configFile);
-                            if (stream != null) {
-                                preProcessedCommands.load(stream);
-                            } else {
-                                s_logger.error("Unable to find properites file", fnfex);
-                            }
-                        }
-                    }
-                }
-                for (Object key : preProcessedCommands.keySet()) {
-                    String preProcessedCommand = preProcessedCommands.getProperty((String) key);
-                    String[] commandParts = preProcessedCommand.split(";");
-                    _apiCommands.put(key, commandParts[0]);
-
-                    if (pluggableServicesConfig) {
-                        s_pluggableServiceCommands.add(commandParts[0]);
-                    }
-
-                    if (commandParts.length > 1) {
-                        try {
-                            short cmdPermissions = Short.parseShort(commandParts[1]);
-                            if ((cmdPermissions & ADMIN_COMMAND) != 0) {
-                                s_adminCommands.add((String) key);
-                            }
-                            if ((cmdPermissions & RESOURCE_DOMAIN_ADMIN_COMMAND) != 0) {
-                                s_resourceDomainAdminCommands.add((String) key);
-                            }
-                            if ((cmdPermissions & DOMAIN_ADMIN_COMMAND) != 0) {
-                                s_resellerCommands.add((String) key);
-                            }
-                            if ((cmdPermissions & USER_COMMAND) != 0) {
-                                s_userCommands.add((String) key);
-                            }
-                        } catch (NumberFormatException nfe) {
-                            s_logger.info("Malformed command.properties permissions value, key = " + key + ", value = " + preProcessedCommand);
-                        }
-                    }
-                }
-
-                s_allCommands.addAll(s_adminCommands);
-                s_allCommands.addAll(s_resourceDomainAdminCommands);
-                s_allCommands.addAll(s_userCommands);
-                s_allCommands.addAll(s_resellerCommands);
-            }
-        } catch (FileNotFoundException fnfex) {
-            s_logger.error("Unable to find properites file", fnfex);
-        } catch (IOException ioex) {
-            s_logger.error("Exception loading properties file", ioex);
-        }
-    }
 
     public void init(String[] apiConfig) {
         BaseCmd.setComponents(new ApiResponseHelper());
         BaseListCmd.configure();
-        processConfigFiles(apiConfig, false);
-
-        // get commands for all pluggable services
-        String[] pluggableServicesApiConfigs = getPluggableServicesApiConfigs();
-        processConfigFiles(pluggableServicesApiConfigs, true);
 
         ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
         _accountMgr = locator.getManager(AccountManager.class);
@@ -490,7 +383,6 @@ public class ApiServer implements HttpRequestHandler {
             } else {
             	List<ControlledEntity> entitiesToAccess = new ArrayList<ControlledEntity>();
                 ApiDispatcher.setupParameters(cmdObj, params, entitiesToAccess);
-                ApiDispatcher.plugService(cmdObj);
                 
                 if(!entitiesToAccess.isEmpty()){
 	                Account owner = s_instance._accountMgr.getActiveAccountById(cmdObj.getEntityOwnerId());
@@ -610,11 +502,6 @@ public class ApiServer implements HttpRequestHandler {
          */
     }
 
-    private static boolean isCommandAvailable(String commandName) {
-        boolean isCommandAvailable = false;
-        isCommandAvailable = s_allCommands.contains(commandName);
-        return isCommandAvailable;
-    }
 
     public boolean verifyRequest(Map<String, Object[]> requestParameters, Long userId) throws ServerApiException {
         try {
@@ -633,18 +520,15 @@ public class ApiServer implements HttpRequestHandler {
 
             // if userId not null, that mean that user is logged in
             if (userId != null) {
-                Long accountId = ApiDBUtils.findUserById(userId).getAccountId();
-                Account userAccount = _accountMgr.getAccount(accountId);
-                short accountType = userAccount.getType();
-
-                if (!isCommandAvailable(accountType, commandName)) {
+            	User user = ApiDBUtils.findUserById(userId);
+                if (!isCommandAvailable(user, commandName)) {
                     s_logger.warn("The given command:" + commandName + " does not exist");
                     throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command does not exist");
                 }
                 return true;
             } else {
                 // check against every available command to see if the command exists or not
-                if (!isCommandAvailable(commandName) && !commandName.equals("login") && !commandName.equals("logout")) {
+                if (!isCommandAvailable(null, commandName) && !commandName.equals("login") && !commandName.equals("logout")) {
                     s_logger.warn("The given command:" + commandName + " does not exist");
                     throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command does not exist");
                 }
@@ -738,7 +622,7 @@ public class ApiServer implements HttpRequestHandler {
 
             UserContext.updateContext(user.getId(), account, null);
 
-            if (!isCommandAvailable(account.getType(), commandName)) {
+            if (!isCommandAvailable(user, commandName)) {
                 s_logger.warn("The given command:" + commandName + " does not exist");
                 throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command:" + commandName + " does not exist");
             }
@@ -876,25 +760,16 @@ public class ApiServer implements HttpRequestHandler {
         return true;
     }
 
-    public static boolean isCommandAvailable(short accountType, String commandName) {
+    private boolean isCommandAvailable(User user, String commandName) {
         boolean isCommandAvailable = false;
-        switch (accountType) {
-        case Account.ACCOUNT_TYPE_ADMIN:
-            isCommandAvailable = s_adminCommands.contains(commandName);
-            break;
-        case Account.ACCOUNT_TYPE_DOMAIN_ADMIN:
-            isCommandAvailable = s_resellerCommands.contains(commandName);
-            break;
-        case Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN:
-            isCommandAvailable = s_resourceDomainAdminCommands.contains(commandName);
-            break;
-        case Account.ACCOUNT_TYPE_NORMAL:
-            isCommandAvailable = s_userCommands.contains(commandName);
-            break;
+        
+        for(APIAccessChecker apichecker : _apiAccessCheckers){
+        	isCommandAvailable = apichecker.canAccessAPI(user, commandName);
         }
+        
         return isCommandAvailable;
     }
-
+    
     // FIXME: rather than isError, we might was to pass in the status code to give more flexibility
     private void writeResponse(HttpResponse resp, final String responseText, final int statusCode, String responseType, String reasonPhrase) {
         try {

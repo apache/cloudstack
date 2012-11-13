@@ -44,4 +44,8 @@ public @interface Parameter {
     int length() default 255;
 
     String since() default "";
+    
+    Class<?>[] resourceType() default Object.class;
+    
+    String retrieveMethod() default "getById";
 }

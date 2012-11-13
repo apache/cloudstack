@@ -18,6 +18,7 @@ package com.cloud.network.security;
 
 import com.cloud.acl.ControlledEntity;
 
+@doc("")
 public interface SecurityGroup extends ControlledEntity {
     long getId();
 
