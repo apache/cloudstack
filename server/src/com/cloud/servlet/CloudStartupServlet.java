@@ -16,6 +16,9 @@
 // under the License.
 package com.cloud.servlet;
 
+import java.util.Map;
+import java.util.Set;
+
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import javax.servlet.ServletException;
@@ -28,7 +31,12 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.server.ConfigurationServer;
 import com.cloud.server.ManagementServer;
 import com.cloud.utils.SerialVersionUID;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.component.SystemIntegrityChecker;
+import com.cloud.utils.component.LegacyComponentLocator.ComponentInfo;
+import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.db.GenericDaoBase;
 
 public class CloudStartupServlet extends HttpServlet implements ServletContextListener {
 	public static final Logger s_logger = Logger.getLogger(CloudStartupServlet.class.getName());
@@ -71,4 +79,50 @@ public class CloudStartupServlet extends HttpServlet implements ServletContextLi
 	@Override
 	public void contextDestroyed(ServletContextEvent sce) {
 	}
+
+	//
+	// following should be moved to CloudStackServer component later to encapsulate business logic in one place
+	//
+	private void initCloudStackComponents() {
+        runCheckers();
+        startDaos();    // daos should not be using managers and adapters.
+     
+/*        
+        configureManagers();
+        configureAdapters();
+        startManagers();
+        startAdapters();
+*/	
+	}
+	
+    private void runCheckers() {
+		Map<String, SystemIntegrityChecker> checkers = ComponentContext.getApplicationContext().getBeansOfType(
+			SystemIntegrityChecker.class);
+		
+		for(SystemIntegrityChecker checker : checkers.values()) {
+			try {
+				checker.check();
+			} catch (Exception e) {
+                s_logger.error("Problems with running checker:" + checker.getClass().getName(), e);
+                System.exit(1);
+			}
+		}
+    }
+	
+    private void startDaos() {
+		@SuppressWarnings("rawtypes")
+		Map<String, GenericDaoBase> daos = ComponentContext.getApplicationContext().getBeansOfType(
+				GenericDaoBase.class);
+			
+		for(GenericDaoBase dao : daos.values()) {
+			try {
+				
+				// dao.configure(dao.getClass().getSimpleName(), params);
+			} catch (Exception e) {
+                s_logger.error("Problems with running checker:" + dao.getClass().getName(), e);
+                System.exit(1);
+			}
+		}
+    }
+	
 }
