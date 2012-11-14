@@ -18,11 +18,11 @@
  */
 package org.apache.cloudstack.storage.image.store;
 
-import org.apache.cloudstack.storage.image.Template;
+import org.apache.cloudstack.storage.image.TemplateInfo;
 import org.apache.cloudstack.storage.image.downloader.ImageDownloader;
 
-public interface ImageDataStore {
-	Template registerTemplate(long templateId);
+public interface ImageDataStore extends ImageDataStoreInfo {
+	TemplateInfo registerTemplate(long templateId);
 	String grantAccess(long templateId, long endPointId);
 	boolean revokeAccess(long templateId, long endPointId);
 	boolean deleteTemplate(long templateId);

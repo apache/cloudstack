@@ -16,15 +16,27 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.image;
+package org.apache.cloudstack.engine.subsystem.api.storage;
 
-public interface ImageService {
-	boolean registerTemplate(long templateId, long imageStoreId);
-	boolean deleteTemplate(long templateId);
-	long registerIso(String isoUrl, long accountId);
-	boolean deleteIso(long isoId);
-	String grantTemplateAccess(long templateId, long endpointId);
-	boolean revokeTemplateAccess(long templateId, long endpointId);
-	String grantIsoAccess(long isoId, long endpointId);
-	boolean revokeIsoAccess(long isoId, long endpointId);
+
+import java.util.Date;
+
+import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
+import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeType;
+
+import com.cloud.storage.Volume;
+
+public interface VolumeInfo {
+	public long getSize();
+	public String getUuid();
+	public String getPath();
+	public PrimaryDataStoreInfo getDataStore() ;
+	public String getTemplateUuid();
+	public String getTemplatePath() ;
+	public VolumeType getType();
+	public VolumeDiskType getDiskType();
+	public long getId();
+	public Volume.State getCurrentState();
+	public Volume.State getDesiredState();
+	public Date getCreatedData();
 }

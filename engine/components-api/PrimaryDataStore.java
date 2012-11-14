@@ -18,52 +18,17 @@
  */
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
+import java.util.List;
+
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
-import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeType;
 
 
-public interface VolumeService {
-
-	/**
-	 * 
-	 */
-	VolumeEntity allocateVolumeInDb(long size, VolumeType type,String volName, Long templateId);
-	
-    /**
-     * Creates the volume based on the given criteria
-     * 
-     * @param cmd
-     *            
-     * @return the volume object
-     */
-	VolumeEntity createVolume(long volumeId, long dataStoreId, VolumeDiskType diskType);
-
-    /**
-     * Delete volume
-     * @param volumeId
-     * @return
-     * @throws ConcurrentOperationException
-     */
-    boolean deleteVolume(long volumeId);
-    
-    /**
-     * 
-     */
-    boolean cloneVolume(long volumeId, long baseVolId);
-    
-    /**
-     * 
-     */
-    boolean createVolumeFromSnapshot(long volumeId, long snapshotId);
-    
-    /**
-     * 
-     */
-    String grantAccess(long volumeId, long endpointId);
-    
-    /**
-     * 
-     */
-    boolean rokeAccess(long volumeId, long endpointId);
+public interface PrimaryDataStore {
+	VolumeEntity getVolume(String id);
+	List<VolumeEntity> getVolumes();
+	boolean deleteVolume(VolumeEntity id);
+	VolumeEntity createVolume(String id, VolumeDiskType diskType);
+	List<EndPoint> getEndPoints();
+	PrimaryDataStoreInfo getDataStoreInfo();
 }

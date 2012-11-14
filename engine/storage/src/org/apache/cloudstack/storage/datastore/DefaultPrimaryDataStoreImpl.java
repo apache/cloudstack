@@ -8,8 +8,8 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
 import org.apache.cloudstack.storage.HypervisorHostEndPoint;
 import org.apache.cloudstack.storage.datastore.db.DataStoreVO;
@@ -17,6 +17,7 @@ import org.apache.cloudstack.storage.datastore.driver.PrimaryDataStoreDriver;
 
 import org.apache.cloudstack.storage.volume.VolumeEntityImpl;
 import org.apache.cloudstack.storage.volume.VolumeEvent;
+import org.apache.cloudstack.storage.volume.VolumeObject;
 import org.apache.cloudstack.storage.volume.db.VolumeDao;
 import org.apache.cloudstack.storage.volume.db.VolumeVO;
 
@@ -24,6 +25,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.component.ComponentInject;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -45,14 +47,14 @@ public class DefaultPrimaryDataStoreImpl implements PrimaryDataStore {
 	}
 	
 	@Override
-	public VolumeEntity getVolume(long id) {
+	public VolumeInfo getVolume(long id) {
 		VolumeVO volumeVO = volumeDao.findById(id);
-		VolumeEntity vol = new VolumeEntityImpl(this, volumeVO);
+		VolumeObject vol = new VolumeObject(this, volumeVO);
 		return vol;
 	}
 
 	@Override
-	public List<VolumeEntity> getVolumes() {
+	public List<VolumeInfo> getVolumes() {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -64,39 +66,10 @@ public class DefaultPrimaryDataStoreImpl implements PrimaryDataStore {
 	}
 
 	@Override
-	public VolumeEntity createVolume(long id, VolumeDiskType diskType) {
-		/*
-		VolumeEntity vol = this.getVolume(id);
-		if (vol == null) {
-			return null;
-		}
+	public VolumeInfo createVolume(VolumeInfo vol, VolumeDiskType diskType) {
 		
-		if (!pdsInfo.isVolumeDiskTypeSupported(diskType)) {
-			return null;
-		}
 		
-		boolean result = vol.stateTransit(VolumeEvent.CreateRequested);
-		if (!result) {
-			return null;
-		}
-		
-		try {
-			vol.setVolumeDiskType(diskType);
-			result = this.driver.createVolume(vol);
-			vol.update();
-			return vol;
-		} catch (Exception e) {
-			result = false;
-			s_logger.debug("Failed to create volume: " + e.toString());
-			throw new CloudRuntimeException(e.toString());
-		} finally {
-			if (result == true) {
-				vol.stateTransit(VolumeEvent.OperationSucceeded);
-			} else {
-				vol.stateTransit(VolumeEvent.OperationFailed);
-			}
-		}*/
-		return null;
+	
 	}
 
 	@Override
@@ -120,5 +93,52 @@ public class DefaultPrimaryDataStoreImpl implements PrimaryDataStore {
 	public PrimaryDataStoreInfo getDataStoreInfo() {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	@Override
+	public boolean isHypervisorSupported(HypervisorType hypervisor) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean isLocalStorageSupported() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean isVolumeDiskTypeSupported(VolumeDiskType diskType) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public long getCapacity() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public long getAvailableCapacity() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public VolumeObject createVolume(VolumeObject vo, VolumeDiskType diskType) {
+		if (!pdsInfo.isVolumeDiskTypeSupported(diskType)) {
+			return null;
+		}
+
+		vo.setVolumeDiskType(diskType);
+		this.driver.createVolume(vo);
+		return vo;
+	}
+
+	@Override
+	public boolean exists(VolumeInfo vi) {
+		// TODO Auto-generated method stub
+		return false;
 	}
 }

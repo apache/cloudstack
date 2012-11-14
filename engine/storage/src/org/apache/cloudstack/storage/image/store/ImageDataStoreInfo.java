@@ -16,29 +16,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.image;
+package org.apache.cloudstack.storage.image.store;
 
-import org.apache.cloudstack.storage.image.db.ImageDataVO;
-import org.apache.cloudstack.storage.image.store.ImageDataStore;
-
-public class Template {
-    protected ImageDataVO imageVO;
-    protected ImageDataStore dataStore;
-    public Template(ImageDataStore dataStore, ImageDataVO imageVO) {
-        this.dataStore = dataStore;
-        this.imageVO = imageVO;
-    }
-
-    public ImageDataStore getImageDataStore() {
-        return this.dataStore;
-    }
-    
-    public void setImageDataStoreId(long dataStoreId) {
-    	imageVO.setImageDataStoreId(dataStoreId);
-    }
-    
-    public long getImageDataStoreId() {
-    	return imageVO.getImageDataStoreId();
-    }
-
+public interface ImageDataStoreInfo {
+	public long getImageDataStoreId();
 }

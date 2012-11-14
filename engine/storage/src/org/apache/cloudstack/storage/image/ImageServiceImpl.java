@@ -20,6 +20,8 @@ package org.apache.cloudstack.storage.image;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.engine.cloud.entity.api.TemplateEntity;
+import org.apache.cloudstack.engine.subsystem.api.storage.ImageService;
 import org.apache.cloudstack.storage.image.downloader.ImageDownloader;
 import org.apache.cloudstack.storage.image.manager.ImageDataStoreManager;
 import org.apache.cloudstack.storage.image.provider.ImageDataStoreProviderManager;
@@ -29,10 +31,12 @@ public class ImageServiceImpl implements ImageService {
 
 	@Inject
 	ImageDataStoreProviderManager imageStoreProviderMgr;
+	@Inject
+	
 	@Override
 	public boolean registerTemplate(long templateId, long imageStoreId) {
 		ImageDataStore ids = imageStoreProviderMgr.getDataStore(imageStoreId);
-		Template template = ids.registerTemplate(templateId);
+		TemplateInfo template = ids.registerTemplate(templateId);
 		if (ids.needDownloadToCacheStorage()) {
 			ImageDownloader imageDl = ids.getImageDownloader();
 			imageDl.downloadImage(template);
@@ -82,4 +86,9 @@ public class ImageServiceImpl implements ImageService {
 		return false;
 	}
 
+	@Override
+	public TemplateEntity getTemplateEntity(long templateId) {
+		TemplateObject to = imageStoreProviderMgr.getTemplate(templateId);
+		return new TemplateEntityImpl(to);
+	}
 }

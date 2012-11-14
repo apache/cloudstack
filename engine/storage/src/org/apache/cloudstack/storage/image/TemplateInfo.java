@@ -16,19 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.engine.subsystem.api.storage;
+package org.apache.cloudstack.storage.image;
 
-import java.util.List;
+import org.apache.cloudstack.storage.image.store.ImageDataStoreInfo;
 
-import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
-import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
-
-
-public interface PrimaryDataStore {
-	VolumeEntity getVolume(long id);
-	List<VolumeEntity> getVolumes();
-	boolean deleteVolume(long id);
-	VolumeEntity createVolume(long id, VolumeDiskType diskType);
-	List<EndPoint> getEndPoints();
-	PrimaryDataStoreInfo getDataStoreInfo();
+public interface TemplateInfo {
+	ImageDataStoreInfo getImageDataStore();
 }

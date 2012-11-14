@@ -16,14 +16,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.image.provider;
+package org.apache.cloudstack.storage.image;
 
-import org.apache.cloudstack.storage.image.TemplateObject;
-import org.apache.cloudstack.storage.image.store.ImageDataStore;
+public class TemplateObject implements TemplateInfo {
 
-public interface ImageDataStoreProviderManager {
-	public ImageDataStoreProvider getProvider(long providerId);
-	public ImageDataStore getDataStore(long dataStoreId);
-	public ImageDataStore getDataStoreFromTemplateId(long templateId);
-	public TemplateObject getTemplate(long templateId);
 }

@@ -16,9 +16,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage;
+package org.apache.cloudstack.engine.subsystem.api.storage;
 
 import java.util.List;
+
+import org.apache.cloudstack.engine.cloud.entity.api.TemplateEntity;
+import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
+import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
+import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeType;
 
 import com.cloud.deploy.DeploymentPlan;
 
@@ -56,4 +61,8 @@ public interface StorageOrchestrator {
      * If attaching a volume in allocated state to a running vm, need to create this volume
      */
     void prepareAttachDiskToVM(long diskId, long vmId, String reservationId);
+    
+    boolean createVolume(VolumeEntity volume, long dataStoreId, VolumeDiskType diskType);
+    boolean createVolumeFromTemplate(VolumeEntity volume, long dataStoreId, VolumeDiskType dis, TemplateEntity template);
+    VolumeEntity allocateVolumeInDb(long size, VolumeType type,String volName, Long templateId);
 }

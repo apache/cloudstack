@@ -16,14 +16,18 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.image.provider;
+package org.apache.cloudstack.engine.subsystem.api.storage;
 
-import org.apache.cloudstack.storage.image.TemplateObject;
-import org.apache.cloudstack.storage.image.store.ImageDataStore;
+import org.apache.cloudstack.engine.cloud.entity.api.TemplateEntity;
 
-public interface ImageDataStoreProviderManager {
-	public ImageDataStoreProvider getProvider(long providerId);
-	public ImageDataStore getDataStore(long dataStoreId);
-	public ImageDataStore getDataStoreFromTemplateId(long templateId);
-	public TemplateObject getTemplate(long templateId);
+public interface ImageService {
+	boolean registerTemplate(long templateId, long imageStoreId);
+	boolean deleteTemplate(long templateId);
+	long registerIso(String isoUrl, long accountId);
+	boolean deleteIso(long isoId);
+	String grantTemplateAccess(long templateId, long endpointId);
+	boolean revokeTemplateAccess(long templateId, long endpointId);
+	String grantIsoAccess(long isoId, long endpointId);
+	boolean revokeIsoAccess(long isoId, long endpointId);
+	TemplateEntity getTemplateEntity(long templateId);
 }

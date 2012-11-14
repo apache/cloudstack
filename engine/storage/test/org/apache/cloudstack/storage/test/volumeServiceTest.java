@@ -27,7 +27,7 @@ import java.util.concurrent.Executors;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.QCOW2;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VHD;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VMDK;
@@ -36,13 +36,13 @@ import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskTyp
 import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeTypeHelper;
 import org.apache.cloudstack.storage.datastore.DefaultPrimaryDataStoreImpl;
 import org.apache.cloudstack.storage.datastore.provider.DefaultPrimaryDatastoreProviderImpl;
-import org.apache.cloudstack.storage.datastore.provider.PrimaryDataStoreProvider;
 import org.apache.cloudstack.storage.image.format.ISO;
 import org.apache.cloudstack.storage.image.format.ImageFormat;
 import org.apache.cloudstack.storage.image.format.ImageFormatHelper;
 import org.apache.cloudstack.storage.image.format.OVA;
 import org.apache.cloudstack.storage.image.format.Unknown;
 import org.apache.cloudstack.storage.volume.VolumeMotionService;
+import org.apache.cloudstack.storage.volume.VolumeService;
 import org.apache.cloudstack.storage.volume.db.VolumeDao;
 
 import org.junit.Before;

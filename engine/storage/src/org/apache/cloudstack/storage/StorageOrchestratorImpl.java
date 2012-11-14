@@ -21,16 +21,27 @@ package org.apache.cloudstack.storage;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.engine.cloud.entity.api.TemplateEntity;
+import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectBackupStorageOperationState;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.StorageOrchestrator;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateProfile;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeProfile;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeStrategy;
+import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
+import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeType;
+import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
+import org.apache.cloudstack.storage.datastore.manager.PrimaryDataStoreManager;
 import org.apache.cloudstack.storage.image.ImageManager;
 import org.apache.cloudstack.storage.manager.BackupStorageManager;
 import org.apache.cloudstack.storage.manager.SecondaryStorageManager;
+import org.apache.cloudstack.storage.volume.VolumeEntityImpl;
 import org.apache.cloudstack.storage.volume.VolumeManager;
+import org.apache.cloudstack.storage.volume.VolumeObject;
+import org.apache.cloudstack.storage.volume.VolumeService;
 import org.apache.log4j.Logger;
 
 import com.cloud.deploy.DeploymentPlan;
@@ -78,6 +89,10 @@ public class StorageOrchestratorImpl implements StorageOrchestrator {
 	ImageManager _templateMgr;
 	@Inject
 	VMTemplateDao _templateDao;
+	@Inject
+	VolumeService volumeService;
+	@Inject
+	PrimaryDataStoreManager primaryStorageMgr;
 	
 	@DB
 	protected Volume copyVolumeFromBackupStorage(VolumeVO volume, DataStore destStore, String reservationId) throws NoTransitionException {
@@ -311,5 +326,30 @@ public class StorageOrchestratorImpl implements StorageOrchestrator {
 		volume = _volumeDao.findById(diskId);
 		volume.setInstanceId(vmId);
 		_volumeDao.update(volume.getId(), volume);
+	}
+
+
+
+	@Override
+	public boolean createVolume(VolumeEntity volume, long dataStoreId, VolumeDiskType diskType) {
+		VolumeEntityImpl vei = ((VolumeEntityImpl)volume);
+		VolumeInfo vi = volumeService.createVolume(vei.getVolumeInfo(), dataStoreId, diskType);
+		vei.setVolumeInfo(vi);
+		return true;
+	}
+
+	@Override
+	public VolumeEntity allocateVolumeInDb(long size, VolumeType type, String volName, Long templateId) {
+		return volumeService.allocateVolumeInDb(size, type, volName, templateId);
+	}
+	
+	@Override
+	public boolean createVolumeFromTemplate(VolumeEntity volume, long dataStoreId, VolumeDiskType diskType, TemplateEntity template) {
+		PrimaryDataStore pd = primaryStorageMgr.getPrimaryDataStore(dataStoreId);
+		boolean existsOnPrimaryStorage = pd.templateExists(template.getId());
+		if (!existsOnPrimaryStorage) {
+			
+		}
+		return false;
 	}
 }

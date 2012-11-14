@@ -16,43 +16,47 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.volume;
+package org.apache.cloudstack.storage.image;
 
 import java.lang.reflect.Method;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.cloudstack.engine.cloud.entity.api.SnapshotEntity;
-import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
-import org.apache.cloudstack.engine.datacenter.entity.api.StorageEntity;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
-import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeType;
+import org.apache.cloudstack.engine.cloud.entity.api.TemplateEntity;
+import org.apache.cloudstack.storage.image.db.ImageDataVO;
+import org.apache.cloudstack.storage.image.store.ImageDataStore;
+import org.apache.cloudstack.storage.image.store.ImageDataStoreInfo;
 
-public class VolumeEntityImpl implements VolumeEntity {
-	private VolumeInfo volumeInfo;
-	
-	public VolumeEntityImpl(VolumeInfo volumeObject) {
-		this.volumeInfo = volumeObject;
-	}
-	
-	public VolumeInfo getVolumeInfo() {
-		return volumeInfo;
-	}
-	
-	public void setVolumeInfo(VolumeInfo vi) {
-		this.volumeInfo = vi;
-	}
-	
-	@Override 
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Storage.TemplateType;
+
+public class TemplateEntityImpl implements TemplateEntity {
+	protected TemplateInfo templateInfo;
+    public TemplateEntityImpl(TemplateInfo templateInfo) {
+       this.templateInfo = templateInfo;
+    }
+
+    public ImageDataStoreInfo getImageDataStore() {
+        return templateInfo.getImageDataStore();
+    }
+
+    
+    public long getImageDataStoreId() {
+    	return getImageDataStore().getImageDataStoreId();
+    }
+
+	@Override
 	public String getUuid() {
-		return volumeInfo.getUuid();
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 	@Override
 	public long getId() {
-		return volumeInfo.getId();
+		// TODO Auto-generated method stub
+		return 0;
 	}
 
 	@Override
@@ -63,17 +67,20 @@ public class VolumeEntityImpl implements VolumeEntity {
 
 	@Override
 	public String getCurrentState() {
-		return volumeInfo.getCurrentState().toString();
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 	@Override
 	public String getDesiredState() {
-		return volumeInfo.getDesiredState().toString();
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 	@Override
 	public Date getCreatedTime() {
-		return volumeInfo.getCreatedData();
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 	@Override
@@ -103,19 +110,19 @@ public class VolumeEntityImpl implements VolumeEntity {
 	@Override
 	public void addDetail(String source, String name, String value) {
 		// TODO Auto-generated method stub
-
+		
 	}
 
 	@Override
 	public void delDetail(String source, String name, String value) {
 		// TODO Auto-generated method stub
-
+		
 	}
 
 	@Override
 	public void updateDetail(String source, String name, String value) {
 		// TODO Auto-generated method stub
-
+		
 	}
 
 	@Override
@@ -125,93 +132,147 @@ public class VolumeEntityImpl implements VolumeEntity {
 	}
 
 	@Override
-	public SnapshotEntity takeSnapshotOf(boolean full) {
+	public boolean isFeatured() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean isPublicTemplate() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean isExtractable() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public String getName() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public String reserveForMigration(long expirationTime) {
+	public ImageFormat getFormat() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public void migrate(String reservationToken) {
+	public boolean isRequiresHvm() {
 		// TODO Auto-generated method stub
-
+		return false;
 	}
 
 	@Override
-	public VolumeEntity setupForCopy() {
+	public String getDisplayText() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public void copy(VolumeEntity dest) {
+	public boolean getEnablePassword() {
 		// TODO Auto-generated method stub
-
+		return false;
 	}
 
 	@Override
-	public void attachTo(String vm, long deviceId) {
+	public boolean getEnableSshKey() {
 		// TODO Auto-generated method stub
-
+		return false;
 	}
 
 	@Override
-	public void detachFrom() {
+	public boolean isCrossZones() {
 		// TODO Auto-generated method stub
-
+		return false;
 	}
 
 	@Override
-	public void destroy() {
+	public Date getCreated() {
 		// TODO Auto-generated method stub
-
+		return null;
 	}
 
 	@Override
-	public long getSize() {
+	public long getGuestOSId() {
 		// TODO Auto-generated method stub
 		return 0;
 	}
 
 	@Override
-	public String getTemplatePath() {
+	public boolean isBootable() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public TemplateType getTemplateType() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public String getTemplateUuid() {
+	public HypervisorType getHypervisorType() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public VolumeDiskType getDiskType() {
+	public int getBits() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public String getUniqueName() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public VolumeType getType() {
+	public String getUrl() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public StorageEntity getDataStore() {
+	public String getChecksum() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public void setPath(String path) {
+	public Long getSourceTemplateId() {
 		// TODO Auto-generated method stub
+		return null;
+	}
 
+	@Override
+	public String getTemplateTag() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Map getDetails() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public long getAccountId() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public long getDomainId() {
+		// TODO Auto-generated method stub
+		return 0;
 	}
 
 }

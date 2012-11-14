@@ -21,16 +21,22 @@ package org.apache.cloudstack.storage.volume;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
 import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeType;
+import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
 import org.apache.cloudstack.storage.datastore.manager.PrimaryDataStoreManager;
 import org.apache.cloudstack.storage.volume.db.VolumeDao;
+import org.apache.cloudstack.storage.volume.db.VolumeVO;
 
 import org.springframework.stereotype.Service;
 
+import com.cloud.storage.Volume;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.exception.CloudRuntimeException;
+
+//1. change volume state
+//2. orchestrator of volume, control most of the information of volume, storage pool id, voluem state, scope etc.
 
 @Service
 public class VolumeServiceImpl implements VolumeService {
@@ -39,9 +45,27 @@ public class VolumeServiceImpl implements VolumeService {
 	@Inject
 	PrimaryDataStoreManager dataStoreMgr;
 	@Override
-	public VolumeEntity createVolume(long volumeId, long dataStoreId, VolumeDiskType diskType) {
+	public VolumeInfo createVolume(VolumeInfo volume, long dataStoreId, VolumeDiskType diskType) {
 		PrimaryDataStore dataStore = dataStoreMgr.getPrimaryDataStore(dataStoreId);
-		return dataStore.createVolume(volumeId, diskType);
+		if (dataStore == null) {
+			throw new CloudRuntimeException("Can't find dataStoreId: " + dataStoreId);
+		}
+		
+		if (dataStore.exists(volume)) {
+			return volume;
+		}
+		
+		VolumeObject vo = (VolumeObject)volume;
+		vo.stateTransit(VolumeEvent.CreateRequested);
+		
+		try {
+			VolumeInfo vi = dataStore.createVolume(vo, diskType);
+			vo.stateTransit(VolumeEvent.OperationSucceeded);
+			return vi;
+		} catch (Exception e) {
+			vo.stateTransit(VolumeEvent.OperationFailed);
+			throw new CloudRuntimeException(e.toString());
+		}
 	}
 
 	@DB
@@ -76,8 +100,22 @@ public class VolumeServiceImpl implements VolumeService {
 
 	@Override
 	public VolumeEntity allocateVolumeInDb(long size, VolumeType type, String volName, Long templateId) {
-		volDao.allocVolume(size, type, volName, templateId);
-		return null;
+		VolumeVO vo = volDao.allocVolume(size, type, volName, templateId);
+		return new VolumeEntityImpl(new VolumeObject(null, vo));
 	}
 
+	@Override
+	public VolumeEntity getVolumeEntity(long volumeId) {
+		VolumeVO vo = volDao.findById(volumeId);
+		if (vo == null) {
+			return null;
+		}
+		
+		if (vo.getPoolId() == null) {
+			return new VolumeEntityImpl(new VolumeObject(null, vo));
+		} else {
+			PrimaryDataStore dataStore = dataStoreMgr.getPrimaryDataStore(vo.getPoolId());
+			return new VolumeEntityImpl(dataStore.getVolume(volumeId));
+		}
+	}
 }
