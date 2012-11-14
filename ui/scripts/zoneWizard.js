@@ -249,31 +249,36 @@
           $('.setup-guest-traffic').removeClass('advanced');
 					skipGuestTrafficStep = false; //set value
         } 
-				else {
+				else { //args.data['network-model'] == 'Advanced'
           $('.setup-guest-traffic').removeClass('basic');
           $('.setup-guest-traffic').addClass('advanced');
-					
-					//skip the step if OVS tunnel manager is enabled	
-          skipGuestTrafficStep = false; //reset it before ajax call
-					$.ajax({
-						url: createURL('listConfigurations'),
-						data: {
-							name: 'sdn.ovs.controller'
-						},
-						dataType: "json",
-						async: false,
-						success: function(json) {					 
-							var items = json.listconfigurationsresponse.configuration; //2 entries returned: 'sdn.ovs.controller', 'sdn.ovs.controller.default.label'
-							$(items).each(function(){						  
-								if(this.name == 'sdn.ovs.controller') {
-									if(this.value == 'true' || this.value == true) {
-										skipGuestTrafficStep = true;
+										
+					if(args.data["zone-isolation-mode"]	== "VLAN") {
+						//skip the step if OVS tunnel manager is enabled	
+						skipGuestTrafficStep = false; //reset it before ajax call
+						$.ajax({
+							url: createURL('listConfigurations'),
+							data: {
+								name: 'sdn.ovs.controller'
+							},
+							dataType: "json",
+							async: false,
+							success: function(json) {					 
+								var items = json.listconfigurationsresponse.configuration; //2 entries returned: 'sdn.ovs.controller', 'sdn.ovs.controller.default.label'
+								$(items).each(function(){						  
+									if(this.name == 'sdn.ovs.controller') {
+										if(this.value == 'true' || this.value == true) {
+											skipGuestTrafficStep = true;
+										}
+										return false; //break each loop
 									}
-									return false; //break each loop
-								}
-							});						
-						}
-					});	
+								});						
+							}
+						});	
+					}
+					else { //args.data["zone-isolation-mode"] == "SG"
+					  skipGuestTrafficStep = true;
+					}					
         }
 				return !skipGuestTrafficStep;
       },
