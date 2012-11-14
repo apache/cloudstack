@@ -1132,7 +1132,21 @@
 									  //check whether to show or hide availability field
                     var $sourceNATField = args.$form.find('input[name=\"service.SourceNat.isEnabled\"]');
                     var $guestTypeField = args.$form.find('select[name=guestIpType]');
-                    		
+                    											
+                    if($guestTypeField.val() == 'Shared') { //Shared network offering
+                      args.$form.find('.form-item[rel=\"useVpc\"]').hide();
+																						
+											var $useVpcCb = args.$form.find('.form-item[rel=\"useVpc\"]').find("input[type=checkbox]");
+											if($useVpcCb.is(':checked')) { //if useVpc is checked,											  
+												$useVpcCb.removeAttr("checked");  //remove "checked" attribute in useVpc
+												$useVpcCb.trigger("click");  //trigger useVpc.onChange()
+											}
+										}
+										else { //Isolated network offering 
+                      args.$form.find('.form-item[rel=\"useVpc\"]').css('display', 'inline-block');
+										}
+										
+											
                     if (!requiredNetworkOfferingExists &&
                         $sourceNATField.is(':checked') &&
                         $guestTypeField.val() == 'Isolated') {
@@ -1367,7 +1381,7 @@
                       var $checkbox = args.$checkbox;
                       var $selects = $checkbox.closest('form').find('.dynamic-input select');
                       var $vpcOptions = $selects.find('option[value=VpcVirtualRouter]');
-                      
+                     
                       if ($checkbox.is(':checked')) {
                         $vpcOptions.siblings().attr('disabled', true);
                         $selects.val('VpcVirtualRouter');
