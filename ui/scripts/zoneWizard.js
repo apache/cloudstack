@@ -2440,7 +2440,17 @@
               if(this.endip != null && this.endip.length > 0)
                 array1.push("&endip=" + this.endip);
 
-              array1.push("&forVirtualNetwork=true");
+							if(args.data.zone.networkType == "Basic") {
+                array1.push("&forVirtualNetwork=true");
+							}
+							else if(args.data.zone.networkType == "Advanced") {							  
+								if(args.data.zone.isolationMode	== "VLAN") { //VLAN
+								  array1.push("&forVirtualNetwork=true");
+								}
+								else { //Security Group
+								  array1.push("&forVirtualNetwork=false");
+								}
+							}
 
               $.ajax({
                 url: createURL("createVlanIpRange" + array1.join("")),
