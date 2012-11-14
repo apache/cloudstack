@@ -2690,6 +2690,12 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             }
         }
 
+        //After start network, check if it's already running
+        router = _routerDao.findById(routerId);
+        if (router.getState() == State.Running) {
+            return router;
+        }
+
         UserVO user = _userDao.findById(UserContext.current().getCallerUserId());
         Map<Param, Object> params = new HashMap<Param, Object>();
         if (reprogramNetwork) {
