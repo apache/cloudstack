@@ -73,24 +73,32 @@ public class ApiResponseSerializer {
             sb.append("{ \"").append(result.getResponseName()).append("\" : ");
             if (result instanceof ListResponse) {
                 List<? extends ResponseObject> responses = ((ListResponse) result).getResponses();
+                Integer count = ((ListResponse) result).getCount();
+                boolean nonZeroCount = (count != null && count.longValue() != 0);
+                if (nonZeroCount) {
+                    sb.append("{ \"").append(ApiConstants.COUNT).append("\":").append(count);
+                }
+                
                 if ((responses != null) && !responses.isEmpty()) {
-
-                    Integer count = ((ListResponse) result).getCount();
                     String jsonStr = gson.toJson(responses.get(0));                    
                     jsonStr = unescape(jsonStr);
 
-                    if (count != null && count != 0) {
-                        sb.append("{ \"").append(ApiConstants.COUNT).append("\":").append(count).append(" ,\"").
-                        append(responses.get(0).getObjectName()).append("\" : [  ").append(jsonStr);
+                    if (nonZeroCount) {
+                        sb.append(" ,\"").append(responses.get(0).getObjectName()).append("\" : [  ").append(jsonStr);
                     }
+                    
                     for (int i = 1; i < ((ListResponse) result).getResponses().size(); i++) {
                         jsonStr = gson.toJson(responses.get(i));
                         jsonStr = unescape(jsonStr);
                         sb.append(", ").append(jsonStr);
                     }
                     sb.append(" ] }");
-                } else {
-                    sb.append("{ }");
+                } else  {
+                    if (!nonZeroCount){ 
+                        sb.append("{");
+                    }
+                    
+                    sb.append(" }");
                 }
             } else if (result instanceof SuccessResponse) {
                 sb.append("{ \"success\" : \"").append(((SuccessResponse) result).getSuccess()).append("\"} ");
