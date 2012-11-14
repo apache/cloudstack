@@ -17,6 +17,8 @@
 
 package com.cloud.api.response;
 
+import java.util.List;
+
 import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.cloud.utils.IdentityProxy;
@@ -38,7 +40,7 @@ public class ConditionResponse extends BaseResponse implements ControlledEntityR
 
     @SerializedName("counter")
     @Param(description = "Details of the Counter.")
-    private CounterResponse counter;
+    private List<CounterResponse> counterResponse;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
     @Param(description = "the domain id of the Condition owner")
@@ -80,8 +82,8 @@ public class ConditionResponse extends BaseResponse implements ControlledEntityR
         this.relationalOperator = relationalOperator;
     }
 
-    public void setCounter(CounterResponse counter) {
-        this.counter = counter;
+    public void setCounterResponse(List<CounterResponse> counterResponse) {
+        this.counterResponse = counterResponse;
     }
 
     @Override

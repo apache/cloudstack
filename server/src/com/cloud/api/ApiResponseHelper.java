@@ -1071,28 +1071,28 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         volResponse.setVolumeType(volume.getVolumeType().toString());
         volResponse.setDeviceId(volume.getDeviceId());
-
-        Long instanceId = volume.getInstanceId();
-        if (instanceId != null && volume.getState() != Volume.State.Destroy) {
-            VMInstanceVO vm = ApiDBUtils.findVMInstanceById(instanceId);
-            if (vm != null) {
-                volResponse.setVirtualMachineId(vm.getId());
-                volResponse.setVirtualMachineName(vm.getHostName());
-                UserVm userVm = ApiDBUtils.findUserVmById(vm.getId());
-                if (userVm != null) {
-                    if (userVm.getDisplayName() != null) {
-                        volResponse.setVirtualMachineDisplayName(userVm.getDisplayName());
-                    } else {
-                        volResponse.setVirtualMachineDisplayName(userVm.getHostName());
-                    }
-                    volResponse.setVirtualMachineState(vm.getState().toString());
-                } else {
-                    s_logger.error("User Vm with Id: " + instanceId + " does not exist for volume " + volume.getId());
-                }
-            } else {
-                s_logger.error("Vm with Id: " + instanceId + " does not exist for volume " + volume.getId());
-            }
-        }
+        
+        	Long instanceId = volume.getInstanceId();
+	        if (instanceId != null && volume.getState() != Volume.State.Destroy) {
+	            VMInstanceVO vm = ApiDBUtils.findVMInstanceById(instanceId);
+	            if (vm != null) {
+	                volResponse.setVirtualMachineId(vm.getId());
+	                volResponse.setVirtualMachineName(vm.getHostName());
+	                UserVm userVm = ApiDBUtils.findUserVmById(vm.getId());
+	                if (userVm != null) {
+	                    if (userVm.getDisplayName() != null) {
+	                        volResponse.setVirtualMachineDisplayName(userVm.getDisplayName());
+	                    } else {
+	                        volResponse.setVirtualMachineDisplayName(userVm.getHostName());
+	                    }
+	                    volResponse.setVirtualMachineState(vm.getState().toString());
+	                } else {
+	                    s_logger.error("User Vm with Id: " + instanceId + " does not exist for volume " + volume.getId());
+	                }
+	            } else {
+	                s_logger.error("Vm with Id: " + instanceId + " does not exist for volume " + volume.getId());
+	            }
+	        }
 
         // Show the virtual size of the volume
         volResponse.setSize(volume.getSize());
@@ -1166,22 +1166,22 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         volResponse.setAttached(volume.getAttached());
         volResponse.setDestroyed(volume.getState() == Volume.State.Destroy);
-        boolean isExtractable = true;
-        if (volume.getVolumeType() != Volume.Type.DATADISK) { // Datadisk dont have any template dependence.
-            VMTemplateVO template = ApiDBUtils.findTemplateById(volume.getTemplateId());
+	        boolean isExtractable = true;
+	        if (volume.getVolumeType() != Volume.Type.DATADISK) { // Datadisk dont have any template dependence.
+	            VMTemplateVO template = ApiDBUtils.findTemplateById(volume.getTemplateId());
             if (template != null) { // For ISO based volumes template = null and we allow extraction of all ISO based volumes
-                isExtractable = template.isExtractable() && template.getTemplateType() != Storage.TemplateType.SYSTEM;
-            }
-        }
-
-        //set tag information
-        List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.Volume, volume.getId());
-        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
-        for (ResourceTag tag : tags) {
-            ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
-            tagResponses.add(tagResponse);
-        }
-        volResponse.setTags(tagResponses);
+	                isExtractable = template.isExtractable() && template.getTemplateType() != Storage.TemplateType.SYSTEM;
+	            }
+	        }
+	
+	        //set tag information
+	        List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.Volume, volume.getId());
+	        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
+	        for (ResourceTag tag : tags) {
+	            ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
+	            tagResponses.add(tagResponse);
+	        }
+	        volResponse.setTags(tagResponses);
 
         volResponse.setExtractable(isExtractable);
         volResponse.setObjectName("volume");
@@ -3841,9 +3841,9 @@ public class ApiResponseHelper implements ResponseGenerator {
     public ConditionResponse createConditionResponse(Condition condition) {
         ConditionResponse response = new ConditionResponse();
         response.setId(condition.getId());
-        CounterResponse counter;
-        counter = createCounterResponse(ApiDBUtils.getCounter(condition.getCounterid()));
-        response.setCounter(counter);
+        List<CounterResponse> counterResponseList = new ArrayList<CounterResponse>();
+        counterResponseList.add(createCounterResponse(ApiDBUtils.getCounter(condition.getCounterid())));
+        response.setCounterResponse(counterResponseList);
         response.setRelationalOperator(condition.getRelationalOperator().toString());
         response.setThreshold(condition.getThreshold());
         response.setObjectName("condition");
