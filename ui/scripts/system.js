@@ -8421,33 +8421,6 @@
               }
 
             },
-            tabFilter: function(args) {
-              var hiddenTabs = [];
-              var hostUpdatesEnabled = false;
-              var host = args.context.hosts[0];
-
-              if (isAdmin()) {
-                // Host updates are only supported on XenServer and when host.updates.enabled is true;
-                $.ajax({
-                  url: createURL('listConfigurations'),
-                  data: {
-                    name: 'host.updates.enable'
-                  },
-                  async: false,
-                  success: function(json) {
-                    var config = json.listconfigurationsresponse.configuration[0];
-
-                    hostUpdatesEnabled = config.value == 'true' ? true : false;
-                  }
-                });
-
-                if (!hostUpdatesEnabled || host.hypervisor != 'XenServer') {
-                  hiddenTabs.push('hostUpdates');
-                }
-              }
-
-              return hiddenTabs;
-            },
             tabs: {
               details: {
                 title: 'label.details',
