@@ -16,25 +16,9 @@
 // under the License.
 package com.cloud.network.dao;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-
-import javax.ejb.Local;
-import javax.persistence.TableGenerator;
-
 import com.cloud.acl.ControlledEntity.ACLType;
-import com.cloud.network.Network;
-import com.cloud.network.Network.Event;
-import com.cloud.network.Network.GuestType;
-import com.cloud.network.Network.Provider;
-import com.cloud.network.Network.Service;
-import com.cloud.network.Network.State;
-import com.cloud.network.NetworkAccountDaoImpl;
-import com.cloud.network.NetworkAccountVO;
-import com.cloud.network.NetworkDomainVO;
-import com.cloud.network.NetworkServiceMapVO;
-import com.cloud.network.NetworkVO;
+import com.cloud.network.*;
+import com.cloud.network.Network.*;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
@@ -44,18 +28,17 @@ import com.cloud.offerings.dao.NetworkOfferingDaoImpl;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.db.DB;
-import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.GenericSearchBuilder;
-import com.cloud.utils.db.JoinBuilder;
+import com.cloud.utils.db.*;
 import com.cloud.utils.db.JoinBuilder.JoinType;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.SequenceFetcher;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.net.NetUtils;
+
+import javax.ejb.Local;
+import javax.persistence.TableGenerator;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
 @Local(value = NetworkDao.class)
 @DB(txn = false)
@@ -558,13 +541,13 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
 	public boolean updateState(State currentState, Event event, State nextState, Network vo, Object data) {
 	   // TODO: ensure this update is correct
        Transaction txn = Transaction.currentTxn();
-        txn.start();
+       txn.start();
 
-        NetworkVO networkVo = (NetworkVO) vo;
-        networkVo.setState(nextState);
-        super.update(networkVo.getId(), networkVo);
+       NetworkVO networkVo = (NetworkVO) vo;
+       networkVo.setState(nextState);
+       super.update(networkVo.getId(), networkVo);
 
-        txn.commit();
-        return true;
+       txn.commit();
+       return true;
     }
 }

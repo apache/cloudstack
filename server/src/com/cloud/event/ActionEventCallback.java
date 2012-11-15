@@ -16,16 +16,21 @@
 // under the License.
 package com.cloud.event;
 
-import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Method;
-
+import com.cloud.user.UserContext;
+import com.cloud.utils.component.Adapters;
+import com.cloud.utils.component.AnnotationInterceptor;
+import com.cloud.utils.component.ComponentLocator;
 import net.sf.cglib.proxy.Callback;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
-
-import com.cloud.user.UserContext;
-import com.cloud.utils.component.AnnotationInterceptor;
 import org.apache.cloudstack.framework.events.EventBus;
+import org.apache.cloudstack.framework.events.EventCategory;
+
+import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Method;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ActionEventCallback implements MethodInterceptor, AnnotationInterceptor<EventVO> {
 
@@ -81,7 +86,7 @@ public class ActionEventCallback implements MethodInterceptor, AnnotationInterce
                     eventDescription += ". "+ctx.getEventDetails();
                 }
                 EventUtils.saveStartedActionEvent(userId, accountId, actionEvent.eventType(), eventDescription, startEventId);
-                publishOnEventBus(userId, accountId, actionEvent.eventType(), "Started", eventDescription);
+                publishOnEventBus(userId, accountId, actionEvent.eventType(), Event.State.Started, eventDescription);
             }
         }
         return event;
@@ -103,11 +108,11 @@ public class ActionEventCallback implements MethodInterceptor, AnnotationInterce
             if(actionEvent.create()){
                 //This start event has to be used for subsequent events of this action
                 startEventId = EventUtils.saveCreatedActionEvent(userId, accountId, EventVO.LEVEL_INFO, actionEvent.eventType(), "Successfully created entity for "+eventDescription);
-                publishOnEventBus(userId, accountId, actionEvent.eventType(), "Successfully created entity for "+eventDescription);
+                publishOnEventBus(userId, accountId, actionEvent.eventType(), Event.State.Created, "Successfully created entity for " + eventDescription);
                 ctx.setStartEventId(startEventId);
             } else {
                 EventUtils.saveActionEvent(userId, accountId, EventVO.LEVEL_INFO, actionEvent.eventType(), "Successfully completed "+eventDescription, startEventId);
-                publishOnEventBus(userId, accountId, actionEvent.eventType(), "Successfully completed "+eventDescription, startEventId);
+                publishOnEventBus(userId, accountId, actionEvent.eventType(), Event.State.Completed, "Successfully completed " + eventDescription + startEventId);
             }
         }
     }
@@ -126,10 +131,10 @@ public class ActionEventCallback implements MethodInterceptor, AnnotationInterce
                 eventDescription += ". "+ctx.getEventDetails();
             }
             if(actionEvent.create()){
-                long eventId = EventUtils.saveCreatedActionEvent(userId, accountId, EventVO.LEVEL_ERROR, actionEvent.eventType(), "Error while creating entity for "+eventDescription);
+                long eventId = EventUtils.saveCreatedActionEvent(userId, accountId, EventVO.LEVEL_ERROR, actionEvent.eventType(), "Error while creating entity for " + eventDescription);
                 ctx.setStartEventId(eventId);
             } else {
-                EventUtils.saveActionEvent(userId, accountId, EventVO.LEVEL_ERROR, actionEvent.eventType(), "Error while "+eventDescription, startEventId);
+                EventUtils.saveActionEvent(userId, accountId, EventVO.LEVEL_ERROR, actionEvent.eventType(), "Error while " + eventDescription, startEventId);
             }
         }
     }
@@ -139,12 +144,12 @@ public class ActionEventCallback implements MethodInterceptor, AnnotationInterce
         return this;
     }
 
-    void publishOnEventBus(long userId, long accountId, String type, String state, String description) {
+    void publishOnEventBus(long userId, long accountId, String type, Event.State state, String description) {
         if (getEventBus() != null) {
             Map<String, String> eventDescription = new HashMap<String, String>();
             eventDescription.put("user", String.valueOf(userId));
             eventDescription.put("account", String.valueOf(accountId));
-            eventDescription.put("state", state);
+            eventDescription.put("state", state.toString());
             eventDescription.put("description", description);
             _eventBus.publish(EventCategory.ACTION_EVENT, type, eventDescription);
         }

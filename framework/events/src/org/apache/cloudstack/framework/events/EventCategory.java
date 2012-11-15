@@ -19,8 +19,27 @@
 
 package org.apache.cloudstack.framework.events;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class EventCategory {
-    public static final String ACTION_EVENT = "Action Event";
-    public static final String USAGE_EVENT = "Usage Event";
-    public static final String ALERT_EVENT = "Alert Event";
+    private static List<EventCategory> eventCategories = new ArrayList<EventCategory>();
+    private String eventCategoryName;
+
+    public  EventCategory(String categoryName) {
+        this.eventCategoryName = categoryName;
+    }
+
+    public String getName() {
+        return eventCategoryName;
+    }
+
+    public static List<EventCategory> listAllEventCategory() {
+        return eventCategories;
+    }
+
+    public static final EventCategory ACTION_EVENT = new EventCategory("Action Events");
+    public static final EventCategory ALERT_EVENT  = new EventCategory("Alert Event");
+    public static final EventCategory USAGE_EVENT  = new EventCategory("Usage Event");
+
 }

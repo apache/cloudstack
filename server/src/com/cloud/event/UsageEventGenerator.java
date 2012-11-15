@@ -1,6 +1,13 @@
 package com.cloud.event;
 
-import import org.apache.cloudstack.framework.events.EventBus;
+import com.cloud.utils.component.Adapters;
+import com.cloud.utils.component.ComponentLocator;
+import org.apache.cloudstack.framework.events.EventBus;
+import org.apache.cloudstack.framework.events.EventCategory;
+
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
 
 public class UsageEventGenerator {
 
@@ -29,21 +36,21 @@ public class UsageEventGenerator {
 
     public static void publishUsageEvent(String usageType, long accountId,long zoneId, long vmId, long securityGroupId) {
         EventUtils.saveUsageEvent(usageType, accountId, zoneId, vmId, securityGroupId);
-        publishOnEventBus((usageType, accountId, zoneId, vmId, null, null);
+        publishOnEventBus(usageType, accountId, zoneId, vmId, null, null);
     }
 
-    void publishOnEventBus(String usageType, Long accountId, Long zoneId, Long resourceId, String resourceName, String resourceType) {
+    private static void publishOnEventBus(String usageType, Long accountId, Long zoneId, Long resourceId, String resourceName, String resourceType) {
         if (getEventBus() != null) {
             Map<String, String> eventDescription = new HashMap<String, String>();
             eventDescription.put("usage type", usageType);
             if (accountId != null) {
-                eventDescription.put("accountId", usageType)
+                eventDescription.put("accountId", usageType);
             }
             if (zoneId != null) {
-                eventDescription.put("zoneId", String.valueOf(zoneId))
+                eventDescription.put("zoneId", String.valueOf(zoneId));
             }
             if (resourceId != null) {
-                eventDescription.put("resourceId", String.valueOf(resourceId))
+                eventDescription.put("resourceId", String.valueOf(resourceId));
             }
             eventDescription.put("resourceName", resourceName);
             eventDescription.put("resourceType", resourceType);
@@ -51,7 +58,7 @@ public class UsageEventGenerator {
         }
     }
 
-    private EventBus getEventBus() {
+    private static EventBus getEventBus() {
         //TODO: check if there is way of getting single adapter
         if (_eventBus == null) {
             if (!_eventBusLoaded) {

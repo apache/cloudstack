@@ -1,6 +1,13 @@
 package com.cloud.event;
 
-import import org.apache.cloudstack.framework.events.EventBus;
+import com.cloud.utils.component.Adapters;
+import com.cloud.utils.component.ComponentLocator;
+import org.apache.cloudstack.framework.events.EventBus;
+import org.apache.cloudstack.framework.events.EventCategory;
+
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
 
 public class AlertGenerator {
 
@@ -14,8 +21,8 @@ public class AlertGenerator {
         if (getEventBus() != null) {
             Map<String, String> eventDescription = new HashMap<String, String>();
             eventDescription.put("alertType", alertType);
-            eventDescription.put("dataCenterId", dataCenterId);
-            eventDescription.put("podId", podId);
+            eventDescription.put("dataCenterId", Long.toString(dataCenterId));
+            eventDescription.put("podId", Long.toString(podId));
             eventDescription.put("subject", subject);
             eventDescription.put("body", body);
             _eventBus.publish(EventCategory.ALERT_EVENT, alertType, eventDescription);
