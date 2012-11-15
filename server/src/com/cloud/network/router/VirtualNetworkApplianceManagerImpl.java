@@ -464,6 +464,24 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         });
     }
 
+    @Override
+    public boolean saveUserDataToRouter(Network network, final NicProfile nic, VirtualMachineProfile<UserVm> profile, List<? extends VirtualRouter> routers) throws ResourceUnavailableException {
+        _userVmDao.loadDetails((UserVmVO) profile.getVirtualMachine());
+
+        final VirtualMachineProfile<UserVm> updatedProfile = profile;
+
+        return applyRules(network, routers, "save userdata entry", false, null, false, new RuleApplier() {
+            @Override
+            public boolean execute(Network network, VirtualRouter router) throws ResourceUnavailableException {
+                // for basic zone, send vm data/password information only to the router in the same pod
+                Commands cmds = new Commands(OnError.Stop);
+                NicVO nicVo = _nicDao.findById(nic.getId());
+                createVmDataCommand(router, updatedProfile.getVirtualMachine(), nicVo, null, cmds);
+                return sendCommandsToRouter(router, cmds);
+            }
+        });
+    }
+
     @Override @ActionEvent(eventType = EventTypes.EVENT_ROUTER_STOP, eventDescription = "stopping router Vm", async = true)
     public VirtualRouter stopRouter(long routerId, boolean forced) throws ResourceUnavailableException, ConcurrentOperationException {
         UserContext context = UserContext.current();

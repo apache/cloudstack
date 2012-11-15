@@ -662,6 +662,24 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     }
 
     @Override
+    public boolean saveUserData(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm)
+            throws ResourceUnavailableException {
+        if (!canHandle(network, null)) {
+            return false;
+        }
+        List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
+        if (routers == null || routers.isEmpty()) {
+            s_logger.debug("Can't find virtual router element in network " + network.getId());
+            return true;
+        }
+
+        @SuppressWarnings("unchecked")
+        VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>) vm;
+
+        return _routerMgr.saveUserDataToRouter(network, nic, uservm, routers);
+    }
+
+    @Override
     public String getPropertiesFile() {
         return "virtualrouter_commands.properties";
     }

@@ -616,6 +616,12 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     @Override
+    public UserDataServiceProvider getUserDataUpdateProvider(Network network) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
     public PhysicalNetworkServiceProvider updateNetworkServiceProvider(Long id, String state, List<String> enabledServices) {
         // TODO Auto-generated method stub
         return null;

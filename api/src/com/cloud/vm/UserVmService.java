@@ -113,7 +113,7 @@ public interface UserVmService {
 
     UserVm rebootVirtualMachine(RebootVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException;
 
-    UserVm updateVirtualMachine(UpdateVMCmd cmd);
+    UserVm updateVirtualMachine(UpdateVMCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException;
 
     UserVm recoverVirtualMachine(RecoverVMCmd cmd) throws ResourceAllocationException;
 

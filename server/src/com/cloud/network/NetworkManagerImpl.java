@@ -184,6 +184,7 @@ import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserStatisticsDao;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.AnnotationHelper;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -4339,6 +4340,18 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         
         return (UserDataServiceProvider)getElementImplementingProvider(passwordProvider);
+    }
+
+    @Override
+    public UserDataServiceProvider getUserDataUpdateProvider(Network network) {
+        String userDataProvider = _ntwkSrvcDao.getProviderForServiceInNetwork(network.getId(), Service.UserData);
+
+        if (userDataProvider == null) {
+            s_logger.debug("Network " + network + " doesn't support service " + Service.UserData.getName());
+            return null;
+        }
+
+        return (UserDataServiceProvider)getElementImplementingProvider(userDataProvider);
     }
 
     @Override

@@ -1756,13 +1756,14 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_UPDATE, eventDescription = "updating Vm")
-    public UserVm updateVirtualMachine(UpdateVMCmd cmd) {
+    public UserVm updateVirtualMachine(UpdateVMCmd cmd)
+            throws ResourceUnavailableException, InsufficientCapacityException {
         String displayName = cmd.getDisplayName();
         String group = cmd.getGroup();
         Boolean ha = cmd.getHaEnable();
         Long id = cmd.getId();
         Long osTypeId = cmd.getOsTypeId();
-        String userData = cmd.getUserData();
+        String userData = cmd.getUserData().replace("\\n", "");
 
         // Input validation
         UserVmVO vmInstance = null;
@@ -1799,9 +1800,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             throw new InvalidParameterValueException("Vm with id " + id + " is not in the right state");
         }
 
+        boolean updateUserdata = false;
         if (userData != null) {
             validateUserData(userData);
             // update userData on domain router.
+            updateUserdata = true;
         } else {
             userData = vmInstance.getUserData();
         }
@@ -1833,7 +1836,41 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         _vmDao.updateVM(id, displayName, ha, osTypeId, userData);
 
+        if (updateUserdata) {
+            boolean result = updateUserDataInternal(_vmDao.findById(id));
+            if (result) {
+                s_logger.debug("User data successfully updated for vm id="+id);
+            } else {
+                throw new CloudRuntimeException("Failed to reset userdata for the virtual machine ");
+            }
+        }
+
         return _vmDao.findById(id);
+    }
+
+    private boolean updateUserDataInternal(UserVm vm)
+            throws ResourceUnavailableException, InsufficientCapacityException {
+        VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
+        Nic defaultNic = _networkMgr.getDefaultNic(vm.getId());
+        if (defaultNic == null) {
+            s_logger.error("Unable to update userdata for vm id=" + vm.getId() + " as the instance doesn't have default nic");
+            return false;
+        }
+
+        Network defaultNetwork = _networkDao.findById(defaultNic.getNetworkId());
+        NicProfile defaultNicProfile = new NicProfile(defaultNic, defaultNetwork, null, null, null,
+                _networkMgr.isSecurityGroupSupportedInNetwork(defaultNetwork),
+                _networkMgr.getNetworkTag(template.getHypervisorType(), defaultNetwork));
+
+        VirtualMachineProfile<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>((VMInstanceVO)vm);
+
+        UserDataServiceProvider element = _networkMgr.getUserDataUpdateProvider(defaultNetwork);
+        if (element == null) {
+            throw new CloudRuntimeException("Can't find network element for " + Service.UserData.getName() + " provider needed for UserData update");
+        }
+        boolean result = element.saveUserData(defaultNetwork, defaultNicProfile, vmProfile);
+
+        return true;
     }
 
     @Override
