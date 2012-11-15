@@ -20,7 +20,7 @@ package org.apache.cloudstack.storage.image.store;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.storage.image.Template;
+import org.apache.cloudstack.storage.image.TemplateInfo;
 import org.apache.cloudstack.storage.image.db.ImageDataDao;
 import org.apache.cloudstack.storage.image.db.ImageDataStoreDao;
 import org.apache.cloudstack.storage.image.db.ImageDataStoreVO;
@@ -43,18 +43,18 @@ public class ImageDataStoreImpl implements ImageDataStore {
 		this.downloader = downloader;
 		this.imageDataStoreVO = dataStoreVO;
 	}
-	
+	/*
 	@Override
-	public Template registerTemplate(long templateId) {
+	public TemplateInfo registerTemplate(long templateId) {
 		ImageDataVO idv = imageDao.findById(templateId);
-		Template template = new Template(this, idv);
+		TemplateInfo template = new TemplateInfo(this, idv);
 		if (driver.registerTemplate(template)) {
 			template.setImageDataStoreId(imageDataStoreVO.getId());
 			return template;
 		} else {
 			return null;
 		}
-	}
+	}*/
 
 	@Override
 	public String grantAccess(long templateId, long endPointId) {
@@ -83,6 +83,18 @@ public class ImageDataStoreImpl implements ImageDataStore {
 	@Override
 	public ImageDownloader getImageDownloader() {
 		return this.downloader;
+	}
+
+	@Override
+	public long getImageDataStoreId() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public TemplateInfo registerTemplate(long templateId) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

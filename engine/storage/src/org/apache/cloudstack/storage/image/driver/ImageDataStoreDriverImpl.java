@@ -18,14 +18,14 @@
  */
 package org.apache.cloudstack.storage.image.driver;
 
-import org.apache.cloudstack.storage.image.Template;
+import org.apache.cloudstack.storage.image.TemplateInfo;
 
 public class ImageDataStoreDriverImpl implements ImageDataStoreDriver {
 	
 	public ImageDataStoreDriverImpl() {
 	}
 	@Override
-	public boolean registerTemplate(Template template) {
+	public boolean registerTemplate(TemplateInfo template) {
 		//TODO: check the availability of template 
 		return true;
 	}
@@ -43,7 +43,7 @@ public class ImageDataStoreDriverImpl implements ImageDataStoreDriver {
 	}
 
 	@Override
-	public boolean deleteTemplate(Template template) {
+	public boolean deleteTemplate(TemplateInfo template) {
 		// TODO Auto-generated method stub
 		return false;
 	}

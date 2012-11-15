@@ -14,7 +14,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskTyp
 import org.apache.cloudstack.storage.HypervisorHostEndPoint;
 import org.apache.cloudstack.storage.datastore.db.DataStoreVO;
 import org.apache.cloudstack.storage.datastore.driver.PrimaryDataStoreDriver;
-import org.apache.cloudstack.storage.image.TemplateInfo;
+import org.apache.cloudstack.storage.image.TemplateObject;
 
 import org.apache.cloudstack.storage.volume.VolumeEntityImpl;
 import org.apache.cloudstack.storage.volume.VolumeEvent;
@@ -143,7 +143,7 @@ public class DefaultPrimaryDataStoreImpl implements PrimaryDataStore {
 	}
 
 	@Override
-	public boolean createTemplate(TemplateObject template) {
+	public boolean installTemplate(TemplateObject template) {
 		// TODO Auto-generated method stub
 		return false;
 	}

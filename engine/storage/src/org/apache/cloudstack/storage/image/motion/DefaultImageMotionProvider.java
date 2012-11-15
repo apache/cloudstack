@@ -18,6 +18,15 @@
  */
 package org.apache.cloudstack.storage.image.motion;
 
+import org.apache.cloudstack.engine.cloud.entity.api.TemplateEntity;
+import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
+
 public class DefaultImageMotionProvider implements ImageMotionProvider {
+
+	@Override
+	public boolean canHandle(TemplateEntity template, PrimaryDataStore dataStoe) {
+		// TODO Auto-generated method stub
+		return false;
+	}
 
 }

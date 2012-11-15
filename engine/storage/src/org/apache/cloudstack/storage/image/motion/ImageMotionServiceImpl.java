@@ -30,7 +30,7 @@ public class ImageMotionServiceImpl implements ImageMotionService {
 	}
 
 	@Override
-	public boolean copyTemplate(TemplateEntity template, PrimaryDataStore dataStore) {
+	public boolean copyTemplate(TemplateEntity template, PrimaryDataStoreInfo dataStore) {
 		// TODO Auto-generated method stub
 		return false;
 	}

@@ -22,6 +22,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.storage.image.TemplateObject;
 import org.apache.cloudstack.storage.image.db.ImageDataDao;
 import org.apache.cloudstack.storage.image.db.ImageDataStoreDao;
 import org.apache.cloudstack.storage.image.db.ImageDataStoreProviderDao;
@@ -69,5 +70,11 @@ public class ImageDataStoreProviderManagerImpl implements ImageDataStoreProvider
 	public ImageDataStore getDataStoreFromTemplateId(long templateId) {
 		ImageDataVO iddv = imageDataDao.findById(templateId);
 		return getDataStore(iddv.getId());
+	}
+
+	@Override
+	public TemplateObject getTemplate(long templateId) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

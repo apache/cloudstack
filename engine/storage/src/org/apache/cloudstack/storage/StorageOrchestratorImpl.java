@@ -348,7 +348,7 @@ public class StorageOrchestratorImpl implements StorageOrchestrator {
 		PrimaryDataStore pd = primaryStorageMgr.getPrimaryDataStore(dataStoreId);
 		boolean existsOnPrimaryStorage = pd.templateExists(template.getId());
 		if (!existsOnPrimaryStorage) {
-			pd.installTemplate(template);
+			//pd.installTemplate(template);
 		}
 		return false;
 	}
