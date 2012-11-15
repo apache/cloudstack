@@ -19,6 +19,12 @@
 package org.apache.cloudstack.framework.messaging;
 
 public interface RpcProvider extends TransportMultiplexier {
-	public void registerRpcEndpoint(RpcEndpoint rpcEndpoint);
-	public void unregisteRpcEndpoint(RpcEndpoint rpcEndpoint);
+	void setMessageSerializer(MessageSerializer messageSerializer);
+	MessageSerializer getMessageSerializer();
+	
+	void registerRpcEndpoint(RpcEndpoint rpcEndpoint);
+	void unregisteRpcEndpoint(RpcEndpoint rpcEndpoint);
+
+	String call(RpcEndpoint endpoint, RpcCallContext callContext, String targetAddress, String command, Object cmdArg);
+	RpcClientCall asyncCall(RpcEndpoint endpoint, RpcCallContext callContext, String targetAddress, String command, Object cmdArg);
 }

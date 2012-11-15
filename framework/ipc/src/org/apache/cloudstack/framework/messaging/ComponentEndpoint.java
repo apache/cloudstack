@@ -18,8 +18,7 @@
  */
 package org.apache.cloudstack.framework.messaging;
 
-public class ComponentEndpoint implements RpcEndpoint, TransportMultiplexier, Subscriber {
-
+public class ComponentEndpoint implements RpcEndpoint, Subscriber {
 	private TransportEndpoint transportEndpoint;
 	private RpcProvider rpcProvider;
 	
@@ -42,44 +41,33 @@ public class ComponentEndpoint implements RpcEndpoint, TransportMultiplexier, Su
 		this.rpcProvider = rpcProvider;
 	}
 	
-	public void initialize(String[] multiplexiers) {
-		if(multiplexiers != null) {
-			for(String name : multiplexiers)
-				transportEndpoint.registerMultiplexier(name, this);
-		}
-		
+	public void initialize() {
 		rpcProvider.registerRpcEndpoint(this);
 	}
 
-	@Override
-	public void onTransportMessage(String senderEndpointAddress,
-		String targetEndpointAddress, String multiplexer, String message) {
-	}
-
-	@Override
-	public String call(String targetAddress, String rpcMessage)
+	// it will throw RpcRuntimeException in case of transport
+	public String call(RpcCallContext callContext, String targetAddress, String command, Object cmdArg)
 	{
-		return null;
+		return rpcProvider.call(this, callContext, targetAddress, command, cmdArg);
 	}
 	
-	@Override
-	public RpcCall asyncCall(String targetAddress, String rpcMessage) {
-		return null;
+	public RpcClientCall asyncCall(RpcCallContext callContext, String targetAddress, String command, Object cmdArg) {
+		return rpcProvider.asyncCall(this, callContext, targetAddress, command, cmdArg);
 	}
 
 	@Override
-	public void onCallReceive(RpcCall call) {
+	public void onCallReceive(RpcServerCall call) {
 		// TODO Auto-generated method stub
 		// implement annotation based call dispatching
 	}
 	
 	@Override
-	public void onCallReturn(RpcCall call, String rpcReturnMessage, RpcException e) {
+	public void onCallReturn(RpcClientCall call, Object returnObject, RpcException e) {
 		// ???
 	}
 	
 	@Override
-	public void onPublishEvent(String subject, String senderAddress, String args) {
+	public void onPublishEvent(String subject, String senderAddress, Object args) {
 		// TODO
 	}
 }

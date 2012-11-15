@@ -24,7 +24,7 @@ import org.apache.cloudstack.framework.messaging.TransportMultiplexier;
 public class ClientTransportEndpoint implements TransportEndpoint {
 
 	@Override
-	public void onAttachConfirm(String endpointAddress) {
+	public void onAttachConfirm(boolean bSuccess, String endpointAddress) {
 		// TODO Auto-generated method stub
 	}
 	

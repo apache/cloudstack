@@ -27,6 +27,5 @@ public class ClientEventBus extends EventBusBase implements TransportMultiplexie
 	public void onTransportMessage(String senderEndpointAddress,
 			String targetEndpointAddress, String multiplexer, String message) {
 		// TODO Auto-generated method stub
-		
 	}
 }

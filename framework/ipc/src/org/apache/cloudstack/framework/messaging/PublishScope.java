@@ -17,26 +17,6 @@
 
 package org.apache.cloudstack.framework.messaging;
 
-public class PublishScope {
-	public enum Type { SINGLE, LOCAL, GLOBAL };
-	
-	Type scope;
-	String address;
-	
-	public PublishScope(Type scope) {
-		this.scope = scope;
-	}
-	
-	public PublishScope(String address) {
-		scope = Type.SINGLE;
-		this.address = address;
-	}
-	
-	public Type getType() {
-		return scope;
-	}
-	
-	public String getAddress() {
-		return this.address;
-	}
+public enum PublishScope {
+	LOCAL, GLOBAL 
 }

@@ -18,8 +18,11 @@
 package org.apache.cloudstack.framework.messaging;
 
 public interface EventBus {
+	void setMessageSerializer(MessageSerializer messageSerializer);
+	MessageSerializer getMessageSerializer();
+	
 	void subscribe(String subject, Subscriber subscriber);
 	void unsubscribe(String subject, Subscriber subscriber);
 	
-	void publish(String subject, PublishScope scope, String senderAddress, String args);
+	void publish(String senderAddress, String subject, PublishScope scope, Object args);
 }

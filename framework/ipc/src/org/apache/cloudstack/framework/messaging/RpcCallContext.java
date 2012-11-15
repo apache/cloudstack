@@ -16,13 +16,32 @@
 // under the License.
 package org.apache.cloudstack.framework.messaging;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.util.HashMap;
+import java.util.Map;
 
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-public @interface EventHandler {
-	public String topic();
+public class RpcCallContext {
+	private final static int DEFAULT_RPC_TIMEOUT = 10000;
+	
+	Map<String, Object> _contextMap = new HashMap<String, Object>();
+	int _timeoutMilliSeconds = DEFAULT_RPC_TIMEOUT;
+	
+	public RpcCallContext() {
+	}
+	
+	public int getTimeoutMilliSeconds() {
+		return _timeoutMilliSeconds;
+	}
+	
+	public void setTimeoutMilliSeconds(int timeoutMilliseconds) {
+		_timeoutMilliSeconds = timeoutMilliseconds;
+	}
+	
+	@SuppressWarnings("unchecked")
+	public <T> T getContextParameter(String key) {
+		return (T)_contextMap.get(key);
+	}
+	
+	public void setContextParameter(String key, Object object) {
+		_contextMap.put(key, object);
+	}
 }

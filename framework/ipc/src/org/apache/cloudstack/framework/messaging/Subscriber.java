@@ -18,5 +18,5 @@
 package org.apache.cloudstack.framework.messaging;
 
 public interface Subscriber {
-	void onPublishEvent(String subject, String senderAddress, String args);
+	void onPublishEvent(String senderAddress, String subject, Object args);
 }

@@ -24,19 +24,29 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
 public class EventBusBase implements EventBus {
 
 	private Gate _gate;
 	private List<ActionRecord> _pendingActions;
 	
 	private SubscriptionNode _subscriberRoot;
+	private MessageSerializer _messageSerializer; 
 	
 	public EventBusBase() {
 		_gate = new Gate();
 		_pendingActions = new ArrayList<ActionRecord>();
 		
 		_subscriberRoot = new SubscriptionNode("/", null);
+	}
+	
+	@Override
+	public void setMessageSerializer(MessageSerializer messageSerializer) {
+		_messageSerializer = messageSerializer;
+	}
+	
+	@Override
+	public MessageSerializer getMessageSerializer() {
+		return _messageSerializer;
 	}
 	
 	@Override
@@ -71,8 +81,8 @@ public class EventBusBase implements EventBus {
 	}
 
 	@Override
-	public void publish(String subject, PublishScope scope, String senderAddress,
-		String args) {
+	public void publish(String senderAddress, String subject, PublishScope scope, 
+		Object args) {
 		
 		if(_gate.enter(true)) {
 
@@ -80,11 +90,11 @@ public class EventBusBase implements EventBus {
 			SubscriptionNode current = locate(subject, chainFromTop, false);
 			
 			if(current != null)
-				current.notifySubscribers(subject, senderAddress, args);
+				current.notifySubscribers(senderAddress, subject, args);
 			
 			Collections.reverse(chainFromTop);
 			for(SubscriptionNode node : chainFromTop)
-				node.notifySubscribers(subject, senderAddress, args);
+				node.notifySubscribers(senderAddress, subject, args);
 			
 			_gate.leave();
 		}
@@ -283,9 +293,9 @@ public class EventBusBase implements EventBus {
 			_children.put(key, childNode);
 		}
 		
-		public void notifySubscribers(String subject, String senderAddress, String args) {
+		public void notifySubscribers(String senderAddress, String subject,  Object args) {
 			for(Subscriber subscriber : _subscribers) {
-				subscriber.onPublishEvent(subject, senderAddress, args);
+				subscriber.onPublishEvent(senderAddress, subject, args);
 			}
 		}
 	}

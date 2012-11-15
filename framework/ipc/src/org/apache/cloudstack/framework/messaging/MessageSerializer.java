@@ -18,14 +18,7 @@
  */
 package org.apache.cloudstack.framework.messaging;
 
-public interface RpcCall {
-	String getCommand();
-	String getContent();
-	String getRequestTag();
-
-	// for sender to cancel
-	void cancel();
-	
-	// for receiver to response call
-	void completeCall(String rpcMessage);
+public interface MessageSerializer {
+	String serializeTo(Object object);
+	Object serializeFrom(String message);
 }
