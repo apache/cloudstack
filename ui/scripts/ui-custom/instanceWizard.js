@@ -464,6 +464,16 @@
           },
 
           'network': function($step, formData) {
+            var showAddNetwork = true;
+
+            var checkShowAddNetwork = function($newNetwork) {
+              if (!showAddNetwork) {
+                $newNetwork.hide();
+              } else {
+                $newNetwork.show();
+              }
+            };
+
             var originalValues = function(formData) {
               // Default networks
               $step.find('input[type=radio]').filter(function() {
@@ -523,6 +533,13 @@
             // Show relevant conditional sub-step if present
             $step.find('.wizard-step-conditional').hide();
 
+            if ($.isFunction(args.showAddNetwork)) {
+              showAddNetwork = args.showAddNetwork({
+                data: formData,
+                context: context
+              });
+            }
+
             // Filter network list by VPC ID
             var filterNetworkList = function(vpcID) {
               var $selects = $step.find('.my-networks .select-container .select');
@@ -546,6 +563,7 @@
               } else {
                 $step.find('.my-networks .select-container').removeClass('single-select');
                 $addNetworkForm.show();
+                checkShowAddNetwork($addNetworkForm);
               }
               
               $selects.find('input[type=checkbox]').attr('checked', false);
@@ -648,6 +666,7 @@
                   );
 
                   originalValues(formData);
+                  checkShowAddNetwork($newNetwork);
                 }
               }
             };

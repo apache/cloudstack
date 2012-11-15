@@ -25,6 +25,12 @@
       return g_capabilities.customdiskofferingmaxsize;
     },
 
+    // Determines whether 'add new network' box is shown.
+    // -- return true to show, false to hide
+    showAddNetwork: function(args) {
+      return true;
+    },
+
     // Called in networks list, when VPC drop-down is changed
     // -- if vpcID given, return true if in network specified by vpcID
     // -- if vpcID == -1, return true if network is not associated with a VPC
