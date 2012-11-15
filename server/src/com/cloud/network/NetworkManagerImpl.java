@@ -4640,7 +4640,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             if (networkOfferingId != oldNetworkOfferingId) {
                 if (networkOfferingIsConfiguredForExternalNetworking(networkOfferingId) != networkOfferingIsConfiguredForExternalNetworking(oldNetworkOfferingId)
                         && !changeCidr) {
-                    throw new InvalidParameterValueException("Can't guarantee guest network CIDR is unchanged after updating network!");
+                    throw new InvalidParameterValueException("Updating network failed since guest CIDR needs to be changed!");
                 }
                 if (changeCidr) {
                     if (!checkForNonStoppedVmInNetwork(network.getId())) {
