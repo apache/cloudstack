@@ -16,12 +16,17 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.framework.container;
+package org.apache.cloudstack.framework.messaging.client;
 
-/**
- * Container of different processes so it doesn't have to deal with message
- * to Java call.
- */
-public interface ServerContainer {
+import org.apache.cloudstack.framework.messaging.EventBusBase;
+import org.apache.cloudstack.framework.messaging.TransportMultiplexier;
 
+public class ClientEventBus extends EventBusBase implements TransportMultiplexier {
+
+	@Override
+	public void onTransportMessage(String senderEndpointAddress,
+			String targetEndpointAddress, String multiplexer, String message) {
+		// TODO Auto-generated method stub
+		
+	}
 }

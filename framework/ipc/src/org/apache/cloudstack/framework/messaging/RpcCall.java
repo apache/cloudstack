@@ -22,6 +22,10 @@ public interface RpcCall {
 	String getCommand();
 	String getContent();
 	String getRequestTag();
+
+	// for sender to cancel
+	void cancel();
 	
+	// for receiver to response call
 	void completeCall(String rpcMessage);
 }

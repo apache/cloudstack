@@ -4,10 +4,10 @@ import java.io.Serializable;
 
 import javax.annotation.PostConstruct;
 
+import org.apache.cloudstack.framework.messaging.EventBusBase;
+import org.apache.cloudstack.framework.messaging.PublishScope;
 import org.springframework.stereotype.Component;
 
-import com.cloud.utils.events.EventBusBase;
-import com.cloud.utils.events.PublishScope;
 
 @Component
 public class ClusterEventBus extends EventBusBase {

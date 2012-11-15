@@ -19,8 +19,9 @@
 package org.apache.cloudstack.framework.messaging;
 
 public interface RpcEndpoint {
-	public String call(String targetAddress, String rpcMessage);
-	public void asyncCall(String targetAddress, String rpcMessage);
+	String call(String targetAddress, String rpcMessage);
+	RpcCall asyncCall(String targetAddress, String rpcMessage);
 
-	void onCall(RpcCall call);
+	void onCallReceive(RpcCall call);
+	void onCallReturn(RpcCall call, String rpcReturnMessage, RpcException e);
 }

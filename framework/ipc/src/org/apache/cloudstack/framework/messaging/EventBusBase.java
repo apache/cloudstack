@@ -15,16 +15,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package com.cloud.utils.events;
+package org.apache.cloudstack.framework.messaging;
 
-import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import edu.emory.mathcs.backport.java.util.Arrays;
-import edu.emory.mathcs.backport.java.util.Collections;
 
 public class EventBusBase implements EventBus {
 
@@ -72,8 +71,8 @@ public class EventBusBase implements EventBus {
 	}
 
 	@Override
-	public void publish(String subject, PublishScope scope, Object sender,
-		Serializable args) {
+	public void publish(String subject, PublishScope scope, String senderAddress,
+		String args) {
 		
 		if(_gate.enter(true)) {
 
@@ -81,11 +80,11 @@ public class EventBusBase implements EventBus {
 			SubscriptionNode current = locate(subject, chainFromTop, false);
 			
 			if(current != null)
-				current.notifySubscribers(subject, sender, args);
+				current.notifySubscribers(subject, senderAddress, args);
 			
 			Collections.reverse(chainFromTop);
 			for(SubscriptionNode node : chainFromTop)
-				node.notifySubscribers(subject, sender, args);
+				node.notifySubscribers(subject, senderAddress, args);
 			
 			_gate.leave();
 		}
@@ -284,9 +283,9 @@ public class EventBusBase implements EventBus {
 			_children.put(key, childNode);
 		}
 		
-		public void notifySubscribers(String subject, Object sender, Serializable args) {
+		public void notifySubscribers(String subject, String senderAddress, String args) {
 			for(Subscriber subscriber : _subscribers) {
-				subscriber.onPublishEvent(subject, sender, args);
+				subscriber.onPublishEvent(subject, senderAddress, args);
 			}
 		}
 	}

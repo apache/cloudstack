@@ -20,6 +20,7 @@ package org.apache.cloudstack.framework.messaging;
 
 public interface TransportEndpoint {
 	void onAttachConfirm(String endpointAddress);
+	void onDetachIndication(String endpointAddress);
 	
 	void registerMultiplexier(String name, TransportMultiplexier multiplexier);
 	void unregisterMultiplexier(String name);

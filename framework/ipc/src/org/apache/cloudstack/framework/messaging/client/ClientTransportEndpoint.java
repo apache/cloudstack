@@ -27,6 +27,10 @@ public class ClientTransportEndpoint implements TransportEndpoint {
 	public void onAttachConfirm(String endpointAddress) {
 		// TODO Auto-generated method stub
 	}
+	
+	@Override
+	public void onDetachIndication(String endpointAddress) {
+	}
 
 	@Override
 	public void registerMultiplexier(String name,

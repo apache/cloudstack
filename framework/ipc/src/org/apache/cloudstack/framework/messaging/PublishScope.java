@@ -15,10 +15,28 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package com.cloud.utils.events;
+package org.apache.cloudstack.framework.messaging;
 
-import java.io.Serializable;
-
-public interface Subscriber {
-	void onPublishEvent(String subject, Object sender, Serializable args);
+public class PublishScope {
+	public enum Type { SINGLE, LOCAL, GLOBAL };
+	
+	Type scope;
+	String address;
+	
+	public PublishScope(Type scope) {
+		this.scope = scope;
+	}
+	
+	public PublishScope(String address) {
+		scope = Type.SINGLE;
+		this.address = address;
+	}
+	
+	public Type getType() {
+		return scope;
+	}
+	
+	public String getAddress() {
+		return this.address;
+	}
 }

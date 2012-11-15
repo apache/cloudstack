@@ -16,17 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.framework.messaging;
+package org.apache.cloudstack.framework.messaging.server;
 
-public interface MessagingProvider {
-	void createChanel(String topic, MessagingDeliveryStrategy deliveryStrategy);
-	
-	void pulishMessage(String topic, Message message);
-	
-	void publishCertifiedMessage(String topic, Message message, 
-		int retryIntervalMillis, int timeoutMillis, 
-		MessagingDeliveryListener deliveryListener);
-	
-	void subscribe(String topicChannel, String messageTitle, MessagingSubscriber subscriber);
-	void unsubscribe(String topicChannel, String messageTitle, MessagingSubscriber subscriber);
+import org.apache.cloudstack.framework.messaging.EventBusBase;
+import org.apache.cloudstack.framework.messaging.TransportMultiplexier;
+
+public class ServerEventBus extends EventBusBase implements TransportMultiplexier {
+
+	@Override
+	public void onTransportMessage(String senderEndpointAddress,
+			String targetEndpointAddress, String multiplexer, String message) {
+		// TODO Auto-generated method stub
+	}
 }

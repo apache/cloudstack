@@ -15,9 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package com.cloud.utils.events;
+package org.apache.cloudstack.framework.messaging;
 
-public enum PublishScope {
-	LOCAL,
-	GLOBAL
+public interface Subscriber {
+	void onPublishEvent(String subject, String senderAddress, String args);
 }

@@ -18,7 +18,7 @@
  */
 package org.apache.cloudstack.framework.messaging;
 
-public class ComponentEndpoint implements RpcEndpoint, TransportMultiplexier {
+public class ComponentEndpoint implements RpcEndpoint, TransportMultiplexier, Subscriber {
 
 	private TransportEndpoint transportEndpoint;
 	private RpcProvider rpcProvider;
@@ -57,19 +57,29 @@ public class ComponentEndpoint implements RpcEndpoint, TransportMultiplexier {
 	}
 
 	@Override
-	public String call(String targetAddress, String rpcMessage) {
-		// TODO Auto-generated method stub
+	public String call(String targetAddress, String rpcMessage)
+	{
+		return null;
+	}
+	
+	@Override
+	public RpcCall asyncCall(String targetAddress, String rpcMessage) {
 		return null;
 	}
 
 	@Override
-	public void asyncCall(String targetAddress, String rpcMessage) {
+	public void onCallReceive(RpcCall call) {
 		// TODO Auto-generated method stub
+		// implement annotation based call dispatching
 	}
-
+	
 	@Override
-	public void onCall(RpcCall call) {
-		// TODO Auto-generated method stub
-		
+	public void onCallReturn(RpcCall call, String rpcReturnMessage, RpcException e) {
+		// ???
+	}
+	
+	@Override
+	public void onPublishEvent(String subject, String senderAddress, String args) {
+		// TODO
 	}
 }
