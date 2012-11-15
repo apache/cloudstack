@@ -223,7 +223,10 @@ class CloudStackShell(cmd.Cmd):
         return api_mod
 
     def default(self, args):
-        args = shlex.split(args.strip())
+        lexp = shlex.shlex(args.strip())
+        lexp.whitespace = " "
+        lexp.whitespace_split = True
+        args = list(lexp)
         api_name = args[0]
 
         try:
@@ -417,6 +420,12 @@ def main():
     for rule in grammar:
         def add_grammar(rule):
             def grammar_closure(self, args):
+                if '|' in args:  #FIXME: Consider parsing issues
+                    prog_name = sys.argv[0]
+                    if '.py' in prog_name:
+                        prog_name = "python " + prog_name
+                    self.do_shell("%s %s %s" % (prog_name, rule, args))
+                    return
                 if not rule in self.cache_verbs:
                     self.cache_verb_miss(rule)
                 try:
@@ -428,13 +437,7 @@ def main():
                 if '--help' in args:
                     self.print_shell(res[2])
                     return
-                if '|' in args:
-                    prog_name = sys.argv[0]
-                    if '.py' in prog_name:
-                        prog_name = "python " + prog_name
-                    self.do_shell("%s %s %s" % (prog_name, rule, args))
-                else:
-                    self.default(res[0] + " " + args_partition[2])
+                self.default(res[0] + " " + args_partition[2])
             return grammar_closure
 
         grammar_handler = add_grammar(rule)
