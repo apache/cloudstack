@@ -156,7 +156,8 @@
       
       // Include zone isolation mode, supported for Advanced zones only
       if (groupedForms.zone.networkType == 'Advanced') {
-        groupedForms.zone.isolationMode = $forms.find('input[name=zone-isolation-mode]:checked').val();
+        groupedForms.zone.sgEnabled = $forms.find('input[name=zone-advanced-sg-enabled]')
+          .is(':checked') ? true : false;
       }
     }
 

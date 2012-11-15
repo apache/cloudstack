@@ -498,22 +498,13 @@ under the License.
                       <div class="title">
                         <fmt:message key="label.isolation.mode"/>
                       </div>
-                      
-                      <!-- VLAN -->
-                      <div class="select-area">
-                        <div class="desc">
-                          <fmt:message key="message.advanced.virtual"/>
-                        </div>
-                        <input type="radio" name="zone-isolation-mode" value="VLAN" disabled="disabled" checked="checked" />
-                        <label>VLAN</label>
-                      </div>
 
                       <!-- Security groups -->
                       <div class="select-area">
                         <div class="desc">
                           <fmt:message key="message.advanced.security.group"/>
                         </div>
-                        <input type="radio" name="zone-isolation-mode" value="SG" disabled="disabled" />
+                        <input type="checkbox" name="zone-advanced-sg-enabled" disabled="disabled" />
                         <label><fmt:message key="label.menu.security.groups"/></label>
                       </div>
                     </div>
