@@ -373,7 +373,8 @@
           $input.toolTip({
             docID: field.docID,
             tooltip:'.tooltip-box',
-            mode:'focus'
+            mode:'focus',
+            attachTo: '.form-item'
           });
         }
         /*     $input.blur(function() {

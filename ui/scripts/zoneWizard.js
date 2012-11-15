@@ -249,31 +249,36 @@
           $('.setup-guest-traffic').removeClass('advanced');
 					skipGuestTrafficStep = false; //set value
         } 
-				else {
+				else { //args.data['network-model'] == 'Advanced'
           $('.setup-guest-traffic').removeClass('basic');
           $('.setup-guest-traffic').addClass('advanced');
-					
-					//skip the step if OVS tunnel manager is enabled	
-          skipGuestTrafficStep = false; //reset it before ajax call
-					$.ajax({
-						url: createURL('listConfigurations'),
-						data: {
-							name: 'sdn.ovs.controller'
-						},
-						dataType: "json",
-						async: false,
-						success: function(json) {					 
-							var items = json.listconfigurationsresponse.configuration; //2 entries returned: 'sdn.ovs.controller', 'sdn.ovs.controller.default.label'
-							$(items).each(function(){						  
-								if(this.name == 'sdn.ovs.controller') {
-									if(this.value == 'true' || this.value == true) {
-										skipGuestTrafficStep = true;
+										
+					if(args.data["zone-isolation-mode"]	== "VLAN") {
+						//skip the step if OVS tunnel manager is enabled	
+						skipGuestTrafficStep = false; //reset it before ajax call
+						$.ajax({
+							url: createURL('listConfigurations'),
+							data: {
+								name: 'sdn.ovs.controller'
+							},
+							dataType: "json",
+							async: false,
+							success: function(json) {					 
+								var items = json.listconfigurationsresponse.configuration; //2 entries returned: 'sdn.ovs.controller', 'sdn.ovs.controller.default.label'
+								$(items).each(function(){						  
+									if(this.name == 'sdn.ovs.controller') {
+										if(this.value == 'true' || this.value == true) {
+											skipGuestTrafficStep = true;
+										}
+										return false; //break each loop
 									}
-									return false; //break each loop
-								}
-							});						
-						}
-					});	
+								});						
+							}
+						});	
+					}
+					else { //args.data["zone-isolation-mode"] == "SG"
+					  skipGuestTrafficStep = true;
+					}					
         }
 				return !skipGuestTrafficStep;
       },
@@ -304,7 +309,11 @@
           }
           else { //args.data['network-model'] == 'Advanced'
             args.$form.find('[rel=networkOfferingId]').hide();
-            args.$form.find('[rel=guestcidraddress]').show();
+												
+						if(args.data["zone-isolation-mode"]	== "VLAN")
+              args.$form.find('[rel=guestcidraddress]').show();
+						else //args.data["zone-isolation-mode"] == "SG"
+						  args.$form.find('[rel=guestcidraddress]').hide();
           }													
 										
           setTimeout(function() {
@@ -1249,15 +1258,26 @@
       var data = args.data;
 
       var stepFns = {
-        addZone: function() {				
+        addZone: function() {		          
           message(dictionary['message.creating.zone']); 
 
           var array1 = [];
           var networkType = args.data.zone.networkType;  //"Basic", "Advanced"
           array1.push("&networktype=" + todb(networkType));
           if(networkType == "Advanced") {
-            if(args.data.zone.guestcidraddress != null && args.data.zone.guestcidraddress.length > 0)
-              array1.push("&guestcidraddress=" + todb(args.data.zone.guestcidraddress));
+            
+						
+            if(args.data.zone.isolationMode != null) {               
+              if(args.data.zone.isolationMode	== "VLAN") {
+							  array1.push("&securitygroupenabled=false"); 
+								
+								if(args.data.zone.guestcidraddress != null && args.data.zone.guestcidraddress.length > 0)
+                  array1.push("&guestcidraddress=" + todb(args.data.zone.guestcidraddress));								
+							}
+              else { // args.data.zone.isolationMode == "SG"
+                array1.push("&securitygroupenabled=true");   	
+              }								
+            }									
           }
 
           array1.push("&name=" + todb(args.data.zone.name));
@@ -2433,7 +2453,17 @@
               if(this.endip != null && this.endip.length > 0)
                 array1.push("&endip=" + this.endip);
 
-              array1.push("&forVirtualNetwork=true");
+							if(args.data.zone.networkType == "Basic") {
+                array1.push("&forVirtualNetwork=true");
+							}
+							else if(args.data.zone.networkType == "Advanced") {							  
+								if(args.data.zone.isolationMode	== "VLAN") { //VLAN
+								  array1.push("&forVirtualNetwork=true");
+								}
+								else { //Security Group
+								  array1.push("&forVirtualNetwork=false");
+								}
+							}
 
               $.ajax({
                 url: createURL("createVlanIpRange" + array1.join("")),

@@ -26,6 +26,12 @@ from cloudmonkey import __version__
 
 name = 'cloudmonkey'
 version = __version__
+requires = ['clint>=0.3.0',]
+
+try:
+    import readline
+except ImportError:
+    requires.append('readline')
 
 setup(
     name = name,
@@ -36,9 +42,12 @@ setup(
     maintainer_email = "bhaisaab@apache.org",
     url = "http://incubator.apache.org/cloudstack",
     description = "Command Line Interface for Apache CloudStack",
+    long_description = "cloudmonkey is a command line interface for Apache "
+                     "CloudStack powered by CloudStack Marvin testclient",
+    platforms = ("Any",),
     license = 'ASL 2.0',
-    packages=find_packages(),
-    install_requires=['clint'],
+    packages = find_packages(),
+    install_requires = requires,
     include_package_data = True,
     zip_safe = False,
     classifiers = [
@@ -54,6 +63,6 @@ setup(
     ],
     entry_points="""
     [console_scripts]
-    cloudmonkey = cloudmonkey:main
+    cloudmonkey = cloudmonkey.cloudmonkey:main
     """,
 )

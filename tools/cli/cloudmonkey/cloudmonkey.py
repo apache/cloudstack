@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -25,14 +25,14 @@ try:
     import logging
     import os
     import pdb
-    import readline
-    import rlcompleter
+    import shlex
     import sys
     import types
 
     from clint.textui import colored
     from ConfigParser import ConfigParser, SafeConfigParser
 
+    from version import __version__
     from marvin.cloudstackConnection import cloudConnection
     from marvin.cloudstackException import cloudstackAPIException
     from marvin.cloudstackAPI import *
@@ -42,13 +42,26 @@ except ImportError, e:
     import sys
     sys.exit()
 
+# Fix autocompletion issue, can be put in .pythonstartup
+try:
+    import readline
+except ImportError, e:
+    print "Module readline not found, autocompletions will fail", e
+else:
+    import rlcompleter
+    if 'libedit' in readline.__doc__:
+        readline.parse_and_bind("bind ^I rl_complete")
+    else:
+        readline.parse_and_bind("tab: complete")
+
 log_fmt = '%(asctime)s - %(filename)s:%(lineno)s - [%(levelname)s] %(message)s'
 logger = logging.getLogger(__name__)
 completions = cloudstackAPI.__all__
 
 
 class CloudStackShell(cmd.Cmd):
-    intro = "☁ Apache CloudStack CLI. Type help or ? to list commands.\n"
+    intro = ("☁ Apache CloudStack 🐵 cloudmonkey " + __version__ +
+             ". Type help or ? to list commands.\n")
     ruler = "-"
     config_file = os.path.expanduser('~/.cloudmonkey_config')
     grammar = []
@@ -58,8 +71,8 @@ class CloudStackShell(cmd.Cmd):
 
     def __init__(self):
         self.config_fields = {'host': 'localhost', 'port': '8080',
-                              'apiKey': '', 'secretKey': '',
-                              'prompt': '🙉 cloudmonkey> ', 'color': 'true',
+                              'apikey': '', 'secretkey': '',
+                              'prompt': '🐵 cloudmonkey>', 'color': 'true',
                               'log_file':
                               os.path.expanduser('~/.cloudmonkey_log'),
                               'history_file':
@@ -70,8 +83,8 @@ class CloudStackShell(cmd.Cmd):
             for key in self.config_fields.keys():
                 setattr(self, key, self.config_fields[key])
             config = self.write_config()
-            print("Set your apiKey, secretKey, host, port, prompt, color, "
-                  "log_file, history_file using the set command!")
+            print("Set your apikey, secretkey, host, port, prompt, color,"
+                  " log_file, history_file using the set command!")
 
         for key in self.config_fields.keys():
             setattr(self, key, config.get('CLI', key))
@@ -85,12 +98,6 @@ class CloudStackShell(cmd.Cmd):
         # Update config if config_file does not exist
         if not os.path.exists(self.config_file):
             config = self.write_config()
-
-        # Fix autocompletion issue
-        if sys.platform == "darwin":
-            readline.parse_and_bind("bind ^I rl_complete")
-        else:
-            readline.parse_and_bind("tab: complete")
 
         # Enable history support
         try:
@@ -195,23 +202,9 @@ class CloudStackShell(cmd.Cmd):
         elif not (str(result) is None):
             self.print_shell(result)
 
-    def do_quit(self, s):
-        """
-        Quit Apache CloudStack CLI
-        """
-        self.print_shell("Bye!")
-        return True
-
-    def do_shell(self, args):
-        """
-        Execute shell commands using shell <command> or !<command>
-        Example: !ls or shell ls
-        """
-        os.system(args)
-
     def make_request(self, command, requests={}):
         conn = cloudConnection(self.host, port=int(self.port),
-                               apiKey=self.apiKey, securityKey=self.secretKey,
+                               apiKey=self.apikey, securityKey=self.secretkey,
                                logging=logging.getLogger("cloudConnection"))
         try:
             response = conn.make_request(command, requests)
@@ -230,7 +223,7 @@ class CloudStackShell(cmd.Cmd):
         return api_mod
 
     def default(self, args):
-        args = args.strip().split(" ")
+        args = shlex.split(args.strip())
         api_name = args[0]
 
         try:
@@ -245,8 +238,8 @@ class CloudStackShell(cmd.Cmd):
 
         command = api_cmd()
         response = api_rsp()
-        #FIXME: Parsing logic
-        args_dict = dict(map(lambda x: x.split("="),
+        args_dict = dict(map(lambda x: [x.partition("=")[0],
+                                        x.partition("=")[2]],
                              args[1:])[x] for x in range(len(args) - 1))
 
         for attribute in dir(command):
@@ -266,12 +259,15 @@ class CloudStackShell(cmd.Cmd):
             try:
                 api_cmd_str = "%sCmd" % api_name
                 api_mod = self.get_api_module(api_name, [api_cmd_str])
-                api_cmd = getattr(api_mod, api_cmd_str)
+                api_cmd = getattr(api_mod, api_cmd_str)()
                 doc = api_mod.__doc__
             except AttributeError, e:
                 self.print_shell("Error: API attribute %s not found!" % e)
             params = filter(lambda x: '__' not in x and 'required' not in x,
-                            dir(api_cmd()))
+                            dir(api_cmd))
+            if len(api_cmd.required) > 0:
+                doc += "\nRequired args: %s" % " ".join(api_cmd.required)
+            doc += "\nArgs: %s" % " ".join(params)
             api_name_lower = api_name.replace(verb, '').lower()
             self.cache_verbs[verb][api_name_lower] = [api_name, params, doc]
 
@@ -296,14 +292,17 @@ class CloudStackShell(cmd.Cmd):
             autocompletions = self.cache_verbs[verb].keys()
             search_string = subject
         else:                  # Complete subject params
-            autocompletions = self.cache_verbs[verb][subject][1]
+            autocompletions = map(lambda x: x + "=",
+                                  self.cache_verbs[verb][subject][1])
             search_string = text
 
         return [s for s in autocompletions if s.startswith(search_string)]
 
     def do_api(self, args):
         """
-        Make raw api calls. Syntax: api <apiName> <args>=<values>. Example:
+        Make raw api calls. Syntax: api <apiName> <args>=<values>.
+
+        Example:
         api listAccount listall=true
         """
         if len(args) > 0:
@@ -319,35 +318,101 @@ class CloudStackShell(cmd.Cmd):
     def do_set(self, args):
         """
         Set config for CloudStack CLI. Available options are:
-        host, port, apiKey, secretKey, log_file, history_file
+        host, port, apikey, secretkey, log_file, history_file
+        You may also edit your ~/.cloudmonkey_config instead of using set.
+
+        Example:
+        set host 192.168.56.2
+        set prompt 🐵 cloudmonkey>
+        set log_file /var/log/cloudmonkey.log
         """
-        args = args.split(' ')
-        if len(args) == 2:
-            key, value = args
-            # Note: keys and fields should have same names
-            setattr(self, key, value)
-            self.write_config()
-        else:
-            self.print_shell("Please use the syntax: set valid-key value")
+        args = args.strip().partition(" ")
+        key, value = (args[0], args[2])
+        # Note: keys and class attributes should have same names
+        setattr(self, key, value)
+        self.write_config()
 
     def complete_set(self, text, line, begidx, endidx):
         mline = line.partition(" ")[2]
         offs = len(mline) - len(text)
         return [s[offs:] for s in
-               ['host', 'port', 'apiKey', 'secretKey', 'prompt', 'color',
+               ['host', 'port', 'apikey', 'secretkey', 'prompt', 'color',
                 'log_file', 'history_file'] if s.startswith(mline)]
+
+    def do_shell(self, args):
+        """
+        Execute shell commands using shell <command> or !<command>
+
+        Example:
+        !ls
+        shell ls
+        !for((i=0; i<10; i++)); do cloudmonkey create user account=admin \
+            email=test@test.tt firstname=user$i lastname=user$i \
+            password=password username=user$i; done
+        """
+        os.system(args)
+
+    def do_help(self, args):
+        """
+        Show help docs for various topics
+
+        Example:
+        help list
+        help list users
+        ?list
+        ?list users
+        """
+        fields = args.partition(" ")
+        if fields[2] == "":
+            cmd.Cmd.do_help(self, args)
+        else:
+            verb = fields[0]
+            subject = fields[2].partition(" ")[0]
+            if verb not in self.cache_verbs:
+                self.cache_verb_miss(verb)
+
+            if subject in self.cache_verbs[verb]:
+                self.print_shell(self.cache_verbs[verb][subject][2])
+            else:
+                self.print_shell("Error: no such api (%s) on %s" %
+                                 (subject, verb))
+
+    def complete_help(self, text, line, begidx, endidx):
+        fields = line.partition(" ")
+        subfields = fields[2].partition(" ")
+
+        if subfields[1] != " ":
+            return cmd.Cmd.complete_help(self, text, line, begidx, endidx)
+        else:
+            line = fields[2]
+            text = subfields[2]
+            return self.completedefault(text, line, begidx, endidx)
+
+    def do_quit(self, args):
+        """
+        Quit Apache CloudStack CLI
+        """
+        self.print_shell("Bye!")
+        return self.do_EOF(args)
+
+    def do_EOF(self, args):
+        """
+        Quit on Ctrl+d or EOF
+        """
+        return True
 
 
 def main():
     # Add verbs in grammar
     grammar = ['create', 'list', 'delete', 'update',
                'enable', 'disable', 'add', 'remove', 'attach', 'detach',
-               'assign', 'authorize', 'change', 'register',
+               'assign', 'authorize', 'change', 'register', 'configure',
                'start', 'restart', 'reboot', 'stop', 'reconnect',
                'cancel', 'destroy', 'revoke',
                'copy', 'extract', 'migrate', 'restore',
                'get', 'prepare', 'deploy', 'upload']
 
+    # Create handlers on the fly using closures
     self = CloudStackShell
     for rule in grammar:
         def add_grammar(rule):
@@ -363,7 +428,13 @@ def main():
                 if '--help' in args:
                     self.print_shell(res[2])
                     return
-                self.default(res[0] + " " + args_partition[2])
+                if '|' in args:
+                    prog_name = sys.argv[0]
+                    if '.py' in prog_name:
+                        prog_name = "python " + prog_name
+                    self.do_shell("%s %s %s" % (prog_name, rule, args))
+                else:
+                    self.default(res[0] + " " + args_partition[2])
             return grammar_closure
 
         grammar_handler = add_grammar(rule)

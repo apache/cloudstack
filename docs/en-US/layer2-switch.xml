@@ -1,0 +1,41 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+  http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+<section id="layer2-switch">
+  <title>Layer-2 Switch</title>
+  <para>The layer-2 switch is the access switching layer inside the pod.</para>
+  <itemizedlist>
+    <listitem>
+      <para>It should trunk all VLANs into every computing host.</para>
+    </listitem>
+    <listitem>
+      <para>It should switch traffic for the management network containing computing and storage
+        hosts. The layer-3 switch will serve as the gateway for the management network.</para>
+    </listitem>
+  </itemizedlist>
+  <formalpara>
+    <title>Example Configurations</title>
+    <para>This section contains example configurations for specific switch models for pod-level
+      layer-2 switching. It assumes VLAN management protocols such as VTP or GVRP have been
+      disabled. The scripts must be changed appropriately if you choose to use VTP or GVRP.</para>
+  </formalpara>
+  <xi:include href="dell62xx-layer2.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+  <xi:include href="cisco3750-layer2.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+</section>

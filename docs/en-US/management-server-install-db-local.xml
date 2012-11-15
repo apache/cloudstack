@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8' ?>
-<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
 <!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
 %BOOK_ENTITIES;
 ]>
@@ -21,69 +21,105 @@
  specific language governing permissions and limitations
  under the License.
 -->
-
 <section id="management-server-install-db-local">
-    <title>Install the Database on the Management Server Node</title>
-    <para>This section describes how to install MySQL on the same machine with the Management Server. This technique is intended for a simple deployment that has a single Management Server node. If you have a multi-node Management Server deployment, you will typically use a separate node for MySQL. See <xref linkend="management-server-install-db-external" />.</para>
-    <orderedlist>
-        <listitem>
-            <para>Install MySQL from the package repository from your distribution:</para>
-            <para condition="community">On RHEL or CentOS:</para>
-            <programlisting language="Bash">yum install mysql-server</programlisting>
-            <para condition="community">On Ubuntu:</para>
-            <programlisting language="Bash">apt-get install mysql-server</programlisting>
-        </listitem>
-        <listitem>
-            <para>Edit the MySQL configuration (/etc/my.cnf or /etc/mysql/my.cnf, depending on your OS) and insert the following lines in the [mysqld] section. You can put these lines below the datadir line. The max_connections parameter should be set to 350 multiplied by the number of Management Servers you are deploying. This example assumes one Management Server.</para>
-            <note>
-                <para>On Ubuntu, you can also create a file /etc/mysql/conf.d/cloudstack.cnf and add these directives there. Don't forget to add [mysqld] on the first line of the file.</para>
-            </note>
-            <programlisting language="Bash">innodb_rollback_on_timeout=1
+  <title>Install the Database on the Management Server Node</title>
+  <para>This section describes how to install MySQL on the same machine with the Management Server.
+    This technique is intended for a simple deployment that has a single Management Server node. If
+    you have a multi-node Management Server deployment, you will typically use a separate node for
+    MySQL. See <xref linkend="management-server-install-db-external"/>.</para>
+  <orderedlist>
+    <listitem>
+      <para>Install MySQL from the package repository from your distribution:</para>
+      <para condition="community">On RHEL or CentOS:</para>
+      <programlisting language="Bash">yum install mysql-server</programlisting>
+      <para condition="community">On Ubuntu:</para>
+      <programlisting language="Bash">apt-get install mysql-server</programlisting>
+    </listitem>
+    <listitem>
+      <para>Edit the MySQL configuration (/etc/my.cnf or /etc/mysql/my.cnf, depending on your OS)
+        and insert the following lines in the [mysqld] section. You can put these lines below the
+        datadir line. The max_connections parameter should be set to 350 multiplied by the number of
+        Management Servers you are deploying. This example assumes one Management Server.</para>
+      <note>
+        <para>On Ubuntu, you can also create a file /etc/mysql/conf.d/cloudstack.cnf and add these
+          directives there. Don't forget to add [mysqld] on the first line of the file.</para>
+      </note>
+      <programlisting language="Bash">innodb_rollback_on_timeout=1
 innodb_lock_wait_timeout=600
 max_connections=350
 log-bin=mysql-bin
 binlog-format = 'ROW'</programlisting>
+    </listitem>
+    <listitem>
+      <para>Start or restart MySQL to put the new configuration into effect.</para>
+      <para>On RHEL/CentOS, MySQL doesn't automatically start after installation. Start it
+        manually.</para>
+      <programlisting language="Bash">service mysqld start</programlisting>
+      <para>On Ubuntu, restart MySQL.</para>
+      <programlisting language="Bash">service mysqld restart</programlisting>
+    </listitem>
+    <listitem>
+      <para>(CentOS and RHEL only; not required on Ubuntu)</para>
+      <warning>
+        <para>On RHEL and CentOS, MySQL does not set a root password by default. It is very strongly
+          recommended that you set a root password as a security precaution. </para>
+      </warning>
+      <para>Run the following command to secure your installation. You can answer "Y" to all
+        questions.</para>
+      <programlisting language="Bash">mysql_secure_installation</programlisting>
+    </listitem>
+    <listitem>
+      <para>Set up the database. The following command creates the "cloud" user on the
+        database.</para>
+      <itemizedlist>
+        <listitem>
+          <para>In dbpassword, specify the password to be assigned to the "cloud" user. You can
+            choose to provide no password although that is not recommended.</para>
         </listitem>
         <listitem>
-            <para>Start or restart MySQL to put the new configuration into effect.</para>
-                <para>On RHEL/CentOS,
-                MySQL doesn't automatically start after installation. Start it manually.</para>
-            <programlisting language="Bash">service mysqld start</programlisting>
-                <para>On Ubuntu, restart MySQL.</para>
-                <programlisting language="Bash">service mysqld restart</programlisting>
+          <para>In deploy-as, specify the username and password of the user deploying the database.
+            In the following command, it is assumed the root user is deploying the database and
+            creating the "cloud" user.</para>
         </listitem>
         <listitem>
-            <para>(CentOS and RHEL only; not required on Ubuntu)</para>
-            <warning>
-                <para>On RHEL and CentOS, MySQL does not set a root password by default. It is very
-                    strongly recommended that you set a root password as a security precaution. </para>
-            </warning>
-            <para>Run the following command to secure your installation. You can answer "Y" to all
-                questions.</para>
-            <programlisting language="Bash">mysql_secure_installation</programlisting>
+          <para>(Optional) For encryption_type, use file or web to indicate the technique used to
+            pass in the database encryption password. Default: file. See <xref
+              linkend="about-password-encryption"/>.</para>
         </listitem>
-        <listitem><para>Set up the database. The following command creates the "cloud" user on the database.</para>
-            <itemizedlist>
-                <listitem><para>In dbpassword, specify the password to be assigned to the "cloud" user. You can choose to provide no password although that is not recommended.</para></listitem>
-                <listitem><para>In deploy-as, specify the username and password of the user deploying the database. In the following command, it is assumed the root user is deploying the database and creating the "cloud" user.</para></listitem>
-                <listitem><para>(Optional) For encryption_type, use file or web to indicate the technique used to pass in the database encryption password. Default: file. See About Password and Key Encryption.</para></listitem>
-                <listitem><para>(Optional) For management_server_key, substitute the default key that is used to encrypt confidential parameters in the &PRODUCT; properties file. Default: password. It is highly recommended that you replace this with a more secure value. See About Password and Key Encryption.</para></listitem>
-                <listitem><para>(Optional) For database_key, substitute the default key that is used to encrypt confidential parameters in the &PRODUCT; database. Default: password. It is highly recommended that you replace this with a more secure value. See About Password and Key Encryption.</para></listitem>
-            </itemizedlist>
-            <programlisting language="Bash">cloud-setup-databases cloud:&lt;dbpassword&gt;@localhost \
-                --deploy-as=root:&lt;password&gt; \
-                -e &lt;encryption_type&gt; \
-                -m &lt;management_server_key&gt; \
-                -k &lt;database_key&gt;</programlisting>
-            <para>When this script is finished, you should see a message like “Successfully initialized the database.”</para>
+        <listitem>
+          <para>(Optional) For management_server_key, substitute the default key that is used to
+            encrypt confidential parameters in the &PRODUCT; properties file. Default: password. It
+            is highly recommended that you replace this with a more secure value. See <xref
+              linkend="about-password-encryption"/>.</para>
         </listitem>
-        <listitem><para>If you are running the KVM hypervisor on the same machine with the Management Server, edit /etc/sudoers and add the following line:</para>
-            <programlisting language="Bash">Defaults:cloud !requiretty</programlisting>
-            <note><para>This type of single-machine setup is recommended only for a trial installation.</para></note>
+        <listitem>
+          <para>(Optional) For database_key, substitute the default key that is used to encrypt
+            confidential parameters in the &PRODUCT; database. Default: password. It is highly
+            recommended that you replace this with a more secure value. See <xref
+              linkend="about-password-encryption"/>.</para>
         </listitem>
-        <listitem><para>Now that the database is set up, you can finish configuring the OS for the Management Server. This command will set up iptables, sudoers, and start the Management Server.</para>
-            <programlisting language="Bash"># cloud-setup-management</programlisting>
-            <para>You should see the message “&PRODUCT; Management Server setup is done.”</para>
-        </listitem>        
-    </orderedlist>
+      </itemizedlist>
+      <programlisting language="Bash">cloud-setup-databases cloud:&lt;dbpassword&gt;@localhost \
+--deploy-as=root:&lt;password&gt; \
+-e &lt;encryption_type&gt; \
+-m &lt;management_server_key&gt; \
+-k &lt;database_key&gt;</programlisting>
+      <para>When this script is finished, you should see a message like “Successfully initialized
+        the database.”</para>
+    </listitem>
+    <listitem>
+      <para>If you are running the KVM hypervisor on the same machine with the Management Server,
+        edit /etc/sudoers and add the following line:</para>
+      <programlisting language="Bash">Defaults:cloud !requiretty</programlisting>
+      <note>
+        <para>This type of single-machine setup is recommended only for a trial installation.</para>
+      </note>
+    </listitem>
+    <listitem>
+      <para>Now that the database is set up, you can finish configuring the OS for the Management
+        Server. This command will set up iptables, sudoers, and start the Management Server.</para>
+      <programlisting language="Bash"># cloud-setup-management</programlisting>
+      <para>You should see the message “&PRODUCT; Management Server setup is done.”</para>
+    </listitem>
+  </orderedlist>
 </section>

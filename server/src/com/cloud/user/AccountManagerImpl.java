@@ -1576,7 +1576,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
         // set project information
         if (projectId != null) {
-            if (projectId == -1) {
+            if (projectId.longValue() == -1) {
                 permittedAccounts.addAll(_projectMgr.listPermittedProjectAccounts(caller.getId()));
             } else {
                 permittedAccounts.clear();
@@ -2327,7 +2327,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         // set project information
         if (projectId != null) {
             if (!forProjectInvitation) {
-                if (projectId == -1) {
+                if (projectId.longValue() == -1) {
                     if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
                         permittedAccounts.addAll(_projectMgr.listPermittedProjectAccounts(caller.getId()));
                     } else {

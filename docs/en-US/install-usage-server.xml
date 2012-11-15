@@ -1,0 +1,61 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
+<section id="install-usage-server">
+    <title>Installing the Usage Server (Optional)</title>
+    <para>You can optionally install the Usage Server once the Management Server is configured properly. The Usage Server takes data from the events in the system and enables usage-based billing for accounts.</para>
+    <para>When multiple Management Servers are present, the Usage Server may be installed on any number of them. The Usage Servers will coordinate usage processing. A site that is concerned about availability should install Usage Servers on at least two Management Servers.</para>
+    <section id="requirements-install-usage-server">
+    <title>Requirements for Installing the Usage Server</title>
+    <itemizedlist>
+        <listitem><para>The Management Server must be running when the Usage Server is installed.</para></listitem>
+        <listitem><para>The Usage Server must be installed on the same server as a Management Server.</para></listitem>
+    </itemizedlist>
+    </section>
+    <section id="steps-install-usage-server">
+    <title>Steps to Install the Usage Server</title>
+    <orderedlist>
+        <listitem>
+        <para>Run ./install.sh.</para>
+        <programlisting>
+# ./install.sh
+        </programlisting>
+        <para>You should see a few messages as the installer prepares, followed by a list of choices.</para>
+        </listitem>
+        <listitem>
+        <para>Choose "S" to install the Usage Server.</para>
+        <programlisting>
+   > S
+        </programlisting>
+        </listitem>
+        <listitem>
+        <para>Once installed, start the Usage Server with the following command.</para>
+        <programlisting>
+# service cloud-usage start
+        </programlisting>
+        </listitem>
+    </orderedlist>
+    <para>The Administration Guide discusses further configuration of the Usage Server.</para>
+    </section>
+</section>

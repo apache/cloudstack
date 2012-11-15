@@ -6305,23 +6305,53 @@ label.error {
 .multi-wizard.zone-wizard .select-network-model .select-area {
   height: 181px;
   width: 586px;
+  position: relative;
+}
+
+.multi-wizard.zone-wizard .select-network-model .select-area.basic-zone {
+  height: 105px;
+}
+
+.multi-wizard.zone-wizard .select-network-model .select-area.advanced-zone {
+  height: 233px;
 }
 
 .multi-wizard.zone-wizard .select-network-model .select-area .isolation-mode {
-  height: 169px;
+  height: 98px;
   overflow: hidden;
   float: left;
   margin: 5px 0 0;
-/*Hide isolation mode (always defaults to VLAN)*/
-  display: none;
+  position: absolute;
+  top: 114px;
+  left: 9px;
+}
+
+.multi-wizard.zone-wizard .select-network-model .select-area.disabled .isolation-mode {
+  /*+opacity:50%;*/
+  filter: alpha(opacity=50);
+  -ms-filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=50);
+  -moz-opacity: 0.5;
+  opacity: 0.5;
+}
+
+.multi-wizard.zone-wizard .select-network-model .select-area.disabled .isolation-mode input {
+}
+
+.multi-wizard.zone-wizard .select-network-model .select-area .isolation-mode .title {
+  font-size: 15px;
+  color: #5D7387;
+  /*+placement:shift 36px 2px;*/
+  position: relative;
+  left: 36px;
+  top: 2px;
 }
 
 .multi-wizard.zone-wizard .select-network-model .select-area .desc {
   width: 373px;
-  height: 120px;
+  height: 62px;
   color: #727272;
   background: #EFEFEF;
-  padding: 18px;
+  padding: 12px 18px 25px;
   /*+placement:shift -27px 12px;*/
   position: relative;
   left: -27px;
@@ -6335,6 +6365,10 @@ label.error {
   line-height: 19px;
 }
 
+.multi-wizard.zone-wizard .select-network-model .select-area.basic-zone .desc {
+  padding-bottom: 4px;
+}
+
 .multi-wizard.zone-wizard .select-network-model .select-area .desc em {
   font-weight: bold;
   text-decoration: underline;
@@ -6342,10 +6376,11 @@ label.error {
 
 .multi-wizard.zone-wizard .select-network-model .select-area .isolation-mode .select-area {
   width: 586px;
-  height: 41px;
+  height: 31px;
   overflow: hidden;
   margin: 0;
   padding: 0px 0 9px;
+  background: none;
 }
 
 .multi-wizard.zone-wizard .select-network-model .select-area .isolation-mode .select-area label {
@@ -6358,15 +6393,17 @@ label.error {
 }
 
 .multi-wizard.zone-wizard .select-network-model .select-area .isolation-mode .select-area .desc {
-  padding: 7px;
+  padding: 6px 7px 11px;
   width: 388px;
+  height: 9px;
   font-size: 11px;
+  margin-right: 9px;
   background: #E6E6E6;
   float: right;
-  /*+placement:shift -27px 11px;*/
+  /*+placement:shift -27px 12px;*/
   position: relative;
   left: -27px;
-  top: 11px;
+  top: 12px;
 }
 
 .multi-wizard.zone-wizard .content.input-area {
@@ -7175,6 +7212,11 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 }
 
 /*Multi-edit*/
+div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBalancer div.multi-edit form table.multi-edit thead tr th,
+div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBalancer div.multi-edit form table.multi-edit tbody tr td {
+  min-width: 100px;
+}
+
 .multi-edit {
 }
 
@@ -7188,7 +7230,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 }
 
 .multi-edit table th {
-  min-width: 120px;
+  min-width: 88px;
 }
 
 .detail-group .multi-edit table td {
@@ -8301,10 +8343,10 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 .system-dashboard.zone .status_box li .icon {
   background: url(../images/infrastructure-icons.png) no-repeat 0px 0px;
   padding: 65px 65px 5px;
-  /*+placement:shift 23px 24px;*/
+  /*+placement:shift 25px 19px;*/
   position: relative;
-  left: 23px;
-  top: 24px;
+  left: 25px;
+  top: 19px;
   position: absolute;
 }
 
@@ -8417,11 +8459,11 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 }
 
 .system-dashboard .status_box li span.overview.total {
-  font-size: 71px;
-  /*+placement:shift 8px 26px;*/
+  font-size: 56px;
+  /*+placement:shift 9px 29px;*/
   position: relative;
-  left: 8px;
-  top: 26px;
+  left: 9px;
+  top: 29px;
   position: absolute;
   font-weight: normal;
 }
@@ -8545,11 +8587,19 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 }
 
 .system-dashboard.zone .status_box li.primary-storage .icon {
-  background-position: -36px -404px;
+  background-position: -32px -404px;
+  /*+placement:shift 37px 68px;*/
+  position: relative;
+  left: 37px;
+  top: 68px;
 }
 
 .system-dashboard.zone .status_box li.secondary-storage .icon {
-  background-position: -219px -404px;
+  background-position: -216px -404px;
+  /*+placement:shift 37px 68px;*/
+  position: relative;
+  left: 37px;
+  top: 68px;
 }
 
 .system-dashboard.zone .status_box li.system-vms .icon {

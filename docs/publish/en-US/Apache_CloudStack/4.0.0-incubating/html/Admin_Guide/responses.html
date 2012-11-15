@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>4.4. Responses</title><link rel="stylesheet" type="text/css" href="Common_Content/css/default.css" /><link rel="stylesheet" media="print" href="Common_Content/css/print.css" type="text/css" /><meta name="generator" content="publican 2.8" /><meta name="package" content="Apache_CloudStack-API_Developers_Guide-4.0.0-incubating-en-US-1-" /><link rel="home" href="index.html" title="CloudStack API Developer's Guide" /><link rel="up" href="api-calls.html" title="Chapter 4. Calling the CloudStack API" /><link rel="prev" href="signing-api-requests.html" title="4.3. Signing API Requests" /><link rel="next" href="asynchronous-commands.html" title="4.5. Asynchronous Commands" /></head><body><p id="title"><a class="left" href="http://cloudstack.org"><img src="Common_Content/images/image_left.png" alt="Product Site" /></a><a class="right" href="http://docs.cloudstack.org"><img src="Common_Content/images/image_right.png" alt="Documentation Site" /></a></p><ul class="docnav"><li class="previous"><a accesskey="p" href="signing-api-requests.html"><strong>Prev</strong></a></li><li class="next"><a accesskey="n" href="asynchronous-commands.html"><strong>Next</strong></a></li></ul><div xml:lang="en-US" class="section" id="responses" lang="en-US"><div class="titlepage"><div><div><h2 class="title" id="responses">4.4. Responses</h2></div></div></div><div xml:lang="en-US" class="section" id="response-formats" lang="en-US"><div class="titlepage"><div><div><h3 class="title" id="response-formats">4.4.1. Response Formats: XML and JSON</h3></div></div></div><div class="para">
+		CloudStack supports two formats as the response to an API call. The default response is XML. If you would like the response to be in JSON, add &amp;response=json to the Command String.
+	</div><div class="para">
+		Sample XML Response:
+	</div><pre class="programlisting">
+     &lt;listipaddressesresponse&gt; 
+        &lt;allocatedipaddress&gt;
+        &lt;ipaddress&gt;192.168.10.141&lt;/ipaddress&gt; 
+        &lt;allocated&gt;2009-09-18T13:16:10-0700&lt;/allocated&gt; 
+        &lt;zoneid&gt;4&lt;/zoneid&gt; 
+            &lt;zonename&gt;WC&lt;/zonename&gt; 
+            &lt;issourcenat&gt;true&lt;/issourcenat&gt; 
+        &lt;/allocatedipaddress&gt;
+     &lt;/listipaddressesresponse&gt;
+</pre><div class="para">
+		Sample JSON Response:
+	</div><pre class="programlisting">
+        { "listipaddressesresponse" : 
+          { "allocatedipaddress" :
+            [ 
+              { 
+                "ipaddress" : "192.168.10.141", 
+                "allocated" : "2009-09-18T13:16:10-0700",
+                "zoneid" : "4", 
+                "zonename" : "WC", 
+                "issourcenat" : "true" 
+              } 
+            ]
+          } 
+        } 
+</pre></div><div xml:lang="en-US" class="section" id="max-result-page-returned" lang="en-US"><div class="titlepage"><div><div><h3 class="title" id="max-result-page-returned">4.4.2. Maximum Result Pages Returned</h3></div></div></div><div class="para">
+		For each cloud, there is a default upper limit on the number of results that any API command will return in a single page. This is to help prevent overloading the cloud servers and prevent DOS attacks. For example, if the page size limit is 500 and a command returns 10,000 results, the command will return 20 pages.
+	</div><div class="para">
+		The default page size limit can be different for each cloud. It is set in the global configuration parameter default.page.size. If your cloud has many users with lots of VMs, you might need to increase the value of this parameter. At the same time, be careful not to set it so high that your site can be taken down by an enormous return from an API call. For more information about how to set global configuration parameters, see "Describe Your Deployment" in the Installation Guide.
+	</div><div class="para">
+		To decrease the page size limit for an individual API command, override the global setting with the page and pagesize parameters, which are available in any list* command (listCapabilities, listDiskOfferings, etc.).
+	</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+				Both parameters must be specified together.
+			</div></li><li class="listitem"><div class="para">
+				The value of the pagesize parameter must be smaller than the value of default.page.size. That is, you can not increase the number of possible items in a result page, only decrease it.
+			</div></li></ul></div><div class="para">
+		For syntax information on the list* commands, see the API Reference.
+	</div></div><div xml:lang="en-US" class="section" id="error-handling" lang="en-US"><div class="titlepage"><div><div><h3 class="title" id="error-handling">4.4.3. Error Handling</h3></div></div></div><div class="para">
+		If an error occurs while processing an API request, the appropriate response in the format specified is returned. Each error response consists of an error code and an error text describing what possibly can go wrong. For an example error response, see page 12.
+	</div><div class="para">
+		An HTTP error code of 401 is always returned if API request was rejected due to bad signatures, missing API Keys, or the user simply did not have the permissions to execute the command.
+	</div></div></div><ul class="docnav"><li class="previous"><a accesskey="p" href="signing-api-requests.html"><strong>Prev</strong>4.3. Signing API Requests</a></li><li class="up"><a accesskey="u" href="#"><strong>Up</strong></a></li><li class="home"><a accesskey="h" href="index.html"><strong>Home</strong></a></li><li class="next"><a accesskey="n" href="asynchronous-commands.html"><strong>Next</strong>4.5. Asynchronous Commands</a></li></ul></body></html>

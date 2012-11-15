@@ -34,6 +34,8 @@ cloud-*.tar.bz2
 *.log
 *.pyc
 *.egginfo/
+*.egg-info/
+*.prefs
 build.number
 api.log.*.gz
 cloud.log.*.*
@@ -62,3 +64,4 @@ awsapi/modules/*
 .settings/
 db.properties.override
 awsapi/overlays/
+*.egg-info/

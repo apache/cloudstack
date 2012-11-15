@@ -33,6 +33,24 @@
     <defaultGoal>install</defaultGoal>
     <plugins>
       <plugin>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>1.7</version>
+        <executions>
+          <execution>
+          <id>generate-resource</id>
+          <phase>generate-resources</phase>
+          <goals>
+            <goal>run</goal>
+          </goals>
+          <configuration>
+            <target>
+              <delete dir="${basedir}/cloudmonkey/marvin"/>
+            </target>
+          </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
         <version>1.2.1</version>

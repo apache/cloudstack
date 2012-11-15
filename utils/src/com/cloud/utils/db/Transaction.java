@@ -1111,21 +1111,21 @@ public class Transaction {
             	s_logger.debug("Simulator DB properties are not available. Not initializing simulator DS");
             }
         } catch (final Exception e) {
-            final GenericObjectPool connectionPool = new GenericObjectPool(null, 5);
-            final ConnectionFactory connectionFactory = new DriverManagerConnectionFactory("jdbc:mysql://localhost:3306/cloud", "cloud", "cloud");
-            final PoolableConnectionFactory poolableConnectionFactory = new PoolableConnectionFactory(connectionFactory, connectionPool, null, null, false, true);
-            s_ds = new PoolingDataSource(/*connectionPool*/ poolableConnectionFactory.getPool());
-
-            final GenericObjectPool connectionPoolUsage = new GenericObjectPool(null, 5);
-            final ConnectionFactory connectionFactoryUsage = new DriverManagerConnectionFactory("jdbc:mysql://localhost:3306/cloud_usage", "cloud", "cloud");
-            final PoolableConnectionFactory poolableConnectionFactoryUsage = new PoolableConnectionFactory(connectionFactoryUsage, connectionPoolUsage, null, null, false, true);
-            s_usageDS = new PoolingDataSource(poolableConnectionFactoryUsage.getPool());
-            
-            final GenericObjectPool connectionPoolsimulator = new GenericObjectPool(null, 5);
-            final ConnectionFactory connectionFactorysimulator = new DriverManagerConnectionFactory("jdbc:mysql://localhost:3306/cloud_simulator", "cloud", "cloud");
-            final PoolableConnectionFactory poolableConnectionFactorysimulator = new PoolableConnectionFactory(connectionFactorysimulator, connectionPoolsimulator, null, null, false, true);
-            s_simulatorDS = new PoolingDataSource(poolableConnectionFactorysimulator.getPool());
+            s_ds = getDefaultDataSource("cloud");
+            s_usageDS = getDefaultDataSource("cloud_usage");
+            s_simulatorDS = getDefaultDataSource("cloud_simulator");
             s_logger.warn("Unable to load db configuration, using defaults with 5 connections.  Please check your configuration", e);
         }
     }
+
+    private static DataSource getDefaultDataSource(final String database) {
+   final GenericObjectPool connectionPool = new GenericObjectPool(null, 5);
+   final ConnectionFactory connectionFactory = new DriverManagerConnectionFactory(
+       "jdbc:mysql://localhost:3306/" + database, "cloud", "cloud");
+   final PoolableConnectionFactory poolableConnectionFactory = new PoolableConnectionFactory(
+       connectionFactory, connectionPool, null, null, false, true);
+   return new PoolingDataSource(
+       /* connectionPool */poolableConnectionFactory.getPool());
+    }
+    
 }

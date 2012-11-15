@@ -30,6 +30,7 @@ from random import random
 #Import System modules
 import datetime
 
+_multiprocess_shared_ = True
 
 class Services:
     """Test Templates Services

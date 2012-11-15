@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>3.5. Building DEB packages</title><link rel="stylesheet" type="text/css" href="Common_Content/css/default.css" /><link rel="stylesheet" media="print" href="Common_Content/css/print.css" type="text/css" /><meta name="generator" content="publican 2.8" /><meta name="package" content="Apache_CloudStack-Installation_Guide-4.0.0-incubating-en-US-1-" /><link rel="home" href="index.html" title="CloudStack Installation Guide" /><link rel="up" href="sect-source.html" title="Chapter 3. Building from Source" /><link rel="prev" href="sect-source-extract.html" title="3.4. Extracting source" /><link rel="next" href="sect-source-buildrpm.html" title="3.6. Building RPMs" /></head><body><p id="title"><a class="left" href="http://cloudstack.org"><img src="Common_Content/images/image_left.png" alt="Product Site" /></a><a class="right" href="http://docs.cloudstack.org"><img src="Common_Content/images/image_right.png" alt="Documentation Site" /></a></p><ul class="docnav"><li class="previous"><a accesskey="p" href="sect-source-extract.html"><strong>Prev</strong></a></li><li class="next"><a accesskey="n" href="sect-source-buildrpm.html"><strong>Next</strong></a></li></ul><div xml:lang="en-US" class="section" id="sect-source-builddebs" lang="en-US"><div class="titlepage"><div><div><h2 class="title" id="sect-source-builddebs">3.5. Building DEB packages</h2></div></div></div><div class="para">
+		In addition to the bootstrap dependencies, you'll also need to install several other dependencies. Note that we recommend using Maven 3, which is not currently available in 12.04.1 LTS. So, you'll also need to add a PPA repository that includes Maven 3. After running the command <code class="command">add-apt-repository</code>, you will be prompted to continue and a GPG key will be added.
+	</div><pre class="screen">
+<code class="command">$ sudo apt-get update</code>
+<code class="command">$ sudo apt-get install python-software-properties</code>
+<code class="command">$ sudo add-apt-repository ppa:natecarlson/maven3</code>
+<code class="command">$ sudo apt-get update</code>
+<code class="command">$ sudo apt-get install ant debhelper openjdk-6-jdk tomcat6 libws-commons-util-java genisoimage python-mysqldb libcommons-codec-java libcommons-httpclient-java liblog4j1.2-java maven3</code></pre><div class="para">
+		While we have defined, and you have presumably already installed the bootstrap prerequisites, there are a number of build time prerequisites that need to be resolved. CloudStack uses maven for dependency resolution. You can resolve the buildtime depdencies for CloudStack by running:
+	</div><pre class="screen"><code class="command">$ mvn3 -P deps</code></pre><div class="para">
+		Now that we have resolved the dependencies we can move on to building CloudStack and packaging them into DEBs by issuing the following command.
+	</div><pre class="screen">
+<code class="command">$ dpkg-buildpackge -uc -us</code></pre><div class="para">
+		This command will build 16 Debian packages. You should have all of the following:
+	</div><pre class="programlisting">
+cloud-agent_4.0.0-incubating_amd64.deb
+cloud-agent-deps_4.0.0-incubating_amd64.deb
+cloud-agent-libs_4.0.0-incubating_amd64.deb
+cloud-awsapi_4.0.0-incubating_amd64.deb
+cloud-cli_4.0.0-incubating_amd64.deb
+cloud-client_4.0.0-incubating_amd64.deb
+cloud-client-ui_4.0.0-incubating_amd64.deb
+cloud-core_4.0.0-incubating_amd64.deb
+cloud-deps_4.0.0-incubating_amd64.deb
+cloud-python_4.0.0-incubating_amd64.deb
+cloud-scripts_4.0.0-incubating_amd64.deb
+cloud-server_4.0.0-incubating_amd64.deb
+cloud-setup_4.0.0-incubating_amd64.deb
+cloud-system-iso_4.0.0-incubating_amd64.deb
+cloud-usage_4.0.0-incubating_amd64.deb
+cloud-utils_4.0.0-incubating_amd64.deb
+</pre><div class="section" id="sect-source-builddebs-repo"><div class="titlepage"><div><div><h3 class="title" id="sect-source-builddebs-repo">3.5.1. Setting up an APT repo</h3></div></div></div><div class="para">
+			After you've created the packages, you'll want to copy them to a system where you can serve the packages over HTTP. You'll create a directory for the packages and then use <code class="code">dpkg-scanpackages</code> to create <code class="filename">Packages.gz</code>, which holds information about the archive structure. Finally, you'll add the repository to your system(s) so you can install the packages using APT.
+		</div><div class="para">
+			The first step is to make sure that you have the <span class="application"><strong>dpkg-dev</strong></span> package installed. This should have been installed when you pulled in the <span class="application"><strong>debhelper</strong></span> application previously, but if you're generating <code class="filename">Packages.gz</code> on a different system, be sure that it's installed there as well.
+		</div><pre class="screen"><code class="command">$ sudo apt-get install dpkg-dev</code></pre><div class="para">
+			The next step is to copy the DEBs to the directory where they can be served over HTTP. We'll use <code class="filename">/var/www/cloudstack/repo</code> in the examples, but change the directory to whatever works for you.
+		</div><pre class="screen">
+<code class="command">sudo mkdir -p /var/www/cloudstack/repo/binary</code>
+<code class="command">sudo cp *.deb /var/www/cloudstack/repo/binary</code>
+<code class="command">sudo cd /var/www/cloudstack/repo/binary</code>
+<code class="command">sudo dpkg-scanpackages . /dev/null | tee Packages | gzip -9 &gt; Packages.gz</code></pre><div class="note"><div class="admonition_header"><h2>Note: Override Files</h2></div><div class="admonition"><div class="para">
+				You can safely ignore the warning about a missing override file.
+			</div></div></div><div class="para">
+			Now you should have all of the DEB packages and <code class="filename">Packages.gz</code> in the <code class="filename">binary</code> directory and available over HTTP. (You may want to use <code class="command">wget</code> or <code class="command">curl</code> to test this before moving on to the next step.)
+		</div></div><div class="section" id="sect-source-builddebs-repo2"><div class="titlepage"><div><div><h3 class="title" id="sect-source-builddebs-repo2">3.5.2. Configuring your machines to use the APT repository</h3></div></div></div><div class="para">
+			Now that we have created the repository, you need to configure your machine to make use of the APT repository. You can do this by adding a repository file under <code class="filename">/etc/apt/sources.list.d</code>. Use your preferred editor to create <code class="filename">/etc/apt/sources.list.d/cloudstack.list</code> with this line:
+		</div><pre class="programlisting">deb http://<em class="replaceable"><code>server.url</code></em>/cloudstack/repo binary/</pre><div class="para">
+			Now that you have the repository info in place, you'll want to run another update so that APT knows where to find the CloudStack packages.
+		</div><pre class="screen"><code class="command">$ sudo apt-get update</code></pre><div class="para">
+			You can now move on to the instructions under Install on Ubuntu.
+		</div></div></div><ul class="docnav"><li class="previous"><a accesskey="p" href="sect-source-extract.html"><strong>Prev</strong>3.4. Extracting source</a></li><li class="up"><a accesskey="u" href="#"><strong>Up</strong></a></li><li class="home"><a accesskey="h" href="index.html"><strong>Home</strong></a></li><li class="next"><a accesskey="n" href="sect-source-buildrpm.html"><strong>Next</strong>3.6. Building RPMs</a></li></ul></body></html>

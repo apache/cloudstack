@@ -64,6 +64,7 @@ cat <<EOF > $file
 # Detail: Multi-line description, followed by blank line
 #
 # BUG-ID: CLOUDSTACK-9999
+# Bugfix-for: 4.0 (a branch that this should be considered for in a bugfix release)
 # Reviewed-by: Bar Barlington <bar@example.com>, Foo McFooson <foo@example.com>
 # Reported-by: Baz Bazelli <baz@example.com>
 # Signed-off-by: You <you@yourdomain.com>
@@ -76,7 +77,8 @@ SOB=$(git var GIT_AUTHOR_IDENT)
 sed -i "1s/^/################################# 80 chars #####################################\n\
 Summary: \n\n\
 Detail: \n\n\
-BUG-ID : \n\
+BUG-ID: \n\
+Bugfix-for: \n\
 Reviewed-by: \n\
 Reported-by: \n\
 Signed-off-by: ${SOB}\n\n/" $file

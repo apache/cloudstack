@@ -2142,8 +2142,13 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 }
 
                 boolean isSecurityGroupEnabled = _networkMgr.isSecurityGroupSupportedInNetwork(network);
-                if (isSecurityGroupEnabled && networkIdList.size() > 1) {
-                    throw new InvalidParameterValueException("Can't create a vm with multiple networks one of which is Security Group enabled");
+                if (isSecurityGroupEnabled) {
+                    if (networkIdList.size() > 1) {
+                        throw new InvalidParameterValueException("Can't create a vm with multiple networks one of" +
+                        		" which is Security Group enabled");
+                    }
+                    
+                    isSecurityGroupEnabledNetworkUsed = true;
                 }
 
                 if (network.getTrafficType() != TrafficType.Guest || network.getGuestType() != Network.GuestType.Shared || (network.getGuestType() == Network.GuestType.Shared && !isSecurityGroupEnabled)) {

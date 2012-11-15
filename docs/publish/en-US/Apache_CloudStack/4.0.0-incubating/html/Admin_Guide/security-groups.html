@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>15.7. Security Groups</title><link rel="stylesheet" type="text/css" href="Common_Content/css/default.css" /><link rel="stylesheet" media="print" href="Common_Content/css/print.css" type="text/css" /><meta name="generator" content="publican 2.8" /><meta name="package" content="Apache_CloudStack-Admin_Guide-4.0.0-incubating-en-US-1-" /><script type="text/javascript" src="../../../../../toc.js"></script><script type="text/javascript">
+              addID('Apache_CloudStack');
+              
+	      addID('Apache_CloudStack.4.0.0-incubating');
+              
+              addID('Apache_CloudStack.4.0.0-incubating.books');
+	      addID('Apache_CloudStack.4.0.0-incubating.Admin_Guide');
+              </script><link rel="home" href="index.html" title="CloudStack Administrator's Guide" /><link rel="up" href="networks.html" title="Chapter 15. Managing Networks and Traffic" /><link rel="prev" href="using-multiple-guest-networks.html" title="15.6. Using Multiple Guest Networks" /><link rel="next" href="external-firewalls-and-load-balancers.html" title="15.8. External Firewalls and Load Balancers" /></head><body class="toc_embeded "><div id="tocdiv" class="toc"><iframe id="tocframe" class="toc" src="../../../../toc.html">This is an iframe, to view it upgrade your browser or enable iframe display.</iframe></div><p id="title"><a class="left" href="http://cloudstack.org"><img src="Common_Content/images/image_left.png" alt="Product Site" /></a><a class="right" href="http://docs.cloudstack.org"><img src="Common_Content/images/image_right.png" alt="Documentation Site" /></a></p><ul class="docnav"><li class="previous"><a accesskey="p" href="using-multiple-guest-networks.html"><strong>Prev</strong></a></li><li class="next"><a accesskey="n" href="external-firewalls-and-load-balancers.html"><strong>Next</strong></a></li></ul><div xml:lang="en-US" class="section" id="security-groups" lang="en-US"><div class="titlepage"><div><div><h2 class="title" id="security-groups">15.7. Security Groups</h2></div></div></div><div xml:lang="en-US" class="section" id="about-security-groups" lang="en-US"><div class="titlepage"><div><div><h3 class="title" id="about-security-groups">15.7.1. About Security Groups</h3></div></div></div><div class="para">
+		Security groups provide a way to isolate traffic to VMs. A security group is a group of VMs that filter their incoming and outgoing traffic according to a set of rules, called ingress and egress rules. These rules filter network traffic according to the IP address that is attempting to communicate with the VM. Security groups are particularly useful in zones that use basic networking, because there is a single guest network for all guest VMs. In CloudStack 3.0.3 - 3.0.5, security groups are supported only in zones that use basic networking.
+	</div><div class="note"><div class="admonition_header"><h2>Note</h2></div><div class="admonition"><div class="para">
+			In a zone that uses advanced networking, you can instead define multiple guest networks to isolate traffic to VMs.
+		</div></div></div><div class="para">
+	</div><div class="para">
+		Each CloudStack account comes with a default security group that denies all inbound traffic and allows all outbound traffic. The default security group can be modified so that all new VMs inherit some other desired set of rules.
+	</div><div class="para">
+		Any CloudStack user can set up any number of additional security groups. When a new VM is launched, it is assigned to the default security group unless another user-defined security group is specified. A VM can be a member of any number of security groups. Once a VM is assigned to a security group, it remains in that group for its entire lifetime; you can not move a running VM from one security group to another.
+	</div><div class="para">
+		You can modify a security group by deleting or adding any number of ingress and egress rules. When you do, the new rules apply to all VMs in the group, whether running or stopped.
+	</div><div class="para">
+		If no ingress rules are specified, then no traffic will be allowed in, except for responses to any traffic that has been allowed out through an egress rule.
+	</div></div><div xml:lang="en-US" class="section" id="add-security-group" lang="en-US"><div class="titlepage"><div><div><h3 class="title" id="add-security-group">15.7.2. Adding a Security Group</h3></div></div></div><div class="para">
+		A user or administrator can define a new security group.
+	</div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				Log in to the CloudStack UI as an administrator or end user.
+			</div></li><li class="listitem"><div class="para">
+				In the left navigation, choose Network
+			</div></li><li class="listitem"><div class="para">
+				In Select view, choose Security Groups.
+			</div></li><li class="listitem"><div class="para">
+				Click Add Security Group.
+			</div></li><li class="listitem"><div class="para">
+				Provide a name and description.
+			</div></li><li class="listitem"><div class="para">
+				Click OK.
+			</div><div class="para">
+				The new security group appears in the Security Groups Details tab.
+			</div></li><li class="listitem"><div class="para">
+				To make the security group useful, continue to Adding Ingress and Egress Rules to a Security Group.
+			</div></li></ol></div></div><div xml:lang="en-US" class="section" id="enable-security-groups" lang="en-US"><div class="titlepage"><div><div><h3 class="title" id="enable-security-groups">15.7.3. Enabling Security Groups</h3></div></div></div><div class="para">
+		In order for security groups to function in a zone, the security groups feature must first be enabled for the zone. The administrator can do this when creating a new zone, by selecting a network offering that includes security groups. The procedure is described in Basic Zone Configuration in the Advanced Installation Guide.
+	</div></div><div xml:lang="en-US" class="section" id="add-ingress-egress-rules" lang="en-US"><div class="titlepage"><div><div><h3 class="title" id="add-ingress-egress-rules">15.7.4. Adding Ingress and Egress Rules to a Security Group</h3></div></div></div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				Log in to the CloudStack UI as an administrator or end user.
+			</div></li><li class="listitem"><div class="para">
+				In the left navigation, choose Network
+			</div></li><li class="listitem"><div class="para">
+				In Select view, choose Security Groups, then click the security group you want .
+			</div></li><li class="listitem"><div class="para">
+				To add an ingress rule, click the Ingress Rules tab and fill out the following fields to specify what network traffic is allowed into VM instances in this security group. If no ingress rules are specified, then no traffic will be allowed in, except for responses to any traffic that has been allowed out through an egress rule.
+			</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>Add by CIDR/Account</strong></span>. Indicate whether the source of the traffic will be defined by IP address (CIDR) or an existing security group in a CloudStack account (Account). Choose Account if you want to allow incoming traffic from all VMs in another security group
+					</div></li><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>Protocol</strong></span>. The networking protocol that sources will use to send traffic to the security group. TCP and UDP are typically used for data exchange and end-user communications. ICMP is typically used to send error messages or network monitoring data.
+					</div></li><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>Start Port, End Port</strong></span>. (TCP, UDP only) A range of listening ports that are the destination for the incoming traffic. If you are opening a single port, use the same number in both fields.
+					</div></li><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>ICMP Type, ICMP Code</strong></span>. (ICMP only) The type of message and error code that will be accepted.
+					</div></li><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>CIDR</strong></span>. (Add by CIDR only) To accept only traffic from IP addresses within a particular address block, enter a CIDR or a comma-separated list of CIDRs. The CIDR is the base IP address of the incoming traffic. For example, 192.168.0.0/22. To allow all CIDRs, set to 0.0.0.0/0.
+					</div></li><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>Account, Security Group</strong></span>. (Add by Account only) To accept only traffic from another security group, enter the CloudStack account and name of a security group that has already been defined in that account. To allow traffic between VMs within the security group you are editing now, enter the same name you used in step 7.
+					</div></li></ul></div><div class="para">
+				The following example allows inbound HTTP access from anywhere:
+			</div><div class="mediaobject"><img src="./images/http-access.png" width="444" alt="httpaccess.png: allows inbound HTTP access from anywhere" /></div></li><li class="listitem"><div class="para">
+				To add an egress rule, click the Egress Rules tab and fill out the following fields to specify what type of traffic is allowed to be sent out of VM instances in this security group. If no egress rules are specified, then all traffic will be allowed out. Once egress rules are specified, the following types of traffic are allowed out: traffic specified in egress rules; queries to DNS and DHCP servers; and responses to any traffic that has been allowed in through an ingress rule
+			</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>Add by CIDR/Account</strong></span>. Indicate whether the destination of the traffic will be defined by IP address (CIDR) or an existing security group in a CloudStack account (Account). Choose Account if you want to allow outgoing traffic to all VMs in another security group.
+					</div></li><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>Protocol</strong></span>. The networking protocol that VMs will use to send outgoing traffic. TCP and UDP are typically used for data exchange and end-user communications. ICMP is typically used to send error messages or network monitoring data.
+					</div></li><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>Start Port, End Port</strong></span>. (TCP, UDP only) A range of listening ports that are the destination for the outgoing traffic. If you are opening a single port, use the same number in both fields.
+					</div></li><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>ICMP Type, ICMP Code</strong></span>. (ICMP only) The type of message and error code that will be sent
+					</div></li><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>CIDR</strong></span>. (Add by CIDR only) To send traffic only to IP addresses within a particular address block, enter a CIDR or a comma-separated list of CIDRs. The CIDR is the base IP address of the destination. For example, 192.168.0.0/22. To allow all CIDRs, set to 0.0.0.0/0.
+					</div></li><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>Account, Security Group</strong></span>. (Add by Account only) To allow traffic to be sent to another security group, enter the CloudStack account and name of a security group that has already been defined in that account. To allow traffic between VMs within the security group you are editing now, enter its name.
+					</div></li></ul></div></li><li class="listitem"><div class="para">
+				Click Add.
+			</div></li></ol></div></div></div><ul class="docnav"><li class="previous"><a accesskey="p" href="using-multiple-guest-networks.html"><strong>Prev</strong>15.6. Using Multiple Guest Networks</a></li><li class="up"><a accesskey="u" href="#"><strong>Up</strong></a></li><li class="home"><a accesskey="h" href="index.html"><strong>Home</strong></a></li><li class="next"><a accesskey="n" href="external-firewalls-and-load-balancers.html"><strong>Next</strong>15.8. External Firewalls and Load Balancers</a></li></ul></body></html>

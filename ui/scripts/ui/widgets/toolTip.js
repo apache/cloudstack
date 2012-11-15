@@ -22,10 +22,10 @@
       var actions = this.options.actions;
       var docID = this.options.docID;
       var text = cloudStack.docs[docID].desc;
-      var $text = $('<p>').html(text).appendTo($tooltip);
       var $tooltip = $('<div>').addClass('tooltip-box');
       var $text = $('<p>').html(text).appendTo($tooltip);
       var $container = $('#cloudStack3-container');
+
       $tooltip.appendTo($container);
 
       if (this.options.mode == 'hover'){
@@ -135,10 +135,11 @@
   function prepare(jObj, options)
   {
     var $tooltip =  $(options.tooltip);
-    var element = jObj[0];
-    var offset = jObj.offset();
+    var element = options.attachTo ?
+          jObj.closest(options.attachTo) : jObj;
+    var offset = element.offset();
 
-    var left = offset.left + jObj.width();
+    var left = offset.left + element.width();
     var top = offset.top-5;
 
     if(options.onShow){

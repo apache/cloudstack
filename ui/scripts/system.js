@@ -1317,8 +1317,10 @@
                                   networkOfferingObjs = json.listnetworkofferingsresponse.networkoffering;
                                   if (networkOfferingObjs != null && networkOfferingObjs.length > 0) {
                                     for (var i = 0; i < networkOfferingObjs.length; i++) {
-																			//if args.scope == "account-specific" or "project-specific", exclude Isolated network offerings with SourceNat service (bug 12869)
-																			if(args.scope == "account-specific" || args.scope == "project-specific") {
+																			
+																			//comment out the following 12 lines because of CS-16718
+																			/*
+																			if(args.scope == "account-specific" || args.scope == "project-specific") { //if args.scope == "account-specific" or "project-specific", exclude Isolated network offerings with SourceNat service (bug 12869)
 																			  var includingSourceNat = false;
                                         var serviceObjArray = networkOfferingObjs[i].service;
                                         for(var k = 0; k < serviceObjArray.length; k++) {
@@ -1330,6 +1332,7 @@
                                         if(includingSourceNat == true)
                                           continue; //skip to next network offering
 																			}
+																			*/																			
 
                                       networkOfferingArray.push({id: networkOfferingObjs[i].id, description: networkOfferingObjs[i].displaytext});
                                     }
@@ -3596,16 +3599,16 @@
                       defaultValue: '300',
                       docID: 'helpSRXTimeout'
                     },
-                    inline: {
-                      label: 'Mode',
-                      docID: 'helpSRXMode',
-                      select: function(args) {
-                        var items = [];
-                        items.push({id: "false", description: "side by side"});
-                        items.push({id: "true", description: "inline"});
-                        args.response.success({data: items});
-                      }
-                    },
+                    // inline: {
+                    //   label: 'Mode',
+                    //   docID: 'helpSRXMode',
+                    //   select: function(args) {
+                    //     var items = [];
+                    //     items.push({id: "false", description: "side by side"});
+                    //     items.push({id: "true", description: "inline"});
+                    //     args.response.success({data: items});
+                    //   }
+                    // },
                     publicnetwork: {
                       label: 'label.public.network',
                       defaultValue: 'untrusted',
@@ -6099,7 +6102,7 @@
                     label: 'label.numretries',
                     defaultValue: '2'
                   },
-                  inline: {
+                 /* inline: {
                     label: 'Mode',
                     select: function(args) {
                       var items = [];
@@ -6107,7 +6110,7 @@
                       items.push({id: "true", description: "inline"});
                       args.response.success({data: items});
                     }
-                  },
+                  },*/
                   dedicated: {
                     label: 'label.dedicated',
                     isBoolean: true,

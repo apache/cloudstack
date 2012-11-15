@@ -28,6 +28,7 @@
     <xi:include href="management-server-install-prepare-os.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="management-server-install-client.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="management-server-install-db.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="about-password-encryption.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="management-server-install-nfs-shares.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="management-server-install-multi-node.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="management-server-install-systemvm.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />

@@ -29,6 +29,7 @@ import telnetlib
 
 #Import System modules
 import time
+_multiprocess_shared_ = True
 
 class Services:
     """Test SSVM Services

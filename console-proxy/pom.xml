@@ -44,28 +44,14 @@
     <!-- required deps for the systemvm -->
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloud-core</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-agent</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloud-api</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloud-utils</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-patches</artifactId>
       <version>${project.version}</version>
+      <type>pom</type>
     </dependency>
   </dependencies>
   <build>
