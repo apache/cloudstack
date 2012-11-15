@@ -31,6 +31,7 @@ try:
 
     from clint.textui import colored
     from ConfigParser import ConfigParser, SafeConfigParser
+    from urllib2 import HTTPError, URLError
 
     from version import __version__
     from marvin.cloudstackConnection import cloudConnection
@@ -138,6 +139,7 @@ class CloudStackShell(cmd.Cmd):
     def print_shell(self, *args):
         try:
             for arg in args:
+                arg = str(arg)
                 if isinstance(type(args), types.NoneType):
                     continue
                 if self.color == 'true':
@@ -208,10 +210,13 @@ class CloudStackShell(cmd.Cmd):
                                logging=logging.getLogger("cloudConnection"))
         try:
             response = conn.make_request(command, requests)
+            return response
         except cloudstackAPIException, e:
-            self.print_shell("API Error", e)
-            return None
-        return response
+            self.print_shell("API Error:", e)
+        except HTTPError, e:
+            self.print_shell(e)
+        except URLError, e:
+            self.print_shell("Connection Error:", e)
 
     def get_api_module(self, api_name, api_class_strs=[]):
         try:
