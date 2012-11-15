@@ -253,7 +253,7 @@
           $('.setup-guest-traffic').removeClass('basic');
           $('.setup-guest-traffic').addClass('advanced');
 										
-					if(args.data["zone-isolation-mode"]	== "VLAN") {
+					if(args.data["zone-advanced-sg-enabled"] !=	"on") {
 						//skip the step if OVS tunnel manager is enabled	
 						skipGuestTrafficStep = false; //reset it before ajax call
 						$.ajax({
@@ -276,7 +276,7 @@
 							}
 						});	
 					}
-					else { //args.data["zone-isolation-mode"] == "SG"
+					else { //args.data["zone-advanced-sg-enabled"] ==	"on"
 					  skipGuestTrafficStep = true;
 					}					
         }
@@ -309,10 +309,10 @@
           }
           else { //args.data['network-model'] == 'Advanced'
             args.$form.find('[rel=networkOfferingId]').hide();
-												
-						if(args.data["zone-isolation-mode"]	== "VLAN")
+						
+						if(args.data["zone-advanced-sg-enabled"] !=	"on")
               args.$form.find('[rel=guestcidraddress]').show();
-						else //args.data["zone-isolation-mode"] == "SG"
+						else //args.data["zone-advanced-sg-enabled"] ==	"on
 						  args.$form.find('[rel=guestcidraddress]').hide();
           }													
 										
@@ -1264,20 +1264,16 @@
           var array1 = [];
           var networkType = args.data.zone.networkType;  //"Basic", "Advanced"
           array1.push("&networktype=" + todb(networkType));
-          if(networkType == "Advanced") {
-            
-						
-            if(args.data.zone.isolationMode != null) {               
-              if(args.data.zone.isolationMode	== "VLAN") {
-							  array1.push("&securitygroupenabled=false"); 
-								
-								if(args.data.zone.guestcidraddress != null && args.data.zone.guestcidraddress.length > 0)
-                  array1.push("&guestcidraddress=" + todb(args.data.zone.guestcidraddress));								
-							}
-              else { // args.data.zone.isolationMode == "SG"
-                array1.push("&securitygroupenabled=true");   	
-              }								
-            }									
+          if(networkType == "Advanced") {            
+						if(args.data.zone.sgEnabled	!= true) {
+							array1.push("&securitygroupenabled=false"); 
+							
+							if(args.data.zone.guestcidraddress != null && args.data.zone.guestcidraddress.length > 0)
+								array1.push("&guestcidraddress=" + todb(args.data.zone.guestcidraddress));								
+						}
+						else { // args.data.zone.sgEnabled	== true
+							array1.push("&securitygroupenabled=true");   	
+						}								
           }
 
           array1.push("&name=" + todb(args.data.zone.name));
@@ -2457,10 +2453,10 @@
                 array1.push("&forVirtualNetwork=true");
 							}
 							else if(args.data.zone.networkType == "Advanced") {							  
-								if(args.data.zone.isolationMode	== "VLAN") { //VLAN
+								if(args.data.zone.sgEnabled	!= true) {
 								  array1.push("&forVirtualNetwork=true");
 								}
-								else { //Security Group
+								else { //args.data.zone.sgEnabled	== true
 								  array1.push("&forVirtualNetwork=false");
 								}
 							}
