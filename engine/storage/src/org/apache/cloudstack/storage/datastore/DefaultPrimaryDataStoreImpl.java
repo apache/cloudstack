@@ -14,6 +14,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskTyp
 import org.apache.cloudstack.storage.HypervisorHostEndPoint;
 import org.apache.cloudstack.storage.datastore.db.DataStoreVO;
 import org.apache.cloudstack.storage.datastore.driver.PrimaryDataStoreDriver;
+import org.apache.cloudstack.storage.image.TemplateInfo;
 
 import org.apache.cloudstack.storage.volume.VolumeEntityImpl;
 import org.apache.cloudstack.storage.volume.VolumeEvent;
@@ -63,13 +64,6 @@ public class DefaultPrimaryDataStoreImpl implements PrimaryDataStore {
 	public boolean deleteVolume(long id) {
 		// TODO Auto-generated method stub
 		return false;
-	}
-
-	@Override
-	public VolumeInfo createVolume(VolumeInfo vol, VolumeDiskType diskType) {
-		
-		
-	
 	}
 
 	@Override
@@ -138,6 +132,18 @@ public class DefaultPrimaryDataStoreImpl implements PrimaryDataStore {
 
 	@Override
 	public boolean exists(VolumeInfo vi) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean templateExists(long templateId) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean createTemplate(TemplateObject template) {
 		// TODO Auto-generated method stub
 		return false;
 	}

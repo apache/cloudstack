@@ -25,6 +25,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
+import org.apache.cloudstack.storage.image.TemplateObject;
 import org.apache.cloudstack.storage.volume.VolumeObject;
 
 
@@ -37,4 +38,5 @@ public interface PrimaryDataStore extends PrimaryDataStoreInfo {
 	PrimaryDataStoreInfo getDataStoreInfo();
 	boolean exists(VolumeInfo vi);
 	boolean templateExists(long templateId);
+	boolean installTemplate(TemplateObject template);
 }

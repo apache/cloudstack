@@ -18,6 +18,14 @@
  */
 package org.apache.cloudstack.storage.image;
 
+import org.apache.cloudstack.storage.image.store.ImageDataStoreInfo;
+
 public class TemplateObject implements TemplateInfo {
+
+	@Override
+	public ImageDataStoreInfo getImageDataStore() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 }

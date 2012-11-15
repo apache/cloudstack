@@ -92,6 +92,5 @@ public interface VirtualMachineTemplate extends ControlledEntity {
     Long getSourceTemplateId();
 
     String getTemplateTag();
-
     Map getDetails();
 }

@@ -16,9 +16,23 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.image;
+package org.apache.cloudstack.storage.image.motion;
 
-public interface ImageMotionService {
-	boolean copyTemplate(String templateUri, String destTemplateUri);
-	boolean copyIso(String isoUri, String destIsoUri);
+import org.apache.cloudstack.engine.cloud.entity.api.TemplateEntity;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
+import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
+
+public class ImageMotionServiceImpl implements ImageMotionService {
+	@Override
+	public boolean copyIso(String isoUri, String destIsoUri) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean copyTemplate(TemplateEntity template, PrimaryDataStore dataStore) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
 }

@@ -16,12 +16,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.engine.cloud.entity.api;
+package org.apache.cloudstack.storage.image.motion;
 
-import org.apache.cloudstack.engine.entity.api.CloudStackEntity;
+public class DefaultImageMotionProvider implements ImageMotionProvider {
 
-import com.cloud.template.VirtualMachineTemplate;
-
-public interface TemplateEntity extends CloudStackEntity, VirtualMachineTemplate {
-	
 }
