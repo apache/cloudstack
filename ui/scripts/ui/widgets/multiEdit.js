@@ -104,9 +104,12 @@
 
         if (!itemData) itemData = [{}];
 
-        if ($multi.find('th,td').filter(function() {
-          return $(this).attr('rel') == fieldName;
-        }).is(':hidden')) return true;
+        if (!options.noSelect &&
+            $multi.find('th,td').filter(function() {
+              return $(this).attr('rel') == fieldName;
+            }).is(':hidden')) {
+          return true;
+        }
 
         if (!field.isPassword) {
           if (field.edit) {
