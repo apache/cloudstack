@@ -1,3 +1,4 @@
+#!/bin/bash
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -15,11 +16,4 @@
 # specific language governing permissions and limitations
 # under the License.
 
-/etc/cloud/agent/agent.properties
-/etc/cloud/agent/developer.properties.template
-/etc/cloud/agent/environment.properties
-/etc/cloud/agent/log4j-cloud.xml
-/etc/init.d/cloud-agent
-/usr/bin/cloud-setup-agent
-/usr/bin/cloud-ssh
-/var/log/cloud/agent
+ssh -i /root/.ssh/id_rsa.cloud -p 3922 root@$1

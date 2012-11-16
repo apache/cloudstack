@@ -575,6 +575,7 @@ fi
 %config(noreplace) %{_sysconfdir}/%{name}/agent/log4j-%{name}.xml
 %attr(0755,root,root) %{_initrddir}/%{name}-agent
 %attr(0755,root,root) %{_bindir}/%{name}-setup-agent
+%attr(0755,root,root) %{_bindir}/%{name}-ssh
 %dir %attr(0770,root,root) %{_localstatedir}/log/%{name}/agent
 %doc LICENSE
 %doc NOTICE
