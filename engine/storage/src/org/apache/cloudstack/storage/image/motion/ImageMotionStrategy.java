@@ -16,18 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.engine.subsystem.api.storage;
+package org.apache.cloudstack.storage.image.motion;
 
 import org.apache.cloudstack.engine.cloud.entity.api.TemplateEntity;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
+import org.apache.cloudstack.storage.image.TemplateInfo;
 
-public interface ImageService {
-	boolean registerTemplate(long templateId, long imageStoreId);
-	boolean deleteTemplate(long templateId);
-	long registerIso(String isoUrl, long accountId);
-	boolean deleteIso(long isoId);
-	String grantTemplateAccess(long templateId, long endpointId);
-	boolean revokeTemplateAccess(long templateId, long endpointId);
-	String grantIsoAccess(long isoId, long endpointId);
-	boolean revokeIsoAccess(long isoId, long endpointId);
-	TemplateEntity getTemplateEntity(long templateId);
+public interface ImageMotionStrategy {
+   public boolean canHandle(TemplateInfo template, VolumeInfo volume);      
+   public EndPoint getEndPoint(TemplateInfo template, VolumeInfo volume);
+   public boolean copyTemplate(TemplateInfo template, VolumeInfo volume, EndPoint ep);
 }

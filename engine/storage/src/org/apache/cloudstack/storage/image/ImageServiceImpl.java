@@ -21,7 +21,7 @@ package org.apache.cloudstack.storage.image;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.cloud.entity.api.TemplateEntity;
-import org.apache.cloudstack.engine.subsystem.api.storage.ImageService;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.storage.image.downloader.ImageDownloader;
 import org.apache.cloudstack.storage.image.manager.ImageDataStoreManager;
 import org.apache.cloudstack.storage.image.provider.ImageDataStoreProviderManager;
@@ -63,12 +63,6 @@ public class ImageServiceImpl implements ImageService {
 	}
 
 	@Override
-	public String grantTemplateAccess(long templateId, long endpointId) {
-		ImageDataStore ids = imageStoreProviderMgr.getDataStoreFromTemplateId(templateId);
-		return ids.grantAccess(templateId, endpointId);
-	}
-
-	@Override
 	public boolean revokeTemplateAccess(long templateId, long endpointId) {
 		// TODO Auto-generated method stub
 		return false;
@@ -90,5 +84,11 @@ public class ImageServiceImpl implements ImageService {
 	public TemplateEntity getTemplateEntity(long templateId) {
 		TemplateObject to = imageStoreProviderMgr.getTemplate(templateId);
 		return new TemplateEntityImpl(to);
+	}
+
+	@Override
+	public String grantTemplateAccess(TemplateInfo template, EndPoint endpointId) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

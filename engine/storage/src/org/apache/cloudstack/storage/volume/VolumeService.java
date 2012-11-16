@@ -19,6 +19,7 @@
 package org.apache.cloudstack.storage.volume;
 
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
 import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeType;
@@ -60,12 +61,14 @@ public interface VolumeService {
     /**
      * 
      */
-    String grantAccess(long volumeId, long endpointId);
+    String grantAccess(VolumeInfo volume, EndPoint endpointId);
     
     /**
      * 
      */
     boolean rokeAccess(long volumeId, long endpointId);
-    
+    VolumeInfo startCopying(VolumeInfo volume);
+    VolumeInfo copyingSucceed(VolumeInfo volume);
+    VolumeInfo copyingFailed(VolumeInfo volume);
     VolumeEntity getVolumeEntity(long volumeId);
 }

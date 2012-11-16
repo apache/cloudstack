@@ -18,13 +18,13 @@
  */
 package org.apache.cloudstack.storage.command;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.storage.to.VolumeTO;
 
 import com.cloud.agent.api.Command;
 
 public class CreateVolumeCommand extends Command {
-	protected VolumeInfo volumeInfo;
-	public CreateVolumeCommand(VolumeInfo volumeInfo) {
+	protected VolumeTO volumeInfo;
+	public CreateVolumeCommand(VolumeTO volumeInfo) {
 		super();
 		this.volumeInfo = volumeInfo;
 	}

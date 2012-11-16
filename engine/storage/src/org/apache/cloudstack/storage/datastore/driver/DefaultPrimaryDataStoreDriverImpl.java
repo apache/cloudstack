@@ -7,6 +7,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.command.CreateVolumeAnswer;
 import org.apache.cloudstack.storage.command.CreateVolumeCommand;
+import org.apache.cloudstack.storage.to.VolumeTO;
 import org.apache.cloudstack.storage.volume.VolumeObject;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -23,7 +24,7 @@ public class DefaultPrimaryDataStoreDriverImpl implements
 		List<EndPoint> endPoints = vol.getDataStore().getEndPoints();
 		int retries = 3;
 		VolumeInfo volInfo = vol;
-		CreateVolumeCommand createCmd = new CreateVolumeCommand(volInfo);
+		CreateVolumeCommand createCmd = new CreateVolumeCommand(new VolumeTO(volInfo));
 		Answer answer = null;
 		int i = 0;
 		boolean result = false;

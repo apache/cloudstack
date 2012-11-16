@@ -25,6 +25,7 @@ import org.apache.cloudstack.engine.cloud.entity.api.TemplateEntity;
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectBackupStorageOperationState;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageOrchestrator;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateProfile;
@@ -32,10 +33,15 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeProfile;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
+import org.apache.cloudstack.engine.subsystem.api.storage.type.BaseImage;
 import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeType;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
 import org.apache.cloudstack.storage.datastore.manager.PrimaryDataStoreManager;
 import org.apache.cloudstack.storage.image.ImageManager;
+import org.apache.cloudstack.storage.image.ImageService;
+import org.apache.cloudstack.storage.image.TemplateEntityImpl;
+import org.apache.cloudstack.storage.image.TemplateInfo;
+import org.apache.cloudstack.storage.image.motion.ImageMotionService;
 import org.apache.cloudstack.storage.manager.BackupStorageManager;
 import org.apache.cloudstack.storage.manager.SecondaryStorageManager;
 import org.apache.cloudstack.storage.volume.VolumeEntityImpl;
@@ -91,6 +97,10 @@ public class StorageOrchestratorImpl implements StorageOrchestrator {
 	VMTemplateDao _templateDao;
 	@Inject
 	VolumeService volumeService;
+	@Inject
+	ImageMotionService imageMotionService;
+	@Inject
+	ImageService imageService;
 	@Inject
 	PrimaryDataStoreManager primaryStorageMgr;
 	
@@ -343,12 +353,28 @@ public class StorageOrchestratorImpl implements StorageOrchestrator {
 		return volumeService.allocateVolumeInDb(size, type, volName, templateId);
 	}
 	
+	protected VolumeInfo getVolumeInfo(VolumeEntity volume) {
+		VolumeEntityImpl vei = (VolumeEntityImpl)volume;
+		return vei.getVolumeInfo();
+	}
+	
 	@Override
 	public boolean createVolumeFromTemplate(VolumeEntity volume, long dataStoreId, VolumeDiskType diskType, TemplateEntity template) {
 		PrimaryDataStore pd = primaryStorageMgr.getPrimaryDataStore(dataStoreId);
 		boolean existsOnPrimaryStorage = pd.templateExists(template.getId());
 		if (!existsOnPrimaryStorage) {
-			//pd.installTemplate(template);
+			TemplateInfo ti = ((TemplateEntityImpl)template).getTemplateInfo();
+			//TODO: hold lock
+			VolumeEntity baseImage = volumeService.allocateVolumeInDb(template.getVirtualSize(), new BaseImage(), "BaseImage-" + template.getName(), template.getId());
+			VolumeInfo vi = pd.createVolume(getVolumeInfo(baseImage), pd.getDefaultDiskType());
+			volumeService.startCopying(vi);
+			
+			boolean copyResult = imageMotionService.copyTemplate(ti, vi);
+			if (copyResult) {
+				volumeService.copyingSucceed(vi);
+			} else {
+				volumeService.copyingFailed(vi);
+			}
 		}
 		return false;
 	}

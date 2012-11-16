@@ -18,11 +18,28 @@
  */
 package org.apache.cloudstack.storage.image.motion;
 
+import java.util.List;
+
+import javax.inject.Inject;
+
 import org.apache.cloudstack.engine.cloud.entity.api.TemplateEntity;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
+import org.apache.cloudstack.storage.image.ImageService;
+import org.apache.cloudstack.storage.image.TemplateInfo;
+import org.apache.cloudstack.storage.volume.VolumeService;
+
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class ImageMotionServiceImpl implements ImageMotionService {
+	@Inject
+	List<ImageMotionStrategy> motionStrategies;
+	@Inject
+	VolumeService volumeService;
+	@Inject
+	ImageService imageService;
 	@Override
 	public boolean copyIso(String isoUri, String destIsoUri) {
 		// TODO Auto-generated method stub
@@ -30,9 +47,23 @@ public class ImageMotionServiceImpl implements ImageMotionService {
 	}
 
 	@Override
-	public boolean copyTemplate(TemplateEntity template, PrimaryDataStoreInfo dataStore) {
-		// TODO Auto-generated method stub
-		return false;
+	public boolean copyTemplate(TemplateInfo template, VolumeInfo volume) {
+		ImageMotionStrategy ims = null;
+		for (ImageMotionStrategy strategy : motionStrategies) {
+			if (strategy.canHandle(template, volume)) {
+				ims = strategy;
+				break;
+			}
+		}
+		
+		if (ims == null) {
+			throw new CloudRuntimeException("Can't find proper image motion strategy");
+		}
+		
+		EndPoint ep = ims.getEndPoint(template, volume);
+		
+		volumeService.grantAccess(volume, ep);
+		imageService.grantTemplateAccess(template, ep);
+		return ims.copyTemplate(template, volume, ep);
 	}
-
 }

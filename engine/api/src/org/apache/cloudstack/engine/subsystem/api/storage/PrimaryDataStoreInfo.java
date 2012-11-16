@@ -19,6 +19,8 @@
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
 
+import java.util.List;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -29,4 +31,5 @@ public interface PrimaryDataStoreInfo {
 	public boolean isVolumeDiskTypeSupported(VolumeDiskType diskType);
 	public long getCapacity();
 	public long getAvailableCapacity();
+	public List<EndPoint> getEndPoints();
 }

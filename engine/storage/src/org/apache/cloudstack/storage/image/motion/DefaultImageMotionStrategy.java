@@ -22,9 +22,35 @@ import org.apache.cloudstack.engine.cloud.entity.api.TemplateEntity;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.storage.command.CopyTemplateToPrimaryStorage;
+import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
 import org.apache.cloudstack.storage.image.TemplateInfo;
+import org.apache.cloudstack.storage.to.TemplateTO;
+import org.apache.cloudstack.storage.to.VolumeTO;
 
-public interface ImageMotionService {
-	boolean copyTemplate(TemplateInfo template, VolumeInfo baseImage);
-	boolean copyIso(String isoUri, String destIsoUri);
+public class DefaultImageMotionStrategy implements ImageMotionStrategy {
+
+	@Override
+	public boolean canHandle(TemplateInfo template, VolumeInfo volume) {
+		// TODO Auto-generated method stub
+		return true;
+	}
+
+	//For default strategy, we will use one of endpoint in volume's datastore
+	@Override
+	public EndPoint getEndPoint(TemplateInfo template, VolumeInfo volume) {
+		PrimaryDataStoreInfo pdi = volume.getDataStore();
+		return pdi.getEndPoints().get(0);
+	}
+
+	@Override
+	public boolean copyTemplate(TemplateInfo template, VolumeInfo volume,
+			EndPoint ep) {
+		VolumeTO vt = new VolumeTO(volume);
+		TemplateTO tt = new TemplateTO(template);
+		CopyTemplateToPrimaryStorage copyCommand = new CopyTemplateToPrimaryStorage(tt, vt);
+		ep.sendMessage(copyCommand);
+		return true;
+	}
+
 }

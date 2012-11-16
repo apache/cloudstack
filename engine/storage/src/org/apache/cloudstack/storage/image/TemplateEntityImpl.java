@@ -46,6 +46,10 @@ public class TemplateEntityImpl implements TemplateEntity {
     public long getImageDataStoreId() {
     	return getImageDataStore().getImageDataStoreId();
     }
+    
+    public TemplateInfo getTemplateInfo() {
+    	return this.templateInfo;
+    }
 
 	@Override
 	public String getUuid() {
@@ -271,6 +275,18 @@ public class TemplateEntityImpl implements TemplateEntity {
 
 	@Override
 	public long getDomainId() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public long getPhysicalSize() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public long getVirtualSize() {
 		// TODO Auto-generated method stub
 		return 0;
 	}

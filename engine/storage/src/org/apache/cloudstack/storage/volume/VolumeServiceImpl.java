@@ -21,6 +21,7 @@ package org.apache.cloudstack.storage.volume;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
 import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeType;
@@ -87,12 +88,6 @@ public class VolumeServiceImpl implements VolumeService {
 	}
 
 	@Override
-	public String grantAccess(long volumeId, long endpointId) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
 	public boolean rokeAccess(long volumeId, long endpointId) {
 		// TODO Auto-generated method stub
 		return false;
@@ -117,5 +112,29 @@ public class VolumeServiceImpl implements VolumeService {
 			PrimaryDataStore dataStore = dataStoreMgr.getPrimaryDataStore(vo.getPoolId());
 			return new VolumeEntityImpl(dataStore.getVolume(volumeId));
 		}
+	}
+
+	@Override
+	public String grantAccess(VolumeInfo volume, EndPoint endpointId) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public VolumeInfo startCopying(VolumeInfo volume) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public VolumeInfo copyingSucceed(VolumeInfo volume) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public VolumeInfo copyingFailed(VolumeInfo volume) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

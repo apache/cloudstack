@@ -16,17 +16,20 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.image.motion;
+package org.apache.cloudstack.storage.image;
 
 import org.apache.cloudstack.engine.cloud.entity.api.TemplateEntity;
-import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 
-public class DefaultImageMotionProvider implements ImageMotionProvider {
 
-	@Override
-	public boolean canHandle(TemplateEntity template, PrimaryDataStore dataStoe) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
+public interface ImageService {
+	boolean registerTemplate(long templateId, long imageStoreId);
+	boolean deleteTemplate(long templateId);
+	long registerIso(String isoUrl, long accountId);
+	boolean deleteIso(long isoId);
+	String grantTemplateAccess(TemplateInfo template, EndPoint endpointId);
+	boolean revokeTemplateAccess(long templateId, long endpointId);
+	String grantIsoAccess(long isoId, long endpointId);
+	boolean revokeIsoAccess(long isoId, long endpointId);
+	TemplateEntity getTemplateEntity(long templateId);
 }
