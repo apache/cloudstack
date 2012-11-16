@@ -597,6 +597,10 @@ setup_vpcrouter() {
     setup_vmware_extra_nics
   fi
 
+  if [ -f /etc/hosts ]; then
+    grep -q $NAME /etc/hosts || echo "127.0.0.1 $NAME" >> /etc/hosts;
+  fi
+
     cat > /etc/network/interfaces << EOF
 auto lo $1
 iface lo inet loopback
