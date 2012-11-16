@@ -24,6 +24,7 @@ public class RpcCallContext {
 	
 	Map<String, Object> _contextMap = new HashMap<String, Object>();
 	int _timeoutMilliSeconds = DEFAULT_RPC_TIMEOUT;
+	String _pipeline;
 	
 	public RpcCallContext() {
 	}
@@ -34,6 +35,14 @@ public class RpcCallContext {
 	
 	public void setTimeoutMilliSeconds(int timeoutMilliseconds) {
 		_timeoutMilliSeconds = timeoutMilliseconds;
+	}
+	
+	public void setPipeline(String pipeName) {
+		_pipeline = pipeName;
+	}
+	
+	public String getPipeline() {
+		return _pipeline;
 	}
 	
 	@SuppressWarnings("unchecked")
