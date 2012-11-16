@@ -598,8 +598,7 @@ setup_vpcrouter() {
   fi
 
   if [ -f /etc/hosts ]; then
-    host=`hostname -s`;
-    grep -q $host /etc/hosts || echo "127.0.0.1 $host" >> /etc/hosts;
+    grep -q $NAME /etc/hosts || echo "127.0.0.1 $NAME" >> /etc/hosts;
   fi
 
     cat > /etc/network/interfaces << EOF
