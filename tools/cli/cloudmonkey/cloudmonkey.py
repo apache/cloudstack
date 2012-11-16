@@ -268,7 +268,13 @@ class CloudStackShell(cmd.Cmd):
         lexp = shlex.shlex(args.strip())
         lexp.whitespace = " "
         lexp.whitespace_split = True
-        args = list(lexp)
+        lexp.posix = True
+        args = []
+        while True:
+            next_val = lexp.next()
+            if next_val is None:
+                break
+            args.append(next_val)
         api_name = args[0]
 
         args_dict = dict(map(lambda x: [x.partition("=")[0],
