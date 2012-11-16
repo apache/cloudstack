@@ -81,6 +81,7 @@ class cloudConnection(object):
             elif hasattr(e, 'code'):
                 if self.logging is not None:
                     self.logging.critical("server returned %d error code"%e.code)
+            raise e
         except httplib.HTTPException, h:
             if self.logging is not None:
                 self.logging.debug("encountered http Exception %s"%h.args)
