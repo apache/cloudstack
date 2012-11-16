@@ -755,8 +755,9 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleManager, AutoScaleSe
                 return _lbRulesMgr.configureLbAutoScaleVmGroup(vmGroupid, currentState);
             } catch (ResourceUnavailableException re) {
                 throw re;
-            } catch (RuntimeException re) {
-                s_logger.warn("Exception during configureLbAutoScaleVmGrouop in lb rules manager", re);
+            } catch (Exception e) {
+                s_logger.warn("Exception during configureLbAutoScaleVmGroup in lb rules manager", e);
+                return false;
             }
         }
 

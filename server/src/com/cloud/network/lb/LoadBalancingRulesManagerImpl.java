@@ -227,6 +227,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
     @Inject
     UserDao _userDao;
 
+
     // Will return a string. For LB Stickiness this will be a json, for autoscale this will be "," separated values
     @Override
     public String getLBCapability(long networkid, String capabilityName) {
@@ -237,7 +238,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
                 serviceResponse.setName(service.getName());
                 if ("Lb".equalsIgnoreCase(service.getName())) {
                     Map<Capability, String> serviceCapabilities = serviceCapabilitiesMap
-                            .get(service);
+                    .get(service);
                     if (serviceCapabilities != null) {
                         for (Capability capability : serviceCapabilities
                                 .keySet()) {
@@ -351,7 +352,6 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
             _lbDao.persist(loadBalancer);
         }
 
-        // LBTODO
         try {
             success = applyAutoScaleConfig(loadBalancer, vmGroup, currentState);
         } catch (ResourceUnavailableException e) {
@@ -862,10 +862,19 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
 
         if (apply) {
             try {
+                if (_autoScaleVmGroupDao.isAutoScaleLoadBalancer(loadBalancerId)) {
+                    // Get the associated VmGroup
+                    AutoScaleVmGroupVO vmGroup = _autoScaleVmGroupDao.listByAll(loadBalancerId, null).get(0);
+                    if (!applyAutoScaleConfig(lb, vmGroup,vmGroup.getState())) {
+                        s_logger.warn("Unable to apply the autoscale config");
+                        return false;
+                    }
+                } else {
                     if (!applyLoadBalancerConfig(loadBalancerId)) {
                         s_logger.warn("Unable to apply the load balancer config");
                         return false;
                     }
+                }
             } catch (ResourceUnavailableException e) {
                 if (rollBack && isRollBackAllowedForProvider(lb)) {
                     if (backupMaps != null) {
@@ -953,7 +962,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
             try {
                 if (ipVO.getAssociatedWithNetworkId() == null) {
                     boolean assignToVpcNtwk = network.getVpcId() != null 
-                            && ipVO.getVpcId() != null && ipVO.getVpcId().longValue() == network.getVpcId();
+                    && ipVO.getVpcId() != null && ipVO.getVpcId().longValue() == network.getVpcId();
                     if (assignToVpcNtwk) {
                         //set networkId just for verification purposes
                         _networkMgr.checkIpForService(ipVO, Service.Lb, lb.getNetworkId());
