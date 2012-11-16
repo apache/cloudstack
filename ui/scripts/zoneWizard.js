@@ -243,42 +243,37 @@
         return true; // Both basic & advanced zones show physical network UI
       },
 
-      configureGuestTraffic: function(args) {
-        if (args.data['network-model'] == 'Basic') {
+      configureGuestTraffic: function(args) {			  
+        if ((args.data['network-model'] == 'Basic') || (args.data['network-model'] == 'Advanced' && args.data["zone-advanced-sg-enabled"] ==	"on")) {
           $('.setup-guest-traffic').addClass('basic');
           $('.setup-guest-traffic').removeClass('advanced');
 					skipGuestTrafficStep = false; //set value
         } 
-				else { //args.data['network-model'] == 'Advanced'
+				else { //args.data['network-model'] == 'Advanced' && args.data["zone-advanced-sg-enabled"] !=	"on"
           $('.setup-guest-traffic').removeClass('basic');
           $('.setup-guest-traffic').addClass('advanced');
-										
-					if(args.data["zone-advanced-sg-enabled"] !=	"on") {
-						//skip the step if OVS tunnel manager is enabled	
-						skipGuestTrafficStep = false; //reset it before ajax call
-						$.ajax({
-							url: createURL('listConfigurations'),
-							data: {
-								name: 'sdn.ovs.controller'
-							},
-							dataType: "json",
-							async: false,
-							success: function(json) {					 
-								var items = json.listconfigurationsresponse.configuration; //2 entries returned: 'sdn.ovs.controller', 'sdn.ovs.controller.default.label'
-								$(items).each(function(){						  
-									if(this.name == 'sdn.ovs.controller') {
-										if(this.value == 'true' || this.value == true) {
-											skipGuestTrafficStep = true;
-										}
-										return false; //break each loop
+															
+					//skip the step if OVS tunnel manager is enabled	
+					skipGuestTrafficStep = false; //reset it before ajax call
+					$.ajax({
+						url: createURL('listConfigurations'),
+						data: {
+							name: 'sdn.ovs.controller'
+						},
+						dataType: "json",
+						async: false,
+						success: function(json) {					 
+							var items = json.listconfigurationsresponse.configuration; //2 entries returned: 'sdn.ovs.controller', 'sdn.ovs.controller.default.label'
+							$(items).each(function(){						  
+								if(this.name == 'sdn.ovs.controller') {
+									if(this.value == 'true' || this.value == true) {
+										skipGuestTrafficStep = true;
 									}
-								});						
-							}
-						});	
-					}
-					else { //args.data["zone-advanced-sg-enabled"] ==	"on"
-					  skipGuestTrafficStep = true;
-					}					
+									return false; //break each loop
+								}
+							});						
+						}
+					});	
         }
 				return !skipGuestTrafficStep;
       },
@@ -612,61 +607,58 @@
 
       guestTraffic: {
         preFilter: function(args) {				                 		
-          var $guestTrafficDesc = $('.zone-wizard:visible').find('#add_zone_guest_traffic_desc');	 		     
-					if (args.data['network-model'] == 'Basic') {
+          var $guestTrafficDesc = $('.zone-wizard:visible').find('#add_zone_guest_traffic_desc');	 	          
+					if ((args.data['network-model'] == 'Basic') || (args.data['network-model'] == 'Advanced' && args.data["zone-advanced-sg-enabled"] ==	"on")) {
 						$guestTrafficDesc.find('#for_basic_zone').css('display', 'inline');
 						$guestTrafficDesc.find('#for_advanced_zone').hide();
 					}
-					else { //args.data['network-model'] == 'Advanced'
+					else { //args.data['network-model'] == 'Advanced' && args.data["zone-advanced-sg-enabled"] !=	"on"
 						$guestTrafficDesc.find('#for_advanced_zone').css('display', 'inline');
 						$guestTrafficDesc.find('#for_basic_zone').hide();
 					}		
 				
           var selectedZoneObj = {
             networktype: args.data['network-model']
-          };
-
-          var advancedFields = ['vlanRange'];
-          $(advancedFields).each(function() {
-            if (selectedZoneObj.networktype == 'Advanced') {
-              args.$form.find('[rel=' + this + ']').show();
-            }
-            else {
-              args.$form.find('[rel=' + this + ']').hide();
-            }
-          });
-
-          var basicFields = [
-            'guestGateway',
-            'guestNetmask',
-            'guestStartIp',
-            'guestEndIp'
-          ];
-          $(basicFields).each(function() {
-             if (selectedZoneObj.networktype == 'Basic') {
-              args.$form.find('[rel=' + this + ']').show();
-            }
-            else {
-              args.$form.find('[rel=' + this + ']').hide();
-            }
-          });
+          };          				
+          					
+					if (selectedZoneObj.networktype == 'Basic') {
+					  args.$form.find('[rel="guestGateway"]').show();
+						args.$form.find('[rel="guestNetmask"]').show();
+						args.$form.find('[rel="guestStartIp"]').show();
+						args.$form.find('[rel="guestEndIp"]').show();	
+            args.$form.find('[rel="vlanId"]').hide();						
+            args.$form.find('[rel="vlanRange"]').hide();						
+					}
+					else if(selectedZoneObj.networktype == 'Advanced' && args.data["zone-advanced-sg-enabled"] ==	"on") { 
+					  args.$form.find('[rel="guestGateway"]').show();
+						args.$form.find('[rel="guestNetmask"]').show();
+						args.$form.find('[rel="guestStartIp"]').show();
+						args.$form.find('[rel="guestEndIp"]').show();
+            args.$form.find('[rel="vlanId"]').show();						
+            args.$form.find('[rel="vlanRange"]').hide();	
+					}					
+					else if (selectedZoneObj.networktype == 'Advanced' && args.data["zone-advanced-sg-enabled"] !=	"on") { //this conditional statement is useless because the div will be replaced with other div(multiple tabs in Advanced zone without SG) later
+					  args.$form.find('[rel="guestGateway"]').hide();
+						args.$form.find('[rel="guestNetmask"]').hide();
+						args.$form.find('[rel="guestStartIp"]').hide();
+						args.$form.find('[rel="guestEndIp"]').hide();		
+						args.$form.find('[rel="vlanId"]').hide();
+            args.$form.find('[rel="vlanRange"]').show();	
+					}					
         },
 
-        fields: {
-          //Basic (start)
-          guestGateway: { label: 'label.guest.gateway' },
-          guestNetmask: { label: 'label.guest.netmask' },
-          guestStartIp: { label: 'label.guest.start.ip' },
-          guestEndIp: { label: 'label.guest.end.ip' },
-          //Basic (end)
-
-          //Advanced (start)
-          vlanRange: {
+        fields: {          
+          guestGateway: { label: 'label.guest.gateway' },  //Basic, Advanced with SG
+          guestNetmask: { label: 'label.guest.netmask' },  //Basic, Advanced with SG
+          guestStartIp: { label: 'label.guest.start.ip' }, //Basic, Advanced with SG
+          guestEndIp: { label: 'label.guest.end.ip' },     //Basic, Advanced with SG
+					vlanId: { label: 'VLAN ID' },              //Advanced with SG
+             						
+          vlanRange: { //in multiple tabs (tabs is as many as Guest Traffic types in multiple physical networks in Advanced Zone without SG)
             label: 'label.vlan.range',
             range: ['vlanRangeStart', 'vlanRangeEnd'],
-            validation: { required: false, digits: true }  //Bug 13517 - AddZone wizard->Configure guest traffic: Vlan is optional
-          }
-          //Advanced (end)
+            validation: { required: false, digits: true }  //Bug 13517 - AddZone wizard->Configure guest traffic: Vlan Range is optional
+          }          
         }
       },
       cluster: {
@@ -2352,17 +2344,29 @@
           });
         },
 				
-				addGuestNetwork: function(args) {  //create a guest network for basic zone
+				addGuestNetwork: function(args) {  //create a guest network for Basic zone or Advanced zone with SG
           message(dictionary['message.creating.guest.network']); 
           
-					var array2 = [];
-					array2.push("&zoneid=" + args.data.returnedZone.id);
-					array2.push("&name=guestNetworkForBasicZone");
-					array2.push("&displaytext=guestNetworkForBasicZone");
-					array2.push("&networkofferingid=" + args.data.zone.networkOfferingId);
+					var data = {
+					  zoneid: args.data.returnedZone.id,
+						name: 'defaultGuestNetwork',
+						displaytext: 'defaultGuestNetwork',
+						networkofferingid: args.data.zone.networkOfferingId,
+            gateway: args.data.guestTraffic.guestGateway,
+ 						netmask: args.data.guestTraffic.guestNetmask,
+						startip: args.data.guestTraffic.guestStartIp,
+						vlan: args.data.guestTraffic.vlanId
+					};
+					
+					if(args.data.guestTraffic.guestEndIp != null && args.data.guestTraffic.guestEndIp.length > 0) {
+					  $.extend(data, {
+						  endip: args.data.guestTraffic.guestEndIp
+						});
+					}					          
+					
 					$.ajax({
-						url: createURL("createNetwork" + array2.join("")),
-						dataType: "json",
+						url: createURL('createNetwork'),
+						data: data,
 						async: false,
 						success: function(json) {
 							//basic zone has only one physical network => addPod() will be called only once => so don't need to double-check before calling addPod()
