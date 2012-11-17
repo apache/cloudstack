@@ -29,6 +29,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
 import org.apache.cloudstack.storage.image.ImageService;
 import org.apache.cloudstack.storage.image.TemplateInfo;
+import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreInfo;
 import org.apache.cloudstack.storage.volume.VolumeService;
 
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -47,10 +48,10 @@ public class ImageMotionServiceImpl implements ImageMotionService {
 	}
 
 	@Override
-	public boolean copyTemplate(TemplateInfo template, VolumeInfo volume) {
+	public boolean copyTemplate(TemplateOnPrimaryDataStoreInfo templateStore) {
 		ImageMotionStrategy ims = null;
 		for (ImageMotionStrategy strategy : motionStrategies) {
-			if (strategy.canHandle(template, volume)) {
+			if (strategy.canHandle(templateStore)) {
 				ims = strategy;
 				break;
 			}
@@ -60,10 +61,11 @@ public class ImageMotionServiceImpl implements ImageMotionService {
 			throw new CloudRuntimeException("Can't find proper image motion strategy");
 		}
 		
-		EndPoint ep = ims.getEndPoint(template, volume);
+		EndPoint ep = ims.getEndPoint(templateStore);
 		
-		volumeService.grantAccess(volume, ep);
+		volumeService.grantAccess(templateStore, ep);
+		TemplateInfo template = templateStore.getTemplate();
 		imageService.grantTemplateAccess(template, ep);
-		return ims.copyTemplate(template, volume, ep);
+		return ims.copyTemplate(templateStore, ep);
 	}
 }

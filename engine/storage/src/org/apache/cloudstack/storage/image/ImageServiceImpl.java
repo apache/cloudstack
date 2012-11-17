@@ -87,7 +87,7 @@ public class ImageServiceImpl implements ImageService {
 	}
 
 	@Override
-	public String grantTemplateAccess(TemplateInfo template, EndPoint endpointId) {
+	public TemplateInfo grantTemplateAccess(TemplateInfo template, EndPoint endpointId) {
 		// TODO Auto-generated method stub
 		return null;
 	}

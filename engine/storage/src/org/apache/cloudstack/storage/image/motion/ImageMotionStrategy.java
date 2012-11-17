@@ -18,14 +18,11 @@
  */
 package org.apache.cloudstack.storage.image.motion;
 
-import org.apache.cloudstack.engine.cloud.entity.api.TemplateEntity;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
-import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
-import org.apache.cloudstack.storage.image.TemplateInfo;
+import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreInfo;
 
 public interface ImageMotionStrategy {
-   public boolean canHandle(TemplateInfo template, VolumeInfo volume);      
-   public EndPoint getEndPoint(TemplateInfo template, VolumeInfo volume);
-   public boolean copyTemplate(TemplateInfo template, VolumeInfo volume, EndPoint ep);
+   public boolean canHandle(TemplateOnPrimaryDataStoreInfo templateStore);      
+   public EndPoint getEndPoint(TemplateOnPrimaryDataStoreInfo templateStore);
+   public boolean copyTemplate(TemplateOnPrimaryDataStoreInfo templateStore, EndPoint ep);
 }

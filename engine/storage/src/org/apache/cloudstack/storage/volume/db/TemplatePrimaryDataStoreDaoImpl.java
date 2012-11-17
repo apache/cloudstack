@@ -16,21 +16,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.engine.subsystem.api.storage;
+package org.apache.cloudstack.storage.volume.db;
 
+import org.springframework.stereotype.Component;
 
-import java.util.List;
+import com.cloud.utils.db.GenericDaoBase;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
+@Component
+public class TemplatePrimaryDataStoreDaoImpl extends GenericDaoBase<TemplatePrimaryDataStoreVO, Long> implements TemplatePrimaryDataStoreDao {
 
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-
-public interface PrimaryDataStoreInfo {
-	public boolean isHypervisorSupported(HypervisorType hypervisor);
-	public boolean isLocalStorageSupported();
-	public boolean isVolumeDiskTypeSupported(VolumeDiskType diskType);
-	public long getCapacity();
-	public long getAvailableCapacity();
-	public List<EndPoint> getEndPoints();
-	public long getId();
 }

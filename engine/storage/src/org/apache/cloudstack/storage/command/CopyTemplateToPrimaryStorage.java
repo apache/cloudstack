@@ -1,5 +1,6 @@
 package org.apache.cloudstack.storage.command;
 
+import org.apache.cloudstack.storage.to.ImageOnPrimayDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateTO;
 import org.apache.cloudstack.storage.to.VolumeTO;
 
@@ -7,17 +8,15 @@ import com.cloud.agent.api.Command;
 
 public class CopyTemplateToPrimaryStorage extends Command {
 
-	private VolumeTO volume;
-	private TemplateTO template;
+	private ImageOnPrimayDataStoreTO imageTO;
 	
 	protected CopyTemplateToPrimaryStorage() {
 		super();
 	}
 	
-	public CopyTemplateToPrimaryStorage(TemplateTO template, VolumeTO volume) {
+	public CopyTemplateToPrimaryStorage(ImageOnPrimayDataStoreTO image) {
 		super();
-		this.volume = volume;
-		this.template = template;
+		this.imageTO = image;
 	}
 	
 	@Override

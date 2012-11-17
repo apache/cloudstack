@@ -7,12 +7,17 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.command.CreateVolumeAnswer;
 import org.apache.cloudstack.storage.command.CreateVolumeCommand;
+import org.apache.cloudstack.storage.command.CreateVolumeFromBaseImageCommand;
+import org.apache.cloudstack.storage.to.ImageOnPrimayDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeTO;
+import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreInfo;
 import org.apache.cloudstack.storage.volume.VolumeObject;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class DefaultPrimaryDataStoreDriverImpl implements
@@ -63,5 +68,44 @@ public class DefaultPrimaryDataStoreDriverImpl implements
 		// TODO Auto-generated method stub
 		return false;
 	}
+	
+	protected Answer sendOutCommand(Command cmd, List<EndPoint> endPoints) {
+		Answer answer = null;
+		int retries = 3;
+		int i = 0;
+		for (EndPoint ep : endPoints) {
+			answer = ep.sendMessage(cmd);
+			if (answer == null || answer.getDetails() != null) {
+				if (i < retries) {
+					s_logger.debug("create volume failed, retrying: " + i);
+				}
+				i++;
+			} else {
+				break;
+			}
+		}
+		return answer;
+	}
 
+	@Override
+	public boolean createVolumeFromBaseImage(VolumeObject volume, TemplateOnPrimaryDataStoreInfo template) {
+		VolumeTO vol = new VolumeTO(volume);
+		ImageOnPrimayDataStoreTO image = new ImageOnPrimayDataStoreTO(template);
+		CreateVolumeFromBaseImageCommand cmd = new CreateVolumeFromBaseImageCommand(vol, image);
+		List<EndPoint> endPoints = volume.getDataStore().getEndPoints();
+		
+		Answer answer = sendOutCommand(cmd, endPoints);
+		
+		if (answer == null || answer.getDetails() != null) {
+			if (answer == null) {
+				throw new CloudRuntimeException("Failed to created volume");
+			} else {
+				throw new CloudRuntimeException(answer.getDetails());
+			}
+		} else {
+			CreateVolumeAnswer volAnswer = (CreateVolumeAnswer)answer;
+			volume.setPath(volAnswer.getVolumeUuid());
+			return true;
+		}
+	}
 }

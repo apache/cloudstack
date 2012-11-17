@@ -20,18 +20,24 @@ package org.apache.cloudstack.storage.volume;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.engine.cloud.entity.api.TemplateEntity;
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
+import org.apache.cloudstack.engine.subsystem.api.storage.type.BaseImage;
 import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeType;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
 import org.apache.cloudstack.storage.datastore.manager.PrimaryDataStoreManager;
+import org.apache.cloudstack.storage.image.TemplateEntityImpl;
+import org.apache.cloudstack.storage.image.TemplateInfo;
+import org.apache.cloudstack.storage.image.motion.ImageMotionService;
 import org.apache.cloudstack.storage.volume.db.VolumeDao;
 import org.apache.cloudstack.storage.volume.db.VolumeVO;
 
 import org.springframework.stereotype.Service;
 
+import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.Volume;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -45,6 +51,10 @@ public class VolumeServiceImpl implements VolumeService {
 	VolumeDao volDao;
 	@Inject
 	PrimaryDataStoreManager dataStoreMgr;
+	@Inject
+	TemplatePrimaryDataStoreManager templatePrimaryStoreMgr;
+	@Inject
+	ImageMotionService imageMotion;
 	@Override
 	public VolumeInfo createVolume(VolumeInfo volume, long dataStoreId, VolumeDiskType diskType) {
 		PrimaryDataStore dataStore = dataStoreMgr.getPrimaryDataStore(dataStoreId);
@@ -114,26 +124,63 @@ public class VolumeServiceImpl implements VolumeService {
 		}
 	}
 
+
 	@Override
 	public String grantAccess(VolumeInfo volume, EndPoint endpointId) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
+	protected TemplateOnPrimaryDataStoreObject createBaseImage(PrimaryDataStore dataStore, TemplateInfo template) {
+		TemplateOnPrimaryDataStoreObject templateOnPrimaryStoreObj = (TemplateOnPrimaryDataStoreObject)templatePrimaryStoreMgr.createTemplateOnPrimaryDataStore(template, dataStore);
+		templateOnPrimaryStoreObj.updateStatus(Status.CREATING);
+		try {
+			dataStore.installTemplate(templateOnPrimaryStoreObj);
+			templateOnPrimaryStoreObj.updateStatus(Status.CREATED);
+		} catch (Exception e) {
+			templateOnPrimaryStoreObj.updateStatus(Status.ABANDONED);
+			throw new CloudRuntimeException(e.toString());
+		}
+		
+		templateOnPrimaryStoreObj.updateStatus(Status.DOWNLOAD_IN_PROGRESS);
+		try {
+			imageMotion.copyTemplate(templateOnPrimaryStoreObj);
+			templateOnPrimaryStoreObj.updateStatus(Status.DOWNLOADED);
+		} catch (Exception e) {
+			templateOnPrimaryStoreObj.updateStatus(Status.ABANDONED);
+			throw new CloudRuntimeException(e.toString());
+		}
+		
+		return templateOnPrimaryStoreObj;
+	}
+	
 	@Override
-	public VolumeInfo startCopying(VolumeInfo volume) {
-		// TODO Auto-generated method stub
-		return null;
+	public VolumeInfo createVolumeFromTemplate(VolumeInfo volume, long dataStoreId, VolumeDiskType diskType, TemplateInfo template) {
+		PrimaryDataStore pd = dataStoreMgr.getPrimaryDataStore(dataStoreId);
+		TemplateOnPrimaryDataStoreInfo templateOnPrimaryStore = pd.getTemplate(template);
+		if (templateOnPrimaryStore == null) {
+			templateOnPrimaryStore = createBaseImage(pd, template);
+		}
+		
+		VolumeObject vo = (VolumeObject)volume;
+		try {
+			vo.stateTransit(VolumeEvent.CreateRequested);
+		} catch (Exception e) {
+			throw new CloudRuntimeException(e.toString());
+		}
+		
+		try {
+			volume = pd.createVoluemFromBaseImage(volume, templateOnPrimaryStore);
+			vo.stateTransit(VolumeEvent.OperationSucceeded);
+		} catch (Exception e) {
+			vo.stateTransit(VolumeEvent.OperationFailed);
+			throw new CloudRuntimeException(e.toString());
+		}
+		return volume;
 	}
 
 	@Override
-	public VolumeInfo copyingSucceed(VolumeInfo volume) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public VolumeInfo copyingFailed(VolumeInfo volume) {
+	public TemplateOnPrimaryDataStoreInfo grantAccess(TemplateOnPrimaryDataStoreInfo template, EndPoint endPoint) {
 		// TODO Auto-generated method stub
 		return null;
 	}

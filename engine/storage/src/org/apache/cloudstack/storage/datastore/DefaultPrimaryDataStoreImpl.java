@@ -17,6 +17,8 @@ import org.apache.cloudstack.storage.datastore.driver.PrimaryDataStoreDriver;
 import org.apache.cloudstack.storage.image.TemplateInfo;
 import org.apache.cloudstack.storage.image.TemplateObject;
 
+import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreInfo;
+import org.apache.cloudstack.storage.volume.TemplatePrimaryDataStoreManager;
 import org.apache.cloudstack.storage.volume.VolumeEntityImpl;
 import org.apache.cloudstack.storage.volume.VolumeEvent;
 import org.apache.cloudstack.storage.volume.VolumeObject;
@@ -42,6 +44,8 @@ public class DefaultPrimaryDataStoreImpl implements PrimaryDataStore {
 	private VolumeDao volumeDao;
 	@Inject
 	private HostDao hostDao;
+	@Inject
+	TemplatePrimaryDataStoreManager templatePrimaryStoreMgr;
 	public DefaultPrimaryDataStoreImpl(PrimaryDataStoreDriver driver, DataStoreVO pdsv, PrimaryDataStoreInfo pdsInfo) {
 		this.driver = driver;
 		this.pdsv = pdsv;
@@ -138,21 +142,38 @@ public class DefaultPrimaryDataStoreImpl implements PrimaryDataStore {
 	}
 
 	@Override
-	public boolean templateExists(long templateId) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public boolean installTemplate(TemplateInfo template) {
-		
-		
-		return false;
+	public boolean templateExists(TemplateInfo template) {
+		return (templatePrimaryStoreMgr.findTemplateOnPrimaryDataStore(template, this)  != null) ? true : false;
 	}
 
 	@Override
 	public VolumeDiskType getDefaultDiskType() {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	@Override
+	public long getId() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public TemplateOnPrimaryDataStoreInfo getTemplate(TemplateInfo template) {
+		return templatePrimaryStoreMgr.findTemplateOnPrimaryDataStore(template, this);
+	}
+
+	@Override
+	public VolumeInfo createVoluemFromBaseImage(VolumeInfo volume, TemplateOnPrimaryDataStoreInfo template) {
+		VolumeObject vo = (VolumeObject)volume;
+		vo.setVolumeDiskType(template.getTemplate().getDiskType());
+		this.driver.createVolumeFromBaseImage(vo, template);
+		return volume;
+	}
+
+	@Override
+	public boolean installTemplate(TemplateOnPrimaryDataStoreInfo template) {
+		// TODO Auto-generated method stub
+		return true;
 	}
 }

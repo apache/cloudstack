@@ -16,21 +16,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.engine.subsystem.api.storage;
+package org.apache.cloudstack.storage.to;
 
+import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreInfo;
 
-import java.util.List;
-
-import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
-
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-
-public interface PrimaryDataStoreInfo {
-	public boolean isHypervisorSupported(HypervisorType hypervisor);
-	public boolean isLocalStorageSupported();
-	public boolean isVolumeDiskTypeSupported(VolumeDiskType diskType);
-	public long getCapacity();
-	public long getAvailableCapacity();
-	public List<EndPoint> getEndPoints();
-	public long getId();
+public class ImageOnPrimayDataStoreTO {
+	public ImageOnPrimayDataStoreTO(TemplateOnPrimaryDataStoreInfo template) {
+		
+	}
 }

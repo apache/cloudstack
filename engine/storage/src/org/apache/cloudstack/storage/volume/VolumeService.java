@@ -18,11 +18,13 @@
  */
 package org.apache.cloudstack.storage.volume;
 
+import org.apache.cloudstack.engine.cloud.entity.api.TemplateEntity;
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
 import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeType;
+import org.apache.cloudstack.storage.image.TemplateInfo;
 
 
 public interface VolumeService {
@@ -63,12 +65,13 @@ public interface VolumeService {
      */
     String grantAccess(VolumeInfo volume, EndPoint endpointId);
     
+    TemplateOnPrimaryDataStoreInfo grantAccess(TemplateOnPrimaryDataStoreInfo template, EndPoint endPoint);
+    
     /**
      * 
      */
     boolean rokeAccess(long volumeId, long endpointId);
-    VolumeInfo startCopying(VolumeInfo volume);
-    VolumeInfo copyingSucceed(VolumeInfo volume);
-    VolumeInfo copyingFailed(VolumeInfo volume);
+
     VolumeEntity getVolumeEntity(long volumeId);
+    VolumeInfo createVolumeFromTemplate(VolumeInfo volume, long dataStoreId, VolumeDiskType diskType, TemplateInfo template);
 }

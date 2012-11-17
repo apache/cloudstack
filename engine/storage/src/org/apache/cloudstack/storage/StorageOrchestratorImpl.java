@@ -360,22 +360,7 @@ public class StorageOrchestratorImpl implements StorageOrchestrator {
 	
 	@Override
 	public boolean createVolumeFromTemplate(VolumeEntity volume, long dataStoreId, VolumeDiskType diskType, TemplateEntity template) {
-		PrimaryDataStore pd = primaryStorageMgr.getPrimaryDataStore(dataStoreId);
-		boolean existsOnPrimaryStorage = pd.templateExists(template.getId());
-		if (!existsOnPrimaryStorage) {
-			TemplateInfo ti = ((TemplateEntityImpl)template).getTemplateInfo();
-			//TODO: hold lock
-			VolumeEntity baseImage = volumeService.allocateVolumeInDb(template.getVirtualSize(), new BaseImage(), "BaseImage-" + template.getName(), template.getId());
-			VolumeInfo vi = pd.createVolume(getVolumeInfo(baseImage), pd.getDefaultDiskType());
-			volumeService.startCopying(vi);
-			
-			boolean copyResult = imageMotionService.copyTemplate(ti, vi);
-			if (copyResult) {
-				volumeService.copyingSucceed(vi);
-			} else {
-				volumeService.copyingFailed(vi);
-			}
-		}
+	
 		return false;
 	}
 }

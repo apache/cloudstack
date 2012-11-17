@@ -72,4 +72,10 @@ public class PrimaryDataStoreInfoImpl implements PrimaryDataStoreInfo {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
+	@Override
+	public long getId() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
 }

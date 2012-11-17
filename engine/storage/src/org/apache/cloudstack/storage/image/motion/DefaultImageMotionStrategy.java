@@ -25,30 +25,29 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.command.CopyTemplateToPrimaryStorage;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
 import org.apache.cloudstack.storage.image.TemplateInfo;
+import org.apache.cloudstack.storage.to.ImageOnPrimayDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateTO;
 import org.apache.cloudstack.storage.to.VolumeTO;
+import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreInfo;
 
 public class DefaultImageMotionStrategy implements ImageMotionStrategy {
 
 	@Override
-	public boolean canHandle(TemplateInfo template, VolumeInfo volume) {
+	public boolean canHandle(TemplateOnPrimaryDataStoreInfo templateStore) {
 		// TODO Auto-generated method stub
 		return true;
 	}
 
-	//For default strategy, we will use one of endpoint in volume's datastore
 	@Override
-	public EndPoint getEndPoint(TemplateInfo template, VolumeInfo volume) {
-		PrimaryDataStoreInfo pdi = volume.getDataStore();
+	public EndPoint getEndPoint(TemplateOnPrimaryDataStoreInfo templateStore) {
+		PrimaryDataStoreInfo pdi = templateStore.getPrimaryDataStore();
 		return pdi.getEndPoints().get(0);
 	}
 
 	@Override
-	public boolean copyTemplate(TemplateInfo template, VolumeInfo volume,
-			EndPoint ep) {
-		VolumeTO vt = new VolumeTO(volume);
-		TemplateTO tt = new TemplateTO(template);
-		CopyTemplateToPrimaryStorage copyCommand = new CopyTemplateToPrimaryStorage(tt, vt);
+	public boolean copyTemplate(TemplateOnPrimaryDataStoreInfo templateStore, EndPoint ep) {
+		ImageOnPrimayDataStoreTO imageTo = new ImageOnPrimayDataStoreTO(templateStore);
+		CopyTemplateToPrimaryStorage copyCommand = new CopyTemplateToPrimaryStorage(imageTo);
 		ep.sendMessage(copyCommand);
 		return true;
 	}

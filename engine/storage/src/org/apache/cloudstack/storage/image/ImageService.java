@@ -27,7 +27,7 @@ public interface ImageService {
 	boolean deleteTemplate(long templateId);
 	long registerIso(String isoUrl, long accountId);
 	boolean deleteIso(long isoId);
-	String grantTemplateAccess(TemplateInfo template, EndPoint endpointId);
+	TemplateInfo grantTemplateAccess(TemplateInfo template, EndPoint endpointId);
 	boolean revokeTemplateAccess(long templateId, long endpointId);
 	String grantIsoAccess(long isoId, long endpointId);
 	boolean revokeIsoAccess(long isoId, long endpointId);

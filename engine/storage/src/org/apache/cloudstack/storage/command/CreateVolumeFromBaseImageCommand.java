@@ -16,32 +16,24 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.image;
+package org.apache.cloudstack.storage.command;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
-import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskTypeHelper;
-import org.apache.cloudstack.storage.image.db.ImageDataVO;
-import org.apache.cloudstack.storage.image.store.ImageDataStoreInfo;
+import org.apache.cloudstack.storage.to.ImageOnPrimayDataStoreTO;
+import org.apache.cloudstack.storage.to.VolumeTO;
 
-public class TemplateObject implements TemplateInfo {
-	private ImageDataVO imageVO;
-	public TemplateObject(ImageDataVO template) {
-		this.imageVO = template;
+import com.cloud.agent.api.Command;
+
+public class CreateVolumeFromBaseImageCommand extends Command {
+	private VolumeTO volume;
+	private ImageOnPrimayDataStoreTO image;
+	public CreateVolumeFromBaseImageCommand(VolumeTO volume, ImageOnPrimayDataStoreTO image) {
+		this.volume = volume;
+		this.image = image;
 	}
 	@Override
-	public ImageDataStoreInfo getImageDataStore() {
+	public boolean executeInSequence() {
 		// TODO Auto-generated method stub
-		return null;
+		return false;
 	}
 
-	@Override
-	public long getId() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
-	public VolumeDiskType getDiskType() {
-		return VolumeDiskTypeHelper.getDiskType(imageVO.getFormat());
-	}
 }

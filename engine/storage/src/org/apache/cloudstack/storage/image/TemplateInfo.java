@@ -18,8 +18,11 @@
  */
 package org.apache.cloudstack.storage.image;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
 import org.apache.cloudstack.storage.image.store.ImageDataStoreInfo;
 
 public interface TemplateInfo {
 	ImageDataStoreInfo getImageDataStore();
+	long getId();
+	VolumeDiskType getDiskType();
 }
