@@ -222,12 +222,11 @@ class CloudStackShell(cmd.Cmd):
                 response = json.loads(str(response))
             except ValueError, e:
                 pass
-
-            if response is None:
-                return {'error': 'Error: json error'}
             return response
 
         response = process_json(response)
+        if response is None:
+            return
 
         isAsync = isAsync and (self.asyncblock == "true")
         if isAsync and 'jobid' in response[response.keys()[0]]:
@@ -260,7 +259,7 @@ class CloudStackShell(cmd.Cmd):
             api_mod = __import__("marvin.cloudstackAPI.%s" % api_name,
                                  globals(), locals(), api_class_strs, -1)
         except ImportError, e:
-            self.print_shell("Error: API %s not found!" % e)
+            self.print_shell("Error: API not found", e)
             return None
         return api_mod
 
@@ -281,23 +280,21 @@ class CloudStackShell(cmd.Cmd):
                                         x.partition("=")[2]],
                              args[1:])[x] for x in range(len(args) - 1))
 
+        api_cmd_str = "%sCmd" % api_name
+        api_mod = self.get_api_module(api_name, [api_cmd_str])
+        if api_mod is None:
+            return
+
         try:
-            api_cmd_str = "%sCmd" % api_name
-            api_rsp_str = "%sResponse" % api_name
-            api_mod = self.get_api_module(api_name, [api_cmd_str, api_rsp_str])
             api_cmd = getattr(api_mod, api_cmd_str)
-            api_rsp = getattr(api_mod, api_rsp_str)
         except AttributeError, e:
-            self.print_shell("Error: API %s not found!" % e)
+            self.print_shell("Error: API attribute %s not found!" % e)
             return
 
         for attribute in args_dict.keys():
-#            if attribute in args_dict:
             setattr(api_cmd, attribute, args_dict[attribute])
 
         command = api_cmd()
-        response = api_rsp()
-
         missing_args = list(sets.Set(command.required).difference(
                             sets.Set(args_dict.keys())))
 
@@ -322,9 +319,11 @@ class CloudStackShell(cmd.Cmd):
         completions_found = filter(lambda x: x.startswith(verb), completions)
         self.cache_verbs[verb] = {}
         for api_name in completions_found:
+            api_cmd_str = "%sCmd" % api_name
+            api_mod = self.get_api_module(api_name, [api_cmd_str])
+            if api_mod is None:
+                continue
             try:
-                api_cmd_str = "%sCmd" % api_name
-                api_mod = self.get_api_module(api_name, [api_cmd_str])
                 api_cmd = getattr(api_mod, api_cmd_str)()
                 required = api_cmd.required
                 doc = api_mod.__doc__
@@ -474,11 +473,12 @@ class CloudStackShell(cmd.Cmd):
 def main():
     # Add verbs in grammar
     grammar = ['create', 'list', 'delete', 'update',
-               'enable', 'disable', 'add', 'remove', 'attach', 'detach',
+               'enable', 'activate', 'disable', 'add', 'remove',
+               'attach', 'detach', 'associate', 'generate', 'ldap',
                'assign', 'authorize', 'change', 'register', 'configure',
                'start', 'restart', 'reboot', 'stop', 'reconnect',
-               'cancel', 'destroy', 'revoke',
-               'copy', 'extract', 'migrate', 'restore',
+               'cancel', 'destroy', 'revoke', 'mark', 'reset',
+               'copy', 'extract', 'migrate', 'restore', 'suspend',
                'get', 'query', 'prepare', 'deploy', 'upload']
 
     # Create handlers on the fly using closures
@@ -501,7 +501,7 @@ def main():
                 except KeyError, e:
                     self.print_shell("Error: no such command on %s" % rule)
                     return
-                if '--help' in args:
+                if ' --help' in args or ' -h' in args:
                     self.print_shell(res[2])
                     return
                 self.default(res[0] + " " + args_partition[2])
