@@ -835,11 +835,23 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
 
             for (int i = 0; i < 2; i++) {
                 if (volume.getVolumeType() == Type.ROOT && Storage.ImageFormat.ISO != template.getFormat()) {
-                    tmpltStoredOn = _tmpltMgr.prepareTemplateForCreate(template, pool);
-                    if (tmpltStoredOn == null) {
-                        continue;
+                    if (pool.getPoolType() == StoragePoolType.CLVM) {
+                        //prepareISOForCreate does what we need, which is to tell us where the template is
+                        VMTemplateHostVO tmpltHostOn = _tmpltMgr.prepareISOForCreate(template, pool);
+                        if (tmpltHostOn == null) {
+                            continue;
+                        }
+                        HostVO secondaryStorageHost = _hostDao.findById(tmpltHostOn.getHostId());
+                        String tmpltHostUrl = secondaryStorageHost.getStorageUrl();
+                        String fullTmpltUrl = tmpltHostUrl + "/" + tmpltHostOn.getInstallPath();
+                        cmd = new CreateCommand(dskCh, fullTmpltUrl, new StorageFilerTO(pool));
+                    } else {
+                        tmpltStoredOn = _tmpltMgr.prepareTemplateForCreate(template, pool);
+                        if (tmpltStoredOn == null) {
+                            continue;
+                        }
+                        cmd = new CreateCommand(dskCh, tmpltStoredOn.getLocalDownloadPath(), new StorageFilerTO(pool));
                     }
-                    cmd = new CreateCommand(dskCh, tmpltStoredOn.getLocalDownloadPath(), new StorageFilerTO(pool));
                 } else {
                     if (volume.getVolumeType() == Type.ROOT && Storage.ImageFormat.ISO == template.getFormat()) {
                         VMTemplateHostVO tmpltHostOn = _tmpltMgr.prepareISOForCreate(template, pool);
@@ -3434,12 +3446,25 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
 
             for (int i = 0; i < 2; i++) {
                 if (template != null && template.getFormat() != Storage.ImageFormat.ISO) {
-                    tmpltStoredOn = _tmpltMgr.prepareTemplateForCreate(template, pool);
-                    if (tmpltStoredOn == null) {
-                        s_logger.debug("Cannot use this pool " + pool + " because we can't propagate template " + template);
-                        return null;
+                    if (pool.getPoolType() == StoragePoolType.CLVM) {
+                        //prepareISOForCreate does what we need, which is to tell us where the template is
+                        VMTemplateHostVO tmpltHostOn = _tmpltMgr.prepareISOForCreate(template, pool);
+                        if (tmpltHostOn == null) {
+                            s_logger.debug("cannot find template " + template.getId() + " " + template.getName());
+                            return null;
+                        }
+                        HostVO secondaryStorageHost = _hostDao.findById(tmpltHostOn.getHostId());
+                        String tmpltHostUrl = secondaryStorageHost.getStorageUrl();
+                        String fullTmpltUrl = tmpltHostUrl + "/" + tmpltHostOn.getInstallPath();
+                        cmd = new CreateCommand(diskProfile, fullTmpltUrl, new StorageFilerTO(pool));
+                    } else {
+                        tmpltStoredOn = _tmpltMgr.prepareTemplateForCreate(template, pool);
+                        if (tmpltStoredOn == null) {
+                            s_logger.debug("Cannot use this pool " + pool + " because we can't propagate template " + template);
+                            return null;
+                        }
+                        cmd = new CreateCommand(diskProfile, tmpltStoredOn.getLocalDownloadPath(), new StorageFilerTO(pool));
                     }
-                    cmd = new CreateCommand(diskProfile, tmpltStoredOn.getLocalDownloadPath(), new StorageFilerTO(pool));
                 } else {
                     if (template != null && Storage.ImageFormat.ISO == template.getFormat()) {
                         VMTemplateHostVO tmpltHostOn = _tmpltMgr.prepareISOForCreate(template, pool);

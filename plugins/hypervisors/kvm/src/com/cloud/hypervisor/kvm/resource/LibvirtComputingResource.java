@@ -1190,11 +1190,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements
             disksize = dskch.getSize();
 
             if (cmd.getTemplateUrl() != null) {
-
-                BaseVol = primaryPool.getPhysicalDisk(cmd.getTemplateUrl());
-                vol = _storagePoolMgr.createDiskFromTemplate(BaseVol, UUID
+                if(primaryPool.getType() == StoragePoolType.CLVM) { 
+                    vol = templateToPrimaryDownload(cmd.getTemplateUrl(),primaryPool);
+                } else {
+                    BaseVol = primaryPool.getPhysicalDisk(cmd.getTemplateUrl());
+                    vol = _storagePoolMgr.createDiskFromTemplate(BaseVol, UUID
                         .randomUUID().toString(), primaryPool);
-
+                }
                 if (vol == null) {
                     return new Answer(cmd, false,
                             " Can't create storage volume on storage pool");
@@ -1210,6 +1212,55 @@ public class LibvirtComputingResource extends ServerResourceBase implements
         } catch (CloudRuntimeException e) {
             s_logger.debug("Failed to create volume: " + e.toString());
             return new CreateAnswer(cmd, e);
+        }
+    }
+
+    // this is much like PrimaryStorageDownloadCommand, but keeping it separate
+    protected KVMPhysicalDisk templateToPrimaryDownload(String templateUrl, KVMStoragePool primaryPool) {
+        int index = templateUrl.lastIndexOf("/");
+        String mountpoint = templateUrl.substring(0, index);
+        String templateName = null;
+        if (index < templateUrl.length() - 1) {
+            templateName = templateUrl.substring(index + 1);
+        }
+
+        KVMPhysicalDisk templateVol = null;
+        KVMStoragePool secondaryPool = null;
+        try {
+            secondaryPool = _storagePoolMgr.getStoragePoolByURI(mountpoint);
+            /* Get template vol */
+            if (templateName == null) {
+                secondaryPool.refresh();
+                List<KVMPhysicalDisk> disks = secondaryPool.listPhysicalDisks();
+                if (disks == null || disks.isEmpty()) {
+                    s_logger.error("Failed to get volumes from pool: " + secondaryPool.getUuid());
+                    return null;
+                }
+                for (KVMPhysicalDisk disk : disks) {
+                    if (disk.getName().endsWith("qcow2")) {
+                        templateVol = disk;
+                        break;
+                    }
+                }
+                if (templateVol == null) {
+                    s_logger.error("Failed to get template from pool: " + secondaryPool.getUuid());
+                    return null;
+                }
+            } else {
+                templateVol = secondaryPool.getPhysicalDisk(templateName);
+            }
+
+            /* Copy volume to primary storage */
+
+            KVMPhysicalDisk primaryVol = _storagePoolMgr.copyPhysicalDisk(templateVol, UUID.randomUUID().toString(), primaryPool);
+            return primaryVol;
+        } catch (CloudRuntimeException e) {
+            s_logger.error("Failed to download template to primary storage",e);
+            return null;
+        } finally {
+            if (secondaryPool != null) {
+                secondaryPool.delete();
+            }
         }
     }
 
