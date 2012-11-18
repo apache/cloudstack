@@ -36,7 +36,8 @@ try:
     from ConfigParser import ConfigParser, SafeConfigParser
     from urllib2 import HTTPError, URLError
 
-    from version import __version__
+    from common import __version__, config_file, config_fields
+    from common import grammar, precached_verbs
     from marvin.cloudstackConnection import cloudConnection
     from marvin.cloudstackException import cloudstackAPIException
     from marvin.cloudstackAPI import *
@@ -67,22 +68,13 @@ class CloudStackShell(cmd.Cmd):
     intro = ("☁ Apache CloudStack 🐵 cloudmonkey " + __version__ +
              ". Type help or ? to list commands.\n")
     ruler = "="
-    config_file = os.path.expanduser('~/.cloudmonkey_config')
-    grammar = []
-
-    # datastructure {'list': {'users': ['listUsers', [params], docstring,
-    #                                   required=[]]}}
-    cache_verbs = {}
+    config_file = config_file
+    config_fields = config_fields
+    grammar = grammar
+    # datastructure {'verb': {cmd': ['api', [params], doc, required=[]]}}
+    cache_verbs = precached_verbs
 
     def __init__(self):
-        self.config_fields = {'host': 'localhost', 'port': '8080',
-                              'apikey': '', 'secretkey': '',
-                              'timeout': '3600', 'asyncblock': 'true',
-                              'prompt': '🐵 cloudmonkey>', 'color': 'true',
-                              'log_file':
-                              os.path.expanduser('~/.cloudmonkey_log'),
-                              'history_file':
-                              os.path.expanduser('~/.cloudmonkey_history')}
         if os.path.exists(self.config_file):
             config = self.read_config()
         else:
@@ -141,9 +133,6 @@ class CloudStackShell(cmd.Cmd):
     def emptyline(self):
         pass
 
-    def set_grammar(self, grammar):
-        self.grammar = grammar
-
     def print_shell(self, *args):
         try:
             for arg in args:
@@ -153,6 +142,10 @@ class CloudStackShell(cmd.Cmd):
                 if self.color == 'true':
                     if str(arg).count(self.ruler) == len(str(arg)):
                         print colored.green(arg),
+                    elif ":\n=" in arg:
+                        print colored.red(arg),
+                    elif ':' in arg:
+                        print colored.blue(arg),
                     elif 'type' in arg:
                         print colored.green(arg),
                     elif 'state' in arg or 'count' in arg:
@@ -163,10 +156,6 @@ class CloudStackShell(cmd.Cmd):
                         print colored.magenta(arg),
                     elif 'Error' in arg:
                         print colored.red(arg),
-                    elif ":\n=" in arg:
-                        print colored.red(arg),
-                    elif ':' in arg:
-                        print colored.blue(arg),
                     else:
                         print arg,
                 else:
@@ -280,6 +269,7 @@ class CloudStackShell(cmd.Cmd):
                                         x.partition("=")[2]],
                              args[1:])[x] for x in range(len(args) - 1))
 
+        # FIXME: With precaching, dynamic loading can be removed
         api_cmd_str = "%sCmd" % api_name
         api_mod = self.get_api_module(api_name, [api_cmd_str])
         if api_mod is None:
@@ -316,6 +306,7 @@ class CloudStackShell(cmd.Cmd):
             self.print_shell("🙈  Error on parsing and printing", e)
 
     def cache_verb_miss(self, verb):
+        self.print_shell("Oops: Verb %s should have been precached" % verb)
         completions_found = filter(lambda x: x.startswith(verb), completions)
         self.cache_verbs[verb] = {}
         for api_name in completions_found:
@@ -402,10 +393,8 @@ class CloudStackShell(cmd.Cmd):
     def complete_set(self, text, line, begidx, endidx):
         mline = line.partition(" ")[2]
         offs = len(mline) - len(text)
-        return [s[offs:] for s in
-               ['host', 'port', 'apikey', 'secretkey',
-                'prompt', 'color', 'timeout', 'asyncblock',
-                'log_file', 'history_file'] if s.startswith(mline)]
+        return [s[offs:] for s in self.config_fields.keys()
+                if s.startswith(mline)]
 
     def do_shell(self, args):
         """
@@ -471,18 +460,9 @@ class CloudStackShell(cmd.Cmd):
 
 
 def main():
-    # Add verbs in grammar
-    grammar = ['create', 'list', 'delete', 'update',
-               'enable', 'activate', 'disable', 'add', 'remove',
-               'attach', 'detach', 'associate', 'generate', 'ldap',
-               'assign', 'authorize', 'change', 'register', 'configure',
-               'start', 'restart', 'reboot', 'stop', 'reconnect',
-               'cancel', 'destroy', 'revoke', 'mark', 'reset',
-               'copy', 'extract', 'migrate', 'restore', 'suspend',
-               'get', 'query', 'prepare', 'deploy', 'upload']
-
     # Create handlers on the fly using closures
     self = CloudStackShell
+    global grammar
     for rule in grammar:
         def add_grammar(rule):
             def grammar_closure(self, args):
@@ -513,7 +493,6 @@ def main():
         setattr(self, grammar_handler.__name__, grammar_handler)
 
     shell = CloudStackShell()
-    shell.set_grammar(grammar)
     if len(sys.argv) > 1:
         shell.onecmd(' '.join(sys.argv[1:]))
     else:

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -19,3 +20,30 @@
 # <cli major version>.<cloudstack minor version>.<cloudstack major version>
 # Example: For CloudStack 4.1.x, CLI version should be 0.1.4
 __version__ = "0.0.4"
+
+try:
+    import os
+    from precache import precached_verbs
+except ImportError, e:
+    precached_verbs = {}
+
+# Add config key:value
+config_file = os.path.expanduser('~/.cloudmonkey_config')
+config_fields = {'host': 'localhost', 'port': '8080',
+                 'apikey': '', 'secretkey': '',
+                 'timeout': '3600', 'asyncblock': 'true',
+                 'prompt': '🐵 cloudmonkey>', 'color': 'true',
+                 'log_file':
+                 os.path.expanduser('~/.cloudmonkey_log'),
+                 'history_file':
+                 os.path.expanduser('~/.cloudmonkey_history')}
+
+# Add verbs in grammar
+grammar = ['create', 'list', 'delete', 'update',
+           'enable', 'activate', 'disable', 'add', 'remove',
+           'attach', 'detach', 'associate', 'generate', 'ldap',
+           'assign', 'authorize', 'change', 'register', 'configure',
+           'start', 'restart', 'reboot', 'stop', 'reconnect',
+           'cancel', 'destroy', 'revoke', 'mark', 'reset',
+           'copy', 'extract', 'migrate', 'restore', 'suspend',
+           'get', 'query', 'prepare', 'deploy', 'upload']
