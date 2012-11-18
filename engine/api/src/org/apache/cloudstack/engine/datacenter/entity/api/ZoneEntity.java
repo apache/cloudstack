@@ -20,11 +20,16 @@ package org.apache.cloudstack.engine.datacenter.entity.api;
 
 import java.util.List;
 
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+
 import com.cloud.dc.DataCenter;
 
 /**
  * Describes a zone and operations that can be done in a zone. 
  */
+@Path("zone/{zone-id}")
 public interface ZoneEntity extends DataCenterResourceEntity, DataCenter {
-    List<PodEntity> listPods(); 
+    @GET
+    List<PodEntity> listPods();
 }

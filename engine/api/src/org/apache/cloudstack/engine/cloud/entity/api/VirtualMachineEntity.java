@@ -20,6 +20,12 @@ package org.apache.cloudstack.engine.cloud.entity.api;
 
 import java.util.List;
 
+import javax.ws.rs.BeanParam;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.xml.bind.annotation.XmlRootElement;
+
 import org.apache.cloudstack.engine.entity.api.CloudStackEntity;
 
 import com.cloud.deploy.DeployDestination;
@@ -31,12 +37,16 @@ import com.cloud.vm.VirtualMachine;
  * Platform.  
  *
  */
+@Path("vm/{id}")
+@Produces({"application/json", "application/xml"})
+@XmlRootElement(name="vm")
 public interface VirtualMachineEntity extends VirtualMachine, CloudStackEntity {
 
     /**
      * @return List of uuids for volumes attached to this virtual machine.
      */
-    List<String> listVolumeUuids();
+    @GET
+    List<String> listVolumeIds();
 
     /**
      * @return List of volumes attached to this virtual machine.
@@ -74,7 +84,7 @@ public interface VirtualMachineEntity extends VirtualMachine, CloudStackEntity {
      * @param exclude list of areas to exclude
      * @return a reservation id
      */
-    String reserve(String plannerToUse, DeployDestination dest, ExcludeList exclude);
+    String reserve(String plannerToUse, @BeanParam DeployDestination dest, ExcludeList exclude);
 
     /**
      * Migrate this VM to a certain destination.

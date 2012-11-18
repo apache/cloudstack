@@ -34,11 +34,7 @@ import com.cloud.hypervisor.Hypervisor;
 
 public class CloudOrchestrator implements OrchestrationService {
 
-    public VirtualMachineEntity create(String name, String template, String hostName, int cpu, int speed, long memory, List<String> networks, List<String> rootDiskTags, List<String> computeTags,
-            Map<String, String> details, String owner) {
-        // TODO Auto-generated method stub
-        return null;
-    }
+
 
     public VirtualMachineEntity createFromScratch(String uuid, String iso, String os, String hypervisor, String hostName, int cpu, int speed, long memory, List<String> networks, List<String> computeTags,
             Map<String, String> details, String owner) {
@@ -83,26 +79,6 @@ public class CloudOrchestrator implements OrchestrationService {
     }
 
     @Override
-    public VirtualMachineEntity createVirtualMachine(String name, String template, String hostName, int cpu, int speed, long memory, List<String> networks, List<String> rootDiskTags, List<String> computeTags,
-            Map<String, String> details, String owner) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public VirtualMachineEntity createVirtualMachineFromScratch(String uuid, String iso, String os, String hypervisor, String hostName, int cpu, int speed, long memory, List<String> networks, List<String> computeTags,
-            Map<String, String> details, String owner) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public NetworkEntity createNetwork(String externaId, String name, String cidr, String gateway) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public void destroyNetwork(String networkUuid) {
         // TODO Auto-generated method stub
 
@@ -112,6 +88,35 @@ public class CloudOrchestrator implements OrchestrationService {
     public void destroyVolume(String volumeEntity) {
         // TODO Auto-generated method stub
 
+    }
+
+    @Override
+    public VirtualMachineEntity createVirtualMachine(
+            String id, 
+            String owner, 
+            String templateId, 
+            String hostName, 
+            String displayName, 
+            int cpu, 
+            int speed, 
+            long memory, 
+            List<String> computeTags, 
+            List<String> rootDiskTags,
+            List<String> networks) {
+        return null;
+    }
+
+    @Override
+    public VirtualMachineEntity createVirtualMachineFromScratch(String id, String owner, String isoId, String hostName, String displayName, String hypervisor, String os, int cpu, int speed, long memory,
+            List<String> computeTags, List<String> rootDiskTags, List<String> networks) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public NetworkEntity createNetwork(String id, String name, String domainName, String cidr, String gateway) {
+        // TODO Auto-generated method stub
+        return null;
     }
 
 }

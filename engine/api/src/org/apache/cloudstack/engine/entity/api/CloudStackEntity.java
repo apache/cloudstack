@@ -23,6 +23,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import javax.ws.rs.GET;
+import javax.ws.rs.QueryParam;
+
 /**
  * All entities returned by the Cloud Orchestration Platform must implement
  * this interface.  CloudValueEntity is an immutable representation of 
@@ -36,6 +39,7 @@ public interface CloudStackEntity {
     /**
      * @return the uuid of the object.
      */
+    @GET
     String getUuid();
 
     /**
@@ -44,39 +48,40 @@ public interface CloudStackEntity {
     long getId();
 
     /**
-     * @return external id set by the caller
-     */
-    String getExternalId();
-
-    /**
      * @return current state for the entity
      */
+    @GET
     String getCurrentState();
 
     /**
      * @return desired state for the entity
      */
+    @GET
     String getDesiredState();
 
     /**
      * Get the time the entity was created
      */
+    @GET
     Date getCreatedTime();
 
     /**
      * Get the time the entity was last updated
      */
+    @GET
     Date getLastUpdatedTime();
 
     /**
      * @return reference to the owner of this entity
      */
+    @GET
     String getOwner();
 
     /**
      * @return details stored for this entity when created.
      */
-    Map<String, String> getDetails(String source);
+    Map<String, String> getDetails(
+            @QueryParam("source") String source);
 
     /**
      * @return a list of sources that have added to the details.

@@ -21,9 +21,17 @@ package org.apache.cloudstack.engine.service.api;
 import java.util.List;
 import java.util.Map;
 
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+
+import org.apache.cloudstack.engine.datacenter.entity.api.ClusterEntity;
+import org.apache.cloudstack.engine.datacenter.entity.api.PodEntity;
+import org.apache.cloudstack.engine.datacenter.entity.api.StorageEntity;
 import org.apache.cloudstack.engine.datacenter.entity.api.ZoneEntity;
 
-import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
 import com.cloud.host.Host;
 import com.cloud.host.Status;
@@ -34,32 +42,56 @@ import com.cloud.storage.StoragePool;
  * ProvisioningService registers and deregisters physical and virtual 
  * resources that the management server can use.  
  */
+@Path("/provision")
+@Produces({"application/json", "application/xml"})
 public interface ProvisioningService {
 
-    String registerStorage(String name, List<String> tags, Map<String, String> details);
+    @POST
+    StorageEntity registerStorage(String name, List<String> tags, Map<String, String> details);
+
+    @POST
     ZoneEntity registerZone(String name, List<String> tags, Map<String, String> details);
-    String registerPod(String name, List<String> tags, Map<String, String> details);
-    String registerCluster(String name, List<String> tags, Map<String, String> details);
+
+    @POST
+    PodEntity registerPod(String name, List<String> tags, Map<String, String> details);
+
+    @POST
+    ClusterEntity registerCluster(String name, List<String> tags, Map<String, String> details);
+
+    @POST
     String registerHost(String name, List<String> tags, Map<String, String> details);
 
-
-
+    @DELETE
     void deregisterStorage(String uuid);
+
+    @DELETE
     void deregisterZone();
+
+    @DELETE
     void deregisterPod();
+
+    @DELETE
     void deregisterCluster();
+
+    @DELETE
     void deregisterHost();
 
     void changeState(String type, String entity, Status state);
 
+    @GET
+    @Path("/hosts")
     List<Host> listHosts();
 
+    @GET
+    @Path("/pods")
     List<Pod> listPods();
 
-    List<DataCenter> listZones();
+    @GET
+    @Path("/zones")
+    List<ZoneEntity> listZones();
 
-
-
+    @GET
+    @Path("/storages")
     List<StoragePool> listStorage();
 
 }

@@ -18,6 +18,8 @@
  */
 package org.apache.cloudstack.engine.datacenter.entity.api;
 
+import javax.ws.rs.POST;
+
 import org.apache.cloudstack.engine.entity.api.CloudStackEntity;
 
 import com.cloud.utils.fsm.StateMachine2;
@@ -60,24 +62,29 @@ public interface DataCenterResourceEntity extends CloudStackEntity, StateObject<
         }
 
     }
+
     /**
      * Prepare the resource to take new on new demands.
      */
+    @POST 
     boolean enable();
 
     /**
      * Disables the resource.  Cleanup.  Prepare for the resource to be removed.
      */
+    @POST
     boolean disable();
 
     /**
      * Do not use the resource for new demands.
      */
+    @POST
     boolean deactivate();
 
     /**
      * Reactivates a deactivated resource.
      */
+    @POST
     boolean reactivate();
 
 }

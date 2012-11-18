@@ -20,6 +20,8 @@ package org.apache.cloudstack.engine.service.api;
 
 import java.util.List;
 
+import javax.ws.rs.Path;
+
 import com.cloud.network.Network;
 import com.cloud.storage.Volume;
 import com.cloud.vm.VirtualMachine;
@@ -28,6 +30,7 @@ import com.cloud.vm.VirtualMachine;
  * Service to retrieve CloudStack entities
  * very likely to change
  */
+@Path("resources")
 public interface EntityService {
     List<String> listVirtualMachines();
     List<String> listVolumes();

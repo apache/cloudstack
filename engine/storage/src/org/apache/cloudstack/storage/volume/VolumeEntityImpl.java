@@ -31,187 +31,181 @@ import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskTyp
 import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeType;
 
 public class VolumeEntityImpl implements VolumeEntity {
-	private VolumeInfo volumeInfo;
-	
-	public VolumeEntityImpl(VolumeInfo volumeObject) {
-		this.volumeInfo = volumeObject;
-	}
-	
-	public VolumeInfo getVolumeInfo() {
-		return volumeInfo;
-	}
-	
-	public void setVolumeInfo(VolumeInfo vi) {
-		this.volumeInfo = vi;
-	}
-	
-	@Override 
-	public String getUuid() {
-		return volumeInfo.getUuid();
-	}
+    private VolumeInfo volumeInfo;
 
-	@Override
-	public long getId() {
-		return volumeInfo.getId();
-	}
+    public VolumeEntityImpl(VolumeInfo volumeObject) {
+        this.volumeInfo = volumeObject;
+    }
 
-	@Override
-	public String getExternalId() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public VolumeInfo getVolumeInfo() {
+        return volumeInfo;
+    }
 
-	@Override
-	public String getCurrentState() {
-		return volumeInfo.getCurrentState().toString();
-	}
+    public void setVolumeInfo(VolumeInfo vi) {
+        this.volumeInfo = vi;
+    }
 
-	@Override
-	public String getDesiredState() {
-		return volumeInfo.getDesiredState().toString();
-	}
+    @Override 
+    public String getUuid() {
+        return volumeInfo.getUuid();
+    }
 
-	@Override
-	public Date getCreatedTime() {
-		return volumeInfo.getCreatedData();
-	}
+    @Override
+    public long getId() {
+        return volumeInfo.getId();
+    }
 
-	@Override
-	public Date getLastUpdatedTime() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public String getCurrentState() {
+        return volumeInfo.getCurrentState().toString();
+    }
 
-	@Override
-	public String getOwner() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public String getDesiredState() {
+        return volumeInfo.getDesiredState().toString();
+    }
 
-	@Override
-	public Map<String, String> getDetails(String source) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public Date getCreatedTime() {
+        return volumeInfo.getCreatedData();
+    }
 
-	@Override
-	public List<String> getDetailSources() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public Date getLastUpdatedTime() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public void addDetail(String source, String name, String value) {
-		// TODO Auto-generated method stub
+    @Override
+    public String getOwner() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	}
+    @Override
+    public Map<String, String> getDetails(String source) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public void delDetail(String source, String name, String value) {
-		// TODO Auto-generated method stub
+    @Override
+    public List<String> getDetailSources() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	}
+    @Override
+    public void addDetail(String source, String name, String value) {
+        // TODO Auto-generated method stub
 
-	@Override
-	public void updateDetail(String source, String name, String value) {
-		// TODO Auto-generated method stub
+    }
 
-	}
+    @Override
+    public void delDetail(String source, String name, String value) {
+        // TODO Auto-generated method stub
 
-	@Override
-	public List<Method> getApplicableActions() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    }
 
-	@Override
-	public SnapshotEntity takeSnapshotOf(boolean full) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public void updateDetail(String source, String name, String value) {
+        // TODO Auto-generated method stub
 
-	@Override
-	public String reserveForMigration(long expirationTime) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    }
 
-	@Override
-	public void migrate(String reservationToken) {
-		// TODO Auto-generated method stub
+    @Override
+    public List<Method> getApplicableActions() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	}
+    @Override
+    public SnapshotEntity takeSnapshotOf(boolean full) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public VolumeEntity setupForCopy() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public String reserveForMigration(long expirationTime) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public void copy(VolumeEntity dest) {
-		// TODO Auto-generated method stub
+    @Override
+    public void migrate(String reservationToken) {
+        // TODO Auto-generated method stub
 
-	}
+    }
 
-	@Override
-	public void attachTo(String vm, long deviceId) {
-		// TODO Auto-generated method stub
+    @Override
+    public VolumeEntity setupForCopy() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	}
+    @Override
+    public void copy(VolumeEntity dest) {
+        // TODO Auto-generated method stub
 
-	@Override
-	public void detachFrom() {
-		// TODO Auto-generated method stub
+    }
 
-	}
+    @Override
+    public void attachTo(String vm, long deviceId) {
+        // TODO Auto-generated method stub
 
-	@Override
-	public void destroy() {
-		// TODO Auto-generated method stub
+    }
 
-	}
+    @Override
+    public void detachFrom() {
+        // TODO Auto-generated method stub
 
-	@Override
-	public long getSize() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+    }
 
-	@Override
-	public String getTemplatePath() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public void destroy() {
+        // TODO Auto-generated method stub
 
-	@Override
-	public String getTemplateUuid() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    }
 
-	@Override
-	public VolumeDiskType getDiskType() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public long getSize() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
 
-	@Override
-	public VolumeType getType() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public String getTemplatePath() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public StorageEntity getDataStore() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public String getTemplateUuid() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public void setPath(String path) {
-		// TODO Auto-generated method stub
+    @Override
+    public VolumeDiskType getDiskType() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	}
+    @Override
+    public VolumeType getType() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public StorageEntity getDataStore() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public void setPath(String path) {
+        // TODO Auto-generated method stub
+
+    }
 
 }
