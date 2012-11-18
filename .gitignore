@@ -49,6 +49,7 @@ git-remote-https.exe.stackdump
 *.swp
 tools/devcloud/devcloudbox/.vagrant
 tools/cli/cloudmonkey/marvin/
+tools/cli/cloudmonkey/precache.py
 *.jar
 *.war
 *.mar
