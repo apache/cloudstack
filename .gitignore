@@ -68,3 +68,5 @@ awsapi/overlays/
 *.egg-info/
 docs/tmp
 docs/publish
+docs/runbook/tmp
+docs/runbook/publish
