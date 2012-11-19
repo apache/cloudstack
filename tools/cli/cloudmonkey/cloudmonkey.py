@@ -449,6 +449,12 @@ class CloudStackShell(cmd.Cmd):
             text = subfields[2]
             return self.completedefault(text, line, begidx, endidx)
 
+    def do_exit(self, args):
+        """
+        Quit Apache CloudStack CLI
+        """
+        return self.do_quit(args)
+
     def do_quit(self, args):
         """
         Quit Apache CloudStack CLI
