@@ -66,3 +66,5 @@ awsapi/modules/*
 db.properties.override
 awsapi/overlays/
 *.egg-info/
+docs/tmp
+docs/publish
