@@ -81,8 +81,9 @@ class CloudStackShell(cmd.Cmd):
             for key in self.config_fields.keys():
                 setattr(self, key, self.config_fields[key])
             config = self.write_config()
-            print("Set your apikey, secretkey, host, port, prompt, color,"
-                  " log_file, history_file using the set command!")
+            print("Set your apikey, secretkey, host, port, prompt,"
+                  " protocol, path, color, log_file and history_file"
+                  " using the set command!")
 
         for key in self.config_fields.keys():
             try:
@@ -195,10 +196,13 @@ class CloudStackShell(cmd.Cmd):
     def make_request(self, command, requests={}, isAsync=False):
         conn = cloudConnection(self.host, port=int(self.port),
                                apiKey=self.apikey, securityKey=self.secretkey,
-                               asyncTimeout=self.timeout, logging=logger)
+                               asyncTimeout=self.timeout, logging=logger,
+                               protocol=self.protocol, path=self.path)
         response = None
         try:
+            self.print_shell("Starting call")
             response = conn.make_request_with_auth(command, requests)
+            self.print_shell("Ending call")
         except cloudstackAPIException, e:
             self.print_shell("API Error:", e)
         except HTTPError, e:
