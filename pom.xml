@@ -68,7 +68,7 @@
     <cs.xapi.version>5.6.100-1-SNAPSHOT</cs.xapi.version>
     <cs.httpclient.version>3.1</cs.httpclient.version>
     <cs.httpcore.version>4.0</cs.httpcore.version>
-    <cs.mysql.version>5.1.12</cs.mysql.version>
+    <cs.mysql.version>5.1.21</cs.mysql.version>
     <cs.xstream.version>1.3.1</cs.xstream.version>
     <cs.xmlrpc.version>3.1.3</cs.xmlrpc.version>
     <cs.mail.version>1.4</cs.mail.version>
@@ -160,6 +160,16 @@
     <module>client</module>
     <module>test</module>
   </modules>
+
+  <dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>${cs.mysql.version}</version>
+        </dependency>
+    </dependencies>
+  </dependencyManagement>
 
   <dependencies>
     <dependency>
