@@ -44,6 +44,7 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpMethodBase;
 import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.NameValuePair;
 import org.apache.commons.httpclient.cookie.CookiePolicy;
 import org.apache.commons.httpclient.methods.DeleteMethod;
@@ -62,6 +63,7 @@ import com.google.gson.reflect.TypeToken;
 public class NiciraNvpApi {
     private static final Logger s_logger = Logger.getLogger(NiciraNvpApi.class);
     private final static String _protocol = "https";
+    private static final MultiThreadedHttpConnectionManager s_httpClientManager = new MultiThreadedHttpConnectionManager();
     
     private String _name;
     private String _host;
@@ -79,7 +81,7 @@ public class NiciraNvpApi {
             throw new NiciraNvpApiException("host, adminuser and adminpass may not be null");
         }
 
-        _client = new HttpClient( );
+        _client = new HttpClient(s_httpClientManager);
         _client.getParams().setCookiePolicy(CookiePolicy.BROWSER_COMPATIBILITY);
         
         try {             

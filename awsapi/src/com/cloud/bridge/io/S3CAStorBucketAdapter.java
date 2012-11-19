@@ -58,6 +58,7 @@ import com.caringo.client.ScspResponse;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.Header;
+import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 
 /**
  * Creates an SCSP client to a CAStor cluster, configured in "storage.root",
@@ -65,6 +66,7 @@ import org.apache.commons.httpclient.Header;
  */
 public class S3CAStorBucketAdapter implements S3BucketAdapter {
     protected final static Logger s_logger = Logger.getLogger(S3CAStorBucketAdapter.class);
+    private static final MultiThreadedHttpConnectionManager s_httpClientManager = new MultiThreadedHttpConnectionManager();
 
     private static final int HTTP_OK = 200;
     private static final int HTTP_CREATED = 201;
@@ -444,7 +446,7 @@ public class S3CAStorBucketAdapter implements S3BucketAdapter {
     @Override
     public DataHandler loadObjectRange(String mountedRoot, String bucket, String fileName, long startPos, long endPos) {
         try {
-            HttpClient httpClient = new HttpClient();
+            HttpClient httpClient = new HttpClient(s_httpClientManager);
             // Create a method instance.
             GetMethod method = new GetMethod(castorURL(mountedRoot, bucket, fileName));
             method.addRequestHeader("Range", "bytes=" + startPos + "-" + endPos);
