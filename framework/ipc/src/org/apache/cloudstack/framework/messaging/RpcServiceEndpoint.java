@@ -18,15 +18,13 @@
  */
 package org.apache.cloudstack.framework.messaging;
 
-public interface TransportEndpoint {
-	String getEndpointAddress();
-	
-	void onAttachConfirm(boolean bSuccess, String endpointAddress);
-	void onDetachIndication(String endpointAddress);
-	
-	void registerMultiplexier(String name, TransportMultiplexier multiplexier);
-	void unregisterMultiplexier(String name);
-	
-	void sendMessage(String soureEndpointAddress, String targetEndpointAddress, 
-		String multiplexier, String message);
+public interface RpcServiceEndpoint {
+	/*
+	 * @return
+	 * 		true call has been handled
+	 * 		false can not find the call handler
+	 * @throws
+	 *  	RpcException, exception when 
+	 */
+	boolean onCallReceive(RpcServerCall call);
 }

@@ -18,7 +18,8 @@
  */
 package org.apache.cloudstack.framework.messaging;
 
-public class ComponentEndpoint implements RpcEndpoint, Subscriber {
+public class ComponentEndpoint implements RpcServiceEndpoint, Subscriber {
+	
 	private TransportEndpoint transportEndpoint;
 	private RpcProvider rpcProvider;
 	
@@ -42,17 +43,19 @@ public class ComponentEndpoint implements RpcEndpoint, Subscriber {
 	}
 	
 	public void initialize() {
-		rpcProvider.registerRpcEndpoint(this);
+		rpcProvider.registerRpcServiceEndpoint(this);
 	}
 
 	@Override
-	public void onCallReceive(RpcServerCall call) {
-		// TODO Auto-generated method stub
-		// implement annotation based call dispatching
+	public boolean onCallReceive(RpcServerCall call) {
+		return RpcServiceDispatcher.dispatch(this, call);
 	}
 	
 	@Override
 	public void onPublishEvent(String subject, String senderAddress, Object args) {
-		// TODO
+		try {
+			EventDispatcher.dispatch(this, subject, senderAddress, args);
+		} catch(RuntimeException e) {
+		}
 	}
 }

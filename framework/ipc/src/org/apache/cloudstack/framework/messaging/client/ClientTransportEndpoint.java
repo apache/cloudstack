@@ -50,7 +50,7 @@ public class ClientTransportEndpoint implements TransportEndpoint {
 	}
 
 	@Override
-	public void sendMessage(TransportEndpoint sender,
+	public void sendMessage(String sourceEndpointAddress,
 			String targetEndpointAddress, String multiplexier, String message) {
 		// TODO Auto-generated method stub
 	}

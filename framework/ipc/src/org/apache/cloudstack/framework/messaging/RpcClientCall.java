@@ -19,8 +19,8 @@ package org.apache.cloudstack.framework.messaging;
 import java.util.concurrent.TimeUnit;
 
 public interface RpcClientCall {
+	String getCommand();
 	RpcClientCall setCommand(String cmd);
-	RpcClientCall setPipeline(String pipeline);
 	RpcClientCall setTimeout(TimeUnit timeout);
 	
 	RpcClientCall setCommandArg(Object arg);
@@ -34,5 +34,8 @@ public interface RpcClientCall {
 	void apply();
 	void cancel();
 	
+	/**
+	 * @return the result object， it may also throw RpcException to indicate RPC failures 
+	 */
 	<T> T get();
 }

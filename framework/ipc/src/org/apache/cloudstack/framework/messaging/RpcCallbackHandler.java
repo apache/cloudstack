@@ -25,6 +25,6 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-public @interface RpcServerCallHandler {
+public @interface RpcCallbackHandler {
     String command();
 }

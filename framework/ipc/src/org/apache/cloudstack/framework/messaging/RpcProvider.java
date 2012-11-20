@@ -22,8 +22,8 @@ public interface RpcProvider extends TransportMultiplexier {
 	void setMessageSerializer(MessageSerializer messageSerializer);
 	MessageSerializer getMessageSerializer();
 	
-	void registerRpcEndpoint(RpcEndpoint rpcEndpoint);
-	void unregisteRpcEndpoint(RpcEndpoint rpcEndpoint);
+	void registerRpcServiceEndpoint(RpcServiceEndpoint rpcEndpoint);
+	void unregisteRpcServiceEndpoint(RpcServiceEndpoint rpcEndpoint);
 	
 	RpcClientCall target(String target);
 }
