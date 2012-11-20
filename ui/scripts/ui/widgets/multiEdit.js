@@ -469,7 +469,7 @@
       // Change action label
       $listView.find('th.actions').html(_l('Select'));
 
-      var $dataList = $listView.dialog({
+      var $dataList = $listView.addClass('multi-edit-add-list').dialog({
         dialogClass: 'multi-edit-add-list panel',
         width: 825,
         title: label,
