@@ -25,10 +25,13 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
 
+import com.cloud.api.ResponseGenerator;
+import com.cloud.api.response.ProjectResponse;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectService;
 import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 
 public class ActivateProjectCmdTest extends TestCase {
 	
@@ -39,14 +42,17 @@ public class ActivateProjectCmdTest extends TestCase {
 	
 	@Before
 	public void setUp() {
+		
 		activateProjectCmd = new ActivateProjectCmd(){
 			
 			@Override
 			public Long getId() {
 				return 2L;
 			}
+			
 		};
 	}
+	
 	
 	@Test
 	public void testGetEntityOwnerIdForNullProject() {
@@ -76,6 +82,5 @@ public class ActivateProjectCmdTest extends TestCase {
 		Assert.assertEquals(2L, activateProjectCmd.getEntityOwnerId());
 		
 	}
-	
 	
 }

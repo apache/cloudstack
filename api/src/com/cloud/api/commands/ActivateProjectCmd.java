@@ -59,6 +59,7 @@ public class ActivateProjectCmd extends BaseAsyncCmd {
         return s_name;
     }
     
+    
     @Override
     public long getEntityOwnerId() {
         Project project= _projectService.getProject(getId());
@@ -78,7 +79,7 @@ public class ActivateProjectCmd extends BaseAsyncCmd {
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Project id: "+ getId());
-        Project project = _projectService.activateProject(id);
+        Project project = _projectService.activateProject(getId());
         if (project != null) {
             ProjectResponse response = _responseGenerator.createProjectResponse(project);
             response.setResponseName(getCommandName());

@@ -16,9 +16,6 @@
 // under the License.
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import junit.framework.Assert;
 import junit.framework.TestCase;
 
@@ -28,22 +25,31 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
 
+import com.cloud.api.ResponseGenerator;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.response.ClusterResponse;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceService;
 
+import edu.emory.mathcs.backport.java.util.Arrays;
+
 public class AddClusterCmdTest extends TestCase {
 	
 	private AddClusterCmd addClusterCmd;
+	private ResourceService resourceService;
+	private ResponseGenerator responseGenerator;
+
 	
 	@Rule
 	public ExpectedException expectedException = ExpectedException.none();
 
 	@Before
 	public void setUp() {
-		addClusterCmd = new AddClusterCmd(){
+/*		resourceService = Mockito.mock(ResourceService.class);
+		responseGenerator = Mockito.mock(ResponseGenerator.class);
+*/		addClusterCmd = new AddClusterCmd(){
 		};
 	}
 
@@ -92,40 +98,26 @@ public class AddClusterCmdTest extends TestCase {
 		
 	}
 	
-	
-	
-	@Test
-	public void testExecuteForResult() {
 
-		ResourceService resourceService = Mockito.mock(ResourceService.class);
+	@Test
+	public void testExecuteForResult() throws Exception {
 		
-		List<? extends Cluster> result = new ArrayList<Cluster>();
-		Cluster cluster = Mockito.mock(Cluster.class);
-//		result.add(cluster);
-		
-		/*try {
-			Mockito.when(resourceService.discoverCluster(addClusterCmd)).thenReturn(Arrays.asList(result));
-		} catch (ResourceInUseException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IllegalArgumentException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (DiscoveryException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}*/
-		
+		resourceService = Mockito.mock(ResourceService.class);
+		responseGenerator = Mockito.mock(ResponseGenerator.class);
+
 		addClusterCmd._resourceService = resourceService;
+		addClusterCmd._responseGenerator = responseGenerator;
 		
-		try { 
-			addClusterCmd.execute();
-		} catch (ServerApiException exception) {
-			Assert.assertEquals("Failed to add cluster", exception.getDescription());
-		}
+		Cluster cluster = Mockito.mock(Cluster.class);
+		Cluster[] clusterArray = new Cluster[]{cluster};
+		
+		Mockito.when(resourceService.discoverCluster(addClusterCmd)).thenReturn(Arrays.asList(clusterArray));
+		
+		addClusterCmd.execute();
+		
 		
 	}
-	
+		
 }
 
  

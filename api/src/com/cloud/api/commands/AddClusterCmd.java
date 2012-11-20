@@ -153,7 +153,7 @@ public class AddClusterCmd extends BaseCmd {
             List<? extends Cluster> result = _resourceService.discoverCluster(this);
             ListResponse<ClusterResponse> response = new ListResponse<ClusterResponse>();
             List<ClusterResponse> clusterResponses = new ArrayList<ClusterResponse>();
-            if (result != null) {
+            if (result != null && result.size() > 0) {
                 for (Cluster cluster : result) {
                     ClusterResponse clusterResponse = _responseGenerator.createClusterResponse(cluster, false);
                     clusterResponses.add(clusterResponse);
