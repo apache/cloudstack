@@ -22,7 +22,13 @@ import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskTyp
 import org.apache.cloudstack.storage.image.store.ImageDataStoreInfo;
 
 public interface TemplateInfo {
-	ImageDataStoreInfo getImageDataStore();
-	long getId();
-	VolumeDiskType getDiskType();
+    ImageDataStoreInfo getImageDataStore();
+
+    long getId();
+
+    VolumeDiskType getDiskType();
+    
+    String getPath();
+    
+    String getUuid();
 }

@@ -30,27 +30,28 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 
 public class HypervisorHostEndPoint implements EndPoint {
-	private static final Logger s_logger = Logger.getLogger(HypervisorHostEndPoint.class);
-	private long hostId;
-	@Inject
-	AgentManager agentMgr;
-	public HypervisorHostEndPoint(long hostId) {
-		this.hostId = hostId;
-	}
-	
-	@Override
-	public Answer sendMessage(Command cmd) {
-		Answer answer = null;
-		try {
-			answer = agentMgr.send(hostId, cmd);
-		} catch (AgentUnavailableException e) {
-			s_logger.debug("Unable to send command:" + cmd + ", due to: " + e.toString());
-		} catch (OperationTimedoutException e) {
-			s_logger.debug("Unable to send command:" + cmd + ", due to: " + e.toString());
-		} catch (Exception e) {
-			s_logger.debug("Unable to send command:" + cmd + ", due to: " + e.toString());
-		}
-		return answer;
-	}
+    private static final Logger s_logger = Logger.getLogger(HypervisorHostEndPoint.class);
+    private long hostId;
+    @Inject
+    AgentManager agentMgr;
+
+    public HypervisorHostEndPoint(long hostId) {
+        this.hostId = hostId;
+    }
+
+    @Override
+    public Answer sendMessage(Command cmd) {
+        Answer answer = null;
+        try {
+            answer = agentMgr.send(hostId, cmd);
+        } catch (AgentUnavailableException e) {
+            s_logger.debug("Unable to send command:" + cmd + ", due to: " + e.toString());
+        } catch (OperationTimedoutException e) {
+            s_logger.debug("Unable to send command:" + cmd + ", due to: " + e.toString());
+        } catch (Exception e) {
+            s_logger.debug("Unable to send command:" + cmd + ", due to: " + e.toString());
+        }
+        return answer;
+    }
 
 }

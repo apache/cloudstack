@@ -21,8 +21,11 @@ package org.apache.cloudstack.storage.image.driver;
 import org.apache.cloudstack.storage.image.TemplateInfo;
 
 public interface ImageDataStoreDriver {
-	boolean registerTemplate(TemplateInfo template);
-	String grantAccess(long templateId, long endPointId);
-	boolean revokeAccess(long templateId, long endPointId);
-	boolean deleteTemplate(TemplateInfo template);
+    boolean registerTemplate(TemplateInfo template);
+
+    String grantAccess(long templateId, long endPointId);
+
+    boolean revokeAccess(long templateId, long endPointId);
+
+    boolean deleteTemplate(TemplateInfo template);
 }

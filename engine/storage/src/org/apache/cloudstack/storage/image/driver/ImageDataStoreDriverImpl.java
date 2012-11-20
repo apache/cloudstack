@@ -21,33 +21,32 @@ package org.apache.cloudstack.storage.image.driver;
 import org.apache.cloudstack.storage.image.TemplateInfo;
 
 public class ImageDataStoreDriverImpl implements ImageDataStoreDriver {
-	
-	public ImageDataStoreDriverImpl() {
-	}
-	@Override
-	public boolean registerTemplate(TemplateInfo template) {
-		//TODO: check the availability of template 
-		return true;
-	}
 
-	@Override
-	public String grantAccess(long templateId, long endPointId) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public ImageDataStoreDriverImpl() {
+    }
 
-	@Override
-	public boolean revokeAccess(long templateId, long endPointId) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public boolean registerTemplate(TemplateInfo template) {
+        // TODO: check the availability of template
+        return true;
+    }
 
-	@Override
-	public boolean deleteTemplate(TemplateInfo template) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public String grantAccess(long templateId, long endPointId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	
+    @Override
+    public boolean revokeAccess(long templateId, long endPointId) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean deleteTemplate(TemplateInfo template) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
 }

@@ -19,8 +19,10 @@
 package org.apache.cloudstack.storage.image.provider;
 
 import java.util.List;
+import java.util.Map;
 
 import javax.inject.Inject;
+import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.storage.image.TemplateObject;
 import org.apache.cloudstack.storage.image.db.ImageDataDao;
@@ -34,47 +36,94 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class ImageDataStoreProviderManagerImpl implements ImageDataStoreProviderManager {
-	@Inject
-	ImageDataStoreProviderDao providerDao;
-	@Inject
-	ImageDataStoreDao dataStoreDao;
-	@Inject
-	ImageDataDao imageDataDao;
-	@Inject
-	List<ImageDataStoreProvider> providers;
-	@Override
-	public ImageDataStoreProvider getProvider(long providerId) {
-		
-		return null;
-	}
-	
-	protected ImageDataStoreProvider getProvider(String name) {
-		for (ImageDataStoreProvider provider : providers) {
-			if (provider.getName().equalsIgnoreCase(name)) {
-				return provider;
-			}
-		}
-		return null;
-	}
-	
-	@Override
-	public ImageDataStore getDataStore(long dataStoreId) {
-		ImageDataStoreVO idsv = dataStoreDao.findById(dataStoreId);
-		long providerId = idsv.getProvider();
-		ImageDataStoreProviderVO idspv = providerDao.findById(providerId);
-		ImageDataStoreProvider provider = getProvider(idspv.getName());
-		return provider.getImageDataStore(dataStoreId);
-	}
+    @Inject
+    ImageDataStoreProviderDao providerDao;
+    @Inject
+    ImageDataStoreDao dataStoreDao;
+    @Inject
+    ImageDataDao imageDataDao;
+    @Inject
+    List<ImageDataStoreProvider> providers;
 
-	@Override
-	public ImageDataStore getDataStoreFromTemplateId(long templateId) {
-		ImageDataVO iddv = imageDataDao.findById(templateId);
-		return getDataStore(iddv.getId());
-	}
+    @Override
+    public ImageDataStoreProvider getProvider(long providerId) {
 
-	@Override
-	public TemplateObject getTemplate(long templateId) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+        return null;
+    }
+
+    protected ImageDataStoreProvider getProvider(String name) {
+        for (ImageDataStoreProvider provider : providers) {
+            if (provider.getName().equalsIgnoreCase(name)) {
+                return provider;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public ImageDataStore getDataStore(Long dataStoreId) {
+        if (dataStoreId == null) {
+            return null;
+        }
+
+        ImageDataStoreVO idsv = dataStoreDao.findById(dataStoreId);
+        if (idsv == null) {
+            return null;
+        }
+        
+        long providerId = idsv.getProvider();
+        ImageDataStoreProviderVO idspv = providerDao.findById(providerId);
+        ImageDataStoreProvider provider = getProvider(idspv.getName());
+        return provider.getImageDataStore(dataStoreId);
+    }
+
+    @Override
+    public ImageDataStore getDataStoreFromTemplateId(long templateId) {
+        ImageDataVO iddv = imageDataDao.findById(templateId);
+        return getDataStore(iddv.getImageDataStoreId());
+    }
+
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        List<ImageDataStoreProviderVO> existingProviders = providerDao.listAll();
+        //TODO: hold global lock
+        boolean foundExistingProvider = false;
+        for (ImageDataStoreProvider provider : providers) {
+            foundExistingProvider = false;
+           for (ImageDataStoreProviderVO existingProvider : existingProviders) {
+               if (provider.getName().equalsIgnoreCase(existingProvider.getName())) {
+                   foundExistingProvider = true;
+                   break;
+               }
+           }
+           
+           if (!foundExistingProvider) {
+               //add a new provider into db
+               ImageDataStoreProviderVO nProvider = new ImageDataStoreProviderVO();
+               nProvider.setName(provider.getName());
+               nProvider = providerDao.persist(nProvider);
+               provider.register(nProvider.getId());
+           }
+        }
+       
+        return true;
+    }
+
+    @Override
+    public boolean start() {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean stop() {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public String getName() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 }

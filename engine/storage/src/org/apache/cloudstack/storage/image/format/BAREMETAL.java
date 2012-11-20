@@ -23,9 +23,10 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class BAREMETAL extends BaseType implements ImageFormat {
-	private final String type = "BAREMETAL";
-	@Override
-	public String toString() {
-		return type;
-	}
+    private final String type = "BAREMETAL";
+
+    @Override
+    public String toString() {
+        return type;
+    }
 }

@@ -22,8 +22,11 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.storage.image.TemplateInfo;
 
 public interface TemplateOnPrimaryDataStoreInfo {
-	public String getPath();
-	public void setPath(String path);
-	public PrimaryDataStoreInfo getPrimaryDataStore();
-	public TemplateInfo getTemplate();
+    public String getPath();
+
+    public void setPath(String path);
+
+    public PrimaryDataStoreInfo getPrimaryDataStore();
+
+    public TemplateInfo getTemplate();
 }

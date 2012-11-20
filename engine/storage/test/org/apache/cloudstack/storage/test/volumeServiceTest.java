@@ -21,11 +21,13 @@ package org.apache.cloudstack.storage.test;
 import static org.junit.Assert.*;
 
 import java.awt.List;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import javax.inject.Inject;
+import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.QCOW2;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VHD;
@@ -35,23 +37,18 @@ import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskTyp
 import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeTypeHelper;
 import org.apache.cloudstack.storage.datastore.DefaultPrimaryDataStoreImpl;
 import org.apache.cloudstack.storage.datastore.provider.DefaultPrimaryDatastoreProviderImpl;
-import org.apache.cloudstack.storage.datastore.provider.PrimaryDataStoreProvider;
 import org.apache.cloudstack.storage.image.format.ISO;
 import org.apache.cloudstack.storage.image.format.ImageFormat;
 import org.apache.cloudstack.storage.image.format.ImageFormatHelper;
 import org.apache.cloudstack.storage.image.format.OVA;
 import org.apache.cloudstack.storage.image.format.Unknown;
-import org.apache.cloudstack.storage.volume.VolumeMotionService;
-import org.apache.cloudstack.storage.volume.VolumeService;
-import org.apache.cloudstack.storage.volume.db.VolumeDao;
+import org.apache.cloudstack.storage.image.provider.ImageDataStoreProviderManager;
 
 import org.junit.Before;
 import org.junit.Test;
+
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
+
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.mockito.Mockito.*;
@@ -61,37 +58,25 @@ import com.cloud.utils.component.ComponentInject;
 import com.cloud.utils.db.DB;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations="storageContext.xml")
+@ContextConfiguration(locations="classpath:/resource/storageContext.xml")
 public class volumeServiceTest {
-	@Autowired
-	protected VolumeService volService;
-	@Inject
-	protected VolumeDao volumeDao;
-	@Autowired
-	protected VolumeMotionService vmotion;
+    @Inject
+    ImageDataStoreProviderManager imageProviderMgr;
 	@Before
 	public void setUp() {
-		Mockito.when(vmotion.copyVolume(null, null)).thenReturn(false);
+		
 	}
 	
-	@DB
+	@Test
 	public void test() {
-		assertTrue(volService.deleteVolume(1) != false);
-		assertNotNull(volumeDao);
-		//VolumeVO vol = new VolumeVO(Volume.Type.DATADISK, "test", 1, 2, 2, 1, 1);
-		//volumeDao.persist(vol);
-		/*
-		VolumeVO volume = new VolumeVO();
-		String name = "test";
-		long size = 100;
-		volume.setName(name);
-		volume.setSize(size);
-		volumeDao.persist(volume);
-		VolumeVO newVol = volumeDao.getVolumeByName(name);
-		assertTrue(newVol.getSize() == volume.getSize());
-		*/
-
-		fail("Not yet implemented");
+	    try {
+	        
+            imageProviderMgr.configure("image Provider", new HashMap<String, Object>());
+            
+        } catch (ConfigurationException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
 	}
 	
 	//@Test

@@ -25,25 +25,25 @@ import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 
 @Entity
-@Table(name="image_data_store_provider")
+@Table(name = "image_data_store_provider")
 public class ImageDataStoreProviderVO {
     @Id
-    @TableGenerator(name="image_data_store_provider_sq", table="sequence", pkColumnName="name", valueColumnName="value", pkColumnValue="image_data_store_provider_seq", allocationSize=1)
-    @Column(name="id", nullable = false)
+    @TableGenerator(name = "image_data_store_provider_sq", table = "sequence", pkColumnName = "name", valueColumnName = "value", pkColumnValue = "image_data_store_provider_seq", allocationSize = 1)
+    @Column(name = "id", nullable = false)
     private long id;
-    
-    @Column(name="name", nullable = false)
+
+    @Column(name = "name", nullable = false)
     private String name;
-    
+
     public long getId() {
-    	return this.id;
+        return this.id;
     }
-    
+
     public String getName() {
-    	return this.name;
+        return this.name;
     }
-    
+
     public void setName(String name) {
-    	this.name = name;
+        this.name = name;
     }
 }

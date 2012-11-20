@@ -26,52 +26,53 @@ import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskTyp
 import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeType;
 import org.apache.cloudstack.storage.image.TemplateInfo;
 
-
 public interface VolumeService {
-	/**
+    /**
 	 * 
 	 */
-	VolumeEntity allocateVolumeInDb(long size, VolumeType type,String volName, Long templateId);
-	
+    VolumeEntity allocateVolumeInDb(long size, VolumeType type, String volName, Long templateId);
+
     /**
      * Creates the volume based on the given criteria
      * 
      * @param cmd
-     *            
+     * 
      * @return the volume object
      */
-	VolumeInfo createVolume(VolumeInfo volume, long dataStoreId, VolumeDiskType diskType);
+    VolumeInfo createVolume(VolumeInfo volume, long dataStoreId, VolumeDiskType diskType);
 
     /**
      * Delete volume
+     * 
      * @param volumeId
      * @return
      * @throws ConcurrentOperationException
      */
     boolean deleteVolume(long volumeId);
-    
+
     /**
      * 
      */
     boolean cloneVolume(long volumeId, long baseVolId);
-    
+
     /**
      * 
      */
     boolean createVolumeFromSnapshot(long volumeId, long snapshotId);
-    
+
     /**
      * 
      */
     String grantAccess(VolumeInfo volume, EndPoint endpointId);
-    
+
     TemplateOnPrimaryDataStoreInfo grantAccess(TemplateOnPrimaryDataStoreInfo template, EndPoint endPoint);
-    
+
     /**
      * 
      */
     boolean rokeAccess(long volumeId, long endpointId);
 
     VolumeEntity getVolumeEntity(long volumeId);
+
     VolumeInfo createVolumeFromTemplate(VolumeInfo volume, long dataStoreId, VolumeDiskType diskType, TemplateInfo template);
 }

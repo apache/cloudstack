@@ -25,14 +25,14 @@ import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 
 @Entity
-@Table(name="data_store_provider")
+@Table(name = "data_store_provider")
 public class PrimaryDataStoreProviderVO {
     @Id
-    @TableGenerator(name="data_store_provider_sq", table="sequence", pkColumnName="name", valueColumnName="value", pkColumnValue="data_store_provider_seq", allocationSize=1)
-    @Column(name="id", updatable=false, nullable = false)
-	private long id;
-    
+    @TableGenerator(name = "data_store_provider_sq", table = "sequence", pkColumnName = "name", valueColumnName = "value", pkColumnValue = "data_store_provider_seq", allocationSize = 1)
+    @Column(name = "id", updatable = false, nullable = false)
+    private long id;
+
     public long getId() {
-    	return id;
+        return id;
     }
 }

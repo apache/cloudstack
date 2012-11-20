@@ -21,5 +21,5 @@ package org.apache.cloudstack.storage.image.manager;
 import org.apache.cloudstack.storage.image.store.ImageDataStore;
 
 public interface ImageDataStoreManager {
-	ImageDataStore getImageDataStore(long dataStoreId);
+    ImageDataStore getImageDataStore(long dataStoreId);
 }

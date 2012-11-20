@@ -30,19 +30,29 @@ import org.apache.cloudstack.storage.image.TemplateObject;
 import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreInfo;
 import org.apache.cloudstack.storage.volume.VolumeObject;
 
-
 public interface PrimaryDataStore extends PrimaryDataStoreInfo {
-	VolumeInfo getVolume(long id);
-	List<VolumeInfo> getVolumes();
-	boolean deleteVolume(long id);
-	VolumeInfo createVolume(VolumeInfo vo, VolumeDiskType diskType);
-	VolumeInfo createVoluemFromBaseImage(VolumeInfo volume, TemplateOnPrimaryDataStoreInfo templateStore);
-	List<EndPoint> getEndPoints();
-	PrimaryDataStoreInfo getDataStoreInfo();
-	boolean exists(VolumeInfo vi);
-	boolean templateExists(TemplateInfo template);
-	TemplateOnPrimaryDataStoreInfo getTemplate(TemplateInfo template);
-	boolean installTemplate(TemplateOnPrimaryDataStoreInfo template);
-	VolumeDiskType getDefaultDiskType();
-	
+    VolumeInfo getVolume(long id);
+
+    List<VolumeInfo> getVolumes();
+
+    boolean deleteVolume(long id);
+
+    VolumeInfo createVolume(VolumeInfo vo, VolumeDiskType diskType);
+
+    VolumeInfo createVoluemFromBaseImage(VolumeInfo volume, TemplateOnPrimaryDataStoreInfo templateStore);
+
+    List<EndPoint> getEndPoints();
+
+    PrimaryDataStoreInfo getDataStoreInfo();
+
+    boolean exists(VolumeInfo vi);
+
+    boolean templateExists(TemplateInfo template);
+
+    TemplateOnPrimaryDataStoreInfo getTemplate(TemplateInfo template);
+
+    boolean installTemplate(TemplateOnPrimaryDataStoreInfo template);
+
+    VolumeDiskType getDefaultDiskType();
+
 }

@@ -21,9 +21,12 @@ package org.apache.cloudstack.storage.image.provider;
 import org.apache.cloudstack.storage.image.TemplateObject;
 import org.apache.cloudstack.storage.image.store.ImageDataStore;
 
-public interface ImageDataStoreProviderManager {
-	public ImageDataStoreProvider getProvider(long providerId);
-	public ImageDataStore getDataStore(long dataStoreId);
-	public ImageDataStore getDataStoreFromTemplateId(long templateId);
-	public TemplateObject getTemplate(long templateId);
+import com.cloud.utils.component.Manager;
+
+public interface ImageDataStoreProviderManager extends Manager {
+    public ImageDataStoreProvider getProvider(long providerId);
+
+    public ImageDataStore getDataStore(Long dataStoreId);
+
+    public ImageDataStore getDataStoreFromTemplateId(long templateId);
 }

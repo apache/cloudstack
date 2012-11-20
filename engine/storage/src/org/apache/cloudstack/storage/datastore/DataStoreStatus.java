@@ -19,11 +19,5 @@
 package org.apache.cloudstack.storage.datastore;
 
 public enum DataStoreStatus {
-	Creating,
-	Up,
-	PrepareForMaintenance,
-	ErrorInMaintenance,
-	CancelMaintenance,
-	Maintenance,
-	Removed;
+    Creating, Up, PrepareForMaintenance, ErrorInMaintenance, CancelMaintenance, Maintenance, Removed;
 }

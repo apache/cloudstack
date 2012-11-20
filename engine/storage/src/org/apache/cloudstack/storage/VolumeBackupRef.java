@@ -28,39 +28,39 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 
 public interface VolumeBackupRef {
-	public DataObjectBackupStorageOperationState getOperationState();
-	
-	public String getInstallPath();
+    public DataObjectBackupStorageOperationState getOperationState();
 
-	public long getHostId();
+    public String getInstallPath();
 
-	public long getVolumeId();
+    public long getHostId();
 
-	public long getZoneId();
+    public long getVolumeId();
 
-	public int getDownloadPercent();
+    public long getZoneId();
 
-	public  long getVolumeSize();
+    public int getDownloadPercent();
 
-	public  Storage.ImageFormat getFormat();
+    public long getVolumeSize();
 
-	public  String getDownloadUrl();
+    public Storage.ImageFormat getFormat();
 
-	public  boolean getDestroyed();
+    public String getDownloadUrl();
 
-	public  long getPhysicalSize();
+    public boolean getDestroyed();
 
-	public  long getSize();
+    public long getPhysicalSize();
 
-	public  String getLocalDownloadPath();
+    public long getSize();
 
-	public  String getChecksum();
+    public String getLocalDownloadPath();
 
-	public  Status getDownloadState();
+    public String getChecksum();
 
-	public  Date getLastUpdated();
+    public Status getDownloadState();
 
-	public  Date getCreated();
+    public Date getLastUpdated();
 
-	public  long getId();
+    public Date getCreated();
+
+    public long getId();
 }

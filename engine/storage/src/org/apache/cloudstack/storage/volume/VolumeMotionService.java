@@ -19,5 +19,5 @@
 package org.apache.cloudstack.storage.volume;
 
 public interface VolumeMotionService {
-	boolean copyVolume(String volumeUri, String destVolumeUri);
+    boolean copyVolume(String volumeUri, String destVolumeUri);
 }

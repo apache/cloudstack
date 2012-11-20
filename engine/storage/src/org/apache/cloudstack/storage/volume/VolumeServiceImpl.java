@@ -47,141 +47,141 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @Service
 public class VolumeServiceImpl implements VolumeService {
-	@Inject
-	VolumeDao volDao;
-	@Inject
-	PrimaryDataStoreManager dataStoreMgr;
-	@Inject
-	TemplatePrimaryDataStoreManager templatePrimaryStoreMgr;
-	@Inject
-	ImageMotionService imageMotion;
-	@Override
-	public VolumeInfo createVolume(VolumeInfo volume, long dataStoreId, VolumeDiskType diskType) {
-		PrimaryDataStore dataStore = dataStoreMgr.getPrimaryDataStore(dataStoreId);
-		if (dataStore == null) {
-			throw new CloudRuntimeException("Can't find dataStoreId: " + dataStoreId);
-		}
-		
-		if (dataStore.exists(volume)) {
-			return volume;
-		}
-		
-		VolumeObject vo = (VolumeObject)volume;
-		vo.stateTransit(VolumeEvent.CreateRequested);
-		
-		try {
-			VolumeInfo vi = dataStore.createVolume(vo, diskType);
-			vo.stateTransit(VolumeEvent.OperationSucceeded);
-			return vi;
-		} catch (Exception e) {
-			vo.stateTransit(VolumeEvent.OperationFailed);
-			throw new CloudRuntimeException(e.toString());
-		}
-	}
+    @Inject
+    VolumeDao volDao;
+    @Inject
+    PrimaryDataStoreManager dataStoreMgr;
+    @Inject
+    TemplatePrimaryDataStoreManager templatePrimaryStoreMgr;
+    @Inject
+    ImageMotionService imageMotion;
 
-	@DB
-	@Override
-	public boolean deleteVolume(long volumeId) {
-		return true;
-	}
+    @Override
+    public VolumeInfo createVolume(VolumeInfo volume, long dataStoreId, VolumeDiskType diskType) {
+        PrimaryDataStore dataStore = dataStoreMgr.getPrimaryDataStore(dataStoreId);
+        if (dataStore == null) {
+            throw new CloudRuntimeException("Can't find dataStoreId: " + dataStoreId);
+        }
 
-	@Override
-	public boolean cloneVolume(long volumeId, long baseVolId) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+        if (dataStore.exists(volume)) {
+            return volume;
+        }
 
-	@Override
-	public boolean createVolumeFromSnapshot(long volumeId, long snapshotId) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+        VolumeObject vo = (VolumeObject) volume;
+        vo.stateTransit(VolumeEvent.CreateRequested);
 
-	@Override
-	public boolean rokeAccess(long volumeId, long endpointId) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+        try {
+            VolumeInfo vi = dataStore.createVolume(vo, diskType);
+            vo.stateTransit(VolumeEvent.OperationSucceeded);
+            return vi;
+        } catch (Exception e) {
+            vo.stateTransit(VolumeEvent.OperationFailed);
+            throw new CloudRuntimeException(e.toString());
+        }
+    }
 
-	@Override
-	public VolumeEntity allocateVolumeInDb(long size, VolumeType type, String volName, Long templateId) {
-		VolumeVO vo = volDao.allocVolume(size, type, volName, templateId);
-		return new VolumeEntityImpl(new VolumeObject(null, vo));
-	}
+    @DB
+    @Override
+    public boolean deleteVolume(long volumeId) {
+        return true;
+    }
 
-	@Override
-	public VolumeEntity getVolumeEntity(long volumeId) {
-		VolumeVO vo = volDao.findById(volumeId);
-		if (vo == null) {
-			return null;
-		}
-		
-		if (vo.getPoolId() == null) {
-			return new VolumeEntityImpl(new VolumeObject(null, vo));
-		} else {
-			PrimaryDataStore dataStore = dataStoreMgr.getPrimaryDataStore(vo.getPoolId());
-			return new VolumeEntityImpl(dataStore.getVolume(volumeId));
-		}
-	}
+    @Override
+    public boolean cloneVolume(long volumeId, long baseVolId) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
+    @Override
+    public boolean createVolumeFromSnapshot(long volumeId, long snapshotId) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	@Override
-	public String grantAccess(VolumeInfo volume, EndPoint endpointId) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public boolean rokeAccess(long volumeId, long endpointId) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	protected TemplateOnPrimaryDataStoreObject createBaseImage(PrimaryDataStore dataStore, TemplateInfo template) {
-		TemplateOnPrimaryDataStoreObject templateOnPrimaryStoreObj = (TemplateOnPrimaryDataStoreObject)templatePrimaryStoreMgr.createTemplateOnPrimaryDataStore(template, dataStore);
-		templateOnPrimaryStoreObj.updateStatus(Status.CREATING);
-		try {
-			dataStore.installTemplate(templateOnPrimaryStoreObj);
-			templateOnPrimaryStoreObj.updateStatus(Status.CREATED);
-		} catch (Exception e) {
-			templateOnPrimaryStoreObj.updateStatus(Status.ABANDONED);
-			throw new CloudRuntimeException(e.toString());
-		}
-		
-		templateOnPrimaryStoreObj.updateStatus(Status.DOWNLOAD_IN_PROGRESS);
-		try {
-			imageMotion.copyTemplate(templateOnPrimaryStoreObj);
-			templateOnPrimaryStoreObj.updateStatus(Status.DOWNLOADED);
-		} catch (Exception e) {
-			templateOnPrimaryStoreObj.updateStatus(Status.ABANDONED);
-			throw new CloudRuntimeException(e.toString());
-		}
-		
-		return templateOnPrimaryStoreObj;
-	}
-	
-	@Override
-	public VolumeInfo createVolumeFromTemplate(VolumeInfo volume, long dataStoreId, VolumeDiskType diskType, TemplateInfo template) {
-		PrimaryDataStore pd = dataStoreMgr.getPrimaryDataStore(dataStoreId);
-		TemplateOnPrimaryDataStoreInfo templateOnPrimaryStore = pd.getTemplate(template);
-		if (templateOnPrimaryStore == null) {
-			templateOnPrimaryStore = createBaseImage(pd, template);
-		}
-		
-		VolumeObject vo = (VolumeObject)volume;
-		try {
-			vo.stateTransit(VolumeEvent.CreateRequested);
-		} catch (Exception e) {
-			throw new CloudRuntimeException(e.toString());
-		}
-		
-		try {
-			volume = pd.createVoluemFromBaseImage(volume, templateOnPrimaryStore);
-			vo.stateTransit(VolumeEvent.OperationSucceeded);
-		} catch (Exception e) {
-			vo.stateTransit(VolumeEvent.OperationFailed);
-			throw new CloudRuntimeException(e.toString());
-		}
-		return volume;
-	}
+    @Override
+    public VolumeEntity allocateVolumeInDb(long size, VolumeType type, String volName, Long templateId) {
+        VolumeVO vo = volDao.allocVolume(size, type, volName, templateId);
+        return new VolumeEntityImpl(new VolumeObject(null, vo));
+    }
 
-	@Override
-	public TemplateOnPrimaryDataStoreInfo grantAccess(TemplateOnPrimaryDataStoreInfo template, EndPoint endPoint) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public VolumeEntity getVolumeEntity(long volumeId) {
+        VolumeVO vo = volDao.findById(volumeId);
+        if (vo == null) {
+            return null;
+        }
+
+        if (vo.getPoolId() == null) {
+            return new VolumeEntityImpl(new VolumeObject(null, vo));
+        } else {
+            PrimaryDataStore dataStore = dataStoreMgr.getPrimaryDataStore(vo.getPoolId());
+            return new VolumeEntityImpl(dataStore.getVolume(volumeId));
+        }
+    }
+
+    @Override
+    public String grantAccess(VolumeInfo volume, EndPoint endpointId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    protected TemplateOnPrimaryDataStoreObject createBaseImage(PrimaryDataStore dataStore, TemplateInfo template) {
+        TemplateOnPrimaryDataStoreObject templateOnPrimaryStoreObj = (TemplateOnPrimaryDataStoreObject) templatePrimaryStoreMgr.createTemplateOnPrimaryDataStore(template, dataStore);
+        templateOnPrimaryStoreObj.updateStatus(Status.CREATING);
+        try {
+            dataStore.installTemplate(templateOnPrimaryStoreObj);
+            templateOnPrimaryStoreObj.updateStatus(Status.CREATED);
+        } catch (Exception e) {
+            templateOnPrimaryStoreObj.updateStatus(Status.ABANDONED);
+            throw new CloudRuntimeException(e.toString());
+        }
+
+        templateOnPrimaryStoreObj.updateStatus(Status.DOWNLOAD_IN_PROGRESS);
+        try {
+            imageMotion.copyTemplate(templateOnPrimaryStoreObj);
+            templateOnPrimaryStoreObj.updateStatus(Status.DOWNLOADED);
+        } catch (Exception e) {
+            templateOnPrimaryStoreObj.updateStatus(Status.ABANDONED);
+            throw new CloudRuntimeException(e.toString());
+        }
+
+        return templateOnPrimaryStoreObj;
+    }
+
+    @Override
+    public VolumeInfo createVolumeFromTemplate(VolumeInfo volume, long dataStoreId, VolumeDiskType diskType, TemplateInfo template) {
+        PrimaryDataStore pd = dataStoreMgr.getPrimaryDataStore(dataStoreId);
+        TemplateOnPrimaryDataStoreInfo templateOnPrimaryStore = pd.getTemplate(template);
+        if (templateOnPrimaryStore == null) {
+            templateOnPrimaryStore = createBaseImage(pd, template);
+        }
+
+        VolumeObject vo = (VolumeObject) volume;
+        try {
+            vo.stateTransit(VolumeEvent.CreateRequested);
+        } catch (Exception e) {
+            throw new CloudRuntimeException(e.toString());
+        }
+
+        try {
+            volume = pd.createVoluemFromBaseImage(volume, templateOnPrimaryStore);
+            vo.stateTransit(VolumeEvent.OperationSucceeded);
+        } catch (Exception e) {
+            vo.stateTransit(VolumeEvent.OperationFailed);
+            throw new CloudRuntimeException(e.toString());
+        }
+        return volume;
+    }
+
+    @Override
+    public TemplateOnPrimaryDataStoreInfo grantAccess(TemplateOnPrimaryDataStoreInfo template, EndPoint endPoint) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 }

@@ -31,23 +31,29 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class DefaultImageDataStoreProvider implements ImageDataStoreProvider {
-	private final String providerName = "DefaultProvider";
-	@Inject
-	ImageDataStoreProviderDao providerDao;
-	@Inject
-	ImageDataStoreDao imageStoreDao;
-	
-	@Override
-	public ImageDataStore getImageDataStore(long imageStoreId) {
-		ImageDataStoreVO idsv = imageStoreDao.findById(imageStoreId);
-		ImageDataStoreDriver driver = new ImageDataStoreDriverImpl();
-		ImageDataStore ids = new ImageDataStoreImpl(idsv, driver, false, null);
-		return ids;
-	}
+    private final String providerName = "DefaultProvider";
+    @Inject
+    ImageDataStoreProviderDao providerDao;
+    @Inject
+    ImageDataStoreDao imageStoreDao;
 
-	@Override
-	public String getName() {
-		return providerName;
-	}
+    @Override
+    public ImageDataStore getImageDataStore(long imageStoreId) {
+        ImageDataStoreVO idsv = imageStoreDao.findById(imageStoreId);
+        ImageDataStoreDriver driver = new ImageDataStoreDriverImpl();
+        ImageDataStore ids = new ImageDataStoreImpl(idsv, driver, false, null);
+        return ids;
+    }
+
+    @Override
+    public String getName() {
+        return providerName;
+    }
+
+    @Override
+    public boolean register(long providerId) {
+        // TODO Auto-generated method stub
+        return true;
+    }
 
 }

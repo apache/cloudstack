@@ -32,47 +32,47 @@ import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.utils.component.Inject;
 
 public class ImageOrchestratorImpl implements ImageOrchestrator {
-	@Inject
-	SecondaryStorageManager _secStorageMgr;
-	@Inject
-	VMTemplateZoneDao _templateZoneDao;
-	public void registerTemplate(long templateId) {
-		List<VMTemplateZoneVO> tpZones = _templateZoneDao.listByTemplateId(templateId);
-		
-		for (VMTemplateZoneVO tpZone : tpZones) {
-			DataStore imageStore = null;
-			List<DataStore> imageStores = _secStorageMgr.getImageStores(tpZone.getZoneId());
-			for (DataStore imgStore : imageStores) {
-				TemplateStrategy ts = imgStore.getTemplateStrategy();
-				if (ts.canRegister(templateId)) {
-					imageStore = imgStore;
-					break;
-				}
-			}
-			
-			if (imageStore == null) {
-				continue;
-			}
-			
-			TemplateStrategy ts = imageStore.getTemplateStrategy();
-			ts.register(ts.get(templateId));
-		}
-	}
+    @Inject
+    SecondaryStorageManager _secStorageMgr;
+    @Inject
+    VMTemplateZoneDao _templateZoneDao;
 
-	public void registerSnapshot(long snapshotId) {
-		// TODO Auto-generated method stub
-		
-	}
+    public void registerTemplate(long templateId) {
+        List<VMTemplateZoneVO> tpZones = _templateZoneDao.listByTemplateId(templateId);
 
-	public void registerVolume(long volumeId) {
-		// TODO Auto-generated method stub
-		
-	}
+        for (VMTemplateZoneVO tpZone : tpZones) {
+            DataStore imageStore = null;
+            List<DataStore> imageStores = _secStorageMgr.getImageStores(tpZone.getZoneId());
+            for (DataStore imgStore : imageStores) {
+                TemplateStrategy ts = imgStore.getTemplateStrategy();
+                if (ts.canRegister(templateId)) {
+                    imageStore = imgStore;
+                    break;
+                }
+            }
 
-	public void registerIso(long isoId) {
-		// TODO Auto-generated method stub
-		
-	}
+            if (imageStore == null) {
+                continue;
+            }
 
+            TemplateStrategy ts = imageStore.getTemplateStrategy();
+            ts.register(ts.get(templateId));
+        }
+    }
+
+    public void registerSnapshot(long snapshotId) {
+        // TODO Auto-generated method stub
+
+    }
+
+    public void registerVolume(long volumeId) {
+        // TODO Auto-generated method stub
+
+    }
+
+    public void registerIso(long isoId) {
+        // TODO Auto-generated method stub
+
+    }
 
 }

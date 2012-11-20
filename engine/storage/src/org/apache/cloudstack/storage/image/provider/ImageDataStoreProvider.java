@@ -21,6 +21,7 @@ package org.apache.cloudstack.storage.image.provider;
 import org.apache.cloudstack.storage.image.store.ImageDataStore;
 
 public interface ImageDataStoreProvider {
-	ImageDataStore getImageDataStore(long imageStoreId);
-	public String getName();
+    ImageDataStore getImageDataStore(long imageStoreId);
+    boolean register(long providerId);
+    public String getName();
 }

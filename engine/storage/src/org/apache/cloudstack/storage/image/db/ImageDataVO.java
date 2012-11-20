@@ -41,100 +41,99 @@ import com.cloud.storage.Storage.TemplateType;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
-@Table(name="vm_template")
+@Table(name = "vm_template")
 public class ImageDataVO implements Identity {
     @Id
-    @TableGenerator(name="vm_template_sq", table="sequence", pkColumnName="name", valueColumnName="value", pkColumnValue="vm_template_seq", allocationSize=1)
-    @Column(name="id", nullable = false)
+    @TableGenerator(name = "vm_template_sq", table = "sequence", pkColumnName = "name", valueColumnName = "value", pkColumnValue = "vm_template_seq", allocationSize = 1)
+    @Column(name = "id", nullable = false)
     private long id;
 
-    @Column(name="format")
+    @Column(name = "format")
     private String format;
 
-    @Column(name="unique_name")
+    @Column(name = "unique_name")
     private String uniqueName;
 
-    @Column(name="name")
+    @Column(name = "name")
     private String name = null;
 
-    @Column(name="public")
+    @Column(name = "public")
     private boolean publicTemplate = true;
 
-    @Column(name="featured")
+    @Column(name = "featured")
     private boolean featured;
 
-    @Column(name="type")
+    @Column(name = "type")
     private Storage.TemplateType templateType;
 
-    @Column(name="url")
+    @Column(name = "url")
     private String url = null;
 
-    @Column(name="hvm")
+    @Column(name = "hvm")
     private boolean requiresHvm;
 
-    @Column(name="bits")
+    @Column(name = "bits")
     private int bits;
 
-    @Temporal(value=TemporalType.TIMESTAMP)
-    @Column(name=GenericDao.CREATED_COLUMN)
+    @Temporal(value = TemporalType.TIMESTAMP)
+    @Column(name = GenericDao.CREATED_COLUMN)
     private Date created = null;
 
-    @Column(name=GenericDao.REMOVED)
+    @Column(name = GenericDao.REMOVED)
     @Temporal(TemporalType.TIMESTAMP)
     private Date removed;
 
-    @Column(name="account_id")
+    @Column(name = "account_id")
     private long accountId;
 
-    @Column(name="checksum")
-    private String checksum;    
+    @Column(name = "checksum")
+    private String checksum;
 
-    @Column(name="display_text", length=4096)
+    @Column(name = "display_text", length = 4096)
     private String displayText;
 
-    @Column(name="enable_password")
+    @Column(name = "enable_password")
     private boolean enablePassword;
 
-    @Column(name="guest_os_id")
+    @Column(name = "guest_os_id")
     private long guestOSId;
 
-    @Column(name="bootable")
+    @Column(name = "bootable")
     private boolean bootable = true;
 
-    @Column(name="prepopulate")
+    @Column(name = "prepopulate")
     private boolean prepopulate = false;
 
-    @Column(name="cross_zones")
+    @Column(name = "cross_zones")
     private boolean crossZones = false;
 
-    @Column(name="hypervisor_type")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "hypervisor_type")
+    @Enumerated(value = EnumType.STRING)
     private HypervisorType hypervisorType;
 
-    @Column(name="extractable")
+    @Column(name = "extractable")
     private boolean extractable = true;
 
-    @Column(name="source_template_id")
+    @Column(name = "source_template_id")
     private Long sourceTemplateId;
 
-    @Column(name="template_tag")
+    @Column(name = "template_tag")
     private String templateTag;
-    
-    @Column(name="uuid")
+
+    @Column(name = "uuid")
     private String uuid;
-    
-    @Column(name="sort_key")
+
+    @Column(name = "sort_key")
     private int sortKey;
-    
-    @Column(name="enable_sshkey")
+
+    @Column(name = "enable_sshkey")
     private boolean enableSshKey;
-    
-    @Column(name="image_data_store_id")
+
+    @Column(name = "image_data_store_id")
     private long imageDataStoreId;
-    
+
     @Transient
     Map details;
-
 
     public String getUniqueName() {
         return uniqueName;
@@ -145,7 +144,7 @@ public class ImageDataVO implements Identity {
     }
 
     protected ImageDataVO() {
-    	this.uuid = UUID.randomUUID().toString();
+        this.uuid = UUID.randomUUID().toString();
     }
 
     public boolean getEnablePassword() {
@@ -306,44 +305,44 @@ public class ImageDataVO implements Identity {
 
     public String getTemplateTag() {
         return templateTag;
-    }    
+    }
 
     public void setTemplateTag(String templateTag) {
         this.templateTag = templateTag;
-    }   
+    }
 
     public long getDomainId() {
         return -1;
     }
-    
+
     @Override
     public String getUuid() {
-    	return this.uuid;
+        return this.uuid;
     }
-    
+
     public void setUuid(String uuid) {
-    	this.uuid = uuid;
+        this.uuid = uuid;
     }
-    
+
     public Map getDetails() {
-    	return this.details;
+        return this.details;
     }
-    
+
     public void setDetails(Map details) {
-    	this.details = details;
+        this.details = details;
     }
 
     @Override
     public boolean equals(Object that) {
-        if (this == that ) {
+        if (this == that) {
             return true;
         }
-        if (!(that instanceof VMTemplateVO)){
+        if (!(that instanceof VMTemplateVO)) {
             return false;
         }
-        VMTemplateVO other = (VMTemplateVO)that;
+        VMTemplateVO other = (VMTemplateVO) that;
 
-        return ((this.getUniqueName().equals(other.getUniqueName())));		
+        return ((this.getUniqueName().equals(other.getUniqueName())));
     }
 
     @Override
@@ -353,6 +352,7 @@ public class ImageDataVO implements Identity {
 
     @Transient
     String toString;
+
     @Override
     public String toString() {
         if (toString == null) {
@@ -364,29 +364,29 @@ public class ImageDataVO implements Identity {
     public void setRemoved(Date removed) {
         this.removed = removed;
     }
-    
+
     public void setSortKey(int key) {
-    	sortKey = key;
-    }
-    
-    public int getSortKey() {
-    	return sortKey;
+        sortKey = key;
     }
 
-	public boolean getEnableSshKey() {
-		return enableSshKey;
-	}
-	
-	public void setEnableSshKey(boolean enable) {
-		enableSshKey = enable;
-	}
-	
-	public long getImageDataStoreId() {
-		return this.imageDataStoreId;
-	}
-	
-	public void setImageDataStoreId(long dataStoreId) {
-		this.imageDataStoreId = dataStoreId;
-	}
+    public int getSortKey() {
+        return sortKey;
+    }
+
+    public boolean getEnableSshKey() {
+        return enableSshKey;
+    }
+
+    public void setEnableSshKey(boolean enable) {
+        enableSshKey = enable;
+    }
+
+    public Long getImageDataStoreId() {
+        return this.imageDataStoreId;
+    }
+
+    public void setImageDataStoreId(long dataStoreId) {
+        this.imageDataStoreId = dataStoreId;
+    }
 
 }

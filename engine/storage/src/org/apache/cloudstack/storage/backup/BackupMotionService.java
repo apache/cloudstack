@@ -19,5 +19,5 @@
 package org.apache.cloudstack.storage.backup;
 
 public interface BackupMotionService {
-	boolean copySnapshot(String snapshotUri, String destSnapshotUri);
+    boolean copySnapshot(String snapshotUri, String destSnapshotUri);
 }

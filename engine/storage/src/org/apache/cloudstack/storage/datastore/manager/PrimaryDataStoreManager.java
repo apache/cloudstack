@@ -22,6 +22,7 @@ import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
 import org.apache.cloudstack.storage.datastore.lifecycle.PrimaryDataStoreLifeCycle;
 
 public interface PrimaryDataStoreManager {
-	public PrimaryDataStore getPrimaryDataStore(long dataStoreId);
-	public PrimaryDataStoreLifeCycle getPrimaryDataStoreLifeCycle(long dataStoreId);
+    public PrimaryDataStore getPrimaryDataStore(long dataStoreId);
+
+    public PrimaryDataStoreLifeCycle getPrimaryDataStoreLifeCycle(long dataStoreId);
 }

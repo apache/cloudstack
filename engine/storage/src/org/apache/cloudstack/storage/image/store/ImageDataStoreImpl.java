@@ -21,6 +21,7 @@ package org.apache.cloudstack.storage.image.store;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.storage.image.TemplateInfo;
+import org.apache.cloudstack.storage.image.TemplateObject;
 import org.apache.cloudstack.storage.image.db.ImageDataDao;
 import org.apache.cloudstack.storage.image.db.ImageDataStoreDao;
 import org.apache.cloudstack.storage.image.db.ImageDataStoreVO;
@@ -29,72 +30,76 @@ import org.apache.cloudstack.storage.image.downloader.ImageDownloader;
 import org.apache.cloudstack.storage.image.driver.ImageDataStoreDriver;
 
 public class ImageDataStoreImpl implements ImageDataStore {
-	@Inject
-	ImageDataDao imageDao;
-	ImageDataStoreDriver driver;
-	ImageDownloader downloader;
-	ImageDataStoreVO imageDataStoreVO;
-	boolean needDownloadToCacheStorage = false;
-	
-	
-	public ImageDataStoreImpl(ImageDataStoreVO dataStoreVO, ImageDataStoreDriver driver, boolean needDownloadToCacheStorage, ImageDownloader downloader) {
-		this.driver = driver;
-		this.needDownloadToCacheStorage = needDownloadToCacheStorage;
-		this.downloader = downloader;
-		this.imageDataStoreVO = dataStoreVO;
-	}
-	/*
-	@Override
-	public TemplateInfo registerTemplate(long templateId) {
-		ImageDataVO idv = imageDao.findById(templateId);
-		TemplateInfo template = new TemplateInfo(this, idv);
-		if (driver.registerTemplate(template)) {
-			template.setImageDataStoreId(imageDataStoreVO.getId());
-			return template;
-		} else {
-			return null;
-		}
-	}*/
+    @Inject
+    ImageDataDao imageDao;
+    ImageDataStoreDriver driver;
+    ImageDownloader downloader;
+    ImageDataStoreVO imageDataStoreVO;
+    boolean needDownloadToCacheStorage = false;
 
-	@Override
-	public String grantAccess(long templateId, long endPointId) {
-		ImageDataVO idv = imageDao.findById(templateId);
-		return idv.getUrl();
-	}
+    public ImageDataStoreImpl(ImageDataStoreVO dataStoreVO, ImageDataStoreDriver driver, boolean needDownloadToCacheStorage, ImageDownloader downloader) {
+        this.driver = driver;
+        this.needDownloadToCacheStorage = needDownloadToCacheStorage;
+        this.downloader = downloader;
+        this.imageDataStoreVO = dataStoreVO;
+    }
 
-	@Override
-	public boolean revokeAccess(long templateId, long endPointId) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    /*
+     * @Override public TemplateInfo registerTemplate(long templateId) {
+     * ImageDataVO idv = imageDao.findById(templateId); TemplateInfo template =
+     * new TemplateInfo(this, idv); if (driver.registerTemplate(template)) {
+     * template.setImageDataStoreId(imageDataStoreVO.getId()); return template;
+     * } else { return null; } }
+     */
 
-	@Override
-	public boolean deleteTemplate(long templateId) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public String grantAccess(long templateId, long endPointId) {
+        ImageDataVO idv = imageDao.findById(templateId);
+        return idv.getUrl();
+    }
 
-	@Override
-	public boolean needDownloadToCacheStorage() {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public boolean revokeAccess(long templateId, long endPointId) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	@Override
-	public ImageDownloader getImageDownloader() {
-		return this.downloader;
-	}
+    @Override
+    public boolean deleteTemplate(long templateId) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	@Override
-	public long getImageDataStoreId() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+    @Override
+    public boolean needDownloadToCacheStorage() {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	@Override
-	public TemplateInfo registerTemplate(long templateId) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public ImageDownloader getImageDownloader() {
+        return this.downloader;
+    }
+
+    @Override
+    public long getImageDataStoreId() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public TemplateObject registerTemplate(long templateId) {
+        ImageDataVO image = imageDao.findById(templateId);
+        image.setImageDataStoreId(this.getImageDataStoreId());
+        imageDao.update(templateId, image);
+        return getTemplate(templateId);
+    }
+
+    @Override
+    public TemplateObject getTemplate(long templateId) {
+        ImageDataVO image = imageDao.findById(templateId);
+        TemplateObject to = new TemplateObject(image, this);
+        return to;
+    }
 
 }

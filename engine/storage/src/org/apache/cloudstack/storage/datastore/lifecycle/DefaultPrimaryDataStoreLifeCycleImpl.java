@@ -25,46 +25,46 @@ import org.springframework.stereotype.Component;
 @Component
 public class DefaultPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
 
-	@Override
-	public boolean registerDataStore(Map<String, String> dsInfos) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public boolean registerDataStore(Map<String, String> dsInfos) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	@Override
-	public boolean attach(long scope) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public boolean attach(long scope) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	@Override
-	public boolean dettach(long dataStoreId) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public boolean dettach(long dataStoreId) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	@Override
-	public boolean unmanaged(long dataStoreId) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public boolean unmanaged(long dataStoreId) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	@Override
-	public boolean maintain(long dataStoreId) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public boolean maintain(long dataStoreId) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	@Override
-	public boolean cancelMaintain(long dataStoreId) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public boolean cancelMaintain(long dataStoreId) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	@Override
-	public boolean deleteDataStore(long dataStoreId) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public boolean deleteDataStore(long dataStoreId) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
 }

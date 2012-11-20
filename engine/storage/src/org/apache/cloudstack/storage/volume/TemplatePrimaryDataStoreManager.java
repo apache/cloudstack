@@ -22,6 +22,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.storage.image.TemplateInfo;
 
 public interface TemplatePrimaryDataStoreManager {
-	public TemplateOnPrimaryDataStoreInfo createTemplateOnPrimaryDataStore(TemplateInfo template, PrimaryDataStoreInfo dataStore);
-	public TemplateOnPrimaryDataStoreInfo findTemplateOnPrimaryDataStore(TemplateInfo template, PrimaryDataStoreInfo dataStore);
+    public TemplateOnPrimaryDataStoreInfo createTemplateOnPrimaryDataStore(TemplateInfo template, PrimaryDataStoreInfo dataStore);
+
+    public TemplateOnPrimaryDataStoreInfo findTemplateOnPrimaryDataStore(TemplateInfo template, PrimaryDataStoreInfo dataStore);
 }

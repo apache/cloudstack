@@ -56,6 +56,12 @@ public class VolumeEntityImpl implements VolumeEntity {
     }
 
     @Override
+    public String getExternalId() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
     public String getCurrentState() {
         return volumeInfo.getCurrentState().toString();
     }

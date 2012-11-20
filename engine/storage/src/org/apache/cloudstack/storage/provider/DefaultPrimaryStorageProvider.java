@@ -30,113 +30,112 @@ import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.dao.StoragePoolDao;
 
 public class DefaultPrimaryStorageProvider implements StorageProvider {
-	private String _name = DefaultPrimaryStorageProvider.class.toString();
-	static Map<HypervisorType, Map<String, DataStoreConfigurator>> _supportedProtocols;
-	@Inject
-	protected ClusterDao _clusterDao;
-	
-	public List<HypervisorType> supportedHypervisors() {
-		List<HypervisorType> hypervisors = new ArrayList<HypervisorType>();
-		hypervisors.add(Hypervisor.HypervisorType.XenServer);
-		return hypervisors;
-	}
-	
-	public DefaultPrimaryStorageProvider() {
-		Map<String, DataStoreConfigurator> dscs = new HashMap<String, DataStoreConfigurator>();
-		DataStoreConfigurator nfsdc = null;
-		dscs.put(nfsdc.getProtocol(), nfsdc);
-	
-		_supportedProtocols.put(HypervisorType.XenServer, dscs);
-	}
+    private String _name = DefaultPrimaryStorageProvider.class.toString();
+    static Map<HypervisorType, Map<String, DataStoreConfigurator>> _supportedProtocols;
+    @Inject
+    protected ClusterDao _clusterDao;
 
-	public List<StoreType> supportedStoreType() {
-		List<StoreType> type = new ArrayList<StoreType>();
-		type.add(StoreType.Primary);
-		return type;
-	}
+    public List<HypervisorType> supportedHypervisors() {
+        List<HypervisorType> hypervisors = new ArrayList<HypervisorType>();
+        hypervisors.add(Hypervisor.HypervisorType.XenServer);
+        return hypervisors;
+    }
 
-	public void configure(Map<String, String> storeProviderInfo) {
-		// TODO Auto-generated method stub
+    public DefaultPrimaryStorageProvider() {
+        Map<String, DataStoreConfigurator> dscs = new HashMap<String, DataStoreConfigurator>();
+        DataStoreConfigurator nfsdc = null;
+        dscs.put(nfsdc.getProtocol(), nfsdc);
 
-	}
+        _supportedProtocols.put(HypervisorType.XenServer, dscs);
+    }
 
-	public Map<HypervisorType, Map<String,DataStoreConfigurator>> getDataStoreConfigs() {
-		return _supportedProtocols;
-	}
+    public List<StoreType> supportedStoreType() {
+        List<StoreType> type = new ArrayList<StoreType>();
+        type.add(StoreType.Primary);
+        return type;
+    }
 
-	public String getProviderName() {
-		return _name;
-	}
+    public void configure(Map<String, String> storeProviderInfo) {
+        // TODO Auto-generated method stub
 
-	public DataStore createDataStore(HypervisorType hypervisor,
-			DataStoreConfigurator dsc) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	
-	public DataStore getDataStore(StoragePool pool) {
-		ClusterVO clu = _clusterDao.findById(pool.getClusterId());
-		HypervisorType hy = clu.getHypervisorType();
-		Map<String, DataStoreConfigurator> dscs = _supportedProtocols.get(hy);
-		DataStoreConfigurator dsc = dscs.get(pool.getPoolType().toString());
-		return dsc.getDataStore(pool);
-	}
+    }
 
-	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    public Map<HypervisorType, Map<String, DataStoreConfigurator>> getDataStoreConfigs() {
+        return _supportedProtocols;
+    }
 
-	public String getName() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public String getProviderName() {
+        return _name;
+    }
 
-	public boolean start() {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    public DataStore createDataStore(HypervisorType hypervisor, DataStoreConfigurator dsc) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	public boolean stop() {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    public DataStore getDataStore(StoragePool pool) {
+        ClusterVO clu = _clusterDao.findById(pool.getClusterId());
+        HypervisorType hy = clu.getHypervisorType();
+        Map<String, DataStoreConfigurator> dscs = _supportedProtocols.get(hy);
+        DataStoreConfigurator dsc = dscs.get(pool.getPoolType().toString());
+        return dsc.getDataStore(pool);
+    }
 
-	public DataStore addDataStore(StoragePool spool, String url, Map<String, String> params) {
-		URI uri;
-		try {
-			uri = new URI(url);
-		} catch (URISyntaxException e) {
-			throw new InvalidParameterValueException("invalide url" + url);
-		}
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-		String protocol = uri.getScheme();
-		if (protocol == null) {
-			throw new InvalidParameterValueException("the protocol can't be null");
-		}
-		
-		ClusterVO cluster = _clusterDao.findById(spool.getClusterId());
+    public String getName() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-		Map<String, DataStoreConfigurator> dscs = _supportedProtocols.get(cluster.getHypervisorType());
-		if (dscs.isEmpty()) {
-			throw new InvalidParameterValueException("Doesn't support this hypervisor");
-		}
+    public boolean start() {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-		DataStoreConfigurator dsc = dscs.get(protocol);
-		if (dsc == null) {
-			throw new InvalidParameterValueException("Doesn't support this protocol");
-		}
-		
-		Map<String, String> configs = dsc.getConfigs(uri, params);
-		dsc.validate(configs);
-		DataStore ds = dsc.getDataStore(spool);
-		
-		return ds;
-	}
+    public boolean stop() {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	public List<StoreType> supportedStoreTypes() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public DataStore addDataStore(StoragePool spool, String url, Map<String, String> params) {
+        URI uri;
+        try {
+            uri = new URI(url);
+        } catch (URISyntaxException e) {
+            throw new InvalidParameterValueException("invalide url" + url);
+        }
+
+        String protocol = uri.getScheme();
+        if (protocol == null) {
+            throw new InvalidParameterValueException("the protocol can't be null");
+        }
+
+        ClusterVO cluster = _clusterDao.findById(spool.getClusterId());
+
+        Map<String, DataStoreConfigurator> dscs = _supportedProtocols.get(cluster.getHypervisorType());
+        if (dscs.isEmpty()) {
+            throw new InvalidParameterValueException("Doesn't support this hypervisor");
+        }
+
+        DataStoreConfigurator dsc = dscs.get(protocol);
+        if (dsc == null) {
+            throw new InvalidParameterValueException("Doesn't support this protocol");
+        }
+
+        Map<String, String> configs = dsc.getConfigs(uri, params);
+        dsc.validate(configs);
+        DataStore ds = dsc.getDataStore(spool);
+
+        return ds;
+    }
+
+    public List<StoreType> supportedStoreTypes() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
 }

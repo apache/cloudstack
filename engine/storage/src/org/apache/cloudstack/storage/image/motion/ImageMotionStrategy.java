@@ -22,7 +22,9 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreInfo;
 
 public interface ImageMotionStrategy {
-   public boolean canHandle(TemplateOnPrimaryDataStoreInfo templateStore);      
-   public EndPoint getEndPoint(TemplateOnPrimaryDataStoreInfo templateStore);
-   public boolean copyTemplate(TemplateOnPrimaryDataStoreInfo templateStore, EndPoint ep);
+    public boolean canHandle(TemplateOnPrimaryDataStoreInfo templateStore);
+
+    public EndPoint getEndPoint(TemplateOnPrimaryDataStoreInfo templateStore);
+
+    public boolean copyTemplate(TemplateOnPrimaryDataStoreInfo templateStore, EndPoint ep);
 }

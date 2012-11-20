@@ -24,16 +24,18 @@ import org.apache.cloudstack.storage.to.VolumeTO;
 import com.cloud.agent.api.Command;
 
 public class CreateVolumeFromBaseImageCommand extends Command {
-	private VolumeTO volume;
-	private ImageOnPrimayDataStoreTO image;
-	public CreateVolumeFromBaseImageCommand(VolumeTO volume, ImageOnPrimayDataStoreTO image) {
-		this.volume = volume;
-		this.image = image;
-	}
-	@Override
-	public boolean executeInSequence() {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    private VolumeTO volume;
+    private ImageOnPrimayDataStoreTO image;
+
+    public CreateVolumeFromBaseImageCommand(VolumeTO volume, ImageOnPrimayDataStoreTO image) {
+        this.volume = volume;
+        this.image = image;
+    }
+
+    @Override
+    public boolean executeInSequence() {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
 }

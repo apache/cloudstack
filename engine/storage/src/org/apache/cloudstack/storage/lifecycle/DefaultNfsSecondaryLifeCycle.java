@@ -22,33 +22,35 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
 
 public class DefaultNfsSecondaryLifeCycle implements DataStoreLifeCycle {
-	protected DataStore _ds;
-	public DefaultNfsSecondaryLifeCycle(DataStore ds) {
-		_ds = ds;
-	}
-	public void add() {
-		// TODO Auto-generated method stub
+    protected DataStore _ds;
 
-	}
+    public DefaultNfsSecondaryLifeCycle(DataStore ds) {
+        _ds = ds;
+    }
 
-	public void delete() {
-		// TODO Auto-generated method stub
+    public void add() {
+        // TODO Auto-generated method stub
 
-	}
+    }
 
-	public void enable() {
-		// TODO Auto-generated method stub
+    public void delete() {
+        // TODO Auto-generated method stub
 
-	}
+    }
 
-	public void disable() {
-		// TODO Auto-generated method stub
+    public void enable() {
+        // TODO Auto-generated method stub
 
-	}
+    }
 
-	public void processEvent(DataStoreEvent event, Object... objs) {
-		// TODO Auto-generated method stub
+    public void disable() {
+        // TODO Auto-generated method stub
 
-	}
+    }
+
+    public void processEvent(DataStoreEvent event, Object... objs) {
+        // TODO Auto-generated method stub
+
+    }
 
 }

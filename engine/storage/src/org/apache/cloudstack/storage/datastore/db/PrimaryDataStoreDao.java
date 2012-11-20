@@ -25,82 +25,92 @@ import org.apache.cloudstack.storage.datastore.DataStoreStatus;
 
 import com.cloud.utils.db.GenericDao;
 
-
 public interface PrimaryDataStoreDao extends GenericDao<DataStoreVO, Long> {
 
-	/**
-	 * @param datacenterId -- the id of the datacenter (availability zone)
-	 */
-	List<DataStoreVO> listByDataCenterId(long datacenterId);
-	
-	/**
-	 * @param datacenterId -- the id of the datacenter (availability zone)
-	 */
-	List<DataStoreVO> listBy(long datacenterId, long podId, Long clusterId);
-    
-	/**
-	 * Set capacity of storage pool in bytes
-	 * @param id pool id.
-	 * @param capacity capacity in bytes
-	 */
+    /**
+     * @param datacenterId
+     *            -- the id of the datacenter (availability zone)
+     */
+    List<DataStoreVO> listByDataCenterId(long datacenterId);
+
+    /**
+     * @param datacenterId
+     *            -- the id of the datacenter (availability zone)
+     */
+    List<DataStoreVO> listBy(long datacenterId, long podId, Long clusterId);
+
+    /**
+     * Set capacity of storage pool in bytes
+     * 
+     * @param id
+     *            pool id.
+     * @param capacity
+     *            capacity in bytes
+     */
     void updateCapacity(long id, long capacity);
-    
-	/**
-	 * Set available bytes of storage pool in bytes
-	 * @param id pool id.
-	 * @param available available capacity in bytes
-	 */
+
+    /**
+     * Set available bytes of storage pool in bytes
+     * 
+     * @param id
+     *            pool id.
+     * @param available
+     *            available capacity in bytes
+     */
     void updateAvailable(long id, long available);
-        
-    
+
     DataStoreVO persist(DataStoreVO pool, Map<String, String> details);
-    
+
     /**
      * Find pool by name.
      * 
-     * @param name name of pool.
-     * @return the single  StoragePoolVO
+     * @param name
+     *            name of pool.
+     * @return the single StoragePoolVO
      */
     List<DataStoreVO> findPoolByName(String name);
-    
+
     /**
      * Find pools by the pod that matches the details.
      * 
-     * @param podId pod id to find the pools in.
-     * @param details details to match.  All must match for the pool to be returned.
+     * @param podId
+     *            pod id to find the pools in.
+     * @param details
+     *            details to match. All must match for the pool to be returned.
      * @return List of StoragePoolVO
      */
     List<DataStoreVO> findPoolsByDetails(long dcId, long podId, Long clusterId, Map<String, String> details);
-    
+
     List<DataStoreVO> findPoolsByTags(long dcId, long podId, Long clusterId, String[] tags, Boolean shared);
-    
+
     /**
      * Find pool by UUID.
      * 
-     * @param uuid uuid of pool.
-     * @return the single  StoragePoolVO
+     * @param uuid
+     *            uuid of pool.
+     * @return the single StoragePoolVO
      */
     DataStoreVO findPoolByUUID(String uuid);
 
     List<DataStoreVO> listByStorageHost(String hostFqdnOrIp);
 
     DataStoreVO findPoolByHostPath(long dcId, Long podId, String host, String path, String uuid);
-    
+
     List<DataStoreVO> listPoolByHostPath(String host, String path);
-    
+
     void updateDetails(long poolId, Map<String, String> details);
-    
+
     Map<String, String> getDetails(long poolId);
 
-	List<String> searchForStoragePoolDetails(long poolId, String value);
-	
-	List<DataStoreVO> findIfDuplicatePoolsExistByUUID(String uuid);
+    List<String> searchForStoragePoolDetails(long poolId, String value);
+
+    List<DataStoreVO> findIfDuplicatePoolsExistByUUID(String uuid);
 
     List<DataStoreVO> listByStatus(DataStoreStatus status);
 
     long countPoolsByStatus(DataStoreStatus... statuses);
 
-	List<DataStoreVO> listByStatusInZone(long dcId, DataStoreStatus status);
-    
+    List<DataStoreVO> listByStatusInZone(long dcId, DataStoreStatus status);
+
     List<DataStoreVO> listPoolsByCluster(long clusterId);
 }

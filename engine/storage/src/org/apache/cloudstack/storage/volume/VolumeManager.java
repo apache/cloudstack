@@ -25,9 +25,13 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.utils.fsm.NoTransitionException;
 
 public interface VolumeManager {
-	VolumeVO allocateDuplicateVolume(VolumeVO oldVol);
-	VolumeVO processEvent(Volume vol, Volume.Event event) throws NoTransitionException;
-	VolumeProfile getProfile(long volumeId);
-	VolumeVO getVolume(long volumeId);
-	VolumeVO updateVolume(VolumeVO volume);
+    VolumeVO allocateDuplicateVolume(VolumeVO oldVol);
+
+    VolumeVO processEvent(Volume vol, Volume.Event event) throws NoTransitionException;
+
+    VolumeProfile getProfile(long volumeId);
+
+    VolumeVO getVolume(long volumeId);
+
+    VolumeVO updateVolume(VolumeVO volume);
 }

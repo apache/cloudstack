@@ -39,155 +39,153 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
-@Table(name="storage_pool")
+@Table(name = "storage_pool")
 public class DataStoreVO implements Identity {
     @Id
-    @TableGenerator(name="storage_pool_sq", table="sequence", pkColumnName="name", valueColumnName="value", pkColumnValue="storage_pool_seq", allocationSize=1)
-    @Column(name="id", updatable=false, nullable = false)
-	private long id;
-    
-    @Column(name="name", updatable=false, nullable=false, length=255)
-	private String name = null;
+    @TableGenerator(name = "storage_pool_sq", table = "sequence", pkColumnName = "name", valueColumnName = "value", pkColumnValue = "storage_pool_seq", allocationSize = 1)
+    @Column(name = "id", updatable = false, nullable = false)
+    private long id;
 
-    @Column(name="uuid", length=255)
-	private String uuid = null;
-    
-    @Column(name="pool_type", updatable=false, nullable=false, length=32)
+    @Column(name = "name", updatable = false, nullable = false, length = 255)
+    private String name = null;
+
+    @Column(name = "uuid", length = 255)
+    private String uuid = null;
+
+    @Column(name = "pool_type", updatable = false, nullable = false, length = 32)
     private String protocol;
-    
-    @Column(name=GenericDao.CREATED_COLUMN)
+
+    @Column(name = GenericDao.CREATED_COLUMN)
     Date created;
-    
-    @Column(name=GenericDao.REMOVED_COLUMN)
+
+    @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
-    
-    @Column(name="update_time", updatable=true)
-    @Temporal(value=TemporalType.TIMESTAMP)
+
+    @Column(name = "update_time", updatable = true)
+    @Temporal(value = TemporalType.TIMESTAMP)
     private Date updateTime;
-    
-    @Column(name="data_center_id", updatable=true, nullable=false)
+
+    @Column(name = "data_center_id", updatable = true, nullable = false)
     private long dataCenterId;
-    
-    @Column(name="pod_id", updatable=true)
+
+    @Column(name = "pod_id", updatable = true)
     private Long podId;
-    
-    @Column(name="available_bytes", updatable=true, nullable=true)
+
+    @Column(name = "available_bytes", updatable = true, nullable = true)
     private long availableBytes;
-    
-    @Column(name="capacity_bytes", updatable=true, nullable=true)
+
+    @Column(name = "capacity_bytes", updatable = true, nullable = true)
     private long capacityBytes;
 
-    @Column(name="status",  updatable=true, nullable=false)
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "status", updatable = true, nullable = false)
+    @Enumerated(value = EnumType.STRING)
     private DataStoreStatus status;
-    
-    @Column(name="storage_provider", updatable=true, nullable=false)
+
+    @Column(name = "storage_provider", updatable = true, nullable = false)
     private Long storageProvider;
-    
-    @Column(name="storage_type", nullable=false)
+
+    @Column(name = "storage_type", nullable = false)
     private String storageType;
-    
-    @Column(name="host_address")
+
+    @Column(name = "host_address")
     private String hostAddress;
-    
-    @Column(name="path")
+
+    @Column(name = "path")
     private String path;
-    
-    @Column(name="port")
+
+    @Column(name = "port")
     private int port;
 
-    @Column(name="user_info")
+    @Column(name = "user_info")
     private String userInfo;
 
-    @Column(name="cluster_id")
+    @Column(name = "cluster_id")
     private Long clusterId;
-    
-    public long getId() {
-		return id;
-	}
-	
-	public DataStoreStatus getStatus() {
-		return status;
-	}
 
-	public DataStoreVO() {
-		// TODO Auto-generated constructor stub
-	}
+    public long getId() {
+        return id;
+    }
+
+    public DataStoreStatus getStatus() {
+        return status;
+    }
+
+    public DataStoreVO() {
+        // TODO Auto-generated constructor stub
+    }
 
     public String getName() {
-		return name;
-	}
+        return name;
+    }
 
     public String getUuid() {
-		return uuid;
-	}
-	
+        return uuid;
+    }
 
     public String getPoolType() {
-		return protocol;
-	}
+        return protocol;
+    }
 
     public Date getCreated() {
-		return created;
-	}
+        return created;
+    }
 
-	public Date getRemoved() {
-		return removed;
-	}
+    public Date getRemoved() {
+        return removed;
+    }
 
     public Date getUpdateTime() {
-		return updateTime;
-	}
+        return updateTime;
+    }
 
     public long getDataCenterId() {
-		return dataCenterId;
-	}
+        return dataCenterId;
+    }
 
     public long getAvailableBytes() {
-		return availableBytes;
-	}
+        return availableBytes;
+    }
 
-	public Long getStorageProviderId() {
-		return storageProvider;
-	}
-	
-	public void setStorageProviderId(Long provider) {
-		storageProvider = provider;
-	}
-	
-	public String getStorageType() {
-		return storageType;
-	}
-	
-	public void setStorageType(String type) {
-		storageType = type;
-	}
+    public Long getStorageProviderId() {
+        return storageProvider;
+    }
+
+    public void setStorageProviderId(Long provider) {
+        storageProvider = provider;
+    }
+
+    public String getStorageType() {
+        return storageType;
+    }
+
+    public void setStorageType(String type) {
+        storageType = type;
+    }
 
     public long getCapacityBytes() {
-		return capacityBytes;
-	}
+        return capacityBytes;
+    }
 
-	public void setAvailableBytes(long available) {
-		availableBytes = available;
-	}
-	
-	public void setCapacityBytes(long capacity) {
-		capacityBytes = capacity;
-	}
+    public void setAvailableBytes(long available) {
+        availableBytes = available;
+    }
 
-    
+    public void setCapacityBytes(long capacity) {
+        capacityBytes = capacity;
+    }
+
     public Long getClusterId() {
         return clusterId;
     }
-    
+
     public void setClusterId(Long clusterId) {
         this.clusterId = clusterId;
     }
-    
+
     public String getHostAddress() {
         return hostAddress;
     }
-    
+
     public String getPath() {
         return path;
     }
@@ -195,62 +193,61 @@ public class DataStoreVO implements Identity {
     public String getUserInfo() {
         return userInfo;
     }
-    
-    public void setStatus(DataStoreStatus status)
-    {
-    	this.status = status;
+
+    public void setStatus(DataStoreStatus status) {
+        this.status = status;
     }
-    
+
     public void setId(long id) {
         this.id = id;
     }
-    
+
     public void setDataCenterId(long dcId) {
         this.dataCenterId = dcId;
     }
-    
+
     public void setPodId(Long podId) {
         this.podId = podId;
     }
-    
+
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
-    
+
     public void setPath(String path) {
-    	this.path = path;
+        this.path = path;
     }
 
     public void setUserInfo(String userInfo) {
         this.userInfo = userInfo;
     }
-    
+
     public int getPort() {
         return port;
     }
 
     public Long getPodId() {
-		return podId;
-	}
-	
-	public void setName(String name) {
-	    this.name = name;
-	}
-	
-	@Override
+        return podId;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    @Override
     public boolean equals(Object obj) {
-	    if (!(obj instanceof DataStoreVO) || obj == null) {
-	        return false;
-	    }
-	    DataStoreVO that = (DataStoreVO)obj;
-	    return this.id == that.id;
-	}
-	
-	@Override
-	public int hashCode() {
-	    return new Long(id).hashCode();
-	}
-	
+        if (!(obj instanceof DataStoreVO) || obj == null) {
+            return false;
+        }
+        DataStoreVO that = (DataStoreVO) obj;
+        return this.id == that.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return new Long(id).hashCode();
+    }
+
     @Override
     public String toString() {
         return new StringBuilder("Pool[").append(id).append("|").append(protocol).append("]").toString();

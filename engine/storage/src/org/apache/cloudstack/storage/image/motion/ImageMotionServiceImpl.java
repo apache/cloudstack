@@ -31,41 +31,44 @@ import org.apache.cloudstack.storage.image.ImageService;
 import org.apache.cloudstack.storage.image.TemplateInfo;
 import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreInfo;
 import org.apache.cloudstack.storage.volume.VolumeService;
+import org.springframework.stereotype.Component;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
+@Component
 public class ImageMotionServiceImpl implements ImageMotionService {
-	@Inject
-	List<ImageMotionStrategy> motionStrategies;
-	@Inject
-	VolumeService volumeService;
-	@Inject
-	ImageService imageService;
-	@Override
-	public boolean copyIso(String isoUri, String destIsoUri) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Inject
+    List<ImageMotionStrategy> motionStrategies;
+    @Inject
+    VolumeService volumeService;
+    @Inject
+    ImageService imageService;
 
-	@Override
-	public boolean copyTemplate(TemplateOnPrimaryDataStoreInfo templateStore) {
-		ImageMotionStrategy ims = null;
-		for (ImageMotionStrategy strategy : motionStrategies) {
-			if (strategy.canHandle(templateStore)) {
-				ims = strategy;
-				break;
-			}
-		}
-		
-		if (ims == null) {
-			throw new CloudRuntimeException("Can't find proper image motion strategy");
-		}
-		
-		EndPoint ep = ims.getEndPoint(templateStore);
-		
-		volumeService.grantAccess(templateStore, ep);
-		TemplateInfo template = templateStore.getTemplate();
-		imageService.grantTemplateAccess(template, ep);
-		return ims.copyTemplate(templateStore, ep);
-	}
+    @Override
+    public boolean copyIso(String isoUri, String destIsoUri) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean copyTemplate(TemplateOnPrimaryDataStoreInfo templateStore) {
+        ImageMotionStrategy ims = null;
+        for (ImageMotionStrategy strategy : motionStrategies) {
+            if (strategy.canHandle(templateStore)) {
+                ims = strategy;
+                break;
+            }
+        }
+
+        if (ims == null) {
+            throw new CloudRuntimeException("Can't find proper image motion strategy");
+        }
+
+        EndPoint ep = ims.getEndPoint(templateStore);
+
+        volumeService.grantAccess(templateStore, ep);
+        TemplateInfo template = templateStore.getTemplate();
+        imageService.grantTemplateAccess(template, ep);
+        return ims.copyTemplate(templateStore, ep);
+    }
 }

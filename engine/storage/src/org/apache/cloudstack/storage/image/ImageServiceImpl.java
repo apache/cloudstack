@@ -26,69 +26,66 @@ import org.apache.cloudstack.storage.image.downloader.ImageDownloader;
 import org.apache.cloudstack.storage.image.manager.ImageDataStoreManager;
 import org.apache.cloudstack.storage.image.provider.ImageDataStoreProviderManager;
 import org.apache.cloudstack.storage.image.store.ImageDataStore;
+import org.springframework.stereotype.Component;
 
+@Component
 public class ImageServiceImpl implements ImageService {
+    @Inject
+    ImageDataStoreProviderManager imageStoreProviderMgr;
 
-	@Inject
-	ImageDataStoreProviderManager imageStoreProviderMgr;
-	@Inject
-	
-	@Override
-	public boolean registerTemplate(long templateId, long imageStoreId) {
-		ImageDataStore ids = imageStoreProviderMgr.getDataStore(imageStoreId);
-		TemplateInfo template = ids.registerTemplate(templateId);
-		if (ids.needDownloadToCacheStorage()) {
-			ImageDownloader imageDl = ids.getImageDownloader();
-			imageDl.downloadImage(template);
-		}
-		return true;
-	}
+    @Override
+    public TemplateEntity registerTemplate(long templateId, long imageStoreId) {
+        ImageDataStore ids = imageStoreProviderMgr.getDataStore(imageStoreId);
+        TemplateObject to = ids.registerTemplate(templateId);
+        return new TemplateEntityImpl(to);
+    }
 
-	@Override
-	public boolean deleteTemplate(long templateId) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public boolean deleteTemplate(long templateId) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	@Override
-	public long registerIso(String isoUrl, long accountId) {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+    @Override
+    public long registerIso(String isoUrl, long accountId) {
+        // TODO Auto-generated method stub
+        return 0;
+    }
 
-	@Override
-	public boolean deleteIso(long isoId) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public boolean deleteIso(long isoId) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	@Override
-	public boolean revokeTemplateAccess(long templateId, long endpointId) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public boolean revokeTemplateAccess(long templateId, long endpointId) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	@Override
-	public String grantIsoAccess(long isoId, long endpointId) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public String grantIsoAccess(long isoId, long endpointId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public boolean revokeIsoAccess(long isoId, long endpointId) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public boolean revokeIsoAccess(long isoId, long endpointId) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	@Override
-	public TemplateEntity getTemplateEntity(long templateId) {
-		TemplateObject to = imageStoreProviderMgr.getTemplate(templateId);
-		return new TemplateEntityImpl(to);
-	}
+    @Override
+    public TemplateEntity getTemplateEntity(long templateId) {
+        ImageDataStore dataStore = imageStoreProviderMgr.getDataStoreFromTemplateId(templateId);
+        TemplateObject to = dataStore.getTemplate(templateId);
+        return new TemplateEntityImpl(to);
+    }
 
-	@Override
-	public TemplateInfo grantTemplateAccess(TemplateInfo template, EndPoint endpointId) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public boolean grantTemplateAccess(TemplateInfo template, EndPoint endpointId) {
+        // TODO Auto-generated method stub
+        return true;
+    }
 }

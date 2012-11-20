@@ -33,59 +33,59 @@ import com.cloud.storage.StoragePool;
 
 public class SwiftSecondaryStorageProvider implements StorageProvider {
 
-	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	public String getName() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public String getName() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	public boolean start() {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    public boolean start() {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	public boolean stop() {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    public boolean stop() {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	public List<HypervisorType> supportedHypervisors() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public List<HypervisorType> supportedHypervisors() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	public String getProviderName() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public String getProviderName() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	public List<StoreType> supportedStoreTypes() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public List<StoreType> supportedStoreTypes() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	public void configure(Map<String, String> storeProviderInfo) {
-		// TODO Auto-generated method stub
+    public void configure(Map<String, String> storeProviderInfo) {
+        // TODO Auto-generated method stub
 
-	}
+    }
 
-	public DataStore addDataStore(StoragePool sp, String uri, Map<String, String> params) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public DataStore addDataStore(StoragePool sp, String uri, Map<String, String> params) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	public DataStore getDataStore(StoragePool pool) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public DataStore getDataStore(StoragePool pool) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	public Map<HypervisorType, Map<String, DataStoreConfigurator>> getDataStoreConfigs() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public Map<HypervisorType, Map<String, DataStoreConfigurator>> getDataStoreConfigs() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
 }

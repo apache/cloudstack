@@ -31,25 +31,26 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class DefaultPrimaryDataStoreManagerImpl implements PrimaryDataStoreManager {
-	@Inject
-	PrimaryDataStoreProviderDao dataStoreProviderDao;
-	@Inject
-	PrimaryDataStoreProviderManager providerManager;
-	@Inject
-	PrimaryDataStoreDao dataStoreDao;
-	@Override
-	public PrimaryDataStore getPrimaryDataStore(long dataStoreId) {
-		DataStoreVO dataStoreVO = dataStoreDao.findById(dataStoreId);
-		Long providerId = dataStoreVO.getStorageProviderId();
-		PrimaryDataStoreProvider provider = providerManager.getDataStoreProvider(providerId);
-		PrimaryDataStore dataStore = provider.getDataStore(dataStoreId);
-		return dataStore;
-	}
+    @Inject
+    PrimaryDataStoreProviderDao dataStoreProviderDao;
+    @Inject
+    PrimaryDataStoreProviderManager providerManager;
+    @Inject
+    PrimaryDataStoreDao dataStoreDao;
 
-	@Override
-	public PrimaryDataStoreLifeCycle getPrimaryDataStoreLifeCycle(long dataStoreId) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public PrimaryDataStore getPrimaryDataStore(long dataStoreId) {
+        DataStoreVO dataStoreVO = dataStoreDao.findById(dataStoreId);
+        Long providerId = dataStoreVO.getStorageProviderId();
+        PrimaryDataStoreProvider provider = providerManager.getDataStoreProvider(providerId);
+        PrimaryDataStore dataStore = provider.getDataStore(dataStoreId);
+        return dataStore;
+    }
+
+    @Override
+    public PrimaryDataStoreLifeCycle getPrimaryDataStoreLifeCycle(long dataStoreId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
 }

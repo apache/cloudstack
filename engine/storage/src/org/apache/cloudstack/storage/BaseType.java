@@ -19,22 +19,22 @@
 package org.apache.cloudstack.storage;
 
 public abstract class BaseType {
-	public boolean equals(Object that) {
-		if (this == that) {
-			return true;
-		}
-		if (that instanceof String) {
-			if (this.toString().equalsIgnoreCase((String)that)) {
-				return true;
-			}
-		} else if (that instanceof BaseType) {
-			BaseType th = (BaseType)that;
-			if (this.toString().equalsIgnoreCase(th.toString())) {
-				return true;
-			}
-		} else {
-			return false;
-		}
-		return false;
-	}
+    public boolean equals(Object that) {
+        if (this == that) {
+            return true;
+        }
+        if (that instanceof String) {
+            if (this.toString().equalsIgnoreCase((String) that)) {
+                return true;
+            }
+        } else if (that instanceof BaseType) {
+            BaseType th = (BaseType) that;
+            if (this.toString().equalsIgnoreCase(th.toString())) {
+                return true;
+            }
+        } else {
+            return false;
+        }
+        return false;
+    }
 }

@@ -20,210 +20,209 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume;
 
 public class DefaultDataStore implements DataStore {
-	protected VolumeStrategy _volumeStrategy;
-	protected SnapshotStrategy _snapshotStrategy;
-	protected BackupStrategy _backupStrategy;
-	protected TemplateStrategy _templateStrategy;
-	protected String _uri;
-	protected String _uuid;
-	protected StoreType _type;
-	protected StoreScope _scope;
-	protected long _poolId;
-	protected DataStoreDriver _driverRef;
-	protected DataStoreEndPointSelector _selector;
-	protected FileSystem _fs;
-	protected VolumeStrategy _volumeSt;
-	protected SnapshotStrategy _snapshotSt;
-	protected BackupStrategy _backupSt;
-	protected long _id;
-	protected DataStoreLifeCycle _dslf;
-	
-	public DefaultDataStore(
-	) {
-	}
+    protected VolumeStrategy _volumeStrategy;
+    protected SnapshotStrategy _snapshotStrategy;
+    protected BackupStrategy _backupStrategy;
+    protected TemplateStrategy _templateStrategy;
+    protected String _uri;
+    protected String _uuid;
+    protected StoreType _type;
+    protected StoreScope _scope;
+    protected long _poolId;
+    protected DataStoreDriver _driverRef;
+    protected DataStoreEndPointSelector _selector;
+    protected FileSystem _fs;
+    protected VolumeStrategy _volumeSt;
+    protected SnapshotStrategy _snapshotSt;
+    protected BackupStrategy _backupSt;
+    protected long _id;
+    protected DataStoreLifeCycle _dslf;
 
-	public String getURI() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	
-	public void setURI(String uri) {
-		this._uri = uri;
-	}
+    public DefaultDataStore() {
+    }
 
-	public String getUUID() {
-		return this._uuid;
-	}
-	
-	public void setUUID(String uuid) {
-		this._uuid = uuid;
-	}
+    public String getURI() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	public StoreType getType() {
-		return this._type;
-	}
-	
-	public void setType(StoreType type) {
-		this._type = type;
-	}
+    public void setURI(String uri) {
+        this._uri = uri;
+    }
 
-	public StoreScope getScope() {
-		return this._scope;
-	}
-	
-	public void setScope(StoreScope scope) {
-		this._scope = scope;
-	}
+    public String getUUID() {
+        return this._uuid;
+    }
 
-	public Long getId() {
-		return this._id;
-	}
-	
-	public void setId(long id) {
-		this._id = id;
-	}
+    public void setUUID(String uuid) {
+        this._uuid = uuid;
+    }
 
-	public DataStoreDriver getDataStoreDriver() {
-		return this._driverRef;
-	}
-	
-	public void setDataStoreDriver(DataStoreDriver drv) {
-		this._driverRef = drv;
-	}
+    public StoreType getType() {
+        return this._type;
+    }
 
-	public void setEndPointSelector(DataStoreEndPointSelector selector) {
-		this._selector = selector;
-	}
-	
-	public DataStoreEndPointSelector getSelector() {
-		return this._selector;
-	}
+    public void setType(StoreType type) {
+        this._type = type;
+    }
 
-	public FileSystem getFileSystem() {
-		return this._fs;
-	}
-	
-	public void setFileSystem(FileSystem fs) {
-		this._fs = fs;
-	}
+    public StoreScope getScope() {
+        return this._scope;
+    }
 
-	public VolumeStrategy getVolumeStrategy() {
-		return this._volumeSt;
-	}
-	
-	public void setVolumeStrategy(VolumeStrategy vs) {
-		this._volumeSt = vs;
-	}
+    public void setScope(StoreScope scope) {
+        this._scope = scope;
+    }
 
-	public SnapshotStrategy getSnapshotStrategy() {
-		return this._snapshotSt;
-	}
-	
-	public void setSnapshotStrategy(SnapshotStrategy ss) {
-		this._snapshotSt = ss;
-	}
+    public Long getId() {
+        return this._id;
+    }
 
-	public BackupStrategy getBackupStrategy() {
-		return this._backupSt;
-	}
-	
-	public void setBackupStrategy(BackupStrategy bs) {
-		this._backupSt = bs;
-	}
-	
-	public TemplateStrategy getTemplateStrategy() {
-		return this._templateStrategy;
-	}
-	
-	public void setTemplateStrategy(TemplateStrategy ts) {
-		this._templateStrategy = ts;
-	}
+    public void setId(long id) {
+        this._id = id;
+    }
 
-	public DataStoreLifeCycle getLifeCycle() {
-		return this._dslf;
-	}
-	
-	public void setLifeCycle(DataStoreLifeCycle lf) {
-		this._dslf = lf;
-	}
+    public DataStoreDriver getDataStoreDriver() {
+        return this._driverRef;
+    }
 
-	public long getCluterId() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+    public void setDataStoreDriver(DataStoreDriver drv) {
+        this._driverRef = drv;
+    }
 
-	public long getPodId() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+    public void setEndPointSelector(DataStoreEndPointSelector selector) {
+        this._selector = selector;
+    }
 
-	public long getZoneId() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+    public DataStoreEndPointSelector getSelector() {
+        return this._selector;
+    }
 
-	public String getPath() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public FileSystem getFileSystem() {
+        return this._fs;
+    }
 
-	public StoragePoolType getPoolType() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public void setFileSystem(FileSystem fs) {
+        this._fs = fs;
+    }
 
-	public boolean isSharedStorage() {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    public VolumeStrategy getVolumeStrategy() {
+        return this._volumeSt;
+    }
 
-	public StorageProvider getProvider() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public void setVolumeStrategy(VolumeStrategy vs) {
+        this._volumeSt = vs;
+    }
 
-	public DataStoreEndPointSelector getEndPointSelector() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public SnapshotStrategy getSnapshotStrategy() {
+        return this._snapshotSt;
+    }
 
-	public VolumeProfile prepareVolume(Volume volume, DataStore destStore) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public void setSnapshotStrategy(SnapshotStrategy ss) {
+        this._snapshotSt = ss;
+    }
 
-	public SnapshotProfile prepareSnapshot(Snapshot snapshot, DataStore destStore) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public BackupStrategy getBackupStrategy() {
+        return this._backupSt;
+    }
 
-	public TemplateProfile prepareTemplate(long templateId, DataStore destStore) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public void setBackupStrategy(BackupStrategy bs) {
+        this._backupSt = bs;
+    }
 
-	public boolean contains(Volume volume) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    public TemplateStrategy getTemplateStrategy() {
+        return this._templateStrategy;
+    }
 
-	public boolean contains(Snapshot snapshot) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    public void setTemplateStrategy(TemplateStrategy ts) {
+        this._templateStrategy = ts;
+    }
 
-	public boolean contains(TemplateProfile template) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    public DataStoreLifeCycle getLifeCycle() {
+        return this._dslf;
+    }
 
-	public TemplateProfile get(TemplateProfile template) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public void setLifeCycle(DataStoreLifeCycle lf) {
+        this._dslf = lf;
+    }
 
-	public StorageFilerTO getTO() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public long getCluterId() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    public long getPodId() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    public long getZoneId() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    public String getPath() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    public StoragePoolType getPoolType() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    public boolean isSharedStorage() {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    public StorageProvider getProvider() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    public DataStoreEndPointSelector getEndPointSelector() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    public VolumeProfile prepareVolume(Volume volume, DataStore destStore) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    public SnapshotProfile prepareSnapshot(Snapshot snapshot, DataStore destStore) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    public TemplateProfile prepareTemplate(long templateId, DataStore destStore) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    public boolean contains(Volume volume) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    public boolean contains(Snapshot snapshot) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    public boolean contains(TemplateProfile template) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    public TemplateProfile get(TemplateProfile template) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    public StorageFilerTO getTO() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 }

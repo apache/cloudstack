@@ -27,55 +27,54 @@ import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskTyp
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 
 public class PrimaryDataStoreInfoImpl implements PrimaryDataStoreInfo {
-	protected List<HypervisorType> supportedHypervs;
-	protected List<VolumeDiskType> supportedDiskTypes;
-	protected long caapcity;
-	protected long avail;
-	protected boolean localStorage;
-	
-	public PrimaryDataStoreInfoImpl(List<HypervisorType> hypers, List<VolumeDiskType> diskTypes, 
-			long capacity, long avail, boolean localStorage) {
-		this.avail = avail;
-		this.caapcity = capacity;
-		this.localStorage = localStorage;
-		this.supportedDiskTypes = diskTypes;
-		this.supportedHypervs = hypers;
-	}
-	
-	@Override
-	public boolean isHypervisorSupported(HypervisorType hypervisor) {
-		return this.supportedHypervs.contains(hypervisor) ? true : false;
-	}
+    protected List<HypervisorType> supportedHypervs;
+    protected List<VolumeDiskType> supportedDiskTypes;
+    protected long caapcity;
+    protected long avail;
+    protected boolean localStorage;
 
-	@Override
-	public boolean isLocalStorageSupported() {
-		return this.localStorage;
-	}
+    public PrimaryDataStoreInfoImpl(List<HypervisorType> hypers, List<VolumeDiskType> diskTypes, long capacity, long avail, boolean localStorage) {
+        this.avail = avail;
+        this.caapcity = capacity;
+        this.localStorage = localStorage;
+        this.supportedDiskTypes = diskTypes;
+        this.supportedHypervs = hypers;
+    }
 
-	@Override
-	public boolean isVolumeDiskTypeSupported(VolumeDiskType diskType) {
-		return this.supportedDiskTypes.contains(diskType) ? true : false;
-	}
+    @Override
+    public boolean isHypervisorSupported(HypervisorType hypervisor) {
+        return this.supportedHypervs.contains(hypervisor) ? true : false;
+    }
 
-	@Override
-	public long getCapacity() {
-		return this.caapcity;
-	}
+    @Override
+    public boolean isLocalStorageSupported() {
+        return this.localStorage;
+    }
 
-	@Override
-	public long getAvailableCapacity() {
-		return this.avail;
-	}
+    @Override
+    public boolean isVolumeDiskTypeSupported(VolumeDiskType diskType) {
+        return this.supportedDiskTypes.contains(diskType) ? true : false;
+    }
 
-	@Override
-	public List<EndPoint> getEndPoints() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public long getCapacity() {
+        return this.caapcity;
+    }
 
-	@Override
-	public long getId() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+    @Override
+    public long getAvailableCapacity() {
+        return this.avail;
+    }
+
+    @Override
+    public List<EndPoint> getEndPoints() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public long getId() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
 }

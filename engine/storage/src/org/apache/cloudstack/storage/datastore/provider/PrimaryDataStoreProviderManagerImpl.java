@@ -23,10 +23,10 @@ import org.springframework.stereotype.Component;
 @Component
 public class PrimaryDataStoreProviderManagerImpl implements PrimaryDataStoreProviderManager {
 
-	@Override
-	public PrimaryDataStoreProvider getDataStoreProvider(Long providerId) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public PrimaryDataStoreProvider getDataStoreProvider(Long providerId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
 }

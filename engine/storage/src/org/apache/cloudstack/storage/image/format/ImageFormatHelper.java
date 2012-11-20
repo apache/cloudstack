@@ -26,19 +26,20 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class ImageFormatHelper {
-	private static List<ImageFormat> formats;
-	private static final ImageFormat defaultFormat = new Unknown();
-	@Inject
-	public void setFormats(List<ImageFormat> formats) {
-		ImageFormatHelper.formats = formats;
-	}
-	
-	public static ImageFormat getFormat(String format) {
-		for(ImageFormat fm : formats) {
-			if (fm.equals(format)) {
-				return fm;
-			}
-		}
-		return ImageFormatHelper.defaultFormat;
-	}
+    private static List<ImageFormat> formats;
+    private static final ImageFormat defaultFormat = new Unknown();
+
+    @Inject
+    public void setFormats(List<ImageFormat> formats) {
+        ImageFormatHelper.formats = formats;
+    }
+
+    public static ImageFormat getFormat(String format) {
+        for (ImageFormat fm : formats) {
+            if (fm.equals(format)) {
+                return fm;
+            }
+        }
+        return ImageFormatHelper.defaultFormat;
+    }
 }

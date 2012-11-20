@@ -26,56 +26,56 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeProfile;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 
-
 public class XenServerStorageDriver extends AbstractStorageDriver {
-	protected DataStore _ds;
-	public XenServerStorageDriver(DataStore ds) {
-		super(ds);
-		_ds = ds;
-	}
-	
-	public String getDriverType() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    protected DataStore _ds;
 
-	public DataObject create(DataObject obj) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public XenServerStorageDriver(DataStore ds) {
+        super(ds);
+        _ds = ds;
+    }
 
-	public DataObject copy(DataObject src, DataStore dest) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public String getDriverType() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	public DataObject copy(DataObject src, DataObject dest) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public DataObject create(DataObject obj) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	public DataObject move(DataObject src, DataObject dest) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public DataObject copy(DataObject src, DataStore dest) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	public Answer sendMessage(DataStoreEndPoint dsep, Command cmd) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public DataObject copy(DataObject src, DataObject dest) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	public boolean delete(DataObject obj) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    public DataObject move(DataObject src, DataObject dest) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	public org.apache.cloudstack.engine.subsystem.api.storage.TemplateProfile register(org.apache.cloudstack.engine.subsystem.api.storage.TemplateProfile tp, DataStoreEndPoint ep) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public Answer sendMessage(DataStoreEndPoint dsep, Command cmd) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	public VolumeProfile createVolumeFromTemplate(VolumeProfile vol, org.apache.cloudstack.engine.subsystem.api.storage.TemplateProfile tp, DataStoreEndPoint dp) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public boolean delete(DataObject obj) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    public org.apache.cloudstack.engine.subsystem.api.storage.TemplateProfile register(org.apache.cloudstack.engine.subsystem.api.storage.TemplateProfile tp, DataStoreEndPoint ep) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    public VolumeProfile createVolumeFromTemplate(VolumeProfile vol, org.apache.cloudstack.engine.subsystem.api.storage.TemplateProfile tp, DataStoreEndPoint dp) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 }

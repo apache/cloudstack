@@ -21,6 +21,7 @@ package org.apache.cloudstack.storage.image.motion;
 import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreInfo;
 
 public interface ImageMotionService {
-	boolean copyTemplate(TemplateOnPrimaryDataStoreInfo templateStore);
-	boolean copyIso(String isoUri, String destIsoUri);
+    boolean copyTemplate(TemplateOnPrimaryDataStoreInfo templateStore);
+
+    boolean copyIso(String isoUri, String destIsoUri);
 }

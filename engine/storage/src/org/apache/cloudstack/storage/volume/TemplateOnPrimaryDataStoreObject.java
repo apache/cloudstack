@@ -28,41 +28,41 @@ import org.apache.cloudstack.storage.volume.db.TemplatePrimaryDataStoreVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 
 public class TemplateOnPrimaryDataStoreObject implements TemplateOnPrimaryDataStoreInfo {
-	protected PrimaryDataStoreInfo dataStore;
-	protected TemplateInfo template;
-	protected TemplatePrimaryDataStoreVO vo;
-	@Inject
-	TemplatePrimaryDataStoreDao templateStoreDao;
-	
-	public TemplateOnPrimaryDataStoreObject(PrimaryDataStoreInfo primaryDataStore, TemplateInfo template, TemplatePrimaryDataStoreVO vo) {
-		this.dataStore = primaryDataStore;
-		this.template = template;
-		this.vo = vo;
-	}
-	
-	@Override
-	public String getPath() {
-		return vo.getInstallPath();
-	}
+    protected PrimaryDataStoreInfo dataStore;
+    protected TemplateInfo template;
+    protected TemplatePrimaryDataStoreVO vo;
+    @Inject
+    TemplatePrimaryDataStoreDao templateStoreDao;
 
-	@Override
-	public void setPath(String path) {
-		this.vo.setInstallPath(path);
-	}
+    public TemplateOnPrimaryDataStoreObject(PrimaryDataStoreInfo primaryDataStore, TemplateInfo template, TemplatePrimaryDataStoreVO vo) {
+        this.dataStore = primaryDataStore;
+        this.template = template;
+        this.vo = vo;
+    }
 
-	@Override
-	public PrimaryDataStoreInfo getPrimaryDataStore() {
-		return this.dataStore;
-	}
+    @Override
+    public String getPath() {
+        return vo.getInstallPath();
+    }
 
-	@Override
-	public TemplateInfo getTemplate() {
-		return this.template;
-	}
-	
-	public void updateStatus(Status status) {
-		vo.setDownloadState(status);
-		templateStoreDao.update(vo.getId(), vo);
-	}
+    @Override
+    public void setPath(String path) {
+        this.vo.setInstallPath(path);
+    }
+
+    @Override
+    public PrimaryDataStoreInfo getPrimaryDataStore() {
+        return this.dataStore;
+    }
+
+    @Override
+    public TemplateInfo getTemplate() {
+        return this.template;
+    }
+
+    public void updateStatus(Status status) {
+        vo.setDownloadState(status);
+        templateStoreDao.update(vo.getId(), vo);
+    }
 
 }

@@ -28,39 +28,39 @@ import com.cloud.utils.fsm.NoTransitionException;
 
 public class BackupStorageManagerImpl implements BackupStorageManager {
 
-	public boolean contains(Volume vol) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    public boolean contains(Volume vol) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	public boolean contains(Snapshot snapshot) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    public boolean contains(Snapshot snapshot) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	public boolean contains(VirtualMachineTemplate template) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    public boolean contains(VirtualMachineTemplate template) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	public DataStore getBackupDataStore(Volume vol) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public DataStore getBackupDataStore(Volume vol) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	public DataStore getBackupDataStore(Snapshot snapshot) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public DataStore getBackupDataStore(Snapshot snapshot) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	public DataStore getBackupDataStore(VirtualMachineTemplate template) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public DataStore getBackupDataStore(VirtualMachineTemplate template) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	public boolean updateOperationState(Volume vol, Event event) throws NoTransitionException {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    public boolean updateOperationState(Volume vol, Event event) throws NoTransitionException {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
 }

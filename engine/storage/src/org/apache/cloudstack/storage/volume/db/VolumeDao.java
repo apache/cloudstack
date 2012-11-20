@@ -21,8 +21,6 @@ import java.util.List;
 import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeType;
 import org.apache.cloudstack.storage.volume.VolumeEvent;
 
-
-
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Volume;
@@ -31,51 +29,51 @@ import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.fsm.StateDao;
 
 public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.State, VolumeEvent, VolumeVO> {
-    
-	List<VolumeVO> findDetachedByAccount(long accountId);
-	
+
+    List<VolumeVO> findDetachedByAccount(long accountId);
+
     List<VolumeVO> findByAccount(long accountId);
-    
+
     Pair<Long, Long> getCountAndTotalByPool(long poolId);
-    
+
     Pair<Long, Long> getNonDestroyedCountAndTotalByPool(long poolId);
-    
+
     List<VolumeVO> findByInstance(long id);
-    
+
     List<VolumeVO> findByInstanceAndType(long id, VolumeType vType);
-    
+
     List<VolumeVO> findByInstanceIdDestroyed(long vmId);
-    
+
     List<VolumeVO> findByAccountAndPod(long accountId, long podId);
-    
+
     List<VolumeVO> findByTemplateAndZone(long templateId, long zoneId);
-    
+
     void deleteVolumesByInstance(long instanceId);
-    
+
     void attachVolume(long volumeId, long vmId, long deviceId);
-    
+
     void detachVolume(long volumeId);
-    
+
     boolean isAnyVolumeActivelyUsingTemplateOnPool(long templateId, long poolId);
-    
+
     List<VolumeVO> findCreatedByInstance(long id);
-    
+
     List<VolumeVO> findByPoolId(long poolId);
-    
-	List<VolumeVO> findByInstanceAndDeviceId(long instanceId, long deviceId);
-	
+
+    List<VolumeVO> findByInstanceAndDeviceId(long instanceId, long deviceId);
+
     List<VolumeVO> findUsableVolumesForInstance(long instanceId);
-    
-    Long countAllocatedVolumesForAccount(long accountId); 
-   
+
+    Long countAllocatedVolumesForAccount(long accountId);
+
     HypervisorType getHypervisorType(long volumeId);
-    
+
     List<VolumeVO> listVolumesToBeDestroyed();
-    
+
     ImageFormat getImageFormat(Long volumeId);
-    
+
     List<VolumeVO> findReadyRootVolumesByInstance(long instanceId);
-    
+
     List<Long> listPoolIdsByVolumeCount(long dcId, Long podId, Long clusterId, long accountId);
 
     VolumeVO allocVolume(long size, VolumeType type, String volName, Long templateId);

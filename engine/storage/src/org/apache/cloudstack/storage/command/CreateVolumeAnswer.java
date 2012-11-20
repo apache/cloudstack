@@ -21,16 +21,17 @@ package org.apache.cloudstack.storage.command;
 import com.cloud.agent.api.Answer;
 
 public class CreateVolumeAnswer extends Answer {
-	private String volumeUuid;
-	protected CreateVolumeAnswer() {
-		super();
-	}
-	
-	public CreateVolumeAnswer(String volumeUuid) {
-		this.volumeUuid = volumeUuid;
-	}
-	
-	public String getVolumeUuid() {
-		return this.volumeUuid;
-	}
+    private String volumeUuid;
+
+    protected CreateVolumeAnswer() {
+        super();
+    }
+
+    public CreateVolumeAnswer(String volumeUuid) {
+        this.volumeUuid = volumeUuid;
+    }
+
+    public String getVolumeUuid() {
+        return this.volumeUuid;
+    }
 }

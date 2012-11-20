@@ -21,5 +21,5 @@ package org.apache.cloudstack.storage.image.downloader;
 import org.apache.cloudstack.storage.image.TemplateInfo;
 
 public interface ImageDownloader {
-	public void downloadImage(TemplateInfo template);
+    public void downloadImage(TemplateInfo template);
 }

@@ -21,7 +21,7 @@ package org.apache.cloudstack.storage.to;
 import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreInfo;
 
 public class ImageOnPrimayDataStoreTO {
-	public ImageOnPrimayDataStoreTO(TemplateOnPrimaryDataStoreInfo template) {
-		
-	}
+    public ImageOnPrimayDataStoreTO(TemplateOnPrimaryDataStoreInfo template) {
+
+    }
 }

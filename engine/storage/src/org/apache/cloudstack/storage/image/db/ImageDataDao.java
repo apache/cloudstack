@@ -31,41 +31,51 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 
 public interface ImageDataDao extends GenericDao<ImageDataVO, Long> {
-	public List<ImageDataVO> listByPublic();
-	public ImageDataVO findByName(String templateName);
-	public ImageDataVO findByTemplateName(String templateName);	
+    public List<ImageDataVO> listByPublic();
 
-	//public void update(ImageDataVO template);
+    public ImageDataVO findByName(String templateName);
 
+    public ImageDataVO findByTemplateName(String templateName);
 
-	public List<ImageDataVO> listAllSystemVMTemplates();
+    // public void update(ImageDataVO template);
 
-	public List<ImageDataVO> listDefaultBuiltinTemplates();
-	public String getRoutingTemplateUniqueName();
-	public List<ImageDataVO> findIsosByIdAndPath(Long domainId, Long accountId, String path);
-	public List<ImageDataVO> listReadyTemplates();
-	public List<ImageDataVO> listByAccountId(long accountId);
-	public Set<Pair<Long, Long>> searchTemplates(String name, String keyword, TemplateFilter templateFilter, boolean isIso,
-	        List<HypervisorType> hypers, Boolean bootable, DomainVO domain, Long pageSize, Long startIndex, Long zoneId,
-	        HypervisorType hyperType, boolean onlyReady, boolean showDomr, List<Account> permittedAccounts, Account caller,
-	        ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags);
-	
-    public Set<Pair<Long, Long>> searchSwiftTemplates(String name, String keyword, TemplateFilter templateFilter,
-            boolean isIso, List<HypervisorType> hypers, Boolean bootable, DomainVO domain, Long pageSize, Long startIndex,
-            Long zoneId, HypervisorType hyperType, boolean onlyReady, boolean showDomr, List<Account> permittedAccounts, Account caller, Map<String, String> tags);
+    public List<ImageDataVO> listAllSystemVMTemplates();
 
-	public long addTemplateToZone(ImageDataVO tmplt, long zoneId);
-	public List<ImageDataVO> listAllInZone(long dataCenterId);	
-	
+    public List<ImageDataVO> listDefaultBuiltinTemplates();
+
+    public String getRoutingTemplateUniqueName();
+
+    public List<ImageDataVO> findIsosByIdAndPath(Long domainId, Long accountId, String path);
+
+    public List<ImageDataVO> listReadyTemplates();
+
+    public List<ImageDataVO> listByAccountId(long accountId);
+
+    public Set<Pair<Long, Long>> searchTemplates(String name, String keyword, TemplateFilter templateFilter, boolean isIso, List<HypervisorType> hypers, Boolean bootable, DomainVO domain,
+            Long pageSize, Long startIndex, Long zoneId, HypervisorType hyperType, boolean onlyReady, boolean showDomr, List<Account> permittedAccounts, Account caller,
+            ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags);
+
+    public Set<Pair<Long, Long>> searchSwiftTemplates(String name, String keyword, TemplateFilter templateFilter, boolean isIso, List<HypervisorType> hypers, Boolean bootable, DomainVO domain,
+            Long pageSize, Long startIndex, Long zoneId, HypervisorType hyperType, boolean onlyReady, boolean showDomr, List<Account> permittedAccounts, Account caller, Map<String, String> tags);
+
+    public long addTemplateToZone(ImageDataVO tmplt, long zoneId);
+
+    public List<ImageDataVO> listAllInZone(long dataCenterId);
+
     public List<ImageDataVO> listByHypervisorType(List<HypervisorType> hyperTypes);
-	public List<ImageDataVO> publicIsoSearch(Boolean bootable, boolean listRemoved, Map<String, String> tags);
-	public List<ImageDataVO> userIsoSearch(boolean listRemoved);
+
+    public List<ImageDataVO> publicIsoSearch(Boolean bootable, boolean listRemoved, Map<String, String> tags);
+
+    public List<ImageDataVO> userIsoSearch(boolean listRemoved);
+
     ImageDataVO findSystemVMTemplate(long zoneId);
+
     ImageDataVO findSystemVMTemplate(long zoneId, HypervisorType hType);
 
     ImageDataVO findRoutingTemplate(HypervisorType type);
-    List<Long> listPrivateTemplatesByHost(Long hostId);
-    public Long countTemplatesForAccount(long accountId);
-	
-}
 
+    List<Long> listPrivateTemplatesByHost(Long hostId);
+
+    public Long countTemplatesForAccount(long accountId);
+
+}

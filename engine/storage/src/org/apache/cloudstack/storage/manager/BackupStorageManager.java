@@ -27,13 +27,17 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.fsm.NoTransitionException;
 
 public interface BackupStorageManager {
-	boolean contains(Volume vol);
-	boolean contains(Snapshot snapshot);
-	boolean contains(VirtualMachineTemplate template);
-	
-	DataStore getBackupDataStore(Volume vol);
-	DataStore getBackupDataStore(Snapshot snapshot);
-	DataStore getBackupDataStore(VirtualMachineTemplate template);
-	
-	boolean updateOperationState(Volume vol, DataObjectBackupStorageOperationState.Event event) throws NoTransitionException;
+    boolean contains(Volume vol);
+
+    boolean contains(Snapshot snapshot);
+
+    boolean contains(VirtualMachineTemplate template);
+
+    DataStore getBackupDataStore(Volume vol);
+
+    DataStore getBackupDataStore(Snapshot snapshot);
+
+    DataStore getBackupDataStore(VirtualMachineTemplate template);
+
+    boolean updateOperationState(Volume vol, DataObjectBackupStorageOperationState.Event event) throws NoTransitionException;
 }

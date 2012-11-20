@@ -24,31 +24,35 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.storage.image.TemplateInfo;
 import org.apache.cloudstack.storage.volume.db.TemplatePrimaryDataStoreDao;
 import org.apache.cloudstack.storage.volume.db.TemplatePrimaryDataStoreVO;
+import org.springframework.stereotype.Component;
 
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.db.SearchCriteriaService;
 import com.cloud.utils.db.SearchCriteria.Op;
 
+@Component
 public class TemplatePrimaryDataStoreManagerImpl implements TemplatePrimaryDataStoreManager {
-	@Inject
-	TemplatePrimaryDataStoreDao templateStoreDao;
-	@Override
-	public TemplateOnPrimaryDataStoreObject createTemplateOnPrimaryDataStore(TemplateInfo template, PrimaryDataStoreInfo dataStore) {
-		
-		TemplatePrimaryDataStoreVO templateStoreVO = new TemplatePrimaryDataStoreVO(dataStore.getId(), template.getId());
-		templateStoreVO = templateStoreDao.persist(templateStoreVO);
-		TemplateOnPrimaryDataStoreObject templateStoreObject = new TemplateOnPrimaryDataStoreObject(dataStore, template, templateStoreVO);
-		return templateStoreObject;
-	}
-	@Override
-	public TemplateOnPrimaryDataStoreObject findTemplateOnPrimaryDataStore(TemplateInfo template, PrimaryDataStoreInfo dataStore) {
-		SearchCriteriaService<TemplatePrimaryDataStoreVO, TemplatePrimaryDataStoreVO> sc = SearchCriteria2.create(TemplatePrimaryDataStoreVO.class);
-		sc.addAnd(sc.getEntity().getTemplateId(), Op.EQ, template.getId());
-		sc.addAnd(sc.getEntity().getPoolId(), Op.EQ, dataStore.getId());
-		sc.addAnd(sc.getEntity().getDownloadState(), Op.EQ, VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
-		TemplatePrimaryDataStoreVO templateStoreVO = sc.find();
-		TemplateOnPrimaryDataStoreObject templateStoreObject = new TemplateOnPrimaryDataStoreObject(dataStore, template, templateStoreVO);
-		return templateStoreObject;
-	}
+    @Inject
+    TemplatePrimaryDataStoreDao templateStoreDao;
+
+    @Override
+    public TemplateOnPrimaryDataStoreObject createTemplateOnPrimaryDataStore(TemplateInfo template, PrimaryDataStoreInfo dataStore) {
+
+        TemplatePrimaryDataStoreVO templateStoreVO = new TemplatePrimaryDataStoreVO(dataStore.getId(), template.getId());
+        templateStoreVO = templateStoreDao.persist(templateStoreVO);
+        TemplateOnPrimaryDataStoreObject templateStoreObject = new TemplateOnPrimaryDataStoreObject(dataStore, template, templateStoreVO);
+        return templateStoreObject;
+    }
+
+    @Override
+    public TemplateOnPrimaryDataStoreObject findTemplateOnPrimaryDataStore(TemplateInfo template, PrimaryDataStoreInfo dataStore) {
+        SearchCriteriaService<TemplatePrimaryDataStoreVO, TemplatePrimaryDataStoreVO> sc = SearchCriteria2.create(TemplatePrimaryDataStoreVO.class);
+        sc.addAnd(sc.getEntity().getTemplateId(), Op.EQ, template.getId());
+        sc.addAnd(sc.getEntity().getPoolId(), Op.EQ, dataStore.getId());
+        sc.addAnd(sc.getEntity().getDownloadState(), Op.EQ, VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
+        TemplatePrimaryDataStoreVO templateStoreVO = sc.find();
+        TemplateOnPrimaryDataStoreObject templateStoreObject = new TemplateOnPrimaryDataStoreObject(dataStore, template, templateStoreVO);
+        return templateStoreObject;
+    }
 }

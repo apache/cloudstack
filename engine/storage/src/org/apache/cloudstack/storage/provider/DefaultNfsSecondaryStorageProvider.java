@@ -39,91 +39,92 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.StoragePool;
 
 public class DefaultNfsSecondaryStorageProvider implements StorageProvider {
-	private String _name = DefaultPrimaryStorageProvider.class.toString();
-	protected Map<HypervisorType, Map<String, DataStoreConfigurator>> _supportedProtocols;
-	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-		Map<String, DataStoreConfigurator> dscs = new HashMap<String, DataStoreConfigurator>();
-		DataStoreConfigurator nfsdc = null;
-		dscs.put(nfsdc.getProtocol(), nfsdc);
-	
-		_supportedProtocols.put(HypervisorType.XenServer, dscs);
-		_supportedProtocols.put(HypervisorType.KVM, dscs);
-		_supportedProtocols.put(HypervisorType.VMware, dscs);
-		_supportedProtocols.put(HypervisorType.Ovm, dscs);
-		return true;
-	}
+    private String _name = DefaultPrimaryStorageProvider.class.toString();
+    protected Map<HypervisorType, Map<String, DataStoreConfigurator>> _supportedProtocols;
 
-	public String getName() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        Map<String, DataStoreConfigurator> dscs = new HashMap<String, DataStoreConfigurator>();
+        DataStoreConfigurator nfsdc = null;
+        dscs.put(nfsdc.getProtocol(), nfsdc);
 
-	public boolean start() {
-		// TODO Auto-generated method stub
-		return false;
-	}
+        _supportedProtocols.put(HypervisorType.XenServer, dscs);
+        _supportedProtocols.put(HypervisorType.KVM, dscs);
+        _supportedProtocols.put(HypervisorType.VMware, dscs);
+        _supportedProtocols.put(HypervisorType.Ovm, dscs);
+        return true;
+    }
 
-	public boolean stop() {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    public String getName() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	public List<HypervisorType> supportedHypervisors() {
-		List<HypervisorType> hypervisors = new ArrayList<HypervisorType>();
-		Set<HypervisorType> hyps = _supportedProtocols.keySet();
-		
-		for (HypervisorType hy : hyps) {
-			hypervisors.add(hy);
-		}
-		
-		return hypervisors;
-	}
+    public boolean start() {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	public String getProviderName() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public boolean stop() {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	public void configure(Map<String, String> storeProviderInfo) {
-		// TODO Auto-generated method stub
+    public List<HypervisorType> supportedHypervisors() {
+        List<HypervisorType> hypervisors = new ArrayList<HypervisorType>();
+        Set<HypervisorType> hyps = _supportedProtocols.keySet();
 
-	}
+        for (HypervisorType hy : hyps) {
+            hypervisors.add(hy);
+        }
 
-	public DataStore addDataStore(StoragePool sp, String url, Map<String, String> params) {
-		URI uri;
-		try {
-			uri = new URI(url);
-		} catch (URISyntaxException e) {
-			throw new InvalidParameterValueException("invalide url" + url);
-		}
-		
-		String protocol = uri.getScheme();
-		if (protocol == null) {
-			throw new InvalidParameterValueException("the protocol can't be null");
-		}
-		
-		DataStoreConfigurator dscf = _supportedProtocols.get(HypervisorType.XenServer).get(protocol);
-		Map<String, String> configs = dscf.getConfigs(uri, params);
-		dscf.validate(configs);
-		DataStore ds = dscf.getDataStore(sp);
-		return ds;
-	}
+        return hypervisors;
+    }
 
-	public DataStore getDataStore(StoragePool pool) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public String getProviderName() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	public Map<HypervisorType, Map<String, DataStoreConfigurator>> getDataStoreConfigs() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public void configure(Map<String, String> storeProviderInfo) {
+        // TODO Auto-generated method stub
 
-	public List<StoreType> supportedStoreTypes() {
-		List<StoreType> types = new ArrayList<StoreType>();
-		types.add(StoreType.Image);
-		types.add(StoreType.Backup);
-		return types;
-	}
+    }
+
+    public DataStore addDataStore(StoragePool sp, String url, Map<String, String> params) {
+        URI uri;
+        try {
+            uri = new URI(url);
+        } catch (URISyntaxException e) {
+            throw new InvalidParameterValueException("invalide url" + url);
+        }
+
+        String protocol = uri.getScheme();
+        if (protocol == null) {
+            throw new InvalidParameterValueException("the protocol can't be null");
+        }
+
+        DataStoreConfigurator dscf = _supportedProtocols.get(HypervisorType.XenServer).get(protocol);
+        Map<String, String> configs = dscf.getConfigs(uri, params);
+        dscf.validate(configs);
+        DataStore ds = dscf.getDataStore(sp);
+        return ds;
+    }
+
+    public DataStore getDataStore(StoragePool pool) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    public Map<HypervisorType, Map<String, DataStoreConfigurator>> getDataStoreConfigs() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    public List<StoreType> supportedStoreTypes() {
+        List<StoreType> types = new ArrayList<StoreType>();
+        types.add(StoreType.Image);
+        types.add(StoreType.Backup);
+        return types;
+    }
 
 }

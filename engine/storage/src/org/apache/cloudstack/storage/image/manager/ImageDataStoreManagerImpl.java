@@ -27,15 +27,16 @@ import org.apache.cloudstack.storage.image.db.ImageDataStoreVO;
 import org.apache.cloudstack.storage.image.store.ImageDataStore;
 
 public class ImageDataStoreManagerImpl implements ImageDataStoreManager {
-	@Inject
-	ImageDataStoreDao dataStoreDao;
-	@Inject
-	ImageDataDao imageDataDao;
-	@Override
-	public ImageDataStore getImageDataStore(long dataStoreId) {
-		ImageDataStoreVO dataStore = dataStoreDao.findById(dataStoreId);
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Inject
+    ImageDataStoreDao dataStoreDao;
+    @Inject
+    ImageDataDao imageDataDao;
+
+    @Override
+    public ImageDataStore getImageDataStore(long dataStoreId) {
+        ImageDataStoreVO dataStore = dataStoreDao.findById(dataStoreId);
+        // TODO Auto-generated method stub
+        return null;
+    }
 
 }

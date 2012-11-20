@@ -24,5 +24,5 @@ import com.cloud.utils.db.GenericDaoBase;
 
 @Component
 class PrimaryDataStoreProviderDaoImpl extends GenericDaoBase<PrimaryDataStoreProviderVO, Long> implements PrimaryDataStoreProviderDao {
-	
+
 }

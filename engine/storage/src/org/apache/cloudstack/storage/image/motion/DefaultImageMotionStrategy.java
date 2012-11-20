@@ -29,27 +29,29 @@ import org.apache.cloudstack.storage.to.ImageOnPrimayDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateTO;
 import org.apache.cloudstack.storage.to.VolumeTO;
 import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreInfo;
+import org.springframework.stereotype.Component;
 
+@Component
 public class DefaultImageMotionStrategy implements ImageMotionStrategy {
 
-	@Override
-	public boolean canHandle(TemplateOnPrimaryDataStoreInfo templateStore) {
-		// TODO Auto-generated method stub
-		return true;
-	}
+    @Override
+    public boolean canHandle(TemplateOnPrimaryDataStoreInfo templateStore) {
+        // TODO Auto-generated method stub
+        return true;
+    }
 
-	@Override
-	public EndPoint getEndPoint(TemplateOnPrimaryDataStoreInfo templateStore) {
-		PrimaryDataStoreInfo pdi = templateStore.getPrimaryDataStore();
-		return pdi.getEndPoints().get(0);
-	}
+    @Override
+    public EndPoint getEndPoint(TemplateOnPrimaryDataStoreInfo templateStore) {
+        PrimaryDataStoreInfo pdi = templateStore.getPrimaryDataStore();
+        return pdi.getEndPoints().get(0);
+    }
 
-	@Override
-	public boolean copyTemplate(TemplateOnPrimaryDataStoreInfo templateStore, EndPoint ep) {
-		ImageOnPrimayDataStoreTO imageTo = new ImageOnPrimayDataStoreTO(templateStore);
-		CopyTemplateToPrimaryStorage copyCommand = new CopyTemplateToPrimaryStorage(imageTo);
-		ep.sendMessage(copyCommand);
-		return true;
-	}
+    @Override
+    public boolean copyTemplate(TemplateOnPrimaryDataStoreInfo templateStore, EndPoint ep) {
+        ImageOnPrimayDataStoreTO imageTo = new ImageOnPrimayDataStoreTO(templateStore);
+        CopyTemplateToPrimaryStorage copyCommand = new CopyTemplateToPrimaryStorage(imageTo);
+        ep.sendMessage(copyCommand);
+        return true;
+    }
 
 }

@@ -26,98 +26,98 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class DefaultPrimaryDataStoreLifeCycle implements DataStoreLifeCycle {
-	 private static final Logger s_logger = Logger.getLogger(DataStoreLifeCycle.class);
-	private DataStore _ds;
-	@Inject
-	StoragePoolDao _storagePoolDao;
-	@Inject
-	StoragePoolHostDao _poolHostDao;
-	public DefaultPrimaryDataStoreLifeCycle(DataStore ds) {
-		this._ds = ds;
-	}
-	
+    private static final Logger s_logger = Logger.getLogger(DataStoreLifeCycle.class);
+    private DataStore _ds;
+    @Inject
+    StoragePoolDao _storagePoolDao;
+    @Inject
+    StoragePoolHostDao _poolHostDao;
 
-	protected boolean createStoragePool(DataStoreEndPoint ep, StoragePoolVO pool) {
-		DataStoreDriver dsDriver = _ds.getDataStoreDriver();
-		CreateStoragePoolCommand cmd = new CreateStoragePoolCommand(true, pool);
-		final Answer answer = dsDriver.sendMessage(ep, cmd);
-		if (answer != null && answer.getResult()) {
-			return true;
-		} else {
-			throw new CloudRuntimeException(answer.getDetails());
-		}
-	}
-	
-	 protected void connectHostToSharedPool(DataStoreEndPoint ep, StoragePoolVO pool) throws StorageUnavailableException {
-		 DataStoreDriver dsDriver = _ds.getDataStoreDriver();
-		 long hostId = ep.getHostId();
-		 ModifyStoragePoolCommand cmd = new ModifyStoragePoolCommand(true, pool);
-		 final Answer answer = dsDriver.sendMessage(ep, cmd);
+    public DefaultPrimaryDataStoreLifeCycle(DataStore ds) {
+        this._ds = ds;
+    }
 
-		 if (answer == null) {
-			 throw new StorageUnavailableException("Unable to get an answer to the modify storage pool command", pool.getId());
-		 }
+    protected boolean createStoragePool(DataStoreEndPoint ep, StoragePoolVO pool) {
+        DataStoreDriver dsDriver = _ds.getDataStoreDriver();
+        CreateStoragePoolCommand cmd = new CreateStoragePoolCommand(true, pool);
+        final Answer answer = dsDriver.sendMessage(ep, cmd);
+        if (answer != null && answer.getResult()) {
+            return true;
+        } else {
+            throw new CloudRuntimeException(answer.getDetails());
+        }
+    }
 
-		 if (!answer.getResult()) {
-			 throw new StorageUnavailableException("Unable establish connection from storage head to storage pool " + pool.getId() + " due to " + answer.getDetails(), pool.getId());
-		 }
+    protected void connectHostToSharedPool(DataStoreEndPoint ep, StoragePoolVO pool) throws StorageUnavailableException {
+        DataStoreDriver dsDriver = _ds.getDataStoreDriver();
+        long hostId = ep.getHostId();
+        ModifyStoragePoolCommand cmd = new ModifyStoragePoolCommand(true, pool);
+        final Answer answer = dsDriver.sendMessage(ep, cmd);
 
-		 assert (answer instanceof ModifyStoragePoolAnswer) : "Well, now why won't you actually return the ModifyStoragePoolAnswer when it's ModifyStoragePoolCommand? Pool=" + pool.getId();
-		 ModifyStoragePoolAnswer mspAnswer = (ModifyStoragePoolAnswer) answer;
+        if (answer == null) {
+            throw new StorageUnavailableException("Unable to get an answer to the modify storage pool command", pool.getId());
+        }
 
-		 StoragePoolHostVO poolHost = _poolHostDao.findByPoolHost(pool.getId(), hostId);
-		 if (poolHost == null) {
-			 poolHost = new StoragePoolHostVO(pool.getId(), hostId, mspAnswer.getPoolInfo().getLocalPath().replaceAll("//", "/"));
-			 _poolHostDao.persist(poolHost);
-		 } else {
-			 poolHost.setLocalPath(mspAnswer.getPoolInfo().getLocalPath().replaceAll("//", "/"));
-		 }
-		 pool.setAvailableBytes(mspAnswer.getPoolInfo().getAvailableBytes());
-		 pool.setCapacityBytes(mspAnswer.getPoolInfo().getCapacityBytes());
-		 _storagePoolDao.update(pool.getId(), pool);
-	 }
+        if (!answer.getResult()) {
+            throw new StorageUnavailableException("Unable establish connection from storage head to storage pool " + pool.getId() + " due to " + answer.getDetails(), pool.getId());
+        }
 
-	 public void add() {
-		 DataStoreEndPointSelector dseps = _ds.getEndPointSelector();
-		 List<DataStoreEndPoint> dsep = dseps.getEndPoints(null);
-		 boolean success = false;
-		 StoragePoolVO spool = _storagePoolDao.findById(_ds.getId());
-		 for (DataStoreEndPoint ep : dsep) {
-			 success = createStoragePool(ep, spool);
-			 if (success) {
-				 break;
-			 }
-		 }
+        assert (answer instanceof ModifyStoragePoolAnswer) : "Well, now why won't you actually return the ModifyStoragePoolAnswer when it's ModifyStoragePoolCommand? Pool=" + pool.getId();
+        ModifyStoragePoolAnswer mspAnswer = (ModifyStoragePoolAnswer) answer;
 
-		 List<DataStoreEndPoint> poolHosts = new ArrayList<DataStoreEndPoint>();
-		 for (DataStoreEndPoint ep : dsep) {
-			 try {
-				 connectHostToSharedPool(ep, spool);
-				 poolHosts.add(ep);
-			 } catch (Exception e) {
-				 s_logger.debug("Failed to add storage on this ep: " + ep.getHostId());
-			 }
-		 }
-	}
+        StoragePoolHostVO poolHost = _poolHostDao.findByPoolHost(pool.getId(), hostId);
+        if (poolHost == null) {
+            poolHost = new StoragePoolHostVO(pool.getId(), hostId, mspAnswer.getPoolInfo().getLocalPath().replaceAll("//", "/"));
+            _poolHostDao.persist(poolHost);
+        } else {
+            poolHost.setLocalPath(mspAnswer.getPoolInfo().getLocalPath().replaceAll("//", "/"));
+        }
+        pool.setAvailableBytes(mspAnswer.getPoolInfo().getAvailableBytes());
+        pool.setCapacityBytes(mspAnswer.getPoolInfo().getCapacityBytes());
+        _storagePoolDao.update(pool.getId(), pool);
+    }
 
-	public void delete() {
-		// TODO Auto-generated method stub
+    public void add() {
+        DataStoreEndPointSelector dseps = _ds.getEndPointSelector();
+        List<DataStoreEndPoint> dsep = dseps.getEndPoints(null);
+        boolean success = false;
+        StoragePoolVO spool = _storagePoolDao.findById(_ds.getId());
+        for (DataStoreEndPoint ep : dsep) {
+            success = createStoragePool(ep, spool);
+            if (success) {
+                break;
+            }
+        }
 
-	}
+        List<DataStoreEndPoint> poolHosts = new ArrayList<DataStoreEndPoint>();
+        for (DataStoreEndPoint ep : dsep) {
+            try {
+                connectHostToSharedPool(ep, spool);
+                poolHosts.add(ep);
+            } catch (Exception e) {
+                s_logger.debug("Failed to add storage on this ep: " + ep.getHostId());
+            }
+        }
+    }
 
-	public void enable() {
-		// TODO Auto-generated method stub
+    public void delete() {
+        // TODO Auto-generated method stub
 
-	}
+    }
 
-	public void disable() {
-		// TODO Auto-generated method stub
+    public void enable() {
+        // TODO Auto-generated method stub
 
-	}
+    }
 
-	public void processEvent(DataStoreEvent event, Object... objs) {
-		// TODO Auto-generated method stub
+    public void disable() {
+        // TODO Auto-generated method stub
 
-	}
+    }
+
+    public void processEvent(DataStoreEvent event, Object... objs) {
+        // TODO Auto-generated method stub
+
+    }
 
 }

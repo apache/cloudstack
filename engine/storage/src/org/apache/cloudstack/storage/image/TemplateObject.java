@@ -24,24 +24,38 @@ import org.apache.cloudstack.storage.image.db.ImageDataVO;
 import org.apache.cloudstack.storage.image.store.ImageDataStoreInfo;
 
 public class TemplateObject implements TemplateInfo {
-	private ImageDataVO imageVO;
-	public TemplateObject(ImageDataVO template) {
-		this.imageVO = template;
-	}
-	@Override
-	public ImageDataStoreInfo getImageDataStore() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    private ImageDataVO imageVO;
+    private ImageDataStoreInfo dataStore;
 
-	@Override
-	public long getId() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+    public TemplateObject(ImageDataVO template, ImageDataStoreInfo dataStore) {
+        this.imageVO = template;
+        this.dataStore = dataStore;
+    }
 
-	@Override
-	public VolumeDiskType getDiskType() {
-		return VolumeDiskTypeHelper.getDiskType(imageVO.getFormat());
-	}
+    @Override
+    public ImageDataStoreInfo getImageDataStore() {
+        return this.dataStore;
+    }
+
+    @Override
+    public long getId() {
+        return this.imageVO.getId();
+    }
+
+    @Override
+    public VolumeDiskType getDiskType() {
+        return VolumeDiskTypeHelper.getDiskType(imageVO.getFormat());
+    }
+
+    @Override
+    public String getPath() {
+        //TODO: add installation path if it's downloaded to cache storage already
+        return this.imageVO.getUrl();
+    }
+
+    @Override
+    public String getUuid() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 }

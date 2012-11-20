@@ -23,20 +23,21 @@ import org.apache.cloudstack.storage.to.VolumeTO;
 import com.cloud.agent.api.Command;
 
 public class CreateVolumeCommand extends Command {
-	protected VolumeTO volumeInfo;
-	public CreateVolumeCommand(VolumeTO volumeInfo) {
-		super();
-		this.volumeInfo = volumeInfo;
-	}
-	
-	protected CreateVolumeCommand() {
-		super();
-	}
-	
-	@Override
-	public boolean executeInSequence() {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    protected VolumeTO volumeInfo;
+
+    public CreateVolumeCommand(VolumeTO volumeInfo) {
+        super();
+        this.volumeInfo = volumeInfo;
+    }
+
+    protected CreateVolumeCommand() {
+        super();
+    }
+
+    @Override
+    public boolean executeInSequence() {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
 }

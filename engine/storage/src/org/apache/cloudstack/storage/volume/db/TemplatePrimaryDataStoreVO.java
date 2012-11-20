@@ -36,183 +36,192 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.utils.db.GenericDaoBase;
 
 @Entity
-@Table(name="template_spool_ref")
+@Table(name = "template_spool_ref")
 public class TemplatePrimaryDataStoreVO {
-	@Id
-	@GeneratedValue(strategy=GenerationType.IDENTITY)
-	long id;
-	
-	@Column(name="pool_id")
-	private long poolId;
-	
-	@Column(name="template_id") long templateId;
-	
-	@Column(name=GenericDaoBase.CREATED_COLUMN) Date created = null;
-	
-	@Column(name="last_updated")
-	@Temporal(value=TemporalType.TIMESTAMP) Date lastUpdated = null;
-	
-	@Column (name="download_pct") int downloadPercent;
-	
-	@Column (name="download_state")
-	@Enumerated(EnumType.STRING) Status downloadState;
-	
-	@Column (name="local_path") String localDownloadPath;
-	
-	@Column (name="error_str") String errorString;
-	
-	@Column (name="job_id") String jobId;
-	
-	@Column (name="install_path") String installPath;
-	
-	@Column (name="template_size") long templateSize;
-	
-	@Column (name="marked_for_gc") boolean markedForGC;
-    
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    long id;
+
+    @Column(name = "pool_id")
+    private long poolId;
+
+    @Column(name = "template_id")
+    long templateId;
+
+    @Column(name = GenericDaoBase.CREATED_COLUMN)
+    Date created = null;
+
+    @Column(name = "last_updated")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    Date lastUpdated = null;
+
+    @Column(name = "download_pct")
+    int downloadPercent;
+
+    @Column(name = "download_state")
+    @Enumerated(EnumType.STRING)
+    Status downloadState;
+
+    @Column(name = "local_path")
+    String localDownloadPath;
+
+    @Column(name = "error_str")
+    String errorString;
+
+    @Column(name = "job_id")
+    String jobId;
+
+    @Column(name = "install_path")
+    String installPath;
+
+    @Column(name = "template_size")
+    long templateSize;
+
+    @Column(name = "marked_for_gc")
+    boolean markedForGC;
+
     public String getInstallPath() {
-		return installPath;
-	}
-	
+        return installPath;
+    }
+
     public long getTemplateSize() {
-		return templateSize;
-	}
+        return templateSize;
+    }
 
-	public long getPoolId() {
-		return poolId;
-	}
+    public long getPoolId() {
+        return poolId;
+    }
 
-	public void setpoolId(long poolId) {
-		this.poolId = poolId;
-	}
+    public void setpoolId(long poolId) {
+        this.poolId = poolId;
+    }
 
     public long getTemplateId() {
-		return templateId;
-	}
+        return templateId;
+    }
 
     public void setTemplateId(long templateId) {
-		this.templateId = templateId;
-	}
+        this.templateId = templateId;
+    }
 
     public int getDownloadPercent() {
-		return downloadPercent;
-	}
+        return downloadPercent;
+    }
 
     public void setDownloadPercent(int downloadPercent) {
-		this.downloadPercent = downloadPercent;
-	}
+        this.downloadPercent = downloadPercent;
+    }
 
     public void setDownloadState(Status downloadState) {
-		this.downloadState = downloadState;
-	}
+        this.downloadState = downloadState;
+    }
 
     public long getId() {
-		return id;
-	}
+        return id;
+    }
 
     public Date getCreated() {
-		return created;
-	}
+        return created;
+    }
 
     public Date getLastUpdated() {
-		return lastUpdated;
-	}
-	
+        return lastUpdated;
+    }
+
     public void setLastUpdated(Date date) {
-	    lastUpdated = date;
-	}
-	
+        lastUpdated = date;
+    }
+
     public void setInstallPath(String installPath) {
-	    this.installPath = installPath;
-	}
+        this.installPath = installPath;
+    }
 
     public Status getDownloadState() {
-		return downloadState;
-	}
+        return downloadState;
+    }
 
-	public TemplatePrimaryDataStoreVO(long poolId, long templateId) {
-		super();
-		this.poolId = poolId;
-		this.templateId = templateId;
-		this.downloadState = Status.NOT_DOWNLOADED;
-		this.markedForGC = false;
-	}
+    public TemplatePrimaryDataStoreVO(long poolId, long templateId) {
+        super();
+        this.poolId = poolId;
+        this.templateId = templateId;
+        this.downloadState = Status.NOT_DOWNLOADED;
+        this.markedForGC = false;
+    }
 
-	public TemplatePrimaryDataStoreVO(long poolId, long templateId, Date lastUpdated,
-			int downloadPercent, Status downloadState,
-			String localDownloadPath, String errorString, String jobId,
-			String installPath, long templateSize) {
-		super();
-		this.poolId = poolId;
-		this.templateId = templateId;
-		this.lastUpdated = lastUpdated;
-		this.downloadPercent = downloadPercent;
-		this.downloadState = downloadState;
-		this.localDownloadPath = localDownloadPath;
-		this.errorString = errorString;
-		this.jobId = jobId;
-		this.installPath = installPath;
-		this.templateSize = templateSize;
-	}
+    public TemplatePrimaryDataStoreVO(long poolId, long templateId, Date lastUpdated, int downloadPercent, Status downloadState, String localDownloadPath, String errorString, String jobId,
+            String installPath, long templateSize) {
+        super();
+        this.poolId = poolId;
+        this.templateId = templateId;
+        this.lastUpdated = lastUpdated;
+        this.downloadPercent = downloadPercent;
+        this.downloadState = downloadState;
+        this.localDownloadPath = localDownloadPath;
+        this.errorString = errorString;
+        this.jobId = jobId;
+        this.installPath = installPath;
+        this.templateSize = templateSize;
+    }
 
-	protected TemplatePrimaryDataStoreVO() {
-		
-	}
+    protected TemplatePrimaryDataStoreVO() {
+
+    }
 
     public void setLocalDownloadPath(String localPath) {
-		this.localDownloadPath = localPath;
-	}
+        this.localDownloadPath = localPath;
+    }
 
     public String getLocalDownloadPath() {
-		return localDownloadPath;
-	}
+        return localDownloadPath;
+    }
 
     public void setErrorString(String errorString) {
-		this.errorString = errorString;
-	}
+        this.errorString = errorString;
+    }
 
     public String getErrorString() {
-		return errorString;
-	}
+        return errorString;
+    }
 
     public void setJobId(String jobId) {
-		this.jobId = jobId;
-	}
+        this.jobId = jobId;
+    }
 
     public String getJobId() {
-		return jobId;
-	}
-	
-	public void setTemplateSize(long templateSize) {
-		this.templateSize = templateSize;
-	}
-	
-	public boolean getMarkedForGC() {
-		return markedForGC;
-	}
-	
-	public void setMarkedForGC(boolean markedForGC) {
-		this.markedForGC = markedForGC;
-	}
+        return jobId;
+    }
 
-	@Override
-	public boolean equals(Object obj) {
-		if (obj instanceof TemplatePrimaryDataStoreVO) {
-		   TemplatePrimaryDataStoreVO other = (TemplatePrimaryDataStoreVO)obj;
-		   return (this.templateId==other.getTemplateId() && this.poolId==other.getPoolId());
-		}
-		return false;
-	}
+    public void setTemplateSize(long templateSize) {
+        this.templateSize = templateSize;
+    }
 
-	@Override
-	public int hashCode() {
-		Long tid = new Long(templateId);
-		Long hid = new Long(poolId);
-		return tid.hashCode()+hid.hashCode();
-	}
-	
-	@Override
+    public boolean getMarkedForGC() {
+        return markedForGC;
+    }
+
+    public void setMarkedForGC(boolean markedForGC) {
+        this.markedForGC = markedForGC;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof TemplatePrimaryDataStoreVO) {
+            TemplatePrimaryDataStoreVO other = (TemplatePrimaryDataStoreVO) obj;
+            return (this.templateId == other.getTemplateId() && this.poolId == other.getPoolId());
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        Long tid = new Long(templateId);
+        Long hid = new Long(poolId);
+        return tid.hashCode() + hid.hashCode();
+    }
+
+    @Override
     public String toString() {
-	    return new StringBuilder("TmplPool[").append(id).append("-").append(templateId).append("-").append("poolId").append("-").append(installPath).append("]").toString();
-	}
+        return new StringBuilder("TmplPool[").append(id).append("-").append(templateId).append("-").append("poolId").append("-").append(installPath).append("]").toString();
+    }
 
 }

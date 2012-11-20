@@ -21,11 +21,17 @@ package org.apache.cloudstack.storage.datastore.lifecycle;
 import java.util.Map;
 
 public interface PrimaryDataStoreLifeCycle {
-	public boolean registerDataStore(Map<String, String> dsInfos);
-	public boolean attach(long scope);
-	public boolean dettach(long dataStoreId);
-	public boolean unmanaged(long dataStoreId);
-	public boolean maintain(long dataStoreId);
-	public boolean cancelMaintain(long dataStoreId);
-	public boolean deleteDataStore(long dataStoreId);
+    public boolean registerDataStore(Map<String, String> dsInfos);
+
+    public boolean attach(long scope);
+
+    public boolean dettach(long dataStoreId);
+
+    public boolean unmanaged(long dataStoreId);
+
+    public boolean maintain(long dataStoreId);
+
+    public boolean cancelMaintain(long dataStoreId);
+
+    public boolean deleteDataStore(long dataStoreId);
 }

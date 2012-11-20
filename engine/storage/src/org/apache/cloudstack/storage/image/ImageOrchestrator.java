@@ -19,8 +19,11 @@
 package org.apache.cloudstack.storage.image;
 
 public interface ImageOrchestrator {
-	void registerTemplate(long templateId);
-	void registerSnapshot(long snapshotId);
-	void registerVolume(long volumeId);
-	void registerIso(long isoId);
+    void registerTemplate(long templateId);
+
+    void registerSnapshot(long snapshotId);
+
+    void registerVolume(long volumeId);
+
+    void registerIso(long isoId);
 }

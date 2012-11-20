@@ -50,7 +50,6 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Component
 @Local(value=VolumeDao.class)
 public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements VolumeDao {
     private static final Logger s_logger = Logger.getLogger(VolumeDaoImpl.class);

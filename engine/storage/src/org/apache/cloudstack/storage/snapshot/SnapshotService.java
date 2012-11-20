@@ -19,6 +19,7 @@
 package org.apache.cloudstack.storage.snapshot;
 
 public interface SnapshotService {
-	long takeSnapshot(long volumeId);
-	boolean deleteSnapshot(long snapshotId);
+    long takeSnapshot(long volumeId);
+
+    boolean deleteSnapshot(long snapshotId);
 }

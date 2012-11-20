@@ -19,5 +19,5 @@
 package org.apache.cloudstack.storage.image.store;
 
 public interface ImageDataStoreInfo {
-	public long getImageDataStoreId();
+    public long getImageDataStoreId();
 }

@@ -23,9 +23,10 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class ISO extends BaseType implements ImageFormat {
-	private final String type = "ISO";
-	@Override
-	public String toString() {
-		return type;
-	}
+    private final String type = "ISO";
+
+    @Override
+    public String toString() {
+        return type;
+    }
 }

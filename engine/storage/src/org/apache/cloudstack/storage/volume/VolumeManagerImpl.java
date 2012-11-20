@@ -28,43 +28,38 @@ import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
 
 public class VolumeManagerImpl implements VolumeManager {
-	private StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
-	@Inject
-	protected VolumeDao _volumeDao;
-	
+    private StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
+    @Inject
+    protected VolumeDao _volumeDao;
 
-	public VolumeVO allocateDuplicateVolume(VolumeVO oldVol) {
-		VolumeVO newVol = new VolumeVO(oldVol.getVolumeType(), oldVol.getName(), oldVol.getDataCenterId(), oldVol.getDomainId(), oldVol.getAccountId(), oldVol.getDiskOfferingId(), oldVol.getSize());
-		newVol.setTemplateId(oldVol.getTemplateId());
-		newVol.setDeviceId(oldVol.getDeviceId());
-		newVol.setInstanceId(oldVol.getInstanceId());
-		newVol.setRecreatable(oldVol.isRecreatable());
-		newVol.setReservationId(oldVol.getReservationId());
-		return null;
-		//return _volumeDao.persist(newVol);
-	}
-	
+    public VolumeVO allocateDuplicateVolume(VolumeVO oldVol) {
+        VolumeVO newVol = new VolumeVO(oldVol.getVolumeType(), oldVol.getName(), oldVol.getDataCenterId(), oldVol.getDomainId(), oldVol.getAccountId(), oldVol.getDiskOfferingId(), oldVol.getSize());
+        newVol.setTemplateId(oldVol.getTemplateId());
+        newVol.setDeviceId(oldVol.getDeviceId());
+        newVol.setInstanceId(oldVol.getInstanceId());
+        newVol.setRecreatable(oldVol.isRecreatable());
+        newVol.setReservationId(oldVol.getReservationId());
+        return null;
+        // return _volumeDao.persist(newVol);
+    }
 
-	public VolumeVO processEvent(Volume vol, Volume.Event event) throws NoTransitionException {
-		//_volStateMachine.transitTo(vol, event, null, _volumeDao);
-		return _volumeDao.findById(vol.getId());
-	}
+    public VolumeVO processEvent(Volume vol, Volume.Event event) throws NoTransitionException {
+        // _volStateMachine.transitTo(vol, event, null, _volumeDao);
+        return _volumeDao.findById(vol.getId());
+    }
 
+    public VolumeProfile getProfile(long volumeId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	public VolumeProfile getProfile(long volumeId) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public VolumeVO getVolume(long volumeId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-
-	public VolumeVO getVolume(long volumeId) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-
-	public VolumeVO updateVolume(VolumeVO volume) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public VolumeVO updateVolume(VolumeVO volume) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 }
