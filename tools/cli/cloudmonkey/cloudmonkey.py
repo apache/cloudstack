@@ -81,13 +81,14 @@ class CloudStackShell(cmd.Cmd):
             for key in self.config_fields.keys():
                 setattr(self, key, self.config_fields[key])
             config = self.write_config()
-            print("Set your apikey, secretkey, host, port, prompt,"
-                  " protocol, path, color, log_file and history_file"
-                  " using the set command!")
+            print "Welcome! Using `set` configure the necessary settings"
+            print " ".join(sorted(self.config_fields.keys()))
+            print "For debugging, tail -f", self.log_file, "\n"
 
         for key in self.config_fields.keys():
             try:
                 setattr(self, key, config.get('CLI', key))
+                self.config_fields[key] = config.get('CLI', key)
             except Exception:
                 print "Please fix `%s` config in %s" % (key, self.config_file)
                 sys.exit()
@@ -95,6 +96,7 @@ class CloudStackShell(cmd.Cmd):
         self.prompt += " "  # Cosmetic fix for prompt
         logging.basicConfig(filename=self.log_file,
                             level=logging.DEBUG, format=log_fmt)
+        logger.debug("Loaded config fields:\n%s" % self.config_fields)
 
         cmd.Cmd.__init__(self)
         # Update config if config_file does not exist
@@ -114,10 +116,6 @@ class CloudStackShell(cmd.Cmd):
         try:
             with open(self.config_file, 'r') as cfg:
                 config.readfp(cfg)
-            for section in config.sections():
-                for option in config.options(section):
-                    logger.debug("[%s] %s=%s" % (section, option,
-                                                 config.get(section, option)))
         except IOError, e:
             self.print_shell("Error: config_file not found", e)
         return config
@@ -143,6 +141,8 @@ class CloudStackShell(cmd.Cmd):
                 if self.color == 'true':
                     if str(arg).count(self.ruler) == len(str(arg)):
                         print colored.green(arg),
+                    elif 'Error' in arg:
+                        print colored.red(arg),
                     elif ":\n=" in arg:
                         print colored.red(arg),
                     elif ':' in arg:
@@ -155,8 +155,6 @@ class CloudStackShell(cmd.Cmd):
                         print colored.cyan(arg),
                     elif 'name =' in arg:
                         print colored.magenta(arg),
-                    elif 'Error' in arg:
-                        print colored.red(arg),
                     else:
                         print arg,
                 else:
@@ -199,16 +197,17 @@ class CloudStackShell(cmd.Cmd):
                                asyncTimeout=self.timeout, logging=logger,
                                protocol=self.protocol, path=self.path)
         response = None
+        logger.debug("====START Request====")
+        logger.debug("Requesting command=%s, args=%s" % (command, requests))
         try:
-            self.print_shell("Starting call")
             response = conn.make_request_with_auth(command, requests)
-            self.print_shell("Ending call")
         except cloudstackAPIException, e:
             self.print_shell("API Error:", e)
         except HTTPError, e:
             self.print_shell(e)
         except URLError, e:
             self.print_shell("Connection Error:", e)
+        logger.debug("====END Request====\n")
 
         def process_json(response):
             try:
@@ -489,7 +488,7 @@ def main():
                     res = self.cache_verbs[rule][args_partition[0]]
 
                 except KeyError, e:
-                    self.print_shell("Error: no such command on %s" % rule)
+                    self.print_shell("Error: invalid %s api arg" % rule, e)
                     return
                 if ' --help' in args or ' -h' in args:
                     self.print_shell(res[2])

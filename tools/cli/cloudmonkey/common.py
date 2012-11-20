@@ -30,7 +30,7 @@ except ImportError, e:
 # Add config key:value
 config_file = os.path.expanduser('~/.cloudmonkey_config')
 config_fields = {'host': 'localhost', 'port': '8080',
-                 'protocol': 'http', 'path': '/client/api', 
+                 'protocol': 'http', 'path': '/client/api',
                  'apikey': '', 'secretkey': '',
                  'timeout': '3600', 'asyncblock': 'true',
                  'prompt': '🐵 cloudmonkey>', 'color': 'true',
