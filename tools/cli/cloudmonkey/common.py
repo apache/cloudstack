@@ -17,9 +17,8 @@
 # under the License.
 
 # Use following rules for versioning:
-# <cli major version>.<cloudstack minor version>.<cloudstack major version>
-# Example: For CloudStack 4.1.x, CLI version should be 0.1.4
-__version__ = "0.0.4"
+# <cloudstack major version>.<cloudstack minor version>.<cli increment>
+__version__ = "4.0.0"
 
 try:
     import os

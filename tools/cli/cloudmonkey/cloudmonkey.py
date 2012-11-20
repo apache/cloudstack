@@ -81,7 +81,7 @@ class CloudStackShell(cmd.Cmd):
             for key in self.config_fields.keys():
                 setattr(self, key, self.config_fields[key])
             config = self.write_config()
-            print "Welcome! Using `set` configure the necessary settings"
+            print "Welcome! Using `set` configure the necessary settings:"
             print " ".join(sorted(self.config_fields.keys()))
             print "For debugging, tail -f", self.log_file, "\n"
 
