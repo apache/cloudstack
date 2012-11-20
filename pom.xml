@@ -31,7 +31,7 @@
   <version>4.1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Apache CloudStack</name>
-  <description>CloudStack is an IaaS (“Infrastracture as a Service”) cloud orchestration platform.</description>
+  <description>Apache CloudStack is an IaaS (“Infrastracture as a Service”) cloud orchestration platform.</description>
   <url>http://www.cloudstack.org</url>
   <scm>
     <connection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-cloudstack.git</connection>
