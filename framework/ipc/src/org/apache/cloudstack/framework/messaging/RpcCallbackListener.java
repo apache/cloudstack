@@ -18,6 +18,7 @@
  */
 package org.apache.cloudstack.framework.messaging;
 
-public interface RpcEndpoint {
-	void onCallReceive(RpcServerCall call);
+public interface RpcCallbackListener<T> {
+	void onSuccess(T result);
+	void onFailure(RpcException e);
 }

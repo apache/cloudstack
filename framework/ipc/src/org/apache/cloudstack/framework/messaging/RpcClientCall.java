@@ -16,10 +16,23 @@
 // under the License.
 package org.apache.cloudstack.framework.messaging;
 
+import java.util.concurrent.TimeUnit;
+
 public interface RpcClientCall {
-	String getCommand();
-	Object getCommandArgument();
-	RpcCallContext getCallContext();
+	RpcClientCall setCommand(String cmd);
+	RpcClientCall setPipeline(String pipeline);
+	RpcClientCall setTimeout(TimeUnit timeout);
 	
+	RpcClientCall setCommandArg(Object arg);
+	Object getCommandArg();
+	
+	RpcClientCall setContextParam(String key, Object param);
+	Object getContextParam(String key);
+	
+	<T> RpcClientCall addCallbackListener(RpcCallbackListener<T> listener);
+	
+	void apply();
 	void cancel();
+	
+	<T> T get();
 }

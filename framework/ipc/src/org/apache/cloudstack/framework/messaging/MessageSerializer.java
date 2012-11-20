@@ -19,6 +19,6 @@
 package org.apache.cloudstack.framework.messaging;
 
 public interface MessageSerializer {
-	String serializeTo(Object object);
-	Object serializeFrom(String message);
+	<T>String serializeTo(Class<?> clz, T object);
+	<T> T serializeFrom(String message);
 }

@@ -19,6 +19,8 @@
 package org.apache.cloudstack.framework.messaging;
 
 public interface TransportEndpoint {
+	String getEndpointAddress();
+	
 	void onAttachConfirm(boolean bSuccess, String endpointAddress);
 	void onDetachIndication(String endpointAddress);
 	

@@ -45,25 +45,10 @@ public class ComponentEndpoint implements RpcEndpoint, Subscriber {
 		rpcProvider.registerRpcEndpoint(this);
 	}
 
-	// it will throw RpcRuntimeException in case of transport
-	public String call(RpcCallContext callContext, String targetAddress, String command, Object cmdArg)
-	{
-		return rpcProvider.call(this, callContext, targetAddress, command, cmdArg);
-	}
-	
-	public RpcClientCall asyncCall(RpcCallContext callContext, String targetAddress, String command, Object cmdArg) {
-		return rpcProvider.asyncCall(this, callContext, targetAddress, command, cmdArg);
-	}
-
 	@Override
 	public void onCallReceive(RpcServerCall call) {
 		// TODO Auto-generated method stub
 		// implement annotation based call dispatching
-	}
-	
-	@Override
-	public void onCallReturn(RpcClientCall call, Object returnObject, RpcException e) {
-		// ???
 	}
 	
 	@Override
