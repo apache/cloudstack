@@ -54,6 +54,7 @@ public interface OrchestrationService {
      * @return VirtualMachineEntity
      */
     @POST
+    @Path("/createvm")
     VirtualMachineEntity createVirtualMachine(
             @QueryParam("id") String id,
             @QueryParam("owner") String owner,            

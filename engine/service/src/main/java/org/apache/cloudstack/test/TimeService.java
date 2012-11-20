@@ -38,5 +38,12 @@ public class TimeService {
         DateFormatter formatter = new DateFormatter("dd/MM/yyyy hh:mm:ss");
         return formatter.print(Calendar.getInstance().getTime(), Locale.getDefault());
     }
+
+//
+//    @GET @Produces("text/plain")
+//    public ZoneEntity getZoneEntity() {
+//        return new ZoneEntityImpl();
+//    }
+
 }
 

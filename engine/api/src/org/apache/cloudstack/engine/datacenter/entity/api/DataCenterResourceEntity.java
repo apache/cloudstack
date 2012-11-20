@@ -38,7 +38,7 @@ public interface DataCenterResourceEntity extends CloudStackEntity, StateObject<
     public enum State {
         Disabled("The resource is disabled so CloudStack should not use it.  This is the initial state of all resources added to CloudStack."),
         Enabled("The resource is now enabled for CloudStack to use."),
-        Deactivated("The resource is disactivated so CloudStack should not use it for new resource needs.");
+        Deactivated("The resource is deactivated so CloudStack should not use it for new resource needs.");
 
         String _description;
 
