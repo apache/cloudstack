@@ -98,15 +98,15 @@ public class AddAccountToProjectCmd extends BaseAsyncCmd {
     
     @Override
     public long getEntityOwnerId() {
-        Project project= _projectService.getProject(projectId);
+        Project project= _projectService.getProject(getProjectId());
         //verify input parameters
         if (project == null) {
         	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find project with specified id");
-        	ex.addProxyObject(project, projectId, "projectId");            
+        	ex.addProxyObject(project, getProjectId(), "projectId");            
             throw ex;
         } 
         
-        return _projectService.getProjectOwner(projectId).getId(); 
+        return _projectService.getProjectOwner(getProjectId()).getId(); 
     }
     
     @Override
@@ -117,9 +117,9 @@ public class AddAccountToProjectCmd extends BaseAsyncCmd {
     @Override
     public String getEventDescription() {
         if (accountName != null) {
-            return  "Adding account " + accountName + " to project: " + projectId;
+            return  "Adding account " + getAccountName() + " to project: " + getProjectId();
         } else {
-            return  "Sending invitation to email " + email + " to join project: " + projectId;
+            return  "Sending invitation to email " + email + " to join project: " + getProjectId();
         }  
     }
 }

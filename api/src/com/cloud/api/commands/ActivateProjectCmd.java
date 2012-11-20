@@ -61,13 +61,13 @@ public class ActivateProjectCmd extends BaseAsyncCmd {
     
     @Override
     public long getEntityOwnerId() {
-        Project project= _projectService.getProject(id);
+        Project project= _projectService.getProject(getId());
         //verify input parameters
         if (project == null) {
-            throw new InvalidParameterValueException("Unable to find project by id " + id);
+            throw new InvalidParameterValueException("Unable to find project by id " + getId());
         } 
         
-        return _projectService.getProjectOwner(id).getId(); 
+        return _projectService.getProjectOwner(getId()).getId(); 
     }
  
 
