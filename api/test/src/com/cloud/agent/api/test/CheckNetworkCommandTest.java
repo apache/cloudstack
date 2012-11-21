@@ -16,24 +16,38 @@
 // under the License.
 package src.com.cloud.agent.api.test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.util.List;
-import com.cloud.agent.api.*;
-import com.cloud.network.PhysicalNetworkSetupInfo;
-import static org.junit.Assert.*;
+
+import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
+
+import com.cloud.agent.api.CheckNetworkCommand;
+import com.cloud.network.PhysicalNetworkSetupInfo;
 
 public class CheckNetworkCommandTest {
-	CheckNetworkCommand cnc = new CheckNetworkCommand();
-	
-	@Test
-	public void testGetPhysicalNetworkInfoList() {
-		List<PhysicalNetworkSetupInfo> networkInfoList = cnc.getPhysicalNetworkInfoList();
-		assertNull(networkInfoList);
-	}
-	
-	@Test
-	public void testExecuteInSequence() {
-		boolean b = cnc.executeInSequence();
-		assertTrue(b);
-	}
+    CheckNetworkCommand cnc;
+
+    @Before
+    public void setUp() {
+        @SuppressWarnings("unchecked")
+        List<PhysicalNetworkSetupInfo> net = Mockito.mock(List.class);
+        cnc = new CheckNetworkCommand(net);
+    }
+
+    @Test
+    public void testGetPhysicalNetworkInfoList() {
+        List<PhysicalNetworkSetupInfo> networkInfoList = cnc
+                .getPhysicalNetworkInfoList();
+        assertEquals(0, networkInfoList.size());
+    }
+
+    @Test
+    public void testExecuteInSequence() {
+        boolean b = cnc.executeInSequence();
+        assertTrue(b);
+    }
 }

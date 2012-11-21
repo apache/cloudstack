@@ -16,101 +16,105 @@
 // under the License.
 package src.com.cloud.agent.api.test;
 
-import com.cloud.storage.Storage.StoragePoolType;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import org.junit.Test;
 
-import com.cloud.agent.api.*;
+import com.cloud.agent.api.AttachVolumeCommand;
+import com.cloud.storage.Storage.StoragePoolType;
 
 public class AttachVolumeCommandTest {
-	AttachVolumeCommand avc = new AttachVolumeCommand(true, "vmname", StoragePoolType.Filesystem, "vFolder", "vPath", "vName", 123456789L, "chainInfo");
+    AttachVolumeCommand avc = new AttachVolumeCommand(true, "vmname",
+            StoragePoolType.Filesystem, "vFolder", "vPath", "vName",
+            123456789L, "chainInfo");
 
-	@Test
-	public void testExecuteInSequence() {
-		boolean b = avc.executeInSequence();
-	    assertTrue(b);
-	}
-	
-	@Test
-	public void testGetAttach() {
-		boolean b = avc.getAttach();
-	    assertTrue(b);
-	}
-	
-	@Test
-	public void testGetVmName() {
-		String vmName = avc.getVmName();
-	    assertTrue(vmName.equals("vmname"));
-	}
+    @Test
+    public void testExecuteInSequence() {
+        boolean b = avc.executeInSequence();
+        assertTrue(b);
+    }
 
-	@Test
-	public void testGetPooltype() {
-		StoragePoolType pt = avc.getPooltype();
-	    assertTrue(pt.equals(StoragePoolType.Filesystem));
-	    
-		avc.setPooltype(StoragePoolType.NetworkFilesystem);
-		pt = avc.getPooltype();
-	    assertTrue(pt.equals(StoragePoolType.NetworkFilesystem));
-	    
-		avc.setPooltype(StoragePoolType.IscsiLUN);
-		pt = avc.getPooltype();
-	    assertTrue(pt.equals(StoragePoolType.IscsiLUN));
-	    
-		avc.setPooltype(StoragePoolType.Iscsi);
-		pt = avc.getPooltype();
-	    assertTrue(pt.equals(StoragePoolType.Iscsi));
-	}
+    @Test
+    public void testGetAttach() {
+        boolean b = avc.getAttach();
+        assertTrue(b);
+    }
 
-	@Test
-	public void testGetVolumeFolder() {
-		String vFolder = avc.getVolumeFolder();
-	    assertTrue(vFolder.equals("vFolder"));
-	}
-	
-	@Test
-	public void testGetVolumePath() {
-		String vPath = avc.getVolumePath();
-	    assertTrue(vPath.equals("vPath"));
-	}
+    @Test
+    public void testGetVmName() {
+        String vmName = avc.getVmName();
+        assertTrue(vmName.equals("vmname"));
+    }
 
-	@Test
-	public void testGetVolumeName() {
-		String vName = avc.getVolumeName();
-	    assertTrue(vName.equals("vName"));
-	}
+    @Test
+    public void testGetPooltype() {
+        StoragePoolType pt = avc.getPooltype();
+        assertTrue(pt.equals(StoragePoolType.Filesystem));
 
-	@Test
-	public void testGetDeviceId() {
-		Long dId = avc.getDeviceId();
-		Long expected = 123456789L;
-		assertEquals(expected, dId);
-		
-		avc.setDeviceId(5L);
-		dId = avc.getDeviceId();
-		expected = 5L;
-		assertEquals(expected, dId);
-		
-		avc.setDeviceId(0L);
-		dId = avc.getDeviceId();
-		expected = 0L;
-		assertEquals(expected, dId);
-		
-		avc.setDeviceId(-5L);
-		dId = avc.getDeviceId();
-		expected = -5L;
-		assertEquals(expected, dId);
-	}
-	
-	@Test
-	public void testGetPoolUuid() {
-		avc.setPoolUuid("420fa39c-4ef1-a83c-fd93-46dc1ff515ae");
-		String pUuid = avc.getPoolUuid();
-	    assertTrue(pUuid.equals("420fa39c-4ef1-a83c-fd93-46dc1ff515ae"));
-	}
-	
-	@Test
-	public void testGetWait() {
-		String cInfo = avc.getChainInfo();
-	    assertTrue(cInfo.equals("chainInfo"));
-	}
+        avc.setPooltype(StoragePoolType.NetworkFilesystem);
+        pt = avc.getPooltype();
+        assertTrue(pt.equals(StoragePoolType.NetworkFilesystem));
+
+        avc.setPooltype(StoragePoolType.IscsiLUN);
+        pt = avc.getPooltype();
+        assertTrue(pt.equals(StoragePoolType.IscsiLUN));
+
+        avc.setPooltype(StoragePoolType.Iscsi);
+        pt = avc.getPooltype();
+        assertTrue(pt.equals(StoragePoolType.Iscsi));
+    }
+
+    @Test
+    public void testGetVolumeFolder() {
+        String vFolder = avc.getVolumeFolder();
+        assertTrue(vFolder.equals("vFolder"));
+    }
+
+    @Test
+    public void testGetVolumePath() {
+        String vPath = avc.getVolumePath();
+        assertTrue(vPath.equals("vPath"));
+    }
+
+    @Test
+    public void testGetVolumeName() {
+        String vName = avc.getVolumeName();
+        assertTrue(vName.equals("vName"));
+    }
+
+    @Test
+    public void testGetDeviceId() {
+        Long dId = avc.getDeviceId();
+        Long expected = 123456789L;
+        assertEquals(expected, dId);
+
+        avc.setDeviceId(5L);
+        dId = avc.getDeviceId();
+        expected = 5L;
+        assertEquals(expected, dId);
+
+        avc.setDeviceId(0L);
+        dId = avc.getDeviceId();
+        expected = 0L;
+        assertEquals(expected, dId);
+
+        avc.setDeviceId(-5L);
+        dId = avc.getDeviceId();
+        expected = -5L;
+        assertEquals(expected, dId);
+    }
+
+    @Test
+    public void testGetPoolUuid() {
+        avc.setPoolUuid("420fa39c-4ef1-a83c-fd93-46dc1ff515ae");
+        String pUuid = avc.getPoolUuid();
+        assertTrue(pUuid.equals("420fa39c-4ef1-a83c-fd93-46dc1ff515ae"));
+    }
+
+    @Test
+    public void testGetWait() {
+        String cInfo = avc.getChainInfo();
+        assertTrue(cInfo.equals("chainInfo"));
+    }
 }

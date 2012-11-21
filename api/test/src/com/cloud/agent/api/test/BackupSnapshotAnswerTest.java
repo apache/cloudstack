@@ -16,41 +16,60 @@
 // under the License.
 package src.com.cloud.agent.api.test;
 
-import com.cloud.agent.api.*;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
+
+import com.cloud.agent.api.BackupSnapshotAnswer;
+import com.cloud.agent.api.BackupSnapshotCommand;
+import com.cloud.storage.StoragePool;
 
 public class BackupSnapshotAnswerTest {
-	BackupSnapshotCommand bsc = new BackupSnapshotCommand();	
-	BackupSnapshotAnswer bsa = new BackupSnapshotAnswer(bsc, true, "results", "bussname", false);
+    private BackupSnapshotCommand bsc;
+    private BackupSnapshotAnswer bsa;
 
-	@Test
-	public void testExecuteInSequence() {
-		boolean b = bsa.executeInSequence();
-	    assertFalse(b);
-	}
+    @Before
+    public void setUp() {
 
-	@Test
-	public void testIsFull() {
-		boolean b = bsa.isFull();
-	    assertFalse(b);
-	}
+        StoragePool pool = Mockito.mock(StoragePool.class);
 
-	@Test
-	public void testGetBackupSnapshotName() {
-		String name = bsa.getBackupSnapshotName();
-	    assertTrue(name.equals("bussname"));
-	}
-	
-	@Test
-	public void testGetResult() {
-		boolean b = bsa.getResult();
-	    assertTrue(b);
-	}
+        bsc = new BackupSnapshotCommand("primaryStoragePoolNameLabel",
+                "secondaryStoragePoolURL", 101L, 102L, 103L, 104L,
+                "volumePath", pool, "snapshotUuid", "snapshotName",
+                "prevSnapshotUuid", "prevBackupUuid", false, "vmName", 5);
+        bsa = new BackupSnapshotAnswer(bsc, true, "results", "bussname", false);
+    }
 
-	@Test
-	public void testDetails() {
-		String details = bsa.getDetails();
-	    assertTrue(details.equals("results"));
-	}
+    @Test
+    public void testExecuteInSequence() {
+        boolean b = bsa.executeInSequence();
+        assertFalse(b);
+    }
+
+    @Test
+    public void testIsFull() {
+        boolean b = bsa.isFull();
+        assertFalse(b);
+    }
+
+    @Test
+    public void testGetBackupSnapshotName() {
+        String name = bsa.getBackupSnapshotName();
+        assertTrue(name.equals("bussname"));
+    }
+
+    @Test
+    public void testGetResult() {
+        boolean b = bsa.getResult();
+        assertTrue(b);
+    }
+
+    @Test
+    public void testDetails() {
+        String details = bsa.getDetails();
+        assertTrue(details.equals("results"));
+    }
 }

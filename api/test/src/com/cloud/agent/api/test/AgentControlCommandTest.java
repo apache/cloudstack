@@ -16,16 +16,18 @@
 // under the License.
 package src.com.cloud.agent.api.test;
 
-import com.cloud.agent.api.*;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+
 import org.junit.Test;
 
-public class AgentControlCommandTest {
-	AgentControlCommand acc = new AgentControlCommand();
+import com.cloud.agent.api.AgentControlCommand;
 
-	@Test
-	public void testExecuteInSequence() {
-		boolean b = acc.executeInSequence();
-	    assertFalse(b);
-	}
+public class AgentControlCommandTest {
+    AgentControlCommand acc = new AgentControlCommand();
+
+    @Test
+    public void testExecuteInSequence() {
+        boolean b = acc.executeInSequence();
+        assertFalse(b);
+    }
 }

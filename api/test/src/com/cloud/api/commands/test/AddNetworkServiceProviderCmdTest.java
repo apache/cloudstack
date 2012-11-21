@@ -29,90 +29,94 @@ import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
 
 import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.AddNetworkServiceProviderCmd;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.NetworkService;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 
 public class AddNetworkServiceProviderCmdTest extends TestCase {
 
-	private AddNetworkServiceProviderCmd addNetworkServiceProviderCmd;
-	
-	@Rule
-	public ExpectedException expectedException = ExpectedException.none();
+    private AddNetworkServiceProviderCmd addNetworkServiceProviderCmd;
 
-	@Before
-	public void setUp() {
-		addNetworkServiceProviderCmd = new AddNetworkServiceProviderCmd() {
-			
-			@Override
-			 public Long getPhysicalNetworkId() {
-		        return 2L;
-		    }
-			
-			@Override
-			 public String getProviderName() {
-		        return "ProviderName";
-		    }
-			
-			@Override 
-			public Long getDestinationPhysicalNetworkId() {
-			        return 2L;
-			 }
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
-			@Override 
-			public List<String> getEnabledServices() {
-				 List<String> lOfEnabledServices = new ArrayList<String>();
-				 lOfEnabledServices.add("Enabled Services");
-			    return lOfEnabledServices;
-			 }
-			
-			public Long getEntityId() {
-		        return 2L;
-		    }
-			
-		};
-		
-	}
+    @Before
+    public void setUp() {
+        addNetworkServiceProviderCmd = new AddNetworkServiceProviderCmd() {
 
-	@Test
-	public void testCreateProviderToPhysicalNetworkSuccess() {
-		
-		NetworkService networkService = Mockito.mock(NetworkService.class);
-		addNetworkServiceProviderCmd._networkService = networkService;
+            @Override
+            public Long getPhysicalNetworkId() {
+                return 2L;
+            }
 
-		PhysicalNetworkServiceProvider physicalNetworkServiceProvider = Mockito.mock(PhysicalNetworkServiceProvider.class);
-		Mockito.when(networkService.addProviderToPhysicalNetwork(Mockito.anyLong(),
-						Mockito.anyString(), Mockito.anyLong(),
-						Mockito.anyList())).thenReturn(
-				physicalNetworkServiceProvider);
+            @Override
+            public String getProviderName() {
+                return "ProviderName";
+            }
 
-		try {
-			addNetworkServiceProviderCmd.create();
-		} catch (ResourceAllocationException e) {
-			e.printStackTrace();
-		}
-		
-	}
-	
-	
-	@Test
-	public void testCreateProviderToPhysicalNetworkFailure() throws ResourceAllocationException {
-		
-		NetworkService networkService = Mockito.mock(NetworkService.class);
-		addNetworkServiceProviderCmd._networkService = networkService;
+            @Override
+            public Long getDestinationPhysicalNetworkId() {
+                return 2L;
+            }
 
-		Mockito.when(networkService.addProviderToPhysicalNetwork(Mockito.anyLong(),
-						Mockito.anyString(), Mockito.anyLong(),
-						Mockito.anyList())).thenReturn(null);
+            @Override
+            public List<String> getEnabledServices() {
+                List<String> lOfEnabledServices = new ArrayList<String>();
+                lOfEnabledServices.add("Enabled Services");
+                return lOfEnabledServices;
+            }
 
-		try {
-			addNetworkServiceProviderCmd.create();
-		} catch (ServerApiException exception) {
-		  Assert.assertEquals("Failed to add service provider entity to physical network", exception.getDescription());	
-		}
-		
-		
-	}
-	
-	
+            public Long getEntityId() {
+                return 2L;
+            }
+
+        };
+
+    }
+
+    @Test
+    public void testCreateProviderToPhysicalNetworkSuccess() {
+
+        NetworkService networkService = Mockito.mock(NetworkService.class);
+        addNetworkServiceProviderCmd._networkService = networkService;
+
+        PhysicalNetworkServiceProvider physicalNetworkServiceProvider = Mockito
+                .mock(PhysicalNetworkServiceProvider.class);
+        Mockito.when(
+                networkService.addProviderToPhysicalNetwork(Mockito.anyLong(),
+                        Mockito.anyString(), Mockito.anyLong(),
+                        Mockito.anyList())).thenReturn(
+                physicalNetworkServiceProvider);
+
+        try {
+            addNetworkServiceProviderCmd.create();
+        } catch (ResourceAllocationException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    @Test
+    public void testCreateProviderToPhysicalNetworkFailure()
+            throws ResourceAllocationException {
+
+        NetworkService networkService = Mockito.mock(NetworkService.class);
+        addNetworkServiceProviderCmd._networkService = networkService;
+
+        Mockito.when(
+                networkService.addProviderToPhysicalNetwork(Mockito.anyLong(),
+                        Mockito.anyString(), Mockito.anyLong(),
+                        Mockito.anyList())).thenReturn(null);
+
+        try {
+            addNetworkServiceProviderCmd.create();
+        } catch (ServerApiException exception) {
+            Assert.assertEquals(
+                    "Failed to add service provider entity to physical network",
+                    exception.getDescription());
+        }
+
+    }
+
 }

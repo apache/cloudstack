@@ -16,52 +16,58 @@
 // under the License.
 package src.com.cloud.agent.api.test;
 
-import com.cloud.agent.api.*;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import org.junit.Test;
 
+import com.cloud.agent.api.AgentControlCommand;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.UnsupportedAnswer;
+
 public class AnswerTest {
-	AgentControlCommand acc = new AgentControlCommand();
-	Answer a = new Answer(acc, true, "details");
+    AgentControlCommand acc = new AgentControlCommand();
+    Answer a = new Answer(acc, true, "details");
 
-	@Test
-	public void testExecuteInSequence() {
-		boolean b = a.executeInSequence();
-	    assertFalse(b);
-	}
+    @Test
+    public void testExecuteInSequence() {
+        boolean b = a.executeInSequence();
+        assertFalse(b);
+    }
 
-	@Test
-	public void testGetResult() {
-		boolean b = a.getResult();
-	    assertTrue(b);
-	}
+    @Test
+    public void testGetResult() {
+        boolean b = a.getResult();
+        assertTrue(b);
+    }
 
-	@Test
-	public void testGetDetails() {
-		String d = a.getDetails();
-	    assertTrue(d.equals("details"));
-	}
+    @Test
+    public void testGetDetails() {
+        String d = a.getDetails();
+        assertTrue(d.equals("details"));
+    }
 
-	@Test
-	public void testCreateUnsupportedCommandAnswer() {
-		UnsupportedAnswer usa = Answer.createUnsupportedCommandAnswer(acc);
-		boolean b = usa.executeInSequence();
-	    assertFalse(b);
-		
-		b = usa.getResult();
-	    assertFalse(b);
+    @Test
+    public void testCreateUnsupportedCommandAnswer() {
+        UnsupportedAnswer usa = Answer.createUnsupportedCommandAnswer(acc);
+        boolean b = usa.executeInSequence();
+        assertFalse(b);
 
-		String d = usa.getDetails();
-	    assertTrue(d.equals("Unsupported command issued:" + acc.toString() + ".  Are you sure you got the right type of server?"));
+        b = usa.getResult();
+        assertFalse(b);
 
-		usa = Answer.createUnsupportedVersionAnswer(acc);
-		b = usa.executeInSequence();
-	    assertFalse(b);
-		
-		b = usa.getResult();
-	    assertFalse(b);
+        String d = usa.getDetails();
+        assertTrue(d.equals("Unsupported command issued:" + acc.toString()
+                + ".  Are you sure you got the right type of server?"));
 
-		d = usa.getDetails();
-	    assertTrue(d.equals("Unsuppored Version."));
-	}
+        usa = Answer.createUnsupportedVersionAnswer(acc);
+        b = usa.executeInSequence();
+        assertFalse(b);
+
+        b = usa.getResult();
+        assertFalse(b);
+
+        d = usa.getDetails();
+        assertTrue(d.equals("Unsuppored Version."));
+    }
 }

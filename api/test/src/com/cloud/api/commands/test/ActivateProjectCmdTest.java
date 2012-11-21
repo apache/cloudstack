@@ -25,62 +25,63 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
 
-import com.cloud.api.ResponseGenerator;
-import com.cloud.api.response.ProjectResponse;
+import com.cloud.api.commands.ActivateProjectCmd;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectService;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 public class ActivateProjectCmdTest extends TestCase {
-	
-	private ActivateProjectCmd activateProjectCmd;
-	
-	@Rule
-	public ExpectedException expectedException = ExpectedException.none();
-	
-	@Before
-	public void setUp() {
-		
-		activateProjectCmd = new ActivateProjectCmd(){
-			
-			@Override
-			public Long getId() {
-				return 2L;
-			}
-			
-		};
-	}
-	
-	
-	@Test
-	public void testGetEntityOwnerIdForNullProject() {
-		ProjectService projectService = Mockito.mock(ProjectService.class);
-		Mockito.when(projectService.getProject(Mockito.anyLong())).thenReturn(null);
-		activateProjectCmd._projectService = projectService;
-		
-		try {
-			activateProjectCmd.getEntityOwnerId();
-		} catch(InvalidParameterValueException exception) {
-			Assert.assertEquals("Unable to find project by id 2", exception.getLocalizedMessage());
-		}
-	}
-	
-	@Test
-	public void testGetEntityOwnerIdForProject() {
-		Project project = Mockito.mock(Project.class);
-		Mockito.when(project.getId()).thenReturn(2L);
-		ProjectService projectService = Mockito.mock(ProjectService.class);
-		Account account = Mockito.mock(Account.class);
-		Mockito.when(account.getId()).thenReturn(2L);
-		Mockito.when(projectService.getProject(Mockito.anyLong())).thenReturn(project);
-		
-		Mockito.when(projectService.getProjectOwner(Mockito.anyLong())).thenReturn(account);
-		activateProjectCmd._projectService = projectService;
-		
-		Assert.assertEquals(2L, activateProjectCmd.getEntityOwnerId());
-		
-	}
-	
+
+    private ActivateProjectCmd activateProjectCmd;
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
+
+    @Before
+    public void setUp() {
+
+        activateProjectCmd = new ActivateProjectCmd() {
+
+            @Override
+            public Long getId() {
+                return 2L;
+            }
+
+        };
+    }
+
+    @Test
+    public void testGetEntityOwnerIdForNullProject() {
+        ProjectService projectService = Mockito.mock(ProjectService.class);
+        Mockito.when(projectService.getProject(Mockito.anyLong())).thenReturn(
+                null);
+        activateProjectCmd._projectService = projectService;
+
+        try {
+            activateProjectCmd.getEntityOwnerId();
+        } catch (InvalidParameterValueException exception) {
+            Assert.assertEquals("Unable to find project by id 2",
+                    exception.getLocalizedMessage());
+        }
+    }
+
+    @Test
+    public void testGetEntityOwnerIdForProject() {
+        Project project = Mockito.mock(Project.class);
+        Mockito.when(project.getId()).thenReturn(2L);
+        ProjectService projectService = Mockito.mock(ProjectService.class);
+        Account account = Mockito.mock(Account.class);
+        Mockito.when(account.getId()).thenReturn(2L);
+        Mockito.when(projectService.getProject(Mockito.anyLong())).thenReturn(
+                project);
+
+        Mockito.when(projectService.getProjectOwner(Mockito.anyLong()))
+                .thenReturn(account);
+        activateProjectCmd._projectService = projectService;
+
+        Assert.assertEquals(2L, activateProjectCmd.getEntityOwnerId());
+
+    }
+
 }

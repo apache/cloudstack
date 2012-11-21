@@ -27,7 +27,7 @@ import org.mockito.Mockito;
 
 import com.cloud.api.ResponseGenerator;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.response.ClusterResponse;
+import com.cloud.api.commands.AddClusterCmd;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.org.Cluster;
@@ -36,88 +36,85 @@ import com.cloud.resource.ResourceService;
 import edu.emory.mathcs.backport.java.util.Arrays;
 
 public class AddClusterCmdTest extends TestCase {
-	
-	private AddClusterCmd addClusterCmd;
-	private ResourceService resourceService;
-	private ResponseGenerator responseGenerator;
 
-	
-	@Rule
-	public ExpectedException expectedException = ExpectedException.none();
+    private AddClusterCmd addClusterCmd;
+    private ResourceService resourceService;
+    private ResponseGenerator responseGenerator;
 
-	@Before
-	public void setUp() {
-/*		resourceService = Mockito.mock(ResourceService.class);
-		responseGenerator = Mockito.mock(ResponseGenerator.class);
-*/		addClusterCmd = new AddClusterCmd(){
-		};
-	}
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
-	
-	
-	@Test
-	public void testExecuteForNullResult() {
+    @Before
+    public void setUp() {
+        /*
+         * resourceService = Mockito.mock(ResourceService.class);
+         * responseGenerator = Mockito.mock(ResponseGenerator.class);
+         */addClusterCmd = new AddClusterCmd() {
+        };
+    }
 
-		ResourceService resourceService = Mockito.mock(ResourceService.class);
-		
-		try {
-			Mockito.when(resourceService.discoverCluster(addClusterCmd)).thenReturn(null);
-		} catch (ResourceInUseException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IllegalArgumentException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (DiscoveryException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		addClusterCmd._resourceService = resourceService;
-		
-		try { 
-			addClusterCmd.execute();
-		} catch (ServerApiException exception) {
-			Assert.assertEquals("Failed to add cluster", exception.getDescription());
-		}
-		
-	}
-	
-	
-	@Test
-	public void testExecuteForEmptyResult() {
+    @Test
+    public void testExecuteForNullResult() {
 
-		ResourceService resourceService = Mockito.mock(ResourceService.class);
-		addClusterCmd._resourceService = resourceService;
-    	
-		try {
-		    addClusterCmd.execute();
-		} catch (ServerApiException exception) {
-			Assert.assertEquals("Failed to add cluster", exception.getDescription());
-		}
-		
-	}
-	
+        ResourceService resourceService = Mockito.mock(ResourceService.class);
 
-	@Test
-	public void testExecuteForResult() throws Exception {
-		
-		resourceService = Mockito.mock(ResourceService.class);
-		responseGenerator = Mockito.mock(ResponseGenerator.class);
+        try {
+            Mockito.when(resourceService.discoverCluster(addClusterCmd))
+                    .thenReturn(null);
+        } catch (ResourceInUseException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IllegalArgumentException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (DiscoveryException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
 
-		addClusterCmd._resourceService = resourceService;
-		addClusterCmd._responseGenerator = responseGenerator;
-		
-		Cluster cluster = Mockito.mock(Cluster.class);
-		Cluster[] clusterArray = new Cluster[]{cluster};
-		
-		Mockito.when(resourceService.discoverCluster(addClusterCmd)).thenReturn(Arrays.asList(clusterArray));
-		
-		addClusterCmd.execute();
-		
-		
-	}
-		
+        addClusterCmd._resourceService = resourceService;
+
+        try {
+            addClusterCmd.execute();
+        } catch (ServerApiException exception) {
+            Assert.assertEquals("Failed to add cluster",
+                    exception.getDescription());
+        }
+
+    }
+
+    @Test
+    public void testExecuteForEmptyResult() {
+
+        ResourceService resourceService = Mockito.mock(ResourceService.class);
+        addClusterCmd._resourceService = resourceService;
+
+        try {
+            addClusterCmd.execute();
+        } catch (ServerApiException exception) {
+            Assert.assertEquals("Failed to add cluster",
+                    exception.getDescription());
+        }
+
+    }
+
+    @Test
+    public void testExecuteForResult() throws Exception {
+
+        resourceService = Mockito.mock(ResourceService.class);
+        responseGenerator = Mockito.mock(ResponseGenerator.class);
+
+        addClusterCmd._resourceService = resourceService;
+        addClusterCmd._responseGenerator = responseGenerator;
+
+        Cluster cluster = Mockito.mock(Cluster.class);
+        Cluster[] clusterArray = new Cluster[] { cluster };
+
+        Mockito.when(resourceService.discoverCluster(addClusterCmd))
+                .thenReturn(Arrays.asList(clusterArray));
+
+        addClusterCmd.execute();
+
+    }
+
 }
-
- 

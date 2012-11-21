@@ -16,11 +16,6 @@
 // under the License.
 package src.com.cloud.api.commands.test;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
-
 import junit.framework.Assert;
 import junit.framework.TestCase;
 
@@ -32,138 +27,139 @@ import org.mockito.Mockito;
 
 import com.cloud.api.ResponseGenerator;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.AddHostCmd;
 import com.cloud.api.response.HostResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
-import com.cloud.host.Status;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceService;
-import com.cloud.resource.ResourceState;
 
 import edu.emory.mathcs.backport.java.util.Arrays;
 
 public class AddHostCmdTest extends TestCase {
-	
-	private AddHostCmd addHostCmd;
-	private ResourceService resourceService;
-	private ResponseGenerator responseGenerator;
 
-	@Rule
-	public ExpectedException expectedException = ExpectedException.none();
+    private AddHostCmd addHostCmd;
+    private ResourceService resourceService;
+    private ResponseGenerator responseGenerator;
 
-	@Before
-	public void setUp() {
-		resourceService = Mockito.mock(ResourceService.class);
-		responseGenerator = Mockito.mock(ResponseGenerator.class);
-		addHostCmd = new AddHostCmd(){
-		};
-	}
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
-	@Test
-	public void testExecuteForEmptyResult() {
-		addHostCmd._resourceService = resourceService;
-		
-		try {
-		    addHostCmd.execute();
-		} catch(ServerApiException exception) {
-			Assert.assertEquals("Failed to add host", exception.getDescription());
-		}
-		
-	}
-	
-	
-	@Test
-	public void testExecuteForNullResult() {
+    @Before
+    public void setUp() {
+        resourceService = Mockito.mock(ResourceService.class);
+        responseGenerator = Mockito.mock(ResponseGenerator.class);
+        addHostCmd = new AddHostCmd() {
+        };
+    }
 
-		ResourceService resourceService = Mockito.mock(ResourceService.class);
-		addHostCmd._resourceService = resourceService;
-		
-		try {
-			Mockito.when(resourceService.discoverHosts(addHostCmd)).thenReturn(null);
-		} catch (InvalidParameterValueException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IllegalArgumentException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (DiscoveryException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		try {
-		    addHostCmd.execute();
-		} catch(ServerApiException exception) {
-			Assert.assertEquals("Failed to add host", exception.getDescription());
-		}
-		
-	}
-	
-	
-/*	@Test
-	public void testExecuteForResult() throws Exception {
-		
-		addHostCmd._resourceService = resourceService;
-		addHostCmd._responseGenerator = responseGenerator;
-		MockHost mockInstance = new MockHost();
-		MockHost[] mockArray = new MockHost[]{mockInstance};
-		HostResponse responseHost = new HostResponse();
-		responseHost.setName("Test");
-		Mockito.when(resourceService.discoverHosts(addHostCmd)).thenReturn(Arrays.asList(mockArray));
-		Mockito.when(responseGenerator.createHostResponse(mockInstance)).thenReturn(responseHost);
-		addHostCmd.execute();
-		Mockito.verify(responseGenerator).createHostResponse(mockInstance);
-		ListResponse<HostResponse> actualResponse = ((ListResponse<HostResponse>)addHostCmd.getResponseObject());
-		Assert.assertEquals(responseHost, actualResponse.getResponses().get(0));
-		Assert.assertEquals("addhostresponse", actualResponse.getResponseName());
-	}
-*/	
-	@Test
-	public void testExecuteForResult() throws Exception {
+    @Test
+    public void testExecuteForEmptyResult() {
+        addHostCmd._resourceService = resourceService;
 
-		addHostCmd._resourceService = resourceService;
-		addHostCmd._responseGenerator = responseGenerator;
+        try {
+            addHostCmd.execute();
+        } catch (ServerApiException exception) {
+            Assert.assertEquals("Failed to add host",
+                    exception.getDescription());
+        }
+
+    }
+
+    @Test
+    public void testExecuteForNullResult() {
+
+        ResourceService resourceService = Mockito.mock(ResourceService.class);
+        addHostCmd._resourceService = resourceService;
+
+        try {
+            Mockito.when(resourceService.discoverHosts(addHostCmd)).thenReturn(
+                    null);
+        } catch (InvalidParameterValueException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IllegalArgumentException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (DiscoveryException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
+        try {
+            addHostCmd.execute();
+        } catch (ServerApiException exception) {
+            Assert.assertEquals("Failed to add host",
+                    exception.getDescription());
+        }
+
+    }
+
+    /*
+     * @Test public void testExecuteForResult() throws Exception {
+     * 
+     * addHostCmd._resourceService = resourceService;
+     * addHostCmd._responseGenerator = responseGenerator; MockHost mockInstance
+     * = new MockHost(); MockHost[] mockArray = new MockHost[]{mockInstance};
+     * HostResponse responseHost = new HostResponse();
+     * responseHost.setName("Test");
+     * Mockito.when(resourceService.discoverHosts(addHostCmd
+     * )).thenReturn(Arrays.asList(mockArray));
+     * Mockito.when(responseGenerator.createHostResponse
+     * (mockInstance)).thenReturn(responseHost); addHostCmd.execute();
+     * Mockito.verify(responseGenerator).createHostResponse(mockInstance);
+     * ListResponse<HostResponse> actualResponse =
+     * ((ListResponse<HostResponse>)addHostCmd.getResponseObject());
+     * Assert.assertEquals(responseHost, actualResponse.getResponses().get(0));
+     * Assert.assertEquals("addhostresponse", actualResponse.getResponseName());
+     * }
+     */
+    @Test
+    public void testExecuteForResult() throws Exception {
+
+        addHostCmd._resourceService = resourceService;
+        addHostCmd._responseGenerator = responseGenerator;
         Host host = Mockito.mock(Host.class);
-		Host[] mockArray = new Host[]{host};
+        Host[] mockArray = new Host[] { host };
 
-		HostResponse responseHost = new HostResponse();
-		responseHost.setName("Test");
-		Mockito.when(resourceService.discoverHosts(addHostCmd)).thenReturn(Arrays.asList(mockArray));
-		Mockito.when(responseGenerator.createHostResponse(host)).thenReturn(responseHost);
-		addHostCmd.execute();
-		Mockito.verify(responseGenerator).createHostResponse(host);
-		ListResponse<HostResponse> actualResponse = ((ListResponse<HostResponse>)addHostCmd.getResponseObject());
-		Assert.assertEquals(responseHost, actualResponse.getResponses().get(0));
-		Assert.assertEquals("addhostresponse", actualResponse.getResponseName());
+        HostResponse responseHost = new HostResponse();
+        responseHost.setName("Test");
+        Mockito.when(resourceService.discoverHosts(addHostCmd)).thenReturn(
+                Arrays.asList(mockArray));
+        Mockito.when(responseGenerator.createHostResponse(host)).thenReturn(
+                responseHost);
+        addHostCmd.execute();
+        Mockito.verify(responseGenerator).createHostResponse(host);
+        ListResponse<HostResponse> actualResponse = ((ListResponse<HostResponse>) addHostCmd
+                .getResponseObject());
+        Assert.assertEquals(responseHost, actualResponse.getResponses().get(0));
+        Assert.assertEquals("addhostresponse", actualResponse.getResponseName());
 
-	}
-	
-	
-	@Test
-	public void testExecuteForDiscoveryException() {
-		
-		addHostCmd._resourceService = resourceService;
-	
-		try {
-			Mockito.when(resourceService.discoverHosts(addHostCmd)).thenThrow(DiscoveryException.class);
-		} catch (InvalidParameterValueException e) {
-			e.printStackTrace();
-		} catch (IllegalArgumentException e) {
-			e.printStackTrace();
-		} catch (DiscoveryException e) {
-			e.printStackTrace();
-		}
-		
-		try {
-     		addHostCmd.execute();
-		} catch(ServerApiException exception) {
-			Assert.assertNull(exception.getDescription());
-		}
-		
-	}
-	
-	
+    }
+
+    @Test
+    public void testExecuteForDiscoveryException() {
+
+        addHostCmd._resourceService = resourceService;
+
+        try {
+            Mockito.when(resourceService.discoverHosts(addHostCmd)).thenThrow(
+                    DiscoveryException.class);
+        } catch (InvalidParameterValueException e) {
+            e.printStackTrace();
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+        } catch (DiscoveryException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            addHostCmd.execute();
+        } catch (ServerApiException exception) {
+            Assert.assertNull(exception.getDescription());
+        }
+
+    }
 
 }

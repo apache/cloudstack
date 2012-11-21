@@ -16,83 +16,92 @@
 // under the License.
 package src.com.cloud.agent.api.test;
 
-import com.cloud.agent.api.*;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import org.junit.Before;
 import org.junit.Test;
 
+import com.cloud.agent.api.SnapshotCommand;
+
 public class SnapshotCommandTest {
-	SnapshotCommand ssc = new SnapshotCommand("primaryStoragePoolNameLabel",
-                                           "http://secondary.Storage.Url",
-                                           "420fa39c-4ef1-a83c-fd93-46dc1ff515ae",
-                                           "snapshotName",
-                                           101L,
-                                           102L,
-                                           103L);
-	
-	SnapshotCommand ssc1 = new SnapshotCommand();
+    SnapshotCommand ssc = new SnapshotCommand("primaryStoragePoolNameLabel",
+            "http://secondary.Storage.Url",
+            "420fa39c-4ef1-a83c-fd93-46dc1ff515ae", "snapshotName", 101L, 102L,
+            103L);
 
-	@Test
-	public void testGetPrimaryStoragePoolNameLabel() {
-		String label = ssc.getPrimaryStoragePoolNameLabel();
-		assertTrue(label.equals("primaryStoragePoolNameLabel"));
-	}
+    SnapshotCommand ssc1;
 
-	@Test
-	public void testGetSecondaryStorageUrl() {
-		String url = ssc.getSecondaryStorageUrl();
-		assertTrue(url.equals("http://secondary.Storage.Url"));
-	}
+    @Before
+    public void setUp() {
+        ssc1 = new SnapshotCommand("primaryStoragePoolNameLabel",
+                "secondaryStorageUrl", "snapshotUuid", "snapshotName", 101L,
+                102L, 103L);
+    }
 
-	@Test
-	public void testGetSnapshotUuid() {
-		String uuid = ssc.getSnapshotUuid();
-	    assertTrue(uuid.equals("420fa39c-4ef1-a83c-fd93-46dc1ff515ae"));
-	}
+    @Test
+    public void testGetPrimaryStoragePoolNameLabel() {
+        String label = ssc.getPrimaryStoragePoolNameLabel();
+        assertTrue(label.equals("primaryStoragePoolNameLabel"));
+    }
 
-	@Test
-	public void testGetSnapshotName() {
-		String name = ssc.getSnapshotName();
-	    assertTrue(name.equals("snapshotName"));
-	}
+    @Test
+    public void testGetSecondaryStorageUrl() {
+        String url = ssc.getSecondaryStorageUrl();
+        assertTrue(url.equals("http://secondary.Storage.Url"));
+    }
 
-	@Test
-	public void testGetVolumePath() {
-		ssc.setVolumePath("vPath");
-		String path = ssc.getVolumePath();
-	    assertTrue(path.equals("vPath"));
-	    
-		ssc1.setVolumePath("vPath1");
-		path = ssc1.getVolumePath();
-	    assertTrue(path.equals("vPath1"));
-	}
+    @Test
+    public void testGetSnapshotUuid() {
+        String uuid = ssc.getSnapshotUuid();
+        assertTrue(uuid.equals("420fa39c-4ef1-a83c-fd93-46dc1ff515ae"));
+    }
 
-	@Test
-	public void testExecuteInSequence() {
-		boolean b = ssc.executeInSequence();
-		assertFalse(b);
+    @Test
+    public void testGetSnapshotName() {
+        String name = ssc.getSnapshotName();
+        assertTrue(name.equals("snapshotName"));
+    }
 
-		b = ssc1.executeInSequence();
-		assertFalse(b);
-	}
+    @Test
+    public void testGetVolumePath() {
+        ssc.setVolumePath("vPath");
+        String path = ssc.getVolumePath();
+        assertTrue(path.equals("vPath"));
 
-	@Test
-	public void testGetDataCenterId() {
-		Long dcId = ssc.getDataCenterId();
-		Long expected = 101L;
-		assertEquals(expected, dcId);
-	}
+        ssc1.setVolumePath("vPath1");
+        path = ssc1.getVolumePath();
+        assertTrue(path.equals("vPath1"));
+    }
 
-	@Test
-	public void testGetAccountId() {
-		Long aId = ssc.getAccountId();
-		Long expected = 102L;
-		assertEquals(expected, aId);
-	}
+    @Test
+    public void testExecuteInSequence() {
+        boolean b = ssc.executeInSequence();
+        assertFalse(b);
 
-	@Test
-	public void testGetVolumeId() {
-		Long vId = ssc.getVolumeId();
-		Long expected = 103L;
-		assertEquals(expected, vId);
-	}
+        b = ssc1.executeInSequence();
+        assertFalse(b);
+    }
+
+    @Test
+    public void testGetDataCenterId() {
+        Long dcId = ssc.getDataCenterId();
+        Long expected = 101L;
+        assertEquals(expected, dcId);
+    }
+
+    @Test
+    public void testGetAccountId() {
+        Long aId = ssc.getAccountId();
+        Long expected = 102L;
+        assertEquals(expected, aId);
+    }
+
+    @Test
+    public void testGetVolumeId() {
+        Long vId = ssc.getVolumeId();
+        Long expected = 103L;
+        assertEquals(expected, vId);
+    }
 }

@@ -16,6 +16,9 @@
 // under the License.
 package src.com.cloud.api.commands.test;
 
+import junit.framework.Assert;
+import junit.framework.TestCase;
+
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -24,69 +27,71 @@ import org.mockito.Mockito;
 
 import com.cloud.api.ResponseGenerator;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.AddSwiftCmd;
 import com.cloud.api.response.SwiftResponse;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.resource.ResourceService;
 import com.cloud.storage.Swift;
 
-import junit.framework.Assert;
-import junit.framework.TestCase;
-
 public class AddSwiftCmdTest extends TestCase {
 
-	private AddSwiftCmd addSwiftCmd;
-	
-	@Rule
-	public ExpectedException expectedException = ExpectedException.none();
+    private AddSwiftCmd addSwiftCmd;
 
-	@Before
-	public void setUp() {
-		addSwiftCmd = new AddSwiftCmd();
-	}
-	
-	@Test
-	public void testExecuteSuccess() {
-		
-		ResourceService resourceService = Mockito.mock(ResourceService.class);
-		addSwiftCmd._resourceService = resourceService;
-		
-		Swift swift = Mockito.mock(Swift.class);
-		
-		try {
-			Mockito.when(resourceService.discoverSwift(addSwiftCmd)).thenReturn(swift);
-		} catch (DiscoveryException e) {
-			e.printStackTrace();
-		}
-		
-		ResponseGenerator responseGenerator = Mockito.mock(ResponseGenerator.class);
-		addSwiftCmd._responseGenerator = responseGenerator;
-		
-		SwiftResponse swiftResponse = Mockito.mock(SwiftResponse.class);
-		
-		Mockito.when(responseGenerator.createSwiftResponse(swift)).thenReturn(swiftResponse);
-		
-		addSwiftCmd.execute();
-		
-	}
-	
-	
-	@Test
-	public void testExecuteFailure() {
-	
-		ResourceService resourceService = Mockito.mock(ResourceService.class);
-		addSwiftCmd._resourceService = resourceService;
-		try {
-			Mockito.when(resourceService.discoverSwift(addSwiftCmd)).thenReturn(null);
-		} catch (DiscoveryException e) {
-			e.printStackTrace();
-		}
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
-		try {
- 		   addSwiftCmd.execute();
-		} catch(ServerApiException exception) {
-			Assert.assertEquals("Failed to add Swift", exception.getDescription());
-		}
-		
-	}
-	
+    @Before
+    public void setUp() {
+        addSwiftCmd = new AddSwiftCmd();
+    }
+
+    @Test
+    public void testExecuteSuccess() {
+
+        ResourceService resourceService = Mockito.mock(ResourceService.class);
+        addSwiftCmd._resourceService = resourceService;
+
+        Swift swift = Mockito.mock(Swift.class);
+
+        try {
+            Mockito.when(resourceService.discoverSwift(addSwiftCmd))
+                    .thenReturn(swift);
+        } catch (DiscoveryException e) {
+            e.printStackTrace();
+        }
+
+        ResponseGenerator responseGenerator = Mockito
+                .mock(ResponseGenerator.class);
+        addSwiftCmd._responseGenerator = responseGenerator;
+
+        SwiftResponse swiftResponse = Mockito.mock(SwiftResponse.class);
+
+        Mockito.when(responseGenerator.createSwiftResponse(swift)).thenReturn(
+                swiftResponse);
+
+        addSwiftCmd.execute();
+
+    }
+
+    @Test
+    public void testExecuteFailure() {
+
+        ResourceService resourceService = Mockito.mock(ResourceService.class);
+        addSwiftCmd._resourceService = resourceService;
+        try {
+            Mockito.when(resourceService.discoverSwift(addSwiftCmd))
+                    .thenReturn(null);
+        } catch (DiscoveryException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            addSwiftCmd.execute();
+        } catch (ServerApiException exception) {
+            Assert.assertEquals("Failed to add Swift",
+                    exception.getDescription());
+        }
+
+    }
+
 }

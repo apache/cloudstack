@@ -16,36 +16,47 @@
 // under the License.
 package src.com.cloud.agent.api.test;
 
-import com.cloud.agent.api.*;
-import com.cloud.host.Status.Event;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
+
+import com.cloud.agent.api.CheckNetworkAnswer;
+import com.cloud.agent.api.CheckNetworkCommand;
 
 public class CheckNetworkAnswerTest {
-	CheckNetworkCommand cnc = new CheckNetworkCommand();
-	CheckNetworkAnswer cna = new CheckNetworkAnswer(cnc, true, "details", true);
-	
-	@Test
-	public void testGetResult() {
-		boolean b = cna.getResult();
-	    assertTrue(b);
-	}
+    CheckNetworkCommand cnc;
+    CheckNetworkAnswer cna;
 
-	@Test
-	public void testGetDetails() {
-		String d = cna.getDetails();
-	    assertTrue(d.equals("details"));
-	}
+    @Before
+    public void setUp() {
+        cnc = Mockito.mock(CheckNetworkCommand.class);
+        cna = new CheckNetworkAnswer(cnc, true, "details", true);
+    }
 
-	@Test
-	public void testNeedReconnect() {
-		boolean b = cna.needReconnect();
-	    assertTrue(b);
-	}
+    @Test
+    public void testGetResult() {
+        boolean b = cna.getResult();
+        assertTrue(b);
+    }
 
-	@Test
-	public void testExecuteInSequence() {
-		boolean b = cna.executeInSequence();
-		assertFalse(b);
-	}
+    @Test
+    public void testGetDetails() {
+        String d = cna.getDetails();
+        assertTrue(d.equals("details"));
+    }
+
+    @Test
+    public void testNeedReconnect() {
+        boolean b = cna.needReconnect();
+        assertTrue(b);
+    }
+
+    @Test
+    public void testExecuteInSequence() {
+        boolean b = cna.executeInSequence();
+        assertFalse(b);
+    }
 }

@@ -16,29 +16,35 @@
 // under the License.
 package src.com.cloud.agent.api.test;
 
-import com.cloud.agent.api.*;
-import com.cloud.host.Status.Event;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import org.junit.Test;
 
+import com.cloud.agent.api.ChangeAgentCommand;
+import com.cloud.host.Status.Event;
+
 public class ChangeAgentCommandTest {
-	ChangeAgentCommand cac = new ChangeAgentCommand(123456789L, Event.AgentConnected);
-	
-	@Test
-	public void testGetAgentId() {
-		Long aid = cac.getAgentId();
-		assertTrue(123456789L == aid);
-	}
-	
-	@Test
-	public void testGetEvent() {
-		Event e = cac.getEvent();
-		assertEquals(Event.AgentConnected, e);
-	}
-	
-	@Test
-	public void testExecuteInSequence() {
-		boolean b = cac.executeInSequence();
-		assertFalse(b);
-	}
+
+    ChangeAgentCommand cac = new ChangeAgentCommand(123456789L,
+            Event.AgentConnected);
+
+    @Test
+    public void testGetAgentId() {
+        Long aid = cac.getAgentId();
+        assertTrue(123456789L == aid);
+    }
+
+    @Test
+    public void testGetEvent() {
+        Event e = cac.getEvent();
+        assertEquals(Event.AgentConnected, e);
+    }
+
+    @Test
+    public void testExecuteInSequence() {
+        boolean b = cac.executeInSequence();
+        assertFalse(b);
+    }
 }

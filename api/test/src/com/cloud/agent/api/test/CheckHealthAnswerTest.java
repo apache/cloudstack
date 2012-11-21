@@ -16,30 +16,34 @@
 // under the License.
 package src.com.cloud.agent.api.test;
 
-import com.cloud.agent.api.*;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import org.junit.Test;
 
+import com.cloud.agent.api.CheckHealthAnswer;
+import com.cloud.agent.api.CheckHealthCommand;
+
 public class CheckHealthAnswerTest {
-	CheckHealthCommand chc = new CheckHealthCommand();
-	CheckHealthAnswer cha = new CheckHealthAnswer(chc, true);
-	
-	@Test
-	public void testGetResult() {
-		boolean r = cha.getResult();
-	    assertTrue(r);
-	}
+    CheckHealthCommand chc = new CheckHealthCommand();
+    CheckHealthAnswer cha = new CheckHealthAnswer(chc, true);
 
-	@Test
-	public void testGetDetails() {
-		String d = cha.getDetails();
-		boolean r = cha.getResult();
-	    assertTrue(d.equals("resource is " + (r? "alive" : "not alive")));
-	}
+    @Test
+    public void testGetResult() {
+        boolean r = cha.getResult();
+        assertTrue(r);
+    }
 
-	@Test
-	public void testExecuteInSequence() {
-		boolean b = cha.executeInSequence();
-		assertFalse(b);
-	}
+    @Test
+    public void testGetDetails() {
+        String d = cha.getDetails();
+        boolean r = cha.getResult();
+        assertTrue(d.equals("resource is " + (r ? "alive" : "not alive")));
+    }
+
+    @Test
+    public void testExecuteInSequence() {
+        boolean b = cha.executeInSequence();
+        assertFalse(b);
+    }
 }

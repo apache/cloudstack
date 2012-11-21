@@ -27,10 +27,8 @@ import org.mockito.Mockito;
 
 import com.cloud.api.ResponseGenerator;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.AddSecondaryStorageCmd;
 import com.cloud.api.response.HostResponse;
-import com.cloud.api.response.ListResponse;
-import com.cloud.exception.DiscoveryException;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.resource.ResourceService;
 
@@ -38,83 +36,89 @@ import edu.emory.mathcs.backport.java.util.Arrays;
 
 public class AddSecondaryStorageCmdTest extends TestCase {
 
-	private AddSecondaryStorageCmd addSecondaryStorageCmd;
-	
-	@Rule
-	public ExpectedException expectedException = ExpectedException.none();
+    private AddSecondaryStorageCmd addSecondaryStorageCmd;
 
-	@Before
-	public void setUp() {
-		addSecondaryStorageCmd = new AddSecondaryStorageCmd() {
-		};
-		
-	}
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
-	
-	@Test
-	public void testExecuteForResult() throws Exception {
-		
-		ResourceService resourceService = Mockito.mock(ResourceService.class);
-		addSecondaryStorageCmd._resourceService = resourceService;
-		
-		Host host = Mockito.mock(Host.class);
-		Host[] mockHosts = new Host[] {host};
-		
-		Mockito.when(resourceService.discoverHosts(addSecondaryStorageCmd)).thenReturn(Arrays.asList(mockHosts));
-		
-		ResponseGenerator responseGenerator = Mockito.mock(ResponseGenerator.class);
-		addSecondaryStorageCmd._responseGenerator = responseGenerator;
-		
-		HostResponse responseHost = new HostResponse();
-		responseHost.setName("Test");
+    @Before
+    public void setUp() {
+        addSecondaryStorageCmd = new AddSecondaryStorageCmd() {
+        };
 
-		Mockito.when(responseGenerator.createHostResponse(host)).thenReturn(responseHost);
-		
-		addSecondaryStorageCmd.execute();
+    }
 
-		Mockito.verify(responseGenerator).createHostResponse(host);
-		
-		HostResponse actualResponse = (HostResponse)addSecondaryStorageCmd.getResponseObject();
-		
-		Assert.assertEquals(responseHost, actualResponse);
-		Assert.assertEquals("addsecondarystorageresponse", actualResponse.getResponseName());
+    @Test
+    public void testExecuteForResult() throws Exception {
 
-		
-	}
-	
-	@Test
-	public void testExecuteForEmptyResult() throws Exception {
-		
-		ResourceService resourceService = Mockito.mock(ResourceService.class);
-		addSecondaryStorageCmd._resourceService = resourceService;
-		
-		Host[] mockHosts = new Host[] {};
-		
-		Mockito.when(resourceService.discoverHosts(addSecondaryStorageCmd)).thenReturn(Arrays.asList(mockHosts));
-	
-		try {
-		   addSecondaryStorageCmd.execute();
-		} catch(ServerApiException exception) {
-			Assert.assertEquals("Failed to add secondary storage", exception.getDescription());
-		}
-		
-	}
-	
-	@Test
-	public void testExecuteForNullResult() throws Exception {
+        ResourceService resourceService = Mockito.mock(ResourceService.class);
+        addSecondaryStorageCmd._resourceService = resourceService;
 
-		ResourceService resourceService = Mockito.mock(ResourceService.class);
-		addSecondaryStorageCmd._resourceService = resourceService;
+        Host host = Mockito.mock(Host.class);
+        Host[] mockHosts = new Host[] { host };
 
-		Mockito.when(resourceService.discoverHosts(addSecondaryStorageCmd)).thenReturn(null);
+        Mockito.when(resourceService.discoverHosts(addSecondaryStorageCmd))
+                .thenReturn(Arrays.asList(mockHosts));
 
-		try {
-			   addSecondaryStorageCmd.execute();
-			} catch(ServerApiException exception) {
-				Assert.assertEquals("Failed to add secondary storage", exception.getDescription());
-			}
-		
-		
-	}
-	
+        ResponseGenerator responseGenerator = Mockito
+                .mock(ResponseGenerator.class);
+        addSecondaryStorageCmd._responseGenerator = responseGenerator;
+
+        HostResponse responseHost = new HostResponse();
+        responseHost.setName("Test");
+
+        Mockito.when(responseGenerator.createHostResponse(host)).thenReturn(
+                responseHost);
+
+        addSecondaryStorageCmd.execute();
+
+        Mockito.verify(responseGenerator).createHostResponse(host);
+
+        HostResponse actualResponse = (HostResponse) addSecondaryStorageCmd
+                .getResponseObject();
+
+        Assert.assertEquals(responseHost, actualResponse);
+        Assert.assertEquals("addsecondarystorageresponse",
+                actualResponse.getResponseName());
+
+    }
+
+    @Test
+    public void testExecuteForEmptyResult() throws Exception {
+
+        ResourceService resourceService = Mockito.mock(ResourceService.class);
+        addSecondaryStorageCmd._resourceService = resourceService;
+
+        Host[] mockHosts = new Host[] {};
+
+        Mockito.when(resourceService.discoverHosts(addSecondaryStorageCmd))
+                .thenReturn(Arrays.asList(mockHosts));
+
+        try {
+            addSecondaryStorageCmd.execute();
+        } catch (ServerApiException exception) {
+            Assert.assertEquals("Failed to add secondary storage",
+                    exception.getDescription());
+        }
+
+    }
+
+    @Test
+    public void testExecuteForNullResult() throws Exception {
+
+        ResourceService resourceService = Mockito.mock(ResourceService.class);
+        addSecondaryStorageCmd._resourceService = resourceService;
+
+        Mockito.when(resourceService.discoverHosts(addSecondaryStorageCmd))
+                .thenReturn(null);
+
+        try {
+            addSecondaryStorageCmd.execute();
+        } catch (ServerApiException exception) {
+            Assert.assertEquals("Failed to add secondary storage",
+                    exception.getDescription());
+        }
+
+    }
+
 }
