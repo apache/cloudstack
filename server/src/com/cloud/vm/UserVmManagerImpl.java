@@ -1763,7 +1763,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         Boolean ha = cmd.getHaEnable();
         Long id = cmd.getId();
         Long osTypeId = cmd.getOsTypeId();
-        String userData = cmd.getUserData().replace("\\n", "");
+        String userData = cmd.getUserData();
 
         // Input validation
         UserVmVO vmInstance = null;
@@ -1802,6 +1802,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         boolean updateUserdata = false;
         if (userData != null) {
+            // check and replace newlines
+            userData = userData.replace("\\n", "");
             validateUserData(userData);
             // update userData on domain router.
             updateUserdata = true;
