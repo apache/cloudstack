@@ -18,16 +18,21 @@
  */
 package org.apache.cloudstack.storage.image.provider;
 
+import java.util.Map;
+
 import javax.inject.Inject;
 
 import org.apache.cloudstack.storage.image.db.ImageDataStoreDao;
 import org.apache.cloudstack.storage.image.db.ImageDataStoreProviderDao;
+import org.apache.cloudstack.storage.image.db.ImageDataStoreProviderVO;
 import org.apache.cloudstack.storage.image.db.ImageDataStoreVO;
 import org.apache.cloudstack.storage.image.driver.ImageDataStoreDriver;
 import org.apache.cloudstack.storage.image.driver.ImageDataStoreDriverImpl;
 import org.apache.cloudstack.storage.image.store.ImageDataStore;
 import org.apache.cloudstack.storage.image.store.ImageDataStoreImpl;
 import org.springframework.stereotype.Component;
+
+import com.cloud.utils.component.ComponentInject;
 
 @Component
 public class DefaultImageDataStoreProvider implements ImageDataStoreProvider {
@@ -36,12 +41,14 @@ public class DefaultImageDataStoreProvider implements ImageDataStoreProvider {
     ImageDataStoreProviderDao providerDao;
     @Inject
     ImageDataStoreDao imageStoreDao;
+    ImageDataStoreProviderVO provider;
 
     @Override
     public ImageDataStore getImageDataStore(long imageStoreId) {
         ImageDataStoreVO idsv = imageStoreDao.findById(imageStoreId);
         ImageDataStoreDriver driver = new ImageDataStoreDriverImpl();
         ImageDataStore ids = new ImageDataStoreImpl(idsv, driver, false, null);
+        ids = ComponentInject.inject(ids);
         return ids;
     }
 
@@ -52,8 +59,24 @@ public class DefaultImageDataStoreProvider implements ImageDataStoreProvider {
 
     @Override
     public boolean register(long providerId) {
-        // TODO Auto-generated method stub
         return true;
     }
 
+    @Override
+    public boolean init() {
+        provider = providerDao.findByName(providerName);
+        return true;
+    }
+
+    @Override
+    public ImageDataStore registerDataStore(String name, Map<String, String> params) {
+        ImageDataStoreVO dataStore = imageStoreDao.findByName(name);
+        if (dataStore == null) {
+            dataStore = new ImageDataStoreVO();
+            dataStore.setName(name);
+            dataStore.setProvider(provider.getId());
+            dataStore = imageStoreDao.persist(dataStore);
+        }
+        return getImageDataStore(dataStore.getId());
+    }
 }

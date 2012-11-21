@@ -25,19 +25,19 @@ import org.apache.cloudstack.storage.datastore.DataStoreStatus;
 
 import com.cloud.utils.db.GenericDao;
 
-public interface PrimaryDataStoreDao extends GenericDao<DataStoreVO, Long> {
+public interface PrimaryDataStoreDao extends GenericDao<PrimaryDataStoreVO, Long> {
 
     /**
      * @param datacenterId
      *            -- the id of the datacenter (availability zone)
      */
-    List<DataStoreVO> listByDataCenterId(long datacenterId);
+    List<PrimaryDataStoreVO> listByDataCenterId(long datacenterId);
 
     /**
      * @param datacenterId
      *            -- the id of the datacenter (availability zone)
      */
-    List<DataStoreVO> listBy(long datacenterId, long podId, Long clusterId);
+    List<PrimaryDataStoreVO> listBy(long datacenterId, long podId, Long clusterId);
 
     /**
      * Set capacity of storage pool in bytes
@@ -59,7 +59,7 @@ public interface PrimaryDataStoreDao extends GenericDao<DataStoreVO, Long> {
      */
     void updateAvailable(long id, long available);
 
-    DataStoreVO persist(DataStoreVO pool, Map<String, String> details);
+    PrimaryDataStoreVO persist(PrimaryDataStoreVO pool, Map<String, String> details);
 
     /**
      * Find pool by name.
@@ -68,7 +68,7 @@ public interface PrimaryDataStoreDao extends GenericDao<DataStoreVO, Long> {
      *            name of pool.
      * @return the single StoragePoolVO
      */
-    List<DataStoreVO> findPoolByName(String name);
+    List<PrimaryDataStoreVO> findPoolByName(String name);
 
     /**
      * Find pools by the pod that matches the details.
@@ -79,9 +79,9 @@ public interface PrimaryDataStoreDao extends GenericDao<DataStoreVO, Long> {
      *            details to match. All must match for the pool to be returned.
      * @return List of StoragePoolVO
      */
-    List<DataStoreVO> findPoolsByDetails(long dcId, long podId, Long clusterId, Map<String, String> details);
+    List<PrimaryDataStoreVO> findPoolsByDetails(long dcId, long podId, Long clusterId, Map<String, String> details);
 
-    List<DataStoreVO> findPoolsByTags(long dcId, long podId, Long clusterId, String[] tags, Boolean shared);
+    List<PrimaryDataStoreVO> findPoolsByTags(long dcId, long podId, Long clusterId, String[] tags, Boolean shared);
 
     /**
      * Find pool by UUID.
@@ -90,13 +90,13 @@ public interface PrimaryDataStoreDao extends GenericDao<DataStoreVO, Long> {
      *            uuid of pool.
      * @return the single StoragePoolVO
      */
-    DataStoreVO findPoolByUUID(String uuid);
+    PrimaryDataStoreVO findPoolByUUID(String uuid);
 
-    List<DataStoreVO> listByStorageHost(String hostFqdnOrIp);
+    List<PrimaryDataStoreVO> listByStorageHost(String hostFqdnOrIp);
 
-    DataStoreVO findPoolByHostPath(long dcId, Long podId, String host, String path, String uuid);
+    PrimaryDataStoreVO findPoolByHostPath(long dcId, Long podId, String host, String path, String uuid);
 
-    List<DataStoreVO> listPoolByHostPath(String host, String path);
+    List<PrimaryDataStoreVO> listPoolByHostPath(String host, String path);
 
     void updateDetails(long poolId, Map<String, String> details);
 
@@ -104,13 +104,13 @@ public interface PrimaryDataStoreDao extends GenericDao<DataStoreVO, Long> {
 
     List<String> searchForStoragePoolDetails(long poolId, String value);
 
-    List<DataStoreVO> findIfDuplicatePoolsExistByUUID(String uuid);
+    List<PrimaryDataStoreVO> findIfDuplicatePoolsExistByUUID(String uuid);
 
-    List<DataStoreVO> listByStatus(DataStoreStatus status);
+    List<PrimaryDataStoreVO> listByStatus(DataStoreStatus status);
 
     long countPoolsByStatus(DataStoreStatus... statuses);
 
-    List<DataStoreVO> listByStatusInZone(long dcId, DataStoreStatus status);
+    List<PrimaryDataStoreVO> listByStatusInZone(long dcId, DataStoreStatus status);
 
-    List<DataStoreVO> listPoolsByCluster(long clusterId);
+    List<PrimaryDataStoreVO> listPoolsByCluster(long clusterId);
 }

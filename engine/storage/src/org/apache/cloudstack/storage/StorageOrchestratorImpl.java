@@ -110,7 +110,7 @@ public class StorageOrchestratorImpl implements StorageOrchestrator {
         if (!ds.contains(volume)) {
             throw new CloudRuntimeException("volume: " + volume + "doesn't exist on backup storage");
         }
-
+/*
         VolumeProfile vp = ds.prepareVolume(volume, destStore);
 
         VolumeStrategy vs = destStore.getVolumeStrategy();
@@ -130,12 +130,15 @@ public class StorageOrchestratorImpl implements StorageOrchestrator {
         txn.commit();
 
         return destVolume;
+        */
+        return null;
     }
 
     @DB
     protected Volume migrateVolume(VolumeVO volume, DataStore srcStore, DataStore destStore, String reservationId) throws NoTransitionException {
         Transaction txn = Transaction.currentTxn();
         txn.start();
+        /*
         volume.setReservationId(reservationId);
         volume = _volumeMgr.processEvent(volume, Volume.Event.MigrationRequested);
         Volume destVolume = _volumeMgr.allocateDuplicateVolume(volume);
@@ -156,12 +159,15 @@ public class StorageOrchestratorImpl implements StorageOrchestrator {
 
         _volumeMgr.processEvent(volume, Volume.Event.OperationSucceeded);
         return destVolume;
+        */
+        return null;
     }
 
     @DB
     protected Volume recreateVolume(VolumeVO srcVolume, DataStore destStore, String reservationId) throws NoTransitionException {
         Transaction txn = Transaction.currentTxn();
         txn.start();
+        /*
         srcVolume.setReservationId(reservationId);
         srcVolume = _volumeMgr.processEvent(srcVolume, Volume.Event.CopyRequested);
         Volume destVolume = _volumeMgr.allocateDuplicateVolume(srcVolume);
@@ -185,10 +191,13 @@ public class StorageOrchestratorImpl implements StorageOrchestrator {
         _volumeMgr.processEvent(srcVolume, Volume.Event.OperationSucceeded);
 
         return destVolume;
+        */
+        return null;
     }
 
     protected Volume createVolumeOnStorage(Volume volume, DataStore destStore, String reservationId) throws NoTransitionException {
         VolumeStrategy vs = destStore.getVolumeStrategy();
+        /*
         volume.setReservationId(reservationId);
         volume = _volumeMgr.processEvent(volume, Volume.Event.CreateRequested);
 
@@ -208,6 +217,8 @@ public class StorageOrchestratorImpl implements StorageOrchestrator {
 
         volume = _volumeMgr.processEvent(volume, Volume.Event.OperationSucceeded);
         return volume;
+        */
+        return null;
     }
 
     @DB

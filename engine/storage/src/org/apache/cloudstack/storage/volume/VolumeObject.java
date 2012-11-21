@@ -18,6 +18,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.State;
+import com.cloud.utils.component.ComponentInject;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
@@ -25,7 +26,7 @@ import com.cloud.utils.fsm.StateMachine2;
 public class VolumeObject implements VolumeInfo {
     private static final Logger s_logger = Logger.getLogger(VolumeObject.class);
     protected VolumeVO volumeVO;
-    private StateMachine2<Volume.State, VolumeEvent, VolumeVO> _volStateMachine;
+    private StateMachine2<Volume.State, Volume.Event, VolumeVO> _volStateMachine;
     protected PrimaryDataStore dataStore;
     @Inject
     VolumeDiskTypeHelper diskTypeHelper;
@@ -33,10 +34,17 @@ public class VolumeObject implements VolumeInfo {
     VolumeTypeHelper volumeTypeHelper;
     @Inject
     VolumeDao volumeDao;
-
-    public VolumeObject(PrimaryDataStore dataStore, VolumeVO volumeVO) {
+    @Inject
+    VolumeManager volumeMgr;
+    private VolumeObject(PrimaryDataStore dataStore, VolumeVO volumeVO) {
         this.volumeVO = volumeVO;
         this.dataStore = dataStore;
+    }
+    
+    public static VolumeObject getVolumeObject(PrimaryDataStore dataStore, VolumeVO volumeVO) {
+        VolumeObject vo = new VolumeObject(dataStore, volumeVO);
+        vo = ComponentInject.inject(vo);
+        return vo;
     }
 
     public String getUuid() {
@@ -91,8 +99,9 @@ public class VolumeObject implements VolumeInfo {
         volumeVO.setDiskType(type.toString());
     }
 
-    public boolean stateTransit(VolumeEvent event) {
+    public boolean stateTransit(Volume.Event event) {
         boolean result = false;
+        _volStateMachine = volumeMgr.getStateMachine();
         try {
             result = _volStateMachine.transitTo(volumeVO, event, null, volumeDao);
         } catch (NoTransitionException e) {

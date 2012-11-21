@@ -141,16 +141,14 @@ public class VolumeVO implements Identity, StateObject<Volume.State> {
     @Column(name = "uuid")
     String uuid;
 
-    @Column(name = "reservation")
-    String reservationId;
-
     // Real Constructor
     public VolumeVO(long size, String type, String name, Long templateId) {
-        this.volumeType = type.toString();
+        this.volumeType = type;
         this.size = size;
         this.name = name;
         this.templateId = templateId;
         this.uuid = UUID.randomUUID().toString();
+        this.state = Volume.State.Allocated;
     }
 
     // Copy Constructor
@@ -396,14 +394,6 @@ public class VolumeVO implements Identity, StateObject<Volume.State> {
         } else {
             return false;
         }
-    }
-
-    public String getReservationId() {
-        return this.reservationId;
-    }
-
-    public void setReservationId(String reserv) {
-        this.reservationId = reserv;
     }
 
     @Override

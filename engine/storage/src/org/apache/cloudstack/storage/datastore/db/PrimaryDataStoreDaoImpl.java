@@ -47,12 +47,12 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
-public class PrimaryDataStoreDaoImpl extends GenericDaoBase<DataStoreVO, Long> implements PrimaryDataStoreDao {
-    protected final SearchBuilder<DataStoreVO> AllFieldSearch;
-    protected final SearchBuilder<DataStoreVO> DcPodSearch;
-    protected final SearchBuilder<DataStoreVO> DcPodAnyClusterSearch;
-    protected final SearchBuilder<DataStoreVO> DeleteLvmSearch;
-    protected final GenericSearchBuilder<DataStoreVO, Long> StatusCountSearch;
+public class PrimaryDataStoreDaoImpl extends GenericDaoBase<PrimaryDataStoreVO, Long> implements PrimaryDataStoreDao {
+    protected final SearchBuilder<PrimaryDataStoreVO> AllFieldSearch;
+    protected final SearchBuilder<PrimaryDataStoreVO> DcPodSearch;
+    protected final SearchBuilder<PrimaryDataStoreVO> DcPodAnyClusterSearch;
+    protected final SearchBuilder<PrimaryDataStoreVO> DeleteLvmSearch;
+    protected final GenericSearchBuilder<PrimaryDataStoreVO, Long> StatusCountSearch;
 
     protected final PrimaryDataStoreDetailsDao _detailsDao = null;
 
@@ -105,73 +105,73 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<DataStoreVO, Long> i
     }
 
     @Override
-    public List<DataStoreVO> findPoolByName(String name) {
-        SearchCriteria<DataStoreVO> sc = AllFieldSearch.create();
+    public List<PrimaryDataStoreVO> findPoolByName(String name) {
+        SearchCriteria<PrimaryDataStoreVO> sc = AllFieldSearch.create();
         sc.setParameters("name", name);
         return listIncludingRemovedBy(sc);
     }
 
     @Override
-    public DataStoreVO findPoolByUUID(String uuid) {
-        SearchCriteria<DataStoreVO> sc = AllFieldSearch.create();
+    public PrimaryDataStoreVO findPoolByUUID(String uuid) {
+        SearchCriteria<PrimaryDataStoreVO> sc = AllFieldSearch.create();
         sc.setParameters("uuid", uuid);
         return findOneIncludingRemovedBy(sc);
     }
 
     @Override
-    public List<DataStoreVO> findIfDuplicatePoolsExistByUUID(String uuid) {
-        SearchCriteria<DataStoreVO> sc = AllFieldSearch.create();
+    public List<PrimaryDataStoreVO> findIfDuplicatePoolsExistByUUID(String uuid) {
+        SearchCriteria<PrimaryDataStoreVO> sc = AllFieldSearch.create();
         sc.setParameters("uuid", uuid);
         return listBy(sc);
     }
 
     @Override
-    public List<DataStoreVO> listByDataCenterId(long datacenterId) {
-        SearchCriteria<DataStoreVO> sc = AllFieldSearch.create();
+    public List<PrimaryDataStoreVO> listByDataCenterId(long datacenterId) {
+        SearchCriteria<PrimaryDataStoreVO> sc = AllFieldSearch.create();
         sc.setParameters("datacenterId", datacenterId);
         return listBy(sc);
     }
 
     @Override
     public void updateAvailable(long id, long available) {
-        DataStoreVO pool = createForUpdate(id);
+        PrimaryDataStoreVO pool = createForUpdate(id);
         pool.setAvailableBytes(available);
         update(id, pool);
     }
 
     @Override
     public void updateCapacity(long id, long capacity) {
-        DataStoreVO pool = createForUpdate(id);
+        PrimaryDataStoreVO pool = createForUpdate(id);
         pool.setCapacityBytes(capacity);
         update(id, pool);
 
     }
 
     @Override
-    public List<DataStoreVO> listByStorageHost(String hostFqdnOrIp) {
-        SearchCriteria<DataStoreVO> sc = AllFieldSearch.create();
+    public List<PrimaryDataStoreVO> listByStorageHost(String hostFqdnOrIp) {
+        SearchCriteria<PrimaryDataStoreVO> sc = AllFieldSearch.create();
         sc.setParameters("hostAddress", hostFqdnOrIp);
         return listIncludingRemovedBy(sc);
     }
 
     @Override
-    public List<DataStoreVO> listByStatus(DataStoreStatus status) {
-        SearchCriteria<DataStoreVO> sc = AllFieldSearch.create();
+    public List<PrimaryDataStoreVO> listByStatus(DataStoreStatus status) {
+        SearchCriteria<PrimaryDataStoreVO> sc = AllFieldSearch.create();
         sc.setParameters("status", status);
         return listBy(sc);
     }
 
     @Override
-    public List<DataStoreVO> listByStatusInZone(long dcId, DataStoreStatus status) {
-        SearchCriteria<DataStoreVO> sc = AllFieldSearch.create();
+    public List<PrimaryDataStoreVO> listByStatusInZone(long dcId, DataStoreStatus status) {
+        SearchCriteria<PrimaryDataStoreVO> sc = AllFieldSearch.create();
         sc.setParameters("status", status);
         sc.setParameters("datacenterId", dcId);
         return listBy(sc);
     }
 
     @Override
-    public DataStoreVO findPoolByHostPath(long datacenterId, Long podId, String host, String path, String uuid) {
-        SearchCriteria<DataStoreVO> sc = AllFieldSearch.create();
+    public PrimaryDataStoreVO findPoolByHostPath(long datacenterId, Long podId, String host, String path, String uuid) {
+        SearchCriteria<PrimaryDataStoreVO> sc = AllFieldSearch.create();
         sc.setParameters("hostAddress", host);
         sc.setParameters("path", path);
         sc.setParameters("datacenterId", datacenterId);
@@ -182,16 +182,16 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<DataStoreVO, Long> i
     }
 
     @Override
-    public List<DataStoreVO> listBy(long datacenterId, long podId, Long clusterId) {
+    public List<PrimaryDataStoreVO> listBy(long datacenterId, long podId, Long clusterId) {
         if (clusterId != null) {
-            SearchCriteria<DataStoreVO> sc = DcPodSearch.create();
+            SearchCriteria<PrimaryDataStoreVO> sc = DcPodSearch.create();
             sc.setParameters("datacenterId", datacenterId);
             sc.setParameters("podId", podId);
 
             sc.setParameters("cluster", clusterId);
             return listBy(sc);
         } else {
-            SearchCriteria<DataStoreVO> sc = DcPodAnyClusterSearch.create();
+            SearchCriteria<PrimaryDataStoreVO> sc = DcPodAnyClusterSearch.create();
             sc.setParameters("datacenterId", datacenterId);
             sc.setParameters("podId", podId);
             return listBy(sc);
@@ -199,16 +199,16 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<DataStoreVO, Long> i
     }
 
     @Override
-    public List<DataStoreVO> listPoolByHostPath(String host, String path) {
-        SearchCriteria<DataStoreVO> sc = AllFieldSearch.create();
+    public List<PrimaryDataStoreVO> listPoolByHostPath(String host, String path) {
+        SearchCriteria<PrimaryDataStoreVO> sc = AllFieldSearch.create();
         sc.setParameters("hostAddress", host);
         sc.setParameters("path", path);
 
         return listBy(sc);
     }
 
-    public DataStoreVO listById(Integer id) {
-        SearchCriteria<DataStoreVO> sc = AllFieldSearch.create();
+    public PrimaryDataStoreVO listById(Integer id) {
+        SearchCriteria<PrimaryDataStoreVO> sc = AllFieldSearch.create();
         sc.setParameters("id", id);
 
         return findOneIncludingRemovedBy(sc);
@@ -216,7 +216,7 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<DataStoreVO, Long> i
 
     @Override
     @DB
-    public DataStoreVO persist(DataStoreVO pool, Map<String, String> details) {
+    public PrimaryDataStoreVO persist(PrimaryDataStoreVO pool, Map<String, String> details) {
         Transaction txn = Transaction.currentTxn();
         txn.start();
         pool = super.persist(pool);
@@ -232,7 +232,7 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<DataStoreVO, Long> i
 
     @DB
     @Override
-    public List<DataStoreVO> findPoolsByDetails(long dcId, long podId, Long clusterId, Map<String, String> details) {
+    public List<PrimaryDataStoreVO> findPoolsByDetails(long dcId, long podId, Long clusterId, Map<String, String> details) {
         StringBuilder sql = new StringBuilder(DetailsSqlPrefix);
         if (clusterId != null) {
             sql.append("storage_pool.cluster_id = ? OR storage_pool.cluster_id IS NULL) AND (");
@@ -254,7 +254,7 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<DataStoreVO, Long> i
             }
             pstmt.setInt(i++, details.size());
             ResultSet rs = pstmt.executeQuery();
-            List<DataStoreVO> pools = new ArrayList<DataStoreVO>();
+            List<PrimaryDataStoreVO> pools = new ArrayList<PrimaryDataStoreVO>();
             while (rs.next()) {
                 pools.add(toEntityBean(rs, false));
             }
@@ -273,8 +273,8 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<DataStoreVO, Long> i
     }
 
     @Override
-    public List<DataStoreVO> findPoolsByTags(long dcId, long podId, Long clusterId, String[] tags, Boolean shared) {
-        List<DataStoreVO> storagePools = null;
+    public List<PrimaryDataStoreVO> findPoolsByTags(long dcId, long podId, Long clusterId, String[] tags, Boolean shared) {
+        List<PrimaryDataStoreVO> storagePools = null;
         if (tags == null || tags.length == 0) {
             storagePools = listBy(dcId, podId, clusterId);
         } else {
@@ -285,8 +285,8 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<DataStoreVO, Long> i
         if (shared == null) {
             return storagePools;
         } else {
-            List<DataStoreVO> filteredStoragePools = new ArrayList<DataStoreVO>(storagePools);
-            for (DataStoreVO pool : storagePools) {
+            List<PrimaryDataStoreVO> filteredStoragePools = new ArrayList<PrimaryDataStoreVO>(storagePools);
+            for (PrimaryDataStoreVO pool : storagePools) {
                 /*
                  * if (shared != pool.isShared()) {
                  * filteredStoragePools.remove(pool); }
@@ -357,8 +357,8 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<DataStoreVO, Long> i
     }
 
     @Override
-    public List<DataStoreVO> listPoolsByCluster(long clusterId) {
-        SearchCriteria<DataStoreVO> sc = AllFieldSearch.create();
+    public List<PrimaryDataStoreVO> listPoolsByCluster(long clusterId) {
+        SearchCriteria<PrimaryDataStoreVO> sc = AllFieldSearch.create();
         sc.setParameters("clusterId", clusterId);
 
         return listBy(sc);

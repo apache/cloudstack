@@ -28,7 +28,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.fsm.StateDao;
 
-public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.State, VolumeEvent, VolumeVO> {
+public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.State, Volume.Event, VolumeVO> {
 
     List<VolumeVO> findDetachedByAccount(long accountId);
 

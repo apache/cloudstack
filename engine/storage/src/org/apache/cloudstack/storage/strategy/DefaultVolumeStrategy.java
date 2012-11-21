@@ -72,6 +72,7 @@ public class DefaultVolumeStrategy implements VolumeStrategy {
 
         VolumeProfile vp = _driver.createVolumeFromTemplate(get(volume.getId()), tp, dp);
 
+        /*
         VolumeVO vlvo = _volumeMgr.getVolume(volume.getId());
 
         vlvo.setFolder(_ds.getPath());
@@ -80,8 +81,10 @@ public class DefaultVolumeStrategy implements VolumeStrategy {
         vlvo.setPoolType(_ds.getPoolType());
         vlvo.setPoolId(_ds.getId());
         vlvo.setPodId(_ds.getPodId());
-
+        
         return _volumeMgr.updateVolume(vlvo);
+        */
+        return null;
     }
 
     public boolean deleteVolume(Volume vol) {

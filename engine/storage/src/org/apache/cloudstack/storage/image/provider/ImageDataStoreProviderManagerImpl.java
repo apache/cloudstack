@@ -24,7 +24,6 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.storage.image.TemplateObject;
 import org.apache.cloudstack.storage.image.db.ImageDataDao;
 import org.apache.cloudstack.storage.image.db.ImageDataStoreDao;
 import org.apache.cloudstack.storage.image.db.ImageDataStoreProviderDao;
@@ -51,7 +50,8 @@ public class ImageDataStoreProviderManagerImpl implements ImageDataStoreProvider
         return null;
     }
 
-    protected ImageDataStoreProvider getProvider(String name) {
+    @Override
+    public ImageDataStoreProvider getProvider(String name) {
         for (ImageDataStoreProvider provider : providers) {
             if (provider.getName().equalsIgnoreCase(name)) {
                 return provider;
@@ -104,6 +104,7 @@ public class ImageDataStoreProviderManagerImpl implements ImageDataStoreProvider
                nProvider = providerDao.persist(nProvider);
                provider.register(nProvider.getId());
            }
+           provider.init();
         }
        
         return true;
@@ -125,5 +126,10 @@ public class ImageDataStoreProviderManagerImpl implements ImageDataStoreProvider
     public String getName() {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    @Override
+    public List<ImageDataStoreProvider> listProvider() {
+        return providers;
     }
 }

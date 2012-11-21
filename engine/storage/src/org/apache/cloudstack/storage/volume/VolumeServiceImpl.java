@@ -68,14 +68,14 @@ public class VolumeServiceImpl implements VolumeService {
         }
 
         VolumeObject vo = (VolumeObject) volume;
-        vo.stateTransit(VolumeEvent.CreateRequested);
+        vo.stateTransit(Volume.Event.CreateRequested);
 
         try {
             VolumeInfo vi = dataStore.createVolume(vo, diskType);
-            vo.stateTransit(VolumeEvent.OperationSucceeded);
+            vo.stateTransit(Volume.Event.OperationSucceeded);
             return vi;
         } catch (Exception e) {
-            vo.stateTransit(VolumeEvent.OperationFailed);
+            vo.stateTransit(Volume.Event.OperationFailed);
             throw new CloudRuntimeException(e.toString());
         }
     }
@@ -107,7 +107,7 @@ public class VolumeServiceImpl implements VolumeService {
     @Override
     public VolumeEntity allocateVolumeInDb(long size, VolumeType type, String volName, Long templateId) {
         VolumeVO vo = volDao.allocVolume(size, type, volName, templateId);
-        return new VolumeEntityImpl(new VolumeObject(null, vo));
+        return new VolumeEntityImpl(VolumeObject.getVolumeObject(null, vo), this);
     }
 
     @Override
@@ -118,10 +118,10 @@ public class VolumeServiceImpl implements VolumeService {
         }
 
         if (vo.getPoolId() == null) {
-            return new VolumeEntityImpl(new VolumeObject(null, vo));
+            return new VolumeEntityImpl(VolumeObject.getVolumeObject(null, vo), this);
         } else {
             PrimaryDataStore dataStore = dataStoreMgr.getPrimaryDataStore(vo.getPoolId());
-            return new VolumeEntityImpl(dataStore.getVolume(volumeId));
+            return new VolumeEntityImpl(dataStore.getVolume(volumeId), this);
         }
     }
 
@@ -164,16 +164,16 @@ public class VolumeServiceImpl implements VolumeService {
 
         VolumeObject vo = (VolumeObject) volume;
         try {
-            vo.stateTransit(VolumeEvent.CreateRequested);
+            vo.stateTransit(Volume.Event.CreateRequested);
         } catch (Exception e) {
             throw new CloudRuntimeException(e.toString());
         }
 
         try {
             volume = pd.createVoluemFromBaseImage(volume, templateOnPrimaryStore);
-            vo.stateTransit(VolumeEvent.OperationSucceeded);
+            vo.stateTransit(Volume.Event.OperationSucceeded);
         } catch (Exception e) {
-            vo.stateTransit(VolumeEvent.OperationFailed);
+            vo.stateTransit(Volume.Event.OperationFailed);
             throw new CloudRuntimeException(e.toString());
         }
         return volume;

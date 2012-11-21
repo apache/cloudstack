@@ -16,23 +16,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.datastore.db;
+package org.apache.cloudstack.storage.image.store.lifecycle;
 
-import org.springframework.stereotype.Component;
+import java.util.Map;
 
-import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.SearchCriteria2;
-import com.cloud.utils.db.SearchCriteriaService;
-import com.cloud.utils.db.SearchCriteria.Op;
+import org.apache.cloudstack.storage.image.store.ImageDataStore;
 
-@Component
-class PrimaryDataStoreProviderDaoImpl extends GenericDaoBase<PrimaryDataStoreProviderVO, Long> implements PrimaryDataStoreProviderDao {
-
-    @Override
-    public PrimaryDataStoreProviderVO findByName(String name) {
-        SearchCriteriaService<PrimaryDataStoreProviderVO, PrimaryDataStoreProviderVO> sc = SearchCriteria2.create(PrimaryDataStoreProviderVO.class);
-        sc.addAnd(sc.getEntity().getName(), Op.EQ, name);
-        return sc.find();
-    }
-
+public interface ImageDataStoreLifeCycle {
+    public ImageDataStore registerDataStore(String name, Map<String, String> params);
 }

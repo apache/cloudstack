@@ -59,7 +59,6 @@ public class TemplateEntityImpl implements TemplateEntity {
        return this.templateInfo.getId();
     }
 
-    @Override
     public String getExternalId() {
         // TODO Auto-generated method stub
         return null;

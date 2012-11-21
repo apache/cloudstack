@@ -18,15 +18,86 @@
  */
 package org.apache.cloudstack.storage.datastore.provider;
 
+import java.util.List;
+import java.util.Map;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreProviderDao;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreProviderVO;
 import org.springframework.stereotype.Component;
 
 @Component
 public class PrimaryDataStoreProviderManagerImpl implements PrimaryDataStoreProviderManager {
-
+    @Inject
+    List<PrimaryDataStoreProvider> providers;
+    @Inject
+    PrimaryDataStoreProviderDao providerDao;
+    
     @Override
     public PrimaryDataStoreProvider getDataStoreProvider(Long providerId) {
+        for (PrimaryDataStoreProvider provider : providers) {
+            if (provider.getId() == providerId) {
+                return provider;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        List<PrimaryDataStoreProviderVO> providerVos = providerDao.listAll();
+        for (PrimaryDataStoreProvider provider : providers) {
+            boolean existingProvider = false;
+            for (PrimaryDataStoreProviderVO providerVo : providerVos) {
+                if (providerVo.getName().equalsIgnoreCase(provider.getName())) {
+                    existingProvider = true;
+                    break;
+                }
+            }
+            if (!existingProvider) {
+                PrimaryDataStoreProviderVO dataStoreProvider = new PrimaryDataStoreProviderVO();
+                dataStoreProvider.setName(provider.getName());
+                dataStoreProvider = providerDao.persist(dataStoreProvider);
+                provider.register(dataStoreProvider, params);
+            }
+            PrimaryDataStoreProviderVO providervo = providerDao.findByName(provider.getName());
+            provider.init(providervo);
+        }
+        return true;
+    }
+
+    @Override
+    public boolean start() {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean stop() {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public String getName() {
         // TODO Auto-generated method stub
         return null;
     }
 
+    @Override
+    public PrimaryDataStoreProvider getDataStoreProvider(String name) {
+        for (PrimaryDataStoreProvider provider : providers) {
+            if (provider.getName().equalsIgnoreCase(name)) {
+                return provider;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public List<PrimaryDataStoreProvider> getDataStoreProviders() {
+        return providers;
+    }
 }

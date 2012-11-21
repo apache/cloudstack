@@ -18,17 +18,76 @@
  */
 package org.apache.cloudstack.storage.datastore.lifecycle;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Map;
 
+import javax.inject.Inject;
+
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreProviderDao;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreVO;
+import org.apache.cloudstack.storage.datastore.provider.PrimaryDataStoreProvider;
 import org.springframework.stereotype.Component;
 
-@Component
 public class DefaultPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
-
+    private final PrimaryDataStoreProvider provider;
+    protected PrimaryDataStoreDao dataStoreDao;
+    public DefaultPrimaryDataStoreLifeCycleImpl(PrimaryDataStoreProvider provider, PrimaryDataStoreDao dataStoreDao) {
+        this.provider = provider;
+        this.dataStoreDao = dataStoreDao;
+    }
+    
+    protected class DataStoreUrlParser {
+        private String schema;
+        private String host;
+        private String path;
+        private int port;
+        
+        public DataStoreUrlParser(String url) {
+            try {
+                URI uri = new URI(url);
+                schema = uri.getScheme();
+                host = uri.getHost();
+                path = uri.getPath();
+                port = (uri.getPort() == -1) ? 0 : uri.getPort();
+            } catch (URISyntaxException e) {
+               
+            }
+        }
+        
+        public String getSchema() {
+            return this.schema;
+        }
+        
+        public String getHost() {
+            return this.host;
+        }
+        
+        public String getPath() {
+            return this.path;
+        }
+        
+        public int getPort() {
+            return this.port;
+        }
+    }
+    
     @Override
-    public boolean registerDataStore(Map<String, String> dsInfos) {
-        // TODO Auto-generated method stub
-        return false;
+    public PrimaryDataStoreInfo registerDataStore(Map<String, String> dsInfos) {
+        DataStoreUrlParser parser = new DataStoreUrlParser(dsInfos.get("url"));
+        PrimaryDataStoreVO dataStore = new PrimaryDataStoreVO();
+        dataStore.setName(dsInfos.get("name"));
+        dataStore.setPoolType(parser.getSchema());
+        dataStore.setPort(parser.port);
+        dataStore.setDataCenterId(Integer.parseInt(dsInfos.get("dcId")));
+        dataStore.setHostAddress(parser.getHost());
+        dataStore.setPath(parser.getPath());
+        dataStore.setStorageProviderId(this.provider.getId());
+        dataStore = dataStoreDao.persist(dataStore);
+        //TODO: add extension point for each data store
+        return this.provider.getDataStore(dataStore.getId());
     }
 
     @Override

@@ -24,17 +24,21 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.engine.cloud.entity.api.SnapshotEntity;
+import org.apache.cloudstack.engine.cloud.entity.api.TemplateEntity;
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import org.apache.cloudstack.engine.datacenter.entity.api.StorageEntity;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
 import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeType;
+import org.apache.cloudstack.storage.image.TemplateEntityImpl;
+import org.apache.cloudstack.storage.image.TemplateInfo;
 
 public class VolumeEntityImpl implements VolumeEntity {
     private VolumeInfo volumeInfo;
-
-    public VolumeEntityImpl(VolumeInfo volumeObject) {
+    private final VolumeService vs;
+    public VolumeEntityImpl(VolumeInfo volumeObject, VolumeService vs) {
         this.volumeInfo = volumeObject;
+        this.vs = vs;
     }
 
     public VolumeInfo getVolumeInfo() {
@@ -55,7 +59,6 @@ public class VolumeEntityImpl implements VolumeEntity {
         return volumeInfo.getId();
     }
 
-    @Override
     public String getExternalId() {
         // TODO Auto-generated method stub
         return null;
@@ -212,6 +215,13 @@ public class VolumeEntityImpl implements VolumeEntity {
     public void setPath(String path) {
         // TODO Auto-generated method stub
 
+    }
+
+    @Override
+    public boolean createVolumeFromTemplate(long dataStoreId, VolumeDiskType diskType, TemplateEntity template) {
+        TemplateInfo ti = ((TemplateEntityImpl)template).getTemplateInfo();
+        volumeInfo = vs.createVolumeFromTemplate(volumeInfo, dataStoreId, diskType, ti);
+        return true;
     }
 
 }

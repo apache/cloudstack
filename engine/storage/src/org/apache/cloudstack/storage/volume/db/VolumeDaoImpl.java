@@ -335,7 +335,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     }
 
     @Override
-    public boolean updateState(Volume.State currentState, VolumeEvent event, Volume.State nextState, VolumeVO vo, Object data) {
+    public boolean updateState(Volume.State currentState, Volume.Event event, Volume.State nextState, VolumeVO vo, Object data) {
 
         Long oldUpdated = vo.getUpdatedCount();
         Date oldUpdatedTime = vo.getUpdated();

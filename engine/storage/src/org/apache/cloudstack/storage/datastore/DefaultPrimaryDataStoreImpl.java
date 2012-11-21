@@ -12,7 +12,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
 import org.apache.cloudstack.storage.HypervisorHostEndPoint;
-import org.apache.cloudstack.storage.datastore.db.DataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreVO;
 import org.apache.cloudstack.storage.datastore.driver.PrimaryDataStoreDriver;
 import org.apache.cloudstack.storage.image.TemplateInfo;
 import org.apache.cloudstack.storage.image.TemplateObject;
@@ -38,16 +38,16 @@ import edu.emory.mathcs.backport.java.util.Collections;
 public class DefaultPrimaryDataStoreImpl implements PrimaryDataStore {
     private static final Logger s_logger = Logger.getLogger(DefaultPrimaryDataStoreImpl.class);
     protected PrimaryDataStoreDriver driver;
-    protected DataStoreVO pdsv;
+    protected PrimaryDataStoreVO pdsv;
     protected PrimaryDataStoreInfo pdsInfo;
     @Inject
     private VolumeDao volumeDao;
-    @Inject
+    //@Inject
     private HostDao hostDao;
     @Inject
     TemplatePrimaryDataStoreManager templatePrimaryStoreMgr;
 
-    public DefaultPrimaryDataStoreImpl(PrimaryDataStoreDriver driver, DataStoreVO pdsv, PrimaryDataStoreInfo pdsInfo) {
+    public DefaultPrimaryDataStoreImpl(PrimaryDataStoreDriver driver, PrimaryDataStoreVO pdsv, PrimaryDataStoreInfo pdsInfo) {
         this.driver = driver;
         this.pdsv = pdsv;
         this.pdsInfo = pdsInfo;
@@ -56,7 +56,7 @@ public class DefaultPrimaryDataStoreImpl implements PrimaryDataStore {
     @Override
     public VolumeInfo getVolume(long id) {
         VolumeVO volumeVO = volumeDao.findById(id);
-        VolumeObject vol = new VolumeObject(this, volumeVO);
+        VolumeObject vol = VolumeObject.getVolumeObject(this, volumeVO);
         return vol;
     }
 
@@ -155,8 +155,7 @@ public class DefaultPrimaryDataStoreImpl implements PrimaryDataStore {
 
     @Override
     public long getId() {
-        // TODO Auto-generated method stub
-        return 0;
+        return pdsv.getId();
     }
 
     @Override

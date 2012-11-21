@@ -35,7 +35,7 @@ public class ImageDataStoreVO {
     @Column(name = "name", nullable = false)
     private String name;
 
-    @Column(name = "image_provider", nullable = false)
+    @Column(name = "image_provider_id", nullable = false)
     private long provider;
 
     public long getId() {

@@ -83,8 +83,7 @@ public class ImageDataStoreImpl implements ImageDataStore {
 
     @Override
     public long getImageDataStoreId() {
-        // TODO Auto-generated method stub
-        return 0;
+        return imageDataStoreVO.getId();
     }
 
     @Override

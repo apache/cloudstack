@@ -143,7 +143,7 @@ public class ImageDataVO implements Identity {
         this.uniqueName = uniqueName;
     }
 
-    protected ImageDataVO() {
+    public ImageDataVO() {
         this.uuid = UUID.randomUUID().toString();
     }
 
@@ -177,6 +177,10 @@ public class ImageDataVO implements Identity {
 
     public boolean requiresHvm() {
         return requiresHvm;
+    }
+    
+    public void setRequireHvm(boolean hvm) {
+        this.requiresHvm = hvm;
     }
 
     public int getBits() {
@@ -229,6 +233,10 @@ public class ImageDataVO implements Identity {
 
     public long getAccountId() {
         return accountId;
+    }
+    
+    public void setAccountId(long accountId) {
+        this.accountId = accountId;
     }
 
     public String getChecksum() {

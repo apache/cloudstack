@@ -12,6 +12,7 @@
                                           http://www.springframework.org/schema/context/spring-context-3.0.xsd">
   <context:annotation-config />
   <context:component-scan base-package="org.apache.cloudstack.storage" />
+  <context:component-scan base-package="org.apache.cloudstack.engine.subsystem.api.storage" />
   <context:component-scan base-package="com.cloud.utils.db" />
   <context:component-scan base-package="com.cloud.utils.component" />
   
@@ -28,36 +29,7 @@
     
 
   </aop:config>
-  <bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager">
-    <property name="entityManagerFactory" ref="entityManagerFactory" />
-  </bean>
-
-  <bean id="dataSource"
-    class="org.springframework.jdbc.datasource.DriverManagerDataSource">
-    <property name="driverClassName" value="com.mysql.jdbc.Driver" />
-    <property name="url" value="jdbc:mysql://localhost:3306/cloud" />
-    <property name="username" value="root" />
-    <property name="password" value="" />
-  </bean>
-
-  <bean id="openJpaVendorAdapter"
-    class="org.springframework.orm.jpa.vendor.OpenJpaVendorAdapter">
-    <property name="showSql" value="true" />
-    <property name="databasePlatform"
-      value="org.apache.openjpa.jdbc.sql.MySQLDictionary" />
-  </bean>
-
-  <bean id="entityManagerFactory"
-    class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
-    <property name="dataSource" ref="dataSource" />
-    <property name="jpaVendorAdapter" ref="openJpaVendorAdapter" />
-    <property name="packagesToScan" value="org.apache.cloudstack.storage" />
-  </bean>
-
-  <bean id="sharedEntityManager"
-    class="org.springframework.orm.jpa.support.SharedEntityManagerBean">
-    <property name="entityManagerFactory" ref="entityManagerFactory" />
-  </bean>
+ 
 
   <bean id="someDependencyMock" class="org.apache.cloudstack.storage.test.StorageFactoryBean">
     <constructor-arg name="classToBeMocked"

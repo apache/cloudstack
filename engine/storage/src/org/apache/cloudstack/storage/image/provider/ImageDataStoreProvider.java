@@ -19,9 +19,15 @@
 package org.apache.cloudstack.storage.image.provider;
 
 import org.apache.cloudstack.storage.image.store.ImageDataStore;
+import org.apache.cloudstack.storage.image.store.lifecycle.ImageDataStoreLifeCycle;
 
-public interface ImageDataStoreProvider {
+public interface ImageDataStoreProvider extends ImageDataStoreLifeCycle {
     ImageDataStore getImageDataStore(long imageStoreId);
     boolean register(long providerId);
     public String getName();
+    /**
+     * @param providerId
+     * @return
+     */
+    boolean init();
 }

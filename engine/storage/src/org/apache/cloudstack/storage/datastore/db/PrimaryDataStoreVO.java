@@ -40,7 +40,7 @@ import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name = "storage_pool")
-public class DataStoreVO implements Identity {
+public class PrimaryDataStoreVO implements Identity {
     @Id
     @TableGenerator(name = "storage_pool_sq", table = "sequence", pkColumnName = "name", valueColumnName = "value", pkColumnValue = "storage_pool_seq", allocationSize = 1)
     @Column(name = "id", updatable = false, nullable = false)
@@ -81,11 +81,8 @@ public class DataStoreVO implements Identity {
     @Enumerated(value = EnumType.STRING)
     private DataStoreStatus status;
 
-    @Column(name = "storage_provider", updatable = true, nullable = false)
-    private Long storageProvider;
-
-    @Column(name = "storage_type", nullable = false)
-    private String storageType;
+    @Column(name = "storage_provider_id", updatable = true, nullable = false)
+    private Long storageProviderId;
 
     @Column(name = "host_address")
     private String hostAddress;
@@ -110,7 +107,7 @@ public class DataStoreVO implements Identity {
         return status;
     }
 
-    public DataStoreVO() {
+    public PrimaryDataStoreVO() {
         // TODO Auto-generated constructor stub
     }
 
@@ -124,6 +121,10 @@ public class DataStoreVO implements Identity {
 
     public String getPoolType() {
         return protocol;
+    }
+    
+    public void setPoolType(String protocol) {
+        this.protocol = protocol;
     }
 
     public Date getCreated() {
@@ -147,19 +148,11 @@ public class DataStoreVO implements Identity {
     }
 
     public Long getStorageProviderId() {
-        return storageProvider;
+        return storageProviderId;
     }
 
     public void setStorageProviderId(Long provider) {
-        storageProvider = provider;
-    }
-
-    public String getStorageType() {
-        return storageType;
-    }
-
-    public void setStorageType(String type) {
-        storageType = type;
+        storageProviderId = provider;
     }
 
     public long getCapacityBytes() {
@@ -184,6 +177,10 @@ public class DataStoreVO implements Identity {
 
     public String getHostAddress() {
         return hostAddress;
+    }
+    
+    public void setHostAddress(String host) {
+        this.hostAddress = host;
     }
 
     public String getPath() {
@@ -225,6 +222,10 @@ public class DataStoreVO implements Identity {
     public int getPort() {
         return port;
     }
+    
+    public void setPort(int port) {
+        this.port = port;
+    }
 
     public Long getPodId() {
         return podId;
@@ -236,10 +237,10 @@ public class DataStoreVO implements Identity {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof DataStoreVO) || obj == null) {
+        if (!(obj instanceof PrimaryDataStoreVO) || obj == null) {
             return false;
         }
-        DataStoreVO that = (DataStoreVO) obj;
+        PrimaryDataStoreVO that = (PrimaryDataStoreVO) obj;
         return this.id == that.id;
     }
 

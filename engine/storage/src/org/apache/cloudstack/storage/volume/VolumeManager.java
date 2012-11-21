@@ -19,10 +19,13 @@
 package org.apache.cloudstack.storage.volume;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeProfile;
+import org.apache.cloudstack.storage.volume.db.VolumeVO;
 
 import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeVO;
+import com.cloud.storage.Volume.Event;
+import com.cloud.storage.Volume.State;
 import com.cloud.utils.fsm.NoTransitionException;
+import com.cloud.utils.fsm.StateMachine2;
 
 public interface VolumeManager {
     VolumeVO allocateDuplicateVolume(VolumeVO oldVol);
@@ -34,4 +37,9 @@ public interface VolumeManager {
     VolumeVO getVolume(long volumeId);
 
     VolumeVO updateVolume(VolumeVO volume);
+
+    /**
+     * @return
+     */
+    StateMachine2<State, Event, VolumeVO> getStateMachine();
 }

@@ -20,7 +20,7 @@ package org.apache.cloudstack.storage.image.manager;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.storage.datastore.db.DataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreVO;
 import org.apache.cloudstack.storage.image.db.ImageDataStoreDao;
 import org.apache.cloudstack.storage.image.db.ImageDataDao;
 import org.apache.cloudstack.storage.image.db.ImageDataStoreVO;

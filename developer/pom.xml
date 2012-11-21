@@ -145,6 +145,7 @@
               <mainClass>com.cloud.upgrade.DatabaseCreator</mainClass>
               <arguments>
                 <argument>${basedir}/target/db/create-schema.sql</argument>
+                <argument>${basedir}/target/db/4.1-new-db-schema.sql</argument>
                 <argument>${basedir}/target/db/create-schema-premium.sql</argument>
                 <argument>com.cloud.upgrade.DatabaseUpgradeChecker</argument>
               </arguments>

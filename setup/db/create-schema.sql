@@ -1500,7 +1500,6 @@ CREATE TABLE  `cloud`.`storage_pool` (
   `created` datetime COMMENT 'date the pool created',
   `removed` datetime COMMENT 'date removed if not null',
   `update_time` DATETIME,
-  `storage_provider` varchar(255) NOT NULL,
   `status` varchar(32),
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_storage_pool__pod_id` FOREIGN KEY `fk_storage_pool__pod_id` (`pod_id`) REFERENCES `host_pod_ref` (`id`) ON DELETE CASCADE,
@@ -2370,6 +2369,20 @@ CREATE TABLE `cloud`.`nicira_nvp_nic_map` (
   `logicalswitchport` varchar(255) UNIQUE COMMENT 'nicira uuid of this logical switch port',
   `nic` varchar(255) UNIQUE COMMENT 'cloudstack uuid of the nic connected to this logical switch port',
   PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`image_data_store` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `name` varchar(255) NOT NULL COMMENT 'name of data store',
+  `image_provider_id` bigint unsigned NOT NULL COMMENT 'id of image_data_store_provider',
+  PRIMARY KEY(`id`),
+  CONSTRAINT `fk_tags__image_data_store_provider_id` FOREIGN KEY(`image_provider_id`) REFERENCES `image_data_store_provider`(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`image_data_store_provider` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `name` varchar(255) NOT NULL COMMENT 'name of data store provider',
+  PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET foreign_key_checks = 1;

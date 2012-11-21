@@ -21,7 +21,7 @@ package org.apache.cloudstack.storage.datastore.manager;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
-import org.apache.cloudstack.storage.datastore.db.DataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreProviderDao;
 import org.apache.cloudstack.storage.datastore.lifecycle.PrimaryDataStoreLifeCycle;
@@ -40,7 +40,7 @@ public class DefaultPrimaryDataStoreManagerImpl implements PrimaryDataStoreManag
 
     @Override
     public PrimaryDataStore getPrimaryDataStore(long dataStoreId) {
-        DataStoreVO dataStoreVO = dataStoreDao.findById(dataStoreId);
+        PrimaryDataStoreVO dataStoreVO = dataStoreDao.findById(dataStoreId);
         Long providerId = dataStoreVO.getStorageProviderId();
         PrimaryDataStoreProvider provider = providerManager.getDataStoreProvider(providerId);
         PrimaryDataStore dataStore = provider.getDataStore(dataStoreId);

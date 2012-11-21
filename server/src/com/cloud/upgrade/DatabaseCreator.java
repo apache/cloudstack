@@ -106,8 +106,8 @@ public class DatabaseCreator {
                     System.exit(1);
                 }
 
-                SystemIntegrityChecker checker = (SystemIntegrityChecker)ComponentLocator.inject(clazz);
-                checker.check();
+                //SystemIntegrityChecker checker = (SystemIntegrityChecker)ComponentLocator.inject(clazz);
+                //checker.check();
             }
         }
     }

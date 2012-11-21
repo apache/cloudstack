@@ -20,8 +20,10 @@ package org.apache.cloudstack.storage.datastore.lifecycle;
 
 import java.util.Map;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
+
 public interface PrimaryDataStoreLifeCycle {
-    public boolean registerDataStore(Map<String, String> dsInfos);
+    public PrimaryDataStoreInfo registerDataStore(Map<String, String> dsInfos);
 
     public boolean attach(long scope);
 
