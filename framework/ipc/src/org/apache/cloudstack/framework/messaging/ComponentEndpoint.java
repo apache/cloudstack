@@ -18,7 +18,10 @@
  */
 package org.apache.cloudstack.framework.messaging;
 
+import org.apache.log4j.Logger;
+
 public class ComponentEndpoint implements RpcServiceEndpoint, Subscriber {
+    private static final Logger s_logger = Logger.getLogger(ComponentEndpoint.class);
 	
 	private TransportEndpoint transportEndpoint;
 	private RpcProvider rpcProvider;
@@ -56,6 +59,7 @@ public class ComponentEndpoint implements RpcServiceEndpoint, Subscriber {
 		try {
 			EventDispatcher.dispatch(this, subject, senderAddress, args);
 		} catch(RuntimeException e) {
+			s_logger.error("Unhandled exception", e);
 		}
 	}
 }

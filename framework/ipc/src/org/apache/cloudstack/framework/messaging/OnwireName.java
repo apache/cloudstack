@@ -16,27 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.cloudstack.framework.messaging;
 
-public interface RpcClientCall {
-	String getCommand();
-	RpcClientCall setCommand(String cmd);
-	RpcClientCall setTimeout(int timeoutMilliseconds);
-	
-	RpcClientCall setCommandArg(Object arg);
-	Object getCommandArg();
-	
-	RpcClientCall setContextParam(String key, Object param);
-	Object getContextParam(String key);
-	
-	<T> RpcClientCall addCallbackListener(RpcCallbackListener<T> listener);
-	RpcClientCall setOneway();
-	
-	void apply();
-	void cancel();
-	
-	/**
-	 * @return the result object， it may also throw RpcException to indicate RPC failures 
-	 */
-	<T> T get();
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+public @interface OnwireName {
+	String name();
 }
