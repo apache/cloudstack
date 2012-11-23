@@ -1,7 +1,7 @@
 #!/bin/bash 
 ### BEGIN INIT INFO
 # Provides:          cloud-passwd-srvr
-# Required-Start:    mountkernfs $local_fs cloud-early-config
+# Required-Start:    mountkernfs $local_fs cloud-early-config iptables-persistent
 # Required-Stop:     $local_fs
 # Should-Start:      
 # Should-Stop:       
@@ -37,7 +37,19 @@ add_iptables_rules()
   #For all cidrs on eth0 for port 8080 accept only if source is withing that cidr
   for cidr in $(ip addr | grep eth0 | grep inet | awk '{print $2}');
   do
-    iptables -A INPUT -i eth0 -p tcp -m state --state NEW -m tcp -s $cidr --dport 8080 -j ACCEPT
+    count=1
+    #Try for 10 times, if it still fails then bail
+    while [ $count -le 10 ];
+    do
+      (( count++ ))
+      iptables -A INPUT -i eth0 -p tcp -m state --state NEW -m tcp -s $cidr --dport 8080 -j ACCEPT
+      if [ `iptables -L INPUT -n -v | grep eth0 | grep 8080 | grep ACCEPT | wc -l` -gt 0 ]
+      then
+        break
+      else
+        sleep 2
+      fi
+    done
   done
   echo "Added cloud-passwd-srvr iptables rules" && return 0
 }
