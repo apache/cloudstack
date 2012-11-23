@@ -945,6 +945,13 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             VMTemplateVO template = _templateDao.findSystemVMTemplate(dataCenterId);
             HostVO secondaryStorageHost = this.templateMgr.getSecondaryStorageHost(dataCenterId);
             boolean templateReady = false;
+            
+            if (secondaryStorageHost == null) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("No secondary storage available in zone " + dataCenterId + ", wait until it is ready to launch secondary storage vm");
+                }
+                return false;
+            }
 
             if (template != null && secondaryStorageHost != null) {
                 VMTemplateHostVO templateHostRef = _vmTemplateHostDao.findByHostTemplate(secondaryStorageHost.getId(), template.getId());
