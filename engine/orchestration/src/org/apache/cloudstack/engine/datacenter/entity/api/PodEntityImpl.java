@@ -19,23 +19,19 @@
 package org.apache.cloudstack.engine.datacenter.entity.api;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.org.Cluster;
 
-public class ZoneEntityImpl implements ZoneEntity {
-    String _id;
+public class PodEntityImpl implements PodEntity {
+    String _uuid;
     String _name;
 
-    // This is a test constructor
-    public ZoneEntityImpl(String id, String name) {
-        _id = id;
+    public PodEntityImpl(String uuid, String name) {
+        _uuid = uuid;
         _name = name;
-    }
-
-    public ZoneEntityImpl() {
     }
 
     @Override
@@ -63,8 +59,14 @@ public class ZoneEntityImpl implements ZoneEntity {
     }
 
     @Override
+    public State getState() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
     public String getUuid() {
-        return _id;
+        return _uuid;
     }
 
     @Override
@@ -76,31 +78,31 @@ public class ZoneEntityImpl implements ZoneEntity {
     @Override
     public String getCurrentState() {
         // TODO Auto-generated method stub
-        return "state";
+        return null;
     }
 
     @Override
     public String getDesiredState() {
         // TODO Auto-generated method stub
-        return "desired_state";
+        return null;
     }
 
     @Override
     public Date getCreatedTime() {
         // TODO Auto-generated method stub
-        return new Date();
+        return null;
     }
 
     @Override
     public Date getLastUpdatedTime() {
         // TODO Auto-generated method stub
-        return new Date();
+        return null;
     }
 
     @Override
     public String getOwner() {
         // TODO Auto-generated method stub
-        return "owner";
+        return null;
     }
 
     @Override
@@ -140,25 +142,31 @@ public class ZoneEntityImpl implements ZoneEntity {
     }
 
     @Override
-    public State getState() {
+    public String getCidrAddress() {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public String getDns1() {
+    public int getCidrSize() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public String getGateway() {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public String getDns2() {
+    public long getDataCenterId() {
         // TODO Auto-generated method stub
-        return null;
+        return 0;
     }
 
     @Override
-    public String getGuestNetworkCidr() {
+    public String getDescription() {
         // TODO Auto-generated method stub
         return null;
     }
@@ -169,130 +177,21 @@ public class ZoneEntityImpl implements ZoneEntity {
     }
 
     @Override
-    public Long getDomainId() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public String getDescription() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public String getDomain() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public NetworkType getNetworkType() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public String getInternalDns1() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public String getInternalDns2() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public String getDnsProvider() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public String getGatewayProvider() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public String getFirewallProvider() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public String getDhcpProvider() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public String getLoadBalancerProvider() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public String getUserDataProvider() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public String getVpnProvider() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public boolean isSecurityGroupEnabled() {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public Map<String, String> getDetails() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public void setDetails(Map<String, String> details) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
     public AllocationState getAllocationState() {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public String getZoneToken() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public boolean isLocalStorageEnabled() {
+    public boolean getExternalDhcp() {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public List<PodEntity> listPods() {
+    public List<Cluster> listClusters() {
         // TODO Auto-generated method stub
         return null;
     }
 
-    @Override
-    public List<String> listPodIds() {
-        List<String> podIds = new ArrayList<String>();
-        podIds.add("pod-uuid-1");
-        podIds.add("pod-uuid-2");
-        return podIds;
-    }
 }

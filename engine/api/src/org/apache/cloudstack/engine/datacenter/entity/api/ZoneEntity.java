@@ -22,14 +22,18 @@ import java.util.List;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.xml.bind.annotation.XmlRootElement;
 
 import com.cloud.dc.DataCenter;
 
 /**
  * Describes a zone and operations that can be done in a zone. 
  */
-@Path("zone/{zone-id}")
+@XmlRootElement(name="zone")
 public interface ZoneEntity extends DataCenterResourceEntity, DataCenter {
     @GET
+    @Path("/pods")
     List<PodEntity> listPods();
+
+    List<String> listPodIds();
 }

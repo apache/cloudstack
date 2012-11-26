@@ -22,23 +22,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-
 import org.apache.cloudstack.engine.datacenter.entity.api.ClusterEntity;
 import org.apache.cloudstack.engine.datacenter.entity.api.PodEntity;
+import org.apache.cloudstack.engine.datacenter.entity.api.PodEntityImpl;
 import org.apache.cloudstack.engine.datacenter.entity.api.StorageEntity;
 import org.apache.cloudstack.engine.datacenter.entity.api.ZoneEntity;
-import org.springframework.stereotype.Service;
+import org.apache.cloudstack.engine.datacenter.entity.api.ZoneEntityImpl;
+import org.springframework.stereotype.Component;
 
-import com.cloud.dc.Pod;
 import com.cloud.host.Host;
 import com.cloud.host.Status;
 import com.cloud.storage.StoragePool;
 
-@Service("provisioningService")
-@Path("/provisioning")
+@Component
 public class ProvisioningServiceImpl implements ProvisioningService {
 
     @Override
@@ -114,18 +110,18 @@ public class ProvisioningServiceImpl implements ProvisioningService {
     }
 
     @Override
-    public List<Pod> listPods() {
-        // TODO Auto-generated method stub
+    public List<PodEntity> listPods() {
+        List<PodEntity> pods = new ArrayList<PodEntity>();
+        pods.add(new PodEntityImpl("pod-uuid-1", "pod1"));
+        pods.add(new PodEntityImpl("pod-uuid-2", "pod2"));
         return null;
     }
 
     @Override
-    @GET
-    @Path("/zones")
-    @Produces("text/plain")
     public List<ZoneEntity> listZones() {
         List<ZoneEntity> zones = new ArrayList<ZoneEntity>();
-        // TODO Auto-generated method stub
+        zones.add(new ZoneEntityImpl("zone-uuid-1", "name1"));
+        zones.add(new ZoneEntityImpl("zone-uuid-2", "name2"));
         return zones;
     }
 
@@ -133,6 +129,12 @@ public class ProvisioningServiceImpl implements ProvisioningService {
     public List<StoragePool> listStorage() {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    @Override
+    public ZoneEntity getZone(String uuid) {
+        ZoneEntityImpl impl = new ZoneEntityImpl(uuid, "name");
+        return impl;
     }
 
 }
