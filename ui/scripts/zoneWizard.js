@@ -60,25 +60,36 @@
   cloudStack.zoneWizard = {
     // Return required traffic types, for configure physical network screen
     requiredTrafficTypes: function(args) {
-      if (args.data.zone.networkType == 'Basic' && (selectedNetworkOfferingHavingEIP ||
-                                                    selectedNetworkOfferingHavingELB)) {
-        return [
-          'management',
-          'guest',
-          'public'
-        ];
-      } else if (args.data.zone.networkType == 'Advanced') {
-        return [
-          'management',
-          'public',
-          'guest'
-        ];
-      } else {
-        return [
-          'management',
-          'guest'
-        ];
-      }
+      if (args.data.zone.networkType == 'Basic') {
+			  if(selectedNetworkOfferingHavingEIP || selectedNetworkOfferingHavingELB) {
+					return [
+						'management',
+						'guest',
+						'public'
+					];
+				}
+				else {
+				  return [
+						'management',
+						'guest'
+					];
+				}
+      } 
+			else if (args.data.zone.networkType == 'Advanced') {
+			  if(args.data.zone.sgEnabled	!= true) {
+					return [
+						'management',
+						'public',
+						'guest'
+					];
+				}
+				else {
+				  return [
+						'management',						
+						'guest'
+					];
+				}
+      } 			
     },
 
     disabledTrafficTypes: function(args) {
@@ -2479,9 +2490,9 @@
           });
         },
 
-        configurePublicTraffic: function(args) {
-          if((args.data.zone.networkType == "Basic" && (selectedNetworkOfferingHavingSG == true && selectedNetworkOfferingHavingEIP == true && selectedNetworkOfferingHavingELB == true))
-           ||(args.data.zone.networkType == "Advanced")) {
+        configurePublicTraffic: function(args) {          
+					if((args.data.zone.networkType == "Basic" && (selectedNetworkOfferingHavingSG == true && selectedNetworkOfferingHavingEIP == true && selectedNetworkOfferingHavingELB == true))
+           ||(args.data.zone.networkType == "Advanced" && args.data.zone.sgEnabled != true)) {
 					 
             message(dictionary['message.configuring.public.traffic']); 
 
@@ -2557,6 +2568,11 @@
               })
             });
           }
+					else if(args.data.zone.networkType == "Advanced" && args.data.zone.sgEnabled == true) { // Advanced SG-enabled zone doesn't have public traffic type
+					  stepFns.configureStorageTraffic({
+							data: args.data
+						});
+					}					
           else { //basic zone without public traffic type , skip to next step
             if (data.physicalNetworks && $.inArray('storage', data.physicalNetworks[0].trafficTypes) > -1) {
               stepFns.configureStorageTraffic({
