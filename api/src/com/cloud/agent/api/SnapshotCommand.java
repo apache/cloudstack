@@ -17,37 +17,38 @@
 package com.cloud.agent.api;
 
 /**
- * This currently assumes that both primary and secondary storage are mounted on the XenServer.  
+ * This currently assumes that both primary and secondary storage are mounted on
+ * the XenServer.
  */
 public class SnapshotCommand extends Command {
     protected String primaryStoragePoolNameLabel;
     private String snapshotUuid;
     private String snapshotName;
     private String secondaryStorageUrl;
-    private Long   dcId;
-    private Long   accountId;
-    private Long   volumeId;
+    private Long dcId;
+    private Long accountId;
+    private Long volumeId;
     private String volumePath;
-    
+
     protected SnapshotCommand() {
-        
+
     }
-    
+
     /**
-     * @param primaryStoragePoolNameLabel   The primary storage Pool
-     * @param snapshotUuid             The UUID of the snapshot which is going to be backed up 
-     * @param secondaryStoragePoolURL This is what shows up in the UI when you click on Secondary storage. 
-     *                                 In the code, it is present as: In the vmops.host_details table, there is a field mount.parent. This is the value of that field
-     *                                 If you have better ideas on how to get it, you are welcome.
+     * @param primaryStoragePoolNameLabel
+     *            The primary storage Pool
+     * @param snapshotUuid
+     *            The UUID of the snapshot which is going to be backed up
+     * @param secondaryStoragePoolURL
+     *            This is what shows up in the UI when you click on Secondary
+     *            storage. In the code, it is present as: In the
+     *            vmops.host_details table, there is a field mount.parent. This
+     *            is the value of that field If you have better ideas on how to
+     *            get it, you are welcome.
      */
     public SnapshotCommand(String primaryStoragePoolNameLabel,
- String secondaryStorageUrl,
-                           String snapshotUuid,
-                           String snapshotName,
-                           Long   dcId,
-                           Long   accountId,
-                           Long   volumeId) 
-    {
+            String secondaryStorageUrl, String snapshotUuid,
+            String snapshotName, Long dcId, Long accountId, Long volumeId) {
         this.primaryStoragePoolNameLabel = primaryStoragePoolNameLabel;
         this.snapshotUuid = snapshotUuid;
         this.secondaryStorageUrl = secondaryStorageUrl;
@@ -70,11 +71,11 @@ public class SnapshotCommand extends Command {
     public String getSnapshotUuid() {
         return snapshotUuid;
     }
-    
+
     public String getSnapshotName() {
-    	return snapshotName;
+        return snapshotName;
     }
-    
+
     /**
      * @return the secondaryStoragePoolURL
      */
@@ -82,7 +83,6 @@ public class SnapshotCommand extends Command {
         return secondaryStorageUrl;
     }
 
-    
     public Long getDataCenterId() {
         return dcId;
     }
@@ -94,13 +94,13 @@ public class SnapshotCommand extends Command {
     public Long getVolumeId() {
         return volumeId;
     }
-    
+
     public String getVolumePath() {
-    	return volumePath;
+        return volumePath;
     }
-    
+
     public void setVolumePath(String path) {
-    	volumePath = path;
+        volumePath = path;
     }
 
     /**

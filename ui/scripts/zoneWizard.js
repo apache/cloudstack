@@ -60,37 +60,53 @@
   cloudStack.zoneWizard = {
     // Return required traffic types, for configure physical network screen
     requiredTrafficTypes: function(args) {
-      if (args.data.zone.networkType == 'Basic' && (selectedNetworkOfferingHavingEIP ||
-                                                    selectedNetworkOfferingHavingELB)) {
-        return [
-          'management',
-          'guest',
-          'public'
-        ];
-      } else if (args.data.zone.networkType == 'Advanced') {
-        return [
-          'management',
-          'public',
-          'guest'
-        ];
-      } else {
-        return [
-          'management',
-          'guest'
-        ];
-      }
+      if (args.data.zone.networkType == 'Basic') {
+			  if(selectedNetworkOfferingHavingEIP || selectedNetworkOfferingHavingELB) {
+					return [
+						'management',
+						'guest',
+						'public'
+					];
+				}
+				else {
+				  return [
+						'management',
+						'guest'
+					];
+				}
+      } 
+			else { // args.data.zone.networkType == 'Advanced'
+			  if(args.data.zone.sgEnabled	!= true) {
+					return [
+						'management',
+						'public',
+						'guest'
+					];
+				}
+				else {
+				  return [
+						'management',						
+						'guest'
+					];
+				}
+      } 			
     },
 
     disabledTrafficTypes: function(args) {
-      if (args.data.zone.networkType == 'Basic' && (selectedNetworkOfferingHavingEIP ||
-                                                    selectedNetworkOfferingHavingELB)) {
-        return [];
-      } else if (args.data.zone.networkType == 'Basic') {
-        return ['public'];
-      } else {
-        return [];
+      if (args.data.zone.networkType == 'Basic') {
+			  if(selectedNetworkOfferingHavingEIP || selectedNetworkOfferingHavingELB)
+          return [];
+				else
+				  return ['public'];
       }
-
+			else { // args.data.zone.networkType == 'Advanced'
+			  if(args.data.zone.sgEnabled	!= true) {
+          return [];
+				}
+				else {
+				  return ['public'];
+				}
+      }
     },
 
     cloneTrafficTypes: function(args) {
@@ -221,7 +237,10 @@
 					$publicTrafficDesc.find('#for_advanced_zone').hide();					
         }
         else { //args.data['network-model'] == 'Advanced'          
-          isShown = true;					
+          if(args.data["zone-advanced-sg-enabled"] !=	"on")          
+					  isShown = true;					
+					else
+					  isShown = false;
 					
 					$publicTrafficDesc.find('#for_advanced_zone').css('display', 'inline');
 					$publicTrafficDesc.find('#for_basic_zone').hide();					
@@ -243,42 +262,37 @@
         return true; // Both basic & advanced zones show physical network UI
       },
 
-      configureGuestTraffic: function(args) {
-        if (args.data['network-model'] == 'Basic') {
+      configureGuestTraffic: function(args) {			  
+        if ((args.data['network-model'] == 'Basic') || (args.data['network-model'] == 'Advanced' && args.data["zone-advanced-sg-enabled"] ==	"on")) {
           $('.setup-guest-traffic').addClass('basic');
           $('.setup-guest-traffic').removeClass('advanced');
 					skipGuestTrafficStep = false; //set value
         } 
-				else { //args.data['network-model'] == 'Advanced'
+				else { //args.data['network-model'] == 'Advanced' && args.data["zone-advanced-sg-enabled"] !=	"on"
           $('.setup-guest-traffic').removeClass('basic');
           $('.setup-guest-traffic').addClass('advanced');
-										
-					if(args.data["zone-advanced-sg-enabled"] !=	"on") {
-						//skip the step if OVS tunnel manager is enabled	
-						skipGuestTrafficStep = false; //reset it before ajax call
-						$.ajax({
-							url: createURL('listConfigurations'),
-							data: {
-								name: 'sdn.ovs.controller'
-							},
-							dataType: "json",
-							async: false,
-							success: function(json) {					 
-								var items = json.listconfigurationsresponse.configuration; //2 entries returned: 'sdn.ovs.controller', 'sdn.ovs.controller.default.label'
-								$(items).each(function(){						  
-									if(this.name == 'sdn.ovs.controller') {
-										if(this.value == 'true' || this.value == true) {
-											skipGuestTrafficStep = true;
-										}
-										return false; //break each loop
+															
+					//skip the step if OVS tunnel manager is enabled	
+					skipGuestTrafficStep = false; //reset it before ajax call
+					$.ajax({
+						url: createURL('listConfigurations'),
+						data: {
+							name: 'sdn.ovs.controller'
+						},
+						dataType: "json",
+						async: false,
+						success: function(json) {					 
+							var items = json.listconfigurationsresponse.configuration; //2 entries returned: 'sdn.ovs.controller', 'sdn.ovs.controller.default.label'
+							$(items).each(function(){						  
+								if(this.name == 'sdn.ovs.controller') {
+									if(this.value == 'true' || this.value == true) {
+										skipGuestTrafficStep = true;
 									}
-								});						
-							}
-						});	
-					}
-					else { //args.data["zone-advanced-sg-enabled"] ==	"on"
-					  skipGuestTrafficStep = true;
-					}					
+									return false; //break each loop
+								}
+							});						
+						}
+					});	
         }
 				return !skipGuestTrafficStep;
       },
@@ -441,15 +455,23 @@
 												});
 											}
 										});
-																				
-										if(args.hypervisor != "VMware" && args.hypervisor != "BareMetal") {
-										  availableNetworkOfferingObjs.push(thisNetworkOffering);
-										}
-										else { //only network offerings that does not include EIP, ELB, SG
-										  if(thisNetworkOffering.havingSG != true && thisNetworkOffering.havingEIP != true && thisNetworkOffering.havingELB != true) {
-											  availableNetworkOfferingObjs.push(thisNetworkOffering);
+										               
+										if(thisNetworkOffering.havingEIP == true && thisNetworkOffering.havingELB == true) { //EIP ELB 
+											if(args.hypervisor == "VMware" || args.hypervisor == "BareMetal") { //VMware, BareMetal don't support EIP ELB 
+												return true; //move to next item in $.each() loop
 											}
-										}		
+											if(args.context.zones[0]["network-model"]	== "Advanced" && args.context.zones[0]["zone-advanced-sg-enabled"] ==	"on") { // Advanced SG-enabled zone doesn't support EIP ELB 
+											  return true; //move to next item in $.each() loop
+											}
+										}
+																				
+										if(args.context.zones[0]["network-model"]	== "Advanced" && args.context.zones[0]["zone-advanced-sg-enabled"] ==	"on") { // Advanced SG-enabled zone
+										  if(thisNetworkOffering.havingSG != true) {
+											  return true; //move to next item in $.each() loop
+											}
+										}
+										
+										availableNetworkOfferingObjs.push(thisNetworkOffering);										
 									});																	
 									
                   args.response.success({
@@ -612,61 +634,58 @@
 
       guestTraffic: {
         preFilter: function(args) {				                 		
-          var $guestTrafficDesc = $('.zone-wizard:visible').find('#add_zone_guest_traffic_desc');	 		     
-					if (args.data['network-model'] == 'Basic') {
+          var $guestTrafficDesc = $('.zone-wizard:visible').find('#add_zone_guest_traffic_desc');	 	          
+					if ((args.data['network-model'] == 'Basic') || (args.data['network-model'] == 'Advanced' && args.data["zone-advanced-sg-enabled"] ==	"on")) {
 						$guestTrafficDesc.find('#for_basic_zone').css('display', 'inline');
 						$guestTrafficDesc.find('#for_advanced_zone').hide();
 					}
-					else { //args.data['network-model'] == 'Advanced'
+					else { //args.data['network-model'] == 'Advanced' && args.data["zone-advanced-sg-enabled"] !=	"on"
 						$guestTrafficDesc.find('#for_advanced_zone').css('display', 'inline');
 						$guestTrafficDesc.find('#for_basic_zone').hide();
 					}		
 				
           var selectedZoneObj = {
             networktype: args.data['network-model']
-          };
-
-          var advancedFields = ['vlanRange'];
-          $(advancedFields).each(function() {
-            if (selectedZoneObj.networktype == 'Advanced') {
-              args.$form.find('[rel=' + this + ']').show();
-            }
-            else {
-              args.$form.find('[rel=' + this + ']').hide();
-            }
-          });
-
-          var basicFields = [
-            'guestGateway',
-            'guestNetmask',
-            'guestStartIp',
-            'guestEndIp'
-          ];
-          $(basicFields).each(function() {
-             if (selectedZoneObj.networktype == 'Basic') {
-              args.$form.find('[rel=' + this + ']').show();
-            }
-            else {
-              args.$form.find('[rel=' + this + ']').hide();
-            }
-          });
+          };          				
+          					
+					if (selectedZoneObj.networktype == 'Basic') {
+					  args.$form.find('[rel="guestGateway"]').show();
+						args.$form.find('[rel="guestNetmask"]').show();
+						args.$form.find('[rel="guestStartIp"]').show();
+						args.$form.find('[rel="guestEndIp"]').show();	
+            args.$form.find('[rel="vlanId"]').hide();						
+            args.$form.find('[rel="vlanRange"]').hide();						
+					}
+					else if(selectedZoneObj.networktype == 'Advanced' && args.data["zone-advanced-sg-enabled"] ==	"on") { 
+					  args.$form.find('[rel="guestGateway"]').show();
+						args.$form.find('[rel="guestNetmask"]').show();
+						args.$form.find('[rel="guestStartIp"]').show();
+						args.$form.find('[rel="guestEndIp"]').show();
+            args.$form.find('[rel="vlanId"]').show();						
+            args.$form.find('[rel="vlanRange"]').hide();	
+					}					
+					else if (selectedZoneObj.networktype == 'Advanced' && args.data["zone-advanced-sg-enabled"] !=	"on") { //this conditional statement is useless because the div will be replaced with other div(multiple tabs in Advanced zone without SG) later
+					  args.$form.find('[rel="guestGateway"]').hide();
+						args.$form.find('[rel="guestNetmask"]').hide();
+						args.$form.find('[rel="guestStartIp"]').hide();
+						args.$form.find('[rel="guestEndIp"]').hide();		
+						args.$form.find('[rel="vlanId"]').hide();
+            args.$form.find('[rel="vlanRange"]').show();	
+					}					
         },
 
-        fields: {
-          //Basic (start)
-          guestGateway: { label: 'label.guest.gateway' },
-          guestNetmask: { label: 'label.guest.netmask' },
-          guestStartIp: { label: 'label.guest.start.ip' },
-          guestEndIp: { label: 'label.guest.end.ip' },
-          //Basic (end)
-
-          //Advanced (start)
-          vlanRange: {
+        fields: {          
+          guestGateway: { label: 'label.guest.gateway' },  //Basic, Advanced with SG
+          guestNetmask: { label: 'label.guest.netmask' },  //Basic, Advanced with SG
+          guestStartIp: { label: 'label.guest.start.ip' }, //Basic, Advanced with SG
+          guestEndIp: { label: 'label.guest.end.ip' },     //Basic, Advanced with SG
+					vlanId: { label: 'VLAN ID' },              //Advanced with SG
+             						
+          vlanRange: { //in multiple tabs (tabs is as many as Guest Traffic types in multiple physical networks in Advanced Zone without SG)
             label: 'label.vlan.range',
             range: ['vlanRangeStart', 'vlanRangeEnd'],
-            validation: { required: false, digits: true }  //Bug 13517 - AddZone wizard->Configure guest traffic: Vlan is optional
-          }
-          //Advanced (end)
+            validation: { required: false, digits: true }  //Bug 13517 - AddZone wizard->Configure guest traffic: Vlan Range is optional
+          }          
         }
       },
       cluster: {
@@ -1904,7 +1923,7 @@
 													clearInterval(enablePhysicalNetworkIntervalID); 
 													
                           if (result.jobstatus == 1) {
-                            //alert("updatePhysicalNetwork succeeded.");
+                            //alert("enable physical network succeeded.");
 
                             // ***** Virtual Router ***** (begin) *****
                             var virtualRouterProviderId;
@@ -1980,11 +1999,19 @@
 																											
                                                       if (result.jobstatus == 1) { //Virtual Router Provider has been enabled successfully
                                                         advZoneConfiguredVirtualRouterCount++;
-                                                        if(advZoneConfiguredVirtualRouterCount == (args.data.returnedPhysicalNetworks.length * 2)) { //not call addPod() until virtualRouter and vpcVirtualRouter of all physical networks get configured
-                                                          stepFns.addPod({
-                                                            data: args.data
-                                                          });
-                                                        }
+
+                                                        if(advZoneConfiguredVirtualRouterCount == args.data.returnedPhysicalNetworks.length) { //not call next stepFns.addXXX() until virtualRouter of all physical networks get configured
+																													if(args.data.zone.sgEnabled	!= true) { //Advanced SG-disabled zone
+																														stepFns.addPod({
+																															data: args.data
+																														});
+																													}
+																													else { //args.data.zone.sgEnabled	== true  //Advanced SG-enabled zone
+																													  stepFns.addGuestNetwork({
+																															data: args.data
+																														});
+																													}
+                                                       }
                                                       }
                                                       else if (result.jobstatus == 2) {
                                                         alert("failed to enable Virtual Router Provider. Error: " + _s(result.jobresult.errortext));
@@ -2015,123 +2042,174 @@
                             });
 														// ***** Virtual Router ***** (end) *****
 														
-														// ***** VPC Virtual Router ***** (begin) *****
-                            var vpcVirtualRouterProviderId;
-                            $.ajax({
-                              url: createURL("listNetworkServiceProviders&name=VpcVirtualRouter&physicalNetworkId=" + thisPhysicalNetwork.id),
-                              dataType: "json",
-                              async: false,
-                              success: function(json) {
-                                var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;
-                                if(items != null && items.length > 0) {
-                                  vpcVirtualRouterProviderId = items[0].id;
-                                }
-                              }
-                            });
-                            if(vpcVirtualRouterProviderId == null) {
-                              alert("error: listNetworkServiceProviders API doesn't return VpcVirtualRouter provider ID");
-                              return;
-                            }
+														if(args.data.zone.sgEnabled != true) { //Advanced SG-disabled zone
+															// ***** VPC Virtual Router ***** (begin) *****
+															var vpcVirtualRouterProviderId;
+															$.ajax({
+																url: createURL("listNetworkServiceProviders&name=VpcVirtualRouter&physicalNetworkId=" + thisPhysicalNetwork.id),
+																dataType: "json",
+																async: false,
+																success: function(json) {
+																	var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;
+																	if(items != null && items.length > 0) {
+																		vpcVirtualRouterProviderId = items[0].id;
+																	}
+																}
+															});
+															if(vpcVirtualRouterProviderId == null) {
+																alert("error: listNetworkServiceProviders API doesn't return VpcVirtualRouter provider ID");
+																return;
+															}
 
-                            var vpcVirtualRouterElementId;
-                            $.ajax({
-                              url: createURL("listVirtualRouterElements&nspid=" + vpcVirtualRouterProviderId),
-                              dataType: "json",
-                              async: false,
-                              success: function(json) {
-                                var items = json.listvirtualrouterelementsresponse.virtualrouterelement;
-                                if(items != null && items.length > 0) {
-                                  vpcVirtualRouterElementId = items[0].id;
-                                }
-                              }
-                            });
-                            if(vpcVirtualRouterElementId == null) {
-                              alert("error: listVirtualRouterElements API doesn't return VPC Virtual Router Element Id");
-                              return;
-                            }
+															var vpcVirtualRouterElementId;
+															$.ajax({
+																url: createURL("listVirtualRouterElements&nspid=" + vpcVirtualRouterProviderId),
+																dataType: "json",
+																async: false,
+																success: function(json) {
+																	var items = json.listvirtualrouterelementsresponse.virtualrouterelement;
+																	if(items != null && items.length > 0) {
+																		vpcVirtualRouterElementId = items[0].id;
+																	}
+																}
+															});
+															if(vpcVirtualRouterElementId == null) {
+																alert("error: listVirtualRouterElements API doesn't return VPC Virtual Router Element Id");
+																return;
+															}
 
-                            $.ajax({
-                              url: createURL("configureVirtualRouterElement&enabled=true&id=" + vpcVirtualRouterElementId),
-                              dataType: "json",
-                              async: false,
-                              success: function(json) {
-                                var jobId = json.configurevirtualrouterelementresponse.jobid;                                
-																var enableVpcVirtualRouterElementIntervalID = setInterval(function() { 	
-                                  $.ajax({
-                                    url: createURL("queryAsyncJobResult&jobId="+jobId),
-                                    dataType: "json",
-                                    success: function(json) {
-                                      var result = json.queryasyncjobresultresponse;
-                                      if (result.jobstatus == 0) {
-                                        return; //Job has not completed
-                                      }
-                                      else {                                        
-																				clearInterval(enableVpcVirtualRouterElementIntervalID); 
-																				
-                                        if (result.jobstatus == 1) { //configureVirtualRouterElement succeeded
-                                          $.ajax({
-                                            url: createURL("updateNetworkServiceProvider&state=Enabled&id=" + vpcVirtualRouterProviderId),
-                                            dataType: "json",
-                                            async: false,
-                                            success: function(json) {
-                                              var jobId = json.updatenetworkserviceproviderresponse.jobid;                                             
-																							var enableVpcVirtualRouterProviderIntervalID = setInterval(function() { 	
-                                                $.ajax({
-                                                  url: createURL("queryAsyncJobResult&jobId="+jobId),
-                                                  dataType: "json",
-                                                  success: function(json) {
-                                                    var result = json.queryasyncjobresultresponse;
-                                                    if (result.jobstatus == 0) {
-                                                      return; //Job has not completed
-                                                    }
-                                                    else {                                                      
-																											clearInterval(enableVpcVirtualRouterProviderIntervalID); 
-																											
-                                                      if (result.jobstatus == 1) { //Virtual Router Provider has been enabled successfully
-                                                        advZoneConfiguredVirtualRouterCount++;
-                                                        if(advZoneConfiguredVirtualRouterCount == (args.data.returnedPhysicalNetworks.length * 2)) { //not call addPod() until virtualRouter and vpcVirtualRouter of all physical networks get configured
-                                                          stepFns.addPod({
-                                                            data: args.data
-                                                          });
-                                                        }
-                                                      }
-                                                      else if (result.jobstatus == 2) {
-                                                        alert("failed to enable VPC Virtual Router Provider. Error: " + _s(result.jobresult.errortext));
-                                                      }
-                                                    }
-                                                  },
-                                                  error: function(XMLHttpResponse) {
-                                                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                                                    alert("updateNetworkServiceProvider failed. Error: " + errorMsg);
-                                                  }
-                                                });                                              
-																							}, 3000); 	
-                                            }
-                                          });
-                                        }
-                                        else if (result.jobstatus == 2) {
-                                          alert("configureVirtualRouterElement failed. Error: " + _s(result.jobresult.errortext));
-                                        }
-                                      }
-                                    },
-                                    error: function(XMLHttpResponse) {
-                                      var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                                      alert("configureVirtualRouterElement failed. Error: " + errorMsg);
-                                    }
-                                  });                                
-																}, 3000); 	
-                              }
-                            });
-														// ***** VPC Virtual Router ***** (end) *****
+															$.ajax({
+																url: createURL("configureVirtualRouterElement&enabled=true&id=" + vpcVirtualRouterElementId),
+																dataType: "json",
+																async: false,
+																success: function(json) {
+																	var jobId = json.configurevirtualrouterelementresponse.jobid;                                
+																	var enableVpcVirtualRouterElementIntervalID = setInterval(function() { 	
+																		$.ajax({
+																			url: createURL("queryAsyncJobResult&jobId="+jobId),
+																			dataType: "json",
+																			success: function(json) {
+																				var result = json.queryasyncjobresultresponse;
+																				if (result.jobstatus == 0) {
+																					return; //Job has not completed
+																				}
+																				else {                                        
+																					clearInterval(enableVpcVirtualRouterElementIntervalID); 
+																					
+																					if (result.jobstatus == 1) { //configureVirtualRouterElement succeeded
+																						$.ajax({
+																							url: createURL("updateNetworkServiceProvider&state=Enabled&id=" + vpcVirtualRouterProviderId),
+																							dataType: "json",
+																							async: false,
+																							success: function(json) {
+																								var jobId = json.updatenetworkserviceproviderresponse.jobid;                                             
+																								var enableVpcVirtualRouterProviderIntervalID = setInterval(function() { 	
+																									$.ajax({
+																										url: createURL("queryAsyncJobResult&jobId="+jobId),
+																										dataType: "json",
+																										success: function(json) {
+																											var result = json.queryasyncjobresultresponse;
+																											if (result.jobstatus == 0) {
+																												return; //Job has not completed
+																											}
+																											else {                                                      
+																												clearInterval(enableVpcVirtualRouterProviderIntervalID); 
+																												
+																												if (result.jobstatus == 1) { //VPC Virtual Router has been enabled successfully
+																													//don't need to do anything here
+																												}
+																												else if (result.jobstatus == 2) {
+																													alert("failed to enable VPC Virtual Router Provider. Error: " + _s(result.jobresult.errortext));
+																												}
+																											}
+																										},
+																										error: function(XMLHttpResponse) {
+																											var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+																											alert("failed to enable VPC Virtual Router Provider. Error: " + errorMsg);
+																										}
+																									});                                              
+																								}, 3000); 	
+																							}
+																						});
+																					}
+																					else if (result.jobstatus == 2) {
+																						alert("configureVirtualRouterElement failed. Error: " + _s(result.jobresult.errortext));
+																					}
+																				}
+																			},
+																			error: function(XMLHttpResponse) {
+																				var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+																				alert("configureVirtualRouterElement failed. Error: " + errorMsg);
+																			}
+																		});                                
+																	}, 3000); 	
+																}
+															});
+															// ***** VPC Virtual Router ***** (end) *****
+														}
+														else { //args.data.zone.sgEnabled == true  //Advanced SG-enabled zone														  														
+															message(dictionary['message.enabling.security.group.provider']); 														
+															
+															// get network service provider ID of Security Group
+															var securityGroupProviderId;
+															$.ajax({
+																url: createURL("listNetworkServiceProviders&name=SecurityGroupProvider&physicalNetworkId=" + thisPhysicalNetwork.id),
+																dataType: "json",
+																async: false,
+																success: function(json) {
+																	var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;
+																	if(items != null && items.length > 0) {
+																		securityGroupProviderId = items[0].id;
+																	}
+																}
+															});
+															if(securityGroupProviderId == null) {
+																alert("error: listNetworkServiceProviders API doesn't return security group provider ID");
+																return;
+															}
+
+															$.ajax({
+																url: createURL("updateNetworkServiceProvider&state=Enabled&id=" + securityGroupProviderId),
+																dataType: "json",
+																async: false,
+																success: function(json) {                                                            
+																	var enableSecurityGroupProviderIntervalID = setInterval(function() { 	
+																		$.ajax({
+																			url: createURL("queryAsyncJobResult&jobId=" + json.updatenetworkserviceproviderresponse.jobid),
+																			dataType: "json",
+																			success: function(json) {
+																				var result = json.queryasyncjobresultresponse;
+																				if (result.jobstatus == 0) {
+																					return; //Job has not completed
+																				}
+																				else {                                                                   
+																					clearInterval(enableSecurityGroupProviderIntervalID); 
+																					
+																					if (result.jobstatus == 1) { //Security group provider has been enabled successfully      
+																						//don't need to do anything here																																																							
+																					}
+																					else if (result.jobstatus == 2) {
+																						alert("failed to enable security group provider. Error: " + _s(result.jobresult.errortext));
+																					}
+																				}
+																			},
+																			error: function(XMLHttpResponse) {
+																				var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+																				alert("failed to enable security group provider. Error: " + errorMsg);
+																			}
+																		});                                                            
+																	}, 3000); 	
+																}
+															});		
+														}
                           }
                           else if (result.jobstatus == 2) {
-                            alert("updatePhysicalNetwork failed. Error: " + _s(result.jobresult.errortext));
+                            alert("failed to enable physical network. Error: " + _s(result.jobresult.errortext));
                           }
                         }
                       },
-                      error: function(XMLHttpResponse) {
-                        var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                        alert("updatePhysicalNetwork failed. Error: " + errorMsg);
+                      error: function(XMLHttpResponse) {                       
+                        alert("failed to enable physical network. Error: " + parseXMLHttpResponse(XMLHttpResponse));
                       }
                     });                  
 									}, 3000); 		
@@ -2352,17 +2430,34 @@
           });
         },
 				
-				addGuestNetwork: function(args) {  //create a guest network for basic zone
+				addGuestNetwork: function(args) {  //create a guest network for Basic zone or Advanced zone with SG
           message(dictionary['message.creating.guest.network']); 
           
-					var array2 = [];
-					array2.push("&zoneid=" + args.data.returnedZone.id);
-					array2.push("&name=guestNetworkForBasicZone");
-					array2.push("&displaytext=guestNetworkForBasicZone");
-					array2.push("&networkofferingid=" + args.data.zone.networkOfferingId);
+					var data = {
+					  zoneid: args.data.returnedZone.id,
+						name: 'defaultGuestNetwork',
+						displaytext: 'defaultGuestNetwork',
+						networkofferingid: args.data.zone.networkOfferingId
+					};
+					
+					//Advanced zone with SG
+					if(args.data.zone.networkType == "Advanced" && args.data.zone.sgEnabled	== true) {
+					  $.extend(data, {
+							gateway: args.data.guestTraffic.guestGateway,
+							netmask: args.data.guestTraffic.guestNetmask,
+							startip: args.data.guestTraffic.guestStartIp,
+							vlan: args.data.guestTraffic.vlanId
+						});					
+						if(args.data.guestTraffic.guestEndIp != null && args.data.guestTraffic.guestEndIp.length > 0) {
+							$.extend(data, {
+								endip: args.data.guestTraffic.guestEndIp
+							});
+						}			
+          }						
+					
 					$.ajax({
-						url: createURL("createNetwork" + array2.join("")),
-						dataType: "json",
+						url: createURL('createNetwork'),
+						data: data,
 						async: false,
 						success: function(json) {
 							//basic zone has only one physical network => addPod() will be called only once => so don't need to double-check before calling addPod()
@@ -2411,9 +2506,9 @@
           });
         },
 
-        configurePublicTraffic: function(args) {
-          if((args.data.zone.networkType == "Basic" && (selectedNetworkOfferingHavingSG == true && selectedNetworkOfferingHavingEIP == true && selectedNetworkOfferingHavingELB == true))
-           ||(args.data.zone.networkType == "Advanced")) {
+        configurePublicTraffic: function(args) {          
+					if((args.data.zone.networkType == "Basic" && (selectedNetworkOfferingHavingSG == true && selectedNetworkOfferingHavingEIP == true && selectedNetworkOfferingHavingELB == true))
+           ||(args.data.zone.networkType == "Advanced" && args.data.zone.sgEnabled != true)) {
 					 
             message(dictionary['message.configuring.public.traffic']); 
 
@@ -2489,6 +2584,11 @@
               })
             });
           }
+					else if(args.data.zone.networkType == "Advanced" && args.data.zone.sgEnabled == true) { // Advanced SG-enabled zone doesn't have public traffic type
+					  stepFns.configureStorageTraffic({
+							data: args.data
+						});
+					}					
           else { //basic zone without public traffic type , skip to next step
             if (data.physicalNetworks && $.inArray('storage', data.physicalNetworks[0].trafficTypes) > -1) {
               stepFns.configureStorageTraffic({

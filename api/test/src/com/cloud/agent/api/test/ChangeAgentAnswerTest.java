@@ -14,29 +14,31 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.agent.api;
+package src.com.cloud.agent.api.test;
 
-import java.util.List;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
-import com.cloud.network.PhysicalNetworkSetupInfo;
+import org.junit.Test;
 
-public class CheckNetworkCommand extends Command {
+import com.cloud.agent.api.ChangeAgentAnswer;
+import com.cloud.agent.api.ChangeAgentCommand;
+import com.cloud.host.Status.Event;
 
-    List<PhysicalNetworkSetupInfo> networkInfoList;
+public class ChangeAgentAnswerTest {
+    ChangeAgentCommand cac = new ChangeAgentCommand(123456789L,
+            Event.AgentConnected);
+    ChangeAgentAnswer caa = new ChangeAgentAnswer(cac, true);
 
-    public CheckNetworkCommand(List<PhysicalNetworkSetupInfo> networkInfoList) {
-        this.networkInfoList = networkInfoList;
+    @Test
+    public void testGetResult() {
+        boolean b = caa.getResult();
+        assertTrue(b);
     }
 
-    public List<PhysicalNetworkSetupInfo> getPhysicalNetworkInfoList() {
-        return networkInfoList;
-    }
-
-    protected CheckNetworkCommand() {
-    }
-
-    @Override
-    public boolean executeInSequence() {
-        return true;
+    @Test
+    public void testExecuteInSequence() {
+        boolean b = caa.executeInSequence();
+        assertFalse(b);
     }
 }

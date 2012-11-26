@@ -35,6 +35,7 @@ try:
     from clint.textui import colored
     from ConfigParser import ConfigParser, SafeConfigParser
     from urllib2 import HTTPError, URLError
+    from httplib import BadStatusLine
 
     from common import __version__, config_file, config_fields
     from common import grammar, precached_verbs
@@ -205,7 +206,7 @@ class CloudStackShell(cmd.Cmd):
             self.print_shell("API Error:", e)
         except HTTPError, e:
             self.print_shell(e)
-        except URLError, e:
+        except (URLError, BadStatusLine), e:
             self.print_shell("Connection Error:", e)
         logger.debug("====END Request====\n")
 
