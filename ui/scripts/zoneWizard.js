@@ -2351,18 +2351,23 @@
 					  zoneid: args.data.returnedZone.id,
 						name: 'defaultGuestNetwork',
 						displaytext: 'defaultGuestNetwork',
-						networkofferingid: args.data.zone.networkOfferingId,
-            gateway: args.data.guestTraffic.guestGateway,
- 						netmask: args.data.guestTraffic.guestNetmask,
-						startip: args.data.guestTraffic.guestStartIp,
-						vlan: args.data.guestTraffic.vlanId
+						networkofferingid: args.data.zone.networkOfferingId
 					};
 					
-					if(args.data.guestTraffic.guestEndIp != null && args.data.guestTraffic.guestEndIp.length > 0) {
+					//Advanced zone with SG
+					if(args.data.zone.networkType == "Advanced" && args.data.zone.sgEnabled	== true) {
 					  $.extend(data, {
-						  endip: args.data.guestTraffic.guestEndIp
-						});
-					}					          
+							gateway: args.data.guestTraffic.guestGateway,
+							netmask: args.data.guestTraffic.guestNetmask,
+							startip: args.data.guestTraffic.guestStartIp,
+							vlan: args.data.guestTraffic.vlanId
+						});					
+						if(args.data.guestTraffic.guestEndIp != null && args.data.guestTraffic.guestEndIp.length > 0) {
+							$.extend(data, {
+								endip: args.data.guestTraffic.guestEndIp
+							});
+						}			
+          }						
 					
 					$.ajax({
 						url: createURL('createNetwork'),
