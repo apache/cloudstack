@@ -1194,19 +1194,19 @@
 													return false; //break each loop
 												}
 											}																					
-										});                    
-                    if(havingVpcVirtualRouterForAtLeastOneService == true) {
+										});   
+										if(havingVpcVirtualRouterForAtLeastOneService == true || $guestTypeField.val() == 'Shared') {			
 										  $conservemode.find("input[type=checkbox]").attr("disabled", "disabled"); 
-                      $conservemode.find("input[type=checkbox]").attr('checked', false);		
-
+                      $conservemode.find("input[type=checkbox]").attr('checked', false);	
+										
                       $serviceSourceNatRedundantRouterCapabilityCheckbox.find("input[type=checkbox]").attr("disabled", "disabled"); 
                       $serviceSourceNatRedundantRouterCapabilityCheckbox.find("input[type=checkbox]").attr('checked', false);										
 										}
-                    else {
-                      $conservemode.find("input[type=checkbox]").removeAttr("disabled"); 
-                      $serviceSourceNatRedundantRouterCapabilityCheckbox.find("input[type=checkbox]").removeAttr("disabled"); 									
-										}
-																				
+                    else {                      
+                      $serviceSourceNatRedundantRouterCapabilityCheckbox.find("input[type=checkbox]").removeAttr("disabled"); 
+                      $conservemode.find("input[type=checkbox]").removeAttr("disabled");       											
+										}		
+												
 	                  $(':ui-dialog').dialog('option', 'position', 'center');
 										
 										//CS-16612 show all services regardless of guestIpType(Shared/Isolated)
