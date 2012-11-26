@@ -120,11 +120,6 @@ public class EntityManagerImpl implements EntityManager, Manager {
         GenericDao<T, ? extends Serializable> dao = (GenericDao<T, ? extends Serializable>)GenericDaoBase.getDao(entityType);
         return dao.customSearch(sc, null);
     }
-    
-    @Override
-    public <T, K> List<K> search(SearchCriteria2<T, K> sc) {
-    	return sc.list();
-    }
 
     @Override
     public <T, K extends Serializable> void remove(Class<T> entityType, K id) {
