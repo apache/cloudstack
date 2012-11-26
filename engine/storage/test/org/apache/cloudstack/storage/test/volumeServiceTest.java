@@ -20,9 +20,10 @@ package org.apache.cloudstack.storage.test;
 
 import static org.junit.Assert.*;
 
-import java.awt.List;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
@@ -41,7 +42,11 @@ import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskTyp
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskTypeHelper;
 import org.apache.cloudstack.engine.subsystem.api.storage.type.RootDisk;
 import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeTypeHelper;
+import org.apache.cloudstack.storage.command.CreateVolumeAnswer;
+import org.apache.cloudstack.storage.command.CreateVolumeFromBaseImageCommand;
 import org.apache.cloudstack.storage.datastore.DefaultPrimaryDataStoreImpl;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreVO;
 import org.apache.cloudstack.storage.datastore.lifecycle.PrimaryDataStoreLifeCycle;
 import org.apache.cloudstack.storage.datastore.provider.DefaultPrimaryDatastoreProviderImpl;
 import org.apache.cloudstack.storage.datastore.provider.PrimaryDataStoreProvider;
@@ -68,9 +73,29 @@ import org.junit.runner.RunWith;
 
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.mockito.Mockito;
 import org.mockito.Mockito.*;
 
 
+import com.cloud.agent.AgentManager;
+import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.HostPodVO;
+import com.cloud.dc.DataCenter.NetworkType;
+import com.cloud.dc.dao.ClusterDao;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.HostPodDao;
+import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.OperationTimedoutException;
+import com.cloud.host.Host;
+import com.cloud.host.HostVO;
+import com.cloud.host.Status;
+import com.cloud.host.Status.Event;
+import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.org.Cluster.ClusterType;
+import com.cloud.org.Managed.ManagedState;
+import com.cloud.resource.ResourceState;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.utils.component.ComponentInject;
 import com.cloud.utils.db.DB;
@@ -89,11 +114,68 @@ public class volumeServiceTest {
     ImageDataDao imageDataDao;
     @Inject
     VolumeDao volumeDao;
+    @Inject 
+    HostDao hostDao;
+    @Inject
+    HostPodDao podDao;
+    @Inject
+    ClusterDao clusterDao;
+    @Inject
+    DataCenterDao dcDao;
+    @Inject
+    PrimaryDataStoreDao primaryStoreDao;
     @Inject
     PrimaryDataStoreProviderManager primaryDataStoreProviderMgr;
+    @Inject
+    AgentManager agentMgr;
+    Long dcId;
+    Long clusterId;
 	@Before
 	public void setUp() {
+		//create data center
+		DataCenterVO dc = new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null,  "10.0.0.1/24", 
+							null, null, NetworkType.Basic, null, null, true,  true);
+		dc = dcDao.persist(dc);
+		dcId = dc.getId();
+		//create pod
 		
+		HostPodVO pod = new HostPodVO(UUID.randomUUID().toString(), dc.getId(), "192.168.56.1", "192.168.56.0/24", 8, "test");
+		pod = podDao.persist(pod);
+		//create xen cluster
+		ClusterVO cluster = new ClusterVO(dc.getId(), pod.getId(), "devcloud cluster");
+		cluster.setHypervisorType(HypervisorType.XenServer.toString());
+		cluster.setClusterType(ClusterType.CloudManaged);
+		cluster.setManagedState(ManagedState.Managed);
+		cluster = clusterDao.persist(cluster);
+		clusterId = cluster.getId();
+		//create xen host
+		
+		HostVO host = new HostVO(UUID.randomUUID().toString());
+		host.setName("devcloud xen host");
+		host.setType(Host.Type.Routing);
+		host.setPrivateIpAddress("192.168.56.2");
+		host.setDataCenterId(dc.getId());
+		host.setVersion("6.0.1");
+		host.setAvailable(true);
+		host.setSetup(true);
+		host.setLastPinged(0);
+		host.setResourceState(ResourceState.Enabled);
+		host.setClusterId(cluster.getId());
+		
+		host = hostDao.persist(host);
+		List<HostVO> results = new ArrayList<HostVO>();
+		results.add(host);
+		Mockito.when(hostDao.listAll()).thenReturn(results);
+		Mockito.when(hostDao.findHypervisorHostInCluster(Mockito.anyLong())).thenReturn(results);
+		CreateVolumeAnswer createVolumeFromImageAnswer = new CreateVolumeAnswer(UUID.randomUUID().toString());
+		try {
+			Mockito.when(agentMgr.send(Mockito.anyLong(), Mockito.any(CreateVolumeFromBaseImageCommand.class))).thenReturn(createVolumeFromImageAnswer);
+		} catch (AgentUnavailableException e) {
+			
+		} catch (OperationTimedoutException e) {
+			
+		}
+		//Mockito.when(primaryStoreDao.findById(Mockito.anyLong())).thenReturn(primaryStore);
 	}
 	
 	private ImageDataVO createImageData() {
@@ -145,7 +227,8 @@ public class volumeServiceTest {
             PrimaryDataStoreLifeCycle lifeCycle = provider.getDataStoreLifeCycle();
             Map<String, String> params = new HashMap<String, String>();
             params.put("url", "nfs://test/test");
-            params.put("dcId", "1");
+            params.put("dcId", dcId.toString());
+            params.put("clusterId", clusterId.toString());
             params.put("name", "my primary data store");
             PrimaryDataStoreInfo primaryDataStoreInfo = lifeCycle.registerDataStore(params);
             return primaryDataStoreInfo;

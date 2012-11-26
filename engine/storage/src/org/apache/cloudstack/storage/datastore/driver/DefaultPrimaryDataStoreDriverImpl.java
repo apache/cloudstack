@@ -93,7 +93,7 @@ public class DefaultPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         VolumeTO vol = new VolumeTO(volume);
         ImageOnPrimayDataStoreTO image = new ImageOnPrimayDataStoreTO(template);
         CreateVolumeFromBaseImageCommand cmd = new CreateVolumeFromBaseImageCommand(vol, image);
-        List<EndPoint> endPoints = volume.getDataStore().getEndPoints();
+        List<EndPoint> endPoints = template.getPrimaryDataStore().getEndPoints();
 
         Answer answer = sendOutCommand(cmd, endPoints);
 

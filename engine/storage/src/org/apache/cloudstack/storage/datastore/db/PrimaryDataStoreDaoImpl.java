@@ -46,7 +46,6 @@ import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Component
 public class PrimaryDataStoreDaoImpl extends GenericDaoBase<PrimaryDataStoreVO, Long> implements PrimaryDataStoreDao {
     protected final SearchBuilder<PrimaryDataStoreVO> AllFieldSearch;
     protected final SearchBuilder<PrimaryDataStoreVO> DcPodSearch;
@@ -60,7 +59,7 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<PrimaryDataStoreVO, 
     private final String DetailsSqlSuffix = ") GROUP BY storage_pool_details.pool_id HAVING COUNT(storage_pool_details.name) >= ?";
     private final String FindPoolTagDetails = "SELECT storage_pool_details.name FROM storage_pool_details WHERE pool_id = ? and value = ?";
 
-    protected PrimaryDataStoreDaoImpl() {
+    public PrimaryDataStoreDaoImpl() {
         AllFieldSearch = createSearchBuilder();
         AllFieldSearch.and("name", AllFieldSearch.entity().getName(), SearchCriteria.Op.EQ);
         AllFieldSearch.and("uuid", AllFieldSearch.entity().getUuid(), SearchCriteria.Op.EQ);

@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.springframework.stereotype.Component;
 
@@ -55,10 +56,10 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
     
     private static final String GET_POD_CLUSTER_MAP_PREFIX = "SELECT pod_id, id FROM cloud.cluster WHERE cluster.id IN( ";
     private static final String GET_POD_CLUSTER_MAP_SUFFIX = " )";
+    @Inject
+    protected HostPodDao _hostPodDao;
     
-    protected final HostPodDaoImpl _hostPodDao = ComponentLocator.inject(HostPodDaoImpl.class);
-    
-    protected ClusterDaoImpl() {
+    public ClusterDaoImpl() {
         super();
         
         HyTypeWithoutGuidSearch = createSearchBuilder();

@@ -27,10 +27,14 @@ import org.apache.cloudstack.storage.volume.db.VolumeVO;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.dao.EntityManager;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.component.ComponentInject;
+import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria2;
+import com.cloud.utils.db.SearchCriteriaService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 import edu.emory.mathcs.backport.java.util.Collections;
@@ -42,8 +46,8 @@ public class DefaultPrimaryDataStoreImpl implements PrimaryDataStore {
     protected PrimaryDataStoreInfo pdsInfo;
     @Inject
     private VolumeDao volumeDao;
-    //@Inject
-    private HostDao hostDao;
+    @Inject
+    HostDao hostDao;
     @Inject
     TemplatePrimaryDataStoreManager templatePrimaryStoreMgr;
 

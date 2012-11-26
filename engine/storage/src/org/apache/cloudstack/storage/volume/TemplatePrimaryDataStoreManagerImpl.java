@@ -41,7 +41,7 @@ public class TemplatePrimaryDataStoreManagerImpl implements TemplatePrimaryDataS
 
         TemplatePrimaryDataStoreVO templateStoreVO = new TemplatePrimaryDataStoreVO(dataStore.getId(), template.getId());
         templateStoreVO = templateStoreDao.persist(templateStoreVO);
-        TemplateOnPrimaryDataStoreObject templateStoreObject = new TemplateOnPrimaryDataStoreObject(dataStore, template, templateStoreVO);
+        TemplateOnPrimaryDataStoreObject templateStoreObject = new TemplateOnPrimaryDataStoreObject(dataStore, template, templateStoreVO, templateStoreDao);
         return templateStoreObject;
     }
 
@@ -52,7 +52,11 @@ public class TemplatePrimaryDataStoreManagerImpl implements TemplatePrimaryDataS
         sc.addAnd(sc.getEntity().getPoolId(), Op.EQ, dataStore.getId());
         sc.addAnd(sc.getEntity().getDownloadState(), Op.EQ, VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
         TemplatePrimaryDataStoreVO templateStoreVO = sc.find();
-        TemplateOnPrimaryDataStoreObject templateStoreObject = new TemplateOnPrimaryDataStoreObject(dataStore, template, templateStoreVO);
+        if (templateStoreVO == null) {
+        	return null;
+        }
+        
+        TemplateOnPrimaryDataStoreObject templateStoreObject = new TemplateOnPrimaryDataStoreObject(dataStore, template, templateStoreVO, templateStoreDao);
         return templateStoreObject;
     }
 }

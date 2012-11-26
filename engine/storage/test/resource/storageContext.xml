@@ -15,7 +15,8 @@
   <context:component-scan base-package="org.apache.cloudstack.engine.subsystem.api.storage" />
   <context:component-scan base-package="com.cloud.utils.db" />
   <context:component-scan base-package="com.cloud.utils.component" />
-  
+  <context:component-scan base-package="com.cloud.host.dao" />
+  <context:component-scan base-package="com.cloud.dc.dao" />
  
    <context:component-scan base-package=" com.cloud.upgrade.dao" />
   <tx:annotation-driven transaction-manager="transactionManager" />
@@ -35,5 +36,7 @@
     <constructor-arg name="classToBeMocked"
       value="org.apache.cloudstack.storage.volume.VolumeMotionService" />
   </bean>
+  
+  <bean class="org.apache.cloudstack.storage.test.ChildTestConfiguration" />
 
 </beans>

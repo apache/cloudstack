@@ -2371,19 +2371,5 @@ CREATE TABLE `cloud`.`nicira_nvp_nic_map` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`image_data_store` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
-  `name` varchar(255) NOT NULL COMMENT 'name of data store',
-  `image_provider_id` bigint unsigned NOT NULL COMMENT 'id of image_data_store_provider',
-  PRIMARY KEY(`id`),
-  CONSTRAINT `fk_tags__image_data_store_provider_id` FOREIGN KEY(`image_provider_id`) REFERENCES `image_data_store_provider`(`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE `cloud`.`image_data_store_provider` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
-  `name` varchar(255) NOT NULL COMMENT 'name of data store provider',
-  PRIMARY KEY(`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
 SET foreign_key_checks = 1;
 

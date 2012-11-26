@@ -85,6 +85,7 @@ public class DefaultPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLif
         dataStore.setHostAddress(parser.getHost());
         dataStore.setPath(parser.getPath());
         dataStore.setStorageProviderId(this.provider.getId());
+        dataStore.setClusterId(Long.parseLong(dsInfos.get("clusterId")));
         dataStore = dataStoreDao.persist(dataStore);
         //TODO: add extension point for each data store
         return this.provider.getDataStore(dataStore.getId());

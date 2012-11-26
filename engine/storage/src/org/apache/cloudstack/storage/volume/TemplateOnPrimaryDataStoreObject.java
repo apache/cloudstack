@@ -18,8 +18,6 @@
  */
 package org.apache.cloudstack.storage.volume;
 
-import javax.inject.Inject;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.storage.image.TemplateInfo;
 import org.apache.cloudstack.storage.volume.db.TemplatePrimaryDataStoreDao;
@@ -31,13 +29,14 @@ public class TemplateOnPrimaryDataStoreObject implements TemplateOnPrimaryDataSt
     protected PrimaryDataStoreInfo dataStore;
     protected TemplateInfo template;
     protected TemplatePrimaryDataStoreVO vo;
-    @Inject
     TemplatePrimaryDataStoreDao templateStoreDao;
 
-    public TemplateOnPrimaryDataStoreObject(PrimaryDataStoreInfo primaryDataStore, TemplateInfo template, TemplatePrimaryDataStoreVO vo) {
+    public TemplateOnPrimaryDataStoreObject(PrimaryDataStoreInfo primaryDataStore, TemplateInfo template, TemplatePrimaryDataStoreVO vo,
+    		TemplatePrimaryDataStoreDao templateStoreDao) {
         this.dataStore = primaryDataStore;
         this.template = template;
         this.vo = vo;
+        this.templateStoreDao = templateStoreDao;
     }
 
     @Override

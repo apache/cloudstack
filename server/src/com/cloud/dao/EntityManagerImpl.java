@@ -33,6 +33,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria2;
 
 @Component
 @Local(value=EntityManager.class)
@@ -118,6 +119,11 @@ public class EntityManagerImpl implements EntityManager, Manager {
     public <T, K> List<K> search(Class<T> entityType, SearchCriteria<K> sc) {
         GenericDao<T, ? extends Serializable> dao = (GenericDao<T, ? extends Serializable>)GenericDaoBase.getDao(entityType);
         return dao.customSearch(sc, null);
+    }
+    
+    @Override
+    public <T, K> List<K> search(SearchCriteria2<T, K> sc) {
+    	return sc.list();
     }
 
     @Override
