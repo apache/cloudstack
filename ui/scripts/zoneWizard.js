@@ -232,7 +232,10 @@
 					$publicTrafficDesc.find('#for_advanced_zone').hide();					
         }
         else { //args.data['network-model'] == 'Advanced'          
-          isShown = true;					
+          if(args.data["zone-advanced-sg-enabled"] !=	"on")          
+					  isShown = true;					
+					else
+					  isShown = false;
 					
 					$publicTrafficDesc.find('#for_advanced_zone').css('display', 'inline');
 					$publicTrafficDesc.find('#for_basic_zone').hide();					
