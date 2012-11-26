@@ -455,15 +455,20 @@
 												});
 											}
 										});
-																				
-										if(args.hypervisor != "VMware" && args.hypervisor != "BareMetal") {
-										  availableNetworkOfferingObjs.push(thisNetworkOffering);
-										}
-										else { //only network offerings that does not include EIP, ELB, SG
-										  if(thisNetworkOffering.havingSG != true && thisNetworkOffering.havingEIP != true && thisNetworkOffering.havingELB != true) {
-											  availableNetworkOfferingObjs.push(thisNetworkOffering);
+										                    
+										if(thisNetworkOffering.havingEIP == true && thisNetworkOffering.havingELB == true) { //EIP ELB 
+											if(args.hypervisor == "VMware" || args.hypervisor == "BareMetal") { //VMware, BareMetal don't support EIP ELB 
+												return true; //move to next item in $.each() loop
 											}
-										}		
+										}
+																				
+										if(args.context.zones[0]["network-model"]	== "Advanced" && args.context.zones[0]["zone-advanced-sg-enabled"] ==	"on") { // Advanced SG-enabled zone
+										  if(thisNetworkOffering.havingSG != true) {
+											  return true; //move to next item in $.each() loop
+											}
+										}
+										
+										availableNetworkOfferingObjs.push(thisNetworkOffering);										
 									});																	
 									
                   args.response.success({
