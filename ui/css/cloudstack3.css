@@ -1458,7 +1458,7 @@ div.list-view td.state.off span {
 }
 
 .quick-view-tooltip .detail-view .detail-group .main-groups table td.value span {
-  height: 15px;
+  height: 25px;
   top: 0px;
 }
 
