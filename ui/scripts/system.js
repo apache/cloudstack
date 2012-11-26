@@ -1145,12 +1145,16 @@
                             label: 'label.scope',
                             docID: 'helpGuestNetworkZoneScope',
                             select: function(args) {
-                              var array1 = [];
-															array1.push({id: 'zone-wide', description: 'All'});
-															array1.push({id: 'domain-specific', description: 'Domain'});
-															array1.push({id: 'account-specific', description: 'Account'});
-															array1.push({id: 'project-specific', description: 'Project'});
-
+                              var array1 = [];															
+															if(args.context.zones[0].networktype == "Advanced" && args.context.zones[0].securitygroupsenabled	== true) {
+															  array1.push({id: 'account-specific', description: 'Account'});
+															}
+															else {															
+																array1.push({id: 'zone-wide', description: 'All'});
+																array1.push({id: 'domain-specific', description: 'Domain'});
+																array1.push({id: 'account-specific', description: 'Account'});
+																array1.push({id: 'project-specific', description: 'Project'});
+															}
                               args.response.success({data: array1});
 
                               args.$select.change(function() {
