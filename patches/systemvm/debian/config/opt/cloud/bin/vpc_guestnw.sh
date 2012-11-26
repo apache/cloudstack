@@ -83,8 +83,10 @@ setup_dnsmasq() {
   # setup rules to allow dhcp/dns request
   sudo iptables -D INPUT -i $dev -p udp -m udp --dport 67 -j ACCEPT
   sudo iptables -D INPUT -i $dev -d $ip -p udp -m udp --dport 53 -j ACCEPT
+  sudo iptables -D INPUT -i $dev -d $ip -p tcp -m tcp --dport 53 -j ACCEPT
   sudo iptables -A INPUT -i $dev -p udp -m udp --dport 67 -j ACCEPT
   sudo iptables -A INPUT -i $dev -d $ip -p udp -m udp --dport 53 -j ACCEPT
+  sudo iptables -A INPUT -i $dev -d $ip -p tcp -m tcp --dport 53 -j ACCEPT
   # setup static 
   sed -i -e "/^[#]*dhcp-range=interface:$dev/d" /etc/dnsmasq.d/cloud.conf
   echo "dhcp-range=interface:$dev,set:interface-$dev,$ip,static" >> /etc/dnsmasq.d/cloud.conf

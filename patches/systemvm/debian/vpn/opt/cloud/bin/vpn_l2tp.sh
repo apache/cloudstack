@@ -49,7 +49,8 @@ iptables_() {
    sudo iptables $op FORWARD -i $subnet_if -o ppp+ -j ACCEPT 
    sudo iptables $op FORWARD -i ppp+ -o ppp+ -j ACCEPT 
    sudo iptables $op INPUT -i ppp+ -m udp -p udp --dport 53 -j ACCEPT
-   sudo iptables -t nat $op PREROUTING -i ppp+ -p udp -m udp --dport 53 -j  DNAT --to-destination $subnet_ip
+   sudo iptables $op INPUT -i ppp+ -m tcp -p tcp --dport 53 -j ACCEPT
+   sudo iptables -t nat $op PREROUTING -i ppp+ -p tcp -m tcp --dport 53 -j  DNAT --to-destination $subnet_ip
 
    if sudo iptables -t mangle -N VPN_$public_ip &> /dev/null
    then
