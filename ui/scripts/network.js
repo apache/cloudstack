@@ -605,19 +605,7 @@
                 if (args.context.networks[0].state == 'Destroyed')
                   return false;
 
-                var services = args.context.networks[0].service;
-                if(services == null)
-                  return false;
-
-                // IP addresses supported for both isolated and shared networks w/ source NAT enabled
-                for(var i=0; i < services.length; i++) {
-                  var service = services[i];
-                  if(service.name == "SourceNat") {
-                    return true;
-                  }
-                }
-
-                return false;
+                return true;
               }
             },
             actions: {
