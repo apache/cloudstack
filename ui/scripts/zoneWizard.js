@@ -75,7 +75,7 @@
 					];
 				}
       } 
-			else if (args.data.zone.networkType == 'Advanced') {
+			else { // args.data.zone.networkType == 'Advanced'
 			  if(args.data.zone.sgEnabled	!= true) {
 					return [
 						'management',
@@ -93,15 +93,20 @@
     },
 
     disabledTrafficTypes: function(args) {
-      if (args.data.zone.networkType == 'Basic' && (selectedNetworkOfferingHavingEIP ||
-                                                    selectedNetworkOfferingHavingELB)) {
-        return [];
-      } else if (args.data.zone.networkType == 'Basic') {
-        return ['public'];
-      } else {
-        return [];
+      if (args.data.zone.networkType == 'Basic') {
+			  if(selectedNetworkOfferingHavingEIP || selectedNetworkOfferingHavingELB)
+          return [];
+				else
+				  return ['public'];
       }
-
+			else { // args.data.zone.networkType == 'Advanced'
+			  if(args.data.zone.sgEnabled	!= true) {
+          return [];
+				}
+				else {
+				  return ['public'];
+				}
+      }
     },
 
     cloneTrafficTypes: function(args) {
