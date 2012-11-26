@@ -309,24 +309,17 @@
               label: 'label.add.guest.network',
 
               preFilter: function(args) {
-                var basicZoneExists = true; //Modifying the logic behind displaying the tabs depending on the networktype
-                $.ajax({
-                  url: createURL("listZones"),
-                  dataType: "json",
-                  async: false,
-                  success: function(json) {
-                    if(json.listzonesresponse.zone != null && json.listzonesresponse.zone.length > 0) {
-                      zoneObjs = json.listzonesresponse.zone;
-                      $(zoneObjs).each(function() {
-                        if(this.networktype == "Advanced") {
-                          basicZoneExists = false; // For any occurence of an Advanced zone with any combination of basic zone , the add guest network tab will be displayed
-                          return false; //break each loop
-                        }
-                      });
-                    }
-                  }
-                })
-                return !basicZoneExists; //hide Add guest network button if any basic zone exists
+                var advSgDisabledZones;
+								$.ajax({
+									url: createURL('listZones'),
+									async: false,
+									success: function(json) {									 
+										advSgDisabledZones = $.grep(json.listzonesresponse.zone, function(zone) {
+											return (zone.networktype == 'Advanced' && zone.securitygroupsenabled	!= true); //Isolated networks can only be created in Advanced SG-disabled zone (but not in Basic zone nor Advanced SG-enabled zone)
+										});										
+									}
+								});								
+								return (advSgDisabledZones.length > 0);							
               },
 
               createForm: {
@@ -345,7 +338,7 @@
                         url: createURL('listZones'),
                         success: function(json) {
                           var zones = $.grep(json.listzonesresponse.zone, function(zone) {
-                            return zone.networktype == 'Advanced';
+                            return (zone.networktype == 'Advanced' && zone.securitygroupsenabled	!= true); //Isolated networks can only be created in Advanced SG-disabled zone (but not in Basic zone nor Advanced SG-enabled zone)
                           });
 
                           args.response.success({
