@@ -1211,7 +1211,7 @@
 										
 										//CS-16612 show all services regardless of guestIpType(Shared/Isolated)
 										/*
-										//hide/show service fields upon guestIpType(Shared/Isolated), having VpcVirtualRouter or not ***** (begin) *****						
+										//hide/show service fields ***** (begin) *****					
 										var serviceFieldsToHide = [];										
 										if($guestTypeField.val() == 'Shared') { //Shared network offering
 										  serviceFieldsToHide = [
@@ -1248,7 +1248,21 @@
 												serviceFieldsToHide = temp;
 											}
 										}
-                     											
+                    */
+										
+										
+										//CS-16687: NetworkACL should be removed when the guest_type is SHARED
+										//hide/show service fields ***** (begin) *****	
+										var serviceFieldsToHide = [];										
+										if($guestTypeField.val() == 'Shared') { //Shared network offering
+										  serviceFieldsToHide = [
+												'service.NetworkACL.isEnabled'
+											];	
+										}
+										else { //Isolated network offering 
+										  serviceFieldsToHide = [];		
+										}
+										
 										//hide service fields that are included in serviceFieldsToHide
 										var $serviceCheckboxesToHide = args.$form.find('.form-item').filter(function() {                         											
                       if ($.inArray($(this).attr('rel'), serviceFieldsToHide) > -1) {
@@ -1276,9 +1290,8 @@
                         }													
 											}											
 										}
-										//hide/show service fields upon guestIpType(Shared/Isolated), having VpcVirtualRouter or not ***** (end) *****			
-										*/
-												
+										//hide/show service fields ***** (end) *****			
+																						
 
                     //show LB InlineMode dropdown only when (1)LB Service is checked (2)Service Provider is F5 							
 										if((args.$form.find('.form-item[rel=\"service.Lb.isEnabled\"]').find('input[type=checkbox]').is(':checked') == true)
