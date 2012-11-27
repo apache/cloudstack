@@ -7,7 +7,6 @@ import javax.inject.Inject;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.storage.datastore.DefaultPrimaryDataStoreImpl;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreProviderDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreProviderVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -15,7 +14,6 @@ import org.apache.cloudstack.storage.datastore.driver.DefaultPrimaryDataStoreDri
 import org.apache.cloudstack.storage.datastore.driver.PrimaryDataStoreDriver;
 import org.apache.cloudstack.storage.datastore.lifecycle.DefaultPrimaryDataStoreLifeCycleImpl;
 import org.apache.cloudstack.storage.datastore.lifecycle.PrimaryDataStoreLifeCycle;
-import org.apache.cloudstack.storage.lifecycle.DefaultPrimaryDataStoreLifeCycle;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.component.ComponentInject;

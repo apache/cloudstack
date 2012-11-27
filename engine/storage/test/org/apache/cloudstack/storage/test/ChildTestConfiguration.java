@@ -18,7 +18,7 @@ public class ChildTestConfiguration extends TestConfiguration {
 	
 	@Bean
 	public AgentManager agentMgr() {
-		return Mockito.mock(AgentManager.class);
+		return new DirectAgentManagerImpl();
 	}
 /*	@Override
 	@Bean

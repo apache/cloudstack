@@ -16,20 +16,26 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.engine.subsystem.api.storage;
+package org.apache.cloudstack.storage.test;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.Command;
+import static org.junit.Assert.*;
 
-public interface DataStoreDriver {
-	String getDriverType();
-	TemplateProfile install(TemplateProfile tp, DataStoreEndPoint ep);
-	TemplateProfile register(TemplateProfile tp, DataStoreEndPoint ep);
-	DataObject create(DataObject obj);
-	DataObject copy(DataObject src, DataStore dest);
-	DataObject copy(DataObject src, DataObject dest);
-	DataObject move(DataObject src, DataObject dest);
-	VolumeProfile createVolumeFromTemplate(VolumeProfile vol, TemplateProfile tp, DataStoreEndPoint dp);
-	Answer sendMessage(DataStoreEndPoint dsep, Command cmd);
-	boolean delete(DataObject obj);
+import java.net.URI;
+import java.net.URISyntaxException;
+
+import org.junit.Test;
+
+public class SimpleTest {
+
+	@Test
+	public void test() {
+		try {
+			URI u = new URI("http://myproxy.domain.com:3128");
+			System.out.print(u.getHost());
+		} catch (URISyntaxException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
 }
