@@ -235,17 +235,19 @@
         viewAll: { path: 'storage.volumes', label: 'label.volumes' },
         tabFilter: function(args) {
           var hiddenTabs = [];
-          var zoneNetworktype;
+					
+					var zoneObj;
           $.ajax({
             url: createURL("listZones&id=" + args.context.instances[0].zoneid),
             dataType: "json",
             async: false,
-            success: function(json) {
-              zoneNetworktype = json.listzonesresponse.zone[0].networktype;
+            success: function(json) {              
+							zoneObj = json.listzonesresponse.zone[0];
             }
           });
-          if(zoneNetworktype == "Basic") { //Basic zone has only one guest network (only one NIC)
-            var includingSecurityGroupService = false;
+					
+					var includingSecurityGroupService = false;
+          if(zoneObj.networktype == "Basic") { //Basic zone           
             $.ajax({
               url: createURL("listNetworks&id=" + args.context.instances[0].nic[0].networkid),
               dataType: "json",
@@ -253,7 +255,7 @@
               success: function(json) {
                 var items = json.listnetworksresponse.network;
                 if(items != null && items.length > 0) {
-                  var networkObj = items[0];    //basic zone has only one guest network
+                  var networkObj = items[0];    //Basic zone has only one guest network (only one NIC)    
                   var serviceObjArray = networkObj.service;
                   for(var k = 0; k < serviceObjArray.length; k++) {
                     if(serviceObjArray[k].name == "SecurityGroup") {
@@ -264,12 +266,18 @@
                 }
               }
             });
-            if(includingSecurityGroupService == false)
-              hiddenTabs.push("securityGroups");
           }
-          else { //Advanced zone
+          else if(zoneObj.networktype == "Advanced") { //Advanced zone    
+            if(zoneObj.securitygroupsenabled == true)	
+              includingSecurityGroupService = true;
+						else
+						  includingSecurityGroupService = false;						
+          }
+					
+					if(includingSecurityGroupService == false) {
             hiddenTabs.push("securityGroups");
-          }
+					}
+					
           return hiddenTabs;
         },
         actions: {
