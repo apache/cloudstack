@@ -203,11 +203,19 @@
           data: data,          
           success: function(json) {
             var items = json.listvirtualmachinesresponse.virtualmachine;
+            var i=0;
+            for( i=0;i< items.length;i++){
+              if(items[i].state == 'Expunging')
+                args.response.success ({
 
+              });
+            else {
             args.response.success({
               actionFilter: vmActionfilter,
-              data: items
-            });
+              data: items[i]
+             });
+            }
+           }
           }
         });
       },
