@@ -30,7 +30,7 @@
     </formalpara>
     <formalpara>
         <title>Cause</title>
-        <para>The CloudPlatform administrator UI was used to place the host in scheduled maintenance mode. This mode is separate from vCenter's maintenance mode.</para>
+        <para>The &PRODUCT; administrator UI was used to place the host in scheduled maintenance mode. This mode is separate from vCenter's maintenance mode.</para>
     </formalpara>
     <formalpara>
         <title>Solution</title>

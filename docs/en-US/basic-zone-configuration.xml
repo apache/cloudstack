@@ -135,7 +135,7 @@
                 <listitem><para><emphasis role="bold">Host Tags.</emphasis> (Optional) Any labels that you use to categorize hosts for ease of maintenance. For example, you can set this to the cloud's HA tag (set in the ha.tag global configuration parameter) if you want this host to be used only for VMs with the "high availability" feature enabled. For more information, see HA-Enabled Virtual Machines as well as HA for Hosts.</para></listitem>
             </itemizedlist>
         </listitem>
-        <listitem><para>In a new cluster, CloudPlatform adds the first primary storage server for you. You can always add more servers later. For an overview of what primary storage is, see About Primary Storage.</para>
+        <listitem><para>In a new cluster, &PRODUCT; adds the first primary storage server for you. You can always add more servers later. For an overview of what primary storage is, see About Primary Storage.</para>
             <para>To configure the first primary storage server, enter the following, then click Next:</para>
             <itemizedlist>
                 <listitem><para><emphasis role="bold">Name.</emphasis> The name of the storage device.</para></listitem>
