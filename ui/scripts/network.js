@@ -319,7 +319,7 @@
 										});										
 									}
 								});								
-								return (advSgDisabledZones.length > 0);							
+								return (advSgDisabledZones != null && advSgDisabledZones.length > 0);							
               },
 
               createForm: {
