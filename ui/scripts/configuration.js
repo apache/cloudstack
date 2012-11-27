@@ -1194,24 +1194,24 @@
 													return false; //break each loop
 												}
 											}																					
-										});                    
-                    if(havingVpcVirtualRouterForAtLeastOneService == true) {
+										});   
+										if(havingVpcVirtualRouterForAtLeastOneService == true || $guestTypeField.val() == 'Shared') {			
 										  $conservemode.find("input[type=checkbox]").attr("disabled", "disabled"); 
-                      $conservemode.find("input[type=checkbox]").attr('checked', false);		
-
+                      $conservemode.find("input[type=checkbox]").attr('checked', false);	
+										
                       $serviceSourceNatRedundantRouterCapabilityCheckbox.find("input[type=checkbox]").attr("disabled", "disabled"); 
                       $serviceSourceNatRedundantRouterCapabilityCheckbox.find("input[type=checkbox]").attr('checked', false);										
 										}
-                    else {
-                      $conservemode.find("input[type=checkbox]").removeAttr("disabled"); 
-                      $serviceSourceNatRedundantRouterCapabilityCheckbox.find("input[type=checkbox]").removeAttr("disabled"); 									
-										}
-																				
+                    else {                      
+                      $serviceSourceNatRedundantRouterCapabilityCheckbox.find("input[type=checkbox]").removeAttr("disabled"); 
+                      $conservemode.find("input[type=checkbox]").removeAttr("disabled");       											
+										}		
+												
 	                  $(':ui-dialog').dialog('option', 'position', 'center');
 										
 										//CS-16612 show all services regardless of guestIpType(Shared/Isolated)
 										/*
-										//hide/show service fields upon guestIpType(Shared/Isolated), having VpcVirtualRouter or not ***** (begin) *****						
+										//hide/show service fields ***** (begin) *****					
 										var serviceFieldsToHide = [];										
 										if($guestTypeField.val() == 'Shared') { //Shared network offering
 										  serviceFieldsToHide = [
@@ -1248,7 +1248,21 @@
 												serviceFieldsToHide = temp;
 											}
 										}
-                     											
+                    */
+										
+										
+										//CS-16687: NetworkACL should be removed when the guest_type is SHARED
+										//hide/show service fields ***** (begin) *****	
+										var serviceFieldsToHide = [];										
+										if($guestTypeField.val() == 'Shared') { //Shared network offering
+										  serviceFieldsToHide = [
+												'service.NetworkACL.isEnabled'
+											];	
+										}
+										else { //Isolated network offering 
+										  serviceFieldsToHide = [];		
+										}
+										
 										//hide service fields that are included in serviceFieldsToHide
 										var $serviceCheckboxesToHide = args.$form.find('.form-item').filter(function() {                         											
                       if ($.inArray($(this).attr('rel'), serviceFieldsToHide) > -1) {
@@ -1276,9 +1290,8 @@
                         }													
 											}											
 										}
-										//hide/show service fields upon guestIpType(Shared/Isolated), having VpcVirtualRouter or not ***** (end) *****			
-										*/
-												
+										//hide/show service fields ***** (end) *****			
+																						
 
                     //show LB InlineMode dropdown only when (1)LB Service is checked (2)Service Provider is F5 							
 										if((args.$form.find('.form-item[rel=\"service.Lb.isEnabled\"]').find('input[type=checkbox]').is(':checked') == true)
@@ -1315,13 +1328,13 @@
 										   &&(args.$form.find('.form-item[rel=\"service.StaticNat.provider\"]').find('select').val() == 'Netscaler')
 											 &&(args.$form.find('.form-item[rel=\"guestIpType\"]').find('select').val() == 'Shared')) {
 										  args.$form.find('.form-item[rel=\"service.StaticNat.elasticIpCheckbox\"]').css('display', 'inline-block');		
-                      args.$form.find('.form-item[rel=\"associatePublicIP\"]').css('display', 'inline-block');												
+                      args.$form.find('.form-item[rel=\"service.StaticNat.associatePublicIP\"]').css('display', 'inline-block');												
 										}
 										else {		
 										  args.$form.find('.form-item[rel=\"service.StaticNat.elasticIpCheckbox\"]').hide();			
                       args.$form.find('.form-item[rel=\"service.StaticNat.elasticIpCheckbox\"]').find('input[type=checkbox]').attr('checked', false);			
-                      args.$form.find('.form-item[rel=\"associatePublicIP\"]').hide();		
-                      args.$form.find('.form-item[rel=\"associatePublicIP\"]').find('input[type=checkbox]').attr('checked',false);									
+                      args.$form.find('.form-item[rel=\"service.StaticNat.associatePublicIP\"]').hide();		
+                      args.$form.find('.form-item[rel=\"service.StaticNat.associatePublicIP\"]').find('input[type=checkbox]').attr('checked',false);									
 										}
 							
                   });
@@ -1604,8 +1617,9 @@
 										isHidden: true,										
 										isBoolean: true
 									},	
-									"associatePublicIP": {
-                    label: 'Associate IP',
+
+									"service.StaticNat.associatePublicIP": {
+                    label: 'Associate Public IP',
                     isBoolean: true,
                     isHidden: true                  
                   },
@@ -1686,7 +1700,13 @@
 											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'ElasticIp'; 
 											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = true; //because this checkbox's value == "on"
 											serviceCapabilityIndex++;
-										} 										
+										} 	
+                    else if ((key == 'service.StaticNat.associatePublicIP') && ("StaticNat" in serviceProviderMap)) {	//if checkbox is unchecked, it won't be included in formData in the first place. i.e. it won't fall into this section								
+											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'StaticNat';
+											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'associatePublicIP'; 
+											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = true; //because this checkbox's value == "on"
+											serviceCapabilityIndex++;
+										} 		
                   } 									
 									else if (value != '') { // Normal data
                     inputData[key] = value;
@@ -1720,12 +1740,7 @@
                 } else {
                   inputData['conservemode'] = false;
                 }
-
-                if (inputData['associatePublicIP'] == 'on') {
-                  inputData['associatePublicIP'] = true;
-                } else {
-                  inputData['associatePublicIP'] = false;
-                }
+               
 								
                 // Make service provider map
                 var serviceProviderIndex = 0;

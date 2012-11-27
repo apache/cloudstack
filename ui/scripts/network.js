@@ -605,19 +605,7 @@
                 if (args.context.networks[0].state == 'Destroyed')
                   return false;
 
-                var services = args.context.networks[0].service;
-                if(services == null)
-                  return false;
-
-                // IP addresses supported for both isolated and shared networks w/ source NAT enabled
-                for(var i=0; i < services.length; i++) {
-                  var service = services[i];
-                  if(service.name == "SourceNat") {
-                    return true;
-                  }
-                }
-
-                return false;
+                return true;
               }
             },
             actions: {
@@ -1272,26 +1260,76 @@
           actions: {
             add: {
               label: 'label.acquire.new.ip',
-              addRow: 'true',	
-              preFilter: function(args) {
-							  if('networks' in args.context) { //from Guest Network section
-									if(args.context.networks[0].vpcid == null) { //if it's a non-VPC network, show Acquire IP button
+              addRow: 'true',
+              preFilter: function(args) {                
+								var zoneObj;
+								$.ajax({
+								  url: createURL('listZones'),
+									data: {
+									  id: args.context.networks[0].zoneid
+									},
+									async: false,
+									success: function(json) {									  
+										zoneObj = json.listzonesresponse.zone[0];										
+									}
+								});
+																							
+								if(zoneObj.networktype == 'Basic') { 
+								  var havingEIP = false, havingELB = false;
+								  $.ajax({
+									  url: createURL('listNetworkOfferings'),
+										data: {
+										  id: args.context.networks[0].networkofferingid
+										},
+										async: false,
+										success: function(json) {										  
+											$(json.listnetworkofferingsresponse.networkoffering[0].service).each(function(){											 
+												var thisService = this;														
+												if(thisService.name == "StaticNat") {
+													$(thisService.capability).each(function(){
+														if(this.name == "ElasticIp" && this.value == "true") {
+															havingEIP = true;
+															return false; //break $.each() loop
+														}
+													});
+												}
+												else if(thisService.name == "Lb") {
+													$(thisService.capability).each(function(){
+														if(this.name == "ElasticLb" && this.value == "true") {
+															havingELB = true;
+															return false; //break $.each() loop
+														}
+													});
+												}
+											});			
+										}
+									});									                	               
+									if(havingEIP != true || havingELB != true) { //not EIP-ELB 
+										return false;  //acquire new IP is not allowed in non-EIP-ELB basic zone 
+									}			
+								}
+																
+								//*** from Guest Network section ***
+								if('networks' in args.context) { 
+                  if(args.context.networks[0].vpcid == null){ //Guest Network section > non-VPC network, show Acquire IP button
                     return true;
+                  } 
+									else { //Guest Network section > VPC network, hide Acquire IP button
+                    return false;
                   }
-									else //if it's a VPC network, hide Acquire IP button
-										return false;
-								}
-								else { //from VPC section
-								  return true; //show Acquire IP button
-								}
-              },							
-              messages: {   
+                } 								
+								//*** from VPC section ***
+								else { //'vpc' in args.context
+                  return true; //VPC section, show Acquire IP button
+                }
+              },
+              messages: {
                 confirm: function(args) {
                   if(args.context.vpc)
-                    return 'Please confirm that you would like to acquire a new IP for this VPC';
+                    return 'message.acquire.new.ip.vpc';
                    else
-                    return 'message.acquire.new.ip';
-                },							
+                     return 'message.acquire.new.ip';
+                },
                 notification: function(args) {
                   return 'label.acquire.new.ip';
                 }
@@ -2743,7 +2781,6 @@
 															},	
                               async: false,															
 															success: function(json) {			
-															  //debugger;
                                 if(json.listautoscalevmgroupsresponse.autoscalevmgroup != null && json.listautoscalevmgroupsresponse.autoscalevmgroup.length > 0) { //from 'autoScale' button
 																  item._hideFields = ['add-vm'];
 																}
