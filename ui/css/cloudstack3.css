@@ -6385,11 +6385,16 @@ label.error {
 
 .multi-wizard.zone-wizard .select-network-model .select-area .isolation-mode .select-area label {
   font-size: 11px;
-  margin: 18px 0 0 11px;
+  margin: 24px 0 0 2px;
 }
 
 .multi-wizard.zone-wizard .select-network-model .select-area .isolation-mode .select-area input {
-  margin: 17px 0 0 39px;
+  margin: 26px 0 11px;
+}
+
+.multi-wizard.zone-wizard .select-network-model .select-area .isolation-mode .select-area input {
+  margin: 24px 8px 0 36px !important;
+  padding: 0 !important;
 }
 
 .multi-wizard.zone-wizard .select-network-model .select-area .isolation-mode .select-area .desc {
@@ -6398,7 +6403,7 @@ label.error {
   height: 9px;
   font-size: 11px;
   margin-right: 9px;
-  background: #E6E6E6;
+  background: #EFEFEF;
   float: right;
   /*+placement:shift -27px 12px;*/
   position: relative;
