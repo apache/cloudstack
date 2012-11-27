@@ -1328,13 +1328,13 @@
 										   &&(args.$form.find('.form-item[rel=\"service.StaticNat.provider\"]').find('select').val() == 'Netscaler')
 											 &&(args.$form.find('.form-item[rel=\"guestIpType\"]').find('select').val() == 'Shared')) {
 										  args.$form.find('.form-item[rel=\"service.StaticNat.elasticIpCheckbox\"]').css('display', 'inline-block');		
-                      args.$form.find('.form-item[rel=\"associatePublicIP\"]').css('display', 'inline-block');												
+                      args.$form.find('.form-item[rel=\"service.StaticNat.associatePublicIP\"]').css('display', 'inline-block');												
 										}
 										else {		
 										  args.$form.find('.form-item[rel=\"service.StaticNat.elasticIpCheckbox\"]').hide();			
                       args.$form.find('.form-item[rel=\"service.StaticNat.elasticIpCheckbox\"]').find('input[type=checkbox]').attr('checked', false);			
-                      args.$form.find('.form-item[rel=\"associatePublicIP\"]').hide();		
-                      args.$form.find('.form-item[rel=\"associatePublicIP\"]').find('input[type=checkbox]').attr('checked',false);									
+                      args.$form.find('.form-item[rel=\"service.StaticNat.associatePublicIP\"]').hide();		
+                      args.$form.find('.form-item[rel=\"service.StaticNat.associatePublicIP\"]').find('input[type=checkbox]').attr('checked',false);									
 										}
 							
                   });
@@ -1617,8 +1617,9 @@
 										isHidden: true,										
 										isBoolean: true
 									},	
-									"associatePublicIP": {
-                    label: 'Associate IP',
+
+									"service.StaticNat.associatePublicIP": {
+                    label: 'Associate Public IP',
                     isBoolean: true,
                     isHidden: true                  
                   },
@@ -1699,7 +1700,13 @@
 											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'ElasticIp'; 
 											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = true; //because this checkbox's value == "on"
 											serviceCapabilityIndex++;
-										} 										
+										} 	
+                    else if ((key == 'service.StaticNat.associatePublicIP') && ("StaticNat" in serviceProviderMap)) {	//if checkbox is unchecked, it won't be included in formData in the first place. i.e. it won't fall into this section								
+											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'StaticNat';
+											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'associatePublicIP'; 
+											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = true; //because this checkbox's value == "on"
+											serviceCapabilityIndex++;
+										} 		
                   } 									
 									else if (value != '') { // Normal data
                     inputData[key] = value;
@@ -1733,12 +1740,7 @@
                 } else {
                   inputData['conservemode'] = false;
                 }
-
-                if (inputData['associatePublicIP'] == 'on') {
-                  inputData['associatePublicIP'] = true;
-                } else {
-                  inputData['associatePublicIP'] = false;
-                }
+               
 								
                 // Make service provider map
                 var serviceProviderIndex = 0;
