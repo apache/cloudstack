@@ -26,7 +26,7 @@
     <title>Add Cluster: OVM</title>
     <para>To add a Cluster of hosts that run Oracle VM (OVM):</para>
     <orderedlist>
-        <listitem><para>Add a companion non-OVM cluster to the Pod. This cluster provides an environment where the CloudPlatform System VMs can run. You should have already installed a non-OVM hypervisor on at least one Host to prepare for this step. Depending on which hypervisor you used:</para>
+        <listitem><para>Add a companion non-OVM cluster to the Pod. This cluster provides an environment where the &PRODUCT; System VMs can run. You should have already installed a non-OVM hypervisor on at least one Host to prepare for this step. Depending on which hypervisor you used:</para>
         <itemizedlist>
             <listitem><para>For VMWare, follow the steps in Add Cluster: vSphere. When finished, return here and continue with the next step.</para></listitem>
             <listitem><para>For KVM or XenServer, follow the steps in <xref linkend="add-clusters-kvm-xenserver"/>. When finished, return here and continue with the next step</para></listitem>

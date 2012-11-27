@@ -24,8 +24,8 @@
 
 <section id="query-filter">
 <title>Query Filter</title>
-<para>The query filter is used to find a mapped user in the external LDAP server. The query filter should uniquely map the CloudPlatform user to LDAP user for a meaningful authentication. For more information about query filter syntax, consult the documentation for your LDAP server.</para>
-<para>The CloudPlatform query filter wildcards are:</para>    
+<para>The query filter is used to find a mapped user in the external LDAP server. The query filter should uniquely map the &PRODUCT; user to LDAP user for a meaningful authentication. For more information about query filter syntax, consult the documentation for your LDAP server.</para>
+<para>The &PRODUCT; query filter wildcards are:</para>    
     <informaltable>
         <tgroup cols="2" align="left" colsep="1" rowsep="1">
         <thead>
@@ -51,9 +51,9 @@
         </tgroup>
     </informaltable>
 <para>The following examples assume you are using Active Directory, and refer to user attributes from the Active Directory schema.</para>
-<para>If the CloudPlatform user name is the same as the LDAP user ID:</para>
+<para>If the &PRODUCT; user name is the same as the LDAP user ID:</para>
 <programlisting>(uid=%u)</programlisting>
-<para>If the CloudPlatform user name is the LDAP display name:</para>
+<para>If the &PRODUCT; user name is the LDAP display name:</para>
 <programlisting>(displayName=%u)</programlisting>
 <para>To find a user by email address:</para>
 <programlisting>(mail=%e)</programlisting>

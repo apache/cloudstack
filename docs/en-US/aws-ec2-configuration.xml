@@ -25,7 +25,7 @@
 <section id="aws-ec2-configuration">
   <title>Enabling the AWS API Compatible Interface</title>
   <para>
-    The software that provides AWS API compatibility is installed along with CloudPlatform. However, you must enable the feature and perform some setup steps.
+    The software that provides AWS API compatibility is installed along with &PRODUCT;. However, you must enable the feature and perform some setup steps.
   </para>
   <orderedlist>
     <listitem><para>Set the global configuration parameter enable.ec2.api to true. See <xref linkend="global-config" />.</para></listitem>

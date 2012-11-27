@@ -88,5 +88,5 @@
     <xi:include href="add-password-management-to-templates.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="configure-vpn.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="tuning.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="cloudplatform-api.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="cloudstack-api.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
    </chapter>

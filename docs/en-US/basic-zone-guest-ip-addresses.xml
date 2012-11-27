@@ -24,5 +24,5 @@
 
 <section id="basic-zone-guest-ip-addresses">
     <title>Basic Zone Guest IP Addresses</title>
-    <para>When basic networking is used, CloudPlatform will assign IP addresses in the CIDR of the pod to the guests in that pod.  The administrator must add a Direct IP range on the pod for this purpose.  These IPs are in the same VLAN as the hosts.</para>
+    <para>When basic networking is used, &PRODUCT; will assign IP addresses in the CIDR of the pod to the guests in that pod.  The administrator must add a Direct IP range on the pod for this purpose.  These IPs are in the same VLAN as the hosts.</para>
 </section>
