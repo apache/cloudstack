@@ -408,8 +408,7 @@
             var items = json.listsecuritygroupsresponse.securitygroup;
             if (items != null && items.length > 0) {
               for (var i = 0; i < items.length; i++) {
-                if(items[i].name != "default") //exclude default security group because it is always applied
-                  securityGroupArray.push(items[i]);
+                securityGroupArray.push(items[i]);
               }
             }
           }
