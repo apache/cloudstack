@@ -1263,11 +1263,21 @@
               addRow: 'true',
               preFilter: function(args) {                
 								var zoneObj;
+                                                                var dataObj = {};
+                                                                if('vpc' in args.context) { //from VPC section
+                                                                $.extend(dataObj, {
+                                                                  vpcid: args.context.vpc[0].id
+                                                                   });
+                                                                 }
+                                                               else if('networks' in args.context) { //from Guest Network section
+                                                                  $.extend(dataObj, {
+                                                                  networkid: args.context.networks[0].id
+                                                                   });
+                                                                 }
+
 								$.ajax({
 								  url: createURL('listZones'),
-									data: {
-									  id: args.context.networks[0].zoneid
-									},
+									data: dataObj,
 									async: false,
 									success: function(json) {									  
 										zoneObj = json.listzonesresponse.zone[0];										
