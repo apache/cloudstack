@@ -37,6 +37,11 @@
     <module>compute</module>
     <module>orchestration</module>
     <module>storage</module>
+    <module>storage/volume</module>
+    <module>storage/image</module>
+    <module>storage/backup</module>
+    <module>storage/snapshot</module>
+    <module>storage/integration-test</module>
     <module>components-api</module>
     <module>schema</module>
     <module>network</module>

@@ -20,15 +20,12 @@ package org.apache.cloudstack.storage.datastore;
 
 import java.util.List;
 
-import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
 import org.apache.cloudstack.storage.image.TemplateInfo;
-import org.apache.cloudstack.storage.image.TemplateObject;
 import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreInfo;
-import org.apache.cloudstack.storage.volume.VolumeObject;
 
 public interface PrimaryDataStore extends PrimaryDataStoreInfo {
     VolumeInfo getVolume(long id);
