@@ -3616,12 +3616,14 @@
                     publicnetwork: {
                       label: 'label.public.network',
                       defaultValue: 'untrusted',
-                      docID: 'helpSRXPublicNetwork'
+                      docID: 'helpSRXPublicNetwork',
+                      isDisabled:true
                     },
                     privatenetwork: {
                       label: 'label.private.network',
                       defaultValue: 'trusted',
-                      docID: 'helpSRXPrivateNetwork'
+                      docID: 'helpSRXPrivateNetwork',
+                      isDisabled:true
                     },
                     capacity: {
                       label: 'label.capacity',
@@ -6513,11 +6515,13 @@
                   // },
                   publicnetwork: {
                     label: 'label.public.network',
-                    defaultValue: 'untrusted'
+                    defaultValue: 'untrusted',
+                    isDisabled:true
                   },
                   privatenetwork: {
                     label: 'label.private.network',
-                    defaultValue: 'trusted'
+                    defaultValue: 'trusted',
+                    isDisabled:true
                   },
                   capacity: {
                     label: 'label.capacity',
