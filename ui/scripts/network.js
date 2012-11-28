@@ -833,13 +833,13 @@
                 }
               });
 
-              var hiddenTabs = ['egressRules']; // Disable egress UI, for now
+              var hiddenTabs = [];
               
               if (!networkOfferingHavingELB) {
                 hiddenTabs.push("addloadBalancer");
               }
 
-              if (!hasNetworkACL || isVPC) {
+              if (isVPC) {
                 hiddenTabs.push('egressRules');
               }
               
@@ -1013,6 +1013,180 @@
 											);		
 										}
 									});			
+                }
+              },
+
+              egressRules: {
+                title: 'label.egress.rules',
+                custom: function(args) {
+                  var context = args.context;
+
+                  return $('<div>').multiEdit({
+                    context: context,
+                    noSelect: true,
+                    noHeaderActionsColumn: true,
+                    fields: {
+                      'cidrlist': { edit: true, label: 'label.cidr', isOptional: true },
+                      'protocol': {
+                        label: 'label.protocol',
+                        select: function(args) {
+                          args.$select.change(function() {
+                            var $inputs = args.$form.find('th, td');
+                            var $icmpFields = $inputs.filter(function() {
+                              var name = $(this).attr('rel');
+
+                              return $.inArray(name, [
+                                'icmptype',
+                                'icmpcode'
+                              ]) > -1;
+                            });
+                            var $otherFields = $inputs.filter(function() {
+                              var name = $(this).attr('rel');
+
+                              return name != 'cidrlist' &&
+                                name != 'icmptype' &&
+                                name != 'icmpcode' &&
+                                name != 'protocol' &&
+                                name != 'add-rule';
+                            });
+
+                            if ($(this).val() == 'icmp') {
+                              $icmpFields.show();
+                              $otherFields.hide();
+                            } else if ($(this).val() == 'all') {
+                              $icmpFields.hide();
+                              $otherFields.hide();
+                            } else {
+                              $icmpFields.hide();
+                              $otherFields.show();
+                            }
+                          });
+
+                          args.response.success({
+                            data: [
+                              { name: 'tcp', description: 'TCP' },
+                              { name: 'udp', description: 'UDP' },
+                              { name: 'icmp', description: 'ICMP' },
+                              { name: 'all', description: 'All' }
+                            ]
+                          });
+                        }
+                      },
+                      'startport': { edit: true, label: 'label.start.port' },
+                      'endport': { edit: true, label: 'label.end.port' },
+                      'icmptype': { edit: true, label: 'ICMP.type', isHidden: true },
+                      'icmpcode': { edit: true, label: 'ICMP.code', isHidden: true },
+                      'add-rule': {
+                        label: 'label.add',
+                        addButton: true
+                      }
+                    },
+                    add: {
+                      label: 'label.add',
+                      action: function(args) {
+                        var data = {
+                          protocol: args.data.protocol,
+                          cidrlist: args.data.cidrlist,
+                          networkid: args.context.networks[0].id
+                        };
+
+                        if (args.data.icmptype && args.data.icmpcode) { // ICMP
+                          $.extend(data, {
+                            icmptype: args.data.icmptype,
+                            icmpcode: args.data.icmpcode
+                          });
+                        } else { // TCP/UDP
+                          $.extend(data, {
+                            startport: args.data.startport,
+                            endport: args.data.endport
+                          });
+                        }
+
+                        $.ajax({
+                          url: createURL('createEgressFirewallRule'),
+                          data: data,
+                          dataType: 'json',
+                          async: true,
+                          success: function(json) {
+                            var jobId = json.createegressfirewallruleresponse.jobid;
+
+                            args.response.success({
+                              _custom: {
+                                jobId: jobId
+                              },
+                              notification: {
+                                label: 'label.add.egress.rule',
+                                poll: pollAsyncJobResult
+                              }
+                            });
+                          },
+                          error: function(json) {
+                            args.response.error(parseXMLHttpResponse(json));
+                          }
+                        });
+                      }
+                    },
+                    actions: {
+                      destroy: {
+                        label: 'label.remove.rule',
+                        action: function(args) {
+                          $.ajax({
+                            url: createURL('deleteEgressFirewallRule'),
+                            data: {
+                              id: args.context.multiRule[0].id
+                            },
+                            dataType: 'json',
+                            async: true,
+                            success: function(data) {
+                              var jobID = data.deleteegressfirewallruleresponse.jobid;
+
+                              args.response.success({
+                                _custom: {
+                                  jobId: jobID
+                                },
+                                notification: {
+                                  label: 'label.remove.egress.rule',
+                                  poll: pollAsyncJobResult
+                                }
+                              });
+                            },
+                            error: function(json) {
+                              args.response.error(parseXMLHttpResponse(json));
+                            }
+                          });
+                        }
+                      }
+                    },
+                    ignoreEmptyFields: true,
+                    dataProvider: function(args) {
+                      $.ajax({
+                        url: createURL('listEgressFirewallRules'),
+                        data: {
+                          listAll: true,
+                          networkid: args.context.networks[0].id
+                        },
+                        dataType: 'json',
+                        async: true,
+                        success: function(json) {
+                          var response = json.listegressfirewallrulesresponse.firewallrule ?
+                                json.listegressfirewallrulesresponse.firewallrule : [];
+                          
+                          args.response.success({
+                            data: $.map(response, function(rule) {
+                              if (rule.protocol == 'all') {
+                                $.extend(rule, {
+                                  startport: 'All',
+                                  endport: 'All'
+                                });
+                              }
+
+                              return rule;
+                            })
+                          });
+                        }
+                      });
+                    }
+                  });
                 }
               },
 
