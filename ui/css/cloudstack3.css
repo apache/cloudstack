@@ -1449,6 +1449,7 @@ div.list-view td.state.off span {
   -webkit-text-shadow: 0px 1px #EAEAEA;
   -o-text-shadow: 0px 1px #EAEAEA;
   text-shadow: 0px 1px #EAEAEA;
+  overflow:hidden;
 }
 
 .quick-view-tooltip .detail-view .detail-group table td.value input[type=text] {
