@@ -52,7 +52,7 @@ public class ProvisioningRestService {
     public ZoneRestTO getZone(@Context UriInfo ui, @PathParam("zoneid") String id) {
         UriBuilder ub = ui.getAbsolutePathBuilder().path(this.getClass(), "getZone");
         ZoneEntity entity = _provisioningService.getZone(id);
-        return new ZoneRestTO(ub, entity, ub.build(entity.getUuid()));
+        return new ZoneRestTO(ui, entity, ub.build(entity.getUuid()));
     }
 
     @GET
@@ -64,7 +64,7 @@ public class ProvisioningRestService {
         Iterator<ZoneEntity> it = zones.iterator();
         for (int i = 0; i < tos.length; i++) {
             ZoneEntity entity = it.next();
-            tos[i] = new ZoneRestTO(ub, entity, ub.build(entity.getUuid()));
+            tos[i] = new ZoneRestTO(ui, entity, ub.build(entity.getUuid()));
         }
         return tos;
     }

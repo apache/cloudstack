@@ -19,13 +19,16 @@
 package org.apache.cloudstack.engine.rest.datacenter.entity.api;
 
 import java.net.URI;
+import java.util.Iterator;
 import java.util.List;
 
 import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.UriBuilder;
+import javax.ws.rs.core.UriInfo;
 
 import org.apache.cloudstack.engine.datacenter.entity.api.ZoneEntity;
 import org.apache.cloudstack.engine.service.api.ProvisioningService;
@@ -37,18 +40,24 @@ public class ZoneRestTO {
     @Inject
     protected static ProvisioningService s_provisioningService;
 
+
     public String id;
     public URI uri;
     public String name;
-    public String[] pods;
+    public URI[] pods;
 
-    public ZoneRestTO(UriBuilder ub, ZoneEntity zone, URI uri) {
+    public ZoneRestTO(UriInfo ui, ZoneEntity zone, URI uri) {
         this.id = zone.getUuid();
         this.name = zone.getName();
         this.uri = uri;
         List<String> podIds = zone.listPodIds();
-        this.pods = new String[podIds.size()];
-        this.pods = podIds.toArray(new String[podIds.size()]);
+        this.pods = new URI[podIds.size()];
+        UriBuilder ub = ui.getAbsolutePathBuilder().path(this.getClass(), "getPod");
+        Iterator<String> it = podIds.iterator();
+        for (int i = 0; i < pods.length; i++) {
+            String pod = it.next();
+            pods[i] = ub.build(pod);
+        }
     }
 
     public ZoneRestTO() {
@@ -56,8 +65,14 @@ public class ZoneRestTO {
 
     @GET
     @Path("/pods")
-    public String[] listPods(@PathParam("zoneid") String zoneId) {
+    public URI[] listPods(@PathParam("zoneid") String zoneId) {
         return this.pods;
+    }
+
+    @GET
+    @Path("/pod/{podid}")
+    public PodRestTO getPod(@Context UriInfo ui, @PathParam("podid") String podId) {
+        return null;
     }
 
 }
