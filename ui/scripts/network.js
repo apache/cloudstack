@@ -1266,12 +1266,12 @@
                                                                 var dataObj = {};
                                                                 if('vpc' in args.context) { //from VPC section
                                                                 $.extend(dataObj, {
-                                                                  vpcid: args.context.vpc[0].id
+                                                                    id: args.context.vpc[0].zoneid
                                                                    });
                                                                  }
                                                                else if('networks' in args.context) { //from Guest Network section
                                                                   $.extend(dataObj, {
-                                                                  networkid: args.context.networks[0].id
+                                                                    id: args.context.networks[0].zoneid
                                                                    });
                                                                  }
 
