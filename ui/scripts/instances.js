@@ -203,7 +203,8 @@
           data: data,          
           success: function(json) {
             var items = json.listvirtualmachinesresponse.virtualmachine;
-            if(items != null) {
+           // Code for hiding "Expunged VMs"
+           /* if(items != null) {
             var i=0;
             for( i=0;i< items.length;i++){
               if(items[i].state == 'Expunging')
@@ -218,13 +219,11 @@
             }
            }
           }
-          else {
+          else {*/
              args.response.success({
               actionFilter: vmActionfilter,
               data: items
              });
- 
-           }
 
           }
         });
