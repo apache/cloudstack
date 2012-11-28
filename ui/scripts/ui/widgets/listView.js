@@ -1076,7 +1076,7 @@
               $('<span>').addClass('icon').html('&nbsp;')
             );
             $quickViewTooltip.append($title);
-
+            $('.quick-view-tooltip').remove();
             // Setup positioning
             $quickViewTooltip.hide().appendTo('#container').fadeIn(200, function() {
               if (!$quickViewTooltip.is(':visible')) return;
