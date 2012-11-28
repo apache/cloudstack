@@ -18,7 +18,9 @@
  */
 package org.apache.cloudstack.framework.messaging;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class RpcClientCallImpl implements RpcClientCall {
@@ -26,17 +28,30 @@ public class RpcClientCallImpl implements RpcClientCall {
 	private String _command;
 	private Object _commandArg;
 	
-	private int _timeoutMilliseconds;
-	
+	private int _timeoutMilliseconds = DEFAULT_RPC_TIMEOUT;
 	private Map<String, Object> _contextParams = new HashMap<String, Object>();
+	private boolean _oneway = false;
 	
-	public RpcClientCallImpl() {
+	private List<RpcCallbackListener> _callbackListeners = new ArrayList<RpcCallbackListener>();
+
+	private RpcProvider _rpcProvider;
+	private long _startTickInMs;
+	private long _callTag;
+	private String _sourceAddress;
+	private String _targetAddress;
+	
+	private Object _responseLock = new Object();
+	private boolean _responseDone = false;;
+	private Object _responseResult;
+		
+	public RpcClientCallImpl(RpcProvider rpcProvider) {
+		assert(rpcProvider != null);
+		_rpcProvider = rpcProvider;
 	}
 	
 	@Override
 	public String getCommand() {
-		// TODO Auto-generated method stub
-		return null;
+		return _command;
 	}
 
 	@Override
@@ -71,37 +86,126 @@ public class RpcClientCallImpl implements RpcClientCall {
 
 	@Override
 	public Object getContextParam(String key) {
-		// TODO Auto-generated method stub
-		return null;
+		return _contextParams.get(key);
 	}
 
 	@Override
 	public <T> RpcClientCall addCallbackListener(RpcCallbackListener<T> listener) {
-		// TODO Auto-generated method stub
-		return null;
+		assert(listener != null);
+		_callbackListeners.add(listener);
+		return this;
 	}
 
 	@Override
 	public RpcClientCall setOneway() {
-		// TODO Auto-generated method stub
-		return null;
+		_oneway = true;
+		return this;
+	}
+	
+	public String getSourceAddress() {
+		return _sourceAddress;
+	}
+	
+	public void setSourceAddress(String sourceAddress) {
+		_sourceAddress = sourceAddress;
+	}
+	
+	public String getTargetAddress() {
+		return _targetAddress;
+	}
+	
+	public void setTargetAddress(String targetAddress) {
+		_targetAddress = targetAddress;
+	}
+	
+	public long getCallTag() {
+		return _callTag;
+	}
+	
+	public void setCallTag(long callTag) {
+		_callTag = callTag;
 	}
 
 	@Override
 	public void apply() {
-		// TODO Auto-generated method stub
+		// sanity check
+		assert(_sourceAddress != null);
+		assert(_targetAddress != null);
 		
+		if(!_oneway)
+			_rpcProvider.registerCall(this);
+		
+		RpcCallRequestPdu pdu = new RpcCallRequestPdu();
+		pdu.setCommand(getCommand());
+		if(_commandArg != null)
+			pdu.setSerializedCommandArg(_rpcProvider.getMessageSerializer().serializeTo(_commandArg.getClass(), _commandArg));
+		pdu.setRequestTag(this.getCallTag());
+		
+		_rpcProvider.sendRpcPdu(getSourceAddress(), getTargetAddress(), 
+			_rpcProvider.getMessageSerializer().serializeTo(RpcCallRequestPdu.class, pdu));
 	}
 
 	@Override
 	public void cancel() {
-		// TODO Auto-generated method stub
-		
+		_rpcProvider.cancelCall(this);
 	}
 
 	@Override
 	public <T> T get() {
-		// TODO Auto-generated method stub
+		if(!_oneway) {
+			synchronized(_responseLock) {
+				if(!_responseDone) {
+					long timeToWait = _timeoutMilliseconds - (System.currentTimeMillis() - _startTickInMs);
+					if(timeToWait < 0)
+						timeToWait = 0;
+					
+					try {
+						_responseLock.wait(timeToWait);
+					} catch (InterruptedException e) {
+						throw new RpcTimeoutException("RPC call timed out");
+					}
+				}
+				
+				assert(_responseDone);
+				
+				if(_responseResult == null)
+					return null;
+				
+				if(_responseResult instanceof RpcException)
+					throw (RpcException)_responseResult;
+				
+				assert(_rpcProvider.getMessageSerializer() != null);
+				assert(_responseResult instanceof String);
+				return _rpcProvider.getMessageSerializer().serializeFrom((String)_responseResult);
+			}
+		}
 		return null;
+	}
+	
+	public void complete(String result) {
+		_responseResult = result;
+		
+		synchronized(_responseLock) {
+			_responseDone = true;
+			_responseLock.notifyAll();
+		}
+		
+		assert(_rpcProvider.getMessageSerializer() != null);
+		Object resultObject = _rpcProvider.getMessageSerializer().serializeFrom(result);
+		for(RpcCallbackListener listener: _callbackListeners)
+			listener.onSuccess(resultObject);
+	}
+	
+	public void complete(RpcException e) {
+		_responseResult = e;
+		
+		synchronized(_responseLock) {
+			_responseDone = true;
+			
+			_responseLock.notifyAll();
+		}
+		
+		for(RpcCallbackListener listener: _callbackListeners)
+			listener.onFailure(e);
 	}
 }

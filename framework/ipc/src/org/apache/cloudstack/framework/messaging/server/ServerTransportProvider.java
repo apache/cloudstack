@@ -34,4 +34,10 @@ public class ServerTransportProvider implements TransportProvider {
 		// TODO Auto-generated method stub
 		
 	}
+	
+	@Override
+	public void sendMessage(String soureEndpointAddress, String targetEndpointAddress, 
+		String multiplexier, String message) {
+		// TODO
+	}
 }

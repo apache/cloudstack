@@ -32,4 +32,11 @@ public class ClientTransportProvider implements TransportProvider {
 	public void detach(TransportEndpoint endpoint) {
 		// TODO Auto-generated method stub
 	}
+	
+	@Override
+	public void sendMessage(String soureEndpointAddress, String targetEndpointAddress, 
+		String multiplexier, String message) {
+		// TODO
+	}
+	
 }

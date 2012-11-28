@@ -19,13 +19,18 @@
 package org.apache.cloudstack.framework.messaging;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class RpcProviderImpl implements RpcProvider {
 	
+	private TransportProvider _transportProvider;
 	private MessageSerializer _messageSerializer;
 	private List<RpcServiceEndpoint> _serviceEndpoints = new ArrayList<RpcServiceEndpoint>();
-	private TransportProvider _transportProvider;
+	private Map<Long, RpcClientCall> _outstandingCalls = new HashMap<Long, RpcClientCall>();
+	
+	private long _nextCallTag = System.currentTimeMillis(); 
 	
 	public RpcProviderImpl() {
 	}
@@ -41,9 +46,16 @@ public class RpcProviderImpl implements RpcProvider {
 	@Override
 	public void onTransportMessage(String senderEndpointAddress,
 		String targetEndpointAddress, String multiplexer, String message) {
-
-		// TODO Auto-generated method stub
+		assert(_messageSerializer != null);
 		
+		Object pdu = _messageSerializer.serializeFrom(message);
+		if(pdu instanceof RpcCallRequestPdu) {
+			handleCallRequestPdu((RpcCallRequestPdu)pdu);
+		} else if(pdu instanceof RpcCallResponsePdu) {
+			handleCallResponsePdu((RpcCallResponsePdu)pdu);
+		} else {
+			assert(false);
+		}
 	}
 
 	@Override
@@ -71,8 +83,76 @@ public class RpcProviderImpl implements RpcProvider {
 	}
 
 	@Override
-	public RpcClientCall target(String target) {
-		// TODO Auto-generated method stub
-		return null;
+	public RpcClientCall newCall(String sourceAddress, String targetAddress) {
+		long callTag = getNextCallTag();
+		RpcClientCallImpl call = new RpcClientCallImpl(this);
+		call.setSourceAddress(sourceAddress);
+		call.setTargetAddress(targetAddress);
+		call.setCallTag(callTag);
+		
+		return call;
+	}
+	
+	@Override
+	public void registerCall(RpcClientCall call) {
+		assert(call != null);
+		synchronized(this) {
+			_outstandingCalls.put(((RpcClientCallImpl)call).getCallTag(), call);
+		}
+	}
+	
+	@Override
+	public void cancelCall(RpcClientCall call) {
+		synchronized(this) {
+			_outstandingCalls.remove(((RpcClientCallImpl)call).getCallTag());
+		}
+		
+		((RpcClientCallImpl)call).complete(new RpcException("Call is cancelled"));
+	}
+	
+	@Override
+	public void sendRpcPdu(String sourceAddress, String targetAddress, String serializedPdu) {
+		assert(_transportProvider != null);
+		_transportProvider.sendMessage(sourceAddress, targetAddress, this.RPC_MULTIPLEXIER, serializedPdu);
+	}
+	
+	protected synchronized long getNextCallTag() {
+		long tag = _nextCallTag++;
+		if(tag == 0)
+			tag++;
+		
+		return tag;
+	}
+	
+	private void handleCallRequestPdu(RpcCallRequestPdu pdu) {
+		// ???
+	}
+	
+	private void handleCallResponsePdu(RpcCallResponsePdu pdu) {
+		RpcClientCallImpl call = null;
+		
+		synchronized(this) {
+			call = (RpcClientCallImpl)_outstandingCalls.remove(pdu.getRequestTag());
+		}
+		
+		if(call != null) {
+			switch(pdu.getResult()) {
+			case RpcCallResponsePdu.RESULT_SUCCESSFUL :
+				call.complete(pdu.getSerializedResult());
+				break;
+				
+			case RpcCallResponsePdu.RESULT_HANDLER_NOT_EXIST :
+				call.complete(new RpcException("Handler does not exist"));
+				break;
+				
+			case RpcCallResponsePdu.RESULT_HANDLER_EXCEPTION :
+				call.complete(new RpcException("Exception in handler"));
+				break;
+				
+			default :
+				assert(false);
+				break;
+			}
+		}
 	}
 }

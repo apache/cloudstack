@@ -19,6 +19,8 @@
 package org.apache.cloudstack.framework.messaging;
 
 public interface RpcClientCall {
+	final static int DEFAULT_RPC_TIMEOUT = 10000;
+	
 	String getCommand();
 	RpcClientCall setCommand(String cmd);
 	RpcClientCall setTimeout(int timeoutMilliseconds);
