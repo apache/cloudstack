@@ -590,7 +590,11 @@ public class ApiServer implements HttpRequestHandler {
             return;
         }
         auditTrailSb.append(" " + HttpServletResponse.SC_OK + " ");
-        auditTrailSb.append(result);
+        if (command.equals("createSSHKeyPair")){
+            auditTrailSb.append("This result was not logged because it contains sensitive data.");
+        } else {
+            auditTrailSb.append(result);
+        }
         /*
          * if (command.equals("queryAsyncJobResult")){ //For this command we need to also log job status and job
          * resultcode for
