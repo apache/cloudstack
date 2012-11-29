@@ -26,6 +26,14 @@ INSERT INTO `cloud`.`configuration` (instance, name,value) VALUE('DEFAULT','cons
 INSERT INTO `cloud`.`configuration` (instance, name,value) VALUE('DEFAULT','ssvm.ram.size','100');
 INSERT INTO `cloud`.`configuration` (instance, name,value) VALUE('DEFAULT','ssvm.cpu.mhz','100');
 INSERT INTO `cloud`.`configuration` (instance, name, value) VALUE('DEFAULT', 'system.vm.use.local.storage', 'true');
+INSERT INTO `cloud`.`configuration` (instance, name, value) VALUE('DEFAULT', 'expunge.workers', '3');
+INSERT INTO `cloud`.`configuration` (instance, name, value) VALUE('DEFAULT', 'expunge.delay', '60');
+INSERT INTO `cloud`.`configuration` (instance, name, value) VALUE('DEFAULT', 'expunge.interval', '60');
+INSERT INTO `cloud`.`configuration` (instance, name, value) VALUE('DEFAULT', 'enable.ec2.api', 'true');
+INSERT INTO `cloud`.`configuration` (instance, name, value) VALUE('DEFAULT', 'enable.s3.api', 'true');
+INSERT INTO `cloud`.`configuration` (instance, name, value) VALUE('DEFAULT', 'host', '192.168.56.1');
+INSERT INTO `cloud`.`configuration` (instance, name, value) VALUE('DEFAULT', 'management.network.cidr', '192.168.56.0/24');
+INSERT INTO `cloud`.`configuration` (instance, name, value) VALUE('DEFAULT', 'secstorage.allowed.internal.sites', '192.168.56.0/8');
 UPDATE `cloud`.`configuration` SET value='10' where name = 'storage.overprovisioning.factor';
 UPDATE `cloud`.`configuration` SET value='10' where name = 'cpu.overprovisioning.factor';
 UPDATE `cloud`.`configuration` SET value='10' where name = 'mem.overprovisioning.factor';
