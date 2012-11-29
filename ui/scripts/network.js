@@ -1321,7 +1321,7 @@
                             async: true,
                             success: function(data) {
                               var itemData = args.itemData;
-                              var jobID = data.createloadbalancerruleresponse.jobid;
+                              //var jobID = data.createloadbalancerruleresponse.jobid; //CS-16964: use jobid from assignToLoadBalancerRule instead of createLoadBalancerRule
 
                               $.ajax({
                                 url: createURL('assignToLoadBalancerRule'),
@@ -1334,7 +1334,8 @@
                                 dataType: 'json',
                                 async: true,
                                 success: function(data) {
-                                  var lbCreationComplete = false;
+                                  var jobID = data.assigntoloadbalancerruleresponse.jobid; //CS-16964: use jobid from assignToLoadBalancerRule instead of createLoadBalancerRule
+																	var lbCreationComplete = false;
 
                                   args.response.success({
                                     _custom: {
