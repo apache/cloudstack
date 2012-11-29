@@ -1720,7 +1720,28 @@
                     inputData[key] = value;
                   }
                 });
-
+								
+							  for(var key1 in inputData) { 								  
+								  /* When capability ElasticIp=true is passed to API, if capability associatePublicIP is not passed to API, cloudStack API will assume associatePublicIP=true. 
+									So, UI has to explicitly pass associatePublicIP=false to API if its checkbox is unchecked. */
+								  if(inputData[key1] == 'ElasticIp') { //ElasticIp checkbox is checked 									 
+										var associatePublicIPExists = false;
+									  for(var key2 in inputData) { 										  
+										  if(inputData[key2] == 'associatePublicIP') {
+											  associatePublicIPExists = true;
+											  break; //break key2 for loop
+											}
+										}											
+                    if(associatePublicIPExists == false) { //but associatePublicIP checkbox is unchecked
+                      //UI explicitly passes associatePublicIP=false to API 
+										  inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'StaticNat';
+											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'associatePublicIP'; 
+											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = false; //associatePublicIP checkbox is unchecked 		
+                    }										
+									  break; //break key1 for loop
+									}
+								}
+																
                 // Make supported services list
                 inputData['supportedServices'] = $.map(serviceProviderMap, function(value, key) {
                   return key;
