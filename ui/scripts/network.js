@@ -1190,7 +1190,7 @@
                 }
               },
 
-              addloadBalancer: {
+              addloadBalancer: { // EIP/ELB Basic zone: Add Load Balancer tab in network detailView
                 title: 'label.add.load.balancer',
                 custom: function(args) {
                   var context = args.context;
@@ -1201,21 +1201,18 @@
                       listView: $.extend(true, {}, cloudStack.sections.instances, {
                         listView: {
                           filters: false,
-                          dataProvider: function(args) {                           
-														var networkid;
-														if('vpc' in args.context) 
-															networkid = args.context.multiData.tier;														
-														else 
-															networkid = args.context.ipAddresses[0].associatednetworkid;
+
+                          dataProvider: function(args) {
+                            var data = {
+                              page: args.page,
+                              pageSize: pageSize,
+															domainid: g_domainid,
+                              account: g_account,
+                              networkid: args.context.networks[0].id,
+                              listAll: true
+                            };
 														
-														var data = {
-															page: args.page,
-															pageSize: pageSize,
-															networkid: networkid,
-															listAll: true
-														};
-														
-														$.ajax({
+                            $.ajax({
                               url: createURL('listVirtualMachines'),
                               data: data,
                               dataType: 'json',
