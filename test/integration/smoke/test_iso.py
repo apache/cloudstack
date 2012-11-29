@@ -70,8 +70,6 @@ class Services:
                         "mode": 'HTTP_DOWNLOAD',
                         # Used in Extract template, value must be HTTP_DOWNLOAD
                     },
-            "destzoneid": 5,
-            # Copy ISO from one zone to another (Destination Zone)
             "isfeatured": True,
             "ispublic": True,
             "isextractable": True,
@@ -203,6 +201,13 @@ class TestISO(cloudstackTestCase):
         cls.services["iso_1"]["zoneid"] = cls.zone.id
         cls.services["iso_2"]["zoneid"] = cls.zone.id
         cls.services["sourcezoneid"] = cls.zone.id
+        #populate second zone id for iso copy
+        cmd = listZones.listZonesCmd()
+        zones = cls.api_client.listZones(cmd)
+        if not isinstance(zones, list):
+            raise Exception("Failed to find zones.")
+        if len(zones) >= 2:
+            cls.services["destzoneid"] = zones[1].id
 
         #Create an account, ISOs etc.
         cls.account = Account.create(
@@ -524,6 +529,35 @@ class TestISO(cloudstackTestCase):
 
         self.debug("Cleanup copied ISO: %s" % iso_response.id)
         # Cleanup- Delete the copied ISO
+        timeout = self.services["timeout"]
+        while True:
+            time.sleep(self.services["sleep"])
+            list_iso_response = list_isos(
+                                          self.apiclient,
+                                          id=self.iso_2.id,
+                                          zoneid=self.services["destzoneid"]
+                                          )
+            self.assertEqual(
+                                isinstance(list_iso_response, list),
+                                True,
+                                "Check list response returns a valid list"
+                            )
+
+            self.assertNotEqual(
+                                len(list_iso_response),
+                                0,
+                                "Check template extracted in List ISO"
+                            )
+
+            iso_response = list_iso_response[0]
+            if iso_response.isready == True:
+                break
+
+            if timeout == 0:
+                raise Exception(
+                        "Failed to download copied iso(ID: %s)" % iso_response.id)
+
+            timeout = timeout - 1
         cmd = deleteIso.deleteIsoCmd()
         cmd.id = iso_response.id
         cmd.zoneid = self.services["destzoneid"]

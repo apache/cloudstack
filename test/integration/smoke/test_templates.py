@@ -87,8 +87,6 @@ class Services:
                                 "mode": "HTTP_DOWNLOAD",
                          },
                         "templatefilter": 'self',
-                        "destzoneid": 5,
-                        # For Copy template (Destination zone)
                         "isfeatured": True,
                         "ispublic": True,
                         "isextractable": False,
@@ -295,6 +293,14 @@ class TestTemplates(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        #populate second zone id for iso copy
+        cmd = listZones.listZonesCmd()
+        zones = cls.api_client.listZones(cmd)
+        if not isinstance(zones, list):
+            raise Exception("Failed to find zones.")
+        if len(zones) >= 2:
+            cls.services["destzoneid"] = zones[1].id
+
         cls.disk_offering = DiskOffering.create(
                                     cls.api_client,
                                     cls.services["disk_offering"]
@@ -700,6 +706,36 @@ class TestTemplates(cloudstackTestCase):
                         )
 
         # Cleanup- Delete the copied template
+        timeout = self.services["timeout"]
+        while True:
+            time.sleep(self.services["sleep"])
+            list_template_response = list_templates(
+                                        self.apiclient,
+                                        templatefilter=\
+                                        self.services["templatefilter"],
+                                        id=self.template_2.id,
+                                        zoneid=self.services["destzoneid"]
+                                        )
+            self.assertEqual(
+                                isinstance(list_template_response, list),
+                                True,
+                                "Check list response returns a valid list"
+                            )
+            self.assertNotEqual(
+                                len(list_template_response),
+                                0,
+                                "Check template extracted in List Templates"
+                            )
+    
+            template_response = list_template_response[0]
+            if template_response.isready == True:
+                break
+
+            if timeout == 0:
+                raise Exception(
+                        "Failed to download copied template(ID: %s)" % template_response.id)
+
+            timeout = timeout - 1
         cmd = deleteTemplate.deleteTemplateCmd()
         cmd.id = template_response.id
         cmd.zoneid = self.services["destzoneid"]
