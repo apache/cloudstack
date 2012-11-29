@@ -109,7 +109,7 @@ class Services:
                     "name": "testISO",
                     "url": "http://iso.linuxquestions.org/download/504/1819/http/gd4.tuwien.ac.at/dsl-4.4.10.iso",
                      # Source URL where ISO is located
-                    "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
+                    "ostype": 'CentOS 5.3 (64-bit)',
                     "mode": 'HTTP_DOWNLOAD', # Downloading existing ISO 
                 },
                 "template": {
@@ -123,7 +123,7 @@ class Services:
             "sleep": 60,
             "timeout": 10,
             #Migrate VM to hostid
-            "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
+            "ostype": 'CentOS 5.3 (64-bit)',
             # CentOS 5.3 (64-bit)
             "mode":'advanced',
         }
@@ -143,7 +143,7 @@ class TestDeployVM(cloudstackTestCase):
         template = get_template(
                             self.apiclient,
                             zone.id,
-                            self.services["ostypeid"]
+                            self.services["ostype"]
                             )
         # Set Zones and disk offerings
         self.services["small"]["zoneid"] = zone.id
@@ -245,7 +245,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         # Set Zones and disk offerings
         cls.services["small"]["zoneid"] = zone.id
@@ -999,7 +999,7 @@ class TestVMPasswordEnabled(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         # Set Zones and disk offerings
         cls.services["small"]["zoneid"] = zone.id
@@ -1065,7 +1065,7 @@ class TestVMPasswordEnabled(cloudstackTestCase):
                 "Exception: Unable to find root volume foe VM: %s" %
                                                     cls.virtual_machine.id)
 
-        cls.services["template"]["ostypeid"] = cls.services["ostypeid"]
+        cls.services["template"]["ostype"] = cls.services["ostype"]
         #Create templates for Edit, Delete & update permissions testcases
         cls.pw_enabled_template = Template.create(
                                          cls.api_client,

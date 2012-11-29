@@ -55,7 +55,7 @@ class Services:
                         "isextractable": True,
                         "isfeatured": True,
                         "ispublic": True,
-                        "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
+                        "ostype": "CentOS 5.3 (64-bit)",
                     },
             "iso_2":
                     {
@@ -66,7 +66,7 @@ class Services:
                         "isextractable": True,
                         "isfeatured": True,
                         "ispublic": True,
-                        "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
+                        "ostype": "CentOS 5.3 (64-bit)",
                         "mode": 'HTTP_DOWNLOAD',
                         # Used in Extract template, value must be HTTP_DOWNLOAD
                     },
@@ -79,7 +79,7 @@ class Services:
             "passwordenabled": True,
             "sleep": 60,
             "timeout": 10,
-            "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
+            "ostype": "CentOS 5.3 (64-bit)",
             # CentOS 5.3 (64 bit)
             "mode": 'advanced'
             # Networking mode: Basic or Advanced
@@ -103,7 +103,18 @@ class TestCreateIso(cloudstackTestCase):
                             self.services["account"],
                             domainid=self.domain.id
                             )
-        
+        # Finding the OsTypeId from Ostype
+        ostypes = list_os_types(
+                    self.apiclient,
+                    description=self.services["ostype"]
+                    )
+        if not isinstance(ostypes, list):
+            raise unittest.SkipTest("OSTypeId for given description not found")
+
+        self.services["iso_1"]["ostypeid"] = ostypes[0].id
+        self.services["iso_2"]["ostypeid"] = ostypes[0].id
+        self.services["ostypeid"] = ostypes[0].id
+
         self.cleanup = [self.account]
         return
 
@@ -200,6 +211,18 @@ class TestISO(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
         cls.services["account"] = cls.account.account.name
+        # Finding the OsTypeId from Ostype
+        ostypes = list_os_types(
+                    self.apiclient,
+                    description=self.services["ostype"]
+                    )
+        if not isinstance(ostypes, list):
+            raise unittest.SkipTest("OSTypeId for given description not found")
+
+        self.services["iso_1"]["ostypeid"] = ostypes[0].id
+        self.services["iso_2"]["ostypeid"] = ostypes[0].id
+        self.services["ostypeid"] = ostypes[0].id
+
         cls.iso_1 = Iso.create(
                                cls.api_client, 
                                cls.services["iso_1"],

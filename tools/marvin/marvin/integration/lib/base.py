@@ -547,7 +547,22 @@ class Template:
         cmd = createTemplate.createTemplateCmd()
         cmd.displaytext = services["displaytext"]
         cmd.name = "-".join([services["name"], random_gen()])
-        cmd.ostypeid = services["ostypeid"]
+        if "ostypeid" in services:
+            cmd.ostypeid = services["ostypeid"]
+        elif "ostype" in services:
+            # Find OSTypeId from Os type
+            sub_cmd = listOsTypes.listOsTypesCmd()
+            sub_cmd.description = services["ostype"]
+            ostypes = apiclient.listOsTypes(sub_cmd)
+
+            if not isinstance(ostypes, list):
+                raise Exception(
+                    "Unable to find Ostype id with desc: %s" %
+                                                services["ostype"])
+            cmd.ostypeid = ostypes[0].id
+        else:
+            raise Exception(
+                    "Unable to find Ostype is required for creating template")
 
         cmd.isfeatured = services["isfeatured"] if "isfeatured" in services else False
         cmd.ispublic = services["ispublic"] if "ispublic" in services else False
@@ -579,7 +594,24 @@ class Template:
         cmd.name = "-".join([services["name"], random_gen()])
         cmd.format = services["format"]
         cmd.hypervisor = services["hypervisor"]
-        cmd.ostypeid = services["ostypeid"]
+
+        if "ostypeid" in services:
+            cmd.ostypeid = services["ostypeid"]
+        elif "ostype" in services:
+            # Find OSTypeId from Os type
+            sub_cmd = listOsTypes.listOsTypesCmd()
+            sub_cmd.description = services["ostype"]
+            ostypes = apiclient.listOsTypes(sub_cmd)
+
+            if not isinstance(ostypes, list):
+                raise Exception(
+                    "Unable to find Ostype id with desc: %s" %
+                                                services["ostype"])
+            cmd.ostypeid = ostypes[0].id
+        else:
+            raise Exception(
+                    "Unable to find Ostype is required for registering template")
+
         cmd.url = services["url"]
 
         if zoneid:
@@ -615,7 +647,24 @@ class Template:
                              services["name"],
                              random_gen()
                             ]) if random_name else services["name"]
-        cmd.ostypeid = services["ostypeid"]
+
+        if "ostypeid" in services:
+            cmd.ostypeid = services["ostypeid"]
+        elif "ostype" in services:
+            # Find OSTypeId from Os type
+            sub_cmd = listOsTypes.listOsTypesCmd()
+            sub_cmd.description = services["ostype"]
+            ostypes = apiclient.listOsTypes(sub_cmd)
+
+            if not isinstance(ostypes, list):
+                raise Exception(
+                    "Unable to find Ostype id with desc: %s" %
+                                                services["ostype"])
+            cmd.ostypeid = ostypes[0].id
+        else:
+            raise Exception(
+                    "Unable to find Ostype is required for creating template")
+
         cmd.snapshotid = snapshot.id
         return Template(apiclient.createTemplate(cmd).__dict__)
 
@@ -695,7 +744,23 @@ class Iso:
         cmd = registerIso.registerIsoCmd()
         cmd.displaytext = services["displaytext"]
         cmd.name = services["name"]
-        cmd.ostypeid = services["ostypeid"]
+        if "ostypeid" in services:
+            cmd.ostypeid = services["ostypeid"]
+        elif "ostype" in services:
+            # Find OSTypeId from Os type
+            sub_cmd = listOsTypes.listOsTypesCmd()
+            sub_cmd.description = services["ostype"]
+            ostypes = apiclient.listOsTypes(sub_cmd)
+
+            if not isinstance(ostypes, list):
+                raise Exception(
+                    "Unable to find Ostype id with desc: %s" %
+                                                services["ostype"])
+            cmd.ostypeid = ostypes[0].id
+        else:
+            raise Exception(
+                    "Unable to find Ostype is required for creating ISO")
+
         cmd.url = services["url"]
         cmd.zoneid = services["zoneid"]
 

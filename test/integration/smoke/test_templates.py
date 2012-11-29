@@ -75,12 +75,12 @@ class Services:
                          "template_1": {
                                 "displaytext": "Cent OS Template",
                                 "name": "Cent OS Template",
-                                "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
+                                "ostype": "CentOS 5.3 (64-bit)",
                          },
                          "template_2": {
                                 "displaytext": "Public Template",
                                 "name": "Public template",
-                                "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
+                                "ostype": "CentOS 5.3 (64-bit)",
                                 "isfeatured": True,
                                 "ispublic": True,
                                 "isextractable": True,
@@ -94,7 +94,7 @@ class Services:
                         "isextractable": False,
                         "bootable": True,
                         "passwordenabled": True,
-                        "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
+                        "ostype": "CentOS 5.3 (64-bit)",
                         "mode": 'advanced',
                         # Networking mode: Advanced, basic
                         "sleep": 30,
@@ -135,8 +135,12 @@ class TestCreateTemplate(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
+        cls.services["template_1"]["ostypeid"] = template.ostypeid
+        cls.services["template_2"]["ostypeid"] = template.ostypeid
+        cls.services["ostypeid"] = template.ostypeid
+
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["volume"]["diskoffering"] = cls.disk_offering.id
         cls.services["volume"]["zoneid"] = cls.zone.id
@@ -298,13 +302,17 @@ class TestTemplates(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["volume"]["diskoffering"] = cls.disk_offering.id
         cls.services["volume"]["zoneid"] = cls.zone.id
         cls.services["template_2"]["zoneid"] = cls.zone.id
         cls.services["sourcezoneid"] = cls.zone.id
+
+        cls.services["template_1"]["ostypeid"] = template.ostypeid
+        cls.services["template_2"]["ostypeid"] = template.ostypeid
+        cls.services["ostypeid"] = template.ostypeid
 
         cls.account = Account.create(
                             cls.api_client,
