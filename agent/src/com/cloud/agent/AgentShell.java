@@ -231,6 +231,7 @@ public class AgentShell implements IAgentShell {
         int response;
         response = client.executeMethod(method);
         if (response != HttpURLConnection.HTTP_OK) {
+            method.releaseConnection();
             s_logger.warn("Retrieving from " + url + " gives response code: "
                     + response);
             throw new CloudRuntimeException("Unable to download from " + url
@@ -253,6 +254,7 @@ public class AgentShell implements IAgentShell {
             s_logger.warn("Exception while closing download stream from  "
                     + url + ", ", e);
         }
+        method.releaseConnection();
     }
 
     private void loadProperties() throws ConfigurationException {

@@ -131,6 +131,8 @@ public class UpgradeManagerImpl implements UpgradeManager {
         	return "Unable to retrieve the file from " + url;
         } catch (final IOException e) {
         	return "Unable to retrieve the file from " + url;
+        } finally {
+               method.releaseConnection();
         }
         
         file.delete();

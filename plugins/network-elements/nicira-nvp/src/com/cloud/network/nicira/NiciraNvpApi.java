@@ -119,6 +119,8 @@ public class NiciraNvpApi {
             throw new NiciraNvpApiException("Nicira NVP API login failed ", e);
         } catch (IOException e) {
             throw new NiciraNvpApiException("Nicira NVP API login failed ", e);
+        } finally {
+            pm.releaseConnection();
         }
         
         if (pm.getStatusCode() != HttpStatus.SC_OK) {
@@ -322,10 +324,11 @@ public class NiciraNvpApi {
         
         if (pm.getStatusCode() != HttpStatus.SC_OK) {
             String errorMessage = responseToErrorMessage(pm);
+            pm.releaseConnection();
             s_logger.error("Failed to update object : " + errorMessage);
             throw new NiciraNvpApiException("Failed to update object : " + errorMessage);
         }
-        
+        pm.releaseConnection();
     }
     
     private <T> T executeCreateObject(T newObject, Type returnObjectType, String uri, Map<String,String> parameters) throws NiciraNvpApiException {
@@ -352,6 +355,7 @@ public class NiciraNvpApi {
         
         if (pm.getStatusCode() != HttpStatus.SC_CREATED) {
             String errorMessage = responseToErrorMessage(pm);
+            pm.releaseConnection();
             s_logger.error("Failed to create object : " + errorMessage);
             throw new NiciraNvpApiException("Failed to create object : " + errorMessage);
         }
@@ -361,6 +365,8 @@ public class NiciraNvpApi {
             result = (T)gson.fromJson(pm.getResponseBodyAsString(), TypeToken.get(newObject.getClass()).getType());
         } catch (IOException e) {
             throw new NiciraNvpApiException("Failed to decode json response body", e);
+        } finally {
+            pm.releaseConnection();
         }
         
         return result;        
@@ -382,9 +388,11 @@ public class NiciraNvpApi {
         
         if (dm.getStatusCode() != HttpStatus.SC_NO_CONTENT) {
             String errorMessage = responseToErrorMessage(dm);
+            dm.releaseConnection();
             s_logger.error("Failed to delete object : " + errorMessage);
             throw new NiciraNvpApiException("Failed to delete object : " + errorMessage);
         }
+        dm.releaseConnection();
     }
     
     private <T> T executeRetrieveObject(Type returnObjectType, String uri, Map<String,String> parameters) throws NiciraNvpApiException {
@@ -410,6 +418,7 @@ public class NiciraNvpApi {
         
         if (gm.getStatusCode() != HttpStatus.SC_OK) {
             String errorMessage = responseToErrorMessage(gm);
+            gm.releaseConnection();
             s_logger.error("Failed to retrieve object : " + errorMessage);
             throw new NiciraNvpApiException("Failed to retrieve object : " + errorMessage);
         }
@@ -421,8 +430,9 @@ public class NiciraNvpApi {
         } catch (IOException e) {
             s_logger.error("IOException while retrieving response body",e);
             throw new NiciraNvpApiException(e);
+        } finally {
+            gm.releaseConnection();
         }
-        
         return returnValue;
     }
     
@@ -430,6 +440,7 @@ public class NiciraNvpApi {
         try {
             _client.executeMethod(method);
             if (method.getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
+                method.releaseConnection();
                 // login and try again
                 login();
                 _client.executeMethod(method);
