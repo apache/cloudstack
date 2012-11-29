@@ -35,6 +35,7 @@ import org.apache.cloudstack.storage.image.motion.ImageMotionService;
 import org.apache.cloudstack.storage.volume.db.VolumeDao;
 import org.apache.cloudstack.storage.volume.db.VolumeVO;
 
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
@@ -45,7 +46,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 //1. change volume state
 //2. orchestrator of volume, control most of the information of volume, storage pool id, voluem state, scope etc.
 
-@Service
+@Component
 public class VolumeServiceImpl implements VolumeService {
     @Inject
     VolumeDao volDao;

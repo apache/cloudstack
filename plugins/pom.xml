@@ -45,6 +45,8 @@
     <module>user-authenticators/ldap</module>
     <module>user-authenticators/md5</module>
     <module>user-authenticators/plain-text</module>
+    <module>storage/volume/solidfire</module>
+    <module>storage/image/s3</module>
   </modules>
 
   <dependencies>

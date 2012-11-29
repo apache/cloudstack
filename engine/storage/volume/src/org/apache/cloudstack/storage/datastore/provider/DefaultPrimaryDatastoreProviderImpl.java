@@ -23,7 +23,7 @@ public class DefaultPrimaryDatastoreProviderImpl implements PrimaryDataStoreProv
     private final String providerName = "default primary data store provider";
     protected PrimaryDataStoreDriver driver;
     private PrimaryDataStoreProviderVO provider;
-    private final PrimaryDataStoreDao dataStoreDao;
+    protected final PrimaryDataStoreDao dataStoreDao;
     protected PrimaryDataStoreLifeCycle dataStoreLifeCycle;
 
     @Inject
