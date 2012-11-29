@@ -33,7 +33,8 @@ public class RpcClientCallImpl implements RpcClientCall {
 	private boolean _oneway = false;
 	
 	private List<RpcCallbackListener> _callbackListeners = new ArrayList<RpcCallbackListener>();
-
+	private Object _callbackDispatcherTarget;
+	
 	private RpcProvider _rpcProvider;
 	private long _startTickInMs;
 	private long _callTag;
@@ -95,6 +96,13 @@ public class RpcClientCallImpl implements RpcClientCall {
 		_callbackListeners.add(listener);
 		return this;
 	}
+	
+	@Override
+	public RpcClientCall setCallbackDispatcherTarget(Object target) {
+		_callbackDispatcherTarget = target;
+		return this;
+	}
+	
 
 	@Override
 	public RpcClientCall setOneway() {
@@ -189,11 +197,16 @@ public class RpcClientCallImpl implements RpcClientCall {
 			_responseDone = true;
 			_responseLock.notifyAll();
 		}
-		
-		assert(_rpcProvider.getMessageSerializer() != null);
-		Object resultObject = _rpcProvider.getMessageSerializer().serializeFrom(result);
-		for(RpcCallbackListener listener: _callbackListeners)
-			listener.onSuccess(resultObject);
+	
+		if(_callbackListeners.size() > 0) {
+			assert(_rpcProvider.getMessageSerializer() != null);
+			Object resultObject = _rpcProvider.getMessageSerializer().serializeFrom(result);
+			for(RpcCallbackListener listener: _callbackListeners)
+				listener.onSuccess(resultObject);
+		} else {
+			if(_callbackDispatcherTarget != null)
+				RpcCallbackDispatcher.dispatch(_callbackDispatcherTarget, this);
+		}
 	}
 	
 	public void complete(RpcException e) {
@@ -205,7 +218,12 @@ public class RpcClientCallImpl implements RpcClientCall {
 			_responseLock.notifyAll();
 		}
 		
-		for(RpcCallbackListener listener: _callbackListeners)
-			listener.onFailure(e);
+		if(_callbackListeners.size() > 0) {
+			for(RpcCallbackListener listener: _callbackListeners)
+				listener.onFailure(e);
+		} else {
+			if(_callbackDispatcherTarget != null)
+				RpcCallbackDispatcher.dispatch(_callbackDispatcherTarget, this);
+		}
 	}
 }

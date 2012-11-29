@@ -32,6 +32,8 @@ public interface RpcClientCall {
 	Object getContextParam(String key);
 	
 	<T> RpcClientCall addCallbackListener(RpcCallbackListener<T> listener);
+	RpcClientCall setCallbackDispatcherTarget(Object target);
+	
 	RpcClientCall setOneway();
 	
 	void apply();

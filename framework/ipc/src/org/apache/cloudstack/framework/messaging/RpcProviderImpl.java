@@ -50,9 +50,9 @@ public class RpcProviderImpl implements RpcProvider {
 		
 		Object pdu = _messageSerializer.serializeFrom(message);
 		if(pdu instanceof RpcCallRequestPdu) {
-			handleCallRequestPdu((RpcCallRequestPdu)pdu);
+			handleCallRequestPdu(senderEndpointAddress, targetEndpointAddress, (RpcCallRequestPdu)pdu);
 		} else if(pdu instanceof RpcCallResponsePdu) {
-			handleCallResponsePdu((RpcCallResponsePdu)pdu);
+			handleCallResponsePdu(senderEndpointAddress, targetEndpointAddress, (RpcCallResponsePdu)pdu);
 		} else {
 			assert(false);
 		}
@@ -81,7 +81,7 @@ public class RpcProviderImpl implements RpcProvider {
 			_serviceEndpoints.remove(rpcEndpoint);
 		}
 	}
-
+	
 	@Override
 	public RpcClientCall newCall(String sourceAddress, String targetAddress) {
 		long callTag = getNextCallTag();
@@ -124,11 +124,42 @@ public class RpcProviderImpl implements RpcProvider {
 		return tag;
 	}
 	
-	private void handleCallRequestPdu(RpcCallRequestPdu pdu) {
-		// ???
+	private void handleCallRequestPdu(String sourceAddress, String targetAddress, RpcCallRequestPdu pdu) {
+		try {
+			RpcServerCall call = new RpcServerCallImpl(this, sourceAddress, targetAddress, pdu);
+			
+			// TODO, we are trying to avoid locking when calling into callbacks
+			// this can be optimized later
+			List<RpcServiceEndpoint> endpoints = new ArrayList<RpcServiceEndpoint>();
+			synchronized(_serviceEndpoints) {
+				endpoints.addAll(_serviceEndpoints);
+			}
+			
+			for(RpcServiceEndpoint endpoint : endpoints) {
+				if(RpcServiceDispatcher.dispatch(endpoint, call))
+					return;
+			}
+			
+			RpcCallResponsePdu responsePdu = new RpcCallResponsePdu();
+			responsePdu.setCommand(pdu.getCommand());
+			responsePdu.setRequestStartTick(pdu.getRequestStartTick());
+			responsePdu.setRequestTag(pdu.getRequestTag());
+			responsePdu.setResult(RpcCallResponsePdu.RESULT_HANDLER_NOT_EXIST);
+			sendRpcPdu(targetAddress, sourceAddress, _messageSerializer.serializeTo(RpcCallResponsePdu.class, responsePdu));
+			
+		} catch (Throwable e) {
+			
+			RpcCallResponsePdu responsePdu = new RpcCallResponsePdu();
+			responsePdu.setCommand(pdu.getCommand());
+			responsePdu.setRequestStartTick(pdu.getRequestStartTick());
+			responsePdu.setRequestTag(pdu.getRequestTag());
+			responsePdu.setResult(RpcCallResponsePdu.RESULT_HANDLER_EXCEPTION);
+			
+			sendRpcPdu(targetAddress, sourceAddress, _messageSerializer.serializeTo(RpcCallResponsePdu.class, responsePdu));
+		}
 	}
 	
-	private void handleCallResponsePdu(RpcCallResponsePdu pdu) {
+	private void handleCallResponsePdu(String sourceAddress, String targetAddress, RpcCallResponsePdu pdu) {
 		RpcClientCallImpl call = null;
 		
 		synchronized(this) {
