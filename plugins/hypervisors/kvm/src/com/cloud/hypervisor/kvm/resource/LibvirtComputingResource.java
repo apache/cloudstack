@@ -1271,6 +1271,25 @@ public class LibvirtComputingResource extends ServerResourceBase implements
             KVMStoragePool pool = _storagePoolMgr.getStoragePool(vol
                     .getPoolUuid());
             pool.deletePhysicalDisk(vol.getPath());
+            String vmName = cmd.getVmName();
+            String poolPath = pool.getLocalPath();
+
+            /* if vol is a root disk for a system vm, try to remove accompanying patch disk as well
+               this is a bit tricky since the patchdisk is only a LibvirtComputingResource construct
+               and not tracked anywhere in cloudstack */
+            if (vol.getType() == Volume.Type.ROOT && vmName.matches("^[rsv]-\\d+-.+$")) {
+                File patchVbd = new File(poolPath + File.separator + vmName + "-patchdisk");
+                if(patchVbd.exists()){
+                    try {
+                        _storagePoolMgr.deleteVbdByPath(patchVbd.getAbsolutePath());
+                    } catch(CloudRuntimeException e) {
+                        s_logger.warn("unable to destroy patch disk '" + patchVbd.getAbsolutePath() +
+                                      "' while removing root disk for " + vmName + " : " + e);
+                    }
+                } else {
+                    s_logger.debug("file '" +patchVbd.getAbsolutePath()+ "' not found");
+                }
+            }
 
             return new Answer(cmd, true, "Success");
         } catch (CloudRuntimeException e) {
@@ -2651,14 +2670,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
                     if (disk.getDeviceType() == DiskDef.deviceType.CDROM
                             && disk.getDiskPath() != null) {
                         cleanupDisk(conn, disk);
-                    } /* The clean up of patch disks should probably be done in expunge
-                      else if (disk.getDiskPath() != null 
-                            && disk.getDiskPath().contains(vmName + "-patchdisk") 
-                            && vmName.matches("^[rsv]-\\d+-VM$")) {
-                        if (!_storagePoolMgr.deleteVbdByPath(disk.getDiskPath())) {
-                            s_logger.warn("failed to delete patch disk " + disk.getDiskPath());
-                        }
-                    }*/
+                    }
                 }
                 for (InterfaceDef iface: ifaces) {
                     _vifDriver.unplug(iface);
