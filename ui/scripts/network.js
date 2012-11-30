@@ -933,6 +933,11 @@
                       label: 'label.network.offering',
                       isEditable: true,
                       select: function(args){
+											  if (args.context.networks[0].type == 'Shared') { //Shared network is not allowed to upgrade to a different network offering
+												  args.response.success({ data: [] });
+                          return;
+												}
+											
                         if (args.context.networks[0].state == 'Destroyed') {
                           args.response.success({ data: [] });
                           return;

@@ -266,7 +266,7 @@ cloudStack.actionFilter = {
 		var allowedActions = [];
     
 		if(jsonObj.type == 'Isolated') {
-		  allowedActions.push('edit');		//only Isolated network can be upgraded
+		  allowedActions.push('edit');		//only Isolated network is allowed to upgrade to a different network offering (Shared network is not allowed to)
 			allowedActions.push('restart');   
 		  allowedActions.push('remove');
 		}
