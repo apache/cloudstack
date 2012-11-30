@@ -35,6 +35,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
 import com.cloud.acl.ControlledEntity.ACLType;
+import com.cloud.acl.SecurityChecker.AccessType;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
@@ -2174,8 +2175,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             isSecurityGroupEnabledNetworkUsed = true;
 
         } else {
-            // Verify that all the networks are Direct/Guest/AccountSpecific; can't create combination of SG enabled network and
-            // regular networks
+            // Verify that all the networks are Shared/Guest; can't create combination of SG enabled and disabled networks 
             for (Long networkId : networkIdList) {
                 NetworkVO network = _networkDao.findById(networkId);
 
@@ -2191,21 +2191,17 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                     }
                     
                     isSecurityGroupEnabledNetworkUsed = true;
-                }
+                }            
 
-                if (network.getTrafficType() != TrafficType.Guest || network.getGuestType() != Network.GuestType.Shared || (network.getGuestType() == Network.GuestType.Shared && !isSecurityGroupEnabled)) {
-                    throw new InvalidParameterValueException("Can specify only Direct Guest Account specific networks when deploy vm in Security Group enabled zone");
+                if (!(network.getTrafficType() == TrafficType.Guest && network.getGuestType() == Network.GuestType.Shared)) {
+                    throw new InvalidParameterValueException("Can specify only Shared Guest networks when" +
+                    		" deploy vm in Advance Security Group enabled zone", null);
                 }
 
                 // Perform account permission check
-                if (network.getGuestType() != Network.GuestType.Shared) {
-                    // Check account permissions
-                    List<NetworkVO> networkMap = _networkDao.listBy(owner.getId(), network.getId());
-                    if (networkMap == null || networkMap.isEmpty()) {
-                        throw new PermissionDeniedException("Unable to create a vm using network with id " + network.getId() + ", permission denied");
-                    }
+                if (network.getAclType() == ACLType.Account) {
+                    _accountMgr.checkAccess(caller, AccessType.UseNetwork, false, network);
                 }
-
                 networkList.add(network);
             }
         }
