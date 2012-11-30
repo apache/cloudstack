@@ -26,6 +26,7 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ACL;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd;
@@ -43,7 +44,10 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.Network;
+import com.cloud.network.security.SecurityGroup;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.template.VirtualMachineTemplate;
@@ -69,6 +73,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     @Parameter(name=ApiConstants.SERVICE_OFFERING_ID, type=CommandType.LONG, required=true, description="the ID of the service offering for the virtual machine")
     private Long serviceOfferingId;
 
+    @ACL(resourceType=VirtualMachineTemplate.class)
     @IdentityMapper(entityTableName="vm_template")
     @Parameter(name=ApiConstants.TEMPLATE_ID, type=CommandType.LONG, required=true, description="the ID of the template for the virtual machine")
     private Long templateId;
@@ -88,6 +93,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     private Long domainId;
 
     //Network information
+    @ACL(resourceType=Network.class)
     @IdentityMapper(entityTableName="networks")
     @Parameter(name=ApiConstants.NETWORK_IDS, type=CommandType.LIST, collectionType=CommandType.LONG, description="list of network ids used by virtual machine. Can't be specified with ipToNetworkList parameter")
     private List<Long> networkIds;
@@ -112,14 +118,17 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     @Parameter(name=ApiConstants.SSH_KEYPAIR, type=CommandType.STRING, description="name of the ssh key pair used to login to the virtual machine")
     private String sshKeyPairName;
 
+    //@ACL(resourceType=Host.class)
     @IdentityMapper(entityTableName="host")
     @Parameter(name=ApiConstants.HOST_ID, type=CommandType.LONG, description="destination Host ID to deploy the VM to - parameter available for root admin only")
     private Long hostId;
     
+    //@ACL(resourceType=SecurityGroup.class)
     @IdentityMapper(entityTableName="security_group")
     @Parameter(name=ApiConstants.SECURITY_GROUP_IDS, type=CommandType.LIST, collectionType=CommandType.LONG, description="comma separated list of security groups id that going to be applied to the virtual machine. Should be passed only when vm is created from a zone with Basic Network support. Mutually exclusive with securitygroupnames parameter")
     private List<Long> securityGroupIdList;
     
+    //@ACL(resourceType=SecurityGroup.class)
     @Parameter(name=ApiConstants.SECURITY_GROUP_NAMES, type=CommandType.LIST, collectionType=CommandType.STRING, description="comma separated list of security groups names that going to be applied to the virtual machine. Should be passed only when vm is created from a zone with Basic Network support. Mutually exclusive with securitygroupids parameter")
     private List<String> securityGroupNameList;
     

@@ -22,6 +22,7 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
@@ -29,6 +30,7 @@ import java.util.regex.Matcher;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.acl.ControlledEntity;
 import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.commands.ListEventsCmd;
 import com.cloud.async.AsyncCommandQueued;
@@ -42,14 +44,19 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.IdentityProxy;
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.server.ManagementServer;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.AccountService;
 import com.cloud.user.UserContext;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.IdentityProxy;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.PluggableService;
+import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.exception.CSExceptionErrorCode;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.uuididentity.dao.IdentityDao;
@@ -64,7 +71,10 @@ public class ApiDispatcher {
     AsyncJobManager _asyncMgr;
     IdentityDao _identityDao;
     Long _createSnapshotQueueSizeLimit;
+    AccountManager _accountMgr;
 
+
+    Map<String, Class<? extends GenericDao>> _daoNameMap = new HashMap<String, Class<? extends GenericDao>>();
     // singleton class
     private static ApiDispatcher s_instance = new ApiDispatcher();
 
@@ -76,6 +86,7 @@ public class ApiDispatcher {
         _locator = ComponentLocator.getLocator(ManagementServer.Name);
         _asyncMgr = _locator.getManager(AsyncJobManager.class);
         _identityDao = _locator.getDao(IdentityDao.class);
+
         ConfigurationDao configDao = _locator.getDao(ConfigurationDao.class);
         Map<String, String> configs = configDao.getConfiguration();
         String strSnapshotLimit = configs.get(Config.ConcurrentSnapshotsThresholdPerHost.key());
@@ -88,13 +99,30 @@ public class ApiDispatcher {
                 _createSnapshotQueueSizeLimit = snapshotLimit;
             }
         }
+        _accountMgr = _locator.getManager(AccountManager.class);
+        
+        _daoNameMap.put("com.cloud.network.Network", NetworkDao.class);
+        _daoNameMap.put("com.cloud.template.VirtualMachineTemplate", VMTemplateDao.class);
+        
+        
     }
 
     public void dispatchCreateCmd(BaseAsyncCreateCmd cmd, Map<String, String> params) {
 
-        setupParameters(cmd, params);
+    	List<ControlledEntity> entitiesToAccess = new ArrayList<ControlledEntity>();
+    	setupParameters(cmd, params, entitiesToAccess);
         plugService(cmd);
 
+        if(!entitiesToAccess.isEmpty()){
+			 //owner
+			Account caller = UserContext.current().getCaller();
+			Account owner = s_instance._accountMgr.getActiveAccountById(cmd.getEntityOwnerId());
+			s_instance._accountMgr.checkAccess(caller, null, true, owner);
+			 
+			for(ControlledEntity entity : entitiesToAccess)
+			s_instance._accountMgr.checkAccess(caller, null, true, entity);
+        }
+        
         try {
             UserContext ctx = UserContext.current();
             ctx.setAccountId(cmd.getEntityOwnerId());
@@ -135,8 +163,19 @@ public class ApiDispatcher {
     }
 
     public void dispatch(BaseCmd cmd, Map<String, String> params) {
-        setupParameters(cmd, params);
+    	List<ControlledEntity> entitiesToAccess = new ArrayList<ControlledEntity>();
+    	setupParameters(cmd, params, entitiesToAccess);
         ApiDispatcher.plugService(cmd);
+        
+        if(!entitiesToAccess.isEmpty()){
+			 //owner
+			Account caller = UserContext.current().getCaller();
+			Account owner = s_instance._accountMgr.getActiveAccountById(cmd.getEntityOwnerId());
+			s_instance._accountMgr.checkAccess(caller, null, true, owner);
+			for(ControlledEntity entity : entitiesToAccess)
+			s_instance._accountMgr.checkAccess(caller, null, true, entity);
+        }
+        
         try {
             UserContext ctx = UserContext.current();
             ctx.setAccountId(cmd.getEntityOwnerId());
@@ -299,8 +338,10 @@ public class ApiDispatcher {
         }
     }
 
-    public static void setupParameters(BaseCmd cmd, Map<String, String> params) {
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+	public static void setupParameters(BaseCmd cmd, Map<String, String> params, List<ControlledEntity> entitiesToAccess) {
         Map<String, Object> unpackedParams = cmd.unpackParams(params);
+        
 
         if (cmd instanceof BaseListCmd) {
             Object pageSizeObj = unpackedParams.get(ApiConstants.PAGE_SIZE);
@@ -368,12 +409,90 @@ public class ApiDispatcher {
                 throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to execute API command " + cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8) + " due to invalid value. " + invEx.getMessage());
             } catch (CloudRuntimeException cloudEx) {
                 // FIXME: Better error message? This only happens if the API command is not executable, which typically
-// means
+            	//means
                 // there was
                 // and IllegalAccessException setting one of the parameters.
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Internal error executing API command " + cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8));
             }
+            
+            
+            //check access on the resource this field points to
+	        try {
+	            ACL checkAccess = field.getAnnotation(ACL.class);
+	            CommandType fieldType = parameterAnnotation.type();
+	            
+	            
+	            if(checkAccess != null){
+	            	// Verify that caller can perform actions in behalf of vm owner
+	            	//acumulate all Controlled Entities together.
+	            	if(checkAccess.resourceType() != null){
+	            		 Class<?> entity = checkAccess.resourceType();
+	            				 
+	            		 if(ControlledEntity.class.isAssignableFrom(entity)){
+	                         if (s_logger.isDebugEnabled()) {
+	                             s_logger.debug("entity name is:" + entity.getName());
+	                         }
+	                         
+	                         if(s_instance._daoNameMap.containsKey(entity.getName())){
+	                        	 Class<? extends GenericDao> daoClass = s_instance._daoNameMap.get(entity.getName());
+	                        	 GenericDao daoClassInstance =  s_instance._locator.getDao(daoClass);
+	                        	 
+	                        	 //Check if the parameter type is a single Id or list of id's/name's
+	                        	 switch (fieldType) {                        	 
+			                         case LIST:
+		                                 CommandType listType = parameterAnnotation.collectionType();
+		                                 switch (listType) {
+    		                                 case LONG: 
+    		                                	 List<Long> listParam = new ArrayList<Long>();
+     											 listParam = (List)field.get(cmd);
+    
+    		                                	 for(Long entityId : listParam){
+    			    	                        	 ControlledEntity entityObj = (ControlledEntity)daoClassInstance.findById(entityId);
+    			    	                        	 entitiesToAccess.add(entityObj);
+    		                                	 }
+    			    	                     break;
+    		                                 /*case STRING:
+    		                                	 List<String> listParam = new ArrayList<String>();
+    		                                	 listParam = (List)field.get(cmd);
+    		                                	 for(String entityName: listParam){
+    			    	                        	 ControlledEntity entityObj = (ControlledEntity)daoClassInstance(entityId);
+    			    	                        	 entitiesToAccess.add(entityObj);
+    		                                	 }
+    		                                     break;
+    		                                  */
+    		                                 default:
+    		                                 break;
+		                                 }
+			                             break;
+			                         case LONG:
+			                        	 Long entityId = (Long)field.get(cmd);
+			                        	 ControlledEntity entityObj = (ControlledEntity)daoClassInstance.findById(entityId);
+			                        	 entitiesToAccess.add(entityObj);
+			                        	 break;
+			                         default:
+			                        	 break;
+	                        	 }
+	                             
+	                        	 
+	                         }
+	            			 
+	            		 }
+	            		 
+	            	}
+	            	
+	            }
+	
+			} catch (IllegalArgumentException e) {
+	            s_logger.error("Error initializing command " + cmd.getCommandName() + ", field " + field.getName() + " is not accessible.");
+	            throw new CloudRuntimeException("Internal error initializing parameters for command " + cmd.getCommandName() + " [field " + field.getName() + " is not accessible]");
+			} catch (IllegalAccessException e) {
+	            s_logger.error("Error initializing command " + cmd.getCommandName() + ", field " + field.getName() + " is not accessible.");
+	            throw new CloudRuntimeException("Internal error initializing parameters for command " + cmd.getCommandName() + " [field " + field.getName() + " is not accessible]");
+			}
+            
         }
+        
+        //check access on the entities.
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })

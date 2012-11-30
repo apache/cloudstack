@@ -81,6 +81,7 @@ import org.apache.http.protocol.ResponseDate;
 import org.apache.http.protocol.ResponseServer;
 import org.apache.log4j.Logger;
 
+import com.cloud.acl.ControlledEntity;
 import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.ExceptionResponse;
 import com.cloud.api.response.ListResponse;
@@ -487,8 +488,16 @@ public class ApiServer implements HttpRequestHandler {
                 objectEntityTable = createCmd.getEntityTable();
                 params.put("id", objectId.toString());
             } else {
-                ApiDispatcher.setupParameters(cmdObj, params);
+            	List<ControlledEntity> entitiesToAccess = new ArrayList<ControlledEntity>();
+                ApiDispatcher.setupParameters(cmdObj, params, entitiesToAccess);
                 ApiDispatcher.plugService(cmdObj);
+                
+                if(!entitiesToAccess.isEmpty()){
+	                Account owner = s_instance._accountMgr.getActiveAccountById(cmdObj.getEntityOwnerId());
+	        		s_instance._accountMgr.checkAccess(caller, null, true, owner);
+	        		 
+	        		s_instance._accountMgr.checkAccess(caller, null, true, (ControlledEntity[])entitiesToAccess.toArray());
+                }
             }
 
             BaseAsyncCmd asyncCmd = (BaseAsyncCmd) cmdObj;
