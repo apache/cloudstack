@@ -28,9 +28,14 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -339,6 +344,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
     int _routerStatsInterval = 300;
     int _routerCheckInterval = 30;
+    int _rvrStatusUpdatePoolSize = 10;
     protected ServiceOfferingVO _offering;
     private String _dnsBasicZoneUpdates = "all";
     private Set<String> _guestOSNeedGatewayOnNonDefaultNetwork = new HashSet<String>();
@@ -353,8 +359,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     ScheduledExecutorService _executor;
     ScheduledExecutorService _checkExecutor;
     ScheduledExecutorService _networkStatsUpdateExecutor;
+    ExecutorService _rvrStatusUpdateExecutor;
 
     Account _systemAcct;
+    
+    BlockingQueue<Long> _vrUpdateQueue = null;
 
     @Override
     public boolean sendSshKeysToHost(Long hostId, String pubKey, String prvKey) {
@@ -582,7 +591,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("RouterMonitor"));
         _checkExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("RouterStatusMonitor"));
         _networkStatsUpdateExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("NetworkStatsUpdater"));
-
+        
         final ComponentLocator locator = ComponentLocator.getCurrentLocator();
 
         final Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
@@ -609,7 +618,18 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         value = configs.get("router.check.interval");
         _routerCheckInterval = NumbersUtil.parseInt(value, 30);
-        
+
+        value = configs.get("router.check.poolsize");
+        _rvrStatusUpdatePoolSize = NumbersUtil.parseInt(value, 10);
+
+        /* 
+         * We assume that one thread can handle 20 requests in 1 minute in normal situation, so here we give the queue size up to 50 minutes.
+         * It's mostly for buffer, since each time CheckRouterTask running, it would add all the redundant networks in the queue immediately
+         */
+        _vrUpdateQueue = new LinkedBlockingQueue<Long>(_rvrStatusUpdatePoolSize * 1000); 
+
+        _rvrStatusUpdateExecutor = Executors.newFixedThreadPool(_rvrStatusUpdatePoolSize, new NamedThreadFactory("RedundantRouterStatusMonitor"));
+
         _instance = configs.get("instance.name");
         if (_instance == null) {
             _instance = "DEFAULT";
@@ -707,6 +727,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         
         if (_routerCheckInterval > 0) {
             _checkExecutor.scheduleAtFixedRate(new CheckRouterTask(), _routerCheckInterval, _routerCheckInterval, TimeUnit.SECONDS);
+            for (int i = 0; i < _rvrStatusUpdatePoolSize; i++) {
+                _rvrStatusUpdateExecutor.execute(new RvRStatusUpdateTask());
+            }
         } else {
             s_logger.debug("router.check.interval - " + _routerCheckInterval+ " so not scheduling the redundant router checking thread");
         }
@@ -1042,14 +1065,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 if (host == null || host.getStatus() != Status.Up) {
                     router.setRedundantState(RedundantState.UNKNOWN);
                     updated = true;
-                } else if (host.getManagementServerId() != ManagementServerNode.getManagementServerId()) {
-                    /* Only cover hosts managed by this management server */
-                    continue;
                 } else if (privateIP != null) {
                     final CheckRouterCommand command = new CheckRouterCommand();
                     command.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
                     command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-                    command.setWait(60);
+                    command.setWait(30);
                     final Answer origAnswer = _agentMgr.easySend(router.getHostId(), command);
                     CheckRouterAnswer answer = null;
                     if (origAnswer instanceof CheckRouterAnswer) {
@@ -1131,11 +1151,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         return priority;
     }
 
-    protected class CheckRouterTask implements Runnable {
+    protected class RvRStatusUpdateTask implements Runnable {
 
-        public CheckRouterTask() {
+        public RvRStatusUpdateTask() {
         }
-
+        
         /*
          * In order to make fail-over works well at any time, we have to ensure:
          * 1. Backup router's priority = Master's priority - DELTA + 1
@@ -1198,9 +1218,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                         String title = "More than one redundant virtual router is in MASTER state! Router " + router.getHostName() + " and router " + dupRouter.getHostName();
                         String context =  "Virtual router (name: " + router.getHostName() + ", id: " + router.getId() + " and router (name: "
                                 + dupRouter.getHostName() + ", id: " + router.getId() + ") are both in MASTER state! If the problem persist, restart both of routers. ";
-
                         _alertMgr.sendAlert(AlertManager.ALERT_TYPE_DOMAIN_ROUTER, router.getDataCenterIdToDeployIn(), router.getPodIdToDeployIn(), title, context);
                         _alertMgr.sendAlert(AlertManager.ALERT_TYPE_DOMAIN_ROUTER, dupRouter.getDataCenterIdToDeployIn(), dupRouter.getPodIdToDeployIn(), title, context);
+                        s_logger.warn(context);
                     } else {
                             networkRouterMaps.put(routerGuestNtwkId, router);
                         }
@@ -1211,17 +1231,59 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         @Override
         public void run() {
+            while (true) {
+                try {
+                    Long networkId = _vrUpdateQueue.take();
+                    List <DomainRouterVO> routers = _routerDao.listByNetworkAndRole(networkId, Role.VIRTUAL_ROUTER);
+
+                    if (routers.size() != 2) {
+                        continue;
+                    }
+                    /*
+                     * We update the router pair which the lower id router owned by this mgmt server, in order
+                     * to prevent duplicate update of router status from cluster mgmt servers
+                     */
+                    DomainRouterVO router = routers.get(0);
+                    if (routers.get(1).getId() < router.getId()) {
+                        router = routers.get(1);
+                    }
+                    HostVO host = _hostDao.findById(router.getHostId());
+                    if (host == null || host.getManagementServerId() == null ||
+                            host.getManagementServerId() != ManagementServerNode.getManagementServerId()) {
+                        continue;
+                    }
+                    updateRoutersRedundantState(routers);
+                    checkDuplicateMaster(routers);
+                    checkSanity(routers);
+                } catch (Exception ex) {
+                    s_logger.error("Fail to complete the RvRStatusUpdateTask! ", ex);
+                }
+            }
+        }
+        
+    }
+    
+    protected class CheckRouterTask implements Runnable {
+
+        public CheckRouterTask() {
+        }
+
+        @Override
+        public void run() {
             try {
                 final List<DomainRouterVO> routers = _routerDao.listIsolatedByHostId(null);
-                s_logger.debug("Found " + routers.size() + " routers. ");
+                s_logger.debug("Found " + routers.size() + " routers to update status. ");
 
-                updateRoutersRedundantState(routers);
                 updateSite2SiteVpnConnectionState(routers);
 
-                /* FIXME assumed the a pair of redundant routers managed by same mgmt server,
-                 * then the update above can get the latest status */
-                checkDuplicateMaster(routers);
-                checkSanity(routers);
+                final List<NetworkVO> networks = _networkDao.listRedundantNetworks();
+                s_logger.debug("Found " + networks.size() + " networks to update RvR status. ");
+                for (NetworkVO network : networks) {
+                    if (!_vrUpdateQueue.offer(network.getId(), 500, TimeUnit.MILLISECONDS)) {
+                        s_logger.warn("Cannot insert into virtual router update queue! Adjustment of router.check.interval and router.check.poolsize maybe needed.");
+                        break;
+                    }
+                }
             } catch (Exception ex) {
                 s_logger.error("Fail to complete the CheckRouterTask! ", ex);
             }
