@@ -1449,7 +1449,7 @@ div.list-view td.state.off span {
   -webkit-text-shadow: 0px 1px #EAEAEA;
   -o-text-shadow: 0px 1px #EAEAEA;
   text-shadow: 0px 1px #EAEAEA;
-  overflow:hidden;
+  overflow: hidden;
 }
 
 .quick-view-tooltip .detail-view .detail-group table td.value input[type=text] {
@@ -6498,7 +6498,7 @@ label.error {
 .multi-wizard.zone-wizard .select-container.multi .drop-container {
   background: #DAE2EC;
   width: 484px;
-  height: 100px;
+  height: 114px;
   clear: both;
   position: relative;
   /*+border-radius:4px;*/
@@ -6538,10 +6538,10 @@ label.error {
   text-align: center;
   color: #959BA0;
   font-size: 13px;
-  /*+placement:shift 0px 24px;*/
+  /*+placement:shift 0px 45px;*/
   position: relative;
   left: 0px;
-  top: 24px;
+  top: 45px;
 }
 
 /*** Add physical network -- traffic type drag area*/
@@ -6769,20 +6769,20 @@ label.error {
   border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
   border-top: 1px solid #FFFFFF;
-  /*+placement:shift -15px 61px;*/
+  /*+placement:shift -16px 70px;*/
   position: relative;
-  left: -15px;
-  top: 61px;
+  left: -16px;
+  top: 70px;
 }
 
 .multi-wizard.zone-wizard .drop-container .traffic-type-draggable > .edit-traffic-type:hover {
   background-position: 0px -105px;
   color: #FFFFFF;
-  /*+box-shadow:inset 0px 2px 1px #727272;*/
-  -moz-box-shadow: inset 0px 2px 1px #727272;
-  -webkit-box-shadow: inset 0px 2px 1px #727272;
-  -o-box-shadow: inset 0px 2px 1px #727272;
-  box-shadow: inset 0px 2px 1px #727272;
+  /*+box-shadow:inset 0px -1px 1px #727272;*/
+  -moz-box-shadow: inset 0px -1px 1px #727272;
+  -webkit-box-shadow: inset 0px -1px 1px #727272;
+  -o-box-shadow: inset 0px -1px 1px #727272;
+  box-shadow: inset 0px -1px 1px #727272;
 }
 
 .multi-wizard.zone-wizard .drop-container .traffic-type-draggable > .edit-traffic-type:hover span {
@@ -6795,10 +6795,10 @@ label.error {
 }
 
 .multi-wizard.zone-wizard .drop-container .traffic-type-draggable:hover > .edit-traffic-type {
-  /*+placement:shift -7px 67px;*/
+  /*+placement:shift -7px 76px;*/
   position: relative;
   left: -7px;
-  top: 67px;
+  top: 76px;
 }
 
 .multi-wizard.zone-wizard .drop-container .traffic-type-draggable .edit-traffic-type span {
@@ -6817,6 +6817,36 @@ label.error {
   float: left;
   background: url(../images/sprites.png) -7px -4px;
   padding: 7px 11px 0 7px;
+}
+
+.multi-wizard.zone-wizard .traffic-type-draggable .edit-traffic-type span.name {
+  float: left;
+  width: 76px;
+  font-size: 10px;
+  padding: 2px;
+  color: #4E5F6F;
+  background: #DBE1E9;
+  /*+border-radius:4px 4px 0 0;*/
+  -moz-border-radius: 4px 4px 0 0;
+  -webkit-border-radius: 4px 4px 0 0;
+  -khtml-border-radius: 4px 4px 0 0;
+  border-radius: 4px 4px 0 0;
+  /*+placement:shift -13px -16px;*/
+  position: relative;
+  left: -13px;
+  top: -16px;
+  margin-bottom: -13px;
+  border: 1px solid #C3BCBC;
+  border-bottom: 1px solid #D1CDCD;
+  /*+box-shadow:inset 0px 1px 1px #F5F4F4;*/
+  -moz-box-shadow: inset 0px 1px 1px #F5F4F4;
+  -webkit-box-shadow: inset 0px 1px 1px #F5F4F4;
+  -o-box-shadow: inset 0px 1px 1px #F5F4F4;
+  box-shadow: inset 0px 1px 1px #F5F4F4;
+}
+
+.multi-wizard.zone-wizard .traffic-type-draggable .edit-traffic-type:hover span.name {
+  background: #C4C3C3;
 }
 
 /*** Configure guest network -- tabs*/
