@@ -23,6 +23,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
@@ -1672,7 +1673,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 NetworkVO vo = new NetworkVO(id, network, offering.getId(), guru.getName(), owner.getDomainId(), owner.getId(),
                         related, name, displayText, predefined.getNetworkDomain(), offering.getGuestType(), 
                         plan.getDataCenterId(), plan.getPhysicalNetworkId(), aclType, offering.getSpecifyIpRanges(), vpcId);
-                networks.add(_networksDao.persist(vo, vo.getGuestType() == Network.GuestType.Isolated, 
+                networks.add(_networksDao.persist(vo, vo.getGuestType() == Network.GuestType.Isolated,
                         finalizeServicesAndProvidersForNetwork(offering, plan.getPhysicalNetworkId())));
 
                 if (domainId != null && aclType == ACLType.Domain) {
@@ -2664,9 +2665,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
 
-        if (cidr != null && networkOfferingIsConfiguredForExternalNetworking(networkOfferingId)) {
+        Collection<String> ntwkProviders = finalizeServicesAndProvidersForNetwork(ntwkOff, physicalNetworkId).values();
+        if (cidr != null && providersConfiguredForExternalNetworking(ntwkProviders)) {
             throw new InvalidParameterValueException("Cannot specify CIDR when using network offering with external devices!");
         }
+
 
         // Vlan is created in 2 cases - works in Advance zone only:
         // 1) GuestType is Shared
@@ -4366,17 +4369,15 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             return false;
         }
     }
-
-    public boolean networkOfferingIsConfiguredForExternalNetworking(long networkOfferingId) {
-        boolean netscalerInNetworkOffering = isProviderForNetworkOffering(Network.Provider.Netscaler, networkOfferingId);
-        boolean juniperInNetworkOffering = isProviderForNetworkOffering(Network.Provider.JuniperSRX, networkOfferingId);
-        boolean f5InNetworkOffering = isProviderForNetworkOffering(Network.Provider.F5BigIp, networkOfferingId);
-
-        if (netscalerInNetworkOffering || juniperInNetworkOffering || f5InNetworkOffering) {
-            return true;
-        } else {
-            return false;
+    
+    public boolean providersConfiguredForExternalNetworking(Collection<String> providers) {
+        for(String providerStr : providers){
+            Provider provider = Network.Provider.getProvider(providerStr);
+            if(provider.isExternal()){
+                return true;
+            }
         }
+        return false;
     }
 
     @Override
@@ -4651,7 +4652,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
 
             if (networkOfferingId != oldNetworkOfferingId) {
-                if (networkOfferingIsConfiguredForExternalNetworking(networkOfferingId) != networkOfferingIsConfiguredForExternalNetworking(oldNetworkOfferingId)
+                NetworkOffering oldNtwkOff = _networkOfferingDao.findByIdIncludingRemoved(oldNetworkOfferingId);
+                Collection<String> newProviders = finalizeServicesAndProvidersForNetwork(networkOffering, network.getPhysicalNetworkId()).values();
+                Collection<String> oldProviders = finalizeServicesAndProvidersForNetwork(oldNtwkOff, network.getPhysicalNetworkId()).values();
+                
+                if (providersConfiguredForExternalNetworking(newProviders) != providersConfiguredForExternalNetworking(oldProviders)
                         && !changeCidr) {
                     throw new InvalidParameterValueException("Updating network failed since guest CIDR needs to be changed!");
                 }

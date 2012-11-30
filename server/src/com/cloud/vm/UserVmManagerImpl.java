@@ -2195,7 +2195,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
                 if (!(network.getTrafficType() == TrafficType.Guest && network.getGuestType() == Network.GuestType.Shared)) {
                     throw new InvalidParameterValueException("Can specify only Shared Guest networks when" +
-                    		" deploy vm in Advance Security Group enabled zone", null);
+                    		" deploy vm in Advance Security Group enabled zone");
                 }
 
                 // Perform account permission check
