@@ -72,15 +72,7 @@ public class NiciraNvpApi {
     
     private HttpClient _client;
 
-    public NiciraNvpApi(String host, String adminuser, String adminpass) throws NiciraNvpApiException {
-        this._host = host;
-        this._adminpass = adminpass;
-        this._adminuser = adminuser;
-        
-        if (_host == null || _adminpass == null || _adminuser == null) {
-            throw new NiciraNvpApiException("host, adminuser and adminpass may not be null");
-        }
-
+    public NiciraNvpApi() {
         _client = new HttpClient(s_httpClientManager);
         _client.getParams().setCookiePolicy(CookiePolicy.BROWSER_COMPATIBILITY);
         
@@ -91,6 +83,15 @@ public class NiciraNvpApi {
             s_logger.warn("Failed to register the TrustingProtocolSocketFactory, falling back to default SSLSocketFactory", e);
         }
         
+    }
+    
+    public void setControllerAddress(String address) {
+    	this._host = address;
+    }
+    
+    public void setAdminCredentials(String username, String password) {
+    	this._adminuser = username;
+    	this._adminpass = password;
     }
     
     /**

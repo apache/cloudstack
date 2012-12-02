@@ -88,38 +88,24 @@ public class NiciraNvpResource implements ServerResource {
     private static final Logger s_logger = Logger.getLogger(NiciraNvpResource.class);
     
     private String _name;
-    private String _ip;
-    private String _adminuser;
-    private String _adminpass;
     private String _guid;
     private String _zoneId;
     private int _numRetries;
     
     private NiciraNvpApi _niciraNvpApi;
     
+    protected NiciraNvpApi createNiciraNvpApi() {
+    	return new NiciraNvpApi();
+    }
+    
     @Override
     public boolean configure(String name, Map<String, Object> params)
             throws ConfigurationException {
-        
+    	
         _name = (String) params.get("name");
         if (_name == null) {
             throw new ConfigurationException("Unable to find name");
         }
-        
-        _ip = (String) params.get("ip");
-        if (_ip == null) {
-            throw new ConfigurationException("Unable to find IP");
-        }
-        
-        _adminuser = (String) params.get("adminuser");
-        if (_adminuser == null) {
-            throw new ConfigurationException("Unable to find admin username");
-        }
-        
-        _adminpass = (String) params.get("adminpass");
-        if (_adminpass == null) {
-            throw new ConfigurationException("Unable to find admin password");
-        }               
         
         _guid = (String)params.get("guid");
         if (_guid == null) {
@@ -133,11 +119,24 @@ public class NiciraNvpResource implements ServerResource {
         
         _numRetries = 2;
 
-        try {
-            _niciraNvpApi = new NiciraNvpApi(_ip, _adminuser, _adminpass);
-        } catch (NiciraNvpApiException e) {
-            throw new ConfigurationException(e.getMessage());
+        String ip = (String) params.get("ip");
+        if (ip == null) {
+            throw new ConfigurationException("Unable to find IP");
         }
+        
+        String adminuser = (String) params.get("adminuser");
+        if (adminuser == null) {
+            throw new ConfigurationException("Unable to find admin username");
+        }
+        
+        String adminpass = (String) params.get("adminpass");
+        if (adminpass == null) {
+            throw new ConfigurationException("Unable to find admin password");
+        }               
+        
+        _niciraNvpApi = createNiciraNvpApi();
+        _niciraNvpApi.setControllerAddress(ip);
+        _niciraNvpApi.setAdminCredentials(adminuser,adminpass);
 
         return true;
     }
