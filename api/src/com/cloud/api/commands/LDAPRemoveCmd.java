@@ -17,22 +17,12 @@
 package com.cloud.api.commands;
 
 
-import javax.naming.NamingException;
-
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
-import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
-import com.cloud.api.response.BaseResponse;
 import com.cloud.api.response.LDAPConfigResponse;
 import com.cloud.api.response.LDAPRemoveResponse;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
 @Implementation(description="Remove the LDAP context for this site.", responseObject=LDAPConfigResponse.class, since="3.0.1")

@@ -34,7 +34,6 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.element.CiscoNexusVSMElementService;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @Implementation(responseObject=SuccessResponse.class, description=" delete a Cisco Nexus VSM device")
 public class DeleteCiscoNexusVSMCmd extends BaseAsyncCmd {

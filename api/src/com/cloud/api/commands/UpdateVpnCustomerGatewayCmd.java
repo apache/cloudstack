@@ -28,7 +28,6 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.Site2SiteCustomerGatewayResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.network.Site2SiteCustomerGateway;
-import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
 @Implementation(description="Update site to site vpn customer gateway", responseObject=Site2SiteCustomerGatewayResponse.class)

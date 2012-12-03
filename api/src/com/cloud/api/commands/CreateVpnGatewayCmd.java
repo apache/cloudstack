@@ -29,8 +29,6 @@ import com.cloud.api.response.Site2SiteVpnGatewayResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.network.Site2SiteVpnGateway;
 import com.cloud.network.vpc.Vpc;
-import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @Implementation(description="Creates site to site vpn local gateway", responseObject=Site2SiteVpnGatewayResponse.class)
 public class CreateVpnGatewayCmd extends BaseAsyncCmd {

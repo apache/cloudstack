@@ -76,7 +76,6 @@ import com.cloud.agent.api.storage.ListVolumeCommand;
 import com.cloud.agent.api.storage.UploadCommand;
 import com.cloud.agent.api.storage.ssCommand;
 import com.cloud.agent.api.to.SwiftTO;
-import com.cloud.api.commands.DeleteVolumeCmd;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;

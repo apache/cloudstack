@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.api.response;
 
-import javax.persistence.Column;
-
 import com.cloud.api.ApiConstants;
 import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;

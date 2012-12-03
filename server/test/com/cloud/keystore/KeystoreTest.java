@@ -16,27 +16,15 @@
 // under the License.
 package com.cloud.keystore;
 
-import java.security.KeyStore;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import junit.framework.TestCase;
 
 import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 
-import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.ApiSerializerHelper;
 import com.cloud.api.response.AlertResponse;
-import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.UserVmResponse;
-import com.cloud.configuration.DefaultInterceptorLibrary;
-import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.MockComponentLocator;
-import com.cloud.utils.security.CertificateHelper;
 
 public class KeystoreTest extends TestCase {
     private final static Logger s_logger = Logger.getLogger(KeystoreTest.class);

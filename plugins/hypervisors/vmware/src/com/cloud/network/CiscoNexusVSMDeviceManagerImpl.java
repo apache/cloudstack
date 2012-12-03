@@ -16,15 +16,11 @@
 // under the License.
 package com.cloud.network;
 
-import java.util.HashMap;
-
 import java.util.List;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.StartupCommand;
-import com.cloud.api.ApiConstants;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterDetailsDao;
@@ -33,7 +29,6 @@ import com.cloud.dc.ClusterVSMMapVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.ClusterVSMMapDao;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDetailsDao;

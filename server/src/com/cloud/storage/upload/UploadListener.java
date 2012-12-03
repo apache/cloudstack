@@ -44,8 +44,6 @@ import com.cloud.api.commands.ExtractVolumeCmd;
 import com.cloud.api.response.ExtractResponse;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobResult;
-import com.cloud.async.executor.ExtractJobResultObject;
-import com.cloud.event.EventVO;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.storage.Storage;

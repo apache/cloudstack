@@ -15,7 +15,6 @@
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.api;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.utils.exception.RuntimeCloudException;
 
 @SuppressWarnings("serial")

@@ -49,7 +49,6 @@ import com.cloud.api.response.AsyncJobResponse;
 import com.cloud.api.response.BaseResponse;
 import com.cloud.api.response.HostResponse;
 import com.cloud.api.response.IPAddressResponse;
-import com.cloud.api.response.LoadBalancerResponse;
 import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.api.response.SnapshotResponse;
 import com.cloud.api.response.StoragePoolResponse;
@@ -57,7 +56,6 @@ import com.cloud.api.response.TemplateResponse;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.api.response.VolumeResponse;
 import com.cloud.serializer.Param;
-import com.cloud.server.api.response.ExternalLoadBalancerResponse;
 import com.google.gson.annotations.SerializedName;
 import com.thoughtworks.xstream.XStream;
 

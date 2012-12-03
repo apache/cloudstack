@@ -33,11 +33,6 @@ import com.cloud.api.commands.UpdateAutoScaleVmGroupCmd;
 import com.cloud.api.commands.UpdateAutoScaleVmProfileCmd;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.as.AutoScalePolicy;
-import com.cloud.network.as.AutoScaleVmGroup;
-import com.cloud.network.as.AutoScaleVmProfile;
-import com.cloud.network.as.Condition;
-import com.cloud.network.as.Counter;
 
 public interface AutoScaleService {
 

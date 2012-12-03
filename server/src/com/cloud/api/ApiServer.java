@@ -17,11 +17,7 @@
 package com.cloud.api;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InterruptedIOException;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
@@ -82,7 +78,6 @@ import org.apache.http.protocol.ResponseServer;
 import org.apache.log4j.Logger;
 
 import com.cloud.acl.ControlledEntity;
-import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.ExceptionResponse;
 import com.cloud.api.response.ListResponse;
@@ -109,11 +104,9 @@ import com.cloud.user.UserContext;
 import com.cloud.user.UserVO;
 import com.cloud.utils.IdentityProxy;
 import com.cloud.utils.Pair;
-import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
-import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;

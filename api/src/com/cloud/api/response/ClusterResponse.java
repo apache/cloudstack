@@ -21,8 +21,6 @@ import java.util.List;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.utils.IdentityProxy;
-import com.cloud.api.Parameter;
-import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 

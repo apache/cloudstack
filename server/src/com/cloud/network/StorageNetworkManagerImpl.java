@@ -38,12 +38,9 @@ import com.cloud.dc.StorageNetworkIpRangeVO;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.StorageNetworkIpAddressDao;
 import com.cloud.dc.dao.StorageNetworkIpRangeDao;
-import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.host.HostVO;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.utils.Pair;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria2;
@@ -55,7 +52,6 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
-import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value = {StorageNetworkManager.class, StorageNetworkService.class})
 public class StorageNetworkManagerImpl implements StorageNetworkManager, StorageNetworkService {

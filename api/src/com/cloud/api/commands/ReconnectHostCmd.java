@@ -28,7 +28,6 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.HostResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
-import com.cloud.exception.AgentUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;

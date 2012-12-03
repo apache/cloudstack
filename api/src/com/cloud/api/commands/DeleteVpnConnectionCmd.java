@@ -30,7 +30,6 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @Implementation(description="Delete site to site vpn connection", responseObject=SuccessResponse.class)
 public class DeleteVpnConnectionCmd extends BaseAsyncCmd {

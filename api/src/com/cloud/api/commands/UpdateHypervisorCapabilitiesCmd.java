@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.api.commands;
 
-import java.util.UUID;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;

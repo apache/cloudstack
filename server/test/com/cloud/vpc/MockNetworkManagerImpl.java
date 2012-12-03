@@ -121,7 +121,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager{
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.network.NetworkService#createGuestNetwork(com.cloud.api.commands.CreateNetworkCmd)
+     * @see com.cloud.network.NetworkService#createGuestNetwork(org.apache.cloudstack.api.commands.CreateNetworkCmd)
      */
     @Override
     public Network createGuestNetwork(CreateNetworkCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException {
@@ -130,7 +130,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager{
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.network.NetworkService#searchForNetworks(com.cloud.api.commands.ListNetworksCmd)
+     * @see com.cloud.network.NetworkService#searchForNetworks(org.apache.cloudstack.api.commands.ListNetworksCmd)
      */
     @Override
     public List<? extends Network> searchForNetworks(ListNetworksCmd cmd) {
@@ -148,7 +148,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager{
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.network.NetworkService#restartNetwork(com.cloud.api.commands.RestartNetworkCmd, boolean)
+     * @see com.cloud.network.NetworkService#restartNetwork(org.apache.cloudstack.api.commands.RestartNetworkCmd, boolean)
      */
     @Override
     public boolean restartNetwork(RestartNetworkCmd cmd, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
@@ -454,7 +454,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager{
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.network.NetworkService#listTrafficTypeImplementor(com.cloud.api.commands.ListTrafficTypeImplementorsCmd)
+     * @see com.cloud.network.NetworkService#listTrafficTypeImplementor(org.apache.cloudstack.api.commands.ListTrafficTypeImplementorsCmd)
      */
     @Override
     public List<Pair<TrafficType, String>> listTrafficTypeImplementor(ListTrafficTypeImplementorsCmd cmd) {

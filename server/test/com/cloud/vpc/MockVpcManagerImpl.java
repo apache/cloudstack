@@ -242,7 +242,7 @@ public class MockVpcManagerImpl implements VpcManager, Manager{
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.network.vpc.VpcService#listPrivateGateway(com.cloud.api.commands.ListPrivateGatewaysCmd)
+     * @see com.cloud.network.vpc.VpcService#listPrivateGateway(org.apache.cloudstack.api.commands.ListPrivateGatewaysCmd)
      */
     @Override
     public Pair<List<PrivateGateway>, Integer> listPrivateGateway(ListPrivateGatewaysCmd listPrivateGatewaysCmd) {
@@ -287,7 +287,7 @@ public class MockVpcManagerImpl implements VpcManager, Manager{
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.network.vpc.VpcService#listStaticRoutes(com.cloud.api.commands.ListStaticRoutesCmd)
+     * @see com.cloud.network.vpc.VpcService#listStaticRoutes(org.apache.cloudstack.api.commands.ListStaticRoutesCmd)
      */
     @Override
     public Pair<List<? extends StaticRoute>, Integer> listStaticRoutes(ListStaticRoutesCmd cmd) {

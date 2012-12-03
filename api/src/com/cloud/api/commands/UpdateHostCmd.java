@@ -29,7 +29,6 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.HostResponse;
 import com.cloud.host.Host;
 import com.cloud.user.Account;
-import com.cloud.utils.fsm.NoTransitionException;
 
 @Implementation(description="Updates a host.", responseObject=HostResponse.class)
 public class UpdateHostCmd extends BaseCmd {
