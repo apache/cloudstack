@@ -18,8 +18,9 @@
  */
 package org.apache.cloudstack.storage.backup;
 
-public interface BackupService {
-    String grantAccessSnapshot(long snapshotId, long endpointId);
+import org.apache.cloudstack.storage.snapshot.SnapshotInfo;
 
-    boolean revokeAccessSnapshot(long snapshotId, long endpointId);
+public interface BackupService {
+	public boolean backupSnapshot(SnapshotInfo snapshot, long backupStoreId);
+	public SnapshotOnBackupStoreInfo getSnapshot(long snapshotId);
 }

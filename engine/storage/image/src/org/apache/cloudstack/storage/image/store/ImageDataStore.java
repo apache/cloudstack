@@ -18,9 +18,7 @@
  */
 package org.apache.cloudstack.storage.image.store;
 
-import org.apache.cloudstack.storage.image.TemplateInfo;
 import org.apache.cloudstack.storage.image.TemplateObject;
-import org.apache.cloudstack.storage.image.downloader.ImageDownloader;
 
 public interface ImageDataStore extends ImageDataStoreInfo {
     TemplateObject registerTemplate(long templateId);
@@ -32,8 +30,6 @@ public interface ImageDataStore extends ImageDataStoreInfo {
     boolean deleteTemplate(long templateId);
 
     boolean needDownloadToCacheStorage();
-
-    ImageDownloader getImageDownloader();
     
     TemplateObject getTemplate(long templateId);
 }

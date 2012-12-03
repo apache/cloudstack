@@ -62,6 +62,7 @@ import org.apache.cloudstack.storage.image.format.Unknown;
 import org.apache.cloudstack.storage.image.provider.ImageDataStoreProvider;
 import org.apache.cloudstack.storage.image.provider.ImageDataStoreProviderManager;
 import org.apache.cloudstack.storage.image.store.ImageDataStore;
+import org.apache.cloudstack.storage.image.store.lifecycle.ImageDataStoreLifeCycle;
 import org.apache.cloudstack.storage.volume.VolumeService;
 import org.apache.cloudstack.storage.volume.db.VolumeDao;
 import org.apache.cloudstack.storage.volume.db.VolumeVO;
@@ -211,7 +212,8 @@ public class volumeServiceTest {
 			imageProviderMgr.configure("image Provider", new HashMap<String, Object>());
 			ImageDataVO image = createImageData();
 			ImageDataStoreProvider defaultProvider = imageProviderMgr.getProvider("DefaultProvider");
-			ImageDataStore store = defaultProvider.registerDataStore("defaultHttpStore", new HashMap<String, String>());
+			ImageDataStoreLifeCycle lifeCycle = defaultProvider.getLifeCycle();
+			ImageDataStore store = lifeCycle.registerDataStore("defaultHttpStore", new HashMap<String, String>());
 			imageService.registerTemplate(image.getId(), store.getImageDataStoreId());
 			TemplateEntity te = imageService.getTemplateEntity(image.getId());
 			return te;

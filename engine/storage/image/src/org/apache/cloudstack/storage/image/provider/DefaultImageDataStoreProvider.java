@@ -30,6 +30,8 @@ import org.apache.cloudstack.storage.image.driver.ImageDataStoreDriver;
 import org.apache.cloudstack.storage.image.driver.ImageDataStoreDriverImpl;
 import org.apache.cloudstack.storage.image.store.ImageDataStore;
 import org.apache.cloudstack.storage.image.store.ImageDataStoreImpl;
+import org.apache.cloudstack.storage.image.store.lifecycle.DefaultImageDataStoreLifeCycle;
+import org.apache.cloudstack.storage.image.store.lifecycle.ImageDataStoreLifeCycle;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.component.ComponentInject;
@@ -47,7 +49,7 @@ public class DefaultImageDataStoreProvider implements ImageDataStoreProvider {
     public ImageDataStore getImageDataStore(long imageStoreId) {
         ImageDataStoreVO idsv = imageStoreDao.findById(imageStoreId);
         ImageDataStoreDriver driver = new ImageDataStoreDriverImpl();
-        ImageDataStore ids = new ImageDataStoreImpl(idsv, driver, false, null);
+        ImageDataStore ids = new ImageDataStoreImpl(idsv, driver, false);
         ids = ComponentInject.inject(ids);
         return ids;
     }
@@ -69,14 +71,7 @@ public class DefaultImageDataStoreProvider implements ImageDataStoreProvider {
     }
 
     @Override
-    public ImageDataStore registerDataStore(String name, Map<String, String> params) {
-        ImageDataStoreVO dataStore = imageStoreDao.findByName(name);
-        if (dataStore == null) {
-            dataStore = new ImageDataStoreVO();
-            dataStore.setName(name);
-            dataStore.setProvider(provider.getId());
-            dataStore = imageStoreDao.persist(dataStore);
-        }
-        return getImageDataStore(dataStore.getId());
+    public ImageDataStoreLifeCycle getLifeCycle() {
+    	return new DefaultImageDataStoreLifeCycle(this, provider, imageStoreDao);
     }
 }
