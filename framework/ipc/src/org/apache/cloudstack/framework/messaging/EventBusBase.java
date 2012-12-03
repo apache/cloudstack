@@ -260,6 +260,7 @@ public class EventBusBase implements EventBus {
 	}
 	
 	private static class SubscriptionNode {
+		@SuppressWarnings("unused")
 		private String _nodeKey;
 		private List<Subscriber> _subscribers;
 		private Map<String, SubscriptionNode> _children;
@@ -275,6 +276,7 @@ public class EventBusBase implements EventBus {
 			_children = new HashMap<String, SubscriptionNode>();
 		}
 		
+		@SuppressWarnings("unused")
 		public List<Subscriber> getSubscriber() {
 			return _subscribers;
 		}

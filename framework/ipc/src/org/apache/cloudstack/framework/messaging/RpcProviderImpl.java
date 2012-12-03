@@ -113,7 +113,7 @@ public class RpcProviderImpl implements RpcProvider {
 	@Override
 	public void sendRpcPdu(String sourceAddress, String targetAddress, String serializedPdu) {
 		assert(_transportProvider != null);
-		_transportProvider.sendMessage(sourceAddress, targetAddress, this.RPC_MULTIPLEXIER, serializedPdu);
+		_transportProvider.sendMessage(sourceAddress, targetAddress, RpcProvider.RPC_MULTIPLEXIER, serializedPdu);
 	}
 	
 	protected synchronized long getNextCallTag() {

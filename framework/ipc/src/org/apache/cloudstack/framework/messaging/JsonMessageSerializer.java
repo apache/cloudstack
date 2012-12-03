@@ -64,6 +64,7 @@ public class JsonMessageSerializer implements MessageSerializer {
 		return sbuf.toString();
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public <T> T serializeFrom(String message) {
 		assert(message != null);

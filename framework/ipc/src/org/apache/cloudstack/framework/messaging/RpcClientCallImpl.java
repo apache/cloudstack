@@ -32,6 +32,7 @@ public class RpcClientCallImpl implements RpcClientCall {
 	private Map<String, Object> _contextParams = new HashMap<String, Object>();
 	private boolean _oneway = false;
 	
+	@SuppressWarnings("rawtypes")
 	private List<RpcCallbackListener> _callbackListeners = new ArrayList<RpcCallbackListener>();
 	private Object _callbackDispatcherTarget;
 	
@@ -190,6 +191,7 @@ public class RpcClientCallImpl implements RpcClientCall {
 		return null;
 	}
 	
+	@SuppressWarnings("unchecked")
 	public void complete(String result) {
 		_responseResult = result;
 		
@@ -201,7 +203,7 @@ public class RpcClientCallImpl implements RpcClientCall {
 		if(_callbackListeners.size() > 0) {
 			assert(_rpcProvider.getMessageSerializer() != null);
 			Object resultObject = _rpcProvider.getMessageSerializer().serializeFrom(result);
-			for(RpcCallbackListener listener: _callbackListeners)
+			for(@SuppressWarnings("rawtypes") RpcCallbackListener listener: _callbackListeners)
 				listener.onSuccess(resultObject);
 		} else {
 			if(_callbackDispatcherTarget != null)
@@ -219,7 +221,7 @@ public class RpcClientCallImpl implements RpcClientCall {
 		}
 		
 		if(_callbackListeners.size() > 0) {
-			for(RpcCallbackListener listener: _callbackListeners)
+			for(@SuppressWarnings("rawtypes") RpcCallbackListener listener: _callbackListeners)
 				listener.onFailure(e);
 		} else {
 			if(_callbackDispatcherTarget != null)
