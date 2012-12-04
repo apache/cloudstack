@@ -260,8 +260,8 @@ migrateVolume=com.cloud.api.commands.MigrateVolumeCmd;15
 registerUserKeys=com.cloud.api.commands.RegisterCmd;1
 
 ### async-query command
-queryAsyncJobResult=com.cloud.api.commands.QueryAsyncJobResultCmd;15
-listAsyncJobs=com.cloud.api.commands.ListAsyncJobsCmd;15
+queryAsyncJobResult=org.apache.cloudstack.api.user.job.command.QueryAsyncJobResultCmd;15
+listAsyncJobs=org.apache.cloudstack.api.user.job.command.ListAsyncJobsCmd;15
 
 #### storage pools commands
 listStoragePools=com.cloud.api.commands.ListStoragePoolsCmd;3

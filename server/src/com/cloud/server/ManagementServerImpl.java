@@ -43,6 +43,7 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.apache.cloudstack.api.user.iso.command.ListIsosCmd;
+import org.apache.cloudstack.api.user.job.command.ListAsyncJobsCmd;
 import org.apache.cloudstack.api.user.ssh.command.DeleteSSHKeyPairCmd;
 import org.apache.cloudstack.api.user.ssh.command.RegisterSSHKeyPairCmd;
 import org.apache.cloudstack.api.user.template.command.ListTemplatesCmd;
@@ -69,7 +70,6 @@ import com.cloud.api.commands.DestroySystemVmCmd;
 import com.cloud.api.commands.ExtractVolumeCmd;
 import org.apache.cloudstack.api.user.vm.command.GetVMPasswordCmd;
 import com.cloud.api.commands.ListAlertsCmd;
-import com.cloud.api.commands.ListAsyncJobsCmd;
 import com.cloud.api.commands.ListCapabilitiesCmd;
 import com.cloud.api.commands.ListCapacityCmd;
 import com.cloud.api.commands.ListCfgsByCmd;

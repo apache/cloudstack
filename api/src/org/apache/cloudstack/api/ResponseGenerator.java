@@ -22,7 +22,7 @@ import java.util.List;
 
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
-import com.cloud.api.commands.QueryAsyncJobResultCmd;
+import org.apache.cloudstack.api.user.job.command.QueryAsyncJobResultCmd;
 import com.cloud.api.response.AccountResponse;
 import com.cloud.api.response.AsyncJobResponse;
 import com.cloud.api.response.AutoScalePolicyResponse;

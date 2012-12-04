@@ -39,7 +39,7 @@ import com.cloud.acl.ControlledEntity;
 import com.cloud.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
-import com.cloud.api.commands.QueryAsyncJobResultCmd;
+import org.apache.cloudstack.api.user.job.command.QueryAsyncJobResultCmd;
 import com.cloud.api.response.AccountResponse;
 import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.AsyncJobResponse;
