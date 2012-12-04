@@ -19,6 +19,7 @@ package src.com.cloud.api.commands.test;
 import junit.framework.Assert;
 import junit.framework.TestCase;
 
+import org.apache.cloudstack.api.user.account.command.AddAccountToProjectCmd;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -29,7 +30,6 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectService;
 import com.cloud.user.Account;
-import com.cloud.api.commands.AddAccountToProjectCmd;
 
 public class AddAccountToProjectCmdTest extends TestCase {
 

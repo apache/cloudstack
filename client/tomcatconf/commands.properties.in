@@ -22,10 +22,10 @@
 createAccount=com.cloud.api.commands.CreateAccountCmd;3
 deleteAccount=com.cloud.api.commands.DeleteAccountCmd;3
 updateAccount=com.cloud.api.commands.UpdateAccountCmd;3
-disableAccount=com.cloud.api.commands.DisableAccountCmd;7
-enableAccount=com.cloud.api.commands.EnableAccountCmd;7
+disableAccount=org.apache.cloudstack.api.admin.account.command.DisableAccountCmd;7
+enableAccount=org.apache.cloudstack.api.admin.account.command.EnableAccountCmd;7
 ###lockAccount=com.cloud.api.commands.LockAccountCmd;7
-listAccounts=com.cloud.api.commands.ListAccountsCmd;15
+listAccounts=org.apache.cloudstack.api.user.account.command.ListAccountsCmd;15
 markDefaultZoneForAccount=com.cloud.api.commands.MarkDefaultZoneForAccountCmd;1
 
 #### User commands
@@ -328,9 +328,9 @@ updateProject=org.apache.cloudstack.api.user.project.command.UpdateProjectCmd;15
 activateProject=org.apache.cloudstack.api.user.project.command.ActivateProjectCmd;15
 suspendProject=org.apache.cloudstack.api.user.project.command.SuspendProjectCmd;15
 listProjects=org.apache.cloudstack.api.user.project.command.ListProjectsCmd;15
-addAccountToProject=com.cloud.api.commands.AddAccountToProjectCmd;15
-deleteAccountFromProject=com.cloud.api.commands.DeleteAccountFromProjectCmd;15
-listProjectAccounts=com.cloud.api.commands.ListProjectAccountsCmd;15
+addAccountToProject=org.apache.cloudstack.api.user.account.command.AddAccountToProjectCmd;15
+deleteAccountFromProject=org.apache.cloudstack.api.user.account.command.DeleteAccountFromProjectCmd;15
+listProjectAccounts=org.apache.cloudstack.api.user.account.command.ListProjectAccountsCmd;15
 listProjectInvitations=org.apache.cloudstack.api.user.project.command.ListProjectInvitationsCmd;15
 updateProjectInvitation=org.apache.cloudstack.api.user.project.command.UpdateProjectInvitationCmd;15
 deleteProjectInvitation=org.apache.cloudstack.api.user.project.command.DeleteProjectInvitationCmd;15
