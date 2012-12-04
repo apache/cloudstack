@@ -18,29 +18,6 @@
  */
 package org.apache.cloudstack.framework.messaging;
 
-public interface RpcClientCall {
-	final static int DEFAULT_RPC_TIMEOUT = 10000;
-	
-	String getCommand();
-	RpcClientCall setCommand(String cmd);
-	RpcClientCall setTimeout(int timeoutMilliseconds);
-	
-	RpcClientCall setCommandArg(Object arg);
-	Object getCommandArg();
-	
-	RpcClientCall setContextParam(String key, Object param);
-	<T> T getContextParam(String key);
-	
-	<T> RpcClientCall addCallbackListener(RpcCallbackListener<T> listener);
-	RpcClientCall setCallbackDispatcherTarget(Object target);
-	
-	RpcClientCall setOneway();
-	
-	RpcClientCall apply();
-	void cancel();
-	
-	/**
-	 * @return the result object， it may also throw RpcException to indicate RPC failures 
-	 */
-	<T> T get();
+@OnwireName(name="TestCommandAnswer")
+public class TestCommandAnswer {
 }

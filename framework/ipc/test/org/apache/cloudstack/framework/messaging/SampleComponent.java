@@ -28,10 +28,6 @@ public class SampleComponent extends ComponentEndpoint {
 		call.completeCall("Call response");
 	}
 	
-	@RpcCallbackHandler(command="StartCommand")
-	void onStartCommandCallback(RpcClientCall call) {
-	}
-	
 	@EventHandler(topic="network.prepare")
 	void onPrepareNetwork(String sender, String topic, Object args) {
 	}

@@ -136,7 +136,7 @@ public class RpcClientCallImpl implements RpcClientCall {
 	}
 
 	@Override
-	public void apply() {
+	public RpcClientCall apply() {
 		// sanity check
 		assert(_sourceAddress != null);
 		assert(_targetAddress != null);
@@ -152,6 +152,8 @@ public class RpcClientCallImpl implements RpcClientCall {
 		
 		_rpcProvider.sendRpcPdu(getSourceAddress(), getTargetAddress(), 
 			_rpcProvider.getMessageSerializer().serializeTo(RpcCallRequestPdu.class, pdu));
+		
+		return this;
 	}
 
 	@Override

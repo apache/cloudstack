@@ -20,7 +20,7 @@ package org.apache.cloudstack.framework.messaging;
 
 public interface RpcServerCall {
 	String getCommand();
-	Object getCommandArgument();
+	<T> T getCommandArgument();
 
 	// for receiver to response call
 	void completeCall(Object returnObject);
