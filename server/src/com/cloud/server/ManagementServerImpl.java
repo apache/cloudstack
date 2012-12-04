@@ -47,7 +47,7 @@ import org.apache.cloudstack.api.user.guest.command.ListGuestOsCmd;
 import org.apache.cloudstack.api.user.iso.command.ListIsosCmd;
 import org.apache.cloudstack.api.user.job.command.ListAsyncJobsCmd;
 import org.apache.cloudstack.api.user.offering.command.ListDiskOfferingsCmd;
-import org.apache.cloudstack.api.user.serviceoffering.command.ListServiceOfferingsCmd;
+import org.apache.cloudstack.api.user.offering.command.ListServiceOfferingsCmd;
 import org.apache.cloudstack.api.user.ssh.command.DeleteSSHKeyPairCmd;
 import org.apache.cloudstack.api.user.ssh.command.RegisterSSHKeyPairCmd;
 import org.apache.cloudstack.api.user.template.command.ListTemplatesCmd;
