@@ -282,10 +282,10 @@ revokeSecurityGroupEgress=org.apache.cloudstack.api.user.sg.command.RevokeSecuri
 listSecurityGroups=org.apache.cloudstack.api.user.sg.command.ListSecurityGroupsCmd;15
 
 #### vm group commands
-createInstanceGroup=com.cloud.api.commands.CreateVMGroupCmd;15
-deleteInstanceGroup=com.cloud.api.commands.DeleteVMGroupCmd;15
-updateInstanceGroup=com.cloud.api.commands.UpdateVMGroupCmd;15
-listInstanceGroups=com.cloud.api.commands.ListVMGroupsCmd;15
+createInstanceGroup=org.apache.cloudstack.api.user.vmgroup.command.CreateVMGroupCmd;15
+deleteInstanceGroup=org.apache.cloudstack.api.user.vmgroup.command.DeleteVMGroupCmd;15
+updateInstanceGroup=org.apache.cloudstack.api.user.vmgroup.command.UpdateVMGroupCmd;15
+listInstanceGroups=org.apache.cloudstack.api.user.vmgroup.command.ListVMGroupsCmd;15
 
 ### Certificate commands
 uploadCustomCertificate=com.cloud.api.commands.UploadCustomCertificateCmd;1

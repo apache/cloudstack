@@ -32,6 +32,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.user.template.command.CreateTemplateCmd;
+import org.apache.cloudstack.api.user.vmgroup.command.DeleteVMGroupCmd;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
@@ -61,8 +62,7 @@ import com.cloud.api.ApiDBUtils;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.admin.vm.command.AssignVMCmd;
 import com.cloud.api.commands.AttachVolumeCmd;
-import com.cloud.api.commands.CreateVMGroupCmd;
-import com.cloud.api.commands.DeleteVMGroupCmd;
+import org.apache.cloudstack.api.user.vmgroup.command.CreateVMGroupCmd;
 import org.apache.cloudstack.api.user.vm.command.DeployVMCmd;
 import org.apache.cloudstack.api.user.vm.command.DestroyVMCmd;
 import com.cloud.api.commands.DetachVolumeCmd;

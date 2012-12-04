@@ -14,38 +14,35 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
-
-import java.util.ArrayList;
-import java.util.List;
+package org.apache.cloudstack.api.user.vmgroup.command;
 
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
 import com.cloud.api.response.InstanceGroupResponse;
-import com.cloud.api.response.ListResponse;
-import com.cloud.utils.Pair;
+import com.cloud.user.Account;
 import com.cloud.vm.InstanceGroup;
 
-@Implementation(description="Lists vm groups", responseObject=InstanceGroupResponse.class)
-public class ListVMGroupsCmd extends BaseListProjectAndAccountResourcesCmd {
-    public static final Logger s_logger = Logger.getLogger(ListVMGroupsCmd.class.getName());
+@Implementation(description="Updates a vm group", responseObject=InstanceGroupResponse.class)
+public class UpdateVMGroupCmd extends BaseCmd{
 
-    private static final String s_name = "listinstancegroupsresponse";
+    private static final String s_name = "updateinstancegroupresponse";
+    public static final Logger s_logger = Logger.getLogger(UpdateVMGroupCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
     @IdentityMapper(entityTableName="instance_group")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list instance groups by ID")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="Instance group ID")
     private Long id;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="list instance groups by name")
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="new instance group name")
     private String groupName;
 
     /////////////////////////////////////////////////////
@@ -70,18 +67,24 @@ public class ListVMGroupsCmd extends BaseListProjectAndAccountResourcesCmd {
     }
 
     @Override
-    public void execute(){
-        Pair<List<? extends InstanceGroup>, Integer> groups = _mgr.searchForVmGroups(this);
-        ListResponse<InstanceGroupResponse> response = new ListResponse<InstanceGroupResponse>();
-        List<InstanceGroupResponse> responses = new ArrayList<InstanceGroupResponse>();
-        for (InstanceGroup group : groups.first()) {
-            InstanceGroupResponse groupResponse = _responseGenerator.createInstanceGroupResponse(group);
-            groupResponse.setObjectName("instancegroup");
-            responses.add(groupResponse);
+    public long getEntityOwnerId() {
+        InstanceGroup group = _entityMgr.findById(InstanceGroup.class, getId());
+        if (group != null) {
+            return group.getAccountId();
         }
 
-        response.setResponses(responses, groups.second());
-        response.setResponseName(getCommandName());
-        this.setResponseObject(response);
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+    }
+
+    @Override
+    public void execute(){
+        InstanceGroup result = _mgr.updateVmGroup(this);
+        if (result != null){
+            InstanceGroupResponse response = _responseGenerator.createInstanceGroupResponse(result);
+            response.setResponseName(getCommandName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update vm instance group");
+        }
     }
 }

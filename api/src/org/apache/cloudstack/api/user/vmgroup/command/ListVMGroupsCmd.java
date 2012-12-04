@@ -14,32 +14,39 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.user.vmgroup.command;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
-import com.cloud.api.response.SuccessResponse;
-import com.cloud.user.Account;
+import com.cloud.api.response.InstanceGroupResponse;
+import com.cloud.api.response.ListResponse;
+import com.cloud.utils.Pair;
 import com.cloud.vm.InstanceGroup;
 
-@Implementation(description="Deletes a vm group", responseObject=SuccessResponse.class)
-public class DeleteVMGroupCmd extends BaseCmd{
-    public static final Logger s_logger = Logger.getLogger(DeleteVMGroupCmd.class.getName());
-    private static final String s_name = "deleteinstancegroupresponse";
+@Implementation(description="Lists vm groups", responseObject=InstanceGroupResponse.class)
+public class ListVMGroupsCmd extends BaseListProjectAndAccountResourcesCmd {
+    public static final Logger s_logger = Logger.getLogger(ListVMGroupsCmd.class.getName());
+
+    private static final String s_name = "listinstancegroupsresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
     @IdentityMapper(entityTableName="instance_group")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the instance group")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list instance groups by ID")
     private Long id;
+
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="list instance groups by name")
+    private String groupName;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -47,6 +54,10 @@ public class DeleteVMGroupCmd extends BaseCmd{
 
     public Long getId() {
         return id;
+    }
+
+    public String getGroupName() {
+        return groupName;
     }
 
     /////////////////////////////////////////////////////
@@ -59,23 +70,18 @@ public class DeleteVMGroupCmd extends BaseCmd{
     }
 
     @Override
-    public long getEntityOwnerId() {
-        InstanceGroup group = _entityMgr.findById(InstanceGroup.class, getId());
-        if (group != null) {
-            return group.getAccountId();
-        }
-
-        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
-    }
-
-    @Override
     public void execute(){
-        boolean result = _userVmService.deleteVmGroup(this);
-        if (result) {
-            SuccessResponse response = new SuccessResponse(getCommandName());
-            this.setResponseObject(response);
-        } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete vm group");
+        Pair<List<? extends InstanceGroup>, Integer> groups = _mgr.searchForVmGroups(this);
+        ListResponse<InstanceGroupResponse> response = new ListResponse<InstanceGroupResponse>();
+        List<InstanceGroupResponse> responses = new ArrayList<InstanceGroupResponse>();
+        for (InstanceGroup group : groups.first()) {
+            InstanceGroupResponse groupResponse = _responseGenerator.createInstanceGroupResponse(group);
+            groupResponse.setObjectName("instancegroup");
+            responses.add(groupResponse);
         }
+
+        response.setResponses(responses, groups.second());
+        response.setResponseName(getCommandName());
+        this.setResponseObject(response);
     }
 }

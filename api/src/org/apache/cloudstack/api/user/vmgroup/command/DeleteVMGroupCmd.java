@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.user.vmgroup.command;
 
 import org.apache.log4j.Logger;
 
@@ -24,26 +24,22 @@ import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import com.cloud.api.response.InstanceGroupResponse;
+import com.cloud.api.response.SuccessResponse;
 import com.cloud.user.Account;
 import com.cloud.vm.InstanceGroup;
 
-@Implementation(description="Updates a vm group", responseObject=InstanceGroupResponse.class)
-public class UpdateVMGroupCmd extends BaseCmd{
-
-    private static final String s_name = "updateinstancegroupresponse";
-    public static final Logger s_logger = Logger.getLogger(UpdateVMGroupCmd.class.getName());
+@Implementation(description="Deletes a vm group", responseObject=SuccessResponse.class)
+public class DeleteVMGroupCmd extends BaseCmd{
+    public static final Logger s_logger = Logger.getLogger(DeleteVMGroupCmd.class.getName());
+    private static final String s_name = "deleteinstancegroupresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
     @IdentityMapper(entityTableName="instance_group")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="Instance group ID")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the instance group")
     private Long id;
-
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="new instance group name")
-    private String groupName;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -51,10 +47,6 @@ public class UpdateVMGroupCmd extends BaseCmd{
 
     public Long getId() {
         return id;
-    }
-
-    public String getGroupName() {
-        return groupName;
     }
 
     /////////////////////////////////////////////////////
@@ -78,13 +70,12 @@ public class UpdateVMGroupCmd extends BaseCmd{
 
     @Override
     public void execute(){
-        InstanceGroup result = _mgr.updateVmGroup(this);
-        if (result != null){
-            InstanceGroupResponse response = _responseGenerator.createInstanceGroupResponse(result);
-            response.setResponseName(getCommandName());
+        boolean result = _userVmService.deleteVmGroup(this);
+        if (result) {
+            SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update vm instance group");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete vm group");
         }
     }
 }
