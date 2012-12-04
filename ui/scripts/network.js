@@ -805,7 +805,10 @@
               var networkOfferingHavingELB = false;
               var hasNetworkACL = false;
               var isVPC = false;
-              
+              var isAdvancedSGZone = false;
+              var hiddenTabs = [];
+
+              // Get network offering data
               $.ajax({
                 url: createURL("listNetworkOfferings&id=" + args.context.networks[0].networkofferingid),
                 dataType: "json",
@@ -833,13 +836,25 @@
                 }
               });
 
-              var hiddenTabs = [];
-              
+              // Get zone data
+              $.ajax({
+                url: createURL('listZones'),
+                data: {
+                  id: args.context.networks[0].zoneid
+                },
+                async: false,
+                success: function(json) {
+                  var zone = json.listzonesresponse.zone[0];
+
+                  isAdvancedSGZone = zone.securitygroupsenabled;
+                }
+              });
+
               if (!networkOfferingHavingELB) {
                 hiddenTabs.push("addloadBalancer");
               }
 
-              if (isVPC) {
+              if (isVPC || isAdvancedSGZone) {
                 hiddenTabs.push('egressRules');
               }
               
