@@ -1079,8 +1079,8 @@
                       },
                       'startport': { edit: true, label: 'label.start.port', isOptional: true },
                       'endport': { edit: true, label: 'label.end.port', isOptional: true },
-                      'icmptype': { edit: true, label: 'ICMP.type', isHidden: true },
-                      'icmpcode': { edit: true, label: 'ICMP.code', isHidden: true },
+                      'icmptype': { edit: true, label: 'ICMP.type', isHidden: true, isOptional: true },
+                      'icmpcode': { edit: true, label: 'ICMP.code', isHidden: true, isOptional: true },
                       'add-rule': {
                         label: 'label.add',
                         addButton: true
