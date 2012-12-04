@@ -19,7 +19,7 @@ package com.cloud.network.vpn;
 import java.util.List;
 
 import org.apache.cloudstack.api.user.vpn.command.ListRemoteAccessVpnsCmd;
-import com.cloud.api.commands.ListVpnUsersCmd;
+import org.apache.cloudstack.api.user.vpn.command.ListVpnUsersCmd;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.RemoteAccessVpn;

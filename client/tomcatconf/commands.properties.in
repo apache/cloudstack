@@ -297,9 +297,9 @@ createRemoteAccessVpn=org.apache.cloudstack.api.user.vpn.command.CreateRemoteAcc
 deleteRemoteAccessVpn=org.apache.cloudstack.api.user.vpn.command.DeleteRemoteAccessVpnCmd;15
 listRemoteAccessVpns=org.apache.cloudstack.api.user.vpn.command.ListRemoteAccessVpnsCmd;15
 
-addVpnUser=com.cloud.api.commands.AddVpnUserCmd;15
-removeVpnUser=com.cloud.api.commands.RemoveVpnUserCmd;15
-listVpnUsers=com.cloud.api.commands.ListVpnUsersCmd;15
+addVpnUser=org.apache.cloudstack.api.user.vpn.command.AddVpnUserCmd;15
+removeVpnUser=org.apache.cloudstack.api.user.vpn.command.RemoveVpnUserCmd;15
+listVpnUsers=org.apache.cloudstack.api.user.vpn.command.ListVpnUsersCmd;15
 
 #### network offering commands
 createNetworkOffering=com.cloud.api.commands.CreateNetworkOfferingCmd;1
