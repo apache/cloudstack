@@ -46,7 +46,7 @@ listDomains=com.cloud.api.commands.ListDomainsCmd;7
 listDomainChildren=com.cloud.api.commands.ListDomainChildrenCmd;7
 
 ####Cloud Identifier commands
-getCloudIdentifier=com.cloud.api.commands.GetCloudIdentifierCmd;15
+getCloudIdentifier=org.apache.cloudstack.api.user.datacenter.command.GetCloudIdentifierCmd;15
 
 #### Limit commands
 updateResourceLimit=com.cloud.api.commands.UpdateResourceLimitCmd;7
@@ -211,7 +211,7 @@ listPods=com.cloud.api.commands.ListPodsByCmd;3
 createZone=com.cloud.api.commands.CreateZoneCmd;1
 updateZone=com.cloud.api.commands.UpdateZoneCmd;1
 deleteZone=com.cloud.api.commands.DeleteZoneCmd;1
-listZones=com.cloud.api.commands.ListZonesByCmd;15
+listZones=org.apache.cloudstack.api.user.datacenter.command.ListZonesByCmd;15
 
 #### events commands
 listEvents=org.apache.cloudstack.api.user.event.command.ListEventsCmd;15
