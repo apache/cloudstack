@@ -24,6 +24,7 @@ import java.util.Set;
 
 import com.cloud.alert.Alert;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.user.address.command.ListPublicIpAddressesCmd;
 import org.apache.cloudstack.api.user.resource.command.ListCapabilitiesCmd;
 import org.apache.cloudstack.api.user.guest.command.ListGuestOsCmd;
 import org.apache.cloudstack.api.user.offering.command.ListDiskOfferingsCmd;
@@ -45,7 +46,6 @@ import org.apache.cloudstack.api.user.guest.command.ListGuestOsCategoriesCmd;
 import com.cloud.api.commands.ListHostsCmd;
 import org.apache.cloudstack.api.user.iso.command.ListIsosCmd;
 import com.cloud.api.commands.ListPodsByCmd;
-import com.cloud.api.commands.ListPublicIpAddressesCmd;
 import com.cloud.api.commands.ListRoutersCmd;
 import org.apache.cloudstack.api.user.ssh.command.ListSSHKeyPairsCmd;
 import com.cloud.api.commands.ListStoragePoolsCmd;

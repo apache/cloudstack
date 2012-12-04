@@ -124,9 +124,9 @@ deleteVlanIpRange=com.cloud.api.commands.DeleteVlanIpRangeCmd;1
 listVlanIpRanges=com.cloud.api.commands.ListVlanIpRangesCmd;1
 
 #### address commands
-associateIpAddress=com.cloud.api.commands.AssociateIPAddrCmd;15
-disassociateIpAddress=com.cloud.api.commands.DisassociateIPAddrCmd;15
-listPublicIpAddresses=com.cloud.api.commands.ListPublicIpAddressesCmd;15
+associateIpAddress=org.apache.cloudstack.api.user.address.command.AssociateIPAddrCmd;15
+disassociateIpAddress=org.apache.cloudstack.api.user.address.command.DisassociateIPAddrCmd;15
+listPublicIpAddresses=org.apache.cloudstack.api.user.address.command.ListPublicIpAddressesCmd;15
 
 #### firewall commands
 listPortForwardingRules=com.cloud.api.commands.ListPortForwardingRulesCmd;15
