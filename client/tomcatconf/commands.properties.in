@@ -290,7 +290,7 @@ listInstanceGroups=org.apache.cloudstack.api.user.vmgroup.command.ListVMGroupsCm
 uploadCustomCertificate=com.cloud.api.commands.UploadCustomCertificateCmd;1
 
 ### other commands
-listHypervisors=com.cloud.api.commands.ListHypervisorsCmd;15
+listHypervisors=org.apache.cloudstack.api.user.hypervisor.command.ListHypervisorsCmd;15
 
 ### VPN
 createRemoteAccessVpn=org.apache.cloudstack.api.user.vpn.command.CreateRemoteAccessVpnCmd;15
