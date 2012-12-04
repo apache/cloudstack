@@ -1440,28 +1440,34 @@
               addRow: 'true',
               preFilter: function(args) {                
 								var zoneObj;
-                                                                var dataObj = {};
-                                                                if('vpc' in args.context) { //from VPC section
-                                                                $.extend(dataObj, {
-                                                                    id: args.context.vpc[0].zoneid
-                                                                   });
-                                                                 }
-                                                               else if('networks' in args.context) { //from Guest Network section
-                                                                  $.extend(dataObj, {
-                                                                    id: args.context.networks[0].zoneid
-                                                                   });
-                                                                 }
+ 								var dataObj = {};
+                
+                if ('vpc' in args.context) { //from VPC section
+                  $.extend(dataObj, {
+                    id: args.context.vpc[0].zoneid
+                  });
+                } else if ('networks' in args.context) { //from Guest Network section
+                  $.extend(dataObj, {
+                    id: args.context.networks[0].zoneid
+                  });
+                }
 
 								$.ajax({
 								  url: createURL('listZones'),
 									data: dataObj,
+								  //	  id: args.context.networks[0].zoneid
+								  //	},
 									async: false,
 									success: function(json) {									  
 										zoneObj = json.listzonesresponse.zone[0];										
 									}
 								});
+
+                if (zoneObj.networktype == 'Advanced' && zoneObj.securitygroupsenabled) {
+                  return false;
+                }
 																							
-								if(zoneObj.networktype == 'Basic') { 
+								if (zoneObj.networktype == 'Basic') {
 								  var havingEIP = false, havingELB = false;
 								  $.ajax({
 									  url: createURL('listNetworkOfferings'),
@@ -1469,20 +1475,19 @@
 										  id: args.context.networks[0].networkofferingid
 										},
 										async: false,
-										success: function(json) {										  
+										success: function(json) {									  
 											$(json.listnetworkofferingsresponse.networkoffering[0].service).each(function(){											 
 												var thisService = this;														
-												if(thisService.name == "StaticNat") {
+												if (thisService.name == "StaticNat") {
 													$(thisService.capability).each(function(){
-														if(this.name == "ElasticIp" && this.value == "true") {
+														if (this.name == "ElasticIp" && this.value == "true") {
 															havingEIP = true;
 															return false; //break $.each() loop
 														}
 													});
-												}
-												else if(thisService.name == "Lb") {
+												} else if (thisService.name == "Lb") {
 													$(thisService.capability).each(function(){
-														if(this.name == "ElasticLb" && this.value == "true") {
+														if (this.name == "ElasticLb" && this.value == "true") {
 															havingELB = true;
 															return false; //break $.each() loop
 														}
