@@ -92,6 +92,17 @@ public class RpcProviderImpl implements RpcProvider {
 		
 		return call;
 	}
+
+	@Override
+	public RpcClientCall newCall(TransportEndpoint sourceEndpoint, RpcAddressable targetAddress) {
+		long callTag = getNextCallTag();
+		RpcClientCallImpl call = new RpcClientCallImpl(this);
+		call.setSourceAddress(sourceEndpoint.getEndpointAddress());
+		call.setTargetAddress(targetAddress.getAddress());
+		call.setCallTag(callTag);
+		
+		return call;
+	}
 	
 	@Override
 	public RpcClientCall newCall(String targetAddress) {
@@ -99,6 +110,12 @@ public class RpcProviderImpl implements RpcProvider {
 		// ???
 		return null;
 	}
+	
+	@Override
+	public RpcClientCall newCall(RpcAddressable targetAddress) {
+		return newCall(targetAddress.getAddress());
+	}
+	
 	
 	@Override
 	public void registerCall(RpcClientCall call) {
