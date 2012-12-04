@@ -41,7 +41,7 @@ public class AddClusterCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddClusterCmd.class.getName());
 
     private static final String s_name = "addclusterresponse";
-    
+
     @Parameter(name=ApiConstants.CLUSTER_NAME, type=CommandType.STRING, required=true, description="the cluster name")
     private String clusterName;
 
@@ -62,16 +62,16 @@ public class AddClusterCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="the Zone ID for the cluster")
     private Long zoneId;
-    
+
     @Parameter(name=ApiConstants.HYPERVISOR, type=CommandType.STRING, required=true, description="hypervisor type of the cluster: XenServer,KVM,VMware,Hyperv,BareMetal,Simulator")
     private String hypervisor;
-    
+
     @Parameter(name=ApiConstants.CLUSTER_TYPE, type=CommandType.STRING, required=true, description="type of the cluster: CloudManaged, ExternalManaged")
     private String clusterType;
-    
+
     @Parameter(name=ApiConstants.ALLOCATION_STATE, type=CommandType.STRING, description="Allocation state of this cluster for allocation of new resources")
     private String allocationState;
-    
+
     @Parameter(name = ApiConstants.VSM_USERNAME, type = CommandType.STRING, required = false, description = "the username for the VSM associated with this cluster")
     private String vsmusername;
 
@@ -80,7 +80,7 @@ public class AddClusterCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.VSM_IPADDRESS, type = CommandType.STRING, required = false, description = "the ipaddress of the VSM associated with this cluster")
     private String vsmipaddress;
-    
+
     public String getVSMIpaddress() {
         return vsmipaddress;
     }
@@ -116,36 +116,36 @@ public class AddClusterCmd extends BaseCmd {
     public Long getZoneId() {
         return zoneId;
     }
-    
+
     public String getHypervisor() {
-    	return hypervisor;
+        return hypervisor;
     }
-    
+
     @Override
     public String getCommandName() {
-    	return s_name;
+        return s_name;
     }
-    
+
     public String getClusterType() {
-    	return clusterType;
+        return clusterType;
     }
-    
+
     public void setClusterType(String type) {
-    	this.clusterType = type;
+        this.clusterType = type;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-    
+
     public String getAllocationState() {
-    	return allocationState;
+        return allocationState;
     }
-    
+
     public void setAllocationState(String allocationState) {
-    	this.allocationState = allocationState;
-    }    
+        this.allocationState = allocationState;
+    }
 
     @Override
     public void execute(){
@@ -164,7 +164,7 @@ public class AddClusterCmd extends BaseCmd {
 
             response.setResponses(clusterResponses);
             response.setResponseName(getCommandName());
-            
+
             this.setResponseObject(response);
         } catch (DiscoveryException ex) {
             s_logger.warn("Exception: ", ex);

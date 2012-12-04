@@ -30,59 +30,59 @@ import com.cloud.api.response.SSHKeyPairResponse;
 import com.cloud.user.SSHKeyPair;
 import com.cloud.utils.Pair;
 
-@Implementation(description="List registered keypairs", responseObject=SSHKeyPairResponse.class) 
+@Implementation(description="List registered keypairs", responseObject=SSHKeyPairResponse.class)
 public class ListSSHKeyPairsCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListSSHKeyPairsCmd.class.getName());
     private static final String s_name = "listsshkeypairsresponse";
-    
-    
+
+
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-	
-	@Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="A key pair name to look for") 
-	private String name;
-	
-    @Parameter(name="fingerprint", type=CommandType.STRING, description="A public key fingerprint to look for") 
+
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="A key pair name to look for")
+    private String name;
+
+    @Parameter(name="fingerprint", type=CommandType.STRING, description="A public key fingerprint to look for")
     private String fingerprint;
 
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
-    ///////////////////////////////////////////////////// 
-    
-	public String getName() {
-		return name;
-	}
-	
-	public String getFingerprint() {
-		return fingerprint;
-	}
-    
-    
+    /////////////////////////////////////////////////////
+
+    public String getName() {
+        return name;
+    }
+
+    public String getFingerprint() {
+        return fingerprint;
+    }
+
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-    
-	@Override
-	public void execute() {
-	    Pair<List<? extends SSHKeyPair>, Integer> resultList = _mgr.listSSHKeyPairs(this);
-		List<SSHKeyPairResponse> responses = new ArrayList<SSHKeyPairResponse>();
-		for (SSHKeyPair result : resultList.first()) {
-			SSHKeyPairResponse r = new SSHKeyPairResponse(result.getName(), result.getFingerprint());
-			r.setObjectName("sshkeypair");
-			responses.add(r);
-		}
-		
+
+    @Override
+    public void execute() {
+        Pair<List<? extends SSHKeyPair>, Integer> resultList = _mgr.listSSHKeyPairs(this);
+        List<SSHKeyPairResponse> responses = new ArrayList<SSHKeyPairResponse>();
+        for (SSHKeyPair result : resultList.first()) {
+            SSHKeyPairResponse r = new SSHKeyPairResponse(result.getName(), result.getFingerprint());
+            r.setObjectName("sshkeypair");
+            responses.add(r);
+        }
+
         ListResponse<SSHKeyPairResponse> response = new ListResponse<SSHKeyPairResponse>();
         response.setResponses(responses, resultList.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
-	}
+    }
 
-	@Override
-	public String getCommandName() {
-		return s_name;
-	}
+    @Override
+    public String getCommandName() {
+        return s_name;
+    }
 
 }

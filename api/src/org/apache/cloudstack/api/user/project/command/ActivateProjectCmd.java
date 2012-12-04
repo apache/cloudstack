@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.user.project.command;
 
 import org.apache.log4j.Logger;
 
@@ -40,7 +40,7 @@ public class ActivateProjectCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    
+
     @IdentityMapper(entityTableName="projects")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="id of the project to be modified")
     private Long id;
@@ -57,19 +57,19 @@ public class ActivateProjectCmd extends BaseAsyncCmd {
     public String getCommandName() {
         return s_name;
     }
-    
-    
+
+
     @Override
     public long getEntityOwnerId() {
         Project project= _projectService.getProject(getId());
         //verify input parameters
         if (project == null) {
             throw new InvalidParameterValueException("Unable to find project by id " + getId());
-        } 
-        
-        return _projectService.getProjectOwner(getId()).getId(); 
+        }
+
+        return _projectService.getProjectOwner(getId()).getId();
     }
- 
+
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -87,12 +87,12 @@ public class ActivateProjectCmd extends BaseAsyncCmd {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to activate a project");
         }
     }
-    
+
     @Override
     public String getEventType() {
         return EventTypes.EVENT_PROJECT_ACTIVATE;
     }
-    
+
     @Override
     public String getEventDescription() {
         return  "Activating project: " + id;

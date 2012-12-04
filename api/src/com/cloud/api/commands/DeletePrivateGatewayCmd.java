@@ -55,7 +55,7 @@ public class DeletePrivateGatewayCmd extends BaseAsyncCmd {
     public Long getId() {
         return id;
     }
-    
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -63,7 +63,7 @@ public class DeletePrivateGatewayCmd extends BaseAsyncCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public String getEventType() {
         return EventTypes.EVENT_PRIVATE_GATEWAY_DELETE;
@@ -73,16 +73,16 @@ public class DeletePrivateGatewayCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  ("Deleting private gateway id=" + id);
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-    
+
     @Override
     public void execute() throws ResourceUnavailableException, ConcurrentOperationException {
         UserContext.current().setEventDetails("Network ACL Id: " + id);
-        boolean result = _vpcService.deleteVpcPrivateGateway(id);        
+        boolean result = _vpcService.deleteVpcPrivateGateway(id);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
@@ -90,8 +90,8 @@ public class DeletePrivateGatewayCmd extends BaseAsyncCmd {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete private gateway");
         }
     }
-    
-    
+
+
     @Override
     public String getSyncObjType() {
         return BaseAsyncCmd.vpcSyncObject;
@@ -105,10 +105,10 @@ public class DeletePrivateGatewayCmd extends BaseAsyncCmd {
         }
         return gateway.getVpcId();
     }
-    
+
     @Override
     public AsyncJob.Type getInstanceType() {
         return AsyncJob.Type.PrivateGateway;
     }
-    
+
 }

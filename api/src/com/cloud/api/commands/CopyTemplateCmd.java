@@ -38,7 +38,7 @@ import com.cloud.user.UserContext;
 
 @Implementation(description="Copies a template from one zone to another.", responseObject=TemplateResponse.class)
 public class CopyTemplateCmd extends BaseAsyncCmd {
-	public static final Logger s_logger = Logger.getLogger(CopyTemplateCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(CopyTemplateCmd.class.getName());
     private static final String s_name = "copytemplateresponse";
 
     /////////////////////////////////////////////////////
@@ -107,29 +107,29 @@ public class CopyTemplateCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "copying template: " + getId() + " from zone: " + getSourceZoneId() + " to zone: " + getDestinationZoneId();
     }
-    
+
     public AsyncJob.Type getInstanceType() {
-    	return AsyncJob.Type.Template;
+        return AsyncJob.Type.Template;
     }
-    
+
     public Long getInstanceId() {
-    	return getId();
+        return getId();
     }
 
     @Override
     public void execute() throws ResourceAllocationException{
         try {
-        	UserContext.current().setEventDetails(getEventDescription());
+            UserContext.current().setEventDetails(getEventDescription());
             VirtualMachineTemplate template = _templateService.copyTemplate(this);
-            
+
             if (template != null){
                 List<TemplateResponse> listResponse = _responseGenerator.createTemplateResponses(template.getId(), getDestinationZoneId(), false);
                 TemplateResponse response = new TemplateResponse();
                 if (listResponse != null && !listResponse.isEmpty()) {
                     response = listResponse.get(0);
                 }
-                    
-                response.setResponseName(getCommandName());              
+
+                response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to copy template");
@@ -137,7 +137,7 @@ public class CopyTemplateCmd extends BaseAsyncCmd {
         } catch (StorageUnavailableException ex) {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
-        } 
+        }
     }
 }
 

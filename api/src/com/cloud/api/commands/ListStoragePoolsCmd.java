@@ -62,7 +62,7 @@ public class ListStoragePoolsCmd extends BaseListCmd {
     @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the Zone ID for the storage pool")
     private Long zoneId;
-    
+
     @IdentityMapper(entityTableName="storage_pool")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the ID of the storage pool")
     private Long id;
@@ -94,9 +94,9 @@ public class ListStoragePoolsCmd extends BaseListCmd {
     public Long getZoneId() {
         return zoneId;
     }
-    
+
     public Long getId() {
-    	return id;
+        return id;
     }
 
     /////////////////////////////////////////////////////
@@ -107,7 +107,7 @@ public class ListStoragePoolsCmd extends BaseListCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     public AsyncJob.Type getInstanceType() {
         return AsyncJob.Type.StoragePool;
     }

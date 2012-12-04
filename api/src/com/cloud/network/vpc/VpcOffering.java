@@ -21,7 +21,7 @@ public interface VpcOffering {
         Disabled,
         Enabled
     }
-    
+
     public static final String defaultVPCOfferingName = "Default VPC offering";
 
     long getId();
@@ -35,7 +35,7 @@ public interface VpcOffering {
     String getDisplayText();
 
     State getState();
-    
+
     boolean isDefault();
 
     /**

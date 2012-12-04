@@ -68,47 +68,47 @@ public class MarkDefaultZoneForAccountCmd extends BaseAsyncCmd {
     public Long getDefaultZoneId() {
         return defaultZoneId;
     }
-    
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-    
+
     @Override
     public String getCommandName() {
-    	return s_name;
+        return s_name;
     }
 
     @Override
     public long getEntityOwnerId() {
-    	return Account.ACCOUNT_ID_SYSTEM;
+        return Account.ACCOUNT_ID_SYSTEM;
     }
-    
+
     @Override
     public String getEventType() {
-    	return EventTypes.EVENT_ACCOUNT_MARK_DEFAULT_ZONE;
+        return EventTypes.EVENT_ACCOUNT_MARK_DEFAULT_ZONE;
     }
-    
+
     @Override
     public String getEventDescription() {
-    	return  "Marking account with the default zone: " + getDefaultZoneId();
+        return  "Marking account with the default zone: " + getDefaultZoneId();
     }
 
     @Override
     public AsyncJob.Type getInstanceType() {
         return AsyncJob.Type.Account;
     }
-    
+
     @Override
     public void execute(){
-    	Account result = _configService.markDefaultZone(getAccountName(),getDomainId(), getDefaultZoneId());
-    	if (result != null) {
-    		AccountResponse response = _responseGenerator.createAccountResponse(result);
-    		response.setResponseName(getCommandName());
-    		this.setResponseObject(response);
-    	}
-    	else {
-    		throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to mark the account with the default zone");
-    	}
+        Account result = _configService.markDefaultZone(getAccountName(),getDomainId(), getDefaultZoneId());
+        if (result != null) {
+            AccountResponse response = _responseGenerator.createAccountResponse(result);
+            response.setResponseName(getCommandName());
+            this.setResponseObject(response);
+        }
+        else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to mark the account with the default zone");
+        }
     }
 }
 

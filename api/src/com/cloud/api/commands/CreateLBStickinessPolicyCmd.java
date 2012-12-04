@@ -50,7 +50,7 @@ public class CreateLBStickinessPolicyCmd extends BaseAsyncCreateCmd {
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
-    
+
     @IdentityMapper(entityTableName="firewall_rules")
     @Parameter(name = ApiConstants.LBID, type = CommandType.LONG, required = true, description = "the ID of the load balancer rule")
     private Long lbRuleId;
@@ -117,7 +117,7 @@ public class CreateLBStickinessPolicyCmd extends BaseAsyncCreateCmd {
     public void execute() throws ResourceAllocationException, ResourceUnavailableException {
         StickinessPolicy policy = null;
         boolean success = false;
-        
+
         try {
             UserContext.current().setEventDetails("Rule Id: " + getEntityId());
             success = _lbService.applyLBStickinessPolicy(this);
@@ -131,9 +131,9 @@ public class CreateLBStickinessPolicyCmd extends BaseAsyncCreateCmd {
             }
         } finally {
             if (!success || (policy == null)) {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create stickiness policy ");  
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create stickiness policy ");
             }
-        } 
+        }
     }
 
     @Override

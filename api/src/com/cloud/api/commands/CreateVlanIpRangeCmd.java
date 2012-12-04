@@ -34,7 +34,7 @@ import com.cloud.user.Account;
 
 @Implementation(description="Creates a VLAN IP range.", responseObject=VlanIpRangeResponse.class)
 public class CreateVlanIpRangeCmd extends BaseCmd {
-	public static final Logger s_logger = Logger.getLogger(CreateVlanIpRangeCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(CreateVlanIpRangeCmd.class.getName());
 
     private static final String s_name = "createvlaniprangeresponse";
 
@@ -44,7 +44,7 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="account who will own the VLAN. If VLAN is Zone wide, this parameter should be ommited")
     private String accountName;
-    
+
     @IdentityMapper(entityTableName="projects")
     @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="project who will own the VLAN. If VLAN is Zone wide, this parameter should be ommited")
     private Long projectId;
@@ -73,13 +73,13 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
     private String startIp;
 
     @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, description="the ID or VID of the VLAN. If not specified," +
-    		" will be defaulted to the vlan of the network or if vlan of the network is null - to Untagged")
+            " will be defaulted to the vlan of the network or if vlan of the network is null - to Untagged")
     private String vlan;
 
     @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the Zone ID of the VLAN IP range")
     private Long zoneId;
-    
+
     @IdentityMapper(entityTableName="networks")
     @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, description="the network id")
     private Long networkID;
@@ -87,7 +87,7 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
     @IdentityMapper(entityTableName="physical_network")
     @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, description="the physical network id")
     private Long physicalNetworkId;
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -147,17 +147,17 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
         return physicalNetworkId;
     }
 
-    
+
     @Override
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-    
+
     @Override
     public void execute() throws ResourceUnavailableException, ResourceAllocationException{
         try {
@@ -175,6 +175,6 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
         } catch (InsufficientCapacityException ex) {
             s_logger.info(ex);
             throw new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
-        } 
+        }
     }
 }

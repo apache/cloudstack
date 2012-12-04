@@ -32,30 +32,30 @@ import com.cloud.utils.Pair;
 @Implementation(description = "List resource tag(s)", responseObject = ResourceTagResponse.class, since = "Burbank")
 public class ListTagsCmd extends BaseListProjectAndAccountResourcesCmd{
     private static final String s_name = "listtagsresponse";
-    
+
     @Parameter(name=ApiConstants.RESOURCE_TYPE, type=CommandType.STRING, description="list by resource type")
     private String resourceType;
-    
+
     @Parameter(name=ApiConstants.RESOURCE_ID, type=CommandType.STRING, description="list by resource id")
     private String resourceId;
-    
+
     @Parameter(name=ApiConstants.KEY, type=CommandType.STRING, description="list by key")
     private String key;
-    
+
     @Parameter(name=ApiConstants.VALUE, type=CommandType.STRING, description="list by value")
     private String value;
-    
+
     @Parameter(name=ApiConstants.CUSTOMER, type=CommandType.STRING, description="list by customer name")
     private String customer;
-    
-    
+
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
     @Override
     public void execute() {
-      
+
       Pair<List<? extends ResourceTag>, Integer> tags = _taggedResourceService.listTags(this);
       ListResponse<ResourceTagResponse> response = new ListResponse<ResourceTagResponse>();
       List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
@@ -64,7 +64,7 @@ public class ListTagsCmd extends BaseListProjectAndAccountResourcesCmd{
           tagResponses.add(tagResponse);
       }
       response.setResponses(tagResponses, tags.second());
-      
+
       response.setResponseName(getCommandName());
       this.setResponseObject(response);
     }
@@ -89,7 +89,7 @@ public class ListTagsCmd extends BaseListProjectAndAccountResourcesCmd{
     public String getCommandName() {
         return s_name;
     }
-    
+
     public String getCustomer() {
         return customer;
     }

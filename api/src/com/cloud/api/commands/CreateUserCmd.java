@@ -108,7 +108,7 @@ public class CreateUserCmd extends BaseCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         Account account = UserContext.current().getCaller();
@@ -127,7 +127,7 @@ public class CreateUserCmd extends BaseCmd {
 
         return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
-    
+
     @Override
     public void execute(){
         UserContext.current().setEventDetails("UserName: "+getUserName()+", FirstName :"+getFirstName()+", LastName: "+getLastName());

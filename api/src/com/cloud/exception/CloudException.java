@@ -24,16 +24,16 @@ import com.cloud.utils.AnnotationHelper;
 /**
  * by the API response serializer. Any exceptions that are thrown by
  * class, which extends RuntimeException instead of Exception like this
- * class does. 
+ * class does.
  */
 
 public class CloudException extends Exception {
-    
+
 	// This holds a list of uuids and their names. Add uuid:fieldname pairs
 	protected ArrayList<IdentityProxy> idList = new ArrayList<IdentityProxy>();
-	
-	protected Integer csErrorCode;	
-		
+
+	protected Integer csErrorCode;
+
 	public CloudException(String message) {
 		super(message);
 		setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
@@ -43,34 +43,34 @@ public class CloudException extends Exception {
         super(message, cause);
         setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
     }
-    
+
     public void addProxyObject(Object voObj, Long id, String idFieldName) {
     	// Get the VO object's table name.
     	String tablename = AnnotationHelper.getTableName(voObj);
     	if (tablename != null) {
-    		addProxyObject(tablename, id, idFieldName);    		
+    		addProxyObject(tablename, id, idFieldName);
     	}
     	return;
     }
-    
+
 	public CloudException() {
 		super();
 		setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
 	}
-	
+
 	public void addProxyObject(String tableName, Long id, String idFieldName) {
 		idList.add(new IdentityProxy(tableName, id, idFieldName));
 		return;
 	}
-	
+
 	public ArrayList<IdentityProxy> getIdProxyList() {
 		return idList;
 	}
-	
+
 	public void setCSErrorCode(int cserrcode) {
 		this.csErrorCode = cserrcode;
 	}
-	
+
 	public int getCSErrorCode() {
 		return this.csErrorCode;
 	}

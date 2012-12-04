@@ -29,7 +29,7 @@ import com.cloud.user.Account;
 
 @Implementation(description="Creates a VLAN IP range.", responseObject=SuccessResponse.class)
 public class DeleteVlanIpRangeCmd extends BaseCmd {
-	public static final Logger s_logger = Logger.getLogger(DeleteVlanIpRangeCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(DeleteVlanIpRangeCmd.class.getName());
 
     private static final String s_name = "deletevlaniprangeresponse";
 
@@ -57,12 +57,12 @@ public class DeleteVlanIpRangeCmd extends BaseCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-	
+
     @Override
     public void execute(){
         boolean result = _configService.deleteVlanIpRange(this);

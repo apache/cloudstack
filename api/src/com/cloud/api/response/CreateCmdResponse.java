@@ -31,8 +31,8 @@ public class CreateCmdResponse extends BaseResponse {
     public void setId(Long id) {
         this.id.setValue(id);
     }
-    
+
     public void setIdEntityTable(String entityTable) {
-    	this.id.setTableName(entityTable);
+        this.id.setTableName(entityTable);
     }
 }

@@ -82,13 +82,13 @@ public class DeleteSnapshotCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "deleting snapshot: " + getId();
     }
-    
+
     public AsyncJob.Type getInstanceType() {
-    	return AsyncJob.Type.Snapshot;
+        return AsyncJob.Type.Snapshot;
     }
-    
+
     public Long getInstanceId() {
-    	return getId();
+        return getId();
     }
 
     @Override

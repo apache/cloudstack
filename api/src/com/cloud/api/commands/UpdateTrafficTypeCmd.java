@@ -40,25 +40,25 @@ public class UpdateTrafficTypeCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    
+
     @IdentityMapper(entityTableName="physical_network_traffic_types")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="traffic type id")
     private Long id;
-    
+
     @Parameter(name=ApiConstants.XEN_NETWORK_LABEL, type=CommandType.STRING, description="The network name label of the physical device dedicated to this traffic on a XenServer host")
     private String xenLabel;
-    
+
     @Parameter(name=ApiConstants.KVM_NETWORK_LABEL, type=CommandType.STRING, description="The network name label of the physical device dedicated to this traffic on a KVM host")
     private String kvmLabel;
-    
+
     @Parameter(name=ApiConstants.VMWARE_NETWORK_LABEL, type=CommandType.STRING, description="The network name label of the physical device dedicated to this traffic on a VMware host")
     private String vmwareLabel;
-    
+
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-    
+
     public Long getId() {
         return id;
     }
@@ -69,11 +69,11 @@ public class UpdateTrafficTypeCmd extends BaseAsyncCmd {
     public String getKvmLabel() {
         return kvmLabel;
     }
-    
+
     public String getVmwareLabel() {
         return vmwareLabel;
-    }    
-    
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -82,12 +82,12 @@ public class UpdateTrafficTypeCmd extends BaseAsyncCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-    
+
     @Override
     public void execute(){
         PhysicalNetworkTrafficType result = _networkService.updatePhysicalNetworkTrafficType(getId(), getXenLabel(), getKvmLabel(), getVmwareLabel());
@@ -104,7 +104,7 @@ public class UpdateTrafficTypeCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "Updating Traffic Type: " + getId();
     }
-    
+
     @Override
     public String getEventType() {
         return EventTypes.EVENT_TRAFFIC_TYPE_UPDATE;

@@ -43,7 +43,7 @@ public class PrepareTemplateCmd extends BaseCmd {
     @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, required=true, type=CommandType.LONG, description="zone ID of the template to be prepared in primary storage(s).")
     private Long zoneId;
-    
+
     @IdentityMapper(entityTableName="vm_template")
     @Parameter(name=ApiConstants.TEMPLATE_ID, required=true, type=CommandType.LONG, description="template ID of the template to be prepared in primary storage(s).")
     private Long templateId;
@@ -52,11 +52,11 @@ public class PrepareTemplateCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-    
+
     public Long getZoneId() {
-    	return zoneId;
+        return zoneId;
     }
-    
+
     public Long getTemplateId() {
         return templateId;
     }
@@ -69,20 +69,20 @@ public class PrepareTemplateCmd extends BaseCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-    
+
     @Override
     public void execute() {
         ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
-    	
-    	VirtualMachineTemplate vmTemplate = _templateService.prepareTemplate(templateId, zoneId);
-    	List<TemplateResponse> templateResponses = _responseGenerator.createTemplateResponses(vmTemplate.getId(), zoneId, true);
+
+        VirtualMachineTemplate vmTemplate = _templateService.prepareTemplate(templateId, zoneId);
+        List<TemplateResponse> templateResponses = _responseGenerator.createTemplateResponses(vmTemplate.getId(), zoneId, true);
         response.setResponses(templateResponses);
-        response.setResponseName(getCommandName());              
+        response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
 }

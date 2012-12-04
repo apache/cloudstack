@@ -24,15 +24,15 @@ public class ListTemplateCommand extends StorageCommand {
     private String secUrl;
     @LogLevel(Log4jLevel.Off)
     private SwiftTO swift;
-    
+
     public ListTemplateCommand() {
     }
-    
+
 	public ListTemplateCommand(String secUrl) {
 	    this.secUrl = secUrl;
         this.swift = null;
 	}
-	
+
     public ListTemplateCommand(SwiftTO swift) {
         this.secUrl = null;
         this.swift = swift;

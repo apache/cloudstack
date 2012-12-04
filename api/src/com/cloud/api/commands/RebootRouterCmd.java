@@ -37,7 +37,7 @@ import com.cloud.user.UserContext;
 
 @Implementation(description="Starts a router.", responseObject=DomainRouterResponse.class)
 public class RebootRouterCmd extends BaseAsyncCmd {
-	public static final Logger s_logger = Logger.getLogger(RebootRouterCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(RebootRouterCmd.class.getName());
     private static final String s_name = "rebootrouterresponse";
 
     /////////////////////////////////////////////////////
@@ -64,7 +64,7 @@ public class RebootRouterCmd extends BaseAsyncCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         VirtualRouter router = _entityMgr.findById(VirtualRouter.class, getId());
@@ -84,16 +84,16 @@ public class RebootRouterCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "rebooting router: " + getId();
     }
-    
+
     public AsyncJob.Type getInstanceType() {
-    	return AsyncJob.Type.DomainRouter;
-    }
-    
-    public Long getInstanceId() {
-    	return getId();
+        return AsyncJob.Type.DomainRouter;
     }
 
-    
+    public Long getInstanceId() {
+        return getId();
+    }
+
+
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
         UserContext.current().setEventDetails("Router Id: "+getId());

@@ -37,9 +37,9 @@ import com.cloud.user.UserContext;
 
 @Implementation(description="Uploads a data disk.", responseObject=VolumeResponse.class)
 public class UploadVolumeCmd extends BaseAsyncCmd {
-	public static final Logger s_logger = Logger.getLogger(UploadVolumeCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(UploadVolumeCmd.class.getName());
     private static final String s_name = "uploadvolumeresponse";
-	
+
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
@@ -78,7 +78,7 @@ public class UploadVolumeCmd extends BaseAsyncCmd {
     public String getVolumeName() {
         return volumeName;
     }
-      
+
     public String getUrl() {
         return url;
     }
@@ -97,51 +97,51 @@ public class UploadVolumeCmd extends BaseAsyncCmd {
 
     public String getChecksum() {
         return checksum;
-    }	
-      
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-	@Override
-	public void execute() throws ResourceUnavailableException,
-			InsufficientCapacityException, ServerApiException,
-			ConcurrentOperationException, ResourceAllocationException,
-			NetworkRuleConflictException {
+    @Override
+    public void execute() throws ResourceUnavailableException,
+            InsufficientCapacityException, ServerApiException,
+            ConcurrentOperationException, ResourceAllocationException,
+            NetworkRuleConflictException {
 
-	        Volume volume = _storageService.uploadVolume(this);
-	        if (volume != null){	            
-	            VolumeResponse response = _responseGenerator.createVolumeResponse(volume);
-	            response.setResponseName(getCommandName());              
-	            this.setResponseObject(response);
-	        } else {
-	            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to upload volume");
-	        }
-	}
+            Volume volume = _storageService.uploadVolume(this);
+            if (volume != null){
+                VolumeResponse response = _responseGenerator.createVolumeResponse(volume);
+                response.setResponseName(getCommandName());
+                this.setResponseObject(response);
+            } else {
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to upload volume");
+            }
+    }
 
-	@Override
-	public String getCommandName() {
-		   return s_name;
-	}
+    @Override
+    public String getCommandName() {
+           return s_name;
+    }
 
-	@Override
-	public long getEntityOwnerId() {
-		Long accountId = finalyzeAccountId(accountName, domainId, null, true);
+    @Override
+    public long getEntityOwnerId() {
+        Long accountId = finalyzeAccountId(accountName, domainId, null, true);
         if (accountId == null) {
             return UserContext.current().getCaller().getId();
         }
-        
+
         return accountId;
-	}
+    }
 
-	@Override
-	public String getEventDescription() {
-		return  "uploading volume: " + getVolumeName() + " in the zone " + getZoneId(); 		
-	}
+    @Override
+    public String getEventDescription() {
+        return  "uploading volume: " + getVolumeName() + " in the zone " + getZoneId();
+    }
 
-	@Override
-	public String getEventType() {
+    @Override
+    public String getEventType() {
         return EventTypes.EVENT_VOLUME_UPLOAD;
-	}
+    }
 
 }

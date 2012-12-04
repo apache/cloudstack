@@ -25,13 +25,13 @@ public interface VpcGateway extends Identity, ControlledEntity {
         Public,
         Vpn
     }
-    
+
     public enum State {
         Creating,
         Ready,
         Deleting
     }
-    
+
     long getId();
 
     /**

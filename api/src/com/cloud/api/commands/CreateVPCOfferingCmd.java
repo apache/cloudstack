@@ -40,22 +40,22 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd{
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    
+
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="the name of the vpc offering")
     private String vpcOfferingName;
-    
+
     @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, required=true, description="the display text of " +
-    		"the vpc offering")
+            "the vpc offering")
     private String displayText;
-    
+
     @Parameter(name=ApiConstants.SUPPORTED_SERVICES, type=CommandType.LIST, required=true, collectionType=CommandType.STRING,
             description="services supported by the vpc offering")
     private List<String> supportedServices;
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-    
+
     public String getVpcOfferingName() {
         return vpcOfferingName;
     }
@@ -67,7 +67,7 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd{
     public List<String> getSupportedServices() {
         return supportedServices;
     }
-  
+
 
     @Override
     public void create() throws ResourceAllocationException {
@@ -78,7 +78,7 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd{
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create a VPC offering");
         }
     }
-    
+
     @Override
     public void execute() {
         VpcOffering vpc = _vpcService.getVpcOffering(this.getEntityId());

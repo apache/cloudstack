@@ -36,10 +36,10 @@ public class UploadCustomCertificateCmd extends BaseAsyncCmd {
 
     @Parameter(name=ApiConstants.CERTIFICATE,type=CommandType.STRING,required=true,description="The certificate to be uploaded.", length=65535)
     private String certificate;
-    
+
     @Parameter(name=ApiConstants.ID,type=CommandType.INTEGER,required=false,description="An integer providing the location in a chain that the certificate will hold. Usually, this can be left empty. When creating a chain, the top level certificate should have an ID of 1, with each step in the chain incrementing by one. Example, CA with id = 1, Intermediate CA with id = 2, Site certificate with ID = 3")
     private Integer index;
-    
+
     @Parameter(name=ApiConstants.NAME,type=CommandType.STRING,required=false,description="A name / alias for the certificate.")
     private String alias;
 
@@ -48,25 +48,25 @@ public class UploadCustomCertificateCmd extends BaseAsyncCmd {
 
     @Parameter(name=ApiConstants.DOMAIN_SUFFIX,type=CommandType.STRING,required=true,description="DNS domain suffix that the certificate is granted for.")
     private String domainSuffix;
-    
+
     public String getCertificate() {
         return certificate;
     }
-    
+
     public String getPrivateKey() {
-    	return privateKey;
+        return privateKey;
     }
-    
+
     public String getDomainSuffix() {
-    	return domainSuffix;
+        return domainSuffix;
     }
-    
+
     public Integer getCertIndex() {
-    	return index;
+        return index;
     }
-    
+
     public String getAlias() {
-    	return alias;
+        return alias;
     }
 
     @Override
@@ -78,21 +78,21 @@ public class UploadCustomCertificateCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  ("Uploading custom certificate to the db, and applying it to all the cpvms in the system");
     }
-    
+
     @Override
     public String getCommandName() {
         return s_name;
     }
-    
+
     public static String getResultObjectName() {
-    	return "certificate";
+        return "certificate";
     }
 
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
-    
+
     @Override
     public void execute(){
         String result = _mgr.uploadCertificate(this);

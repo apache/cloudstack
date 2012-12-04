@@ -36,7 +36,7 @@ import com.cloud.vm.VirtualMachine;
 
 @Implementation(description="Stops a system VM.", responseObject=SystemVmResponse.class)
 public class StopSystemVmCmd extends BaseAsyncCmd {
-	public static final Logger s_logger = Logger.getLogger(StopSystemVmCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(StopSystemVmCmd.class.getName());
 
     private static final String s_name = "stopsystemvmresponse";
 
@@ -50,7 +50,7 @@ public class StopSystemVmCmd extends BaseAsyncCmd {
 
     @Parameter(name=ApiConstants.FORCED, type=CommandType.BOOLEAN, required=false, description="Force stop the VM.  The caller knows the VM is stopped.")
     private Boolean forced;
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -93,17 +93,17 @@ public class StopSystemVmCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "stopping system vm: " + getId();
     }
-    
+
     @Override
     public AsyncJob.Type getInstanceType() {
-    	return AsyncJob.Type.SystemVm;
+        return AsyncJob.Type.SystemVm;
     }
-    
+
     @Override
     public Long getInstanceId() {
-    	return getId();
+        return getId();
     }
-    
+
     public boolean isForced() {
         return (forced != null) ? forced : false;
     }

@@ -53,7 +53,7 @@ public class EnableAccountCmd extends BaseCmd {
     public Long getId() {
         return id;
     }
-    
+
     public String getAccountName() {
         return accountName;
     }
@@ -70,14 +70,14 @@ public class EnableAccountCmd extends BaseCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         Account account = _entityMgr.findById(Account.class, getId());
         if (account != null) {
             return account.getAccountId();
         }
-        
+
         account = _accountService.getActiveAccountByName(getAccountName(), getDomainId());
         if (account != null) {
             return account.getAccountId();

@@ -34,7 +34,7 @@ import com.cloud.user.UserContext;
 
 @Implementation(responseObject=SuccessResponse.class, description="Deletes a template from the system. All virtual machines using the deleted template will not be affected.")
 public class DeleteTemplateCmd extends BaseAsyncCmd {
-	public static final Logger s_logger = Logger.getLogger(DeleteTemplateCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(DeleteTemplateCmd.class.getName());
     private static final String s_name = "deletetemplateresponse";
 
     /////////////////////////////////////////////////////
@@ -66,12 +66,12 @@ public class DeleteTemplateCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-    
+
     @Override
     public String getCommandName() {
         return s_name;
     }
-    
+
     public static String getStaticName() {
         return s_name;
     }
@@ -95,15 +95,15 @@ public class DeleteTemplateCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return "Deleting template " + getId();
     }
-    
+
     public AsyncJob.Type getInstanceType() {
-    	return AsyncJob.Type.Template;
+        return AsyncJob.Type.Template;
     }
-    
+
     public Long getInstanceId() {
-    	return getId();
+        return getId();
     }
-    
+
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Template Id: "+getId());

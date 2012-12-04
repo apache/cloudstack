@@ -22,13 +22,13 @@ import com.cloud.dc.Vlan;
 /**
  */
 public interface PublicIpAddress extends ControlledEntity, IpAddress, Vlan {
-    
+
     String getMacAddress();
-    
+
     public String getNetmask();
-    
+
     public String getGateway();
-    
+
     @Override
     public String getVlanTag();
 }

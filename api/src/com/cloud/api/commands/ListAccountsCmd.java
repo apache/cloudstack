@@ -33,7 +33,7 @@ import com.cloud.utils.Pair;
 
 @Implementation(description="Lists accounts and provides detailed account information for listed accounts", responseObject=AccountResponse.class)
 public class ListAccountsCmd extends BaseListDomainResourcesCmd {
-	public static final Logger s_logger = Logger.getLogger(ListAccountsCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(ListAccountsCmd.class.getName());
     private static final String s_name = "listaccountsresponse";
 
     /////////////////////////////////////////////////////
@@ -55,7 +55,7 @@ public class ListAccountsCmd extends BaseListDomainResourcesCmd {
 
     @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="list accounts by state. Valid states are enabled, disabled, and locked.")
     private String state;
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -79,7 +79,7 @@ public class ListAccountsCmd extends BaseListDomainResourcesCmd {
     public String getState() {
         return state;
     }
-    
+
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -102,7 +102,7 @@ public class ListAccountsCmd extends BaseListDomainResourcesCmd {
         }
         response.setResponses(accountResponses, accounts.second());
         response.setResponseName(getCommandName());
-        
+
         this.setResponseObject(response);
     }
 }

@@ -60,12 +60,12 @@ public class DeleteVPCOfferingCmd extends BaseAsyncCmd{
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-    
+
     @Override
     public void execute(){
         boolean result = _vpcService.deleteVpcOffering(getId());
@@ -76,7 +76,7 @@ public class DeleteVPCOfferingCmd extends BaseAsyncCmd{
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete VPC offering");
         }
     }
-    
+
     @Override
     public String getEventType(){
         return EventTypes.EVENT_VPC_OFFERING_DELETE;
@@ -87,6 +87,6 @@ public class DeleteVPCOfferingCmd extends BaseAsyncCmd{
     public String getEventDescription() {
         return "Deleting VPC offering id=" + getId();
     }
-    
-    
+
+
 }

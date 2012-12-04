@@ -38,7 +38,7 @@ import com.cloud.utils.Pair;
 public interface StorageService{
     /**
      * Create StoragePool based on uri
-     * 
+     *
      * @param cmd
      *            the command object that specifies the zone, cluster/pod, URI, details, etc. to use to create the
      *            storage pool.
@@ -49,12 +49,12 @@ public interface StorageService{
      * @throws ResourceUnavailableException
      *             TODO
      */
-    StoragePool createPool(CreateStoragePoolCmd cmd) throws ResourceInUseException, IllegalArgumentException, 
+    StoragePool createPool(CreateStoragePoolCmd cmd) throws ResourceInUseException, IllegalArgumentException,
     UnknownHostException, ResourceUnavailableException;
 
     /**
      * Creates the database object for a volume based on the given criteria
-     * 
+     *
      * @param cmd
      *            the API command wrapping the criteria (account/domainId [admin only], zone, diskOffering, snapshot,
      *            name)
@@ -65,7 +65,7 @@ public interface StorageService{
 
     /**
      * Creates the volume based on the given criteria
-     * 
+     *
      * @param cmd
      *            the API command wrapping the criteria (account/domainId [admin only], zone, diskOffering, snapshot,
      *            name)
@@ -76,7 +76,7 @@ public interface StorageService{
 
     /**
      * Delete the storage pool
-     * 
+     *
      * @param cmd
      *            - the command specifying poolId
      * @return success or failure
@@ -85,7 +85,7 @@ public interface StorageService{
 
     /**
      * Enable maintenance for primary storage
-     * 
+     *
      * @param cmd
      *            - the command specifying primaryStorageId
      * @return the primary storage pool
@@ -94,19 +94,19 @@ public interface StorageService{
      * @throws InsufficientCapacityException
      *             TODO
      */
-    public StoragePool preparePrimaryStorageForMaintenance(Long primaryStorageId) throws ResourceUnavailableException, 
+    public StoragePool preparePrimaryStorageForMaintenance(Long primaryStorageId) throws ResourceUnavailableException,
     InsufficientCapacityException;
 
     /**
      * Complete maintenance for primary storage
-     * 
+     *
      * @param cmd
      *            - the command specifying primaryStorageId
      * @return the primary storage pool
      * @throws ResourceUnavailableException
      *             TODO
      */
-    public StoragePool cancelPrimaryStorageForMaintenance(CancelPrimaryStorageMaintenanceCmd cmd) 
+    public StoragePool cancelPrimaryStorageForMaintenance(CancelPrimaryStorageMaintenanceCmd cmd)
             throws ResourceUnavailableException;
 
     public StoragePool updateStoragePool(UpdateStoragePoolCmd cmd) throws IllegalArgumentException;
@@ -119,9 +119,9 @@ public interface StorageService{
 
     /**
      * Uploads the volume to secondary storage
-     * 
-     * @param UploadVolumeCmd cmd 
-     *            
+     *
+     * @param UploadVolumeCmd cmd
+     *
      * @return Volume object
      */
     Volume uploadVolume(UploadVolumeCmd cmd)	throws ResourceAllocationException;

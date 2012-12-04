@@ -39,19 +39,19 @@ public class NetworkACLResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.TRAFFIC_TYPE) @Param(description="the traffic type for the ACL")
     private String trafficType;
-    
+
     @SerializedName(ApiConstants.STATE) @Param(description="the state of the rule")
     private String state;
 
     @SerializedName(ApiConstants.CIDR_LIST) @Param(description="the cidr list to forward traffic from")
     private String cidrList;
-    
+
     @SerializedName(ApiConstants.ICMP_TYPE) @Param(description= "type of the icmp message being sent")
     private Integer icmpType;
 
     @SerializedName(ApiConstants.ICMP_CODE) @Param(description = "error code for this icmp message")
     private Integer icmpCode;
-    
+
     @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with the network ACLs",
             responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
@@ -91,7 +91,7 @@ public class NetworkACLResponse extends BaseResponse {
     public void setTrafficType(String trafficType) {
         this.trafficType = trafficType;
     }
-    
+
     public void setTags(List<ResourceTagResponse> tags) {
         this.tags = tags;
     }

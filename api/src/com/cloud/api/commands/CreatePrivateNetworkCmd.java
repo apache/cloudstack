@@ -42,36 +42,36 @@ public class CreatePrivateNetworkCmd extends BaseAsyncCreateCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    
+
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="the name of the network")
     private String name;
-    
+
     @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, required=true, description="the display text of the network")
     private String displayText;
-    
+
     @IdentityMapper(entityTableName="physical_network")
     @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, required=true, description="the Physical Network ID the network belongs to")
     private Long physicalNetworkId;
 
     @Parameter(name=ApiConstants.GATEWAY, type=CommandType.STRING, required=true, description="the gateway of the network")
     private String gateway;
-    
+
     @Parameter(name=ApiConstants.NETMASK, type=CommandType.STRING, required=true, description="the netmask of the network")
     private String netmask;
-    
+
     @Parameter(name=ApiConstants.START_IP, type=CommandType.STRING, required=true, description="the beginning IP address in the network IP range")
     private String startIp;
-    
+
     @Parameter(name=ApiConstants.END_IP, type=CommandType.STRING, description="the ending IP address in the network IP" +
             " range. If not specified, will be defaulted to startIP")
     private String endIp;
-    
+
     @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, required=true, description="the ID or VID of the network")
     private String vlan;
 
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="account who will own the network")
     private String accountName;
-    
+
     @IdentityMapper(entityTableName="projects")
     @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="an optional project for the ssh key")
     private Long projectId;
@@ -100,7 +100,7 @@ public class CreatePrivateNetworkCmd extends BaseAsyncCreateCmd {
     public Long getDomainId() {
         return domainId;
     }
-    
+
     public String getNetmask() {
         return netmask;
     }
@@ -108,23 +108,23 @@ public class CreatePrivateNetworkCmd extends BaseAsyncCreateCmd {
     public String getStartIp() {
         return startIp;
     }
-    
+
     public String getNetworkName() {
         return name;
     }
-    
+
     public String getDisplayText() {
         return displayText;
     }
-    
+
     public Long getProjectId() {
         return projectId;
     }
-    
+
     public long getPhysicalNetworkId() {
         return physicalNetworkId;
     }
-    
+
     public String getEndIp() {
         return endIp;
     }
@@ -136,8 +136,8 @@ public class CreatePrivateNetworkCmd extends BaseAsyncCreateCmd {
     public String getCommandName() {
         return s_name;
     }
-    
-    
+
+
     @Override
     public void create() throws ResourceAllocationException {
         Network result = null;
@@ -152,14 +152,14 @@ public class CreatePrivateNetworkCmd extends BaseAsyncCreateCmd {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
         }
-        
+
         if (result != null) {
             this.setEntityId(result.getId());
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create a Private network");
         }
     }
-    
+
     @Override
     public void execute() throws InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException{
         Network result = _networkService.getNetwork(getEntityId());
@@ -171,7 +171,7 @@ public class CreatePrivateNetworkCmd extends BaseAsyncCreateCmd {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create private network");
         }
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         Long accountId = finalyzeAccountId(accountName, domainId, projectId, true);
@@ -191,7 +191,7 @@ public class CreatePrivateNetworkCmd extends BaseAsyncCreateCmd {
         return  "creating private network";
 
     }
-    
+
     @Override
     public String getEntityTable() {
         return "networks";

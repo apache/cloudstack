@@ -38,7 +38,7 @@ import com.cloud.user.UserContext;
 
 @Implementation(description="Extracts volume", responseObject=ExtractResponse.class)
 public class ExtractVolumeCmd extends BaseAsyncCmd {
-	public static final Logger s_logger = Logger.getLogger(ExtractVolumeCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(ExtractVolumeCmd.class.getName());
 
     private static final String s_name = "extractvolumeresponse";
 
@@ -57,7 +57,7 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
     @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="the ID of the zone where the volume is located")
     private Long zoneId;
-    
+
     @Parameter(name=ApiConstants.MODE, type=CommandType.STRING, required=true, description="the mode of extraction - HTTP_DOWNLOAD or FTP_UPLOAD")
     private String mode;
 
@@ -76,7 +76,7 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
     public Long getZoneId() {
         return zoneId;
     }
-    
+
     public String getMode() {
         return mode;
     }
@@ -86,20 +86,20 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-	public String getCommandName() {
-		return s_name;
-	}
-    
+    public String getCommandName() {
+        return s_name;
+    }
+
     public static String getStaticName() {
         return s_name;
     }
-    
+
     public AsyncJob.Type getInstanceType() {
-    	return AsyncJob.Type.Volume;
+        return AsyncJob.Type.Volume;
     }
-    
+
     public Long getInstanceId() {
-    	return getId();
+        return getId();
     }
 
     @Override
@@ -122,7 +122,7 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "Extraction job";
     }
-	
+
     @Override
     public void execute(){
         try {
@@ -135,13 +135,13 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
                 response.setObjectName("volume");
                 response.setIdentityTableName("volumes");
                 response.setId(id);
-                response.setName(_entityMgr.findById(Volume.class, id).getName());        
+                response.setName(_entityMgr.findById(Volume.class, id).getName());
                 response.setZoneId(zoneId);
                 response.setZoneName(_entityMgr.findById(DataCenter.class, zoneId).getName());
                 response.setMode(mode);
                 response.setUploadId(uploadId);
                 response.setState(uploadInfo.getUploadState().toString());
-                response.setAccountId(getEntityOwnerId());        
+                response.setAccountId(getEntityOwnerId());
                 response.setUrl(uploadInfo.getUploadUrl());
                 this.setResponseObject(response);
             } else {

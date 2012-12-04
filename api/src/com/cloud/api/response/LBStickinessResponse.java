@@ -39,7 +39,7 @@ public class LBStickinessResponse extends BaseResponse {
     @SerializedName("account")
     @Param(description = "the account of the Stickiness policy")
     private String accountName;
-    
+
     @SerializedName(ApiConstants.DOMAIN_ID)
     @Param(description = "the domain ID of the Stickiness policy")
     private IdentityProxy domainId = new IdentityProxy("domain");
@@ -51,7 +51,7 @@ public class LBStickinessResponse extends BaseResponse {
     @SerializedName("state")
     @Param(description = "the state of the policy")
     private String state;
-    
+
     @SerializedName(ApiConstants.ZONE_ID)
     @Param(description = "the id of the zone the Stickiness policy belongs to")
     private IdentityProxy zoneId = new IdentityProxy("data_center");
@@ -79,11 +79,11 @@ public class LBStickinessResponse extends BaseResponse {
     public List<LBStickinessPolicyResponse> getStickinessPolicies() {
         return stickinessPolicies;
     }
-    
+
     public String getDescription() {
         return description;
     }
-    
+
     public void setDescription(String description) {
         this.description = description;
     }
@@ -99,11 +99,11 @@ public class LBStickinessResponse extends BaseResponse {
     public void setDomainId(Long domainId) {
         this.domainId.setValue(domainId);
     }
-    
+
     public void setZoneId(Long zoneId) {
         this.zoneId.setValue(zoneId);
     }
-    
+
     public String getDomainName() {
         return domainName;
     }

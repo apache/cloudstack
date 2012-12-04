@@ -42,15 +42,15 @@ public class ListIpForwardingRulesCmd extends BaseListProjectAndAccountResources
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    
+
     @IdentityMapper(entityTableName="user_ip_address")
     @Parameter(name=ApiConstants.IP_ADDRESS_ID, type=CommandType.LONG, description="list the rule belonging to this public ip address")
     private Long publicIpAddressId;
-    
+
     @IdentityMapper(entityTableName="firewall_rules")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="Lists rule with the specified ID.")
     private Long id;
-    
+
     @IdentityMapper(entityTableName="vm_instance")
     @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, description="Lists all rules applied to the specified Vm.")
     private Long vmId;
@@ -64,15 +64,15 @@ public class ListIpForwardingRulesCmd extends BaseListProjectAndAccountResources
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
     @Override
-	public String getCommandName() {
+    public String getCommandName() {
         return s_name;
     }
-    
-    public Long getPublicIpAddressId() {
-		return publicIpAddressId;
-	}
 
-	public Long getId() {
+    public Long getPublicIpAddressId() {
+        return publicIpAddressId;
+    }
+
+    public Long getId() {
         return id;
     }
 
@@ -82,7 +82,7 @@ public class ListIpForwardingRulesCmd extends BaseListProjectAndAccountResources
 
     @Override
     public void execute(){
-        Pair<List<? extends FirewallRule>, Integer> result = _rulesService.searchStaticNatRules(publicIpAddressId, id, vmId, 
+        Pair<List<? extends FirewallRule>, Integer> result = _rulesService.searchStaticNatRules(publicIpAddressId, id, vmId,
                 this.getStartIndex(), this.getPageSizeVal(), this.getAccountName(), this.getDomainId(), this.getProjectId(), this.isRecursive(), this.listAll());
         ListResponse<IpForwardingRuleResponse> response = new ListResponse<IpForwardingRuleResponse>();
         List<IpForwardingRuleResponse> ipForwardingResponses = new ArrayList<IpForwardingRuleResponse>();
@@ -97,5 +97,5 @@ public class ListIpForwardingRulesCmd extends BaseListProjectAndAccountResources
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
-    
+
 }

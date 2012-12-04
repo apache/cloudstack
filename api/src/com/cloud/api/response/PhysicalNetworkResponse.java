@@ -25,28 +25,28 @@ import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 public class PhysicalNetworkResponse extends BaseResponse{
-    
+
     @SerializedName(ApiConstants.ID) @Param(description="the uuid of the physical network")
     private String id;
-    
+
     @SerializedName(ApiConstants.NAME) @Param(description="name of the physical network")
     private String name;
-    
+
     @SerializedName(ApiConstants.BROADCAST_DOMAIN_RANGE) @Param(description="Broadcast domain range of the physical network")
     private String broadcastDomainRange;
-    
+
     @SerializedName(ApiConstants.ZONE_ID) @Param(description="zone id of the physical network")
     private IdentityProxy zoneId = new IdentityProxy("data_center");
-    
+
     @SerializedName(ApiConstants.STATE) @Param(description="state of the physical network")
     private String state;
 
     @SerializedName(ApiConstants.VLAN) @Param(description="the vlan of the physical network")
     private String vlan;
-    
+
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain id of the physical network owner")
     private IdentityProxy domainId = new IdentityProxy("domain");
-    
+
     @SerializedName(ApiConstants.TAGS) @Param(description="comma separated tag")
     private String tags;
 
@@ -67,30 +67,30 @@ public class PhysicalNetworkResponse extends BaseResponse{
     public void setState(String state) {
         this.state = state;
     }
-    
+
 
     public void setDomainId(Long domainId) {
         this.domainId.setValue(domainId);
     }
-    
+
     public void setVlan(String vlan) {
         this.vlan = vlan;
     }
-    
+
 
     public void setTags(List<String> tags) {
         if (tags == null || tags.size() == 0) {
             return;
         }
-        
+
         StringBuilder buf = new StringBuilder();
         for (String tag : tags) {
             buf.append(tag).append(",");
         }
-        
+
         this.tags = buf.delete(buf.length()-1, buf.length()).toString();
     }
-    
+
     public void setBroadcastDomainRange(String broadcastDomainRange) {
         this.broadcastDomainRange = broadcastDomainRange;
     }
@@ -103,16 +103,16 @@ public class PhysicalNetworkResponse extends BaseResponse{
         if (isolationMethods == null || isolationMethods.size() == 0) {
             return;
         }
-        
+
         StringBuilder buf = new StringBuilder();
         for (String isolationMethod : isolationMethods) {
             buf.append(isolationMethod).append(",");
         }
-        
+
         this.isolationMethods = buf.delete(buf.length()-1, buf.length()).toString();
     }
 
-	public void setName(String name) {
-		this.name = name;
-	}
+    public void setName(String name) {
+        this.name = name;
+    }
 }

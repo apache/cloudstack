@@ -36,10 +36,10 @@ public class TemplatePermissionsResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ACCOUNT) @Param(description="the list of accounts the template is available for")
     private List<String> accountNames;
-    
+
     @SerializedName(ApiConstants.PROJECT_IDS) @Param(description="the list of projects the template is available for")
     private List<String> projectIds;
-    
+
 
     public void setId(Long id) {
         this.id.setValue(id);

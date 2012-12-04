@@ -41,11 +41,11 @@ import com.cloud.utils.fsm.NoTransitionException;
 public interface ResourceService {
     /**
      * Updates a host
-     * 
+     *
      * @param cmd
      *            - the command specifying hostId
      * @return hostObject
-     * @throws NoTransitionException 
+     * @throws NoTransitionException
      */
     Host updateHost(UpdateHostCmd cmd) throws NoTransitionException;
 
@@ -56,7 +56,7 @@ public interface ResourceService {
     /**
      * We will automatically create a cloud.com cluster to attach to the external cluster and return a hyper host to perform
      * host related operation within the cluster
-     * 
+     *
      * @param cmd
      * @return
      * @throws IllegalArgumentException
@@ -76,12 +76,12 @@ public interface ResourceService {
 
     /**
      * Deletes a host
-     * 
+     *
      * @param hostId
      *            TODO
      * @param isForced
      *            TODO
-     * 
+     *
      * @param true if deleted, false otherwise
      */
     boolean deleteHost(long hostId, boolean isForced, boolean isForceDeleteStorage);
@@ -93,7 +93,7 @@ public interface ResourceService {
     Cluster getCluster(Long clusterId);
 
     Swift discoverSwift(AddSwiftCmd addSwiftCmd) throws DiscoveryException;
-    
+
     List<HypervisorType> getSupportedHypervisorTypes(long zoneId, boolean forVirtualRouter, Long podId);
 
     List<? extends Swift> listSwifts(ListSwiftsCmd cmd);

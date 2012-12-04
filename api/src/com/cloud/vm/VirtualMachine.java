@@ -27,7 +27,7 @@ import com.cloud.utils.fsm.StateObject;
 
 /**
  * VirtualMachine describes the properties held by a virtual machine
- * 
+ *
  */
 public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, StateObject<VirtualMachine.State> {
 
@@ -245,7 +245,7 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, S
 
     /**
      * returns the guest OS ID
-     * 
+     *
      * @return guestOSId
      */
     public long getGuestOSId();
@@ -290,6 +290,6 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, S
     HypervisorType getHypervisorType();
 
     public Map<String, String> getDetails();
-    
+
     boolean canPlugNics();
 }

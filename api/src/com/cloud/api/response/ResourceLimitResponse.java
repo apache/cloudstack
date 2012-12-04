@@ -37,18 +37,18 @@ public class ResourceLimitResponse extends BaseResponse implements ControlledEnt
 
     @SerializedName("max") @Param(description="the maximum number of the resource. A -1 means the resource currently has no limit.")
     private Long max;
-    
+
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the resource limit")
     private IdentityProxy projectId = new IdentityProxy("projects");
-    
+
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the resource limit")
     private String projectName;
-    
+
     @Override
     public void setAccountName(String accountName) {
         this.accountName = accountName;
     }
-    
+
     @Override
     public void setProjectName(String projectName) {
         this.projectName = projectName;
@@ -58,12 +58,12 @@ public class ResourceLimitResponse extends BaseResponse implements ControlledEnt
     public void setDomainId(Long domainId) {
         this.domainId.setValue(domainId);
     }
-    
+
     @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
     }
-    
+
     public void setResourceType(String resourceType) {
         this.resourceType = resourceType;
     }

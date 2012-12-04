@@ -31,22 +31,22 @@ public class VpcOfferingResponse extends BaseResponse{
 
     @SerializedName(ApiConstants.NAME) @Param(description="the name of the vpc offering")
     private String name;
-    
+
     @SerializedName(ApiConstants.DISPLAY_TEXT) @Param(description="an alternate display text of the vpc offering.")
     private String displayText;
-    
+
     @SerializedName(ApiConstants.CREATED) @Param(description="the date this vpc offering was created")
     private Date created;
-    
+
     @SerializedName(ApiConstants.IS_DEFAULT) @Param(description="true if vpc offering is default, false otherwise")
     private Boolean isDefault;
-    
+
     @SerializedName(ApiConstants.STATE) @Param(description="state of the vpc offering. Can be Disabled/Enabled")
     private String state;
-   
+
     @SerializedName(ApiConstants.SERVICE) @Param(description="the list of supported services", responseObject = ServiceResponse.class)
     private List<ServiceResponse> services;
-    
+
 
     public void setId(Long id) {
         this.id.setValue(id);
@@ -71,7 +71,7 @@ public class VpcOfferingResponse extends BaseResponse{
     public void setServices(List<ServiceResponse> services) {
         this.services = services;
     }
-    
+
     public void setState(String state) {
         this.state = state;
     }

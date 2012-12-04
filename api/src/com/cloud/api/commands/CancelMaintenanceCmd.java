@@ -64,9 +64,9 @@ public class CancelMaintenanceCmd extends BaseAsyncCmd  {
     public String getCommandName() {
         return s_name;
     }
-    
+
     public static String getResultObjectName() {
-    	return "host";
+        return "host";
     }
 
     @Override
@@ -88,17 +88,17 @@ public class CancelMaintenanceCmd extends BaseAsyncCmd  {
     public String getEventDescription() {
         return  "canceling maintenance for host: " + getId();
     }
-    
+
     @Override
     public AsyncJob.Type getInstanceType() {
-    	return AsyncJob.Type.Host;
+        return AsyncJob.Type.Host;
     }
-    
+
     @Override
     public Long getInstanceId() {
-    	return getId();
+        return getId();
     }
-	
+
     @Override
     public void execute(){
         Host result = _resourceService.cancelMaintenance(this);

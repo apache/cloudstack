@@ -38,22 +38,22 @@ public class UpdateClusterCmd extends BaseCmd {
     @IdentityMapper(entityTableName="cluster")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the Cluster")
     private Long id;
-    
+
     @Parameter(name=ApiConstants.CLUSTER_NAME, type=CommandType.STRING, description="the cluster name")
     private String clusterName;
 
     @Parameter(name=ApiConstants.HYPERVISOR, type=CommandType.STRING, description="hypervisor type of the cluster")
     private String hypervisor;
-    
+
     @Parameter(name=ApiConstants.CLUSTER_TYPE, type=CommandType.STRING, description="hypervisor type of the cluster")
     private String clusterType;
-    
+
     @Parameter(name=ApiConstants.ALLOCATION_STATE, type=CommandType.STRING, description="Allocation state of this cluster for allocation of new resources")
     private String allocationState;
-    
+
     @Parameter(name=ApiConstants.MANAGED_STATE, type=CommandType.STRING, description="whether this cluster is managed by cloudstack")
     private String managedState;
-    
+
     public String getClusterName() {
         return clusterName;
     }
@@ -63,34 +63,34 @@ public class UpdateClusterCmd extends BaseCmd {
     }
 
     public String getHypervisor() {
-    	return hypervisor;
+        return hypervisor;
     }
-    
+
     @Override
     public String getCommandName() {
-    	return s_name;
+        return s_name;
     }
-    
+
     public String getClusterType() {
-    	return clusterType;
+        return clusterType;
     }
-    
+
     public void setClusterType(String type) {
-    	this.clusterType = type;
+        this.clusterType = type;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-    
+
     public String getAllocationState() {
-    	return allocationState;
+        return allocationState;
     }
-    
+
     public void setAllocationState(String allocationState) {
-    	this.allocationState = allocationState;
-    }    
+        this.allocationState = allocationState;
+    }
 
     public String getManagedstate() {
         return managedState;
@@ -102,11 +102,11 @@ public class UpdateClusterCmd extends BaseCmd {
 
     @Override
     public void execute(){
-    	Cluster cluster = _resourceService.getCluster(getId());
+        Cluster cluster = _resourceService.getCluster(getId());
         if (cluster == null) {
             throw new InvalidParameterValueException("Unable to find the cluster by id=" + getId());
         }
-        
+
         Cluster result = _resourceService.updateCluster(cluster, getClusterType(), getHypervisor(), getAllocationState(), getManagedstate());
         if (result != null) {
                 ClusterResponse clusterResponse = _responseGenerator.createClusterResponse(cluster, false);

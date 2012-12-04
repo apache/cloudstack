@@ -36,7 +36,7 @@ import com.cloud.user.UserContext;
 
 @Implementation(description="Puts storage pool into maintenance state", responseObject=StoragePoolResponse.class)
 public class PreparePrimaryStorageForMaintenanceCmd extends BaseAsyncCmd {
-	public static final Logger s_logger = Logger.getLogger(PreparePrimaryStorageForMaintenanceCmd.class.getName());	
+    public static final Logger s_logger = Logger.getLogger(PreparePrimaryStorageForMaintenanceCmd.class.getName());
     private static final String s_name = "prepareprimarystorageformaintenanceresponse";
 
     /////////////////////////////////////////////////////
@@ -63,16 +63,16 @@ public class PreparePrimaryStorageForMaintenanceCmd extends BaseAsyncCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     public static String getResultObjectName() {
-    	return "primarystorage";
+        return "primarystorage";
     }
-    
+
     @Override
     public AsyncJob.Type getInstanceType() {
         return AsyncJob.Type.StoragePool;
     }
-    
+
     @Override
     public Long getInstanceId() {
         return getId();

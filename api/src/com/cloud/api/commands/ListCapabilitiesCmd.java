@@ -27,7 +27,7 @@ import com.cloud.user.Account;
 
 @Implementation(description="Lists capabilities", responseObject=CapabilitiesResponse.class)
 public class ListCapabilitiesCmd extends BaseCmd {
-	public static final Logger s_logger = Logger.getLogger(ListCapabilitiesCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(ListCapabilitiesCmd.class.getName());
 
     private static final String s_name = "listcapabilitiesresponse";
 
@@ -35,12 +35,12 @@ public class ListCapabilitiesCmd extends BaseCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-    
+
     @Override
     public void execute(){
         Map<String, Object> capabilities = _mgr.listCapabilities(this);

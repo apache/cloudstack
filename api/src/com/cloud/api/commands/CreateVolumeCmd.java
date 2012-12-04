@@ -34,7 +34,7 @@ import com.cloud.user.UserContext;
 
 @Implementation(responseObject=VolumeResponse.class, description="Creates a disk volume from a disk offering. This disk volume must still be attached to a virtual machine to make use of it.")
 public class CreateVolumeCmd extends BaseAsyncCreateCmd {
-	public static final Logger s_logger = Logger.getLogger(CreateVolumeCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(CreateVolumeCmd.class.getName());
     private static final String s_name = "createvolumeresponse";
 
     /////////////////////////////////////////////////////
@@ -43,11 +43,11 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
 
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account associated with the disk volume. Must be used with the domainId parameter.")
     private String accountName;
-    
+
     @IdentityMapper(entityTableName="projects")
     @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="the project associated with the volume. Mutually exclusive with account parameter")
     private Long projectId;
-    
+
     @IdentityMapper(entityTableName="domain")
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID associated with the disk offering. If used with the account parameter returns the disk volume associated with the account for the specified domain.")
     private Long domainId;
@@ -74,9 +74,9 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-    
+
     public String getEntityTable() {
-    	return "volumes";
+        return "volumes";
     }
 
     public String getAccountName() {
@@ -118,22 +118,22 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     public static String getResultObjectName() {
-    	return "volume";
+        return "volume";
     }
-    
+
     public AsyncJob.Type getInstanceType() {
-    	return AsyncJob.Type.Volume;
+        return AsyncJob.Type.Volume;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         Long accountId = finalyzeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
             return UserContext.current().getCaller().getId();
         }
-        
+
         return accountId;
     }
 
@@ -146,7 +146,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     public String getEventDescription() {
         return  "creating volume: " + getVolumeName() + ((getSnapshotId() == null) ? "" : " from snapshot: " + getSnapshotId());
     }
-    
+
     @Override
     public void create() throws ResourceAllocationException{
 
@@ -155,9 +155,9 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
             this.setEntityId(volume.getId());
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create volume");
-        }  
+        }
     }
-    
+
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Volume Id: "+getEntityId()+((getSnapshotId() == null) ? "" : " from snapshot: " + getSnapshotId()));

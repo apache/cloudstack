@@ -40,7 +40,7 @@ public class AccountResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.DOMAIN) @Param(description="name of the Domain the account belongs too")
     private String domainName;
-    
+
     @SerializedName(ApiConstants.DEFAULT_ZONE_ID) @Param(description="the default zone of the account")
     private IdentityProxy defaultZoneId = new IdentityProxy("data_center");
 
@@ -100,7 +100,7 @@ public class AccountResponse extends BaseResponse {
 
     @SerializedName("vmrunning") @Param(description="the total number of virtual machines running for this account")
     private Integer vmRunning;
-    
+
     @SerializedName("projectlimit") @Param(description="the total number of projects the account can own", since="3.0.1")
     private String projectLimit;
 
@@ -109,7 +109,7 @@ public class AccountResponse extends BaseResponse {
 
     @SerializedName("projectavailable") @Param(description="the total number of projects available for administration by this account", since="3.0.1")
     private String projectAvailable;
-    
+
     @SerializedName("networklimit") @Param(description="the total number of networks the account can own", since="3.0.1")
     private String networkLimit;
 
@@ -118,7 +118,7 @@ public class AccountResponse extends BaseResponse {
 
     @SerializedName("networkavailable") @Param(description="the total number of networks available to be created for this account", since="3.0.1")
     private String networkAvailable;
-    
+
     @SerializedName("vpclimit") @Param(description="the total number of vpcs the account can own", since="3.0.5")
     private String vpcLimit;
 
@@ -127,20 +127,20 @@ public class AccountResponse extends BaseResponse {
 
     @SerializedName("vpcavailable") @Param(description="the total number of vpcs available to be created for this account", since="3.0.5")
     private String vpcAvailable;
-    
+
 
     @SerializedName(ApiConstants.STATE) @Param(description="the state of the account")
     private String state;
 
     @SerializedName(ApiConstants.IS_CLEANUP_REQUIRED) @Param(description="true if the account requires cleanup")
     private Boolean cleanupRequired;
-    
+
     @SerializedName("user")  @Param(description="the list of users associated with account", responseObject = UserResponse.class)
     private List<UserResponse> users;
-    
+
     @SerializedName(ApiConstants.NETWORK_DOMAIN) @Param(description="the network domain")
     private String networkDomain;
-    
+
     @SerializedName(ApiConstants.ACCOUNT_DETAILS) @Param(description="details for the account")
     private Map<String, String> details;
 
@@ -247,7 +247,7 @@ public class AccountResponse extends BaseResponse {
     public void setCleanupRequired(Boolean cleanupRequired) {
         this.cleanupRequired = cleanupRequired;
     }
-    
+
     public void setUsers(List<UserResponse> users) {
         this.users = users;
     }
@@ -255,9 +255,9 @@ public class AccountResponse extends BaseResponse {
     public void setNetworkDomain(String networkDomain) {
         this.networkDomain = networkDomain;
     }
-    
+
     public void setDetails(Map<String, String> details) {
-    	this.details = details;
+        this.details = details;
     }
 
     public void setProjectLimit(String projectLimit) {
@@ -283,8 +283,8 @@ public class AccountResponse extends BaseResponse {
     public void setNetworkAvailable(String networkAvailable) {
         this.networkAvailable = networkAvailable;
     }
-    
+
     public void setDefaultZone(Long defaultZoneId) {
-    	this.defaultZoneId.setValue(defaultZoneId);
+        this.defaultZoneId.setValue(defaultZoneId);
     }
 }

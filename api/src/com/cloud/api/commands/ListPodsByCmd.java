@@ -51,13 +51,13 @@ public class ListPodsByCmd extends BaseListCmd {
     @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="list Pods by Zone ID")
     private Long zoneId;
-    
+
     @Parameter(name=ApiConstants.ALLOCATION_STATE, type=CommandType.STRING, description="list pods by allocation state")
-    private String allocationState;    
-    
+    private String allocationState;
+
     @Parameter(name=ApiConstants.SHOW_CAPACITIES, type=CommandType.BOOLEAN, description="flag to display the capacity of the pods")
     private Boolean showCapacities;
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -73,15 +73,15 @@ public class ListPodsByCmd extends BaseListCmd {
     public Long getZoneId() {
         return zoneId;
     }
-    
+
     public String getAllocationState() {
-    	return allocationState;
-    }    
+        return allocationState;
+    }
 
     public Boolean getShowCapacities() {
-		return showCapacities;
-	}
-    
+        return showCapacities;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

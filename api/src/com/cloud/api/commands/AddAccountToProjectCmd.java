@@ -45,10 +45,10 @@ public class AddAccountToProjectCmd extends BaseAsyncCmd {
     @IdentityMapper(entityTableName="projects")
     @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, required=true, description="id of the project to add the account to")
     private Long projectId;
-    
+
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="name of the account to be added to the project")
     private String accountName;
-    
+
     @Parameter(name=ApiConstants.EMAIL, type=CommandType.STRING, description="email to which invitation to the project is going to be sent")
     private String email;
 
@@ -65,7 +65,7 @@ public class AddAccountToProjectCmd extends BaseAsyncCmd {
         return projectId;
     }
 
-    
+
     public String getEmail() {
         return email;
     }
@@ -84,7 +84,7 @@ public class AddAccountToProjectCmd extends BaseAsyncCmd {
         if (accountName == null && email == null) {
             throw new InvalidParameterValueException("Either accountName or email is required");
         }
-        
+
         UserContext.current().setEventDetails("Project id: "+ projectId + "; accountName " + accountName);
         boolean result = _projectService.addAccountToProject(getProjectId(), getAccountName(), getEmail());
         if (result) {
@@ -94,31 +94,31 @@ public class AddAccountToProjectCmd extends BaseAsyncCmd {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add account to the project");
         }
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         Project project= _projectService.getProject(getProjectId());
         //verify input parameters
         if (project == null) {
-        	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find project with specified id");
-        	ex.addProxyObject(project, getProjectId(), "projectId");            
+            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find project with specified id");
+            ex.addProxyObject(project, getProjectId(), "projectId");
             throw ex;
-        } 
-        
-        return _projectService.getProjectOwner(getProjectId()).getId(); 
+        }
+
+        return _projectService.getProjectOwner(getProjectId()).getId();
     }
-    
+
     @Override
     public String getEventType() {
         return EventTypes.EVENT_PROJECT_ACCOUNT_ADD;
     }
-    
+
     @Override
     public String getEventDescription() {
         if (accountName != null) {
             return  "Adding account " + getAccountName() + " to project: " + getProjectId();
         } else {
             return  "Sending invitation to email " + email + " to join project: " + getProjectId();
-        }  
+        }
     }
 }

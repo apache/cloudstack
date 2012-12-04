@@ -27,21 +27,21 @@ public class CapabilitiesResponse extends BaseResponse {
 
     @SerializedName("cloudstackversion") @Param(description="version of the cloud stack")
     private String cloudStackVersion;
-    
+
     @SerializedName("userpublictemplateenabled") @Param(description="true if user and domain admins can set templates to be shared, false otherwise")
     private boolean userPublicTemplateEnabled;
-    
+
     @SerializedName("supportELB") @Param(description="true if region supports elastic load balancer on basic zones")
     private String supportELB;
-    
+
     @SerializedName(ApiConstants.PROJECT_INVITE_REQUIRED) @Param(description="If invitation confirmation is required when add account to project")
     private Boolean projectInviteRequired;
-    
+
     @SerializedName(ApiConstants.ALLOW_USER_CREATE_PROJECTS) @Param(description="true if regular user is allowed to create projects")
     private Boolean allowUsersCreateProjects;
-    
+
     @SerializedName(ApiConstants.CUSTOM_DISK_OFF_MAX_SIZE) @Param(description="maximum size that can be specified when " +
-    		"create disk from disk offering with custom size")
+            "create disk from disk offering with custom size")
     private Long diskOffMaxSize;
 
 
@@ -61,13 +61,13 @@ public class CapabilitiesResponse extends BaseResponse {
         this.supportELB = supportELB;
     }
 
-	public void setProjectInviteRequired(Boolean projectInviteRequired) {
-		this.projectInviteRequired = projectInviteRequired;
-	}
+    public void setProjectInviteRequired(Boolean projectInviteRequired) {
+        this.projectInviteRequired = projectInviteRequired;
+    }
 
-	public void setAllowUsersCreateProjects(Boolean allowUsersCreateProjects) {
-		this.allowUsersCreateProjects = allowUsersCreateProjects;
-	}
+    public void setAllowUsersCreateProjects(Boolean allowUsersCreateProjects) {
+        this.allowUsersCreateProjects = allowUsersCreateProjects;
+    }
 
     public void setDiskOffMaxSize(Long diskOffMaxSize) {
         this.diskOffMaxSize = diskOffMaxSize;

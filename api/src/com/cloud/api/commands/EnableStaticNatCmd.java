@@ -44,18 +44,18 @@ public class EnableStaticNatCmd extends BaseCmd{
 
     @IdentityMapper(entityTableName="user_ip_address")
     @Parameter(name=ApiConstants.IP_ADDRESS_ID, type=CommandType.LONG, required=true, description="the public IP " +
-    		"address id for which static nat feature is being enabled")
+            "address id for which static nat feature is being enabled")
     private Long ipAddressId;
 
     @IdentityMapper(entityTableName="vm_instance")
     @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, required=true, description="the ID of " +
-    		"the virtual machine for enabling static nat feature")
+            "the virtual machine for enabling static nat feature")
     private Long virtualMachineId;
-    
+
     @IdentityMapper(entityTableName="networks")
-    @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, 
+    @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG,
         description="The network of the vm the static nat will be enabled for." +
-        		" Required when public Ip address is not associated with any Guest network yet (VPC case)")
+                " Required when public Ip address is not associated with any Guest network yet (VPC case)")
     private Long networkId;
 
     /////////////////////////////////////////////////////
@@ -69,18 +69,18 @@ public class EnableStaticNatCmd extends BaseCmd{
     public Long getVirtualMachineId() {
         return virtualMachineId;
     }
-    
+
     public long getNetworkId() {
         IpAddress ip = _entityMgr.findById(IpAddress.class, getIpAddressId());
         Long ntwkId = null;
-        
+
         if (ip.getAssociatedWithNetworkId() != null) {
             ntwkId = ip.getAssociatedWithNetworkId();
         } else {
             ntwkId = networkId;
         }
         if (ntwkId == null) {
-            throw new InvalidParameterValueException("Unable to enable static nat for the ipAddress id=" + ipAddressId + 
+            throw new InvalidParameterValueException("Unable to enable static nat for the ipAddress id=" + ipAddressId +
                     " as ip is not associated with any network and no networkId is passed in");
         }
         return ntwkId;
@@ -94,7 +94,7 @@ public class EnableStaticNatCmd extends BaseCmd{
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         UserVm userVm = _entityMgr.findById(UserVm.class, getVirtualMachineId());
@@ -106,7 +106,7 @@ public class EnableStaticNatCmd extends BaseCmd{
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException{ 
+    public void execute() throws ResourceUnavailableException{
         try {
             boolean result = _rulesService.enableStaticNat(ipAddressId, virtualMachineId, getNetworkId(), false);
             if (result) {

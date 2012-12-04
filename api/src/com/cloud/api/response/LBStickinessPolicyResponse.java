@@ -30,7 +30,7 @@ public class LBStickinessPolicyResponse extends BaseResponse {
     @SerializedName("id")
     @Param(description = "the LB Stickiness policy ID")
     private IdentityProxy id = new IdentityProxy("load_balancer_stickiness_policies");
-    
+
     @SerializedName("name")
     @Param(description = "the name of the Stickiness policy")
     private String name;
@@ -54,7 +54,7 @@ public class LBStickinessPolicyResponse extends BaseResponse {
     @SerializedName("params")
     @Param(description = "the params of the policy")
     private Map<String, String> params;
-    
+
     public Map<String, String> getParams() {
         return params;
     }
@@ -82,7 +82,7 @@ public class LBStickinessPolicyResponse extends BaseResponse {
     public String getMethodName() {
         return methodName;
     }
-    
+
     public String getState() {
         return state;
     }
@@ -102,9 +102,9 @@ public class LBStickinessPolicyResponse extends BaseResponse {
         if (stickinesspolicy.getId() != 0)
             setId(stickinesspolicy.getId());
 
-        /* Get the param and values from the database and fill the response object 
-         *  The following loop is to 
-         *    1) convert from List of Pair<String,String> to Map<String, String> 
+        /* Get the param and values from the database and fill the response object
+         *  The following loop is to
+         *    1) convert from List of Pair<String,String> to Map<String, String>
          *    2)  combine all params with name with ":" , currently we have one param called "domain" that can appear multiple times.
          * */
 
@@ -118,7 +118,7 @@ public class LBStickinessPolicyResponse extends BaseResponse {
             {
                 sb.append(":").append(tempParamList.get(key));
             }
-                
+
             tempParamList.put(key,sb.toString());
         }
 

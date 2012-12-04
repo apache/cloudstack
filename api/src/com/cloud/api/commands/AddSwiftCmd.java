@@ -33,7 +33,7 @@ import com.cloud.user.Account;
 public class AddSwiftCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddSwiftCmd.class.getName());
     private static final String s_name = "addswiftresponse";
-     
+
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
@@ -76,14 +76,14 @@ public class AddSwiftCmd extends BaseCmd {
 
     @Override
     public String getCommandName() {
-    	return s_name;
+        return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-    
+
     @Override
     public void execute(){
         try {

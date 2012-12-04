@@ -38,33 +38,33 @@ public class UpdateVPCOfferingCmd extends BaseAsyncCmd{
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    
+
     @IdentityMapper(entityTableName="vpc_offerings")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the id of the VPC offering")
     private Long id;
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the VPC offering")
     private String vpcOffName;
-    
+
     @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="the display text of the VPC offering")
     private String displayText;
-   
+
     @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="update state for the VPC offering; " +
-    		"supported states - Enabled/Disabled")
+            "supported states - Enabled/Disabled")
     private String state;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-    
+
     public String getVpcOfferingName() {
         return vpcOffName;
     }
-    
+
     public String getDisplayText() {
         return displayText;
     }
-    
+
     public Long getId() {
         return id;
     }
@@ -72,7 +72,7 @@ public class UpdateVPCOfferingCmd extends BaseAsyncCmd{
     public String getState() {
         return state;
     }
-    
+
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -81,7 +81,7 @@ public class UpdateVPCOfferingCmd extends BaseAsyncCmd{
     public String getCommandName() {
         return _name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;

@@ -60,7 +60,7 @@ public class EnableUserCmd extends BaseCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         User user = _entityMgr.findById(User.class, getId());
@@ -70,14 +70,14 @@ public class EnableUserCmd extends BaseCmd {
 
         return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
-    
+
     @Override
     public void execute(){
         UserContext.current().setEventDetails("UserId: "+getId());
         UserAccount user = _accountService.enableUser(getId());
         if (user != null){
             UserResponse response = _responseGenerator.createUserResponse(user);
-            response.setResponseName(getCommandName());   
+            response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to enable user");

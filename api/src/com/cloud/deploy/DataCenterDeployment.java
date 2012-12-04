@@ -37,7 +37,7 @@ public class DataCenterDeployment implements DeploymentPlan {
     public DataCenterDeployment(long dataCenterId, Long podId, Long clusterId, Long hostId, Long poolId, Long physicalNetworkId) {
         this(dataCenterId, podId, clusterId, hostId, poolId, physicalNetworkId, null);
     }
-    
+
     public DataCenterDeployment(long dataCenterId, Long podId, Long clusterId, Long hostId, Long poolId, Long physicalNetworkId, ReservationContext context) {
         _dcId = dataCenterId;
         _podId = podId;
@@ -87,7 +87,7 @@ public class DataCenterDeployment implements DeploymentPlan {
     public Long getPhysicalNetworkId() {
         return _physicalNetworkId;
     }
-    
+
     @Override
     public ReservationContext getReservationContext() {
         return _context;

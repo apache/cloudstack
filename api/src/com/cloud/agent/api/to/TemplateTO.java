@@ -23,16 +23,16 @@ public class TemplateTO {
     private long id;
     private String uniqueName;
     private ImageFormat format;
-    
+
     protected TemplateTO() {
     }
-    
+
     public TemplateTO(VirtualMachineTemplate template) {
         this.id = template.getId();
         this.uniqueName = template.getUniqueName();
         this.format = template.getFormat();
     }
-    
+
     public long getId() {
         return id;
     }

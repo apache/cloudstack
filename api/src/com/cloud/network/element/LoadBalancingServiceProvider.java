@@ -38,7 +38,7 @@ public interface LoadBalancingServiceProvider extends NetworkElement {
      * @param network
      * @param rule
      * @return true/false. true should be return if there are no validations. false should be return if any oneof the validation fails.
-     * @throws 
+     * @throws
      */
     boolean validateLBRule(Network network, LoadBalancingRule rule);
 }

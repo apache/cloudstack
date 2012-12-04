@@ -25,26 +25,26 @@ import com.google.gson.annotations.SerializedName;
 public class ResourceTagResponse extends BaseResponse implements ControlledEntityResponse{
     @SerializedName(ApiConstants.KEY) @Param(description="tag key name")
     private String key;
-    
+
     @SerializedName(ApiConstants.VALUE) @Param(description="tag value")
     private String value;
-    
+
     @SerializedName(ApiConstants.RESOURCE_TYPE) @Param(description="resource type")
     private String resourceType;
-    
+
     @SerializedName(ApiConstants.RESOURCE_ID) @Param(description="id of the resource")
     private String id;
-    
+
     @SerializedName(ApiConstants.ACCOUNT)
     @Param(description = "the account associated with the tag")
     private String accountName;
-    
+
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id the tag belongs to")
     private IdentityProxy projectId = new IdentityProxy("projects");
-    
+
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name where tag belongs to")
     private String projectName;
-    
+
     @SerializedName(ApiConstants.DOMAIN_ID)
     @Param(description = "the ID of the domain associated with the tag")
     private IdentityProxy domainId = new IdentityProxy("domain");
@@ -52,7 +52,7 @@ public class ResourceTagResponse extends BaseResponse implements ControlledEntit
     @SerializedName(ApiConstants.DOMAIN)
     @Param(description = "the domain associated with the tag")
     private String domainName;
-    
+
     @SerializedName(ApiConstants.CUSTOMER) @Param(description="customer associated with the tag")
     private String customer;
 
@@ -71,7 +71,7 @@ public class ResourceTagResponse extends BaseResponse implements ControlledEntit
     public void setId(String id) {
         this.id = id;
     }
-    
+
     public void setAccountName(String accountName) {
         this.accountName = accountName;
     }
@@ -79,21 +79,21 @@ public class ResourceTagResponse extends BaseResponse implements ControlledEntit
     public void setDomainId(Long domainId) {
         this.domainId.setValue(domainId);
     }
-    
+
     public void setDomainName(String domainName) {
         this.domainName = domainName;
     }
-    
+
     @Override
     public void setProjectId(Long projectId) {
         this.projectId.setValue(projectId);
     }
-    
+
     @Override
     public void setProjectName(String projectName) {
         this.projectName = projectName;
-    }   
-   
+    }
+
     public void setCustomer(String customer) {
         this.customer = customer;
     }

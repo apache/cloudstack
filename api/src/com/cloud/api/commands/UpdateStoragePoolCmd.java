@@ -46,7 +46,7 @@ public class UpdateStoragePoolCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.TAGS, type=CommandType.LIST, collectionType=CommandType.STRING, description="comma-separated list of tags for the storage pool")
     private List<String> tags;
-    
+
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -68,12 +68,12 @@ public class UpdateStoragePoolCmd extends BaseCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-    
+
     @Override
     public void execute(){
         StoragePool result = _storageService.updateStoragePool(this);

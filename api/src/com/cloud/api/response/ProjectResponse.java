@@ -25,31 +25,31 @@ import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 public class ProjectResponse extends BaseResponse{
-    
+
     @SerializedName(ApiConstants.ID) @Param(description="the id of the project")
     private IdentityProxy id = new IdentityProxy("projects");
-    
+
     @SerializedName(ApiConstants.NAME) @Param(description="the name of the project")
     private String name;
-    
+
     @SerializedName(ApiConstants.DISPLAY_TEXT) @Param(description="the displaytext of the project")
     private String displaytext;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain id the project belongs to")
     private IdentityProxy domainId = new IdentityProxy("domain");
-    
+
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name where the project belongs to")
     private String domain;
-    
+
     @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account name of the project's owner")
     private String ownerName;
-    
+
     @SerializedName(ApiConstants.STATE) @Param(description="the state of the project")
     private String state;
-    
+
     @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with vm", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
- 
+
 
     public void setId(Long id) {
         this.id.setValue(id);
@@ -78,7 +78,7 @@ public class ProjectResponse extends BaseResponse{
     public void setState(String state) {
         this.state = state;
     }
-    
+
     public void setTags(List<ResourceTagResponse> tags) {
         this.tags = tags;
     }

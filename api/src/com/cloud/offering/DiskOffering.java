@@ -21,7 +21,7 @@ import java.util.Date;
 /**
  * Represents a disk offering that specifies what the end user needs in
  * the disk offering.
- * 
+ *
  */
 public interface DiskOffering {
     long getId();

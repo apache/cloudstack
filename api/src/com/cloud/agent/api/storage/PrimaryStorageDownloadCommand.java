@@ -26,7 +26,7 @@ public class PrimaryStorageDownloadCommand extends AbstractDownloadCommand {
 	String localPath;
 	String poolUuid;
 	long poolId;
-	
+
 	String secondaryStorageUrl;
 	String primaryStorageUrl;
 
@@ -39,39 +39,39 @@ public class PrimaryStorageDownloadCommand extends AbstractDownloadCommand {
         this.poolUuid = poolUuid;
         setWait(wait);
     }
-   
+
     public String getPoolUuid() {
         return poolUuid;
     }
-    
+
     public long getPoolId() {
         return poolId;
     }
-    
+
     public void setLocalPath(String path) {
     	this.localPath = path;
     }
-    
+
     public String getLocalPath() {
     	return localPath;
     }
-    
+
     public void setSecondaryStorageUrl(String url) {
     	secondaryStorageUrl = url;
     }
-    
+
     public String getSecondaryStorageUrl() {
     	return secondaryStorageUrl;
     }
-    
+
     public void setPrimaryStorageUrl(String url) {
     	primaryStorageUrl = url;
     }
-    
+
     public String getPrimaryStorageUrl() {
     	return primaryStorageUrl;
     }
-    
+
     @Override
     public boolean executeInSequence() {
         return true;

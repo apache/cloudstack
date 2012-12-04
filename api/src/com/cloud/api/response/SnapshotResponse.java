@@ -38,14 +38,14 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
     @SerializedName(ApiConstants.DOMAIN_ID)
     @Param(description = "the domain ID of the snapshot's account")
     private IdentityProxy domainId = new IdentityProxy("domain");
-    
+
     @SerializedName(ApiConstants.DOMAIN)
     @Param(description = "the domain name of the snapshot's account")
     private String domainName;
-    
+
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the snapshot")
     private IdentityProxy projectId = new IdentityProxy("projects");
-    
+
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the snapshot")
     private String projectName;
 
@@ -66,7 +66,7 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
     private String volumeType;
 
     @SerializedName(ApiConstants.CREATED)
-    @Param(description = "	the date the snapshot was created")
+    @Param(description = "  the date the snapshot was created")
     private Date created;
 
     @SerializedName(ApiConstants.NAME)
@@ -80,7 +80,7 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
     @SerializedName(ApiConstants.STATE)
     @Param(description = "the state of the snapshot. BackedUp means that snapshot is ready to be used; Creating - the snapshot is being allocated on the primary storage; BackingUp - the snapshot is being backed up on secondary storage")
     private Snapshot.Status state;
-    
+
     @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with snapshot", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
 
@@ -88,7 +88,7 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
     public Long getObjectId() {
         return getId();
     }
-   
+
     private Long getId() {
         return id.getValue();
     }
@@ -158,7 +158,7 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
     public void setProjectName(String projectName) {
         this.projectName = projectName;
     }
-    
+
     public void setTags(List<ResourceTagResponse> tags) {
         this.tags = tags;
     }

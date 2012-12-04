@@ -45,41 +45,41 @@ public class Site2SiteCustomerGatewayResponse extends BaseResponse implements Co
 
     @SerializedName(ApiConstants.IKE_POLICY) @Param(description="IKE policy of customer gateway")
     private String ikePolicy;
-    
+
     @SerializedName(ApiConstants.ESP_POLICY) @Param(description="IPsec policy of customer gateway")
     private String espPolicy;
-    
+
     @SerializedName(ApiConstants.IKE_LIFETIME) @Param(description="Lifetime of IKE SA of customer gateway")
     private Long ikeLifetime;
-    
+
     @SerializedName(ApiConstants.ESP_LIFETIME) @Param(description="Lifetime of ESP SA of customer gateway")
     private Long espLifetime;
-    
+
     @SerializedName(ApiConstants.DPD) @Param(description="if DPD is enabled for customer gateway")
     private Boolean dpd;
-    
+
     @SerializedName(ApiConstants.ACCOUNT) @Param(description="the owner")
     private String accountName;
-    
+
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id")
     private IdentityProxy projectId = new IdentityProxy("projects");
-    
+
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain id of the owner")
     private IdentityProxy domainId = new IdentityProxy("domain");
-    
+
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the owner")
     private String domain;
-    
+
     @SerializedName(ApiConstants.REMOVED) @Param(description="the date and time the host was removed")
     private Date removed;
 
-	public void setId(Long id) {
-		this.id.setValue(id);
-	}
-	
+    public void setId(Long id) {
+        this.id.setValue(id);
+    }
+
     public void setName(String name) {
         this.name = name;
     }
@@ -98,32 +98,32 @@ public class Site2SiteCustomerGatewayResponse extends BaseResponse implements Co
 
     public void setIpsecPsk(String ipsecPsk) {
         this.ipsecPsk = ipsecPsk;
-    }	
-    
+    }
+
     public void setIkePolicy(String ikePolicy) {
         this.ikePolicy = ikePolicy;
-    }	
-    
+    }
+
     public void setEspPolicy(String espPolicy) {
         this.espPolicy = espPolicy;
-    }	
-    
+    }
+
     public void setIkeLifetime(Long ikeLifetime) {
         this.ikeLifetime = ikeLifetime;
-    }	
-    
+    }
+
     public void setEspLifetime(Long espLifetime) {
         this.espLifetime = espLifetime;
-    }	
-    
+    }
+
     public void setDpd(Boolean dpd) {
         this.dpd= dpd;
-    }	
-    
+    }
+
     public void setRemoved(Date removed) {
         this.removed = removed;
-    }	
-    
+    }
+
     @Override
     public void setAccountName(String accountName) {
         this.accountName = accountName;

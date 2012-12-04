@@ -32,9 +32,9 @@ import com.cloud.user.Account;
 
 @Implementation(description="Migrate volume", responseObject=VolumeResponse.class, since="3.0.0")
 public class MigrateVolumeCmd extends BaseAsyncCmd {
-	private static final String s_name = "migratevolumeresponse";
-	
-	 /////////////////////////////////////////////////////
+    private static final String s_name = "migratevolumeresponse";
+
+     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
@@ -45,7 +45,7 @@ public class MigrateVolumeCmd extends BaseAsyncCmd {
     @IdentityMapper(entityTableName="storage_pool")
     @Parameter(name=ApiConstants.STORAGE_ID, type=CommandType.LONG, required=true, description="destination storage pool ID to migrate the volume to")
     private Long storageId;
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -55,7 +55,7 @@ public class MigrateVolumeCmd extends BaseAsyncCmd {
     }
 
     public Long getStoragePoolId() {
-    	return storageId;
+        return storageId;
     }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -65,10 +65,10 @@ public class MigrateVolumeCmd extends BaseAsyncCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
-    	  Volume volume = _entityMgr.findById(Volume.class, getVolumeId());
+          Volume volume = _entityMgr.findById(Volume.class, getVolumeId());
           if (volume != null) {
               return volume.getAccountId();
           }
@@ -85,22 +85,22 @@ public class MigrateVolumeCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "Attempting to migrate volume Id: " + getVolumeId() + " to storage pool Id: "+ getStoragePoolId();
     }
-    
-    
+
+
     @Override
     public void execute(){
-    	Volume result;
-		try {
-			result = _storageService.migrateVolume(getVolumeId(), getStoragePoolId());
-			 if (result != null) {
-	             VolumeResponse response = _responseGenerator.createVolumeResponse(result);
-	             response.setResponseName(getCommandName());
-	             this.setResponseObject(response);
-			 }
-		} catch (ConcurrentOperationException e) {
-			throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to migrate volume: ");
-		}
-    	
+        Volume result;
+        try {
+            result = _storageService.migrateVolume(getVolumeId(), getStoragePoolId());
+             if (result != null) {
+                 VolumeResponse response = _responseGenerator.createVolumeResponse(result);
+                 response.setResponseName(getCommandName());
+                 this.setResponseObject(response);
+             }
+        } catch (ConcurrentOperationException e) {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to migrate volume: ");
+        }
+
     }
 
 }

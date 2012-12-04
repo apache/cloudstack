@@ -52,7 +52,7 @@ public class UpdateHostCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.HOST_TAGS, type=CommandType.LIST, collectionType=CommandType.STRING, description="list of tags to be added to the host")
     private List<String> hostTags;
-    
+
     @Parameter(name=ApiConstants.URL, type=CommandType.STRING, description="the new uri for the secondary storage: nfs://host/path")
     private String url;
 
@@ -74,10 +74,10 @@ public class UpdateHostCmd extends BaseCmd {
 
     public List<String> getHostTags() {
         return hostTags;
-    }    
-    
+    }
+
     public String getUrl() {
-    	return url;
+        return url;
     }
 
     /////////////////////////////////////////////////////
@@ -102,13 +102,13 @@ public class UpdateHostCmd extends BaseCmd {
     public void execute(){
         Host result;
         try {
-	        result = _resourceService.updateHost(this);
+            result = _resourceService.updateHost(this);
             HostResponse hostResponse = _responseGenerator.createHostResponse(result);
             hostResponse.setResponseName(getCommandName());
             this.setResponseObject(hostResponse);
         } catch (Exception e) {
-        	s_logger.debug("Failed to update host:" + getId(), e);
-        	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update host:" + getId() + "," + e.getMessage());
+            s_logger.debug("Failed to update host:" + getId(), e);
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update host:" + getId() + "," + e.getMessage());
         }
     }
 }

@@ -36,7 +36,7 @@ public class CapacityResponse extends BaseResponse {
 
     @SerializedName("podname") @Param(description="the Pod name")
     private String podName;
-    
+
     @SerializedName(ApiConstants.CLUSTER_ID) @Param(description="the Cluster ID")
     private IdentityProxy clusterId = new IdentityProxy("cluster");
 
@@ -93,22 +93,22 @@ public class CapacityResponse extends BaseResponse {
     }
 
     public Long getClusterId() {
-		return clusterId.getValue();
-	}
+        return clusterId.getValue();
+    }
 
-	public void setClusterId(Long clusterId) {
-		this.clusterId.setValue(clusterId);
-	}
+    public void setClusterId(Long clusterId) {
+        this.clusterId.setValue(clusterId);
+    }
 
-	public String getClusterName() {
-		return clusterName;
-	}
+    public String getClusterName() {
+        return clusterName;
+    }
 
-	public void setClusterName(String clusterName) {
-		this.clusterName = clusterName;
-	}
+    public void setClusterName(String clusterName) {
+        this.clusterName = clusterName;
+    }
 
-	public Long getCapacityUsed() {
+    public Long getCapacityUsed() {
         return capacityUsed;
     }
 

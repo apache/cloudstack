@@ -68,7 +68,7 @@ public class ListVolumesCmd extends BaseListTaggedResourcesCmd {
     @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the ID of the availability zone")
     private Long zoneId;
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -101,7 +101,7 @@ public class ListVolumesCmd extends BaseListTaggedResourcesCmd {
     public Long getZoneId() {
         return zoneId;
     }
-    
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -110,12 +110,12 @@ public class ListVolumesCmd extends BaseListTaggedResourcesCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public AsyncJob.Type getInstanceType() {
-    	return AsyncJob.Type.Volume;
+        return AsyncJob.Type.Volume;
     }
-    
+
     @Override
     public void execute(){
         Pair<List<? extends Volume>, Integer> volumes = _storageService.searchForVolumes(this);

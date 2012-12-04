@@ -24,7 +24,7 @@ import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class UpgradeVmResponse extends BaseResponse {
-	@SerializedName("id")
+    @SerializedName("id")
     private IdentityProxy id = new IdentityProxy("vm_instance");
 
     public String getName() {
@@ -268,7 +268,7 @@ public class UpgradeVmResponse extends BaseResponse {
     @SerializedName("templatename") @Param(description="the name of the template for the virtual machine")
     private String templateName;
 
-    @SerializedName("templatedisplaytext") @Param(description="	an alternate display text of the template for the virtual machine")
+    @SerializedName("templatedisplaytext") @Param(description=" an alternate display text of the template for the virtual machine")
     private String templateDisplayText;
 
     @SerializedName("passwordenabled") @Param(description="true if the password rest feature is enabled, false otherwise")

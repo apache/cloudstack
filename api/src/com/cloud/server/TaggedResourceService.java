@@ -24,7 +24,7 @@ import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.utils.Pair;
 
 public interface TaggedResourceService {
-    
+
     TaggedResourceType getResourceType (String resourceTypeStr);
 
     /**
@@ -56,6 +56,6 @@ public interface TaggedResourceService {
      * @return
      */
     boolean deleteTags(List<String> resourceIds, TaggedResourceType resourceType, Map<String, String> tags);
-    
+
     List<? extends ResourceTag> listByResourceTypeAndId(TaggedResourceType type, long resourceId);
 }

@@ -73,7 +73,7 @@ public class RegisterTemplateCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.PASSWORD_ENABLED, type=CommandType.BOOLEAN, description="true if the template supports the password reset feature; default is false")
     private Boolean passwordEnabled;
-    
+
     @Parameter(name=ApiConstants.SSHKEY_ENABLED, type=CommandType.BOOLEAN, description="true if the template supports the sshkey upload feature; default is false")
     private Boolean sshKeyEnabled;
 
@@ -102,11 +102,11 @@ public class RegisterTemplateCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.TEMPLATE_TAG, type=CommandType.STRING, description="the tag for this template.")
     private String templateTag;
-    
+
     @IdentityMapper(entityTableName="projects")
     @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="Register template for the project")
     private Long projectId;
-    
+
     @Parameter(name=ApiConstants.DETAILS, type=CommandType.MAP, description="Template details in key/value pairs.")
     protected Map details;
 
@@ -149,7 +149,7 @@ public class RegisterTemplateCmd extends BaseCmd {
     public Boolean isPasswordEnabled() {
         return passwordEnabled;
     }
-    
+
     public Boolean isSshKeyEnabled() {
         return sshKeyEnabled;
     }
@@ -180,22 +180,22 @@ public class RegisterTemplateCmd extends BaseCmd {
 
     public String getChecksum() {
         return checksum;
-    }	
+    }
 
     public String getTemplateTag() {
         return templateTag;
     }
-    
+
     public Map getDetails() {
-    	if (details == null || details.isEmpty()) {
-    		return null;
-    	}
-    	
-    	Collection paramsCollection = details.values();
-    	Map params = (Map) (paramsCollection.toArray())[0];
-    	return params;
+        if (details == null || details.isEmpty()) {
+            return null;
+        }
+
+        Collection paramsCollection = details.values();
+        Map params = (Map) (paramsCollection.toArray())[0];
+        return params;
     }
-    
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -215,9 +215,9 @@ public class RegisterTemplateCmd extends BaseCmd {
         if (accountId == null) {
             return UserContext.current().getCaller().getId();
         }
-        
+
         return accountId;
-    } 	
+    }
 
     @Override
     public void execute() throws ResourceAllocationException{
@@ -227,7 +227,7 @@ public class RegisterTemplateCmd extends BaseCmd {
                 ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
                 List<TemplateResponse> templateResponses = _responseGenerator.createTemplateResponses(template.getId(), zoneId, false);
                 response.setResponses(templateResponses);
-                response.setResponseName(getCommandName());              
+                response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to register template");

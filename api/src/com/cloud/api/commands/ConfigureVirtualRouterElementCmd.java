@@ -39,9 +39,9 @@ import com.cloud.user.UserContext;
 
 @Implementation(responseObject=VirtualRouterProviderResponse.class, description="Configures a virtual router element.")
 public class ConfigureVirtualRouterElementCmd extends BaseAsyncCmd {
-	public static final Logger s_logger = Logger.getLogger(ConfigureVirtualRouterElementCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(ConfigureVirtualRouterElementCmd.class.getName());
     private static final String s_name = "configurevirtualrouterelementresponse";
-    
+
     @PlugService
     private VirtualRouterElementService _service;
 
@@ -56,7 +56,7 @@ public class ConfigureVirtualRouterElementCmd extends BaseAsyncCmd {
     @IdentityMapper(entityTableName = "physical_network_service_providers")
     @Parameter(name=ApiConstants.ENABLED, type=CommandType.BOOLEAN, required=true, description="Enabled/Disabled the service provider")
     private Boolean enabled;
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -85,11 +85,11 @@ public class ConfigureVirtualRouterElementCmd extends BaseAsyncCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     public static String getResultObjectName() {
-    	return "boolean";
+        return "boolean";
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
@@ -104,15 +104,15 @@ public class ConfigureVirtualRouterElementCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "configuring virtual router provider: " + id;
     }
-    
+
     public AsyncJob.Type getInstanceType() {
-    	return AsyncJob.Type.None;
+        return AsyncJob.Type.None;
     }
-    
+
     public Long getInstanceId() {
         return id;
     }
-	
+
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
         UserContext.current().setEventDetails("Virtual router element: " + id);

@@ -38,7 +38,7 @@ public class AddHostCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddHostCmd.class.getName());
 
     private static final String s_name = "addhostresponse";
-    
+
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
@@ -66,10 +66,10 @@ public class AddHostCmd extends BaseCmd {
     @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="the Zone ID for the host")
     private Long zoneId;
-    
+
     @Parameter(name=ApiConstants.HYPERVISOR, type=CommandType.STRING, required=true, description="hypervisor type of the host")
     private String hypervisor;
-        
+
     @Parameter(name=ApiConstants.ALLOCATION_STATE, type=CommandType.STRING, description="Allocation state of this Host for allocation of new resources")
     private String allocationState;
 
@@ -107,33 +107,33 @@ public class AddHostCmd extends BaseCmd {
     public Long getZoneId() {
         return zoneId;
     }
-    
+
     public String getHypervisor() {
-    	return hypervisor;
+        return hypervisor;
     }
-    
+
     public List<String> getHostTags() {
         return hostTags;
     }
-    
+
     public String getAllocationState() {
-    	return allocationState;
-    }    
-    
+        return allocationState;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
     @Override
     public String getCommandName() {
-    	return s_name;
+        return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-    
+
     @Override
     public void execute(){
         try {
@@ -151,7 +151,7 @@ public class AddHostCmd extends BaseCmd {
 
             response.setResponses(hostResponses);
             response.setResponseName(getCommandName());
-            
+
             this.setResponseObject(response);
         } catch (DiscoveryException ex) {
             s_logger.warn("Exception: ", ex);

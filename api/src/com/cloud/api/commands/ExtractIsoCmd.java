@@ -35,7 +35,7 @@ import com.cloud.user.UserContext;
 
 @Implementation(description="Extracts an ISO", responseObject=ExtractResponse.class)
 public class ExtractIsoCmd extends BaseAsyncCmd {
-	public static final Logger s_logger = Logger.getLogger(ExtractIsoCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(ExtractIsoCmd.class.getName());
 
     private static final String s_name = "extractisoresponse";
 
@@ -53,7 +53,7 @@ public class ExtractIsoCmd extends BaseAsyncCmd {
     @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=false, description="the ID of the zone where the ISO is originally located")
     private Long zoneId;
-    
+
     @Parameter(name=ApiConstants.MODE, type=CommandType.STRING, required=true, description="the mode of extraction - HTTP_DOWNLOAD or FTP_UPLOAD")
     private String mode;
 
@@ -109,19 +109,19 @@ public class ExtractIsoCmd extends BaseAsyncCmd {
     public static String getStaticName() {
         return s_name;
     }
-    
+
     public AsyncJob.Type getInstanceType() {
-    	return AsyncJob.Type.Iso;
+        return AsyncJob.Type.Iso;
     }
-    
+
     public Long getInstanceId() {
-    	return getId();
+        return getId();
     }
-    
+
     @Override
     public void execute(){
         try {
-        	UserContext.current().setEventDetails(getEventDescription());
+            UserContext.current().setEventDetails(getEventDescription());
             Long uploadId = _templateService.extract(this);
             if (uploadId != null){
                 ExtractResponse response = _responseGenerator.createExtractResponse(uploadId, id, zoneId, getEntityOwnerId(), mode);

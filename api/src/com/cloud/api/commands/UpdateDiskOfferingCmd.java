@@ -45,7 +45,7 @@ public class UpdateDiskOfferingCmd extends BaseCmd{
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="updates name of the disk offering with this value")
     private String diskOfferingName;
-    
+
     @Parameter(name=ApiConstants.SORT_KEY, type=CommandType.INTEGER, description="sort key of the disk offering, integer")
     private Integer sortKey;
 
@@ -64,26 +64,26 @@ public class UpdateDiskOfferingCmd extends BaseCmd{
     public String getDiskOfferingName() {
         return diskOfferingName;
     }
-    
+
     public Integer getSortKey() {
-    	return sortKey;
+        return sortKey;
     }
 
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-    
+
     @Override
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-    
+
     @Override
     public void execute(){
         DiskOffering result = _configService.updateDiskOffering(this);

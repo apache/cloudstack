@@ -66,7 +66,7 @@ public class ListSystemVMsCmd extends BaseListCmd {
     @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the Zone ID of the system VM")
     private Long zoneId;
-    
+
     @IdentityMapper(entityTableName="storage_pool")
     @Parameter(name=ApiConstants.STORAGE_ID, type=CommandType.LONG, description="the storage ID where vm's volumes belong to", since="3.0.1")
     private Long storageId;
@@ -102,7 +102,7 @@ public class ListSystemVMsCmd extends BaseListCmd {
     public Long getZoneId() {
         return zoneId;
     }
-    
+
     public Long getStorageId() {
         return storageId;
     }
@@ -115,11 +115,11 @@ public class ListSystemVMsCmd extends BaseListCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     public AsyncJob.Type getInstanceType() {
-    	return AsyncJob.Type.SystemVm;
+        return AsyncJob.Type.SystemVm;
     }
-    
+
     @Override
     public void execute(){
         Pair<List<? extends VirtualMachine>, Integer> systemVMs = _mgr.searchForSystemVm(this);

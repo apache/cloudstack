@@ -21,11 +21,11 @@ import com.cloud.utils.SerialVersionUID;
 
 public class InsufficientVirtualNetworkCapcityException extends InsufficientNetworkCapacityException {
     private static final long serialVersionUID = SerialVersionUID.InsufficientVirtualNetworkCapacityException;
-    
+
     public InsufficientVirtualNetworkCapcityException(String msg, Class<?> scope, Long id) {
         super(msg, scope, id);
     }
-    
+
     public InsufficientVirtualNetworkCapcityException(String msg, long podId) {
         this(msg, Pod.class, podId);
     }

@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.user.project.command;
 
 import org.apache.log4j.Logger;
 
@@ -31,51 +31,27 @@ import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
 @Implementation(description = "Accepts or declines project invitation", responseObject = SuccessResponse.class, since = "3.0.0")
-public class UpdateProjectInvitationCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdateProjectInvitationCmd.class.getName());
-    private static final String s_name = "updateprojectinvitationresponse";
+public class DeleteProjectInvitationCmd extends BaseAsyncCmd {
+    public static final Logger s_logger = Logger.getLogger(DeleteProjectInvitationCmd.class.getName());
+    private static final String s_name = "deleteprojectinvitationresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
-    @IdentityMapper(entityTableName = "projects")
-    @Parameter(name = ApiConstants.PROJECT_ID, required = true, type = CommandType.LONG, description = "id of the project to join")
-    private Long projectId;
-
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "account that is joining the project")
-    private String accountName;
-
-    @Parameter(name = ApiConstants.TOKEN, type = CommandType.STRING, description = "list invitations for specified account; this parameter has to be specified with domainId")
-    private String token;
-
-    @Parameter(name = ApiConstants.ACCEPT, type = CommandType.BOOLEAN, description = "if true, accept the invitation, decline if false. True by default")
-    private Boolean accept;
+    @IdentityMapper(entityTableName = "project_invitations")
+    @Parameter(name = ApiConstants.ID, required = true, type = CommandType.LONG, description = "id of the invitation")
+    private Long id;
 
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
-    public Long getProjectId() {
-        return projectId;
-    }
-
-    public String getAccountName() {
-        return accountName;
+    public Long getId() {
+        return id;
     }
 
     @Override
     public String getCommandName() {
         return s_name;
-    }
-
-    public String getToken() {
-        return token;
-    }
-
-    public Boolean getAccept() {
-        if (accept == null) {
-            return true;
-        }
-        return accept;
     }
 
     // ///////////////////////////////////////////////////
@@ -90,23 +66,24 @@ public class UpdateProjectInvitationCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        UserContext.current().setEventDetails("Project id: " + projectId + "; accountName " + accountName + "; accept " + getAccept());
-        boolean result = _projectService.updateInvitation(projectId, accountName, token, getAccept());
+        UserContext.current().setEventDetails("Project invitation id " + id);
+        boolean result = _projectService.deleteProjectInvitation(id);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to join the project");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete the project invitation");
         }
     }
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_PROJECT_INVITATION_UPDATE;
+        return EventTypes.EVENT_PROJECT_INVITATION_REMOVE;
     }
 
     @Override
     public String getEventDescription() {
-        return "Updating project invitation for projectId " + projectId;
+        return "Project invitatino id " + id + " is being removed";
     }
+
 }

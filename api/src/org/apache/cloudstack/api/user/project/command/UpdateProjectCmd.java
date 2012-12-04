@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.user.project.command;
 
 import org.apache.log4j.Logger;
 
@@ -25,33 +25,47 @@ import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import com.cloud.api.response.SuccessResponse;
+import com.cloud.api.response.ProjectResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.projects.Project;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Deletes a project", responseObject=SuccessResponse.class, since="3.0.0")
-public class DeleteProjectCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteProjectCmd.class.getName());
+@Implementation(description="Updates a project", responseObject=ProjectResponse.class, since="3.0.0")
+public class UpdateProjectCmd extends BaseAsyncCmd {
+    public static final Logger s_logger = Logger.getLogger(UpdateProjectCmd.class.getName());
 
-    private static final String s_name = "deleteprojectresponse";
+    private static final String s_name = "updateprojectresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
     @IdentityMapper(entityTableName="projects")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="id of the project to be deleted")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="id of the project to be modified")
     private Long id;
+
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="new Admin account for the project")
+    private String accountName;
+
+    @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="display text of the project")
+    private String displayText;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
+    public String getAccountName() {
+        return accountName;
+    }
 
-    public Long geId() {
+    public Long getId() {
         return id;
+    }
+
+    public String getDisplayText() {
+        return displayText;
     }
 
     @Override
@@ -59,41 +73,42 @@ public class DeleteProjectCmd extends BaseAsyncCmd {
         return s_name;
     }
 
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
-
-    @Override
-    public void execute(){
-        UserContext.current().setEventDetails("Project Id: " + id);
-        boolean result = _projectService.deleteProject(id);
-        if (result) {
-            SuccessResponse response = new SuccessResponse(getCommandName());
-            this.setResponseObject(response);
-        } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete project");
-        }
-    }
-    
-    @Override
-    public String getEventType() {
-        return EventTypes.EVENT_PROJECT_DELETE;
-    }
-    
-    @Override
-    public String getEventDescription() {
-        return  "Deleting project: " + id;
-    }
-    
     @Override
     public long getEntityOwnerId() {
         Project project= _projectService.getProject(id);
         //verify input parameters
         if (project == null) {
             throw new InvalidParameterValueException("Unable to find project by id " + id);
-        } 
-        
-        return _projectService.getProjectOwner(id).getId(); 
+        }
+
+        return _projectService.getProjectOwner(id).getId();
     }
-    
+
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
+
+    @Override
+    public void execute() throws ResourceAllocationException{
+        UserContext.current().setEventDetails("Project id: "+ getId());
+        Project project = _projectService.updateProject(getId(), getDisplayText(), getAccountName());
+        if (project != null) {
+            ProjectResponse response = _responseGenerator.createProjectResponse(project);
+            response.setResponseName(getCommandName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update a project");
+        }
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_PROJECT_UPDATE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "Updating project: " + id;
+    }
 }

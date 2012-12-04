@@ -31,10 +31,10 @@ import com.cloud.user.UserContext;
 
 @Implementation(description="Destroys console proxy", responseObject=SuccessResponse.class)
 public class DestroyConsoleProxyCmd extends BaseAsyncCmd {
-	public static final Logger s_logger = Logger.getLogger(DestroyConsoleProxyCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(DestroyConsoleProxyCmd.class.getName());
 
     private static final String s_name = "destroyconsoleproxyresponse";
-    
+
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
@@ -80,7 +80,7 @@ public class DestroyConsoleProxyCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "destroying console proxy: " + getId();
     }
-	
+
     @Override
     public void execute(){
         boolean result = _consoleProxyService.destroyConsoleProxy(this);

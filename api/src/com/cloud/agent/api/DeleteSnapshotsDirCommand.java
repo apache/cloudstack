@@ -18,18 +18,18 @@ package com.cloud.agent.api;
 
 /**
  * This command encapsulates a primitive operation which enables coalescing the backed up VHD snapshots on the secondary server
- * This currently assumes that the secondary storage are mounted on the XenServer.  
+ * This currently assumes that the secondary storage are mounted on the XenServer.
  */
 public class DeleteSnapshotsDirCommand extends Command {
     String secondaryStorageUrl;
     Long dcId;
     Long accountId;
     Long volumeId;
-    
+
     protected DeleteSnapshotsDirCommand() {
-        
+
     }
-    
+
     public DeleteSnapshotsDirCommand(String secondaryStorageUrl,
  Long dcId, Long accountId, Long volumeId)
     {

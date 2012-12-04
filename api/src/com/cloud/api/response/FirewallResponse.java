@@ -36,19 +36,19 @@ public class FirewallResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.END_PORT)  @Param(description = "the ending port of firewall rule's port range")
     private String endPort;
-    
+
     @SerializedName(ApiConstants.IP_ADDRESS_ID) @Param(description="the public ip address id for the firewall rule")
     private Long publicIpAddressId;
 
     @SerializedName(ApiConstants.IP_ADDRESS) @Param(description="the public ip address for the firewall rule")
     private String publicIpAddress;
-    
+
     @SerializedName(ApiConstants.STATE) @Param(description="the state of the rule")
     private String state;
 
     @SerializedName(ApiConstants.CIDR_LIST) @Param(description="the cidr list to forward traffic from")
     private String cidrList;
-    
+
     @SerializedName(ApiConstants.ICMP_TYPE) @Param(description= "type of the icmp message being sent")
     private Integer icmpType;
 

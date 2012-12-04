@@ -69,7 +69,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
     @IdentityMapper(entityTableName="user_ip_address")
     @Parameter(name=ApiConstants.PUBLIC_IP_ID, type=CommandType.LONG, description="public ip address id from where the network traffic will be load balanced from")
     private Long publicIpId;
-    
+
     @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=false, description="zone where the load balancer is going to be created. This parameter is required when LB service provider is ElasticLoadBalancerVm")
     private Long zoneId;
@@ -78,7 +78,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
     private Integer publicPort;
 
     @Parameter(name = ApiConstants.OPEN_FIREWALL, type = CommandType.BOOLEAN, description = "if true, firewall rule for" +
-    		" source/end pubic port is automatically created; if false - firewall rule has to be created explicitely. If not specified 1) defaulted to false when LB" +
+            " source/end pubic port is automatically created; if false - firewall rule has to be created explicitely. If not specified 1) defaulted to false when LB" +
                     " rule is being created for VPC guest network 2) in all other cases defaulted to true")
     private Boolean openFirewall;
 
@@ -88,15 +88,15 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
     @IdentityMapper(entityTableName="domain")
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID associated with the load balancer")
     private Long domainId;
-    
+
     @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the cidr list to forward traffic from")
     private List<String> cidrlist;
-    
+
     @IdentityMapper(entityTableName="networks")
     @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, description="The guest network this " +
-    		"rule will be created for. Required when public Ip address is not associated with any Guest network yet (VPC case)")
+            "rule will be created for. Required when public Ip address is not associated with any Guest network yet (VPC case)")
     private Long networkId;
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -118,23 +118,23 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
     }
 
     public String getEntityTable() {
-    	return "firewall_rules";
+        return "firewall_rules";
     }
-    
+
     public Long getSourceIpAddressId() {
-    	if (publicIpId != null) {
-    		IpAddress ipAddr = _networkService.getIp(publicIpId);
-	        if (ipAddr == null || !ipAddr.readyToUse()) {
-	            throw new InvalidParameterValueException("Unable to create load balancer rule, invalid IP address id " + ipAddr.getId());
-	        }
-    	} else if (getEntityId() != null) {
-    		LoadBalancer rule = _entityMgr.findById(LoadBalancer.class, getEntityId());
-    		return rule.getSourceIpAddressId();
-    	}
-    	
-    	return publicIpId;
+        if (publicIpId != null) {
+            IpAddress ipAddr = _networkService.getIp(publicIpId);
+            if (ipAddr == null || !ipAddr.readyToUse()) {
+                throw new InvalidParameterValueException("Unable to create load balancer rule, invalid IP address id " + ipAddr.getId());
+            }
+        } else if (getEntityId() != null) {
+            LoadBalancer rule = _entityMgr.findById(LoadBalancer.class, getEntityId());
+            return rule.getSourceIpAddressId();
+        }
+
+        return publicIpId;
     }
-    
+
     private Long getVpcId() {
         if (publicIpId != null) {
             IpAddress ipAddr = _networkService.getIp(publicIpId);
@@ -146,36 +146,36 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
         }
         return null;
     }
-    
-    
+
+
     public Long getNetworkId() {
         if (networkId != null) {
             return networkId;
-        } 
-        Long zoneId = getZoneId();
-        
-        if (zoneId == null) {
-        	Long ipId = getSourceIpAddressId();
-        	if (ipId == null) {
-            	throw new InvalidParameterValueException("Either networkId or zoneId or publicIpId has to be specified");
-        	}
         }
-        
+        Long zoneId = getZoneId();
+
+        if (zoneId == null) {
+            Long ipId = getSourceIpAddressId();
+            if (ipId == null) {
+                throw new InvalidParameterValueException("Either networkId or zoneId or publicIpId has to be specified");
+            }
+        }
+
         if (zoneId != null) {
-        	DataCenter zone = _configService.getZone(zoneId);
-        	if (zone.getNetworkType() == NetworkType.Advanced) {
+            DataCenter zone = _configService.getZone(zoneId);
+            if (zone.getNetworkType() == NetworkType.Advanced) {
                 List<? extends Network> networks = _networkService.getIsolatedNetworksOwnedByAccountInZone(getZoneId(), _accountService.getAccount(getEntityOwnerId()));
                 if (networks.size() == 0) {
                     String domain = _domainService.getDomain(getDomainId()).getName();
                     throw new InvalidParameterValueException("Account name=" + getAccountName() + " domain=" + domain + " doesn't have virtual networks in zone=" + zone.getName());
                 }
-                
+
                 if (networks.size() < 1) {
-                	throw new InvalidParameterValueException("Account doesn't have any Isolated networks in the zone");
+                    throw new InvalidParameterValueException("Account doesn't have any Isolated networks in the zone");
                 } else if (networks.size() > 1) {
-                	throw new InvalidParameterValueException("Account has more than one Isolated network in the zone");
+                    throw new InvalidParameterValueException("Account has more than one Isolated network in the zone");
                 }
-                
+
                 return networks.get(0).getId();
             } else {
                 Network defaultGuestNetwork = _networkService.getExclusiveGuestNetwork(zoneId);
@@ -186,23 +186,23 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
                 }
             }
         } else {
-        	IpAddress ipAddr = _networkService.getIp(publicIpId);
-        	if (ipAddr.getAssociatedWithNetworkId() != null) {
+            IpAddress ipAddr = _networkService.getIp(publicIpId);
+            if (ipAddr.getAssociatedWithNetworkId() != null) {
                 return ipAddr.getAssociatedWithNetworkId();
-        	} else {
-        	    throw new InvalidParameterValueException("Ip address id=" + publicIpId + " is not associated with any network");
-        	}
+            } else {
+                throw new InvalidParameterValueException("Ip address id=" + publicIpId + " is not associated with any network");
+            }
         }
     }
 
     public Integer getPublicPort() {
         return publicPort;
     }
-    
+
     public String getName() {
         return loadBalancerRuleName;
     }
-    
+
     public Boolean getOpenFirewall() {
         boolean isVpc = getVpcId() == null ? false : true;
         if (openFirewall != null) {
@@ -217,7 +217,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
             return true;
         }
     }
-    
+
     public List<String> getSourceCidrList() {
         if (cidrlist != null) {
             throw new InvalidParameterValueException("Parameter cidrList is deprecated; if you need to open firewall rule for the specific cidr, please refer to createFirewallRule command");
@@ -233,33 +233,33 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
-    public void execute() throws ResourceAllocationException, ResourceUnavailableException {        
-        
+    public void execute() throws ResourceAllocationException, ResourceUnavailableException {
+
         UserContext callerContext = UserContext.current();
         boolean success = true;
         LoadBalancer rule = null;
         try {
             UserContext.current().setEventDetails("Rule Id: " + getEntityId());
-            
+
             if (getOpenFirewall()) {
                 success = success && _firewallService.applyFirewallRules(getSourceIpAddressId(), callerContext.getCaller());
             }
 
             // State might be different after the rule is applied, so get new object here
             rule = _entityMgr.findById(LoadBalancer.class, getEntityId());
-            LoadBalancerResponse lbResponse = new LoadBalancerResponse(); 
+            LoadBalancerResponse lbResponse = new LoadBalancerResponse();
             if (rule != null) {
                 lbResponse = _responseGenerator.createLoadBalancerResponse(rule);
                 setResponseObject(lbResponse);
             }
             lbResponse.setResponseName(getCommandName());
         } catch (Exception ex) {
-        	s_logger.warn("Failed to create LB rule due to exception ", ex);
+            s_logger.warn("Failed to create LB rule due to exception ", ex);
         }finally {
             if (!success || rule == null) {
-                
+
                 if (getOpenFirewall()) {
                     _firewallService.revokeRelatedFirewallRule(getEntityId(), true);
                 }
@@ -270,7 +270,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
             }
         }
     }
-    
+
     @Override
     public void create() {
         //cidr list parameter is deprecated
@@ -300,11 +300,11 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
     public String getProtocol() {
         return NetUtils.TCP_PROTO;
     }
-    
-    public long getAccountId() {  
+
+    public long getAccountId() {
         if (publicIpId != null)
             return _networkService.getIp(getSourceIpAddressId()).getAccountId();
-        
+
         Account account = null;
         if ((domainId != null) && (accountName != null)) {
             account = _responseGenerator.findAccountByNameDomain(accountName, domainId);
@@ -334,16 +334,16 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
     public int getDefaultPortEnd() {
         return privatePort.intValue();
     }
-    
+
     @Override
     public long getEntityOwnerId() {
        return getAccountId();
     }
-    
+
     public String getAccountName() {
         return accountName;
     }
-    
+
     public Long getZoneId() {
         return zoneId;
     }
@@ -371,7 +371,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
     public void setSourceIpAddressId(Long ipId) {
         this.publicIpId = ipId;
     }
-    
+
     @Override
     public AsyncJob.Type getInstanceType() {
         return AsyncJob.Type.FirewallRule;

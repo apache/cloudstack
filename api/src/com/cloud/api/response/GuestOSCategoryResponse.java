@@ -26,7 +26,7 @@ public class GuestOSCategoryResponse extends BaseResponse {
     private IdentityProxy id = new IdentityProxy("guest_os_category");
 
     @SerializedName(ApiConstants.NAME) @Param(description="the name of the OS category")
-    private String name; 
+    private String name;
 
     public Long getId() {
         return id.getValue();

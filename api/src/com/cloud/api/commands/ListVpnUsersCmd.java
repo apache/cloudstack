@@ -46,7 +46,7 @@ public class ListVpnUsersCmd extends BaseListProjectAndAccountResourcesCmd {
 
     @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, description="the username of the vpn user.")
     private String userName;
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -67,7 +67,7 @@ public class ListVpnUsersCmd extends BaseListProjectAndAccountResourcesCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public void execute(){
         Pair<List<? extends VpnUser>, Integer> vpnUsers = _ravService.searchForVpnUsers(this);

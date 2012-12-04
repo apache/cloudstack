@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.user.project.command;
 
 import org.apache.log4j.Logger;
 
@@ -77,26 +77,26 @@ public class SuspendProjectCmd extends BaseAsyncCmd {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to suspend a project");
         }
     }
-    
+
     @Override
     public String getEventType() {
         return EventTypes.EVENT_PROJECT_SUSPEND;
     }
-    
+
     @Override
     public String getEventDescription() {
         return  "Suspending project: " + id;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         Project project= _projectService.getProject(id);
         //verify input parameters
         if (project == null) {
             throw new InvalidParameterValueException("Unable to find project by id " + id);
-        } 
-        
-        return _projectService.getProjectOwner(id).getId(); 
+        }
+
+        return _projectService.getProjectOwner(id).getId();
     }
-    
+
 }

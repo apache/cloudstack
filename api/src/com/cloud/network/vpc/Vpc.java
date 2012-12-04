@@ -24,7 +24,7 @@ public interface Vpc extends ControlledEntity{
         Enabled,
         Inactive
     }
-    
+
    public static final String _supportedProviders = Network.Provider.VPCVirtualRouter.getName();
 
    boolean readyToUse();
@@ -32,7 +32,7 @@ public interface Vpc extends ControlledEntity{
    long getId();
 
    String getUuid();
-   
+
    String getName();
 
    long getZoneId();
@@ -42,11 +42,11 @@ public interface Vpc extends ControlledEntity{
    State getState();
 
    long getVpcOfferingId();
-   
+
    String getDisplayText();
 
    String getNetworkDomain();
 
    boolean isRestartRequired();
-   
+
 }

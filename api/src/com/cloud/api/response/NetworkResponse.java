@@ -25,121 +25,121 @@ import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 public class NetworkResponse extends BaseResponse implements ControlledEntityResponse{
-    
+
     @SerializedName(ApiConstants.ID) @Param(description="the id of the network")
     private IdentityProxy id = new IdentityProxy("networks");
-    
+
     @SerializedName(ApiConstants.NAME) @Param(description="the name of the network")
     private String name;
-    
+
     @SerializedName(ApiConstants.DISPLAY_TEXT) @Param(description="the displaytext of the network")
     private String displaytext;
-    
+
     @SerializedName("broadcastdomaintype") @Param(description="Broadcast domain type of the network")
     private String broadcastDomainType;
-    
+
     @SerializedName(ApiConstants.TRAFFIC_TYPE) @Param(description="the traffic type of the network")
     private String trafficType;
-    
+
     @SerializedName(ApiConstants.GATEWAY) @Param(description="the network's gateway")
     private String gateway;
-    
+
     @SerializedName(ApiConstants.NETMASK) @Param(description="the network's netmask")
     private String netmask;
-    
+
     @SerializedName(ApiConstants.CIDR) @Param(description="the cidr the network")
     private String cidr;
-    
+
     @SerializedName(ApiConstants.ZONE_ID) @Param(description="zone id of the network")
     private IdentityProxy zoneId = new IdentityProxy("data_center");
-    
+
     @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the name of the zone the network belongs to")
     private String zoneName;
-    
+
     @SerializedName("networkofferingid") @Param(description="network offering id the network is created from")
     private IdentityProxy networkOfferingId = new IdentityProxy("network_offerings");
-    
+
     @SerializedName("networkofferingname") @Param(description="name of the network offering the network is created from")
     private String networkOfferingName;
-    
+
     @SerializedName("networkofferingdisplaytext") @Param(description="display text of the network offering the network is created from")
     private String networkOfferingDisplayText;
-    
+
     @SerializedName("networkofferingavailability") @Param(description="availability of the network offering the network is created from")
     private String networkOfferingAvailability;
-    
+
     @SerializedName(ApiConstants.IS_SYSTEM) @Param(description="true if network is system, false otherwise")
     private Boolean isSystem;
-    
+
     @SerializedName(ApiConstants.STATE) @Param(description="state of the network")
     private String state;
 
     @SerializedName("related") @Param(description="related to what other network configuration")
     private IdentityProxy related = new IdentityProxy("networks");
-    
+
     @SerializedName("broadcasturi") @Param(description="broadcast uri of the network. This parameter is visible to ROOT admins only")
     private String broadcastUri;
-    
+
     @SerializedName(ApiConstants.DNS1) @Param(description="the first DNS for the network")
     private String dns1;
-    
+
     @SerializedName(ApiConstants.DNS2) @Param(description="the second DNS for the network")
     private String dns2;
-    
+
     @SerializedName(ApiConstants.TYPE) @Param(description="the type of the network")
     private String type;
-    
+
     @SerializedName(ApiConstants.VLAN) @Param(description="The vlan of the network. This parameter is visible to ROOT admins only")
     private String vlan;
-    
+
     @SerializedName(ApiConstants.ACL_TYPE) @Param(description="acl type - access type to the network")
     private String aclType;
-    
+
     @SerializedName(ApiConstants.SUBDOMAIN_ACCESS) @Param(description="true if users from subdomains can access the domain level network")
     private Boolean subdomainAccess;
-    
+
     @SerializedName(ApiConstants.ACCOUNT) @Param(description="the owner of the network")
     private String accountName;
-    
+
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the ipaddress")
     private IdentityProxy projectId = new IdentityProxy("projects");
-    
+
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the address")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain id of the network owner")
     private IdentityProxy domainId = new IdentityProxy("domain");
-    
+
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the network owner")
     private String domain;
-    
+
     @SerializedName("isdefault") @Param(description="true if network is default, false otherwise")
     private Boolean isDefault;
-    
+
     @SerializedName("service") @Param(description="the list of services", responseObject = ServiceResponse.class)
     private List<ServiceResponse> services;
-    
+
     @SerializedName(ApiConstants.NETWORK_DOMAIN) @Param(description="the network domain")
     private String networkDomain;
-    
+
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) @Param(description="the physical network id")
     private IdentityProxy physicalNetworkId = new IdentityProxy("physical_network");
-    
+
     @SerializedName(ApiConstants.RESTART_REQUIRED) @Param(description="true network requires restart")
     private Boolean restartRequired;
-    
+
     @SerializedName(ApiConstants.SPECIFY_IP_RANGES) @Param(description="true if network supports specifying ip ranges, false otherwise")
     private Boolean specifyIpRanges;
-    
+
     @SerializedName(ApiConstants.VPC_ID) @Param(description="VPC the network belongs to")
     private IdentityProxy vpcId = new IdentityProxy("vpc");
 
     @SerializedName(ApiConstants.CAN_USE_FOR_DEPLOY) @Param(description="list networks available for vm deployment")
     private Boolean canUseForDeploy;
-    
+
     @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with network", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
-    
+
     public void setId(Long id) {
         this.id.setValue(id);
     }
@@ -163,7 +163,7 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     public void setNetmask(String netmask) {
         this.netmask = netmask;
     }
-    
+
     public void setZoneId(Long zoneId) {
         this.zoneId.setValue(zoneId);
     }
@@ -224,14 +224,14 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
         this.isSystem = isSystem;
     }
 
-	public void setDomainName(String domain) {
-		this.domain = domain;
-	}
+    public void setDomainName(String domain) {
+        this.domain = domain;
+    }
 
     public void setNetworkOfferingAvailability(String networkOfferingAvailability) {
         this.networkOfferingAvailability = networkOfferingAvailability;
     }
-    
+
     public void setServices(List<ServiceResponse> services) {
         this.services = services;
     }
@@ -243,7 +243,7 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     public void setNetworkDomain(String networkDomain) {
         this.networkDomain = networkDomain;
     }
-    
+
     @Override
     public void setProjectId(Long projectId) {
         this.projectId.setValue(projectId);
@@ -258,38 +258,38 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
         this.physicalNetworkId.setValue(physicalNetworkId);
     }
 
-	public void setAclType(String aclType) {
-		this.aclType = aclType;
-	}
+    public void setAclType(String aclType) {
+        this.aclType = aclType;
+    }
 
-	public void setSubdomainAccess(Boolean subdomainAccess) {
-		this.subdomainAccess = subdomainAccess;
-	}
+    public void setSubdomainAccess(Boolean subdomainAccess) {
+        this.subdomainAccess = subdomainAccess;
+    }
 
-	public void setZoneName(String zoneName) {
-		this.zoneName = zoneName;
-	}
+    public void setZoneName(String zoneName) {
+        this.zoneName = zoneName;
+    }
 
-	public void setCidr(String cidr) {
-		this.cidr = cidr;
-	}
+    public void setCidr(String cidr) {
+        this.cidr = cidr;
+    }
 
-	public void setRestartRequired(Boolean restartRequired) {
-		this.restartRequired = restartRequired;
-	}
-	
-	public void setSpecifyIpRanges(Boolean specifyIpRanges) {
-		this.specifyIpRanges = specifyIpRanges;
-	}
-	
+    public void setRestartRequired(Boolean restartRequired) {
+        this.restartRequired = restartRequired;
+    }
+
+    public void setSpecifyIpRanges(Boolean specifyIpRanges) {
+        this.specifyIpRanges = specifyIpRanges;
+    }
+
     public void setVpcId(Long vpcId) {
         this.vpcId.setValue(vpcId);
     }
-    
+
     public void setCanUseForDeploy(Boolean canUseForDeploy) {
         this.canUseForDeploy = canUseForDeploy;
     }
-    
+
     public void setTags(List<ResourceTagResponse> tags) {
         this.tags = tags;
     }

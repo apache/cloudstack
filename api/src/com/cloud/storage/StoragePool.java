@@ -33,7 +33,7 @@ public interface StoragePool {
     String getName();
 
     /***
-     * 
+     *
      * @return unique identifier
      */
     String getUuid();

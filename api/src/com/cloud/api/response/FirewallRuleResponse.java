@@ -51,22 +51,22 @@ public class FirewallRuleResponse extends BaseResponse{
 
     @SerializedName("virtualmachinedisplayname") @Param(description="the VM display name for the port forwarding rule")
     private String virtualMachineDisplayName;
-    
+
     @SerializedName(ApiConstants.IP_ADDRESS_ID) @Param(description="the public ip address id for the port forwarding rule")
     private IdentityProxy publicIpAddressId = new IdentityProxy("user_ip_address");
 
     @SerializedName(ApiConstants.IP_ADDRESS) @Param(description="the public ip address for the port forwarding rule")
     private String publicIpAddress;
-    
+
     @SerializedName(ApiConstants.STATE) @Param(description="the state of the rule")
     private String state;
 
     @SerializedName(ApiConstants.CIDR_LIST) @Param(description="the cidr list to forward traffic from")
     private String cidrList;
-    
+
     @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with the rule", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
-    
+
     public Long getId() {
         return id.getValue();
     }
@@ -89,8 +89,8 @@ public class FirewallRuleResponse extends BaseResponse{
 
     public void setPrivateEndPort(String privatePort) {
         this.privateEndPort = privatePort;
-    }    
-    
+    }
+
     public String getProtocol() {
         return protocol;
     }
@@ -106,7 +106,7 @@ public class FirewallRuleResponse extends BaseResponse{
     public String getPublicEndPort() {
         return publicEndPort;
     }
-    
+
     public void setPublicStartPort(String publicPort) {
         this.publicStartPort = publicPort;
     }
@@ -131,21 +131,21 @@ public class FirewallRuleResponse extends BaseResponse{
         this.virtualMachineName = virtualMachineName;
     }
 
-	public String getVirtualMachineDisplayName() {
-		return virtualMachineDisplayName;
-	}
+    public String getVirtualMachineDisplayName() {
+        return virtualMachineDisplayName;
+    }
 
-	public void setVirtualMachineDisplayName(String virtualMachineDisplayName) {
-		this.virtualMachineDisplayName = virtualMachineDisplayName;
-	}
+    public void setVirtualMachineDisplayName(String virtualMachineDisplayName) {
+        this.virtualMachineDisplayName = virtualMachineDisplayName;
+    }
 
-	public String getPublicIpAddress() {
-		return publicIpAddress;
-	}
+    public String getPublicIpAddress() {
+        return publicIpAddress;
+    }
 
-	public void setPublicIpAddress(String publicIpAddress) {
-		this.publicIpAddress = publicIpAddress;
-	}
+    public void setPublicIpAddress(String publicIpAddress) {
+        this.publicIpAddress = publicIpAddress;
+    }
 
     public String getState() {
         return state;
@@ -162,7 +162,7 @@ public class FirewallRuleResponse extends BaseResponse{
     public void setPublicIpAddressId(Long publicIpAddressId) {
         this.publicIpAddressId.setValue(publicIpAddressId);
     }
-    
+
     public String getCidrList() {
         return cidrList;
     }
@@ -170,7 +170,7 @@ public class FirewallRuleResponse extends BaseResponse{
     public void setCidrList(String cidrs) {
         this.cidrList = cidrs;
     }
-    
+
     public void setTags(List<ResourceTagResponse> tags) {
         this.tags = tags;
     }

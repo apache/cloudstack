@@ -54,7 +54,7 @@ public class IsoVmResponse extends BaseResponse {
     @SerializedName("vmstate") @Param(description="state of the virtual machine")
     private String virtualMachineState;
 
-    
+
     public Long getOsTypeId() {
         return osTypeId.getValue();
     }

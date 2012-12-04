@@ -97,7 +97,7 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
     private String hypervisor;
 
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the name of the domain to which the template belongs")
-    private String domainName;  
+    private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the ID of the domain to which the template belongs")
     private IdentityProxy domainId = new IdentityProxy("domain");
@@ -109,7 +109,7 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
     private String checksum;
 
     @SerializedName("sourcetemplateid") @Param(description="the template ID of the parent template if present")
-    private IdentityProxy sourcetemplateId = new IdentityProxy("vm_template");    
+    private IdentityProxy sourcetemplateId = new IdentityProxy("vm_template");
 
     @SerializedName(ApiConstants.HOST_ID) @Param(description="the ID of the secondary storage host for the template")
     private IdentityProxy hostId = new IdentityProxy("host");
@@ -119,25 +119,25 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
 
     @SerializedName(ApiConstants.TEMPLATE_TAG) @Param(description="the tag of this template")
     private String templateTag;
-    
+
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the template")
     private IdentityProxy projectId = new IdentityProxy("projects");
-    
+
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the template")
     private String projectName;
-    
+
     @SerializedName(ApiConstants.DETAILS) @Param(description="additional key/value details tied with template")
     private Map details;
-    
+
     @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with tempate", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
-    
+
 
     @Override
     public Long getObjectId() {
         return getId();
     }
-    
+
     public Long getId() {
         return id.getValue();
     }
@@ -229,7 +229,7 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
     public void setHypervisor(String hypervisor) {
         this.hypervisor = hypervisor;
     }
-    
+
     @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
@@ -250,7 +250,7 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
 
     public void setSourceTemplateId(Long sourcetemplateId) {
         this.sourcetemplateId.setValue(sourcetemplateId);
-    }    
+    }
 
     public void setHostId(Long hostId) {
         this.hostId.setValue(hostId);
@@ -263,7 +263,7 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
     public void setTemplateTag(String templateTag) {
         this.templateTag = templateTag;
     }
-    
+
     @Override
     public void setProjectId(Long projectId) {
         this.projectId.setValue(projectId);
@@ -273,15 +273,15 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
     public void setProjectName(String projectName) {
         this.projectName = projectName;
     }
-    
+
     public Map getDetails() {
-    	return this.details;
+        return this.details;
     }
-    
+
     public void setDetails(Map details) {
-    	this.details = details;
+        this.details = details;
     }
-    
+
     public void setTags(List<ResourceTagResponse> tags) {
         this.tags = tags;
     }

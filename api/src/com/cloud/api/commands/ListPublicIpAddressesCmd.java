@@ -48,7 +48,7 @@ public class ListPublicIpAddressesCmd extends BaseListTaggedResourcesCmd {
 
     @Parameter(name=ApiConstants.FOR_VIRTUAL_NETWORK, type=CommandType.BOOLEAN, description="the virtual network for the IP address")
     private Boolean forVirtualNetwork;
-    
+
     @IdentityMapper(entityTableName="user_ip_address")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="lists ip address by id")
     private Long id;
@@ -63,24 +63,24 @@ public class ListPublicIpAddressesCmd extends BaseListTaggedResourcesCmd {
     @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="lists all public IP addresses by Zone ID")
     private Long zoneId;
-    
+
     @Parameter(name=ApiConstants.FOR_LOAD_BALANCING, type=CommandType.BOOLEAN, description="list only ips used for load balancing")
     private Boolean forLoadBalancing;
-    
+
     @IdentityMapper(entityTableName="physical_network")
     @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, description="lists all public IP addresses by physical network id")
     private Long physicalNetworkId;
-    
+
     @IdentityMapper(entityTableName="networks")
     @Parameter(name=ApiConstants.ASSOCIATED_NETWORK_ID, type=CommandType.LONG, description="lists all public IP addresses associated to the network specified")
     private Long associatedNetworkId;
-    
+
     @Parameter(name=ApiConstants.IS_SOURCE_NAT, type=CommandType.BOOLEAN, description="list only source nat ip addresses")
     private Boolean isSourceNat;
-    
+
     @Parameter(name=ApiConstants.IS_STATIC_NAT, type=CommandType.BOOLEAN, description="list only static nat ip addresses")
     private Boolean isStaticNat;
-    
+
     @IdentityMapper(entityTableName="vpc")
     @Parameter(name=ApiConstants.VPC_ID, type=CommandType.LONG, description="List ips belonging to the VPC")
     private Long vpcId;
@@ -111,35 +111,35 @@ public class ListPublicIpAddressesCmd extends BaseListTaggedResourcesCmd {
     public Long getZoneId() {
         return zoneId;
     }
-    
+
     public Long getPhysicalNetworkId() {
         return physicalNetworkId;
     }
-    
+
     public Long getAssociatedNetworkId() {
-		return associatedNetworkId;
-	}
+        return associatedNetworkId;
+    }
 
     public Boolean getIsSourceNat() {
-		return isSourceNat;
-	}
+        return isSourceNat;
+    }
 
-	public Boolean getIsStaticNat() {
-		return isStaticNat;
-	}
+    public Boolean getIsStaticNat() {
+        return isStaticNat;
+    }
 
-	public Long getVpcId() {
+    public Long getVpcId() {
         return vpcId;
-	}
+    }
 
-	/////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-	@Override
+    @Override
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public void execute(){
         Pair<List<? extends IpAddress>, Integer> result = _mgr.searchForIPAddresses(this);
@@ -155,7 +155,7 @@ public class ListPublicIpAddressesCmd extends BaseListTaggedResourcesCmd {
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
-    
+
     public AsyncJob.Type getInstanceType() {
         return AsyncJob.Type.IpAddress;
     }

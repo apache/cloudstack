@@ -39,13 +39,13 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
     @IdentityMapper(entityTableName="disk_offering")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the service offering to be updated")
     private Long id;
-    
+
     @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="the display text of the service offering to be updated")
     private String displayText;
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the service offering to be updated")
     private String serviceOfferingName;
-    
+
     @Parameter(name=ApiConstants.SORT_KEY, type=CommandType.INTEGER, description="sort key of the service offering, integer")
     private Integer sortKey;
     /////////////////////////////////////////////////////
@@ -65,19 +65,19 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
     }
 
     public Integer getSortKey() {
-    	return sortKey;
+        return sortKey;
     }
-    
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
 
-	@Override
+    @Override
     public String getCommandName() {
         return s_name;
     }
-	
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
@@ -85,8 +85,8 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
 
     @Override
     public void execute(){
-    	//Note
-    	//Once an offering is created, we cannot update the domainId field (keeping consistent with zones logic)
+        //Note
+        //Once an offering is created, we cannot update the domainId field (keeping consistent with zones logic)
         ServiceOffering result = _configService.updateServiceOffering(this);
         if (result != null){
             ServiceOfferingResponse response = _responseGenerator.createServiceOfferingResponse(result);

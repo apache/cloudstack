@@ -66,21 +66,21 @@ public class UpdateZoneCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.IS_PUBLIC, type=CommandType.BOOLEAN, description="updates a private zone to public if set, but not vice-versa")
     private Boolean isPublic;
-    
+
     @Parameter(name=ApiConstants.ALLOCATION_STATE, type=CommandType.STRING, description="Allocation state of this cluster for allocation of new resources")
     private String allocationState;
-    
+
     @Parameter(name=ApiConstants.DETAILS, type=CommandType.MAP, description="the details for the Zone")
     private Map details;
-    
+
     @Parameter(name=ApiConstants.DHCP_PROVIDER, type=CommandType.STRING, description="the dhcp Provider for the Zone")
     private String dhcpProvider;
-    
+
     @Parameter(name=ApiConstants.DOMAIN, type=CommandType.STRING, description="Network domain name for the networks in the zone; empty string will update domain with NULL value")
     private String domain;
-    
+
     @Parameter(name=ApiConstants.DNS_SEARCH_ORDER, type=CommandType.LIST, collectionType = CommandType.STRING, description="the dns search order list")
-    private List<String> dnsSearchOrder;   
+    private List<String> dnsSearchOrder;
 
     @Parameter(name=ApiConstants.LOCAL_STORAGE_ENABLED, type=CommandType.BOOLEAN, description="true if local storage offering enabled, false otherwise")
     private Boolean localStorageEnabled;
@@ -120,26 +120,26 @@ public class UpdateZoneCmd extends BaseCmd {
     public Boolean isPublic() {
         return isPublic;
     }
-    
+
     public String getAllocationState() {
-    	return allocationState;
+        return allocationState;
     }
-    
+
     public Map getDetails() {
         return details;
     }
-    
+
     public String getDhcpProvider() {
         return dhcpProvider;
     }
-    
+
     public String getDomain() {
         return domain;
     }
 
     public List<String> getDnsSearchOrder() {
         return dnsSearchOrder;
-    }   
+    }
 
     public Boolean getLocalStorageEnabled() {
         return localStorageEnabled;
@@ -153,16 +153,16 @@ public class UpdateZoneCmd extends BaseCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-    
+
     @Override
     public void execute(){
-    	UserContext.current().setEventDetails("Zone Id: "+getId());
-    	DataCenter result = _configService.editZone(this);
+        UserContext.current().setEventDetails("Zone Id: "+getId());
+        DataCenter result = _configService.editZone(this);
         if (result != null) {
             ZoneResponse response = _responseGenerator.createZoneResponse(result, false);
             response.setResponseName(getCommandName());

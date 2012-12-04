@@ -25,15 +25,15 @@ public class PingRoutingCommand extends PingCommand {
     Map<String, State> newStates;
     boolean _gatewayAccessible = true;
     boolean _vnetAccessible = true;
-   
+
     protected PingRoutingCommand() {
     }
-    
+
     public PingRoutingCommand(Host.Type type, long id, Map<String, State> states) {
         super(type, id);
         this.newStates = states;
     }
-    
+
     public Map<String, State> getNewStates() {
         return newStates;
     }

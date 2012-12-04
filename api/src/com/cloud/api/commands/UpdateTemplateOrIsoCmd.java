@@ -46,13 +46,13 @@ public abstract class UpdateTemplateOrIsoCmd extends BaseCmd {
     @IdentityMapper(entityTableName="guest_os")
     @Parameter(name=ApiConstants.OS_TYPE_ID, type=CommandType.LONG, description="the ID of the OS type that best represents the OS of this image.")
     private Long osTypeId;
-    
+
     @Parameter(name=ApiConstants.FORMAT, type=CommandType.STRING, description="the format for the image")
     private String format;
-    
+
     @Parameter(name=ApiConstants.PASSWORD_ENABLED, type=CommandType.BOOLEAN, description="true if the image supports the password reset feature; default is false")
     private Boolean passwordEnabled;
-    
+
     @Parameter(name=ApiConstants.SORT_KEY, type=CommandType.INTEGER, description="sort key of the template, integer")
     private Integer sortKey;
 
@@ -79,16 +79,16 @@ public abstract class UpdateTemplateOrIsoCmd extends BaseCmd {
     public Long getOsTypeId() {
         return osTypeId;
     }
-    
+
     public Boolean isPasswordEnabled() {
         return passwordEnabled;
     }
-    
+
     public String getFormat() {
         return format;
     }
-    
+
     public Integer getSortKey() {
-    	return sortKey;
+        return sortKey;
     }
 }

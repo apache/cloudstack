@@ -322,18 +322,18 @@ deleteSSHKeyPair=com.cloud.api.commands.DeleteSSHKeyPairCmd;15
 listSSHKeyPairs=com.cloud.api.commands.ListSSHKeyPairsCmd;15
 
 #### Projects commands
-createProject=com.cloud.api.commands.CreateProjectCmd;15
-deleteProject=com.cloud.api.commands.DeleteProjectCmd;15
-updateProject=com.cloud.api.commands.UpdateProjectCmd;15
-activateProject=com.cloud.api.commands.ActivateProjectCmd;15
-suspendProject=com.cloud.api.commands.SuspendProjectCmd;15
-listProjects=com.cloud.api.commands.ListProjectsCmd;15
+createProject=org.apache.cloudstack.api.user.project.command.CreateProjectCmd;15
+deleteProject=org.apache.cloudstack.api.user.project.command.DeleteProjectCmd;15
+updateProject=org.apache.cloudstack.api.user.project.command.UpdateProjectCmd;15
+activateProject=org.apache.cloudstack.api.user.project.command.ActivateProjectCmd;15
+suspendProject=org.apache.cloudstack.api.user.project.command.SuspendProjectCmd;15
+listProjects=org.apache.cloudstack.api.user.project.command.ListProjectsCmd;15
 addAccountToProject=com.cloud.api.commands.AddAccountToProjectCmd;15
 deleteAccountFromProject=com.cloud.api.commands.DeleteAccountFromProjectCmd;15
 listProjectAccounts=com.cloud.api.commands.ListProjectAccountsCmd;15
-listProjectInvitations=com.cloud.api.commands.ListProjectInvitationsCmd;15
-updateProjectInvitation=com.cloud.api.commands.UpdateProjectInvitationCmd;15
-deleteProjectInvitation=com.cloud.api.commands.DeleteProjectInvitationCmd;15
+listProjectInvitations=org.apache.cloudstack.api.user.project.command.ListProjectInvitationsCmd;15
+updateProjectInvitation=org.apache.cloudstack.api.user.project.command.UpdateProjectInvitationCmd;15
+deleteProjectInvitation=org.apache.cloudstack.api.user.project.command.DeleteProjectInvitationCmd;15
 
 #### 
 createFirewallRule=com.cloud.api.commands.CreateFirewallRuleCmd;15

@@ -81,10 +81,10 @@ public class VolumeResponse extends BaseResponse implements ControlledEntityResp
     @SerializedName(ApiConstants.ACCOUNT)
     @Param(description = "the account associated with the disk volume")
     private String accountName;
-    
+
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the vpn")
     private IdentityProxy projectId = new IdentityProxy("projects");
-    
+
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the vpn")
     private String projectName;
 
@@ -147,11 +147,11 @@ public class VolumeResponse extends BaseResponse implements ControlledEntityResp
     @SerializedName("isextractable")
     @Param(description = "true if the volume is extractable, false otherwise")
     private Boolean extractable;
-    
+
     @SerializedName(ApiConstants.STATUS)
     @Param(description="the status of the volume")
     private String status;
-    
+
     @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with volume", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
 
@@ -183,7 +183,7 @@ public class VolumeResponse extends BaseResponse implements ControlledEntityResp
     public void setZoneId(Long zoneId) {
         this.zoneId.setValue(zoneId);
     }
-    
+
     public void setZoneName(String zoneName) {
         this.zoneName = zoneName;
     }
@@ -227,7 +227,7 @@ public class VolumeResponse extends BaseResponse implements ControlledEntityResp
     public void setDomainId(Long domainId) {
         this.domainId.setValue(domainId);
     }
-    
+
     public void setDomainName(String domainName) {
         this.domainName = domainName;
     }
@@ -273,10 +273,10 @@ public class VolumeResponse extends BaseResponse implements ControlledEntityResp
     }
 
     public void setStatus(String status) {
-		this.status = status;
-	}
+        this.status = status;
+    }
 
-	public void setServiceOfferingDisplayText(String serviceOfferingDisplayText) {
+    public void setServiceOfferingDisplayText(String serviceOfferingDisplayText) {
         this.serviceOfferingDisplayText = serviceOfferingDisplayText;
     }
 
@@ -287,7 +287,7 @@ public class VolumeResponse extends BaseResponse implements ControlledEntityResp
     public void setState(String state) {
         this.state = state;
     }
-    
+
     @Override
     public void setProjectId(Long projectId) {
         this.projectId.setValue(projectId);
@@ -297,7 +297,7 @@ public class VolumeResponse extends BaseResponse implements ControlledEntityResp
     public void setProjectName(String projectName) {
         this.projectName = projectName;
     }
-    
+
     public void setTags(List<ResourceTagResponse> tags) {
         this.tags = tags;
     }

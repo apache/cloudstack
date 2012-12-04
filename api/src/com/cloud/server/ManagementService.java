@@ -94,7 +94,7 @@ import com.cloud.vm.VirtualMachine.Type;
 
 /**
  * Hopefully this is temporary.
- * 
+ *
  */
 public interface ManagementService {
     static final String Name = "management-server";
@@ -104,21 +104,21 @@ public interface ManagementService {
      * for the
      * account that invokes the API. By specifying available=true all zones which the account can access. By specifying
      * available=false the zones where the account has virtual machine instances will be returned.
-     * 
+     *
      * @return a list of DataCenters
      */
     List<? extends DataCenter> listDataCenters(ListZonesByCmd cmd);
 
     /**
      * returns the a map of the names/values in the configuraton table
-     * 
+     *
      * @return map of configuration name/values
      */
     Pair<List<? extends Configuration>, Integer> searchForConfigurations(ListCfgsByCmd c);
 
     /**
      * Searches for Service Offerings by the specified search criteria Can search by: "name"
-     * 
+     *
      * @param cmd
      * @return List of ServiceOfferings
      */
@@ -126,12 +126,12 @@ public interface ManagementService {
 
     /**
      * Searches for Clusters by the specified search criteria
-     * 
+     *
      * @param c
      * @return
      */
     Pair<List<? extends Cluster>, Integer> searchForClusters(ListClustersCmd c);
-    
+
     /**
      * Searches for Clusters by the specified zone Id.
      * @param zoneId
@@ -141,7 +141,7 @@ public interface ManagementService {
 
     /**
      * Searches for Pods by the specified search criteria Can search by: pod name and/or zone name
-     * 
+     *
      * @param cmd
      * @return List of Pods
      */
@@ -150,7 +150,7 @@ public interface ManagementService {
     /**
      * Searches for servers by the specified search criteria Can search by: "name", "type", "state", "dataCenterId",
      * "podId"
-     * 
+     *
      * @param cmd
      * @return List of Hosts
      */
@@ -158,7 +158,7 @@ public interface ManagementService {
 
     /**
      * Creates a new template
-     * 
+     *
      * @param cmd
      * @return updated template
      */
@@ -170,7 +170,7 @@ public interface ManagementService {
      * Obtains a list of events by the specified search criteria. Can search by: "username", "type", "level",
      * "startDate",
      * "endDate"
-     * 
+     *
      * @param c
      * @return List of Events.
      */
@@ -180,7 +180,7 @@ public interface ManagementService {
      * Obtains a list of routers by the specified search criteria. Can search by: "userId", "name", "state",
      * "dataCenterId",
      * "podId", "hostId"
-     * 
+     *
      * @param cmd
      * @return List of DomainRouters.
      */
@@ -189,7 +189,7 @@ public interface ManagementService {
     /**
      * Obtains a list of IP Addresses by the specified search criteria. Can search by: "userId", "dataCenterId",
      * "address"
-     * 
+     *
      * @param cmd
      *            the command that wraps the search criteria
      * @return List of IPAddresses
@@ -198,14 +198,14 @@ public interface ManagementService {
 
     /**
      * Obtains a list of all guest OS.
-     * 
+     *
      * @return list of GuestOS
      */
     Pair<List<? extends GuestOS>, Integer> listGuestOSByCriteria(ListGuestOsCmd cmd);
 
     /**
      * Obtains a list of all guest OS categories.
-     * 
+     *
      * @return list of GuestOSCategories
      */
     Pair<List<? extends GuestOsCategory>, Integer> listGuestOSCategoriesByCriteria(ListGuestOsCategoriesCmd cmd);
@@ -217,12 +217,12 @@ public interface ManagementService {
     VirtualMachine rebootSystemVM(RebootSystemVmCmd cmd);
 
     VirtualMachine destroySystemVM(DestroySystemVmCmd cmd);
-    
+
     VirtualMachine upgradeSystemVM(UpgradeSystemVMCmd cmd);
 
     /**
      * update an existing domain
-     * 
+     *
      * @param cmd
      *            - the command containing domainId and new domainName
      * @return Domain object if the command succeeded
@@ -231,7 +231,7 @@ public interface ManagementService {
 
     /**
      * Searches for alerts
-     * 
+     *
      * @param c
      * @return List of Alerts
      */
@@ -239,7 +239,7 @@ public interface ManagementService {
 
     /**
      * list all the capacity rows in capacity operations table
-     * 
+     *
      * @param cmd
      * @return List of capacities
      */
@@ -247,7 +247,7 @@ public interface ManagementService {
 
     /**
      * List ISOs that match the specified criteria.
-     * 
+     *
      * @param cmd
      *            The command that wraps the (optional) templateId, name, keyword, templateFilter, bootable, account,
      *            and zoneId
@@ -258,7 +258,7 @@ public interface ManagementService {
 
     /**
      * List templates that match the specified criteria.
-     * 
+     *
      * @param cmd
      *            The command that wraps the (optional) templateId, name, keyword, templateFilter, bootable, account,
      *            and zoneId
@@ -269,7 +269,7 @@ public interface ManagementService {
 
     /**
      * Search for disk offerings based on search criteria
-     * 
+     *
      * @param cmd
      *            the command containing the criteria to use for searching for disk offerings
      * @return a list of disk offerings that match the given criteria
@@ -278,7 +278,7 @@ public interface ManagementService {
 
     /**
      * List storage pools that match the given criteria
-     * 
+     *
      * @param cmd
      *            the command that wraps the search criteria (zone, pod, name, IP address, path, and cluster id)
      * @return a list of storage pools that match the given criteria
@@ -287,7 +287,7 @@ public interface ManagementService {
 
     /**
      * List system VMs by the given search criteria
-     * 
+     *
      * @param cmd
      *            the command that wraps the search criteria (host, name, state, type, zone, pod, and/or id)
      * @return the list of system vms that match the given criteria
@@ -296,7 +296,7 @@ public interface ManagementService {
 
     /**
      * Returns back a SHA1 signed response
-     * 
+     *
      * @param userId
      *            -- id for the user
      * @return -- ArrayList of <CloudId+Signature>
@@ -313,7 +313,7 @@ public interface ManagementService {
 
     /**
      * Extracts the volume to a particular location.
-     * 
+     *
      * @param cmd
      *            the command specifying url (where the volume needs to be extracted to), zoneId (zone where the volume
      *            exists),
@@ -321,23 +321,23 @@ public interface ManagementService {
      * @throws URISyntaxException
      * @throws InternalErrorException
      * @throws PermissionDeniedException
-     * 
+     *
      */
     Long extractVolume(ExtractVolumeCmd cmd) throws URISyntaxException;
 
     /**
      * return an array of available hypervisors
-     * 
+     *
      * @param zoneId
      *            TODO
-     * 
+     *
      * @return an array of available hypervisors in the cloud
      */
     List<String> getHypervisors(Long zoneId);
 
     /**
      * This method uploads a custom cert to the db, and patches every cpvm with it on the current ms
-     * 
+     *
      * @param cmd
      *            -- upload certificate cmd
      * @return -- returns a string on success
@@ -350,7 +350,7 @@ public interface ManagementService {
 
     /**
      * Searches for vlan by the specified search criteria Can search by: "id", "vlan", "name", "zoneID"
-     * 
+     *
      * @param cmd
      * @return List of Vlans
      */
@@ -358,7 +358,7 @@ public interface ManagementService {
 
     /**
      * Search for async jobs by account and/or startDate
-     * 
+     *
      * @param cmd
      *            the command specifying the account and start date parameters
      * @return the list of async jobs that match the criteria
@@ -367,7 +367,7 @@ public interface ManagementService {
 
     /**
      * Generates a random password that will be used (initially) by newly created and started virtual machines
-     * 
+     *
      * @return a random password
      */
     String generateRandomPassword();
@@ -378,7 +378,7 @@ public interface ManagementService {
 
     /**
      * Search registered key pairs for the logged in user.
-     * 
+     *
      * @param cmd
      *            The api command class.
      * @return The list of key pairs found.
@@ -387,7 +387,7 @@ public interface ManagementService {
 
     /**
      * Registers a key pair for a given public key.
-     * 
+     *
      * @param cmd
      *            The api command class.
      * @return A VO with the key pair name and a finger print for the public key.
@@ -396,7 +396,7 @@ public interface ManagementService {
 
     /**
      * Creates a new
-     * 
+     *
      * @param cmd
      *            The api command class.
      * @return A VO containing the key pair name, finger print for the public key and the private key material of the
@@ -406,7 +406,7 @@ public interface ManagementService {
 
     /**
      * Deletes a key pair by name.
-     * 
+     *
      * @param cmd
      *            The api command class.
      * @return True on success. False otherwise.
@@ -415,7 +415,7 @@ public interface ManagementService {
 
     /**
      * Finds and returns an encrypted password for a VM.
-     * 
+     *
      * @param cmd
      *            The api command class.
      * @return The encrypted password.
@@ -428,7 +428,7 @@ public interface ManagementService {
      * List hosts for migrating the given VM. The API returns list of all hosts in the VM's cluster minus the current
      * host and
      * also a list of hosts that seem to have enough CPU and RAM capacity to host this VM.
-     * 
+     *
      * @param Long
      *            vmId
      *            Id of The VM to migrate
@@ -445,7 +445,7 @@ public interface ManagementService {
 
     /**
      * list all the top consumed resources across different capacity types
-     * 
+     *
      * @param cmd
      * @return List of capacities
      */

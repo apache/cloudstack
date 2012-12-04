@@ -25,10 +25,10 @@ import com.google.gson.annotations.SerializedName;
 public class ResourceCountResponse extends BaseResponse implements ControlledEntityResponse{
     @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account for which resource count's are updated")
     private String accountName;
-    
+
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id for which resource count's are updated")
     private IdentityProxy projectId = new IdentityProxy("projects");
-    
+
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name for which resource count's are updated")
     private String projectName;
 
@@ -67,7 +67,7 @@ public class ResourceCountResponse extends BaseResponse implements ControlledEnt
     public void setResourceCount(Long resourceCount) {
         this.resourceCount = resourceCount;
     }
-    
+
     @Override
     public void setProjectId(Long projectId) {
         this.projectId.setValue(projectId);
@@ -77,5 +77,5 @@ public class ResourceCountResponse extends BaseResponse implements ControlledEnt
     public void setProjectName(String projectName) {
         this.projectName = projectName;
     }
-    
+
 }

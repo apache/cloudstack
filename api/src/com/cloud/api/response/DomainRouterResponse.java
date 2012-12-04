@@ -29,12 +29,12 @@ import com.google.gson.annotations.SerializedName;
 public class DomainRouterResponse extends BaseResponse implements ControlledEntityResponse{
     @SerializedName(ApiConstants.ID) @Param(description="the id of the router")
     private IdentityProxy id = new IdentityProxy("vm_instance");
- 
+
     @SerializedName(ApiConstants.ZONE_ID) @Param(description="the Zone ID for the router")
     private IdentityProxy zoneId = new IdentityProxy("data_center");
 
     @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the Zone name for the router")
-    private String zoneName; 
+    private String zoneName;
 
     @SerializedName(ApiConstants.DNS1) @Param(description="the first DNS for the router")
     private String dns1;
@@ -68,7 +68,7 @@ public class DomainRouterResponse extends BaseResponse implements ControlledEnti
 
     @SerializedName(ApiConstants.LINK_LOCAL_MAC_NETMASK) @Param(description="the link local netmask for the router")
     private String linkLocalNetmask;
-    
+
     @SerializedName(ApiConstants.LINK_LOCAL_NETWORK_ID) @Param(description="the ID of the corresponding link local network")
     private IdentityProxy linkLocalNetworkId = new IdentityProxy("networks");
 
@@ -80,7 +80,7 @@ public class DomainRouterResponse extends BaseResponse implements ControlledEnti
 
     @SerializedName("publicnetmask") @Param(description="the public netmask for the router")
     private String publicNetmask;
-    
+
     @SerializedName("publicnetworkid") @Param(description="the ID of the corresponding public network")
     private IdentityProxy publicNetworkId = new IdentityProxy("networks");
 
@@ -92,7 +92,7 @@ public class DomainRouterResponse extends BaseResponse implements ControlledEnti
 
     @SerializedName("guestnetmask") @Param(description="the guest netmask for the router")
     private String guestNetmask;
-    
+
     @SerializedName("guestnetworkid") @Param(description="the ID of the corresponding guest network")
     private IdentityProxy guestNetworkId = new IdentityProxy("networks");
 
@@ -107,10 +107,10 @@ public class DomainRouterResponse extends BaseResponse implements ControlledEnti
 
     @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account associated with the router")
     private String accountName;
-    
+
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the ipaddress")
     private IdentityProxy projectId = new IdentityProxy("projects");
-    
+
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the address")
     private String projectName;
 
@@ -119,35 +119,35 @@ public class DomainRouterResponse extends BaseResponse implements ControlledEnti
 
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain associated with the router")
     private String domainName;
-    
+
     @SerializedName(ApiConstants.SERVICE_OFFERING_ID) @Param(description="the ID of the service offering of the virtual machine")
     private IdentityProxy serviceOfferingId = new IdentityProxy("disk_offering");
 
     @SerializedName("serviceofferingname") @Param(description="the name of the service offering of the virtual machine")
     private String serviceOfferingName;
-    
+
     @SerializedName("isredundantrouter") @Param(description="if this router is an redundant virtual router")
     private boolean isRedundantRouter;
-    
+
     @SerializedName("redundantstate") @Param(description="the state of redundant virtual router")
     private String redundantState;
-    
+
     @SerializedName("templateversion") @Param(description="the version of template")
     private String templateVersion;
-    
+
     @SerializedName("scriptsversion") @Param(description="the version of scripts")
     private String scriptsVersion;
-    
+
     @SerializedName(ApiConstants.VPC_ID) @Param(description="VPC the network belongs to")
     private IdentityProxy vpcId = new IdentityProxy("vpc");
-    
-    @SerializedName("nic")  @Param(description="the list of nics associated with the router", 
+
+    @SerializedName("nic")  @Param(description="the list of nics associated with the router",
             responseObject = NicResponse.class, since="4.0")
     private List<NicResponse> nics;
-    
+
     @Override
     public Long getObjectId() {
-    	return getId();
+        return getId();
     }
 
     public Long getId() {
@@ -260,7 +260,7 @@ public class DomainRouterResponse extends BaseResponse implements ControlledEnti
     public void setLinkLocalIp(String linkLocalIp) {
         this.linkLocalIp = linkLocalIp;
     }
-    
+
     public void setLinkLocalMacAddress(String linkLocalMacAddress) {
         this.linkLocalMacAddress = linkLocalMacAddress;
     }
@@ -292,15 +292,15 @@ public class DomainRouterResponse extends BaseResponse implements ControlledEnti
     public String getTemplateVersion() {
         return this.templateVersion;
     }
-    
+
     public void setTemplateVersion(String templateVersion) {
         this.templateVersion = templateVersion;
     }
-    
+
     public String getScriptsVersion() {
         return this.scriptsVersion;
     }
-    
+
     public void setScriptsVersion(String scriptsVersion) {
         this.scriptsVersion = scriptsVersion;
     }
@@ -313,11 +313,11 @@ public class DomainRouterResponse extends BaseResponse implements ControlledEnti
     public void setProjectName(String projectName) {
         this.projectName = projectName;
     }
-    
+
     public void setVpcId(Long vpcId) {
         this.vpcId.setValue(vpcId);
     }
-    
+
     public void setNics(List<NicResponse> nics) {
         this.nics = nics;
     }

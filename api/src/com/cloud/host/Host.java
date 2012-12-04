@@ -198,6 +198,6 @@ public interface Host extends StateObject<Status> {
     String getHypervisorVersion();
 
     boolean isInMaintenanceStates();
-    
-    ResourceState getResourceState(); 
+
+    ResourceState getResourceState();
 }

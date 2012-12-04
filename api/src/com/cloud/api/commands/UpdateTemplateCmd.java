@@ -27,13 +27,13 @@ import com.cloud.user.Account;
 
 @Implementation(description="Updates attributes of a template.", responseObject=TemplateResponse.class)
 public class UpdateTemplateCmd extends UpdateTemplateOrIsoCmd {
-	public static final Logger s_logger = Logger.getLogger(UpdateTemplateCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(UpdateTemplateCmd.class.getName());
     private static final String s_name = "updatetemplateresponse";
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-    
+
     @Override
     public Boolean isBootable() {
         return null;
@@ -42,17 +42,17 @@ public class UpdateTemplateCmd extends UpdateTemplateOrIsoCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-    
+
     @Override
     public String getCommandName() {
         return s_name;
     }
-    
+
     @SuppressWarnings("unchecked")
     public TemplateResponse getResponse() {
        return null;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         VirtualMachineTemplate template = _entityMgr.findById(VirtualMachineTemplate.class, getId());
@@ -62,7 +62,7 @@ public class UpdateTemplateCmd extends UpdateTemplateOrIsoCmd {
 
         return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
-    
+
     @Override
     public void execute(){
         VirtualMachineTemplate result = _mgr.updateTemplate(this);

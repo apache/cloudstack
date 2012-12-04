@@ -72,7 +72,7 @@ public class ListSnapshotPoliciesCmd extends BaseListCmd {
             policyResponses.add(policyResponse);
         }
         response.setResponses(policyResponses);
-        response.setResponseName(getCommandName());   
+        response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
 }

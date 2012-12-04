@@ -28,7 +28,7 @@ public class StaticRouteProfile implements StaticRoute{
     String gateway;
     String netmask;
     String ipAddress;
-    
+
 
     public StaticRouteProfile(StaticRoute staticRoute, VpcGateway gateway) {
         this.id = staticRoute.getId();
@@ -82,7 +82,7 @@ public class StaticRouteProfile implements StaticRoute{
     public String getVlanTag() {
         return vlanTag;
     }
-    
+
     public String getIp4Address() {
         return ipAddress;
     }
@@ -94,5 +94,5 @@ public class StaticRouteProfile implements StaticRoute{
     public String getNetmask() {
         return netmask;
     }
-    
+
 }

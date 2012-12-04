@@ -41,21 +41,21 @@ public class ListNetworkServiceProvidersCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    
+
     @IdentityMapper(entityTableName="physical_network")
     @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, description="the Physical Network ID")
     private Long physicalNetworkId;
-    
+
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="list providers by name")
     private String name;
-    
+
     @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="list providers by state")
     private String state;
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-    
+
     public void setPhysicalNetworkId(Long physicalNetworkId) {
         this.physicalNetworkId = physicalNetworkId;
     }
@@ -65,14 +65,14 @@ public class ListNetworkServiceProvidersCmd extends BaseListCmd {
     }
 
     public String getName() {
-		return name;
-	}
+        return name;
+    }
 
-	public String getState() {
-		return state;
-	}
+    public String getState() {
+        return state;
+    }
 
-	/////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
     @Override
@@ -84,7 +84,7 @@ public class ListNetworkServiceProvidersCmd extends BaseListCmd {
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-    
+
     @Override
     public void execute(){
         Pair<List<? extends PhysicalNetworkServiceProvider>, Integer> serviceProviders = _networkService.listNetworkServiceProviders(getPhysicalNetworkId(),

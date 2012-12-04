@@ -59,12 +59,12 @@ public class GetCloudIdentifierCmd extends BaseCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-    
+
     @Override
     public void execute(){
         ArrayList<String> result = _mgr.getCloudIdentifierResponse(userid);
@@ -78,6 +78,6 @@ public class GetCloudIdentifierCmd extends BaseCmd {
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to get cloud identifier");
         }
-      
+
     }
 }

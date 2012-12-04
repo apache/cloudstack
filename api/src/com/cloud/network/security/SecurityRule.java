@@ -23,11 +23,11 @@ public interface SecurityRule {
     public static class SecurityRuleType {
         public static final SecurityRuleType IngressRule = new SecurityRuleType("ingress");
         public static final SecurityRuleType EgressRule = new SecurityRuleType("egress");
-        
+
         public SecurityRuleType(String type) {
             this._type = type;
         }
-        
+
         public String getType(){
             return _type;
         }
@@ -40,11 +40,11 @@ public interface SecurityRule {
     int getStartPort();
 
     int getEndPort();
-    
+
     String getType();
-    
+
     SecurityRuleType getRuleType();
-    
+
     String getProtocol();
 
     AsyncInstanceCreateStatus getCreateStatus();
@@ -52,7 +52,7 @@ public interface SecurityRule {
     Long getAllowedNetworkId();
 
     String getAllowedSourceIpCidr();
-    
+
     String getUuid();
 
 }

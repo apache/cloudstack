@@ -37,9 +37,9 @@ import com.cloud.user.UserContext;
 
 @Implementation(responseObject=VirtualRouterProviderResponse.class, description="Create a virtual router element.")
 public class CreateVirtualRouterElementCmd extends BaseAsyncCreateCmd {
-	public static final Logger s_logger = Logger.getLogger(CreateVirtualRouterElementCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(CreateVirtualRouterElementCmd.class.getName());
     private static final String s_name = "createvirtualrouterelementresponse";
-    
+
     @PlugService
     private VirtualRouterElementService _service;
 
@@ -67,7 +67,7 @@ public class CreateVirtualRouterElementCmd extends BaseAsyncCreateCmd {
     public Long getNspId() {
         return nspId;
     }
-    
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -76,12 +76,12 @@ public class CreateVirtualRouterElementCmd extends BaseAsyncCreateCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-    
+
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Virtual router element Id: "+getEntityId());
@@ -102,14 +102,14 @@ public class CreateVirtualRouterElementCmd extends BaseAsyncCreateCmd {
             setEntityId(result.getId());
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add Virtual Router entity to physical network");
-        }        
+        }
     }
 
     @Override
     public String getEventType() {
         return EventTypes.EVENT_SERVICE_PROVIDER_CREATE;
     }
-    
+
     @Override
     public String getEventDescription() {
         return  "Adding physical network ServiceProvider Virtual Router: " + getEntityId();

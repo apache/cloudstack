@@ -56,12 +56,12 @@ public class QueryAsyncJobResultCmd extends BaseCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-    
+
     @Override
     public void execute(){
         AsyncJobResponse response = _responseGenerator.queryJobResult(this);

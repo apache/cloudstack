@@ -19,7 +19,7 @@ package com.cloud.server;
 import com.cloud.acl.ControlledEntity;
 
 public interface ResourceTag extends ControlledEntity{
-    
+
     public enum  TaggedResourceType {
         UserVm,
         Template,

@@ -45,19 +45,19 @@ public class ClusterResponse extends BaseResponse {
 
     @SerializedName("hypervisortype") @Param(description="the hypervisor type of the cluster")
     private String hypervisorType;
-    
+
     @SerializedName("clustertype") @Param(description="the type of the cluster")
     private String clusterType;
-    
+
     @SerializedName("allocationstate") @Param(description="the allocation state of the cluster")
     private String allocationState;
-    
+
     @SerializedName("managedstate") @Param(description="whether this cluster is managed by cloudstack")
     private String managedState;
-    
+
     @SerializedName("capacity")  @Param(description="the capacity of the Cluster", responseObject = CapacityResponse.class)
     private List<CapacityResponse> capacitites;
-   
+
     public Long getId() {
         return id.getValue();
     }
@@ -105,29 +105,29 @@ public class ClusterResponse extends BaseResponse {
     public void setZoneName(String zoneName) {
         this.zoneName = zoneName;
     }
-    
+
     public String getClusterType() {
-    	return clusterType;
+        return clusterType;
     }
-    
+
     public void setClusterType(String clusterType) {
-    	this.clusterType = clusterType;
+        this.clusterType = clusterType;
     }
-    
+
     public String getHypervisorType() {
-    	return this.hypervisorType;
+        return this.hypervisorType;
     }
-    
+
     public void setHypervisorType(String hypervisorType) {
-    	this.hypervisorType = hypervisorType;
+        this.hypervisorType = hypervisorType;
     }
-    
+
     public String getAllocationState() {
-    	return allocationState;
+        return allocationState;
     }
-    
+
     public void setAllocationState(String allocationState) {
-    	this.allocationState = allocationState;
+        this.allocationState = allocationState;
     }
 
     public String getManagedState() {
@@ -138,11 +138,11 @@ public class ClusterResponse extends BaseResponse {
         this.managedState = managedState;
     }
 
-	public List<CapacityResponse> getCapacitites() {
-		return capacitites;
-	}
+    public List<CapacityResponse> getCapacitites() {
+        return capacitites;
+    }
 
-	public void setCapacitites(ArrayList<CapacityResponse> arrayList) {
-		this.capacitites = arrayList;
-	}     
+    public void setCapacitites(ArrayList<CapacityResponse> arrayList) {
+        this.capacitites = arrayList;
+    }
 }

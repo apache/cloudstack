@@ -47,7 +47,7 @@ public class DiskOfferingResponse extends BaseResponse {
 
     @SerializedName("iscustomized") @Param(description="true if disk offering uses custom size, false otherwise")
     private Boolean customized;
-    
+
     @SerializedName(ApiConstants.TAGS) @Param(description="the tags for the disk offering")
     private String tags;
 

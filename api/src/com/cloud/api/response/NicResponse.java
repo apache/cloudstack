@@ -23,43 +23,43 @@ import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 public class NicResponse extends BaseResponse {
-    
+
     @SerializedName("id") @Param(description="the ID of the nic")
     private final IdentityProxy id = new IdentityProxy("nics");
 
     @SerializedName("networkid") @Param(description="the ID of the corresponding network")
     private final IdentityProxy networkId = new IdentityProxy("networks");
- 
+
     @SerializedName("networkname") @Param(description="the name of the corresponding network")
     private String  networkName ;
-    
+
     @SerializedName(ApiConstants.NETMASK) @Param(description="the netmask of the nic")
     private String netmask;
-    
+
     @SerializedName(ApiConstants.GATEWAY) @Param(description="the gateway of the nic")
     private String gateway;
-    
+
     @SerializedName(ApiConstants.IP_ADDRESS) @Param(description="the ip address of the nic")
     private String ipaddress;
-    
+
     @SerializedName("isolationuri") @Param(description="the isolation uri of the nic")
     private String isolationUri;
-    
+
     @SerializedName("broadcasturi") @Param(description="the broadcast uri of the nic")
     private String broadcastUri;
-    
+
     @SerializedName(ApiConstants.TRAFFIC_TYPE) @Param(description="the traffic type of the nic")
     private String trafficType;
-    
+
     @SerializedName(ApiConstants.TYPE) @Param(description="the type of the nic")
     private String type;
-    
+
     @SerializedName(ApiConstants.IS_DEFAULT) @Param(description="true if nic is default, false otherwise")
     private Boolean isDefault;
 
     @SerializedName("macaddress") @Param(description="true if nic is default, false otherwise")
     private String macAddress;
-    
+
     public Long getId() {
         return id.getValue();
     }
@@ -108,9 +108,9 @@ public class NicResponse extends BaseResponse {
         this.isDefault = isDefault;
     }
 
-	public void setMacAddress(String macAddress) {
-		this.macAddress = macAddress;
-	}
+    public void setMacAddress(String macAddress) {
+        this.macAddress = macAddress;
+    }
 
     @Override
     public int hashCode() {
@@ -136,5 +136,5 @@ public class NicResponse extends BaseResponse {
             return false;
         return true;
     }
-    
+
 }

@@ -56,10 +56,10 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd {
     private String templateName;
 
     @Parameter(name=ApiConstants.TEMPLATE_FILTER, type=CommandType.STRING, required=true, description="possible values are \"featured\", \"self\", \"self-executable\", \"executable\", and \"community\"." +
-    																					"* featured-templates that are featured and are public" +
-    																					"* self-templates that have been registered/created by the owner" +
-    																					"* selfexecutable-templates that have been registered/created by the owner that can be used to deploy a new VM" +
-    																					"* executable-all templates that can be used to deploy a new VM* community-templates that are public.")
+                                                                                        "* featured-templates that are featured and are public" +
+                                                                                        "* self-templates that have been registered/created by the owner" +
+                                                                                        "* selfexecutable-templates that have been registered/created by the owner that can be used to deploy a new VM" +
+                                                                                        "* executable-all templates that can be used to deploy a new VM* community-templates that are public.")
     private String templateFilter;
 
     @IdentityMapper(entityTableName="data_center")
@@ -88,9 +88,9 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd {
     public Long getZoneId() {
         return zoneId;
     }
-    
+
     public boolean listInReadyState() {
-   	
+
         Account account = UserContext.current().getCaller();
         // It is account specific if account is admin type and domainId and accountName are not null
         boolean isAccountSpecific = (account == null || isAdmin(account.getType())) && (getAccountName() != null) && (getDomainId() != null);
@@ -109,11 +109,11 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     public AsyncJob.Type getInstanceType() {
-    	return AsyncJob.Type.Template;
+        return AsyncJob.Type.Template;
     }
-    
+
     @Override
     public void execute(){
         Set<Pair<Long, Long>> templateZonePairSet = _mgr.listTemplates(this);

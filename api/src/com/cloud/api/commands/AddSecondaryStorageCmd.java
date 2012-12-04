@@ -35,7 +35,7 @@ import com.cloud.user.Account;
 public class AddSecondaryStorageCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddSecondaryStorageCmd.class.getName());
     private static final String s_name = "addsecondarystorageresponse";
-     
+
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
@@ -65,14 +65,14 @@ public class AddSecondaryStorageCmd extends BaseCmd {
 
     @Override
     public String getCommandName() {
-    	return s_name;
+        return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-    
+
     @Override
     public void execute(){
         try {

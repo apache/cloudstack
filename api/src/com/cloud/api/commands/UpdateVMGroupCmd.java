@@ -38,7 +38,7 @@ public class UpdateVMGroupCmd extends BaseCmd{
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-	@IdentityMapper(entityTableName="instance_group")
+    @IdentityMapper(entityTableName="instance_group")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="Instance group ID")
     private Long id;
 
@@ -65,7 +65,7 @@ public class UpdateVMGroupCmd extends BaseCmd{
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         InstanceGroup group = _entityMgr.findById(InstanceGroup.class, getId());

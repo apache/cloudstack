@@ -43,7 +43,7 @@ public class ListPhysicalNetworksCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    
+
     @IdentityMapper(entityTableName="physical_network")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list physical network by id")
     private Long id;
@@ -51,14 +51,14 @@ public class ListPhysicalNetworksCmd extends BaseListCmd {
     @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the Zone ID for the physical network")
     private Long zoneId;
-    
+
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="search by name")
     private String networkName;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-    
+
     public Long getId() {
         return id;
     }
@@ -66,11 +66,11 @@ public class ListPhysicalNetworksCmd extends BaseListCmd {
     public Long getZoneId() {
         return zoneId;
     }
-    
+
     public String getNetworkName() {
-    	return networkName;
+        return networkName;
     }
-    
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -79,12 +79,12 @@ public class ListPhysicalNetworksCmd extends BaseListCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-    
+
     @Override
     public void execute(){
         Pair<List<? extends PhysicalNetwork>, Integer> result = _networkService.searchPhysicalNetworks(getId(),getZoneId(),

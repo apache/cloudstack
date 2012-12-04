@@ -26,37 +26,37 @@ import com.google.gson.annotations.SerializedName;
 public class ExtractResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the id of extracted object")
     private IdentityProxy id = new IdentityProxy("vm_template");
-    
+
     @SerializedName(ApiConstants.NAME) @Param(description="the name of the extracted object")
     private String name;
-    
+
     @SerializedName("extractId") @Param(description="the upload id of extracted object")
     private IdentityProxy uploadId = new IdentityProxy("async_job");
-    
+
     @SerializedName("uploadpercentage") @Param(description="the percentage of the entity uploaded to the specified location")
     private Integer uploadPercent;
-        
+
     @SerializedName("status") @Param(description="the status of the extraction")
     private String status;
-    
+
     @SerializedName("accountid") @Param(description="the account id to which the extracted object belongs")
-    private IdentityProxy accountId = new IdentityProxy("account");    
- 
+    private IdentityProxy accountId = new IdentityProxy("account");
+
     @SerializedName("resultstring") @Param(includeInApiDoc=false)
-    private String resultString;    
+    private String resultString;
 
     @SerializedName(ApiConstants.CREATED) @Param(description="the time and date the object was created")
     private Date createdDate;
 
     @SerializedName(ApiConstants.STATE) @Param(description="the state of the extracted object")
     private String state;
-    
+
     @SerializedName("storagetype") @Param(description="type of the storage")
     private String storageType;
 
     @SerializedName("storage")
     private String storage;
-    
+
     @SerializedName(ApiConstants.ZONE_ID) @Param(description="zone ID the object was extracted from")
     private IdentityProxy zoneId = new IdentityProxy("data_center");
 
@@ -65,20 +65,20 @@ public class ExtractResponse extends BaseResponse {
 
     @SerializedName("extractMode") @Param(description="the mode of extraction - upload or download")
     private String mode;
-    
+
     @SerializedName(ApiConstants.URL) @Param(description="if mode = upload then url of the uploaded entity. if mode = download the url from which the entity can be downloaded")
-    private String url;   
-    
-    public ExtractResponse(){        
+    private String url;
+
+    public ExtractResponse(){
     }
-    
+
     public ExtractResponse(Long typeId, String typeName, long accountId,
             String state, Long uploadId) {
         this.id.setValue(typeId);
         this.name = typeName;
         this.accountId.setValue(accountId);
         this.state = state;
-        this.uploadId.setValue(uploadId);        
+        this.uploadId.setValue(uploadId);
     }
 
     public Long getId() {
@@ -88,9 +88,9 @@ public class ExtractResponse extends BaseResponse {
     public void setId(long id) {
         this.id.setValue(id);
     }
-    
+
     public void setIdentityTableName(String tableName) {
-    	this.id.setTableName(tableName);
+        this.id.setTableName(tableName);
     }
 
     public String getName() {

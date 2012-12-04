@@ -53,10 +53,10 @@ public class CreateDiskOfferingCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.CUSTOMIZED, type=CommandType.BOOLEAN, description="whether disk offering is custom or not")
     private Boolean customized;
-    
+
     @IdentityMapper(entityTableName="domain")
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the ID of the containing domain, null for public offerings")
-    private Long domainId; 
+    private Long domainId;
 
     @Parameter(name=ApiConstants.STORAGE_TYPE, type=CommandType.STRING, description="the storage type of the disk offering. Values are local and shared.")
     private String storageType = ServiceOffering.StorageType.shared.toString();
@@ -82,11 +82,11 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     }
 
     public Boolean isCustomized(){
-    	return customized;
+        return customized;
     }
-    
+
     public Long getDomainId(){
-    	return domainId;
+        return domainId;
     }
 
     public String getStorageType() {
@@ -101,12 +101,12 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-    
+
     @Override
     public void execute(){
         DiskOffering offering = _configService.createDiskOffering(this);
@@ -116,6 +116,6 @@ public class CreateDiskOfferingCmd extends BaseCmd {
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create disk offering");
-        } 
+        }
     }
 }

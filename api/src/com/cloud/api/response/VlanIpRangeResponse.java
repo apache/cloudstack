@@ -64,16 +64,16 @@ public class VlanIpRangeResponse extends BaseResponse implements ControlledEntit
 
     @SerializedName(ApiConstants.END_IP) @Param(description="the end ip of the VLAN IP range")
     private String endIp;
-    
+
     @SerializedName(ApiConstants.NETWORK_ID) @Param(description="the network id of vlan range")
     private IdentityProxy networkId = new IdentityProxy("networks");
-    
+
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the vlan range")
     private IdentityProxy projectId = new IdentityProxy("projects");
-    
+
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the vlan range")
     private String projectName;
-    
+
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) @Param(description="the physical network this belongs to")
     private IdentityProxy physicalNetworkId = new IdentityProxy("physical_network");
 
@@ -88,11 +88,11 @@ public class VlanIpRangeResponse extends BaseResponse implements ControlledEntit
     public void setZoneId(Long zoneId) {
         this.zoneId.setValue(zoneId);
     }
-    
+
     public void setVlan(String vlan) {
         this.vlan = vlan;
     }
-    
+
     public void setAccountName(String accountName) {
         this.accountName = accountName;
     }
@@ -136,7 +136,7 @@ public class VlanIpRangeResponse extends BaseResponse implements ControlledEntit
     public void setNetworkId(Long networkId) {
         this.networkId.setValue(networkId);
     }
-    
+
     @Override
     public void setProjectId(Long projectId) {
         this.projectId.setValue(projectId);
@@ -146,12 +146,12 @@ public class VlanIpRangeResponse extends BaseResponse implements ControlledEntit
     public void setProjectName(String projectName) {
         this.projectName = projectName;
     }
-    
+
     public void setPhysicalNetworkId(long physicalNetworkId) {
         this.physicalNetworkId.setValue(physicalNetworkId);
     }
 
     public long getphysicalNetworkId() {
         return physicalNetworkId.getValue();
-    }    
+    }
 }

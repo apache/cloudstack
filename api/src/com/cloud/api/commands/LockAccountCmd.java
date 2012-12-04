@@ -58,12 +58,12 @@ public class LockAccountCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-    
+
     @Override
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         Account account = _accountService.getActiveAccountByName(getAccountName(), getDomainId());

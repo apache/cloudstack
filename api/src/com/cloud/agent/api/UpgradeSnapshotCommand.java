@@ -19,16 +19,16 @@ public class UpgradeSnapshotCommand extends SnapshotCommand {
     private String version;
     private Long templateId;
     private Long tmpltAccountId;
-    
+
     protected UpgradeSnapshotCommand() {
-        
+
     }
-    
+
     /**
      * @param primaryStoragePoolNameLabel   The UUID of the primary storage Pool
      * @param secondaryStoragePoolURL  This is what shows up in the UI when you click on Secondary storage.
      * @param snapshotUuid             The UUID of the snapshot which is going to be upgraded
-     * @param _version          version for this snapshot                                 
+     * @param _version          version for this snapshot
      */
     public UpgradeSnapshotCommand(String primaryStoragePoolNameLabel,
                                  String secondaryStoragePoolURL,
@@ -58,5 +58,5 @@ public class UpgradeSnapshotCommand extends SnapshotCommand {
 
     public Long getTmpltAccountId() {
         return tmpltAccountId;
-    }   
+    }
 }

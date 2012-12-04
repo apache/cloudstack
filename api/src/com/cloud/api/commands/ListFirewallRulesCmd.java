@@ -42,7 +42,7 @@ public class ListFirewallRulesCmd extends BaseListTaggedResourcesCmd {
     @IdentityMapper(entityTableName="firewall_rules")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="Lists rule with the specified ID.")
     private Long id;
-    
+
     @IdentityMapper(entityTableName="user_ip_address")
     @Parameter(name=ApiConstants.IP_ADDRESS_ID, type=CommandType.LONG, description="the id of IP address of the firwall services")
     private Long ipAddressId;
@@ -50,11 +50,11 @@ public class ListFirewallRulesCmd extends BaseListTaggedResourcesCmd {
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-    
+
     public Long getIpAddressId() {
         return ipAddressId;
     }
-    
+
     public Long getId() {
         return id;
     }
@@ -67,13 +67,13 @@ public class ListFirewallRulesCmd extends BaseListTaggedResourcesCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public void execute(){
         Pair<List<? extends FirewallRule>, Integer> result = _firewallService.listFirewallRules(this);
         ListResponse<FirewallResponse> response = new ListResponse<FirewallResponse>();
         List<FirewallResponse> fwResponses = new ArrayList<FirewallResponse>();
-        
+
         for (FirewallRule fwRule : result.first()) {
             FirewallResponse ruleData = _responseGenerator.createFirewallResponse(fwRule);
             ruleData.setObjectName("firewallrule");
@@ -81,6 +81,6 @@ public class ListFirewallRulesCmd extends BaseListTaggedResourcesCmd {
         }
         response.setResponses(fwResponses, result.second());
         response.setResponseName(getCommandName());
-        this.setResponseObject(response); 
+        this.setResponseObject(response);
     }
 }

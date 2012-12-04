@@ -39,7 +39,7 @@ public interface SecurityChecker extends Adapter {
 
     /**
      * Checks if the account owns the object.
-     * 
+     *
      * @param caller
      *            account to check against.
      * @param object
@@ -52,7 +52,7 @@ public interface SecurityChecker extends Adapter {
 
     /**
      * Checks if the user belongs to an account that owns the object.
-     * 
+     *
      * @param user
      *            user to check against.
      * @param object
@@ -65,7 +65,7 @@ public interface SecurityChecker extends Adapter {
 
     /**
      * Checks if the account can access the object.
-     * 
+     *
      * @param caller
      *            account to check against.
      * @param entity
@@ -80,7 +80,7 @@ public interface SecurityChecker extends Adapter {
 
     /**
      * Checks if the user belongs to an account that can access the object.
-     * 
+     *
      * @param user
      *            user to check against.
      * @param entity

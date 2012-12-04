@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -51,14 +51,14 @@ public class AsyncJobResponse extends BaseResponse {
 
     @SerializedName("jobresult") @Param(description="the result reason")
     private ResponseObject jobResult;
- 
+
     @SerializedName("jobinstancetype") @Param(description="the instance/entity object related to the job")
     private String jobInstanceType;
 
     @SerializedName("jobinstanceid") @Param(description="the unique ID of the instance/entity object related to the job")
     private IdentityProxy jobInstanceId = new IdentityProxy();
 
-    @SerializedName(ApiConstants.CREATED) @Param(description="	the created date of the job")
+    @SerializedName(ApiConstants.CREATED) @Param(description="  the created date of the job")
     private Date created;
 
     public void setAccountId(Long accountId) {
@@ -98,33 +98,33 @@ public class AsyncJobResponse extends BaseResponse {
         this.jobInstanceType = jobInstanceType;
 
         if(jobInstanceType != null) {
-        	if(jobInstanceType.equalsIgnoreCase(AsyncJob.Type.Volume.toString())) {
-        		this.jobInstanceId.setTableName("volumes");
-        	} else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.Template.toString())) {
-        		this.jobInstanceId.setTableName("vm_template");
-        	} else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.Iso.toString())) {
-        		this.jobInstanceId.setTableName("vm_template");
-        	} else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.VirtualMachine.toString()) || jobInstanceType.equalsIgnoreCase(AsyncJob.Type.ConsoleProxy.toString()) || jobInstanceType.equalsIgnoreCase(AsyncJob.Type.SystemVm.toString()) || jobInstanceType.equalsIgnoreCase(AsyncJob.Type.DomainRouter.toString()) ) {
-        		this.jobInstanceId.setTableName("vm_instance");
-        	} else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.Snapshot.toString())) {
-        		this.jobInstanceId.setTableName("snapshots");
-        	} else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.Host.toString())) {
-        		this.jobInstanceId.setTableName("host");
-        	} else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.StoragePool.toString())) {
-        		this.jobInstanceId.setTableName("storage_pool");
-        	} else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.IpAddress.toString())) {
-        		this.jobInstanceId.setTableName("user_ip_address");
-        	} else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.SecurityGroup.toString())) {
-        		this.jobInstanceId.setTableName("security_group");
-        	} else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.PhysicalNetwork.toString())) {
-        		this.jobInstanceId.setTableName("physical_network");
-        	} else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.TrafficType.toString())) {
+            if(jobInstanceType.equalsIgnoreCase(AsyncJob.Type.Volume.toString())) {
+                this.jobInstanceId.setTableName("volumes");
+            } else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.Template.toString())) {
+                this.jobInstanceId.setTableName("vm_template");
+            } else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.Iso.toString())) {
+                this.jobInstanceId.setTableName("vm_template");
+            } else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.VirtualMachine.toString()) || jobInstanceType.equalsIgnoreCase(AsyncJob.Type.ConsoleProxy.toString()) || jobInstanceType.equalsIgnoreCase(AsyncJob.Type.SystemVm.toString()) || jobInstanceType.equalsIgnoreCase(AsyncJob.Type.DomainRouter.toString()) ) {
+                this.jobInstanceId.setTableName("vm_instance");
+            } else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.Snapshot.toString())) {
+                this.jobInstanceId.setTableName("snapshots");
+            } else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.Host.toString())) {
+                this.jobInstanceId.setTableName("host");
+            } else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.StoragePool.toString())) {
+                this.jobInstanceId.setTableName("storage_pool");
+            } else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.IpAddress.toString())) {
+                this.jobInstanceId.setTableName("user_ip_address");
+            } else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.SecurityGroup.toString())) {
+                this.jobInstanceId.setTableName("security_group");
+            } else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.PhysicalNetwork.toString())) {
+                this.jobInstanceId.setTableName("physical_network");
+            } else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.TrafficType.toString())) {
                 this.jobInstanceId.setTableName("physical_network_traffic_types");
             } else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.PhysicalNetworkServiceProvider.toString())) {
                 this.jobInstanceId.setTableName("physical_network_service_providers");
-        	} else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.FirewallRule.toString())) {
-        	    this.jobInstanceId.setTableName("firewall_rules");
-        	} else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.Account.toString())) {
+            } else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.FirewallRule.toString())) {
+                this.jobInstanceId.setTableName("firewall_rules");
+            } else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.Account.toString())) {
                 this.jobInstanceId.setTableName("account");
             } else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.User.toString())) {
                 this.jobInstanceId.setTableName("user");
@@ -143,14 +143,14 @@ public class AsyncJobResponse extends BaseResponse {
             } else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.AutoScaleVmGroup.toString())) {
                 this.jobInstanceId.setTableName("autoscale_vmgroups");
             } else if (!jobInstanceType.equalsIgnoreCase(AsyncJob.Type.None.toString())){
-        		// TODO : when we hit here, we need to add instanceType -> UUID entity table mapping
-        		assert(false);
-        	}
+                // TODO : when we hit here, we need to add instanceType -> UUID entity table mapping
+                assert(false);
+            }
         }
     }
 
     public void setJobInstanceId(Long jobInstanceId) {
-    	this.jobInstanceId.setValue(jobInstanceId);
+        this.jobInstanceId.setValue(jobInstanceId);
     }
 
     public void setCreated(Date created) {

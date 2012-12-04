@@ -36,21 +36,21 @@ public class UpdateNetworkOfferingCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    
+
     @IdentityMapper(entityTableName="network_offerings")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the id of the network offering")
     private Long id;
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the network offering")
     private String networkOfferingName;
-    
+
     @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="the display text of the network offering")
     private String displayText;
-    
+
     @Parameter(name=ApiConstants.AVAILABILITY, type=CommandType.STRING, description="the availability of network offering." +
-    		" Default value is Required for Guest Virtual network offering; Optional for Guest Direct network offering")
+            " Default value is Required for Guest Virtual network offering; Optional for Guest Direct network offering")
     private String availability;
-    
+
     @Parameter(name=ApiConstants.SORT_KEY, type=CommandType.INTEGER, description="sort key of the network offering, integer")
     private Integer sortKey;
 
@@ -60,15 +60,15 @@ public class UpdateNetworkOfferingCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-    
+
     public String getNetworkOfferingName() {
         return networkOfferingName;
     }
-    
+
     public String getDisplayText() {
         return displayText;
     }
-    
+
     public Long getId() {
         return id;
     }
@@ -80,9 +80,9 @@ public class UpdateNetworkOfferingCmd extends BaseCmd {
     public String getState() {
         return state;
     }
-    
+
     public Integer getSortKey() {
-    	return sortKey;
+        return sortKey;
     }
 
     /////////////////////////////////////////////////////
@@ -92,7 +92,7 @@ public class UpdateNetworkOfferingCmd extends BaseCmd {
     public String getCommandName() {
         return _name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;

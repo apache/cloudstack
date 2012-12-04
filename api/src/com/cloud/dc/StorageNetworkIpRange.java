@@ -30,8 +30,8 @@ public interface StorageNetworkIpRange {
     String getNetworkUuid();
 
     String getZoneUuid();
-    
+
     String getNetmask();
-    
+
     String getGateway();
 }

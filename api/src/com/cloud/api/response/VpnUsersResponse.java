@@ -37,18 +37,18 @@ public class VpnUsersResponse extends BaseResponse implements ControlledEntityRe
 
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the account of the remote access vpn")
 	private String domainName;
-    
+
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the vpn")
     private IdentityProxy projectId = new IdentityProxy("projects");
-    
+
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the vpn")
     private String projectName;
-    
+
 
 	public void setId(Long id) {
 		this.id.setValue(id);
 	}
-	
+
 	public void setUserName(String name) {
 		this.userName = name;
 	}
@@ -62,9 +62,9 @@ public class VpnUsersResponse extends BaseResponse implements ControlledEntityRe
 	}
 
 	public void setDomainName(String name) {
-		this.domainName = name;		
+		this.domainName = name;
 	}
-	
+
     @Override
     public void setProjectId(Long projectId) {
         this.projectId.setValue(projectId);
@@ -73,6 +73,6 @@ public class VpnUsersResponse extends BaseResponse implements ControlledEntityRe
     @Override
     public void setProjectName(String projectName) {
         this.projectName = projectName;
-    }	
+    }
 
 }

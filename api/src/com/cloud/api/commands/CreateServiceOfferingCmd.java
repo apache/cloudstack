@@ -30,8 +30,8 @@ import com.cloud.user.Account;
 
 @Implementation(description="Creates a service offering.", responseObject=ServiceOfferingResponse.class)
 public class CreateServiceOfferingCmd extends BaseCmd {
-	public static final Logger s_logger = Logger.getLogger(CreateServiceOfferingCmd.class.getName());
-	private static final String _name = "createserviceofferingresponse";
+    public static final Logger s_logger = Logger.getLogger(CreateServiceOfferingCmd.class.getName());
+    private static final String _name = "createserviceofferingresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -66,8 +66,8 @@ public class CreateServiceOfferingCmd extends BaseCmd {
 
     @IdentityMapper(entityTableName="domain")
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the ID of the containing domain, null for public offerings")
-    private Long domainId; 
-    
+    private Long domainId;
+
     @Parameter(name=ApiConstants.HOST_TAGS, type=CommandType.STRING, description="the host tag for this service offering.")
     private String hostTag;
 
@@ -76,10 +76,10 @@ public class CreateServiceOfferingCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.SYSTEM_VM_TYPE, type=CommandType.STRING, description="the system VM type. Possible types are \"domainrouter\", \"consoleproxy\" and \"secondarystoragevm\".")
     private String systemVmType;
-    
+
     @Parameter(name=ApiConstants.NETWORKRATE, type=CommandType.INTEGER, description="data transfer rate in megabits per second allowed. Supported only for non-System offering and system offerings having \"domainrouter\" systemvmtype")
     private Integer networkRate;
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -109,7 +109,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     }
 
     public Boolean GetLimitCpuUse() {
-    	return limitCpuUse;
+        return limitCpuUse;
     }
 
     public String getStorageType() {
@@ -121,8 +121,8 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     }
 
     public Long getDomainId() {
-		return domainId;
-	}
+        return domainId;
+    }
 
     public String getHostTag() {
         return hostTag;
@@ -135,7 +135,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     public String getSystemVmType() {
         return systemVmType;
     }
-    
+
     public Integer getNetworkRate() {
         return networkRate;
     }
@@ -144,11 +144,11 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-	@Override
+    @Override
     public String getCommandName() {
-		return _name;
-	}
-	
+        return _name;
+    }
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;

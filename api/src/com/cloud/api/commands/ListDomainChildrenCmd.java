@@ -33,7 +33,7 @@ import com.cloud.utils.Pair;
 
 @Implementation(description="Lists all children domains belonging to a specified domain", responseObject=DomainResponse.class)
 public class ListDomainChildrenCmd extends BaseListCmd {
-	public static final Logger s_logger = Logger.getLogger(ListDomainChildrenCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(ListDomainChildrenCmd.class.getName());
 
     private static final String s_name = "listdomainchildrenresponse";
 
@@ -47,10 +47,10 @@ public class ListDomainChildrenCmd extends BaseListCmd {
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="list children domains by name")
     private String domainName;
-    
+
     @Parameter(name=ApiConstants.IS_RECURSIVE, type=CommandType.BOOLEAN, description="to return the entire tree, use the value \"true\". To return the first level children, use the value \"false\".")
     private Boolean recursive;
-    
+
     @Parameter(name=ApiConstants.LIST_ALL, type=CommandType.BOOLEAN, description="If set to false, list only resources belonging to the command's caller; if set to true - list resources that the caller is authorized to see. Default value is false")
     private Boolean listAll;
 
@@ -65,11 +65,11 @@ public class ListDomainChildrenCmd extends BaseListCmd {
     public String getDomainName() {
         return domainName;
     }
-    
+
     public boolean listAll() {
         return listAll == null ? false : listAll;
     }
-    
+
     public boolean isRecursive() {
         return recursive == null ? false : recursive;
     }
@@ -82,7 +82,7 @@ public class ListDomainChildrenCmd extends BaseListCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public void execute(){
         Pair<List<? extends Domain>, Integer> result = _domainService.searchForDomainChildren(this);

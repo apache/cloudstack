@@ -35,7 +35,7 @@ import com.cloud.utils.Pair;
 
 @Implementation(description="Lists all available snapshots for the account.", responseObject=SnapshotResponse.class)
 public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
-	public static final Logger s_logger = Logger.getLogger(ListSnapshotsCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(ListSnapshotsCmd.class.getName());
 
     private static final String s_name = "listsnapshotsresponse";
 
@@ -83,7 +83,7 @@ public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
     public Long getVolumeId() {
         return volumeId;
     }
-    
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -92,9 +92,9 @@ public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     public AsyncJob.Type getInstanceType() {
-    	return AsyncJob.Type.Snapshot;
+        return AsyncJob.Type.Snapshot;
     }
 
     @Override
@@ -109,7 +109,7 @@ public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
         }
         response.setResponses(snapshotResponses, result.second());
         response.setResponseName(getCommandName());
-        
+
         this.setResponseObject(response);
     }
 }

@@ -19,7 +19,7 @@ package com.cloud.network;
 import java.util.List;
 
 /**
- * 
+ *
  */
 public interface PhysicalNetwork {
 

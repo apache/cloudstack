@@ -42,7 +42,7 @@ import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.utils.net.NetUtils;
 
-@Implementation(description = "Creates a ACL rule the given network (the network has to belong to VPC)", 
+@Implementation(description = "Creates a ACL rule the given network (the network has to belong to VPC)",
 responseObject = NetworkACLResponse.class)
 public class CreateNetworkACLCmd extends BaseAsyncCreateCmd implements FirewallRule {
     public static final Logger s_logger = Logger.getLogger(CreateNetworkACLCmd.class.getName());
@@ -53,7 +53,7 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd implements FirewallR
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, required = true, description = 
+    @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, required = true, description =
             "the protocol for the ACL rule. Valid values are TCP/UDP/ICMP.")
     private String protocol;
 
@@ -62,30 +62,30 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd implements FirewallR
 
     @Parameter(name = ApiConstants.END_PORT, type = CommandType.INTEGER, description = "the ending port of ACL")
     private Integer publicEndPort;
-    
-    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, 
+
+    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING,
             description = "the cidr list to allow traffic from/to")
     private List<String> cidrlist;
-    
+
     @Parameter(name = ApiConstants.ICMP_TYPE, type = CommandType.INTEGER, description = "type of the icmp message being sent")
     private Integer icmpType;
 
     @Parameter(name = ApiConstants.ICMP_CODE, type = CommandType.INTEGER, description = "error code for this icmp message")
     private Integer icmpCode;
-    
+
     @IdentityMapper(entityTableName="networks")
     @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, required=true,
         description="The network of the vm the ACL will be created for")
     private Long networkId;
-    
+
     @Parameter(name=ApiConstants.TRAFFIC_TYPE, type=CommandType.STRING, description="the traffic type for the ACL," +
-    		"can be Ingress or Egress, defaulted to Ingress if not specified")
+            "can be Ingress or Egress, defaulted to Ingress if not specified")
     private String trafficType;
-    
+
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
-    
+
     public String getEntityTable() {
         return "firewall_rules";
     }
@@ -108,21 +108,21 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd implements FirewallR
             return oneCidrList;
         }
     }
-    
+
     public long getVpcId() {
         Network network = _networkService.getNetwork(getNetworkId());
         if (network == null) {
             throw new InvalidParameterValueException("Invalid networkId is given");
         }
-        
+
         Long vpcId = network.getVpcId();
         if (vpcId == null) {
             throw new InvalidParameterValueException("Can create network ACL only for the network belonging to the VPC");
         }
-        
+
         return vpcId;
     }
-    
+
     @Override
     public FirewallRule.TrafficType getTrafficType() {
         if (trafficType == null) {
@@ -144,7 +144,7 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd implements FirewallR
     public String getCommandName() {
         return s_name;
     }
-    
+
     public void setSourceCidrList(List<String> cidrs){
         cidrlist = cidrs;
     }
@@ -159,7 +159,7 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd implements FirewallR
             success = _networkACLService.applyNetworkACLs(rule.getNetworkId(), callerContext.getCaller());
 
             // State is different after the rule is applied, so get new object here
-            NetworkACLResponse aclResponse = new NetworkACLResponse(); 
+            NetworkACLResponse aclResponse = new NetworkACLResponse();
             if (rule != null) {
                 aclResponse = _responseGenerator.createNetworkACLResponse(rule);
                 setResponseObject(aclResponse);
@@ -206,7 +206,7 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd implements FirewallR
         } else {
             return publicEndPort.intValue();
         }
-        
+
         return null;
     }
 
@@ -247,7 +247,7 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd implements FirewallR
         if (getSourceCidrList() != null) {
             for (String cidr: getSourceCidrList()){
                 if (!NetUtils.isValidCIDR(cidr)){
-                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Source cidrs formatting error " + cidr); 
+                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Source cidrs formatting error " + cidr);
                 }
             }
         }
@@ -288,7 +288,7 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd implements FirewallR
     public Long getSyncObjId() {
         return getNetworkId();
     }
-    
+
     @Override
     public Integer getIcmpCode() {
         if (icmpCode != null) {
@@ -298,14 +298,14 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd implements FirewallR
         }
         return null;
     }
-    
+
     @Override
     public Integer getIcmpType() {
         if (icmpType != null) {
             return icmpType;
         } else if (protocol.equalsIgnoreCase(NetUtils.ICMP_PROTO)) {
                 return -1;
-            
+
         }
         return null;
     }
@@ -319,7 +319,7 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd implements FirewallR
     public FirewallRuleType getType() {
         return FirewallRuleType.User;
     }
-    
+
     @Override
     public AsyncJob.Type getInstanceType() {
         return AsyncJob.Type.FirewallRule;

@@ -56,17 +56,17 @@ public class LoadBalancerResponse extends BaseResponse implements ControlledEnti
     @SerializedName(ApiConstants.ALGORITHM)
     @Param(description = "the load balancer algorithm (source, roundrobin, leastconn)")
     private String algorithm;
-    
+
     @SerializedName(ApiConstants.CIDR_LIST) @Param(description="the cidr list to forward traffic from")
     private String cidrList;
 
     @SerializedName(ApiConstants.ACCOUNT)
     @Param(description = "the account of the load balancer rule")
     private String accountName;
-    
+
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the load balancer")
     private IdentityProxy projectId = new IdentityProxy("projects");
-    
+
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the load balancer")
     private String projectName;
 
@@ -85,7 +85,7 @@ public class LoadBalancerResponse extends BaseResponse implements ControlledEnti
     @SerializedName(ApiConstants.ZONE_ID)
     @Param(description = "the id of the zone the rule belongs to")
     private IdentityProxy zoneId = new IdentityProxy("data_center");
-    
+
     @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with load balancer", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
 
@@ -154,9 +154,9 @@ public class LoadBalancerResponse extends BaseResponse implements ControlledEnti
     public void setProjectName(String projectName) {
         this.projectName = projectName;
     }
-    
+
     public void setTags(List<ResourceTagResponse> tags) {
         this.tags = tags;
     }
-   
+
 }

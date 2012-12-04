@@ -34,10 +34,10 @@ import com.cloud.vm.VirtualMachine;
 
 @Implementation(description="Reboots a system VM.", responseObject=SystemVmResponse.class)
 public class RebootSystemVmCmd extends BaseAsyncCmd {
-	public static final Logger s_logger = Logger.getLogger(RebootSystemVmCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(RebootSystemVmCmd.class.getName());
 
     private static final String s_name = "rebootsystemvmresponse";
-    
+
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
@@ -57,7 +57,7 @@ public class RebootSystemVmCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-    
+
     @Override
     public String getCommandName() {
         return s_name;
@@ -88,15 +88,15 @@ public class RebootSystemVmCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "rebooting system vm: " + getId();
     }
-    
+
     public AsyncJob.Type getInstanceType() {
-    	return AsyncJob.Type.SystemVm;
+        return AsyncJob.Type.SystemVm;
     }
-    
+
     public Long getInstanceId() {
-    	return getId();
+        return getId();
     }
-    
+
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Vm Id: "+getId());

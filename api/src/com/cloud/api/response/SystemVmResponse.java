@@ -74,7 +74,7 @@ public class SystemVmResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.PRIVATE_NETMASK) @Param(description="the private netmask for the system VM")
     private String privateNetmask;
-    
+
     @SerializedName(ApiConstants.LINK_LOCAL_IP) @Param(description="the link local IP address for the system vm")
     private String linkLocalIp;
 
@@ -101,18 +101,18 @@ public class SystemVmResponse extends BaseResponse {
 
     @SerializedName("state") @Param(description="the state of the system VM")
     private String state;
-    
+
     @SerializedName("activeviewersessions") @Param(description="the number of active console sessions for the console proxy system vm")
     private Integer activeViewerSessions;
-    
+
     private Long objectId;
-    
+
     public Long getObjectId() {
-    	return objectId;
+        return objectId;
     }
-    
+
     public void setObjectId(Long objectId) {
-    	this.objectId = objectId;
+        this.objectId = objectId;
     }
 
     public Long getId() {

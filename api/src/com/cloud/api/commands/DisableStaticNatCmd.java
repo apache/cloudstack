@@ -45,7 +45,7 @@ public class DisableStaticNatCmd extends BaseAsyncCmd {
     @IdentityMapper(entityTableName="user_ip_address")
     @Parameter(name=ApiConstants.IP_ADDRESS_ID, type=CommandType.LONG, required=true, description="the public IP address id for which static nat feature is being disableed")
     private Long ipAddressId;
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -53,7 +53,7 @@ public class DisableStaticNatCmd extends BaseAsyncCmd {
     public Long getIpAddress() {
         return ipAddressId;
     }
-    
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -61,7 +61,7 @@ public class DisableStaticNatCmd extends BaseAsyncCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public String getEventType() {
         return EventTypes.EVENT_DISABLE_STATIC_NAT;
@@ -71,16 +71,16 @@ public class DisableStaticNatCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  ("Disabling static nat for ip id=" + ipAddressId);
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         return _entityMgr.findById(IpAddress.class, ipAddressId).getAccountId();
     }
-    
+
     @Override
     public void execute() throws ResourceUnavailableException, NetworkRuleConflictException, InsufficientAddressCapacityException {
         boolean result = _rulesService.disableStaticNat(ipAddressId);
-        
+
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
@@ -88,8 +88,8 @@ public class DisableStaticNatCmd extends BaseAsyncCmd {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to disable static nat");
         }
     }
-    
-    
+
+
     @Override
     public String getSyncObjType() {
         return BaseAsyncCmd.networkSyncObject;

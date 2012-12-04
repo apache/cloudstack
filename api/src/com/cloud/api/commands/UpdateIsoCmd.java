@@ -33,12 +33,12 @@ public class UpdateIsoCmd extends UpdateTemplateOrIsoCmd {
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-    
+
     @Override
     public Boolean isPasswordEnabled() {
         return null;
     }
-    
+
     @Override
     public String getFormat() {
         return null;
@@ -52,7 +52,7 @@ public class UpdateIsoCmd extends UpdateTemplateOrIsoCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         VirtualMachineTemplate template = _entityMgr.findById(VirtualMachineTemplate.class, getId());
@@ -62,7 +62,7 @@ public class UpdateIsoCmd extends UpdateTemplateOrIsoCmd {
 
         return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
-    
+
     @Override
     public void execute(){
         VirtualMachineTemplate result = _mgr.updateTemplate(this);

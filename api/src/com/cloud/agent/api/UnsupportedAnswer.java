@@ -20,7 +20,7 @@ public class UnsupportedAnswer extends Answer {
     protected UnsupportedAnswer() {
         super();
     }
-    
+
     public UnsupportedAnswer(Command cmd, String details) {
         super(cmd, false, details);
     }

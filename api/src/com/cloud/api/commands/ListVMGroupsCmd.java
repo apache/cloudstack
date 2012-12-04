@@ -65,7 +65,7 @@ public class ListVMGroupsCmd extends BaseListProjectAndAccountResourcesCmd {
     /////////////////////////////////////////////////////
 
     @Override
-	public String getCommandName() {
+    public String getCommandName() {
         return s_name;
     }
 

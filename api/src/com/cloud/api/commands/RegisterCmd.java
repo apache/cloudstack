@@ -36,7 +36,7 @@ public class RegisterCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    
+
     @IdentityMapper(entityTableName="user")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="User id")
     private Long id;
@@ -56,7 +56,7 @@ public class RegisterCmd extends BaseCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         User user = _entityMgr.findById(User.class, getId());

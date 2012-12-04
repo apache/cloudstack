@@ -32,7 +32,7 @@ import com.cloud.user.UserContext;
 
 @Implementation(description="Deletes a detached disk volume.", responseObject=SuccessResponse.class)
 public class DeleteVolumeCmd extends BaseCmd {
-	public static final Logger s_logger = Logger.getLogger(DeleteVolumeCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(DeleteVolumeCmd.class.getName());
     private static final String s_name = "deletevolumeresponse";
 
     /////////////////////////////////////////////////////
@@ -63,9 +63,9 @@ public class DeleteVolumeCmd extends BaseCmd {
     }
 
     public static String getResultObjectName() {
-    	return "volume";
+        return "volume";
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         Volume volume = _entityMgr.findById(Volume.class, getId());
@@ -75,7 +75,7 @@ public class DeleteVolumeCmd extends BaseCmd {
 
         return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
-	
+
     @Override
     public void execute() throws ConcurrentOperationException {
         UserContext.current().setEventDetails("Volume Id: "+getId());

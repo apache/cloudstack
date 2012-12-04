@@ -26,13 +26,13 @@ import com.cloud.user.Account;
 @Implementation(description="Updates iso permissions", responseObject=SuccessResponse.class)
 public class UpdateIsoPermissionsCmd extends UpdateTemplateOrIsoPermissionsCmd {
     protected String getResponseName() {
-    	return "updateisopermissionsresponse";
+        return "updateisopermissionsresponse";
     }
 
-	protected Logger getLogger() {
-		return Logger.getLogger(UpdateIsoPermissionsCmd.class.getName());    
-	}
-	
+    protected Logger getLogger() {
+        return Logger.getLogger(UpdateIsoPermissionsCmd.class.getName());
+    }
+
     @Override
     public long getEntityOwnerId() {
         VirtualMachineTemplate template = _entityMgr.findById(VirtualMachineTemplate.class, getId());

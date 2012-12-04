@@ -31,8 +31,8 @@ public class ExceptionResponse extends BaseResponse {
     private Integer errorCode;
 
     @SerializedName("cserrorcode") @Param(description="cloudstack exception error code associated with this error")
-    private Integer csErrorCode;    
-    
+    private Integer csErrorCode;
+
     @SerializedName("errortext") @Param(description="the text associated with this error")
     private String errorText = "Command failed due to Internal Server Error";
 

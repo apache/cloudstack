@@ -33,8 +33,8 @@ import com.cloud.utils.Pair;
 
 @Implementation(description="Lists domains and provides detailed information for listed domains", responseObject=DomainResponse.class)
 public class ListDomainsCmd extends BaseListCmd {
-	public static final Logger s_logger = Logger.getLogger(ListDomainsCmd.class.getName());
-	
+    public static final Logger s_logger = Logger.getLogger(ListDomainsCmd.class.getName());
+
     private static final String s_name = "listdomainsresponse";
 
     /////////////////////////////////////////////////////
@@ -50,7 +50,7 @@ public class ListDomainsCmd extends BaseListCmd {
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="List domain by domain name.")
     private String domainName;
-    
+
     @Parameter(name=ApiConstants.LIST_ALL, type=CommandType.BOOLEAN, description="If set to false, list only resources belonging to the command's caller; if set to true - list resources that the caller is authorized to see. Default value is false")
     private Boolean listAll;
 
@@ -69,7 +69,7 @@ public class ListDomainsCmd extends BaseListCmd {
     public String getDomainName() {
         return domainName;
     }
-    
+
     public boolean listAll() {
         return listAll == null ? false : listAll;
     }

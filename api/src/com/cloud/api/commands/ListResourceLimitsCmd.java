@@ -43,12 +43,12 @@ public class ListResourceLimitsCmd extends BaseListProjectAndAccountResourcesCmd
     private Long id;
 
     @Parameter(name=ApiConstants.RESOURCE_TYPE, type=CommandType.INTEGER, description="Type of resource to update. Values are 0, 1, 2, 3, and 4. 0 - Instance. Number of instances a user can create. " +
-																						"1 - IP. Number of public IP addresses a user can own. " +
-																						"2 - Volume. Number of disk volumes a user can create." +
-																						"3 - Snapshot. Number of snapshots a user can create." +
-																						"4 - Template. Number of templates that a user can register/create.")
-	private Integer resourceType;
-			
+                                                                                        "1 - IP. Number of public IP addresses a user can own. " +
+                                                                                        "2 - Volume. Number of disk volumes a user can create." +
+                                                                                        "3 - Snapshot. Number of snapshots a user can create." +
+                                                                                        "4 - Template. Number of templates that a user can register/create.")
+    private Integer resourceType;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -64,12 +64,12 @@ public class ListResourceLimitsCmd extends BaseListProjectAndAccountResourcesCmd
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-    
+
     @Override
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public void execute(){
         List<? extends ResourceLimit> result = _resourceLimitService.searchForLimits(id, finalyzeAccountId(this.getAccountName(), this.getDomainId(), this.getProjectId(), false), this.getDomainId(), resourceType, this.getStartIndex(), this.getPageSizeVal());

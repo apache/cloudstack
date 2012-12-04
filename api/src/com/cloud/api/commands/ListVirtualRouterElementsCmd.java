@@ -44,25 +44,25 @@ public class ListVirtualRouterElementsCmd extends BaseListCmd {
 
     @PlugService
     private VirtualRouterElementService _service;
-    
+
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
     @IdentityMapper(entityTableName = "virtual_router_providers")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list virtual router elements by id")
     private Long id;
-    
+
     @IdentityMapper(entityTableName = "physical_network_service_providers")
     @Parameter(name=ApiConstants.NSP_ID, type=CommandType.LONG, description="list virtual router elements by network service provider id")
     private Long nspId;
-    
+
     @Parameter(name=ApiConstants.ENABLED, type=CommandType.BOOLEAN, description="list network offerings by enabled state")
     private Boolean enabled;
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-    
+
     public void setId(Long id) {
         this.id = id;
     }
@@ -91,7 +91,7 @@ public class ListVirtualRouterElementsCmd extends BaseListCmd {
     public String getCommandName() {
         return _name;
     }
-    
+
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
         List<? extends VirtualRouterProvider> providers = _service.searchForVirtualRouterElement(this);

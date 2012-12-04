@@ -88,7 +88,7 @@ public class DeleteDomainCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "deleting domain: " + getId();
     }
-    
+
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Domain Id: "+getId());

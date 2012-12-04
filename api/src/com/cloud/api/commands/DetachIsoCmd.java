@@ -69,7 +69,7 @@ public class DetachIsoCmd extends BaseAsyncCmd {
             return vm.getAccountId();
         } else {
             throw new InvalidParameterValueException("Unable to find vm by id " + getVirtualMachineId());
-        }  
+        }
     }
 
     @Override
@@ -81,13 +81,13 @@ public class DetachIsoCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "detaching ISO from vm: " + getVirtualMachineId();
     }
-	
+
     @Override
     public void execute(){
         boolean result = _templateService.detachIso(virtualMachineId);
         if (result) {
-            UserVm userVm = _entityMgr.findById(UserVm.class, virtualMachineId);         
-            UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", userVm).get(0);            
+            UserVm userVm = _entityMgr.findById(UserVm.class, virtualMachineId);
+            UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", userVm).get(0);
             response.setResponseName(DeployVMCmd.getResultObjectName());
             this.setResponseObject(response);
         } else {

@@ -22,16 +22,16 @@ import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class CloudIdentifierResponse extends BaseResponse {
-	
+
     @SerializedName(ApiConstants.USER_ID) @Param(description="the user ID for the cloud identifier")
     private IdentityProxy userId = new IdentityProxy("user");
-    
+
     @SerializedName("cloudidentifier") @Param(description="the cloud identifier")
     private String cloudIdentifier;
-    
+
     @SerializedName("signature") @Param(description="the signed response for the cloud identifier")
     private String signature;
-    
+
     public Long getUserId() {
         return userId.getValue();
     }
@@ -39,7 +39,7 @@ public class CloudIdentifierResponse extends BaseResponse {
     public void setUserId(Long userId) {
         this.userId.setValue(userId);
     }
-    
+
     public String getCloudIdentifier() {
         return cloudIdentifier;
     }
@@ -47,7 +47,7 @@ public class CloudIdentifierResponse extends BaseResponse {
     public void setCloudIdentifier(String cloudIdentifier) {
         this.cloudIdentifier = cloudIdentifier;
     }
-    
+
     public String getSignature() {
         return signature;
     }

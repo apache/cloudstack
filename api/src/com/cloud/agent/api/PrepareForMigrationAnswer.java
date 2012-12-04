@@ -19,15 +19,15 @@ package com.cloud.agent.api;
 public class PrepareForMigrationAnswer extends Answer {
     protected PrepareForMigrationAnswer() {
     }
-    
+
     public PrepareForMigrationAnswer(PrepareForMigrationCommand cmd, String detail) {
         super(cmd, false, detail);
     }
-    
+
     public PrepareForMigrationAnswer(PrepareForMigrationCommand cmd, Exception ex) {
         super(cmd, ex);
     }
-    
+
     public PrepareForMigrationAnswer(PrepareForMigrationCommand cmd) {
         super(cmd, true, null);
     }

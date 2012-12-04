@@ -23,7 +23,7 @@ public class Hypervisor {
         XenServer,
         KVM,
         VMware,
-        Hyperv,    	
+        Hyperv,
         VirtualBox,
         Parralels,
         BareMetal,

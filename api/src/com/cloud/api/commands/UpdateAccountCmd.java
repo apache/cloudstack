@@ -34,7 +34,7 @@ import com.cloud.user.Account;
 public class UpdateAccountCmd extends BaseCmd{
     public static final Logger s_logger = Logger.getLogger(UpdateAccountCmd.class.getName());
     private static final String s_name = "updateaccountresponse";
- 
+
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
@@ -42,7 +42,7 @@ public class UpdateAccountCmd extends BaseCmd{
     @IdentityMapper(entityTableName="account")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="Account id")
     private Long id;
-    
+
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the current account name")
     private String accountName;
 
@@ -52,11 +52,11 @@ public class UpdateAccountCmd extends BaseCmd{
 
     @Parameter(name=ApiConstants.NEW_NAME, type=CommandType.STRING, required=true, description="new name for the account")
     private String newName;
-    
+
     @Parameter(name=ApiConstants.NETWORK_DOMAIN, type=CommandType.STRING, description="Network domain for the account's networks; empty string will update domainName with NULL value")
     private String networkDomain;
-    
-	@Parameter(name = ApiConstants.ACCOUNT_DETAILS, type = CommandType.MAP, description = "details for account used to store specific parameters")
+
+    @Parameter(name = ApiConstants.ACCOUNT_DETAILS, type = CommandType.MAP, description = "details for account used to store specific parameters")
     private Map details;
 
     /////////////////////////////////////////////////////
@@ -66,7 +66,7 @@ public class UpdateAccountCmd extends BaseCmd{
     public Long getId() {
         return id;
     }
-    
+
     public String getAccountName() {
         return accountName;
     }
@@ -78,19 +78,19 @@ public class UpdateAccountCmd extends BaseCmd{
     public String getNewName() {
         return newName;
     }
-    
+
     public String getNetworkDomain() {
         return networkDomain;
     }
-    
+
     public Map getDetails() {
-    	if (details == null || details.isEmpty()) {
-    		return null;
-    	}
-    	
-    	Collection paramsCollection = details.values();
-    	Map params = (Map) (paramsCollection.toArray())[0];
-    	return params;
+        if (details == null || details.isEmpty()) {
+            return null;
+        }
+
+        Collection paramsCollection = details.values();
+        Map params = (Map) (paramsCollection.toArray())[0];
+        return params;
     }
 
     /////////////////////////////////////////////////////
@@ -101,7 +101,7 @@ public class UpdateAccountCmd extends BaseCmd{
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         Account account = _entityMgr.findById(Account.class, getId());
@@ -115,7 +115,7 @@ public class UpdateAccountCmd extends BaseCmd{
 
         return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
-    
+
     @Override
     public void execute(){
         Account result = _accountService.updateAccount(this);

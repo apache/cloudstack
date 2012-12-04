@@ -42,47 +42,47 @@ public class ListNetworksCmd extends BaseListTaggedResourcesCmd {
     @IdentityMapper(entityTableName="networks")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list networks by id")
     private Long id;
-    
+
     @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the Zone ID of the network")
     private Long zoneId;
-    
+
     @Parameter(name=ApiConstants.TYPE, type=CommandType.STRING, description="the type of the network. Supported values are: Isolated and Shared")
     private String guestIpType;
-    
+
     @Parameter(name=ApiConstants.IS_SYSTEM, type=CommandType.BOOLEAN, description="true if network is system, false otherwise")
     private Boolean isSystem;
-    
+
     @Parameter(name=ApiConstants.ACL_TYPE, type=CommandType.STRING, description="list networks by ACL (access control list) type. Supported values are Account and Domain")
     private String aclType;
-    
+
     @Parameter(name=ApiConstants.TRAFFIC_TYPE, type=CommandType.STRING, description="type of the traffic")
     private String trafficType;
-    
+
     @IdentityMapper(entityTableName="physical_network")
     @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, description="list networks by physical network id")
     private Long physicalNetworkId;
-    
+
     @Parameter(name=ApiConstants.SUPPORTED_SERVICES, type=CommandType.LIST, collectionType=CommandType.STRING, description="list networks supporting certain services")
     private List<String> supportedServices;
-    
+
     @Parameter(name=ApiConstants.RESTART_REQUIRED, type=CommandType.BOOLEAN, description="list networks by restartRequired")
-    
+
     private Boolean restartRequired;
-    
+
     @Parameter(name=ApiConstants.SPECIFY_IP_RANGES, type=CommandType.BOOLEAN, description="true if need to list only networks which support specifying ip ranges")
     private Boolean specifyIpRanges;
-    
+
     @IdentityMapper(entityTableName="vpc")
     @Parameter(name=ApiConstants.VPC_ID, type=CommandType.LONG, description="List networks by VPC")
     private Long vpcId;
 
     @Parameter(name=ApiConstants.CAN_USE_FOR_DEPLOY, type=CommandType.BOOLEAN, description="list networks available for vm deployment")
     private Boolean canUseForDeploy;
-    
+
     @Parameter(name=ApiConstants.FOR_VPC, type=CommandType.BOOLEAN, description="the network belongs to vpc")
     private Boolean forVpc;
-   
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -90,7 +90,7 @@ public class ListNetworksCmd extends BaseListTaggedResourcesCmd {
     public Long getId() {
         return id;
     }
-    
+
     public Long getZoneId() {
         return zoneId;
     }
@@ -102,10 +102,10 @@ public class ListNetworksCmd extends BaseListTaggedResourcesCmd {
     public Boolean getIsSystem() {
         return isSystem;
     }
-    
+
     public String getAclType() {
-		return aclType;
-	}
+        return aclType;
+    }
 
     public String getTrafficType() {
         return trafficType;
@@ -120,21 +120,21 @@ public class ListNetworksCmd extends BaseListTaggedResourcesCmd {
     }
 
     public Boolean getRestartRequired() {
-		return restartRequired;
-	}
-    
-    public Boolean getSpecifyIpRanges() {
-    	return specifyIpRanges;
+        return restartRequired;
     }
 
-	public Long getVpcId() {
+    public Boolean getSpecifyIpRanges() {
+        return specifyIpRanges;
+    }
+
+    public Long getVpcId() {
         return vpcId;
-	}
-	
-	public Boolean canUseForDeploy() {
+    }
+
+    public Boolean canUseForDeploy() {
         return canUseForDeploy;
     }
-	
+
     public Boolean getForVpc() {
         return forVpc;
     }

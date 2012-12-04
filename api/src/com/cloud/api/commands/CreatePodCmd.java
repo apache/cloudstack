@@ -39,23 +39,23 @@ public class CreatePodCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="the name of the Pod")
     private String podName;
-    
+
     @IdentityMapper(entityTableName="data_center")
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="the Zone ID in which the Pod will be created	")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="the Zone ID in which the Pod will be created   ")
     private Long zoneId;
 
     @Parameter(name=ApiConstants.START_IP, type=CommandType.STRING, required=true, description="the starting IP address for the Pod")
     private String startIp;
-    
+
     @Parameter(name=ApiConstants.END_IP, type=CommandType.STRING, description="the ending IP address for the Pod")
     private String endIp;
-    
+
     @Parameter(name=ApiConstants.NETMASK, type=CommandType.STRING, required=true, description="the netmask for the Pod")
     private String netmask;
 
     @Parameter(name=ApiConstants.GATEWAY, type=CommandType.STRING, required=true, description="the gateway for the Pod")
     private String gateway;
-    
+
     @Parameter(name=ApiConstants.ALLOCATION_STATE, type=CommandType.STRING, description="Allocation state of this Pod for allocation of new resources")
     private String allocationState;
 
@@ -88,9 +88,9 @@ public class CreatePodCmd extends BaseCmd {
     }
 
     public String getAllocationState() {
-    	return allocationState;
+        return allocationState;
     }
-    
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -99,7 +99,7 @@ public class CreatePodCmd extends BaseCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;

@@ -45,11 +45,11 @@ public class ListTrafficTypesCmd extends BaseListCmd {
     @IdentityMapper(entityTableName="physical_network")
     @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, required=true, description="the Physical Network ID")
     private Long physicalNetworkId;
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-    
+
     public void setPhysicalNetworkId(Long physicalNetworkId) {
         this.physicalNetworkId = physicalNetworkId;
     }
@@ -70,7 +70,7 @@ public class ListTrafficTypesCmd extends BaseListCmd {
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-    
+
     @Override
     public void execute(){
         Pair<List<? extends PhysicalNetworkTrafficType>, Integer> trafficTypes = _networkService.listTrafficTypes(getPhysicalNetworkId());

@@ -46,7 +46,7 @@ public class DeleteIpForwardingRuleCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the id of the forwarding rule")
     private Long id;
 
-    
+
     // unexposed parameter needed for events logging
     @IdentityMapper(entityTableName="account")
     @Parameter(name=ApiConstants.ACCOUNT_ID, type=CommandType.LONG, expose=false)
@@ -71,8 +71,8 @@ public class DeleteIpForwardingRuleCmd extends BaseAsyncCmd {
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Rule Id: "+id);
-    	boolean result = _firewallService.revokeRelatedFirewallRule(id, true);
-	    result = result && _rulesService.revokeStaticNatRule(id, true);	
+        boolean result = _firewallService.revokeRelatedFirewallRule(id, true);
+        result = result && _rulesService.revokeStaticNatRule(id, true);
 
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
@@ -104,7 +104,7 @@ public class DeleteIpForwardingRuleCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  ("Deleting an ipforwarding 1:1 NAT rule id:"+id);
     }
-    
+
     @Override
     public String getSyncObjType() {
         return BaseAsyncCmd.networkSyncObject;
@@ -114,7 +114,7 @@ public class DeleteIpForwardingRuleCmd extends BaseAsyncCmd {
     public Long getSyncObjId() {
         return _rulesService.getFirewallRule(id).getNetworkId();
     }
-    
+
     @Override
     public AsyncJob.Type getInstanceType() {
         return AsyncJob.Type.FirewallRule;

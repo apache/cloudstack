@@ -33,7 +33,7 @@ import com.cloud.utils.Pair;
 
 @Implementation(description="Lists all VLAN IP ranges.", responseObject=VlanIpRangeResponse.class)
 public class ListVlanIpRangesCmd extends BaseListCmd {
-	public static final Logger s_logger = Logger.getLogger(ListVlanIpRangesCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(ListVlanIpRangesCmd.class.getName());
 
     private static final String s_name = "listvlaniprangesresponse";
 
@@ -43,7 +43,7 @@ public class ListVlanIpRangesCmd extends BaseListCmd {
 
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account with which the VLAN IP range is associated. Must be used with the domainId parameter.")
     private String accountName;
-    
+
     @IdentityMapper(entityTableName="projects")
     @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="project who will own the VLAN")
     private Long projectId;
@@ -66,14 +66,14 @@ public class ListVlanIpRangesCmd extends BaseListCmd {
     @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the Zone ID of the VLAN IP range")
     private Long zoneId;
-    
+
     @IdentityMapper(entityTableName="networks")
     @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, description="network id of the VLAN IP range")
     private Long networkId;
-    
+
     @Parameter(name=ApiConstants.FOR_VIRTUAL_NETWORK, type=CommandType.BOOLEAN, description="true if VLAN is of Virtual type, false if Direct")
     private Boolean forVirtualNetwork;
-    
+
     @IdentityMapper(entityTableName="physical_network")
     @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, description="physical network id of the VLAN IP range")
     private Long physicalNetworkId;
@@ -109,34 +109,34 @@ public class ListVlanIpRangesCmd extends BaseListCmd {
     public Long getNetworkId() {
         return networkId;
     }
-    
+
     public Boolean getForVirtualNetwork() {
-		return forVirtualNetwork;
-	}
-    
+        return forVirtualNetwork;
+    }
+
     public Long getProjectId() {
         return projectId;
     }
-    
+
     public Long getPhysicalNetworkId() {
         return physicalNetworkId;
     }
-    
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-    
-	@Override
+
+    @Override
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public void execute(){
         Pair<List<? extends Vlan>, Integer> vlans = _mgr.searchForVlans(this);
         ListResponse<VlanIpRangeResponse> response = new ListResponse<VlanIpRangeResponse>();
         List<VlanIpRangeResponse> vlanResponses = new ArrayList<VlanIpRangeResponse>();
-        for (Vlan vlan : vlans.first()) {  
+        for (Vlan vlan : vlans.first()) {
             VlanIpRangeResponse vlanResponse = _responseGenerator.createVlanIpRangeResponse(vlan);
             vlanResponse.setObjectName("vlaniprange");
             vlanResponses.add(vlanResponse);

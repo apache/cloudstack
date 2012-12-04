@@ -32,7 +32,7 @@ public interface DomainService {
 
     /**
      * Return whether a domain is a child domain of a given domain.
-     * 
+     *
      * @param parentId
      * @param childId
      */

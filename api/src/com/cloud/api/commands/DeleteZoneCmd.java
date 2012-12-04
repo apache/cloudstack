@@ -60,7 +60,7 @@ public class DeleteZoneCmd extends BaseCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
@@ -68,8 +68,8 @@ public class DeleteZoneCmd extends BaseCmd {
 
     @Override
     public void execute(){
-    	UserContext.current().setEventDetails("Zone Id: "+getId());
-    	boolean result = _configService.deleteZone(this);
+        UserContext.current().setEventDetails("Zone Id: "+getId());
+        boolean result = _configService.deleteZone(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);

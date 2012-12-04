@@ -68,7 +68,7 @@ public class UserResponse extends BaseResponse {
     @SerializedName("accountid") @Param(description="the account ID of the user")
     private IdentityProxy accountId = new IdentityProxy("account");
 
-    
+
     public Long getId() {
         return id.getValue();
     }

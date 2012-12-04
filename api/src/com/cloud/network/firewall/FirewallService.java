@@ -33,7 +33,7 @@ public interface FirewallService {
 
     /**
      * Revokes a firewall rule
-     * 
+     *
      * @param ruleId
      *            the id of the rule to revoke.
      * @return

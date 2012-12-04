@@ -98,6 +98,6 @@ public class LDAPConfigResponse  extends BaseResponse {
     public void setBindPassword(String bindPassword) {
         this.bindPassword = bindPassword;
     }
-    
+
 
 }

@@ -39,13 +39,13 @@ public class DomainResponse extends BaseResponse {
 
     @SerializedName("haschild") @Param(description="whether the domain has one or more sub-domains")
     private boolean hasChild;
-    
+
     @SerializedName(ApiConstants.NETWORK_DOMAIN) @Param(description="the network domain")
     private String networkDomain;
 
     @SerializedName(ApiConstants.PATH) @Param(description="the path of the domain")
     private String path;
-    
+
     public Long getId() {
         return id.getValue();
     }
@@ -98,12 +98,12 @@ public class DomainResponse extends BaseResponse {
         this.networkDomain = networkDomain;
     }
 
-	public String getPath() {
-		return path;
-	}
+    public String getPath() {
+        return path;
+    }
 
-	public void setPath(String path) {
-		this.path = path;
-	}
-    
+    public void setPath(String path) {
+        this.path = path;
+    }
+
 }

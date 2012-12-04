@@ -34,7 +34,7 @@ import com.cloud.user.UserContext;
 
 @Implementation(description="Reconnects a host.", responseObject=HostResponse.class)
 public class ReconnectHostCmd extends BaseAsyncCmd {
-	public static final Logger s_logger = Logger.getLogger(ReconnectHostCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(ReconnectHostCmd.class.getName());
 
     private static final String s_name = "reconnecthostresponse";
 
@@ -62,9 +62,9 @@ public class ReconnectHostCmd extends BaseAsyncCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     public static String getResultObjectName() {
-    	return "host";
+        return "host";
     }
 
     @Override
@@ -86,15 +86,15 @@ public class ReconnectHostCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "reconnecting host: " + getId();
     }
-    
+
     public AsyncJob.Type getInstanceType() {
-    	return AsyncJob.Type.Host;
+        return AsyncJob.Type.Host;
     }
-    
+
     public Long getInstanceId() {
-    	return getId();
+        return getId();
     }
-	
+
     @Override
     public void execute(){
         try {

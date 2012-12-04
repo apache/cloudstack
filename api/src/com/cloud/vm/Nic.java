@@ -35,7 +35,7 @@ public interface Nic {
     }
 
     public enum State implements FiniteState<State, Event> {
-        Allocated("Resource is allocated but not reserved"), Reserving("Resource is being reserved right now"), 
+        Allocated("Resource is allocated but not reserved"), Reserving("Resource is being reserved right now"),
         Reserved("Resource has been reserved."), Releasing("Resource is being released"), Deallocating(
                 "Resource is being deallocated");
 

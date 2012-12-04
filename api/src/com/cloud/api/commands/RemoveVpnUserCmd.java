@@ -41,10 +41,10 @@ public class RemoveVpnUserCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required=true, description="username for the vpn user")
     private String userName;
-    
+
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="an optional account for the vpn user. Must be used with domainId.")
     private String accountName;
-    
+
     @IdentityMapper(entityTableName="projects")
     @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="remove vpn user from the project")
     private Long projectId;
@@ -52,58 +52,58 @@ public class RemoveVpnUserCmd extends BaseAsyncCmd {
     @IdentityMapper(entityTableName="domain")
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="an optional domainId for the vpn user. If the account parameter is used, domainId must also be used.")
     private Long domainId;
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
 
-	public String getAccountName() {
-		return accountName;
-	}
+    public String getAccountName() {
+        return accountName;
+    }
 
-	public Long getDomainId() {
-		return domainId;
-	}
+    public Long getDomainId() {
+        return domainId;
+    }
 
-	public String getUserName() {
-		return userName;
-	}
+    public String getUserName() {
+        return userName;
+    }
 
-	public Long getProjecId() {
-	    return projectId;
-	}
+    public Long getProjecId() {
+        return projectId;
+    }
 
-	
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-	@Override
+    @Override
     public String getCommandName() {
         return s_name;
     }
 
-	@Override
-	public long getEntityOwnerId() {
-	    Long accountId = finalyzeAccountId(accountName, domainId, projectId, true);
+    @Override
+    public long getEntityOwnerId() {
+        Long accountId = finalyzeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
             return UserContext.current().getCaller().getId();
         }
-        
+
         return accountId;
     }
 
-	@Override
-	public String getEventDescription() {
-		return "Remove Remote Access VPN user for account " + getEntityOwnerId() + " username= " + getUserName();
-	}
+    @Override
+    public String getEventDescription() {
+        return "Remove Remote Access VPN user for account " + getEntityOwnerId() + " username= " + getUserName();
+    }
 
-	
-	@Override
-	public String getEventType() {
-		return EventTypes.EVENT_VPN_USER_REMOVE;
-	}
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_VPN_USER_REMOVE;
+    }
 
     @Override
     public void execute(){
@@ -112,10 +112,10 @@ public class RemoveVpnUserCmd extends BaseAsyncCmd {
         if (!result) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to remove vpn user");
         }
-        
+
         if (!_ravService.applyVpnUsers(owner.getId(), userName)) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to apply vpn user removal");
-        } 
+        }
         SuccessResponse response = new SuccessResponse(getCommandName());
         setResponseObject(response);
     }

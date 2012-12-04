@@ -24,7 +24,7 @@ public interface RemoteAccessVpn extends ControlledEntity {
         Running,
         Removed
     }
-    
+
     long getServerAddressId();
     String getIpRange();
     String getIpsecPresharedKey();

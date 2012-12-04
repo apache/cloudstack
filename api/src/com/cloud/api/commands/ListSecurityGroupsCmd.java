@@ -33,7 +33,7 @@ import com.cloud.network.security.SecurityGroupRules;
 
 @Implementation(description="Lists security groups", responseObject=SecurityGroupResponse.class)
 public class ListSecurityGroupsCmd extends BaseListTaggedResourcesCmd {
-	public static final Logger s_logger = Logger.getLogger(ListSecurityGroupsCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(ListSecurityGroupsCmd.class.getName());
 
     private static final String s_name = "listsecuritygroupsresponse";
 
@@ -51,7 +51,7 @@ public class ListSecurityGroupsCmd extends BaseListTaggedResourcesCmd {
     @IdentityMapper(entityTableName="security_group")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list the security group by the id provided")
     private Long id;
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -62,9 +62,9 @@ public class ListSecurityGroupsCmd extends BaseListTaggedResourcesCmd {
     public Long getVirtualMachineId() {
         return virtualMachineId;
     }
-    
+
     public Long getId(){
-    	return id;
+        return id;
     }
 
     /////////////////////////////////////////////////////
@@ -84,7 +84,7 @@ public class ListSecurityGroupsCmd extends BaseListTaggedResourcesCmd {
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
-    
+
     @Override
     public AsyncJob.Type getInstanceType() {
         return AsyncJob.Type.SecurityGroup;

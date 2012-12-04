@@ -30,13 +30,13 @@ public class Site2SiteVpnConnectionResponse extends BaseResponse implements Cont
 
     @SerializedName(ApiConstants.S2S_VPN_GATEWAY_ID) @Param(description="the vpn gateway ID")
     private IdentityProxy vpnGatewayId= new IdentityProxy("s2s_vpn_gateway");
-    
+
     @SerializedName(ApiConstants.PUBLIC_IP) @Param(description="the public IP address") //from VpnGateway
     private String ip;
 
     @SerializedName(ApiConstants.S2S_CUSTOMER_GATEWAY_ID) @Param(description="the customer gateway ID")
     private IdentityProxy customerGatewayId = new IdentityProxy("s2s_customer_gateway");
-        
+
     @SerializedName(ApiConstants.GATEWAY) @Param(description="public ip address id of the customer gateway") //from CustomerGateway
     private String gatewayIp;
 
@@ -54,85 +54,85 @@ public class Site2SiteVpnConnectionResponse extends BaseResponse implements Cont
 
     @SerializedName(ApiConstants.IKE_LIFETIME) @Param(description="Lifetime of IKE SA of customer gateway") //from CustomerGateway
     private Long ikeLifetime;
-    
+
     @SerializedName(ApiConstants.ESP_LIFETIME) @Param(description="Lifetime of ESP SA of customer gateway") //from CustomerGateway
     private Long espLifetime;
-    
+
     @SerializedName(ApiConstants.DPD) @Param(description="if DPD is enabled for customer gateway") //from CustomerGateway
     private Boolean dpd;
-    
+
     @SerializedName(ApiConstants.STATE) @Param(description="State of vpn connection")
     private String state;
-    
+
     @SerializedName(ApiConstants.ACCOUNT) @Param(description="the owner")
     private String accountName;
-    
+
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id")
     private IdentityProxy projectId = new IdentityProxy("projects");
-    
+
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain id of the owner")
     private IdentityProxy domainId = new IdentityProxy("domain");
-    
+
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the owner")
     private String domain;
-    
+
     @SerializedName(ApiConstants.CREATED) @Param(description="the date and time the host was created")
     private Date created;
 
     @SerializedName(ApiConstants.REMOVED) @Param(description="the date and time the host was removed")
     private Date removed;
 
-	public void setId(Long id) {
-		this.id.setValue(id);
-	}
-	
+    public void setId(Long id) {
+        this.id.setValue(id);
+    }
+
     public void setVpnGatewayId(Long vpnGatewayId) {
         this.vpnGatewayId.setValue(vpnGatewayId);
     }
 
     public void setIp(String ip) {
-		this.ip = ip;
-	}
-    
+        this.ip = ip;
+    }
+
     public void setCustomerGatewayId(Long customerGatewayId) {
         this.customerGatewayId.setValue(customerGatewayId);
     }
-    
+
     public void setGatewayIp(String gatewayIp) {
-    	this.gatewayIp = gatewayIp;
+        this.gatewayIp = gatewayIp;
     }
-    
+
     public void setGuestCidrList(String guestCidrList) {
-    	this.guestCidrList = guestCidrList;
+        this.guestCidrList = guestCidrList;
     }
-    
+
     public void setIpsecPsk(String ipsecPsk) {
-    	this.ipsecPsk = ipsecPsk;
+        this.ipsecPsk = ipsecPsk;
     }
-    
+
     public void setIkePolicy(String ikePolicy) {
-    	this.ikePolicy = ikePolicy;
+        this.ikePolicy = ikePolicy;
     }
-    
+
     public void setEspPolicy(String espPolicy) {
-    	this.espPolicy = espPolicy;
+        this.espPolicy = espPolicy;
     }
-    
+
     public void setIkeLifetime(Long ikeLifetime) {
         this.ikeLifetime = ikeLifetime;
-    }	
-    
+    }
+
     public void setEspLifetime(Long espLifetime) {
         this.espLifetime = espLifetime;
-    }	
-    
+    }
+
     public void setDpd(Boolean dpd) {
         this.dpd= dpd;
-    }	
-    
+    }
+
     public void setState(String state) {
         this.state = state;
     }
@@ -143,7 +143,7 @@ public class Site2SiteVpnConnectionResponse extends BaseResponse implements Cont
 
     public void setRemoved(Date removed) {
         this.removed = removed;
-    }	
+    }
 
     @Override
     public void setAccountName(String accountName) {

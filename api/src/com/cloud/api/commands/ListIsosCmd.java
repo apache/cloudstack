@@ -62,10 +62,10 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd {
     private Boolean ready;
 
     @Parameter(name=ApiConstants.ISO_FILTER, type=CommandType.STRING, description="possible values are \"featured\", \"self\", \"self-executable\",\"executable\", and \"community\". " +
-    														"* featured-ISOs that are featured and are publicself-ISOs that have been registered/created by the owner. " +
-    														"* selfexecutable-ISOs that have been registered/created by the owner that can be used to deploy a new VM. " +
-    														"* executable-all ISOs that can be used to deploy a new VM " +
-    														"* community-ISOs that are public.")
+                                                            "* featured-ISOs that are featured and are publicself-ISOs that have been registered/created by the owner. " +
+                                                            "* selfexecutable-ISOs that have been registered/created by the owner that can be used to deploy a new VM. " +
+                                                            "* executable-all ISOs that can be used to deploy a new VM " +
+                                                            "* community-ISOs that are public.")
     private String isoFilter = TemplateFilter.selfexecutable.toString();
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="list all isos by name")
@@ -74,7 +74,7 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd {
     @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the ID of the zone")
     private Long zoneId;
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -111,7 +111,7 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd {
     public Long getZoneId() {
         return zoneId;
     }
-    
+
     public boolean listInReadyState() {
         Account account = UserContext.current().getCaller();
         // It is account specific if account is admin type and domainId and accountName are not null
@@ -120,29 +120,29 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd {
         TemplateFilter templateFilter = TemplateFilter.valueOf(getIsoFilter());
         boolean onlyReady = (templateFilter == TemplateFilter.featured) || (templateFilter == TemplateFilter.selfexecutable) || (templateFilter == TemplateFilter.sharedexecutable)
         || (templateFilter == TemplateFilter.executable && isAccountSpecific) || (templateFilter == TemplateFilter.community);
-        
+
         if (!onlyReady) {
-        	if (isReady() != null && isReady().booleanValue() != onlyReady) {
-        		onlyReady = isReady().booleanValue();
-        	}
+            if (isReady() != null && isReady().booleanValue() != onlyReady) {
+                onlyReady = isReady().booleanValue();
+            }
         }
-        
+
         return onlyReady;
     }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-    
+
     @Override
     public String getCommandName() {
         return s_name;
     }
-    
+
     public AsyncJob.Type getInstanceType() {
-    	return AsyncJob.Type.Iso;
+        return AsyncJob.Type.Iso;
     }
-    
+
     @Override
     public void execute(){
         Set<Pair<Long, Long>> isoZonePairSet = _mgr.listIsos(this);

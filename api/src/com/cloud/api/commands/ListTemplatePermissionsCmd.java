@@ -25,17 +25,17 @@ public class ListTemplatePermissionsCmd extends ListTemplateOrIsoPermissionsCmd 
 	protected String getResponseName() {
     	return "listtemplatepermissionsresponse";
     }
-    
+
 	@Override
     public String getMediaType() {
     	return "template";
     }
-	
+
 	@Override
     protected Logger getLogger() {
-		return Logger.getLogger(ListTemplatePermissionsCmd.class.getName());    
+		return Logger.getLogger(ListTemplatePermissionsCmd.class.getName());
 	}
-	
+
 	protected boolean templateIsCorrectType(VirtualMachineTemplate template) {
 		return !template.getFormat().equals(ImageFormat.ISO);
 	}

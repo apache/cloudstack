@@ -49,7 +49,7 @@ public class ListRoutersCmd extends BaseListProjectAndAccountResourcesCmd {
     @IdentityMapper(entityTableName="vm_instance")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the ID of the disk router")
     private Long id;
-    
+
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the router")
     private String routerName;
 
@@ -63,15 +63,15 @@ public class ListRoutersCmd extends BaseListProjectAndAccountResourcesCmd {
     @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the Zone ID of the router")
     private Long zoneId;
-    
+
     @IdentityMapper(entityTableName="networks")
     @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, description="list by network id")
     private Long networkId;
-    
+
     @IdentityMapper(entityTableName="vpc")
     @Parameter(name=ApiConstants.VPC_ID, type=CommandType.LONG, description="List networks by VPC")
     private Long vpcId;
-    
+
     @Parameter(name=ApiConstants.FOR_VPC, type=CommandType.BOOLEAN, description="if true is passed for this parameter, list only VPC routers")
     private Boolean forVpc;
 
@@ -86,7 +86,7 @@ public class ListRoutersCmd extends BaseListProjectAndAccountResourcesCmd {
     public Long getId() {
         return id;
     }
-    
+
     public String getRouterName() {
         return routerName;
     }
@@ -102,15 +102,15 @@ public class ListRoutersCmd extends BaseListProjectAndAccountResourcesCmd {
     public Long getZoneId() {
         return zoneId;
     }
-    
+
     public Long getNetworkId() {
         return networkId;
     }
-    
+
     public Long getVpcId() {
         return vpcId;
     }
-    
+
     public Boolean getForVpc() {
         return forVpc;
     }
@@ -123,9 +123,9 @@ public class ListRoutersCmd extends BaseListProjectAndAccountResourcesCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     public AsyncJob.Type getInstanceType() {
-    	return AsyncJob.Type.DomainRouter;
+        return AsyncJob.Type.DomainRouter;
     }
 
     @Override

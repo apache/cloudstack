@@ -24,11 +24,11 @@ public class CheckSshCommand extends Command {
     int interval;
     int retries;
     String name;
-    
+
     protected CheckSshCommand() {
         super();
     }
-    
+
     public CheckSshCommand(String instanceName, String ip, int port) {
         super();
         this.ip = ip;
@@ -37,7 +37,7 @@ public class CheckSshCommand extends Command {
         this.retries = 100;
         this.name = instanceName;
     }
-    
+
     public String getName() {
         return name;
     }

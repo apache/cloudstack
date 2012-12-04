@@ -67,14 +67,14 @@ public class ListLoadBalancerRuleInstancesCmd extends BaseListCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public void execute(){
         List<? extends UserVm> result = _lbService.listLoadBalancerInstances(this);
         ListResponse<UserVmResponse> response = new ListResponse<UserVmResponse>();
         List<UserVmResponse> vmResponses = new ArrayList<UserVmResponse>();
         if (result != null) {
-            vmResponses = _responseGenerator.createUserVmResponse("loadbalancerruleinstance", result.toArray(new UserVm[result.size()])); 
+            vmResponses = _responseGenerator.createUserVmResponse("loadbalancerruleinstance", result.toArray(new UserVm[result.size()]));
         }
         response.setResponses(vmResponses);
         response.setResponseName(getCommandName());

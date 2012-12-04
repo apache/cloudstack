@@ -23,13 +23,13 @@ import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 public class RemoteAccessVpnResponse extends BaseResponse implements ControlledEntityResponse{
-    
+
     @SerializedName(ApiConstants.PUBLIC_IP_ID) @Param(description="the public ip address of the vpn server")
     private IdentityProxy publicIpId = new IdentityProxy("user_ip_address");
-    
+
     @SerializedName(ApiConstants.PUBLIC_IP) @Param(description="the public ip address of the vpn server")
     private String publicIp;
-    
+
     @SerializedName("iprange") @Param(description="the range of ips to allocate to the clients")
     private String ipRange;
 
@@ -38,45 +38,45 @@ public class RemoteAccessVpnResponse extends BaseResponse implements ControlledE
 
     @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account of the remote access vpn")
     private String accountName;
-    
+
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the vpn")
     private IdentityProxy projectId = new IdentityProxy("projects");
-    
+
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the vpn")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain id of the account of the remote access vpn")
-	private IdentityProxy domainId = new IdentityProxy("domain");
+    private IdentityProxy domainId = new IdentityProxy("domain");
 
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the account of the remote access vpn")
-	private String domainName;
-    
+    private String domainName;
+
     @SerializedName(ApiConstants.STATE) @Param(description="the state of the rule")
     private String state;
 
-	public void setPublicIp(String publicIp) {
-		this.publicIp = publicIp;
-	}
+    public void setPublicIp(String publicIp) {
+        this.publicIp = publicIp;
+    }
 
-	public void setIpRange(String ipRange) {
-		this.ipRange = ipRange;
-	}
+    public void setIpRange(String ipRange) {
+        this.ipRange = ipRange;
+    }
 
-	public void setPresharedKey(String presharedKey) {
-		this.presharedKey = presharedKey;
-	}
+    public void setPresharedKey(String presharedKey) {
+        this.presharedKey = presharedKey;
+    }
 
-	public void setAccountName(String accountName) {
-		this.accountName = accountName;
-	}
+    public void setAccountName(String accountName) {
+        this.accountName = accountName;
+    }
 
-	public void setDomainId(Long domainId) {
-		this.domainId.setValue(domainId);
-	}
+    public void setDomainId(Long domainId) {
+        this.domainId.setValue(domainId);
+    }
 
-	public void setDomainName(String name) {
-		this.domainName = name;		
-	}
+    public void setDomainName(String name) {
+        this.domainName = name;
+    }
 
     public void setState(String state) {
         this.state = state;
@@ -95,5 +95,5 @@ public class RemoteAccessVpnResponse extends BaseResponse implements ControlledE
     public void setProjectName(String projectName) {
         this.projectName = projectName;
     }
-    
+
 }

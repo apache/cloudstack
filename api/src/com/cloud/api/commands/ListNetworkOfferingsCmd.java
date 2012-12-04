@@ -42,70 +42,70 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
     @IdentityMapper(entityTableName="network_offerings")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list network offerings by id")
     private Long id;
-    
+
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="list network offerings by name")
     private String networkOfferingName;
-    
+
     @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="list network offerings by display text")
     private String displayText;
-    
+
     @Parameter(name=ApiConstants.TRAFFIC_TYPE, type=CommandType.STRING, description="list by traffic type")
     private String trafficType;
-    
+
     @Parameter(name=ApiConstants.IS_DEFAULT, type=CommandType.BOOLEAN, description="true if need to list only default network offerings. Default value is false")
-    private Boolean isDefault; 
-    
+    private Boolean isDefault;
+
     @Parameter(name=ApiConstants.SPECIFY_VLAN, type=CommandType.BOOLEAN, description="the tags for the network offering.")
     private Boolean specifyVlan;
-    
+
     @Parameter(name=ApiConstants.AVAILABILITY, type=CommandType.STRING, description="the availability of network offering. Default value is Required")
     private String availability;
-    
+
     @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="list netowrk offerings available for network creation in specific zone")
     private Long zoneId;
-    
+
     @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="list network offerings by state")
     private String state;
-    
+
     @IdentityMapper(entityTableName="networks")
     @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, description="the ID of the network. Pass this in if you want to see the available network offering that a network can be changed to.")
     private Long networkId;
-    
+
     @Parameter(name=ApiConstants.GUEST_IP_TYPE, type=CommandType.STRING, description="list network offerings by guest type: Shared or Isolated")
     private String guestIpType;
 
     @Parameter(name=ApiConstants.SUPPORTED_SERVICES, type=CommandType.LIST, collectionType=CommandType.STRING, description="list network offerings supporting certain services")
     private List<String> supportedServices;
-    
+
     @Parameter(name=ApiConstants.SOURCE_NAT_SUPPORTED, type=CommandType.BOOLEAN, description="true if need to list only netwok offerings where source nat is supported, false otherwise")
     private Boolean sourceNatSupported;
-    
+
     @Parameter(name=ApiConstants.SPECIFY_IP_RANGES, type=CommandType.BOOLEAN, description="true if need to list only network offerings which support specifying ip ranges")
     private Boolean specifyIpRanges;
-    
+
     @Parameter(name=ApiConstants.TAGS, type=CommandType.STRING, description="list network offerings by tags", length=4096)
     private String tags;
-    
+
     @Parameter(name=ApiConstants.IS_TAGGED, type=CommandType.BOOLEAN, description="true if offering has tags specified")
     private Boolean isTagged;
-    
+
     @Parameter(name=ApiConstants.FOR_VPC, type=CommandType.BOOLEAN, description="the network offering can be used" +
-    		" only for network creation inside the VPC")
+            " only for network creation inside the VPC")
     private Boolean forVpc;
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-    
+
     public String getNetworkOfferingName() {
         return networkOfferingName;
     }
-    
+
     public String getDisplayText() {
         return displayText;
     }
-    
+
     public String getTrafficType() {
         return trafficType;
     }
@@ -117,7 +117,7 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
     public Boolean getIsDefault() {
         return isDefault;
     }
-    
+
     public Boolean getSpecifyVlan() {
         return specifyVlan;
     }
@@ -147,14 +147,14 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
     }
 
     public Boolean getSourceNatSupported() {
-		return sourceNatSupported;
-	}
-    
-    public Boolean getSpecifyIpRanges() {
-    	return specifyIpRanges;
+        return sourceNatSupported;
     }
 
-	public String getTags() {
+    public Boolean getSpecifyIpRanges() {
+        return specifyIpRanges;
+    }
+
+    public String getTags() {
         return tags;
     }
 

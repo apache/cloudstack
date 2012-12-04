@@ -70,11 +70,11 @@ public class DeleteIsoCmd extends BaseAsyncCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     public static String getStaticName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         VirtualMachineTemplate iso = _entityMgr.findById(VirtualMachineTemplate.class, getId());
@@ -94,18 +94,18 @@ public class DeleteIsoCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return "Deleting iso " + getId();
     }
-    
+
     public AsyncJob.Type getInstanceType() {
-    	return AsyncJob.Type.Iso;
+        return AsyncJob.Type.Iso;
     }
-    
+
     public Long getInstanceId() {
-    	return getId();
+        return getId();
     }
-    
+
     @Override
     public void execute(){
-    	UserContext.current().setEventDetails("ISO Id: "+getId());
+        UserContext.current().setEventDetails("ISO Id: "+getId());
         boolean result = _templateService.deleteIso(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

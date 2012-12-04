@@ -47,16 +47,16 @@ public class UpdatePodCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.START_IP, type=CommandType.STRING, description="the starting IP address for the Pod")
     private String startIp;
-    
+
     @Parameter(name=ApiConstants.END_IP, type=CommandType.STRING, description="the ending IP address for the Pod")
     private String endIp;
-    
+
     @Parameter(name=ApiConstants.NETMASK, type=CommandType.STRING, description="the netmask of the Pod")
     private String netmask;
 
     @Parameter(name=ApiConstants.GATEWAY, type=CommandType.STRING, description="the gateway for the Pod")
     private String gateway;
-    
+
     @Parameter(name=ApiConstants.ALLOCATION_STATE, type=CommandType.STRING, description="Allocation state of this cluster for allocation of new resources")
     private String allocationState;
 
@@ -89,7 +89,7 @@ public class UpdatePodCmd extends BaseCmd {
     }
 
     public String getAllocationState() {
-    	return allocationState;
+        return allocationState;
     }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -99,12 +99,12 @@ public class UpdatePodCmd extends BaseCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-    
+
     @Override
     public void execute(){
         Pod result = _configService.editPod(this);

@@ -34,14 +34,14 @@ import com.cloud.user.UserContext;
 
 @Implementation(description="Deletes a account, and all users associated with this account", responseObject=SuccessResponse.class)
 public class DeleteAccountCmd extends BaseAsyncCmd {
-	public static final Logger s_logger = Logger.getLogger(DeleteAccountCmd.class.getName());
-	private static final String s_name = "deleteaccountresponse";
+    public static final Logger s_logger = Logger.getLogger(DeleteAccountCmd.class.getName());
+    private static final String s_name = "deleteaccountresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-	
+
     @IdentityMapper(entityTableName="account")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="Account id")
     private Long id;
@@ -60,12 +60,12 @@ public class DeleteAccountCmd extends BaseAsyncCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-	public static String getStaticName() {
-		return s_name;
-	}
-	
+    public static String getStaticName() {
+        return s_name;
+    }
+
     @Override
-	public String getCommandName() {
+    public String getCommandName() {
         return s_name;
     }
 
@@ -89,7 +89,7 @@ public class DeleteAccountCmd extends BaseAsyncCmd {
         User user = _responseGenerator.findUserById(getId());
         return (user != null ? ("deleting User " + user.getUsername() + " (id: " + user.getId() + ") and accountId = " + user.getAccountId()) : "user delete, but this user does not exist in the system");
     }
-	
+
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Account Id: "+getId());
@@ -101,7 +101,7 @@ public class DeleteAccountCmd extends BaseAsyncCmd {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete user account and all corresponding users");
         }
     }
-    
+
     @Override
     public AsyncJob.Type getInstanceType() {
         return AsyncJob.Type.Account;

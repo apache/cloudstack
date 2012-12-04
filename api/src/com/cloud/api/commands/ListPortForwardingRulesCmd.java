@@ -40,11 +40,11 @@ public class ListPortForwardingRulesCmd extends BaseListTaggedResourcesCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    
+
     @IdentityMapper(entityTableName="firewall_rules")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="Lists rule with the specified ID.")
     private Long id;
-    
+
     @IdentityMapper(entityTableName="user_ip_address")
     @Parameter(name=ApiConstants.IP_ADDRESS_ID, type=CommandType.LONG, description="the id of IP address of the port forwarding services")
     private Long ipAddressId;
@@ -52,11 +52,11 @@ public class ListPortForwardingRulesCmd extends BaseListTaggedResourcesCmd {
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-    
+
     public Long getIpAddressId() {
         return ipAddressId;
     }
-    
+
     public Long getId() {
         return id;
     }
@@ -69,13 +69,13 @@ public class ListPortForwardingRulesCmd extends BaseListTaggedResourcesCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public void execute(){
         Pair<List<? extends PortForwardingRule>, Integer> result = _rulesService.listPortForwardingRules(this);
         ListResponse<FirewallRuleResponse> response = new ListResponse<FirewallRuleResponse>();
         List<FirewallRuleResponse> fwResponses = new ArrayList<FirewallRuleResponse>();
-        
+
         for (PortForwardingRule fwRule : result.first()) {
             FirewallRuleResponse ruleData = _responseGenerator.createPortForwardingRuleResponse(fwRule);
             ruleData.setObjectName("portforwardingrule");
@@ -83,6 +83,6 @@ public class ListPortForwardingRulesCmd extends BaseListTaggedResourcesCmd {
         }
         response.setResponses(fwResponses, result.second());
         response.setResponseName(getCommandName());
-        this.setResponseObject(response); 
+        this.setResponseObject(response);
     }
 }

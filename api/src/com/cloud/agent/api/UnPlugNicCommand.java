@@ -21,7 +21,7 @@ import com.cloud.agent.api.to.NicTO;
 public class UnPlugNicCommand extends Command{
     NicTO nic;
     String instanceName;
-    
+
     public NicTO getNic() {
         return nic;
     }
@@ -30,10 +30,10 @@ public class UnPlugNicCommand extends Command{
     public boolean executeInSequence() {
         return true;
     }
-    
+
     protected UnPlugNicCommand() {
     }
-    
+
     public UnPlugNicCommand(NicTO nic, String instanceName) {
         this.nic = nic;
         this.instanceName = instanceName;

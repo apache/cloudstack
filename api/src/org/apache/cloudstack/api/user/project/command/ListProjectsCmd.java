@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.user.project.command;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -44,7 +44,7 @@ public class ListProjectsCmd extends BaseListAccountResourcesCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    
+
     @IdentityMapper(entityTableName="projects")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list projects by project ID")
     private Long id;
@@ -54,13 +54,13 @@ public class ListProjectsCmd extends BaseListAccountResourcesCmd {
 
     @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="list projects by display text")
     private String displayText;
-    
+
     @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="list projects by state")
     private String state;
-    
+
     @Parameter(name = ApiConstants.TAGS, type = CommandType.MAP, description = "List projects by tags (key/value pairs)")
     private Map tags;
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -76,12 +76,12 @@ public class ListProjectsCmd extends BaseListAccountResourcesCmd {
     public String getDisplayText() {
         return displayText;
     }
-    
+
     @Override
     public String getCommandName() {
         return s_name;
     }
-    
+
     public Map<String, String> getTags() {
         Map<String, String> tagsMap = null;
         if (tags != null && !tags.isEmpty()) {
@@ -107,7 +107,7 @@ public class ListProjectsCmd extends BaseListAccountResourcesCmd {
 
     @Override
     public void execute(){
-        Pair<List<? extends Project>, Integer> projects = _projectService.listProjects(id, name, displayText, state, 
+        Pair<List<? extends Project>, Integer> projects = _projectService.listProjects(id, name, displayText, state,
                 this.getAccountName(), this.getDomainId(), this.getKeyword(), this.getStartIndex(), this.getPageSizeVal(),
                 this.listAll(), this.isRecursive(), getTags());
         ListResponse<ProjectResponse> response = new ListResponse<ProjectResponse>();
@@ -118,7 +118,7 @@ public class ListProjectsCmd extends BaseListAccountResourcesCmd {
         }
         response.setResponses(projectResponses, projects.second());
         response.setResponseName(getCommandName());
-        
+
         this.setResponseObject(response);
     }
 }

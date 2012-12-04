@@ -41,7 +41,7 @@ public class DeleteNetworkServiceProviderCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    
+
     @IdentityMapper(entityTableName="physical_network_service_providers")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the network service provider")
     private Long id;
@@ -64,7 +64,7 @@ public class DeleteNetworkServiceProviderCmd extends BaseAsyncCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
@@ -86,7 +86,7 @@ public class DeleteNetworkServiceProviderCmd extends BaseAsyncCmd {
         }  catch (ConcurrentOperationException ex) {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
-        } 
+        }
     }
 
 
@@ -100,7 +100,7 @@ public class DeleteNetworkServiceProviderCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "Deleting Physical network ServiceProvider: " + getId();
     }
-    
+
     @Override
     public AsyncJob.Type getInstanceType() {
         return AsyncJob.Type.PhysicalNetworkServiceProvider;

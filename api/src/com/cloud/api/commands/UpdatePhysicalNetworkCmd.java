@@ -49,17 +49,17 @@ public class UpdatePhysicalNetworkCmd extends BaseAsyncCmd {
 
     @Parameter(name=ApiConstants.TAGS, type=CommandType.LIST, collectionType=CommandType.STRING, description="Tag the physical network")
     private List<String> tags;
-    
+
     @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="Enabled/Disabled")
     private String state;
 
     @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, description="the VLAN for the physical network")
     private String vlan;
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-    
+
     public List<String> getTags() {
         return tags;
     }
@@ -67,7 +67,7 @@ public class UpdatePhysicalNetworkCmd extends BaseAsyncCmd {
     public String getNetworkSpeed() {
         return speed;
     }
-    
+
     public String getState() {
         return state;
     }
@@ -79,7 +79,7 @@ public class UpdatePhysicalNetworkCmd extends BaseAsyncCmd {
     public String getVlan() {
         return vlan;
     }
-    
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -88,12 +88,12 @@ public class UpdatePhysicalNetworkCmd extends BaseAsyncCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-    
+
     @Override
     public void execute(){
         PhysicalNetwork result = _networkService.updatePhysicalNetwork(getId(),getNetworkSpeed(), getTags(), getVlan(), getState());
@@ -106,12 +106,12 @@ public class UpdatePhysicalNetworkCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "Updating Physical network: " + getId();
     }
-    
+
     @Override
     public String getEventType() {
         return EventTypes.EVENT_PHYSICAL_NETWORK_UPDATE;
     }
-    
+
     @Override
     public AsyncJob.Type getInstanceType() {
         return AsyncJob.Type.PhysicalNetwork;

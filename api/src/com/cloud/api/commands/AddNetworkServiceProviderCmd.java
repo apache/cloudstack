@@ -44,7 +44,7 @@ public class AddNetworkServiceProviderCmd extends BaseAsyncCreateCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    
+
     @IdentityMapper(entityTableName="physical_network")
     @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, required=true, description="the Physical Network ID to add the provider to")
     private Long physicalNetworkId;
@@ -52,10 +52,10 @@ public class AddNetworkServiceProviderCmd extends BaseAsyncCreateCmd {
     @IdentityMapper(entityTableName="physical_network")
     @Parameter(name=ApiConstants.DEST_PHYSICAL_NETWORK_ID, type=CommandType.LONG, description="the destination Physical Network ID to bridge to")
     private Long destinationPhysicalNetworkId;
-    
+
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="the name for the physical network service provider")
     private String name;
-    
+
     @Parameter(name=ApiConstants.SERVICE_LIST, type=CommandType.LIST, collectionType = CommandType.STRING, description="the list of services to be enabled for this physical network service provider")
     private List<String> enabledServices;
 
@@ -67,7 +67,7 @@ public class AddNetworkServiceProviderCmd extends BaseAsyncCreateCmd {
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-    
+
     public Long getPhysicalNetworkId() {
         return physicalNetworkId;
     }
@@ -92,12 +92,12 @@ public class AddNetworkServiceProviderCmd extends BaseAsyncCreateCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-    
+
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Network ServiceProvider Id: "+getEntityId());
@@ -118,19 +118,19 @@ public class AddNetworkServiceProviderCmd extends BaseAsyncCreateCmd {
             setEntityId(result.getId());
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add service provider entity to physical network");
-        }        
+        }
     }
 
     @Override
     public String getEventType() {
         return EventTypes.EVENT_SERVICE_PROVIDER_CREATE;
     }
-    
+
     @Override
     public String getEventDescription() {
         return  "Adding physical network ServiceProvider: " + getEntityId();
     }
-    
+
     @Override
     public AsyncJob.Type getInstanceType() {
         return AsyncJob.Type.PhysicalNetworkServiceProvider;

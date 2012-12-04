@@ -57,7 +57,7 @@ public class DeleteVMGroupCmd extends BaseCmd{
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         InstanceGroup group = _entityMgr.findById(InstanceGroup.class, getId());
@@ -67,7 +67,7 @@ public class DeleteVMGroupCmd extends BaseCmd{
 
         return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
-    
+
     @Override
     public void execute(){
         boolean result = _userVmService.deleteVmGroup(this);

@@ -45,44 +45,44 @@ public class ZoneResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.INTERNAL_DNS2) @Param(description="the second internal DNS for the Zone")
     private String internalDns2;
-    
+
     @SerializedName(ApiConstants.VLAN) @Param(description="the vlan range of the zone")
     private String vlan;
 
     @SerializedName(ApiConstants.GUEST_CIDR_ADDRESS) @Param(description="the guest CIDR address for the Zone")
     private String guestCidrAddress;
-    
+
     //TODO - generate description
     @SerializedName("status")
     private String status;
 
     @SerializedName(ApiConstants.DISPLAY_TEXT) @Param(description="the display text of the zone")
     private String displayText;
-    
+
     @SerializedName(ApiConstants.DOMAIN) @Param(description="Network domain name for the networks in the zone")
     private String domain;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the ID of the containing domain, null for public zones")
     private Long domainId;
-    
+
     @SerializedName("domainname") @Param(description="the name of the containing domain, null for public zones")
     private String domainName;
-    
+
     @SerializedName(ApiConstants.NETWORK_TYPE) @Param(description="the network type of the zone; can be Basic or Advanced")
     private String networkType;
-    
+
     @SerializedName("securitygroupsenabled") @Param(description="true if security groups support is enabled, false otherwise")
     private boolean securityGroupsEnabled;
-    
+
     @SerializedName("allocationstate") @Param(description="the allocation state of the cluster")
-    private String allocationState; 
-    
+    private String allocationState;
+
     @SerializedName(ApiConstants.ZONE_TOKEN) @Param(description="Zone Token")
-    private String zoneToken;    
-    
+    private String zoneToken;
+
     @SerializedName(ApiConstants.DHCP_PROVIDER) @Param(description="the dhcp Provider for the Zone")
-    private String dhcpProvider;     
-    
+    private String dhcpProvider;
+
     @SerializedName("capacity")  @Param(description="the capacity of the Zone", responseObject = CapacityResponse.class)
     private List<CapacityResponse> capacitites;
 
@@ -140,7 +140,7 @@ public class ZoneResponse extends BaseResponse {
 	public void setDomainId(Long domainId) {
 		this.domainId = domainId;
 	}
-	
+
     public void setType(String networkType) {
         this.networkType = networkType;
     }
@@ -148,11 +148,11 @@ public class ZoneResponse extends BaseResponse {
     public void setSecurityGroupsEnabled(boolean securityGroupsEnabled) {
         this.securityGroupsEnabled = securityGroupsEnabled;
     }
-    
+
     public void setAllocationState(String allocationState) {
     	this.allocationState = allocationState;
     }
-	
+
 	public void setZoneToken(String zoneToken) {
 		this.zoneToken = zoneToken;
 	}

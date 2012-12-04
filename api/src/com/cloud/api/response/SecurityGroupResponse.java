@@ -36,10 +36,10 @@ public class SecurityGroupResponse extends BaseResponse implements ControlledEnt
 
     @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account owning the security group")
     private String accountName;
-    
+
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the group")
     private IdentityProxy projectId = new IdentityProxy("projects");
-    
+
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the group")
     private String projectName;
 
@@ -54,14 +54,14 @@ public class SecurityGroupResponse extends BaseResponse implements ControlledEnt
 
     @SerializedName("egressrule")  @Param(description="the list of egress rules associated with the security group", responseObject = SecurityGroupRuleResponse.class)
     private List<SecurityGroupRuleResponse> egressRules;
-    
+
     @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with the rule", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
-    
+
     public void setId(Long id) {
         this.id.setValue(id);
     }
-    
+
     public Long getId() {
         return id.getValue();
     }
@@ -93,7 +93,7 @@ public class SecurityGroupResponse extends BaseResponse implements ControlledEnt
     public void setSecurityGroupEgressRules(List<SecurityGroupRuleResponse> securityGroupRules) {
         this.egressRules = securityGroupRules;
     }
-    
+
     @Override
     public Long getObjectId() {
         return getId();
@@ -123,7 +123,7 @@ public class SecurityGroupResponse extends BaseResponse implements ControlledEnt
             return false;
         return true;
     }
-    
+
     @Override
     public void setProjectId(Long projectId) {
         this.projectId.setValue(projectId);
@@ -133,7 +133,7 @@ public class SecurityGroupResponse extends BaseResponse implements ControlledEnt
     public void setProjectName(String projectName) {
         this.projectName = projectName;
     }
-    
+
     public void setTags(List<ResourceTagResponse> tags) {
         this.tags = tags;
     }

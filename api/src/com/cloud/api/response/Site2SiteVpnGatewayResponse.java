@@ -36,38 +36,38 @@ public class Site2SiteVpnGatewayResponse extends BaseResponse implements Control
 
     @SerializedName(ApiConstants.ACCOUNT) @Param(description="the owner")
     private String accountName;
-    
+
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id")
     private IdentityProxy projectId = new IdentityProxy("projects");
-    
+
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain id of the owner")
     private IdentityProxy domainId = new IdentityProxy("domain");
-    
+
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the owner")
     private String domain;
-    
+
     @SerializedName(ApiConstants.REMOVED) @Param(description="the date and time the host was removed")
     private Date removed;
 
-	public void setId(Long id) {
-		this.id.setValue(id);
-	}
-	
-	public void setIp(String ip) {
-		this.ip = ip;
-	}
-	
-	public void setVpcId(Long vpcId) {
-		this.vpcId.setValue(vpcId);
-	}
-	
+    public void setId(Long id) {
+        this.id.setValue(id);
+    }
+
+    public void setIp(String ip) {
+        this.ip = ip;
+    }
+
+    public void setVpcId(Long vpcId) {
+        this.vpcId.setValue(vpcId);
+    }
+
     public void setRemoved(Date removed) {
         this.removed = removed;
-    }	
-    
+    }
+
     @Override
     public void setAccountName(String accountName) {
         this.accountName = accountName;

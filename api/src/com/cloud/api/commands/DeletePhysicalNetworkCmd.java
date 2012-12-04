@@ -62,7 +62,7 @@ public class DeletePhysicalNetworkCmd extends BaseAsyncCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
@@ -85,12 +85,12 @@ public class DeletePhysicalNetworkCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "Deleting Physical network: " + getId();
     }
-    
+
     @Override
     public String getEventType() {
         return EventTypes.EVENT_PHYSICAL_NETWORK_DELETE;
     }
-    
+
     @Override
     public AsyncJob.Type getInstanceType() {
         return AsyncJob.Type.PhysicalNetwork;

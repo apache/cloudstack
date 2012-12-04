@@ -35,7 +35,7 @@ import com.cloud.user.Account;
 public class ListSwiftsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListSwiftsCmd.class.getName());
     private static final String s_name = "listswiftsresponse";
-     
+
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
@@ -54,14 +54,14 @@ public class ListSwiftsCmd extends BaseListCmd {
 
     @Override
     public String getCommandName() {
-    	return s_name;
+        return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-    
+
     @Override
     public void execute(){
         List<? extends Swift> result = _resourceService.listSwifts(this);

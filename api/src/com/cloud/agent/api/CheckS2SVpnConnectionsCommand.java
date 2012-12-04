@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -22,17 +22,17 @@ import com.cloud.agent.api.routing.NetworkElementCommand;
 
 public class CheckS2SVpnConnectionsCommand extends NetworkElementCommand {
     List<String> vpnIps;
-    
+
     @Override
     public boolean executeInSequence() {
         return true;
     }
-    
+
     public CheckS2SVpnConnectionsCommand(List<String> vpnIps) {
         super();
         this.vpnIps = vpnIps;
     }
-    
+
     public List<String> getVpnIps() {
         return vpnIps;
     }

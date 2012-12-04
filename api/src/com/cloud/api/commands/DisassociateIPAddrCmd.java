@@ -46,7 +46,7 @@ public class DisassociateIPAddrCmd extends BaseAsyncCmd {
 
     @IdentityMapper(entityTableName="user_ip_address")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the id of the public ip address" +
-    		" to disassociate")
+            " to disassociate")
     private Long id;
 
     // unexposed parameter needed for events logging
@@ -81,7 +81,7 @@ public class DisassociateIPAddrCmd extends BaseAsyncCmd {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to disassociate ip address");
         }
     }
-    
+
     @Override
     public String getEventType() {
         return EventTypes.EVENT_NET_IP_RELEASE;
@@ -91,7 +91,7 @@ public class DisassociateIPAddrCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  ("Disassociating ip address with id=" + id);
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         if (ownerId == null) {
@@ -101,13 +101,13 @@ public class DisassociateIPAddrCmd extends BaseAsyncCmd {
             }
             ownerId = ip.getAccountId();
         }
-        
+
         if (ownerId == null) {
             return Account.ACCOUNT_ID_SYSTEM;
         }
         return ownerId;
     }
-    
+
     @Override
     public String getSyncObjType() {
         return BaseAsyncCmd.networkSyncObject;
@@ -118,22 +118,22 @@ public class DisassociateIPAddrCmd extends BaseAsyncCmd {
         IpAddress ip = getIpAddress(id);
         return ip.getAssociatedWithNetworkId();
     }
-    
+
     private IpAddress getIpAddress(long id) {
         IpAddress ip = _entityMgr.findById(IpAddress.class, id);
-        
+
         if (ip == null) {
             throw new InvalidParameterValueException("Unable to find ip address by id=" + id);
         } else {
             return ip;
         }
     }
-    
+
     @Override
     public AsyncJob.Type getInstanceType() {
         return AsyncJob.Type.IpAddress;
     }
-    
+
     @Override
     public Long getInstanceId() {
         return getIpAddressId();

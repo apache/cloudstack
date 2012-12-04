@@ -20,7 +20,7 @@ import com.cloud.org.Grouping;
 
 /**
  * Represents one pod in the cloud stack.
- * 
+ *
  */
 public interface Pod extends Grouping {
     /**

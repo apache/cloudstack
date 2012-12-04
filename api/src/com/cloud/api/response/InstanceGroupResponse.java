@@ -36,10 +36,10 @@ public class InstanceGroupResponse extends BaseResponse implements ControlledEnt
 
     @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account owning the instance group")
     private String accountName;
-    
+
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the group")
     private IdentityProxy projectId = new IdentityProxy("projects");
-    
+
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the group")
     private String projectName;
 
@@ -75,7 +75,7 @@ public class InstanceGroupResponse extends BaseResponse implements ControlledEnt
     public void setDomainName(String domainName) {
         this.domainName = domainName;
     }
-    
+
     @Override
     public void setProjectId(Long projectId) {
         this.projectId.setValue(projectId);

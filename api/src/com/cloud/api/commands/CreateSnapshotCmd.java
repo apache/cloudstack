@@ -61,15 +61,15 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
     @IdentityMapper(entityTableName="snapshot_policy")
     @Parameter(name = ApiConstants.POLICY_ID, type = CommandType.LONG, description = "policy id of the snapshot, if this is null, then use MANUAL_POLICY.")
     private Long policyId;
-        
+
     private String syncObjectType = BaseAsyncCmd.snapshotHostSyncObject;
 
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
-    
+
     public String getEntityTable() {
-    	return "snapshots";
+        return "snapshots";
     }
 
     public String getAccountName() {
@@ -91,7 +91,7 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
             return Snapshot.MANUAL_POLICY_ID;
         }
     }
-    
+
     private Long getHostId() {
         Volume volume = _entityMgr.findById(Volume.class, getVolumeId());
         if (volume == null) {
@@ -100,7 +100,7 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
         return _snapshotService.getHostIdForSnapshotOperation(volume);
     }
 
-    
+
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
@@ -116,23 +116,23 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
 
     @Override
     public long getEntityOwnerId() {
-        
+
         Volume volume = _entityMgr.findById(Volume.class, getVolumeId());
         if (volume == null) {
-        	throw new InvalidParameterValueException("Unable to find volume by id=" + volumeId);
+            throw new InvalidParameterValueException("Unable to find volume by id=" + volumeId);
         }
-        
+
         Account account = _accountService.getAccount(volume.getAccountId());
         //Can create templates for enabled projects/accounts only
         if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
-        	Project project = _projectService.findByProjectAccountId(volume.getAccountId());
+            Project project = _projectService.findByProjectAccountId(volume.getAccountId());
             if (project.getState() != Project.State.Active) {
                 throw new PermissionDeniedException("Can't add resources to the project id=" + project.getId() + " in state=" + project.getState() + " as it's no longer active");
             }
         } else if (account.getState() == Account.State.disabled) {
             throw new PermissionDeniedException("The owner of template is disabled: " + account);
         }
-        
+
         return volume.getAccountId();
     }
 
@@ -173,8 +173,8 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create snapshot due to an internal error creating snapshot for volume " + volumeId);
         }
     }
-    
-    
+
+
     @Override
     public String getSyncObjType() {
         if (getSyncObjId() != null) {

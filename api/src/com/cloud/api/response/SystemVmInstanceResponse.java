@@ -38,11 +38,11 @@ public class SystemVmInstanceResponse extends BaseResponse {
 
     @SerializedName("state") @Param(description="the state of the system VM")
     private String state;
-    
+
     @SerializedName("role") @Param(description="the role of the system VM")
     private String role;
-    
-    
+
+
     public Long getObjectId() {
     	return getId();
     }
@@ -86,13 +86,13 @@ public class SystemVmInstanceResponse extends BaseResponse {
     public void setState(String state) {
         this.state = state;
     }
-    
+
     public String getRole() {
         return role;
     }
 
     public void setRole(String role) {
         this.role = role;
-    }    
+    }
 
 }

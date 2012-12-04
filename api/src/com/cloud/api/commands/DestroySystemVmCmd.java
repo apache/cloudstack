@@ -35,13 +35,13 @@ import com.cloud.vm.VirtualMachine;
 @Implementation(responseObject=SystemVmResponse.class, description="Destroyes a system virtual machine.")
 public class DestroySystemVmCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DestroySystemVmCmd.class.getName());
-    
+
     private static final String s_name = "destroysystemvmresponse";
 
     @IdentityMapper(entityTableName="vm_instance")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="The ID of the system virtual machine")
     private Long id;
-    
+
     public Long getId() {
         return id;
     }
@@ -50,9 +50,9 @@ public class DestroySystemVmCmd extends BaseAsyncCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     public static String getResultObjectName() {
-        return "systemvm"; 
+        return "systemvm";
     }
 
     @Override
@@ -75,22 +75,22 @@ public class DestroySystemVmCmd extends BaseAsyncCmd {
             return EventTypes.EVENT_SSVM_DESTROY;
         }
     }
-    
+
     @Override
     public String getEventDescription() {
         return  "destroying system vm: " + getId();
     }
-    
+
     @Override
     public AsyncJob.Type getInstanceType() {
         return AsyncJob.Type.SystemVm;
     }
-    
+
     @Override
     public Long getInstanceId() {
         return getId();
     }
-    
+
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Vm Id: "+getId());

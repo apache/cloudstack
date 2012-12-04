@@ -47,13 +47,13 @@ public class PodResponse extends BaseResponse {
 
     @SerializedName("endip") @Param(description="the ending IP for the Pod")
     private String endIp;
-    
+
     @SerializedName("allocationstate") @Param(description="the allocation state of the Pod")
-    private String allocationState;    
+    private String allocationState;
 
     @SerializedName("capacity")  @Param(description="the capacity of the Pod", responseObject = CapacityResponse.class)
     private List<CapacityResponse> capacitites;
-    
+
     public Long getId() {
         return id.getValue();
     }
@@ -117,20 +117,20 @@ public class PodResponse extends BaseResponse {
     public void setEndIp(String endIp) {
         this.endIp = endIp;
     }
-    
+
     public String getAllocationState() {
-    	return allocationState;
+        return allocationState;
     }
-    
+
     public void setAllocationState(String allocationState) {
-    	this.allocationState = allocationState;
+        this.allocationState = allocationState;
     }
 
-	public List<CapacityResponse> getCapacitites() {
-		return capacitites;
-	}
+    public List<CapacityResponse> getCapacitites() {
+        return capacitites;
+    }
 
-	public void setCapacitites(List<CapacityResponse> capacitites) {
-		this.capacitites = capacitites;
-	}       
+    public void setCapacitites(List<CapacityResponse> capacitites) {
+        this.capacitites = capacitites;
+    }
 }

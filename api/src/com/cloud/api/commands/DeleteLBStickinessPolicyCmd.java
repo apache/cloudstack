@@ -105,11 +105,11 @@ public class DeleteLBStickinessPolicyCmd extends BaseAsyncCmd {
         StickinessPolicy policy = _entityMgr.findById(StickinessPolicy.class,
                 getId());
         if (policy == null) {
-            throw new InvalidParameterValueException("Unable to find LB stickiness rule: " + id);        
+            throw new InvalidParameterValueException("Unable to find LB stickiness rule: " + id);
         }
         LoadBalancer lb = _lbService.findById(policy.getLoadBalancerId());
         if (lb == null) {
-            throw new InvalidParameterValueException("Unable to find load balancer rule for stickiness rule: " + id);                 
+            throw new InvalidParameterValueException("Unable to find load balancer rule for stickiness rule: " + id);
         }
         return lb.getNetworkId();
     }

@@ -50,21 +50,21 @@ public class ServiceOfferingResponse extends BaseResponse {
 
     @SerializedName("offerha") @Param(description="the ha support in the service offering")
     private Boolean offerHa;
-  
+
     @SerializedName("limitcpuuse") @Param(description="restrict the CPU usage to committed service offering")
     private Boolean limitCpuUse;
-        
+
     @SerializedName("tags") @Param(description="the tags for the service offering")
     private String tags;
 
-	@SerializedName("domainid") @Param(description="the domain id of the service offering")
+    @SerializedName("domainid") @Param(description="the domain id of the service offering")
     private IdentityProxy domainId = new IdentityProxy("domain");
-	
+
     @SerializedName(ApiConstants.DOMAIN) @Param(description="Domain name for the offering")
     private String domain;
-    
+
     @SerializedName(ApiConstants.HOST_TAGS) @Param(description="the host tag for the service offering")
-    private String hostTag; 
+    private String hostTag;
 
     @SerializedName(ApiConstants.IS_SYSTEM_OFFERING) @Param(description="is this a system vm offering")
     private Boolean isSystem;
@@ -74,7 +74,7 @@ public class ServiceOfferingResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.SYSTEM_VM_TYPE) @Param(description="is this a the systemvm type for system vm offering")
     private String vm_type;
-    
+
     @SerializedName(ApiConstants.NETWORKRATE) @Param(description="data transfer rate in megabits per second allowed.")
     private Integer networkRate;
 
@@ -94,11 +94,11 @@ public class ServiceOfferingResponse extends BaseResponse {
     public void setName(String name) {
         this.name = name;
     }
-    
+
     public Boolean getIsSystem() {
         return isSystem;
     }
-    
+
     public void setIsSystemOffering(Boolean isSystem) {
         this.isSystem = isSystem;
     }
@@ -107,16 +107,16 @@ public class ServiceOfferingResponse extends BaseResponse {
     public Boolean getDefaultUse() {
         return defaultUse;
     }
-    
+
     public void setDefaultUse(Boolean defaultUse) {
         this.defaultUse = defaultUse;
     }
-    
+
 
     public String getSystemVmType() {
         return vm_type;
     }
-    
+
     public void setSystemVmType(String vmtype) {
         this.vm_type = vmtype;
     }
@@ -179,13 +179,13 @@ public class ServiceOfferingResponse extends BaseResponse {
     }
 
     public Boolean getLimitCpuUse() {
-    	return limitCpuUse;
+        return limitCpuUse;
     }
-    
+
     public void setLimitCpuUse(Boolean limitCpuUse) {
-    	this.limitCpuUse = limitCpuUse;
+        this.limitCpuUse = limitCpuUse;
     }
-        
+
     public String getTags() {
         return tags;
     }
@@ -195,28 +195,28 @@ public class ServiceOfferingResponse extends BaseResponse {
     }
 
     public Long getDomainId() {
-		return domainId.getValue();
-	}
+        return domainId.getValue();
+    }
 
-	public void setDomainId(Long domainId) {
-		this.domainId.setValue(domainId);
-	}
+    public void setDomainId(Long domainId) {
+        this.domainId.setValue(domainId);
+    }
 
-	public String getDomain() {
-		return domain;
-	}
+    public String getDomain() {
+        return domain;
+    }
 
-	public void setDomain(String domain) {
-		this.domain = domain;
-	}
-	
-	public String getHostTag() {
-		return hostTag;
-	}
+    public void setDomain(String domain) {
+        this.domain = domain;
+    }
 
-	public void setHostTag(String hostTag) {
-		this.hostTag = hostTag;
-	}
+    public String getHostTag() {
+        return hostTag;
+    }
+
+    public void setHostTag(String hostTag) {
+        this.hostTag = hostTag;
+    }
 
     public void setNetworkRate(Integer networkRate) {
         this.networkRate = networkRate;

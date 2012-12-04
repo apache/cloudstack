@@ -19,10 +19,10 @@ package com.cloud.agent.api;
 public class CheckOnHostAnswer extends Answer {
     boolean determined;
     boolean alive;
-    
+
     protected CheckOnHostAnswer() {
     }
-    
+
     public CheckOnHostAnswer(CheckOnHostCommand cmd, Boolean alive, String details) {
         super(cmd, true, details);
         if (alive == null) {
@@ -32,7 +32,7 @@ public class CheckOnHostAnswer extends Answer {
             this.alive = alive;
         }
     }
-    
+
     public CheckOnHostAnswer(CheckOnHostCommand cmd, String details) {
         super(cmd, false, details);
     }

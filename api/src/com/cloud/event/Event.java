@@ -27,7 +27,7 @@ public interface Event extends ControlledEntity{
         Started,
         Completed;
     }
-    
+
 
     long getId();
     String getType();

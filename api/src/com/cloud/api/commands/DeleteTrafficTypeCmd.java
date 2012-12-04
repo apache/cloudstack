@@ -42,16 +42,16 @@ public class DeleteTrafficTypeCmd extends BaseAsyncCmd {
     @IdentityMapper(entityTableName="physical_network_traffic_types")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="traffic type id")
     private Long id;
-    
+
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-    
+
     public Long getId() {
         return id;
     }
-    
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -60,12 +60,12 @@ public class DeleteTrafficTypeCmd extends BaseAsyncCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-    
+
     @Override
     public void execute(){
         boolean result = _networkService.deletePhysicalNetworkTrafficType(getId());
@@ -81,7 +81,7 @@ public class DeleteTrafficTypeCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "Deleting Traffic Type: " + getId();
     }
-    
+
     @Override
     public String getEventType() {
         return EventTypes.EVENT_TRAFFIC_TYPE_DELETE;

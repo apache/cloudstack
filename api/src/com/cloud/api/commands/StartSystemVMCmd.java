@@ -34,10 +34,10 @@ import com.cloud.vm.VirtualMachine;
 
 @Implementation(responseObject=SystemVmResponse.class, description="Starts a system virtual machine.")
 public class StartSystemVMCmd extends BaseAsyncCmd {
-	public static final Logger s_logger = Logger.getLogger(StartSystemVMCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(StartSystemVMCmd.class.getName());
 
     private static final String s_name = "startsystemvmresponse";
-    
+
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
@@ -62,9 +62,9 @@ public class StartSystemVMCmd extends BaseAsyncCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     public static String getResultObjectName() {
-    	return "systemvm"; 
+        return "systemvm";
     }
 
     @Override
@@ -92,15 +92,15 @@ public class StartSystemVMCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "starting system vm: " + getId();
     }
-    
+
     public AsyncJob.Type getInstanceType() {
-    	return AsyncJob.Type.SystemVm;
+        return AsyncJob.Type.SystemVm;
     }
-    
+
     public Long getInstanceId() {
-    	return getId();
+        return getId();
     }
-	
+
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Vm Id: "+getId());

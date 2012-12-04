@@ -42,30 +42,30 @@ public class AddTrafficTypeCmd extends BaseAsyncCreateCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    
+
     @IdentityMapper(entityTableName="physical_network")
     @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, required=true, description="the Physical Network ID")
     private Long physicalNetworkId;
-    
+
     @Parameter(name=ApiConstants.TRAFFIC_TYPE, type=CommandType.STRING, required=true, description="the trafficType to be added to the physical network")
     private String trafficType;
-    
+
     @Parameter(name=ApiConstants.XEN_NETWORK_LABEL, type=CommandType.STRING, description="The network name label of the physical device dedicated to this traffic on a XenServer host")
     private String xenLabel;
-    
+
     @Parameter(name=ApiConstants.KVM_NETWORK_LABEL, type=CommandType.STRING, description="The network name label of the physical device dedicated to this traffic on a KVM host")
     private String kvmLabel;
-    
+
     @Parameter(name=ApiConstants.VMWARE_NETWORK_LABEL, type=CommandType.STRING, description="The network name label of the physical device dedicated to this traffic on a VMware host")
     private String vmwareLabel;
-        
+
     @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, description="The VLAN id to be used for Management traffic by VMware host")
     private String vlan;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-    
+
     @Override
     public String getEntityTable() {
         return "physical_network_traffic_types";
@@ -90,10 +90,10 @@ public class AddTrafficTypeCmd extends BaseAsyncCreateCmd {
     public String getVmwareLabel() {
         return vmwareLabel;
     }
-    
+
     public String getSimulatorLabel() {
-    	//simulators will have no labels
-    	return null; 
+        //simulators will have no labels
+        return null;
     }
 
     public void setVlan(String vlan) {
@@ -112,12 +112,12 @@ public class AddTrafficTypeCmd extends BaseAsyncCreateCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-    
+
     @Override
     public void execute(){
         UserContext.current().setEventDetails("TrafficType Id: "+getEntityId());
@@ -138,19 +138,19 @@ public class AddTrafficTypeCmd extends BaseAsyncCreateCmd {
             setEntityId(result.getId());
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add traffic type to physical network");
-        }        
+        }
     }
 
     @Override
     public String getEventType() {
         return EventTypes.EVENT_TRAFFIC_TYPE_CREATE;
     }
-    
+
     @Override
     public String getEventDescription() {
         return  "Adding physical network traffic type: " + getEntityId();
     }
-    
+
     @Override
     public AsyncJob.Type getInstanceType() {
         return AsyncJob.Type.TrafficType;

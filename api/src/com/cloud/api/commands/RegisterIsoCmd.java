@@ -56,7 +56,7 @@ public class RegisterIsoCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.IS_EXTRACTABLE, type=CommandType.BOOLEAN, description="true if the iso or its derivatives are extractable; default is false")
     private Boolean extractable;
-    
+
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="the name of the ISO")
     private String isoName;
 
@@ -69,22 +69,22 @@ public class RegisterIsoCmd extends BaseCmd {
 
     @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="the ID of the zone you wish to register the ISO to.")
-    private Long zoneId;        
-    
+    private Long zoneId;
+
     @IdentityMapper(entityTableName="domain")
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="an optional domainId. If the account parameter is used, domainId must also be used.")
     private Long domainId;
 
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="an optional account name. Must be used with domainId.")
     private String accountName;
-    
+
     @Parameter(name=ApiConstants.CHECKSUM, type=CommandType.STRING, description="the MD5 checksum value of this ISO")
     private String checksum;
-    
+
     @IdentityMapper(entityTableName="projects")
     @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="Register iso for the project")
     private Long projectId;
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -108,7 +108,7 @@ public class RegisterIsoCmd extends BaseCmd {
     public Boolean isExtractable() {
         return extractable;
     }
-    
+
     public String getIsoName() {
         return isoName;
     }
@@ -126,36 +126,36 @@ public class RegisterIsoCmd extends BaseCmd {
     }
 
     public Long getDomainId() {
-		return domainId;
-	}
+        return domainId;
+    }
 
-	public String getAccountName() {
-		return accountName;
-	}
+    public String getAccountName() {
+        return accountName;
+    }
 
     public String getChecksum() {
         return checksum;
-    }	
-    
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-	@Override
+    @Override
     public String getCommandName() {
         return s_name;
     }
-	
+
     @Override
     public long getEntityOwnerId() {
         Long accountId = finalyzeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
             return UserContext.current().getCaller().getId();
         }
-        
+
         return accountId;
-    }	
-	
+    }
+
     @Override
     public void execute() throws ResourceAllocationException{
         VirtualMachineTemplate template = _templateService.registerIso(this);
@@ -163,11 +163,11 @@ public class RegisterIsoCmd extends BaseCmd {
             ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
             List<TemplateResponse> templateResponses = _responseGenerator.createIsoResponses(template.getId(), zoneId, false);
             response.setResponses(templateResponses);
-            response.setResponseName(getCommandName());              
+            response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to register iso");
         }
-      
+
     }
 }

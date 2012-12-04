@@ -34,8 +34,8 @@ import com.cloud.user.UserContext;
 
 @Implementation(description="Prepares a host for maintenance.", responseObject=HostResponse.class)
 public class PrepareForMaintenanceCmd extends BaseAsyncCmd {
-	public static final Logger s_logger = Logger.getLogger(PrepareForMaintenanceCmd.class.getName());
-	
+    public static final Logger s_logger = Logger.getLogger(PrepareForMaintenanceCmd.class.getName());
+
     private static final String s_name = "preparehostformaintenanceresponse";
 
     /////////////////////////////////////////////////////
@@ -62,9 +62,9 @@ public class PrepareForMaintenanceCmd extends BaseAsyncCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     public static String getResultObjectName() {
-    	return "host";
+        return "host";
     }
 
     @Override
@@ -86,17 +86,17 @@ public class PrepareForMaintenanceCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "preparing host: " + getId() + " for maintenance";
     }
-    
+
     @Override
     public AsyncJob.Type getInstanceType() {
-    	return AsyncJob.Type.Host;
+        return AsyncJob.Type.Host;
     }
-    
+
     @Override
     public Long getInstanceId() {
-    	return getId();
+        return getId();
     }
-    
+
     @Override
     public void execute(){
         Host result = _resourceService.maintain(this);

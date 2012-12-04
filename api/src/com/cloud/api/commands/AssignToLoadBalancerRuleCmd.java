@@ -92,7 +92,7 @@ public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return "applying instances for load balancer: " + getLoadBalancerId() + " (ids: " + StringUtils.join(getVirtualMachineIds(), ",") + ")";
     }
-    
+
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Load balancer Id: "+getLoadBalancerId()+" VmIds: "+StringUtils.join(getVirtualMachineIds(), ","));
@@ -104,7 +104,7 @@ public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to assign load balancer rule");
         }
     }
-    
+
     @Override
     public String getSyncObjType() {
         return BaseAsyncCmd.networkSyncObject;
@@ -112,10 +112,10 @@ public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     @Override
     public Long getSyncObjId() {
-    	LoadBalancer lb = _lbService.findById(id);
-    	if(lb == null){
-    		throw new InvalidParameterValueException("Unable to find load balancer rule: " + id);
-    	}
+        LoadBalancer lb = _lbService.findById(id);
+        if(lb == null){
+            throw new InvalidParameterValueException("Unable to find load balancer rule: " + id);
+        }
         return lb.getNetworkId();
     }
 }

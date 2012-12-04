@@ -53,13 +53,13 @@ public class UpdateResourceCountCmd extends BaseCmd {
     private Long domainId;
 
     @Parameter(name=ApiConstants.RESOURCE_TYPE, type=CommandType.INTEGER, description=  "Type of resource to update. If specifies valid values are 0, 1, 2, 3, and 4. If not specified will update all resource counts" +
-    																					"0 - Instance. Number of instances a user can create. " +
-    																					"1 - IP. Number of public IP addresses a user can own. " +
-    																					"2 - Volume. Number of disk volumes a user can create." +
-    																					"3 - Snapshot. Number of snapshots a user can create." +
-    																					"4 - Template. Number of templates that a user can register/create.")
+                                                                                        "0 - Instance. Number of instances a user can create. " +
+                                                                                        "1 - IP. Number of public IP addresses a user can own. " +
+                                                                                        "2 - Volume. Number of disk volumes a user can create." +
+                                                                                        "3 - Snapshot. Number of snapshots a user can create." +
+                                                                                        "4 - Template. Number of templates that a user can register/create.")
     private Integer resourceType;
-    
+
     @IdentityMapper(entityTableName="projects")
     @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="Update resource limits for project")
     private Long projectId;
@@ -83,12 +83,12 @@ public class UpdateResourceCountCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-    
+
     @Override
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         Account account = UserContext.current().getCaller();
@@ -110,7 +110,7 @@ public class UpdateResourceCountCmd extends BaseCmd {
 
     @Override
     public void execute(){
-    	List<? extends ResourceCount> result = _resourceLimitService.recalculateResourceCount(finalyzeAccountId(accountName, domainId, projectId, true), getDomainId(), getResourceType());
+        List<? extends ResourceCount> result = _resourceLimitService.recalculateResourceCount(finalyzeAccountId(accountName, domainId, projectId, true), getDomainId(), getResourceType());
 
         if ((result != null) && (result.size()>0)){
             ListResponse<ResourceCountResponse> response = new ListResponse<ResourceCountResponse>();

@@ -62,14 +62,14 @@ public class CreateZoneCmd extends BaseCmd {
 
     @IdentityMapper(entityTableName="domain")
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the ID of the containing domain, null for public zones")
-    private Long domainId; 
-    
+    private Long domainId;
+
     @Parameter(name=ApiConstants.NETWORK_TYPE, type=CommandType.STRING, required=true, description="network type of the zone, can be Basic or Advanced")
-    private String networkType; 
-    
+    private String networkType;
+
     @Parameter(name=ApiConstants.ALLOCATION_STATE, type=CommandType.STRING, description="Allocation state of this Zone for allocation of new resources")
     private String allocationState;
-    
+
     @Parameter(name=ApiConstants.SECURITY_GROUP_EANBLED, type=CommandType.BOOLEAN, description="true if network is security group enabled, false otherwise")
     private Boolean securitygroupenabled;
 
@@ -109,17 +109,17 @@ public class CreateZoneCmd extends BaseCmd {
     }
 
     public Long getDomainId(){
-    	return domainId;
+        return domainId;
     }
-    
+
     public String getNetworkType(){
         return networkType;
     }
-    
+
     public String getAllocationState() {
-    	return allocationState;
+        return allocationState;
     }
-    
+
     public Boolean getSecuritygroupenabled() {
         if (securitygroupenabled == null) {
             return false;
@@ -140,16 +140,16 @@ public class CreateZoneCmd extends BaseCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-    
+
     @Override
     public void execute(){
-    	UserContext.current().setEventDetails("Zone Name: "+getZoneName());
-    	DataCenter result = _configService.createZone(this);
+        UserContext.current().setEventDetails("Zone Name: "+getZoneName());
+        DataCenter result = _configService.createZone(this);
         if (result != null){
             ZoneResponse response = _responseGenerator.createZoneResponse(result,false);
             response.setResponseName(getCommandName());

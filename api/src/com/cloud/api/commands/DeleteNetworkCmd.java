@@ -62,7 +62,7 @@ public class DeleteNetworkCmd extends BaseAsyncCmd{
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Network Id: " + id);
@@ -74,8 +74,8 @@ public class DeleteNetworkCmd extends BaseAsyncCmd{
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete network");
         }
     }
-    
-    
+
+
     @Override
     public String getSyncObjType() {
         return BaseAsyncCmd.networkSyncObject;
@@ -85,17 +85,17 @@ public class DeleteNetworkCmd extends BaseAsyncCmd{
     public Long getSyncObjId() {
         return id;
     }
-    
+
     @Override
     public String getEventType() {
         return EventTypes.EVENT_NETWORK_DELETE;
     }
-    
+
     @Override
     public String getEventDescription() {
         return  "Deleting network: " + id;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         Network network = _networkService.getNetwork(id);

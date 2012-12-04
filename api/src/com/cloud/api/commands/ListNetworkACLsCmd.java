@@ -44,26 +44,26 @@ public class ListNetworkACLsCmd extends BaseListTaggedResourcesCmd {
     @IdentityMapper(entityTableName="firewall_rules")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="Lists network ACL with the specified ID.")
     private Long id;
-    
+
     @IdentityMapper(entityTableName="networks")
     @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, description="list network ACLs by network Id")
     private Long networkId;
-    
+
     @Parameter(name=ApiConstants.TRAFFIC_TYPE, type=CommandType.STRING, description="list network ACLs by traffic type - Ingress or Egress")
     private String trafficType;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-    
+
     public Long getNetworkId() {
         return networkId;
     }
-    
+
     public Long getId() {
         return id;
     }
-    
+
     public String getTrafficType() {
         return trafficType;
     }
@@ -76,19 +76,19 @@ public class ListNetworkACLsCmd extends BaseListTaggedResourcesCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public void execute(){
         Pair<List<? extends FirewallRule>,Integer> result = _networkACLService.listNetworkACLs(this);
         ListResponse<NetworkACLResponse> response = new ListResponse<NetworkACLResponse>();
         List<NetworkACLResponse> aclResponses = new ArrayList<NetworkACLResponse>();
-        
+
         for (FirewallRule acl : result.first()) {
             NetworkACLResponse ruleData = _responseGenerator.createNetworkACLResponse(acl);
             aclResponses.add(ruleData);
         }
         response.setResponses(aclResponses, result.second());
         response.setResponseName(getCommandName());
-        this.setResponseObject(response); 
+        this.setResponseObject(response);
     }
 }

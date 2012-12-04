@@ -61,13 +61,13 @@ public class ListClustersCmd extends BaseListCmd {
 
     @Parameter(name=ApiConstants.CLUSTER_TYPE, type=CommandType.STRING, description="lists clusters by cluster type")
     private String clusterType;
-    
+
     @Parameter(name=ApiConstants.ALLOCATION_STATE, type=CommandType.STRING, description="lists clusters by allocation state")
     private String allocationState;
-    
+
     @Parameter(name=ApiConstants.MANAGED_STATE, type=CommandType.STRING, description="whether this cluster is managed by cloudstack")
     private String managedState;
-    
+
     @Parameter(name=ApiConstants.SHOW_CAPACITIES, type=CommandType.BOOLEAN, description="flag to display the capacity of the clusters")
     private Boolean showCapacities;
 
@@ -90,19 +90,19 @@ public class ListClustersCmd extends BaseListCmd {
     public Long getZoneId() {
         return zoneId;
     }
-    
+
     public String getHypervisorType() {
-    	return hypervisorType;
+        return hypervisorType;
     }
-    
+
     public String getClusterType() {
-    	return clusterType;
+        return clusterType;
     }
 
     public String getAllocationState() {
-    	return allocationState;
+        return allocationState;
     }
-    
+
 
     public String getManagedstate() {
         return managedState;
@@ -114,18 +114,18 @@ public class ListClustersCmd extends BaseListCmd {
 
 
     public Boolean getShowCapacities() {
-		return showCapacities;
-	}
+        return showCapacities;
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-	@Override
+    @Override
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public void execute(){
         Pair<List<? extends Cluster>, Integer> result = _mgr.searchForClusters(this);

@@ -49,7 +49,7 @@ public class SwiftResponse extends BaseResponse {
     public Long getObjectId() {
         return id.getValue();
     }
-    
+
     public void setId(Long id) {
         this.id.setValue(id);
     }

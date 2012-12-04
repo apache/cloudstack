@@ -44,7 +44,7 @@ public class UpdateDomainCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="updates domain with this name")
     private String domainName;
-    
+
     @Parameter(name=ApiConstants.NETWORK_DOMAIN, type=CommandType.STRING, description="Network domain for the domain's networks; empty string will update domainName with NULL value")
     private String networkDomain;
 
@@ -59,7 +59,7 @@ public class UpdateDomainCmd extends BaseCmd {
     public String getDomainName() {
         return domainName;
     }
-    
+
     public String getNetworkDomain() {
         return networkDomain;
     }
@@ -72,12 +72,12 @@ public class UpdateDomainCmd extends BaseCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-    
+
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Domain Id: "+getId());

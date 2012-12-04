@@ -29,7 +29,7 @@ import com.cloud.utils.Pair;
 public interface ProjectService {
     /**
      * Creates a new project
-     * 
+     *
      * @param name
      *            - project name
      * @param displayText
@@ -45,7 +45,7 @@ public interface ProjectService {
 
     /**
      * Deletes a project
-     * 
+     *
      * @param id
      *            - project id
      * @return true if the project was deleted successfully, false otherwise
@@ -54,14 +54,14 @@ public interface ProjectService {
 
     /**
      * Gets a project by id
-     * 
+     *
      * @param id
      *            - project id
      * @return project object
      */
     Project getProject(long id);
 
-    Pair<List<? extends Project>, Integer> listProjects(Long id, String name, String displayText, String state, String accountName, 
+    Pair<List<? extends Project>, Integer> listProjects(Long id, String name, String displayText, String state, String accountName,
             Long domainId, String keyword, Long startIndex, Long pageSize, boolean listAll, boolean isRecursive, Map<String, String> tags);
 
     ProjectAccount assignAccountToProject(Project project, long accountId, Role accountRole);
@@ -94,6 +94,6 @@ public interface ProjectService {
     Project enableProject(long projectId);
 
     boolean deleteProjectInvitation(long invitationId);
-    
+
     Project findByProjectAccountIdIncludingRemoved(long projectAccountId);
 }

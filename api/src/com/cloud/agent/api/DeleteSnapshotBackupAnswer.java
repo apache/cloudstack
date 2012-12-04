@@ -18,15 +18,15 @@ package com.cloud.agent.api;
 
 
 public class DeleteSnapshotBackupAnswer extends Answer {
-    
+
     protected DeleteSnapshotBackupAnswer() {
-        
+
     }
 
     public DeleteSnapshotBackupAnswer(DeleteSnapshotBackupCommand cmd, boolean success, String details) {
         super(cmd, success, details);
     }
-    
-    
-    
+
+
+
 }

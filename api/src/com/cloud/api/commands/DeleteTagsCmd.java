@@ -43,14 +43,14 @@ public class DeleteTagsCmd extends BaseAsyncCmd{
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
-    
+
     @Parameter(name = ApiConstants.TAGS, type = CommandType.MAP, description = "Delete tags matching key/value pairs")
     private Map tag;
-    
+
     @Parameter(name=ApiConstants.RESOURCE_TYPE, type=CommandType.STRING, required=true, description="Delete tag by resource type")
     private String resourceType;
-    
-    @Parameter(name=ApiConstants.RESOURCE_IDS, type=CommandType.LIST, required=true, 
+
+    @Parameter(name=ApiConstants.RESOURCE_IDS, type=CommandType.LIST, required=true,
             collectionType=CommandType.STRING, description="Delete tags for resource id(s)")
     private List<String> resourceIds;
 
@@ -58,11 +58,11 @@ public class DeleteTagsCmd extends BaseAsyncCmd{
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    
+
     public TaggedResourceType getResourceType(){
         return _taggedResourceService.getResourceType(resourceType);
-    } 
-    
+    }
+
     public Map<String, String> getTags() {
         Map<String, String> tagsMap = null;
         if (tag != null && !tag.isEmpty()) {
@@ -78,7 +78,7 @@ public class DeleteTagsCmd extends BaseAsyncCmd{
         }
         return tagsMap;
     }
-    
+
     public List<String> getResourceIds() {
         return resourceIds;
     }
@@ -101,7 +101,7 @@ public class DeleteTagsCmd extends BaseAsyncCmd{
     @Override
     public void execute() {
         boolean success = _taggedResourceService.deleteTags(getResourceIds(), getResourceType(), getTags());
-        
+
         if (success) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 this.setResponseObject(response);

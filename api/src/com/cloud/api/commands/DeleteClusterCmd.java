@@ -60,12 +60,12 @@ public class DeleteClusterCmd extends BaseCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-    
+
     @Override
     public void execute(){
         boolean result = _resourceService.deleteCluster(this);

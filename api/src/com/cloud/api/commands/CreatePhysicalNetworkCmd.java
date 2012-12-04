@@ -44,7 +44,7 @@ public class CreatePhysicalNetworkCmd extends BaseAsyncCreateCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    
+
     @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="the Zone ID for the physical network")
     private Long zoneId;
@@ -58,22 +58,22 @@ public class CreatePhysicalNetworkCmd extends BaseAsyncCreateCmd {
     @IdentityMapper(entityTableName="domain")
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="domain ID of the account owning a physical network")
     private Long domainId;
-    
+
     @Parameter(name=ApiConstants.BROADCAST_DOMAIN_RANGE, type=CommandType.STRING, description="the broadcast domain range for the physical network[Pod or Zone]. In Acton release it can be Zone only in Advance zone, and Pod in Basic")
     private String broadcastDomainRange;
-    
+
     @Parameter(name=ApiConstants.TAGS, type=CommandType.LIST, collectionType=CommandType.STRING, description="Tag the physical network")
     private List<String> tags;
-    
+
     @Parameter(name=ApiConstants.ISOLATION_METHODS, type=CommandType.LIST, collectionType=CommandType.STRING, description="the isolation method for the physical network[VLAN/L3/GRE]")
     private List<String> isolationMethods;
-    
+
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="the name of the physical network")
     private String networkName;
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-    
+
     public List<String> getTags() {
         return tags;
     }
@@ -102,25 +102,25 @@ public class CreatePhysicalNetworkCmd extends BaseAsyncCreateCmd {
     public List<String> getIsolationMethods() {
         return isolationMethods;
     }
-    
+
     public String getNetworkSpeed() {
         return speed;
     }
-    
+
     public String getNetworkName() {
-		return networkName;
-	}
-    
-	@Override
+        return networkName;
+    }
+
+    @Override
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-    
+
     @Override
     public String getEventType() {
         return EventTypes.EVENT_PHYSICAL_NETWORK_CREATE;
@@ -140,7 +140,7 @@ public class CreatePhysicalNetworkCmd extends BaseAsyncCreateCmd {
     public String getEventDescription() {
         return  "creating Physical Network. Id: "+getEntityId();
     }
-    
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -167,7 +167,7 @@ public class CreatePhysicalNetworkCmd extends BaseAsyncCreateCmd {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create physical network entity");
         }
     }
-    
+
     @Override
     public AsyncJob.Type getInstanceType() {
         return AsyncJob.Type.PhysicalNetwork;

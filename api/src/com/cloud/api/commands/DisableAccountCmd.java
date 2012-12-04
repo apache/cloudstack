@@ -35,7 +35,7 @@ import com.cloud.user.UserContext;
 
 @Implementation(description="Disables an account", responseObject=AccountResponse.class)
 public class DisableAccountCmd extends BaseAsyncCmd {
-	public static final Logger s_logger = Logger.getLogger(DisableAccountCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(DisableAccountCmd.class.getName());
     private static final String s_name = "disableaccountresponse";
 
     /////////////////////////////////////////////////////
@@ -44,7 +44,7 @@ public class DisableAccountCmd extends BaseAsyncCmd {
     @IdentityMapper(entityTableName="account")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="Account id")
     private Long id;
-    
+
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="Disables specified account.")
     private String accountName;
 
@@ -62,7 +62,7 @@ public class DisableAccountCmd extends BaseAsyncCmd {
     public Long getId() {
         return id;
     }
-    
+
     public String getAccountName() {
         return accountName;
     }
@@ -91,7 +91,7 @@ public class DisableAccountCmd extends BaseAsyncCmd {
         if (account != null) {
             return account.getAccountId();
         }
-        
+
         account = _accountService.getActiveAccountByName(getAccountName(), getDomainId());
         if (account != null) {
             return account.getAccountId();
@@ -108,11 +108,11 @@ public class DisableAccountCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException{
         UserContext.current().setEventDetails("Account Name: "+getAccountName()+", Domain Id:"+getDomainId());
-    	Account result = null;
-    	if(lockRequested)
-    		result = _accountService.lockAccount(getAccountName(), getDomainId(), getId());
-    	else
-    		result = _accountService.disableAccount(getAccountName(), getDomainId(), getId());
+        Account result = null;
+        if(lockRequested)
+            result = _accountService.lockAccount(getAccountName(), getDomainId(), getId());
+        else
+            result = _accountService.disableAccount(getAccountName(), getDomainId(), getId());
         if (result != null){
             AccountResponse response = _responseGenerator.createAccountResponse(result);
             response.setResponseName(getCommandName());
@@ -121,7 +121,7 @@ public class DisableAccountCmd extends BaseAsyncCmd {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, lockRequested == true ? "Failed to lock account" : "Failed to disable account" );
         }
     }
-    
+
     @Override
     public AsyncJob.Type getInstanceType() {
         return AsyncJob.Type.Account;

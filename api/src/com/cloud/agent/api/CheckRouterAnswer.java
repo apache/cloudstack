@@ -23,10 +23,10 @@ public class CheckRouterAnswer extends Answer {
     public static final String ROUTER_IP = "router.ip";
     RedundantState state;
     boolean isBumped;
-    
+
     protected CheckRouterAnswer() {
     }
-    
+
     public CheckRouterAnswer(CheckRouterCommand cmd, String details, boolean parse) {
         super(cmd, true, details);
         if (parse) {
@@ -35,7 +35,7 @@ public class CheckRouterAnswer extends Answer {
             }
         }
 	}
-    
+
     public CheckRouterAnswer(CheckRouterCommand cmd, String details) {
         super(cmd, false, details);
     }
@@ -61,11 +61,11 @@ public class CheckRouterAnswer extends Answer {
         }
         return true;
     }
-    
+
     public void setState(RedundantState state) {
         this.state = state;
 	}
-    
+
     public RedundantState getState() {
         return state;
 	}
@@ -73,9 +73,9 @@ public class CheckRouterAnswer extends Answer {
     public boolean isBumped() {
         return isBumped;
     }
-    
+
     public void setIsBumped(boolean isBumped) {
         this.isBumped = isBumped;
     }
-    
+
 }

@@ -24,19 +24,19 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 
 @Implementation(responseObject=SuccessResponse.class, description="Updates a template visibility permissions. " +
-																						"A public template is visible to all accounts within the same domain. " +
-																						"A private template is visible only to the owner of the template. " +
-																						"A priviledged template is a private template with account permissions added. " +
-																						"Only accounts specified under the template permissions are visible to them.")
+                                                                                        "A public template is visible to all accounts within the same domain. " +
+                                                                                        "A private template is visible only to the owner of the template. " +
+                                                                                        "A priviledged template is a private template with account permissions added. " +
+                                                                                        "Only accounts specified under the template permissions are visible to them.")
 public class UpdateTemplatePermissionsCmd extends UpdateTemplateOrIsoPermissionsCmd {
     protected String getResponseName() {
-    	return "updatetemplatepermissionsresponse";
+        return "updatetemplatepermissionsresponse";
     }
-    	
-	protected Logger getLogger() {
-		return Logger.getLogger(UpdateTemplatePermissionsCmd.class.getName());    
-	}	
-	
+
+    protected Logger getLogger() {
+        return Logger.getLogger(UpdateTemplatePermissionsCmd.class.getName());
+    }
+
     @Override
     public long getEntityOwnerId() {
         VirtualMachineTemplate template = _entityMgr.findById(VirtualMachineTemplate.class, getId());

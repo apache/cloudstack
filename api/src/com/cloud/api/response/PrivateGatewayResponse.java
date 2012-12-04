@@ -22,41 +22,41 @@ import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 public class PrivateGatewayResponse extends BaseResponse implements ControlledEntityResponse{
-    
+
     @SerializedName(ApiConstants.ID) @Param(description="the id of the private gateway")
     private IdentityProxy id = new IdentityProxy("vpc_gateways");
-    
+
     @SerializedName(ApiConstants.GATEWAY) @Param(description="the gateway")
     private String gateway;
-    
+
     @SerializedName(ApiConstants.NETMASK) @Param(description="the private gateway's netmask")
     private String netmask;
-    
+
     @SerializedName(ApiConstants.IP_ADDRESS) @Param(description="the private gateway's ip address")
     private String address;
-    
+
     @SerializedName(ApiConstants.ZONE_ID) @Param(description="zone id of the private gateway")
     private IdentityProxy zoneId = new IdentityProxy("data_center");
-    
+
     @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the name of the zone the private gateway belongs to")
     private String zoneName;
-    
+
     @SerializedName(ApiConstants.VLAN) @Param(description="the vlan of the private gateway")
     private String vlan;
-    
+
     @SerializedName(ApiConstants.VPC_ID) @Param(description="VPC the private gateaway belongs to")
     private IdentityProxy vpcId = new IdentityProxy("vpc");
-    
+
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) @Param(description="the physical network id")
     private IdentityProxy physicalNetworkId = new IdentityProxy("physical_network");
-    
+
     @SerializedName(ApiConstants.ACCOUNT)
     @Param(description = "the account associated with the private gateway")
     private String accountName;
-    
+
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the private gateway")
     private IdentityProxy projectId = new IdentityProxy("projects");
-    
+
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the private gateway")
     private String projectName;
 
@@ -67,11 +67,11 @@ public class PrivateGatewayResponse extends BaseResponse implements ControlledEn
     @SerializedName(ApiConstants.DOMAIN)
     @Param(description = "the domain associated with the private gateway")
     private String domainName;
-    
+
     @SerializedName(ApiConstants.STATE) @Param(description="State of the gateway, can be Creating, Ready, Deleting")
     private String state;
-    
-    
+
+
     public void setId(Long id) {
         this.id.setValue(id);
     }
@@ -83,7 +83,7 @@ public class PrivateGatewayResponse extends BaseResponse implements ControlledEn
     public void setNetmask(String netmask) {
         this.netmask = netmask;
     }
-    
+
     public void setZoneId(Long zoneId) {
         this.zoneId.setValue(zoneId);
     }
@@ -95,7 +95,7 @@ public class PrivateGatewayResponse extends BaseResponse implements ControlledEn
     public void setZoneName(String zoneName) {
         this.zoneName = zoneName;
     }
-    
+
     public void setVpcId(Long vpcId) {
         this.vpcId.setValue(vpcId);
     }
@@ -107,7 +107,7 @@ public class PrivateGatewayResponse extends BaseResponse implements ControlledEn
     public void setPhysicalNetworkId(Long physicalNetworkId) {
         this.physicalNetworkId.setValue(physicalNetworkId);
     }
-    
+
     @Override
     public void setAccountName(String accountName) {
         this.accountName = accountName;
@@ -117,12 +117,12 @@ public class PrivateGatewayResponse extends BaseResponse implements ControlledEn
     public void setDomainId(Long domainId) {
         this.domainId.setValue(domainId);
     }
-    
+
     @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
     }
-    
+
     @Override
     public void setProjectId(Long projectId) {
         this.projectId.setValue(projectId);

@@ -49,14 +49,14 @@ public class ListZonesByCmd extends BaseListCmd {
     @IdentityMapper(entityTableName="domain")
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the ID of the domain associated with the zone")
     private Long domainId;
-    
+
     @Parameter(name=ApiConstants.SHOW_CAPACITIES, type=CommandType.BOOLEAN, description="flag to display the capacity of the zones")
     private Boolean showCapacities;
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-    
+
     public Long getId() {
         return id;
     }
@@ -64,19 +64,19 @@ public class ListZonesByCmd extends BaseListCmd {
     public Boolean isAvailable() {
         return available;
     }
-    
+
     public Long getDomainId(){
-    	return domainId;
+        return domainId;
     }
 
     public Boolean getShowCapacities() {
-		return showCapacities;
-	}
-    
+        return showCapacities;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-    
+
     @Override
     public String getCommandName() {
         return s_name;

@@ -70,11 +70,11 @@ public class CreateAccountCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required=true, description="Unique username.")
     private String userName;
-    
+
     @Parameter(name=ApiConstants.NETWORK_DOMAIN, type=CommandType.STRING, description="Network domain for the account's networks")
     private String networkDomain;
 
-	@Parameter(name = ApiConstants.ACCOUNT_DETAILS, type = CommandType.MAP, description = "details for account used to store specific parameters")
+    @Parameter(name = ApiConstants.ACCOUNT_DETAILS, type = CommandType.MAP, description = "details for account used to store specific parameters")
     private Map<String, String> details;
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -115,19 +115,19 @@ public class CreateAccountCmd extends BaseCmd {
     public String getUsername() {
         return userName;
     }
-    
+
     public String getNetworkDomain() {
         return networkDomain;
-    } 
-    
+    }
+
     public Map<String, String> getDetails() {
-    	if (details == null || details.isEmpty()) {
-    		return null;
-    	}
-    	
-    	Collection<String> paramsCollection = details.values();
-    	Map<String, String> params = (Map<String, String>) (paramsCollection.toArray())[0];
-    	return params;
+        if (details == null || details.isEmpty()) {
+            return null;
+        }
+
+        Collection<String> paramsCollection = details.values();
+        Map<String, String> params = (Map<String, String>) (paramsCollection.toArray())[0];
+        return params;
     }
 
     /////////////////////////////////////////////////////
@@ -138,12 +138,12 @@ public class CreateAccountCmd extends BaseCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-    
+
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Account Name: "+getAccountName()+", Domain Id:"+getDomainId());

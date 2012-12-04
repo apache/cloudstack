@@ -37,10 +37,10 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
 
     @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account associated with the virtual machine")
     private String accountName;
-    
+
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the vm")
     private IdentityProxy projectId = new IdentityProxy("projects");
-    
+
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the vm")
     private String projectName;
 
@@ -83,7 +83,7 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     @SerializedName("templatename") @Param(description="the name of the template for the virtual machine")
     private String templateName;
 
-    @SerializedName("templatedisplaytext") @Param(description="	an alternate display text of the template for the virtual machine")
+    @SerializedName("templatedisplaytext") @Param(description=" an alternate display text of the template for the virtual machine")
     private String templateDisplayText;
 
     @SerializedName(ApiConstants.PASSWORD_ENABLED) @Param(description="true if the password rest feature is enabled, false otherwise")
@@ -103,7 +103,7 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
 
     @SerializedName("serviceofferingname") @Param(description="the name of the service offering of the virtual machine")
     private String serviceOfferingName;
-    
+
     @SerializedName("forvirtualnetwork") @Param(description="the virtual network for the service offering")
     private Boolean forVirtualNetwork;
 
@@ -118,7 +118,7 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
 
     @SerializedName("cpuused") @Param(description="the amount of the vm's CPU currently used")
     private String cpuUsed;
-    
+
     @SerializedName("networkkbsread") @Param(description="the incoming network traffic on the vm")
     private Long networkKbsRead;
 
@@ -142,29 +142,29 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
 
     @SerializedName("nic")  @Param(description="the list of nics associated with vm", responseObject = NicResponse.class)
     private List<NicResponse> nics;
-    
+
     @SerializedName("hypervisor") @Param(description="the hypervisor on which the template runs")
     private String hypervisor;
-    
+
     @SerializedName(ApiConstants.PUBLIC_IP_ID) @Param(description="public IP address id associated with vm via Static nat rule")
     private IdentityProxy publicIpId = new IdentityProxy("user_ip_address");
-    
+
     @SerializedName(ApiConstants.PUBLIC_IP) @Param(description="public IP address id associated with vm via Static nat rule")
     private String publicIp;
-    
+
     @SerializedName(ApiConstants.INSTANCE_NAME) @Param(description="instance name of the user vm; this parameter is returned to the ROOT admin only", since="3.0.1")
     private String instanceName;
-    
+
     @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with vm", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
 
     @SerializedName(ApiConstants.SSH_KEYPAIR) @Param(description="ssh key-pair")
     private String keyPairName;
 
-	public void setHypervisor(String hypervisor) {
-		this.hypervisor = hypervisor;
-	}
-    
+    public void setHypervisor(String hypervisor) {
+        this.hypervisor = hypervisor;
+    }
+
     public void setId(Long id) {
         this.id.setValue(id);
     }
@@ -305,7 +305,7 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
         this.password = password;
     }
 
-/*   
+/*
     public void setJobId(Long jobId) {
         super.setJobId(jobId);
     }
@@ -325,17 +325,17 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     public void setSecurityGroupList(List<SecurityGroupResponse> securityGroups) {
         this.securityGroupList = securityGroups;
     }
-    
+
     @Override
     public void setProjectId(Long projectId) {
         this.projectId.setValue(projectId);
     }
-    
+
     @Override
     public void setProjectName(String projectName) {
         this.projectName = projectName;
     }
-    
+
     public void setPublicIpId(Long publicIpId) {
         this.publicIpId.setValue(publicIpId);
     }

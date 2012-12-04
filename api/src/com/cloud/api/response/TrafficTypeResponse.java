@@ -28,10 +28,10 @@ public class TrafficTypeResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.TRAFFIC_TYPE) @Param(description="the trafficType to be added to the physical network")
     private String trafficType;
-    
+
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) @Param(description="the physical network this belongs to")
     private IdentityProxy physicalNetworkId = new IdentityProxy("physical_network");
-    
+
     @SerializedName(ApiConstants.XEN_NETWORK_LABEL) @Param(description="The network name label of the physical device dedicated to this traffic on a XenServer host")
     private String xenNetworkLabel;
 
@@ -48,23 +48,23 @@ public class TrafficTypeResponse extends BaseResponse {
     public long getphysicalNetworkId() {
         return physicalNetworkId.getValue();
     }
-    
+
     public void setId(String uuid) {
         this.id = uuid;
     }
-    
+
     public String getId() {
         return this.id;
     }
-    
+
     public String getTrafficType() {
         return trafficType;
     }
-    
+
     public void setTrafficType(String trafficType) {
         this.trafficType = trafficType;
     }
-    
+
     public String getXenLabel() {
         return xenNetworkLabel;
     }
@@ -72,7 +72,7 @@ public class TrafficTypeResponse extends BaseResponse {
     public String getKvmLabel() {
         return kvmNetworkLabel;
     }
-    
+
     public void setXenLabel(String xenLabel) {
         this.xenNetworkLabel = xenLabel;
     }
@@ -83,8 +83,8 @@ public class TrafficTypeResponse extends BaseResponse {
 
     public void setVmwareLabel(String vmwareNetworkLabel) {
         this.vmwareNetworkLabel = vmwareNetworkLabel;
-    }    
-    
+    }
+
     public String getVmwareLabel() {
         return vmwareNetworkLabel;
     }

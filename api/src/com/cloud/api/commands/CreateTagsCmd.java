@@ -44,30 +44,30 @@ public class CreateTagsCmd extends BaseAsyncCmd{
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
-    
+
     @Parameter(name = ApiConstants.TAGS, type = CommandType.MAP, required=true, description = "Map of tags (key/value pairs)")
     private Map tag;
-    
+
     @Parameter(name=ApiConstants.RESOURCE_TYPE, type=CommandType.STRING, required=true, description="type of the resource")
     private String resourceType;
-    
-    @Parameter(name=ApiConstants.RESOURCE_IDS, type=CommandType.LIST, required=true, 
+
+    @Parameter(name=ApiConstants.RESOURCE_IDS, type=CommandType.LIST, required=true,
             collectionType=CommandType.STRING, description="list of resources to create the tags for")
     private List<String> resourceIds;
-    
+
     @Parameter(name=ApiConstants.CUSTOMER, type=CommandType.STRING, description="identifies client specific tag. " +
-    		"When the value is not null, the tag can't be used by cloudStack code internally")
+            "When the value is not null, the tag can't be used by cloudStack code internally")
     private String customer;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    
+
     public TaggedResourceType getResourceType(){
         return _taggedResourceService.getResourceType(resourceType);
-    } 
-    
+    }
+
     public Map<String, String> getTags() {
         Map<String, String> tagsMap = null;
         if (!tag.isEmpty()) {
@@ -83,11 +83,11 @@ public class CreateTagsCmd extends BaseAsyncCmd{
         }
         return tagsMap;
     }
-    
+
     public List<String> getResourceIds() {
         return resourceIds;
     }
-    
+
     public String getCustomer() {
         return customer;
     }
@@ -110,7 +110,7 @@ public class CreateTagsCmd extends BaseAsyncCmd{
     @Override
     public void execute() {
         List<ResourceTag> tags = _taggedResourceService.createTags(getResourceIds(), getResourceType(), getTags(), getCustomer());
-        
+
         if (tags != null && !tags.isEmpty()) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 this.setResponseObject(response);

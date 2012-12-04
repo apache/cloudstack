@@ -33,7 +33,7 @@ public class NetworkUsageAnswer extends Answer {
         this.bytesSent = bytesSent;
         routerName = cmd.getDomRName();
     }
-    
+
     public NetworkUsageAnswer(Command command, Exception e) {
         super(command, e);
     }

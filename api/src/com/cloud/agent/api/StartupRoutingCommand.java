@@ -90,7 +90,7 @@ getHostDetails().put(RouterPrivateIpStrategy.class.getCanonicalName(), privIpStr
             long memory,
             long dom0MinMemory,
             final String caps,
-            final HypervisorType hypervisorType,   		
+            final HypervisorType hypervisorType,
             final Map<String, String> hostDetails,
             Map<String, VmState> vms) {
         super(Host.Type.Routing);
@@ -114,7 +114,7 @@ getHostDetails().put(RouterPrivateIpStrategy.class.getCanonicalName(), privIpStr
     public StartupRoutingCommand(int cpus, long speed, long memory, long dom0MinMemory, final String caps, final HypervisorType hypervisorType, final Map<String, String> hostDetails, Map<String, VmState> vms, String hypervisorVersion) {
         this(cpus, speed, memory, dom0MinMemory, caps, hypervisorType, hostDetails, vms);
         this.hypervisorVersion = hypervisorVersion;
-    }    
+    }
 
     public void setChanges(Map<String, VmState> vms) {
         this.vms = vms;
@@ -128,7 +128,7 @@ getHostDetails().put(RouterPrivateIpStrategy.class.getCanonicalName(), privIpStr
             this.vms.put(vm_name, new VmState(vms.get(vm_name), null));
         }
     }
-    
+
     public void setClusterVMStateChanges(HashMap<String, Pair<String, State>> allStates){
     	_clusterVMStates = allStates;
     }
@@ -156,7 +156,7 @@ getHostDetails().put(RouterPrivateIpStrategy.class.getCanonicalName(), privIpStr
     public Map<String, VmState> getVmStates() {
         return vms;
     }
-    
+
     public HashMap<String, Pair<String, State>> getClusterVMStateChanges() {
         return _clusterVMStates;
     }
@@ -219,6 +219,6 @@ getHostDetails().put(RouterPrivateIpStrategy.class.getCanonicalName(), privIpStr
 
     public void setHypervisorVersion(String hypervisorVersion) {
         this.hypervisorVersion = hypervisorVersion;
-    }	
+    }
 }
 

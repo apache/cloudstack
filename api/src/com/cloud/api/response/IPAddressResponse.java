@@ -28,7 +28,7 @@ import com.google.gson.annotations.SerializedName;
 public class IPAddressResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID) @Param(description="public IP address id")
     private IdentityProxy id = new IdentityProxy("user_ip_address");
-    
+
     @SerializedName(ApiConstants.IP_ADDRESS) @Param(description="public IP address")
     private String ipAddress;
 
@@ -46,10 +46,10 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
 
     @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account the public IP address is associated with")
     private String accountName;
-    
+
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the ipaddress")
     private IdentityProxy projectId = new IdentityProxy("projects");
-    
+
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the address")
     private String projectName;
 
@@ -63,7 +63,7 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
     private Boolean forVirtualNetwork;
 
     @SerializedName(ApiConstants.VLAN_ID) @Param(description="the ID of the VLAN associated with the IP address." +
-    		" This parameter is visible to ROOT admins only")
+            " This parameter is visible to ROOT admins only")
     private IdentityProxy vlanId = new IdentityProxy("vlan");
 
     @SerializedName("vlanname") @Param(description="the VLAN associated with the IP address")
@@ -71,46 +71,46 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
 
     @SerializedName("isstaticnat") @Param(description="true if this ip is for static nat, false otherwise")
     private Boolean staticNat;
-    
+
     @SerializedName(ApiConstants.IS_SYSTEM) @Param(description="true if this ip is system ip (was allocated as a part of deployVm or createLbRule)")
     private Boolean isSystem;
-    
+
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID) @Param(description="virutal machine id the ip address is assigned to (not null only for static nat Ip)")
     private IdentityProxy virtualMachineId = new IdentityProxy("vm_instance");
-    
+
     @SerializedName("virtualmachinename") @Param(description="virutal machine name the ip address is assigned to (not null only for static nat Ip)")
     private String virtualMachineName;
-    
+
     @SerializedName("virtualmachinedisplayname") @Param(description="virutal machine display name the ip address is assigned to (not null only for static nat Ip)")
     private String virtualMachineDisplayName;
-    
+
     @SerializedName(ApiConstants.ASSOCIATED_NETWORK_ID) @Param(description="the ID of the Network associated with the IP address")
     private IdentityProxy associatedNetworkId = new IdentityProxy("networks");
-    
+
     @SerializedName(ApiConstants.ASSOCIATED_NETWORK_NAME) @Param(description="the name of the Network associated with the IP address")
     private String associatedNetworkName;
-    
+
     @SerializedName(ApiConstants.NETWORK_ID) @Param(description="the ID of the Network where ip belongs to")
     private IdentityProxy networkId = new IdentityProxy("networks");
-    
+
     @SerializedName(ApiConstants.STATE) @Param(description="State of the ip address. Can be: Allocatin, Allocated and Releasing")
     private String state;
-    
+
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) @Param(description="the physical network this belongs to")
     private IdentityProxy physicalNetworkId = new IdentityProxy("physical_network");
-    
+
     @SerializedName(ApiConstants.PURPOSE) @Param(description="purpose of the IP address. In Acton this value is not null for Ips with isSystem=true, and can have either StaticNat or LB value")
     private String purpose;
-    
+
     @SerializedName(ApiConstants.VPC_ID) @Param(description="VPC the ip belongs to")
     private IdentityProxy vpcId = new IdentityProxy("vpc");
     @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with ip address", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
 
-/*    
+/*
     @SerializedName(ApiConstants.JOB_ID) @Param(description="shows the current pending asynchronous job ID. This tag is not returned if no current pending jobs are acting on the volume")
     private IdentityProxy jobId = new IdentityProxy("async_job");
-*/    
+*/
 
 
     public void setIpAddress(String ipAddress) {
@@ -120,7 +120,7 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
     public void setAllocated(Date allocated) {
         this.allocated = allocated;
     }
-    
+
     public void setZoneId(Long zoneId) {
         this.zoneId.setValue(zoneId);
     }
@@ -142,7 +142,7 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
     public void setDomainId(Long domainId) {
         this.domainId.setValue(domainId);
     }
-    
+
     @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
@@ -160,9 +160,9 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
         this.vlanName = vlanName;
     }
 
-	public void setStaticNat(Boolean staticNat) {
-		this.staticNat = staticNat;
-	}
+    public void setStaticNat(Boolean staticNat) {
+        this.staticNat = staticNat;
+    }
 
     public void setAssociatedNetworkId(Long networkId) {
         this.associatedNetworkId.setValue(networkId);
@@ -210,23 +210,23 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
     public void setProjectName(String projectName) {
         this.projectName = projectName;
     }
-    
+
     public void setPhysicalNetworkId(long physicalNetworkId) {
         this.physicalNetworkId.setValue(physicalNetworkId);
     }
 
-	public void setIsSystem(Boolean isSystem) {
-		this.isSystem = isSystem;
-	}
+    public void setIsSystem(Boolean isSystem) {
+        this.isSystem = isSystem;
+    }
 
     public void setPurpose(String purpose) {
         this.purpose = purpose;
     }
-    
+
     public void setVpcId(Long vpcId) {
         this.vpcId.setValue(vpcId);
     }
-    
+
     public void setTags(List<ResourceTagResponse> tags) {
         this.tags = tags;
     }

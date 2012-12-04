@@ -44,7 +44,7 @@ public class ListEventsCmd extends BaseListProjectAndAccountResourcesCmd {
     @IdentityMapper(entityTableName="event")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the ID of the event")
     private Long id;
-    
+
     @Parameter(name=ApiConstants.DURATION, type=CommandType.INTEGER, description="the duration of the event")
     private Integer duration;
 
@@ -70,7 +70,7 @@ public class ListEventsCmd extends BaseListProjectAndAccountResourcesCmd {
     public Long getId() {
         return id;
     }
-    
+
     public Integer getDuration() {
         return duration;
     }

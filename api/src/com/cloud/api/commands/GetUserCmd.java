@@ -43,32 +43,32 @@ public class GetUserCmd extends BaseCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-	public String getApiKey() {
-		return apiKey;
-	}
+    public String getApiKey() {
+        return apiKey;
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-	@Override
+    @Override
     public String getCommandName() {
         return s_name;
     }
 
-	@Override
-	public long getEntityOwnerId() {
-		return 0;
-	}
-	
+    @Override
+    public long getEntityOwnerId() {
+        return 0;
+    }
+
     @Override
     public void execute(){
         UserAccount result = _accountService.getUserByApiKey(getApiKey());
         if(result != null){
-        	UserResponse response = _responseGenerator.createUserResponse(result);
-        	response.setResponseName(getCommandName());
-        	response.setResponseName(getCommandName());
-        	this.setResponseObject(response);
+            UserResponse response = _responseGenerator.createUserResponse(result);
+            response.setResponseName(getCommandName());
+            response.setResponseName(getCommandName());
+            this.setResponseObject(response);
         } else {
             throw new InvalidParameterValueException("User with specified API key does not exist");
         }

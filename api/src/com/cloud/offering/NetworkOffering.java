@@ -21,7 +21,7 @@ import com.cloud.network.Networks.TrafficType;
 
 /**
  * Describes network offering
- * 
+ *
  */
 public interface NetworkOffering {
 
@@ -40,7 +40,7 @@ public interface NetworkOffering {
     public final static String SystemManagementNetwork = "System-Management-Network";
     public final static String SystemStorageNetwork = "System-Storage-Network";
     public final static String SystemPrivateGatewayNetworkOffering = "System-Private-Gateway-Network-Offering";
-    
+
     public final static String DefaultSharedNetworkOfferingWithSGService = "DefaultSharedNetworkOfferingWithSGService";
     public final static String DefaultIsolatedNetworkOfferingWithSourceNatService = "DefaultIsolatedNetworkOfferingWithSourceNatService";
     public final static String OvsIsolatedNetworkOfferingWithSourceNatService = "OvsIsolatedNetworkOfferingWithSourceNatService";

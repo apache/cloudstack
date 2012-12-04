@@ -51,5 +51,5 @@ public interface StaticRoute extends ControlledEntity{
      */
     long getId();
 
-    
+
 }

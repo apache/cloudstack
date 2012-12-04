@@ -32,7 +32,7 @@ import com.cloud.user.UserContext;
 
 @Implementation(description="List template visibility and all accounts that have permissions to view this template.", responseObject=TemplatePermissionsResponse.class)
 public class ListTemplateOrIsoPermissionsCmd extends BaseCmd {
-	public Logger s_logger = getLogger();
+    public Logger s_logger = getLogger();
     protected String s_name = "listtemplatepermissionsresponse";
 
     /////////////////////////////////////////////////////
@@ -68,23 +68,23 @@ public class ListTemplateOrIsoPermissionsCmd extends BaseCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     protected boolean templateIsCorrectType(VirtualMachineTemplate template) {
-    	return true;
+        return true;
     }
-    
+
     public String getMediaType() {
-    	return "templateOrIso";
+        return "templateOrIso";
     }
-    
+
     protected Logger getLogger() {
-    	return Logger.getLogger(UpdateTemplateOrIsoPermissionsCmd.class.getName());    
+        return Logger.getLogger(UpdateTemplateOrIsoPermissionsCmd.class.getName());
     }
-    
+
     @Override
     public void execute(){
         List<String> accountNames = _templateService.listTemplatePermissions(this);
-        
+
         Account account = UserContext.current().getCaller();
         boolean isAdmin = (isAdmin(account.getType()));
 

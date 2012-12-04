@@ -43,10 +43,10 @@ public class EventResponse extends BaseResponse implements ControlledEntityRespo
 
     @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account name for the account that owns the object being acted on in the event (e.g. the owner of the virtual machine, ip address, or security group)")
     private String accountName;
-    
+
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the ipaddress")
     private IdentityProxy projectId = new IdentityProxy("projects");
-    
+
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the address")
     private String projectName;
 

@@ -48,7 +48,7 @@ public class UpdateHostPasswordCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required=true, description="the username for the host/cluster")
     private String username;
-    
+
     @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, required=true, description="the new password for the host/cluster")
     private String password;
 
@@ -59,7 +59,7 @@ public class UpdateHostPasswordCmd extends BaseCmd {
     public Long getHostId() {
         return hostId;
     }
-    
+
     public Long getClusterId() {
         return clusterId;
     }
@@ -71,7 +71,7 @@ public class UpdateHostPasswordCmd extends BaseCmd {
     public String getUsername() {
         return username;
     }
-    
+
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////

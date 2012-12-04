@@ -24,7 +24,7 @@ public class CapabilityResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.NAME) @Param(description="the capability name")
     private String name;
-    
+
     @SerializedName(ApiConstants.VALUE) @Param(description="the capability value")
     private String value;
 

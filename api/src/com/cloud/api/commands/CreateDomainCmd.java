@@ -63,7 +63,7 @@ public class CreateDomainCmd extends BaseCmd {
 
     public String getNetworkDomain() {
         return networkDomain;
-    }  
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -73,12 +73,12 @@ public class CreateDomainCmd extends BaseCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-    
+
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Domain Name: "+getDomainName()+((getParentDomainId()!=null)?", Parent DomainId :"+getParentDomainId():""));

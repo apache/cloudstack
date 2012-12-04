@@ -25,7 +25,7 @@ import com.google.gson.annotations.SerializedName;
 public abstract class BaseResponse implements ResponseObject {
     private transient String responseName;
     private transient String objectName;
-    
+
     @Override
     public String getResponseName() {
         return responseName;
@@ -35,7 +35,7 @@ public abstract class BaseResponse implements ResponseObject {
     public void setResponseName(String responseName) {
         this.responseName = responseName;
     }
-    
+
     @Override
     public String getObjectName() {
         return objectName;
@@ -45,31 +45,31 @@ public abstract class BaseResponse implements ResponseObject {
     public void setObjectName(String objectName) {
         this.objectName = objectName;
     }
-    
+
     public Long getObjectId() {
-    	return null;
+        return null;
     }
-    
+
     // For use by list commands with pending async jobs
     @SerializedName(ApiConstants.JOB_ID) @Param(description="the ID of the latest async job acting on this object")
     protected IdentityProxy jobId = new IdentityProxy("async_job");
-    
+
     @SerializedName(ApiConstants.JOB_STATUS) @Param(description="the current status of the latest async job acting on this object")
     private Integer jobStatus;
-    
+
     public Long getJobId() {
-    	return jobId.getValue();
+        return jobId.getValue();
     }
-    
+
     public void setJobId(Long jobId) {
-    	this.jobId.setValue(jobId);
+        this.jobId.setValue(jobId);
     }
-    
+
     public Integer getJobStatus() {
-    	return jobStatus;
+        return jobStatus;
     }
-    
+
     public void setJobStatus(Integer jobStatus) {
-    	this.jobStatus = jobStatus;
+        this.jobStatus = jobStatus;
     }
 }

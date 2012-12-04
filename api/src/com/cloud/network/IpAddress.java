@@ -22,11 +22,11 @@ import com.cloud.acl.ControlledEntity;
 import com.cloud.utils.net.Ip;
 
 /**
- * 
+ *
  * - Allocated = null
  * - AccountId = null
  * - DomainId = null
- * 
+ *
  * - State = Allocated
  * - AccountId = account owner.
  * - DomainId = domain of the account owner.
@@ -39,7 +39,7 @@ public interface IpAddress extends ControlledEntity {
         Releasing, // The IP address is being released for other network elements and is not ready for allocation.
         Free // The IP address is ready to be allocated.
     }
-    
+
     enum Purpose {
         StaticNat,
         Lb

@@ -35,12 +35,12 @@ public class LDAPRemoveCmd extends BaseCmd  {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-   
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-   
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -50,10 +50,10 @@ public class LDAPRemoveCmd extends BaseCmd  {
     public void execute(){
           boolean result = _configService.removeLDAP(this);
           if (result){
-        	  LDAPRemoveResponse lr = new LDAPRemoveResponse();
+              LDAPRemoveResponse lr = new LDAPRemoveResponse();
               lr.setObjectName("ldapremove");
               lr.setResponseName(getCommandName());
-              this.setResponseObject(lr);             
+              this.setResponseObject(lr);
           }
     }
 
@@ -61,7 +61,7 @@ public class LDAPRemoveCmd extends BaseCmd  {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;

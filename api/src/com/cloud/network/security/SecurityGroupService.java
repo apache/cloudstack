@@ -38,7 +38,7 @@ public interface SecurityGroupService {
     public SecurityGroup createSecurityGroup(CreateSecurityGroupCmd command) throws PermissionDeniedException, InvalidParameterValueException;
     boolean revokeSecurityGroupIngress(RevokeSecurityGroupIngressCmd cmd);
     boolean revokeSecurityGroupEgress(RevokeSecurityGroupEgressCmd cmd);
-    
+
     boolean deleteSecurityGroup(DeleteSecurityGroupCmd cmd) throws ResourceInUseException;
 
     /**
@@ -49,7 +49,7 @@ public interface SecurityGroupService {
     public List<? extends SecurityGroupRules> searchForSecurityGroupRules(ListSecurityGroupsCmd cmd) throws PermissionDeniedException, InvalidParameterValueException;
 
     public List<? extends SecurityRule> authorizeSecurityGroupIngress(AuthorizeSecurityGroupIngressCmd cmd);
-    
+
     public List<? extends SecurityRule> authorizeSecurityGroupEgress(AuthorizeSecurityGroupEgressCmd cmd);
 
 }

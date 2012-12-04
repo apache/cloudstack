@@ -35,10 +35,10 @@ import com.cloud.user.Account;
 
 @Implementation(description="Deletes a storage network IP Range.", responseObject=SuccessResponse.class, since="3.0.0")
 public class DeleteStorageNetworkIpRangeCmd extends BaseAsyncCmd {
-	public static final Logger s_logger = Logger.getLogger(DeleteStorageNetworkIpRangeCmd.class);
-	
-	private static final String s_name = "deletestoragenetworkiprangeresponse";
-	
+    public static final Logger s_logger = Logger.getLogger(DeleteStorageNetworkIpRangeCmd.class);
+
+    private static final String s_name = "deletestoragenetworkiprangeresponse";
+
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
@@ -46,7 +46,7 @@ public class DeleteStorageNetworkIpRangeCmd extends BaseAsyncCmd {
     @IdentityMapper(entityTableName="dc_storage_network_ip_range")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the uuid of the storage network ip range")
     private Long id;
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -54,38 +54,38 @@ public class DeleteStorageNetworkIpRangeCmd extends BaseAsyncCmd {
     public Long getId() {
         return id;
     }
-    
-	@Override
-	public String getEventType() {
-		return EventTypes.EVENT_STORAGE_IP_RANGE_DELETE;
-	}
 
-	@Override
-	public String getEventDescription() {
-		return "Deleting storage ip range " + getId();
-	}
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_STORAGE_IP_RANGE_DELETE;
+    }
 
-	@Override
-	public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
-	        ResourceAllocationException {
-		try {
-			_storageNetworkService.deleteIpRange(this);
+    @Override
+    public String getEventDescription() {
+        return "Deleting storage ip range " + getId();
+    }
+
+    @Override
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+            ResourceAllocationException {
+        try {
+            _storageNetworkService.deleteIpRange(this);
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
-		} catch (Exception e) {
-			s_logger.warn("Failed to delete storage network ip range " + getId(), e);
-			throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e.getMessage());
-		}
-	}
+        } catch (Exception e) {
+            s_logger.warn("Failed to delete storage network ip range " + getId(), e);
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e.getMessage());
+        }
+    }
 
-	@Override
-	public String getCommandName() {
-		return s_name;
-	}
+    @Override
+    public String getCommandName() {
+        return s_name;
+    }
 
-	@Override
-	public long getEntityOwnerId() {
-		return Account.ACCOUNT_ID_SYSTEM;
-	}
+    @Override
+    public long getEntityOwnerId() {
+        return Account.ACCOUNT_ID_SYSTEM;
+    }
 
 }

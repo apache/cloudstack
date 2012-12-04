@@ -45,10 +45,10 @@ public class LDAPConfigCmd extends BaseCmd  {
 
     @Parameter(name=ApiConstants.HOST_NAME, type=CommandType.STRING, required=true, description="Hostname or ip address of the ldap server eg: my.ldap.com")
     private String hostname;
-    
+
     @Parameter(name=ApiConstants.PORT, type=CommandType.INTEGER, description="Specify the LDAP port if required, default is 389.")
     private Integer port=0;
-    
+
     @Parameter(name=ApiConstants.USE_SSL, type=CommandType.BOOLEAN, description="Check Use SSL if the external LDAP server is configured for LDAP over SSL.")
     private Boolean useSSL;
 
@@ -60,10 +60,10 @@ public class LDAPConfigCmd extends BaseCmd  {
 
     @Parameter(name=ApiConstants.BIND_DN, type=CommandType.STRING, description="Specify the distinguished name of a user with the search permission on the directory.")
     private String bindDN;
-    
+
     @Parameter(name=ApiConstants.BIND_PASSWORD, type=CommandType.STRING, description="Enter the password.")
     private String bindPassword;
-    
+
     @Parameter(name=ApiConstants.TRUST_STORE, type=CommandType.STRING, description="Enter the path to trust certificates store.")
     private String trustStore;
 
@@ -132,14 +132,14 @@ public class LDAPConfigCmd extends BaseCmd  {
           catch (NamingException ne){
               ne.printStackTrace();
           }
-          
+
     }
 
     @Override
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;

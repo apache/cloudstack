@@ -35,7 +35,7 @@ import com.cloud.user.UserContext;
 
 @Implementation(description="Extracts a template", responseObject=ExtractResponse.class)
 public class ExtractTemplateCmd extends BaseAsyncCmd {
-	public static final Logger s_logger = Logger.getLogger(ExtractTemplateCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(ExtractTemplateCmd.class.getName());
 
     private static final String s_name = "extracttemplateresponse";
 
@@ -49,14 +49,14 @@ public class ExtractTemplateCmd extends BaseAsyncCmd {
 
     @Parameter(name=ApiConstants.URL, type=CommandType.STRING, required=false, description="the url to which the ISO would be extracted")
     private String url;
-    
+
     @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=false, description="the ID of the zone where the ISO is originally located" )
     private Long zoneId;
 
     @Parameter(name=ApiConstants.MODE, type=CommandType.STRING, required=true, description="the mode of extraction - HTTP_DOWNLOAD or FTP_UPLOAD")
     private String mode;
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -76,16 +76,16 @@ public class ExtractTemplateCmd extends BaseAsyncCmd {
     public String getMode() {
         return mode;
     }
-    
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-	@Override
-	public String getCommandName() {
-		return s_name;
-	}
-	
+    @Override
+    public String getCommandName() {
+        return s_name;
+    }
+
     public static String getStaticName() {
         return s_name;
     }
@@ -110,19 +110,19 @@ public class ExtractTemplateCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "extracting template: " + getId() + " from zone: " + getZoneId();
     }
-    
+
     public AsyncJob.Type getInstanceType() {
-    	return AsyncJob.Type.Template;
+        return AsyncJob.Type.Template;
     }
-    
+
     public Long getInstanceId() {
-    	return getId();
+        return getId();
     }
-	
+
     @Override
     public void execute(){
         try {
-        	UserContext.current().setEventDetails(getEventDescription());
+            UserContext.current().setEventDetails(getEventDescription());
             Long uploadId = _templateService.extract(this);
             if (uploadId != null){
                 ExtractResponse response = _responseGenerator.createExtractResponse(uploadId, id, zoneId, getEntityOwnerId(), mode);

@@ -30,8 +30,8 @@ import com.cloud.user.Account;
 
 @Implementation(description="Upgrades domain router to a new service offering", responseObject=DomainRouterResponse.class)
 public class UpgradeRouterCmd extends BaseCmd {
-	public static final Logger s_logger = Logger.getLogger(UpgradeRouterCmd.class.getName());
-	private static final String s_name = "changeserviceforrouterresponse";
+    public static final Logger s_logger = Logger.getLogger(UpgradeRouterCmd.class.getName());
+    private static final String s_name = "changeserviceforrouterresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -61,11 +61,11 @@ public class UpgradeRouterCmd extends BaseCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-	@Override
-	public String getCommandName() {
-		 return s_name;
-	}
-	
+    @Override
+    public String getCommandName() {
+         return s_name;
+    }
+
     @Override
     public long getEntityOwnerId() {
         VirtualRouter router = _entityMgr.findById(VirtualRouter.class, getId());
@@ -75,7 +75,7 @@ public class UpgradeRouterCmd extends BaseCmd {
 
         return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
-	
+
     @Override
     public void execute(){
         VirtualRouter router = _routerService.upgradeRouter(this);

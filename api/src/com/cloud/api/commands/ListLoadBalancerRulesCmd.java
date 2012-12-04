@@ -49,7 +49,7 @@ public class ListLoadBalancerRulesCmd extends BaseListTaggedResourcesCmd {
     private String loadBalancerRuleName;
 
     @IdentityMapper(entityTableName="user_ip_address")
-    @Parameter(name = ApiConstants.PUBLIC_IP_ID, type = CommandType.LONG, description = "the public IP address id of the load balancer rule	")
+    @Parameter(name = ApiConstants.PUBLIC_IP_ID, type = CommandType.LONG, description = "the public IP address id of the load balancer rule ")
     private Long publicIpId;
 
     @IdentityMapper(entityTableName="vm_instance")

@@ -161,7 +161,7 @@ public class HostResponse extends BaseResponse {
     public Long getObjectId() {
         return getId();
     }
-    
+
     public Long getId() {
         return id.getValue();
     }
@@ -217,7 +217,7 @@ public class HostResponse extends BaseResponse {
     public void setVersion(String version) {
         this.version = version;
     }
-    
+
     public void setHypervisor(HypervisorType hypervisor) {
         this.hypervisor = hypervisor;
     }
@@ -225,7 +225,7 @@ public class HostResponse extends BaseResponse {
     public void setCpuNumber(Integer cpuNumber) {
         this.cpuNumber = cpuNumber;
     }
-    
+
     public void setCpuSpeed(Long cpuSpeed) {
         this.cpuSpeed = cpuSpeed;
     }
@@ -321,11 +321,11 @@ public class HostResponse extends BaseResponse {
     public void setHasEnoughCapacity(Boolean hasEnoughCapacity) {
         this.hasEnoughCapacity = hasEnoughCapacity;
     }
-    
+
 
     public void setSuitableForMigration(Boolean suitableForMigration) {
         this.suitableForMigration = suitableForMigration;
-    }    
+    }
 
     public String getResourceState() {
         return resourceState;

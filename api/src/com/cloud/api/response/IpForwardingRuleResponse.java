@@ -36,22 +36,22 @@ public class IpForwardingRuleResponse extends BaseResponse {
 
     @SerializedName("virtualmachinedisplayname") @Param(description="the VM display name for the port forwarding rule")
     private String virtualMachineDisplayName;
-    
+
     @SerializedName(ApiConstants.IP_ADDRESS_ID) @Param(description="the public ip address id for the port forwarding rule")
     private Long publicIpAddressId;
 
     @SerializedName(ApiConstants.IP_ADDRESS) @Param(description="the public ip address for the port forwarding rule")
     private String publicIpAddress;
-    
+
     @SerializedName(ApiConstants.START_PORT) @Param(description="the start port of the rule")
     private Integer startPort;
-    
+
     @SerializedName(ApiConstants.END_PORT) @Param(description="the end port of the rule")
     private Integer endPort;
-    
+
     @SerializedName(ApiConstants.STATE) @Param(description="state of the ip forwarding rule")
     private String state;
-    
+
     public Long getId() {
         return id.getValue();
     }
@@ -84,21 +84,21 @@ public class IpForwardingRuleResponse extends BaseResponse {
         this.virtualMachineName = virtualMachineName;
     }
 
-	public String getVirtualMachineDisplayName() {
-		return virtualMachineDisplayName;
-	}
+    public String getVirtualMachineDisplayName() {
+        return virtualMachineDisplayName;
+    }
 
-	public void setVirtualMachineDisplayName(String virtualMachineDisplayName) {
-		this.virtualMachineDisplayName = virtualMachineDisplayName;
-	}
+    public void setVirtualMachineDisplayName(String virtualMachineDisplayName) {
+        this.virtualMachineDisplayName = virtualMachineDisplayName;
+    }
 
-	public String getPublicIpAddress() {
-		return publicIpAddress;
-	}
+    public String getPublicIpAddress() {
+        return publicIpAddress;
+    }
 
-	public void setPublicIpAddress(String publicIpAddress) {
-		this.publicIpAddress = publicIpAddress;
-	}
+    public void setPublicIpAddress(String publicIpAddress) {
+        this.publicIpAddress = publicIpAddress;
+    }
 
     public String getState() {
         return state;

@@ -230,7 +230,7 @@ public class LoadBalancingRule implements FirewallRule, LoadBalancer {
         return null;
     }
 
-	
+
     @Override
     public TrafficType getTrafficType() {
         return null;

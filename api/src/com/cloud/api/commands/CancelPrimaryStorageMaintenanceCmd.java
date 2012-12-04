@@ -35,8 +35,8 @@ import com.cloud.user.UserContext;
 
 @Implementation(description="Cancels maintenance for primary storage", responseObject=StoragePoolResponse.class)
 public class CancelPrimaryStorageMaintenanceCmd extends BaseAsyncCmd {
-	public static final Logger s_logger = Logger.getLogger(CancelPrimaryStorageMaintenanceCmd.class.getName());
-	
+    public static final Logger s_logger = Logger.getLogger(CancelPrimaryStorageMaintenanceCmd.class.getName());
+
     private static final String s_name = "cancelprimarystoragemaintenanceresponse";
 
     /////////////////////////////////////////////////////
@@ -65,16 +65,16 @@ public class CancelPrimaryStorageMaintenanceCmd extends BaseAsyncCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     public static String getResultObjectName() {
-    	return "primarystorage";
+        return "primarystorage";
     }
-    
+
     @Override
     public AsyncJob.Type getInstanceType() {
         return AsyncJob.Type.StoragePool;
     }
-    
+
     @Override
     public Long getInstanceId() {
         return getId();
@@ -99,7 +99,7 @@ public class CancelPrimaryStorageMaintenanceCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "canceling maintenance for primary storage pool: " + getId();
     }
-	
+
     @Override
     public void execute() throws ResourceUnavailableException{
         StoragePool result = _storageService.cancelPrimaryStorageForMaintenance(this);

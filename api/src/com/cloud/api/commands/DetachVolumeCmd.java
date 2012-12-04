@@ -35,7 +35,7 @@ import com.cloud.uservm.UserVm;
 
 @Implementation(description="Detaches a disk volume from a virtual machine.", responseObject=VolumeResponse.class)
 public class DetachVolumeCmd extends BaseAsyncCmd {
-	public static final Logger s_logger = Logger.getLogger(DetachVolumeCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(DetachVolumeCmd.class.getName());
     private static final String s_name = "detachvolumeresponse";
 
     /////////////////////////////////////////////////////
@@ -77,17 +77,17 @@ public class DetachVolumeCmd extends BaseAsyncCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     public static String getResultObjectName() {
-    	return "volume";
+        return "volume";
     }
-    
+
     public AsyncJob.Type getInstanceType() {
-    	return AsyncJob.Type.Volume;
+        return AsyncJob.Type.Volume;
     }
-    
+
     public Long getInstanceId() {
-    	return getId();
+        return getId();
     }
 
     @Override

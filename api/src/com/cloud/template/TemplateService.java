@@ -48,7 +48,7 @@ public interface TemplateService {
 
     /**
      * Deletes a template
-     * 
+     *
      * @param cmd
      *            - the command specifying templateId
      */
@@ -56,7 +56,7 @@ public interface TemplateService {
 
     /**
      * Deletes a template
-     * 
+     *
      * @param cmd
      *            - the command specifying isoId
      * @return true if deletion is successful, false otherwise
@@ -65,7 +65,7 @@ public interface TemplateService {
 
     /**
      * Extracts an ISO
-     * 
+     *
      * @param cmd
      *            - the command specifying the mode and id of the ISO
      * @return extractId.
@@ -74,7 +74,7 @@ public interface TemplateService {
 
     /**
      * Extracts a Template
-     * 
+     *
      * @param cmd
      *            - the command specifying the mode and id of the template
      * @return extractId

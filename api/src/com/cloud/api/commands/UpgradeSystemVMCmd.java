@@ -48,7 +48,7 @@ public class UpgradeSystemVMCmd extends BaseCmd {
     private Long id;
 
     @IdentityMapper(entityTableName="disk_offering")
-    @Parameter(name=ApiConstants.SERVICE_OFFERING_ID, type=CommandType.LONG, required=true, 
+    @Parameter(name=ApiConstants.SERVICE_OFFERING_ID, type=CommandType.LONG, required=true,
                 description="the service offering ID to apply to the system vm")
     private Long serviceOfferingId;
 
@@ -72,7 +72,7 @@ public class UpgradeSystemVMCmd extends BaseCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         Account account = UserContext.current().getCaller();
@@ -82,16 +82,16 @@ public class UpgradeSystemVMCmd extends BaseCmd {
 
         return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
-    
+
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Vm Id: "+getId());
-        
+
         ServiceOffering serviceOffering = _configService.getServiceOffering(serviceOfferingId);
         if (serviceOffering == null) {
             throw new InvalidParameterValueException("Unable to find service offering: " + serviceOfferingId);
         }
-        
+
         VirtualMachine result = _mgr.upgradeSystemVM(this);
         if (result != null) {
             SystemVmResponse response = _responseGenerator.createSystemVmResponse(result);

@@ -35,7 +35,7 @@ import com.cloud.user.UserContext;
 
 @Implementation(description="Disables a user account", responseObject=UserResponse.class)
 public class DisableUserCmd extends BaseAsyncCmd {
-	public static final Logger s_logger = Logger.getLogger(DisableUserCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(DisableUserCmd.class.getName());
     private static final String s_name = "disableuserresponse";
 
     /////////////////////////////////////////////////////
@@ -83,20 +83,20 @@ public class DisableUserCmd extends BaseAsyncCmd {
         return  "disabling user: " + getId();
     }
 
-	
+
     @Override
     public void execute(){
         UserContext.current().setEventDetails("UserId: "+getId());
         UserAccount user = _accountService.disableUser(getId());
         if (user != null){
             UserResponse response = _responseGenerator.createUserResponse(user);
-            response.setResponseName(getCommandName()); 
+            response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to disable user");
         }
     }
-    
+
     @Override
     public AsyncJob.Type getInstanceType() {
         return AsyncJob.Type.User;

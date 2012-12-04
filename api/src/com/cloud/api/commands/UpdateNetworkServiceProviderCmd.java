@@ -44,14 +44,14 @@ public class UpdateNetworkServiceProviderCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="Enabled/Disabled/Shutdown the physical network service provider")
     private String state;
-    
+
     @IdentityMapper(entityTableName="physical_network_service_providers")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="network service provider id")
-    private Long id;    
+    private Long id;
 
     @Parameter(name=ApiConstants.SERVICE_LIST, type=CommandType.LIST, collectionType = CommandType.STRING, description="the list of services to be enabled for this physical network service provider")
     private List<String> enabledServices;
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -59,14 +59,14 @@ public class UpdateNetworkServiceProviderCmd extends BaseAsyncCmd {
     public String getState() {
         return state;
     }
-    
+
     private Long getId() {
         return id;
-    }    
-    
+    }
+
     public List<String> getEnabledServices() {
         return enabledServices;
-    }    
+    }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -75,12 +75,12 @@ public class UpdateNetworkServiceProviderCmd extends BaseAsyncCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-    
+
     @Override
     public void execute(){
         PhysicalNetworkServiceProvider result = _networkService.updateNetworkServiceProvider(getId(), getState(), getEnabledServices());
@@ -102,7 +102,7 @@ public class UpdateNetworkServiceProviderCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "Updating physical network ServiceProvider: " + getId();
     }
-    
+
     @Override
     public AsyncJob.Type getInstanceType() {
         return AsyncJob.Type.PhysicalNetworkServiceProvider;

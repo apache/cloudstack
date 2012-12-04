@@ -50,7 +50,7 @@ public class ListServiceOfferingsCmd extends BaseListCmd {
     @IdentityMapper(entityTableName="vm_instance")
     @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, description="the ID of the virtual machine. Pass this in if you want to see the available service offering that a virtual machine can be changed to.")
     private Long virtualMachineId;
-    
+
     @IdentityMapper(entityTableName="domain")
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the ID of the domain associated with the service offering")
     private Long domainId;
@@ -61,7 +61,7 @@ public class ListServiceOfferingsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.SYSTEM_VM_TYPE, type=CommandType.STRING, description="the system VM type. Possible types are \"consoleproxy\", \"secondarystoragevm\" or \"domainrouter\".")
     private String systemVmType;
 
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -79,13 +79,13 @@ public class ListServiceOfferingsCmd extends BaseListCmd {
     }
 
     public Long getDomainId(){
-    	return domainId;
+        return domainId;
     }
-    
+
     public Boolean getIsSystem() {
         return isSystem == null ? false : isSystem;
     }
-    
+
     public String getSystemVmType(){
         return systemVmType;
     }
@@ -98,7 +98,7 @@ public class ListServiceOfferingsCmd extends BaseListCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public void execute(){
         List<? extends ServiceOffering> offerings = _mgr.searchForServiceOfferings(this);

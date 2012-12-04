@@ -46,7 +46,7 @@ public class ListLBStickinessPoliciesCmd extends BaseListCmd {
     @IdentityMapper(entityTableName="firewall_rules")
     @Parameter(name = ApiConstants.LBID, type = CommandType.LONG, required = true, description = "the ID of the load balancer rule")
     private Long lbRuleId;
-    
+
 
 
     // ///////////////////////////////////////////////////
@@ -55,7 +55,7 @@ public class ListLBStickinessPoliciesCmd extends BaseListCmd {
     public Long getLbRuleId() {
         return lbRuleId;
     }
-    
+
 
 
     // ///////////////////////////////////////////////////
@@ -72,17 +72,17 @@ public class ListLBStickinessPoliciesCmd extends BaseListCmd {
         List<LBStickinessResponse> spResponses = new ArrayList<LBStickinessResponse>();
         LoadBalancer lb = _lbService.findById(getLbRuleId());
         ListResponse<LBStickinessResponse> response = new ListResponse<LBStickinessResponse>();
-        
+
         if (lb != null) {
-        	//check permissions
-        	Account caller = UserContext.current().getCaller();
-        	_accountService.checkAccess(caller, null, true, lb);
+            //check permissions
+            Account caller = UserContext.current().getCaller();
+            _accountService.checkAccess(caller, null, true, lb);
             List<? extends StickinessPolicy> stickinessPolicies = _lbService.searchForLBStickinessPolicies(this);
             LBStickinessResponse spResponse = _responseGenerator.createLBStickinessPolicyResponse(stickinessPolicies, lb);
             spResponses.add(spResponse);
             response.setResponses(spResponses);
         }
-        
+
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
