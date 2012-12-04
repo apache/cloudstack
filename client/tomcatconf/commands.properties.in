@@ -110,7 +110,7 @@ listOsCategories=org.apache.cloudstack.api.user.guest.command.ListGuestOsCategor
 createServiceOffering=com.cloud.api.commands.CreateServiceOfferingCmd;1
 deleteServiceOffering=com.cloud.api.commands.DeleteServiceOfferingCmd;1
 updateServiceOffering=com.cloud.api.commands.UpdateServiceOfferingCmd;1
-listServiceOfferings=com.cloud.api.commands.ListServiceOfferingsCmd;15
+listServiceOfferings=org.apache.cloudstack.api.user.serviceoffering.command.ListServiceOfferingsCmd;15
 
 #### disk offering commands
 createDiskOffering=com.cloud.api.commands.CreateDiskOfferingCmd;1

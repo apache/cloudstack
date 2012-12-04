@@ -47,7 +47,7 @@ import com.cloud.api.commands.ListPodsByCmd;
 import com.cloud.api.commands.ListPublicIpAddressesCmd;
 import com.cloud.api.commands.ListRoutersCmd;
 import org.apache.cloudstack.api.user.ssh.command.ListSSHKeyPairsCmd;
-import com.cloud.api.commands.ListServiceOfferingsCmd;
+import org.apache.cloudstack.api.user.serviceoffering.command.ListServiceOfferingsCmd;
 import com.cloud.api.commands.ListStoragePoolsCmd;
 import com.cloud.api.commands.ListSystemVMsCmd;
 import org.apache.cloudstack.api.user.vmgroup.command.ListVMGroupsCmd;
