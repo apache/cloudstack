@@ -24,7 +24,7 @@ import java.util.Set;
 
 import com.cloud.alert.Alert;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.user.datacenter.command.ListCapabilitiesCmd;
+import org.apache.cloudstack.api.user.resource.command.ListCapabilitiesCmd;
 import org.apache.cloudstack.api.user.guest.command.ListGuestOsCmd;
 import org.apache.cloudstack.api.user.offering.command.ListDiskOfferingsCmd;
 import org.apache.cloudstack.api.user.offering.command.ListServiceOfferingsCmd;

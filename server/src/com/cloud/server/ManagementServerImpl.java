@@ -42,7 +42,7 @@ import java.util.concurrent.TimeUnit;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.apache.cloudstack.api.user.datacenter.command.ListCapabilitiesCmd;
+import org.apache.cloudstack.api.user.resource.command.ListCapabilitiesCmd;
 import org.apache.cloudstack.api.user.guest.command.ListGuestOsCategoriesCmd;
 import org.apache.cloudstack.api.user.guest.command.ListGuestOsCmd;
 import org.apache.cloudstack.api.user.iso.command.ListIsosCmd;

@@ -46,12 +46,12 @@ listDomains=com.cloud.api.commands.ListDomainsCmd;7
 listDomainChildren=com.cloud.api.commands.ListDomainChildrenCmd;7
 
 ####Cloud Identifier commands
-getCloudIdentifier=org.apache.cloudstack.api.user.datacenter.command.GetCloudIdentifierCmd;15
+getCloudIdentifier=org.apache.cloudstack.api.user.resource.command.GetCloudIdentifierCmd;15
 
 #### Limit commands
-updateResourceLimit=com.cloud.api.commands.UpdateResourceLimitCmd;7
-updateResourceCount=com.cloud.api.commands.UpdateResourceCountCmd;7
-listResourceLimits=com.cloud.api.commands.ListResourceLimitsCmd;15
+updateResourceLimit=org.apache.cloudstack.api.user.resource.command.UpdateResourceLimitCmd;7
+updateResourceCount=org.apache.cloudstack.api.user.resource.command.UpdateResourceCountCmd;7
+listResourceLimits=org.apache.cloudstack.api.user.resource.command.ListResourceLimitsCmd;15
 
 #### VM commands
 deployVirtualMachine=org.apache.cloudstack.api.user.vm.command.DeployVMCmd;15
@@ -199,7 +199,7 @@ updateConfiguration=com.cloud.api.commands.UpdateCfgCmd;1
 listConfigurations=com.cloud.api.commands.ListCfgsByCmd;1
 ldapConfig=com.cloud.api.commands.LDAPConfigCmd;1
 ldapRemove=com.cloud.api.commands.LDAPRemoveCmd;1
-listCapabilities=org.apache.cloudstack.api.user.datacenter.command.ListCapabilitiesCmd;15
+listCapabilities=org.apache.cloudstack.api.user.resource.command.ListCapabilitiesCmd;15
 
 #### pod commands
 createPod=com.cloud.api.commands.CreatePodCmd;1
