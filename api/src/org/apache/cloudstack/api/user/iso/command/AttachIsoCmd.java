@@ -14,8 +14,9 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.user.iso.command;
 
+import org.apache.cloudstack.api.user.vm.command.DeployVMCmd;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -25,17 +26,17 @@ import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import com.cloud.api.response.SuccessResponse;
-import com.cloud.async.AsyncJob;
+import com.cloud.api.response.UserVmResponse;
 import com.cloud.event.EventTypes;
-import com.cloud.template.VirtualMachineTemplate;
-import com.cloud.user.Account;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.UserContext;
+import com.cloud.uservm.UserVm;
 
-@Implementation(description="Deletes an ISO file.", responseObject=SuccessResponse.class)
-public class DeleteIsoCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteIsoCmd.class.getName());
-    private static final String s_name = "deleteisosresponse";
+@Implementation(description="Attaches an ISO to a virtual machine.", responseObject=UserVmResponse.class)
+public class AttachIsoCmd extends BaseAsyncCmd {
+    public static final Logger s_logger = Logger.getLogger(AttachIsoCmd.class.getName());
+
+    private static final String s_name = "attachisoresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -45,9 +46,9 @@ public class DeleteIsoCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the ISO file")
     private Long id;
 
-    @IdentityMapper(entityTableName="data_center")
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the ID of the zone of the ISO file. If not specified, the ISO will be deleted from all the zones")
-    private Long zoneId;
+    @IdentityMapper(entityTableName="vm_instance")
+    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, required=true, description="the ID of the virtual machine")
+    private Long virtualMachineId;
 
 
     /////////////////////////////////////////////////////
@@ -58,9 +59,10 @@ public class DeleteIsoCmd extends BaseAsyncCmd {
         return id;
     }
 
-    public Long getZoneId() {
-        return zoneId;
+    public Long getVirtualMachineId() {
+        return virtualMachineId;
     }
+
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -71,47 +73,41 @@ public class DeleteIsoCmd extends BaseAsyncCmd {
         return s_name;
     }
 
-    public static String getStaticName() {
-        return s_name;
-    }
-
     @Override
     public long getEntityOwnerId() {
-        VirtualMachineTemplate iso = _entityMgr.findById(VirtualMachineTemplate.class, getId());
-        if (iso != null) {
-            return iso.getAccountId();
+        UserVm vm = _entityMgr.findById(UserVm.class, getVirtualMachineId());
+        if (vm == null) {
+            throw new InvalidParameterValueException("Unable to find virtual machine by id " + getVirtualMachineId());
         }
 
-        return Account.ACCOUNT_ID_SYSTEM;
+        return vm.getAccountId();
     }
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_ISO_DELETE;
+        return EventTypes.EVENT_ISO_ATTACH;
     }
 
     @Override
     public String getEventDescription() {
-        return "Deleting iso " + getId();
-    }
-
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.Iso;
-    }
-
-    public Long getInstanceId() {
-        return getId();
+        return  "attaching ISO: " + getId() + " to vm: " + getVirtualMachineId();
     }
 
     @Override
     public void execute(){
-        UserContext.current().setEventDetails("ISO Id: "+getId());
-        boolean result = _templateService.deleteIso(this);
+        UserContext.current().setEventDetails("Vm Id: " +getVirtualMachineId()+ " ISO Id: "+getId());
+        boolean result = _templateService.attachIso(id, virtualMachineId);
         if (result) {
-            SuccessResponse response = new SuccessResponse(getCommandName());
-            this.setResponseObject(response);
+            UserVm userVm = _responseGenerator.findUserVmById(virtualMachineId);
+            if (userVm != null) {
+                UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", userVm).get(0);
+                response.setResponseName(DeployVMCmd.getResultObjectName());
+                this.setResponseObject(response);
+            } else {
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to attach iso");
+            }
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete iso");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to attach iso");
         }
     }
 }

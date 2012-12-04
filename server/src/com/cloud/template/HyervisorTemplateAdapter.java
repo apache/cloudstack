@@ -25,12 +25,12 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import org.apache.cloudstack.api.user.iso.command.DeleteIsoCmd;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.DeleteTemplateCommand;
-import com.cloud.api.commands.DeleteIsoCmd;
 import com.cloud.api.commands.DeleteTemplateCmd;
 import com.cloud.api.commands.RegisterIsoCmd;
 import com.cloud.api.commands.RegisterTemplateCmd;

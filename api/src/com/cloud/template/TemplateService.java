@@ -19,10 +19,10 @@ package com.cloud.template;
 import java.net.URISyntaxException;
 import java.util.List;
 
-import com.cloud.api.commands.CopyTemplateCmd;
-import com.cloud.api.commands.DeleteIsoCmd;
+import org.apache.cloudstack.api.user.template.command.CopyTemplateCmd;
+import org.apache.cloudstack.api.user.iso.command.DeleteIsoCmd;
 import com.cloud.api.commands.DeleteTemplateCmd;
-import com.cloud.api.commands.ExtractIsoCmd;
+import org.apache.cloudstack.api.user.iso.command.ExtractIsoCmd;
 import com.cloud.api.commands.ExtractTemplateCmd;
 import com.cloud.api.commands.ListTemplateOrIsoPermissionsCmd;
 import com.cloud.api.commands.RegisterIsoCmd;

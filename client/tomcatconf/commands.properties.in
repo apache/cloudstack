@@ -82,7 +82,7 @@ listSnapshotPolicies=com.cloud.api.commands.ListSnapshotPoliciesCmd;15
 createTemplate=com.cloud.api.commands.CreateTemplateCmd;15
 registerTemplate=com.cloud.api.commands.RegisterTemplateCmd;15
 updateTemplate=com.cloud.api.commands.UpdateTemplateCmd;15
-copyTemplate=com.cloud.api.commands.CopyTemplateCmd;15
+copyTemplate=org.apache.cloudstack.api.user.template.command.CopyTemplateCmd;15
 deleteTemplate=com.cloud.api.commands.DeleteTemplateCmd;15
 listTemplates=com.cloud.api.commands.ListTemplatesCmd;15
 updateTemplatePermissions=com.cloud.api.commands.UpdateTemplatePermissionsCmd;15
@@ -91,16 +91,16 @@ extractTemplate=com.cloud.api.commands.ExtractTemplateCmd;15
 prepareTemplate=com.cloud.api.commands.PrepareTemplateCmd;1
 
 #### iso commands
-attachIso=com.cloud.api.commands.AttachIsoCmd;15
-detachIso=com.cloud.api.commands.DetachIsoCmd;15
-listIsos=com.cloud.api.commands.ListIsosCmd;15
+attachIso=org.apache.cloudstack.api.user.iso.command.AttachIsoCmd;15
+detachIso=org.apache.cloudstack.api.user.iso.command.DetachIsoCmd;15
+listIsos=org.apache.cloudstack.api.user.iso.command.ListIsosCmd;15
 registerIso=com.cloud.api.commands.RegisterIsoCmd;15
-updateIso=com.cloud.api.commands.UpdateIsoCmd;15
-deleteIso=com.cloud.api.commands.DeleteIsoCmd;15
-copyIso=com.cloud.api.commands.CopyTemplateCmd;15
-updateIsoPermissions=com.cloud.api.commands.UpdateIsoPermissionsCmd;15
-listIsoPermissions=com.cloud.api.commands.ListIsoPermissionsCmd;15
-extractIso=com.cloud.api.commands.ExtractIsoCmd;15
+updateIso=org.apache.cloudstack.api.user.iso.command.UpdateIsoCmd;15
+deleteIso=org.apache.cloudstack.api.user.iso.command.DeleteIsoCmd;15
+copyIso=org.apache.cloudstack.api.user.template.command.CopyTemplateCmd;15
+updateIsoPermissions=org.apache.cloudstack.api.user.iso.command.UpdateIsoPermissionsCmd;15
+listIsoPermissions=org.apache.cloudstack.api.user.iso.command.ListIsoPermissionsCmd;15
+extractIso=org.apache.cloudstack.api.user.iso.command.ExtractIsoCmd;15
 
 #### guest OS commands
 listOsTypes=com.cloud.api.commands.ListGuestOsCmd;15

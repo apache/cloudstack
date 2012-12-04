@@ -21,9 +21,9 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import org.apache.cloudstack.api.user.iso.command.DeleteIsoCmd;
 import org.apache.log4j.Logger;
 
-import com.cloud.api.commands.DeleteIsoCmd;
 import com.cloud.api.commands.RegisterIsoCmd;
 import com.cloud.api.commands.RegisterTemplateCmd;
 import com.cloud.configuration.Resource.ResourceType;

@@ -34,6 +34,8 @@ import java.util.concurrent.TimeUnit;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.user.iso.command.*;
+import org.apache.cloudstack.api.user.template.command.CopyTemplateCmd;
 import org.apache.log4j.Logger;
 
 import com.cloud.acl.SecurityChecker.AccessType;
@@ -45,17 +47,12 @@ import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.to.SwiftTO;
-import com.cloud.api.commands.CopyTemplateCmd;
-import com.cloud.api.commands.DeleteIsoCmd;
 import com.cloud.api.commands.DeleteTemplateCmd;
-import com.cloud.api.commands.ExtractIsoCmd;
 import com.cloud.api.commands.ExtractTemplateCmd;
-import com.cloud.api.commands.ListIsoPermissionsCmd;
 import com.cloud.api.commands.ListTemplateOrIsoPermissionsCmd;
 import com.cloud.api.commands.ListTemplatePermissionsCmd;
 import com.cloud.api.commands.RegisterIsoCmd;
 import com.cloud.api.commands.RegisterTemplateCmd;
-import com.cloud.api.commands.UpdateIsoPermissionsCmd;
 import com.cloud.api.commands.UpdateTemplateOrIsoPermissionsCmd;
 import com.cloud.api.commands.UpdateTemplatePermissionsCmd;
 import com.cloud.async.AsyncJobManager;

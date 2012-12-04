@@ -42,6 +42,7 @@ import java.util.concurrent.TimeUnit;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.apache.cloudstack.api.user.iso.command.ListIsosCmd;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
@@ -74,7 +75,6 @@ import com.cloud.api.commands.ListEventsCmd;
 import com.cloud.api.commands.ListGuestOsCategoriesCmd;
 import com.cloud.api.commands.ListGuestOsCmd;
 import com.cloud.api.commands.ListHostsCmd;
-import com.cloud.api.commands.ListIsosCmd;
 import com.cloud.api.commands.ListPodsByCmd;
 import com.cloud.api.commands.ListPublicIpAddressesCmd;
 import com.cloud.api.commands.ListRoutersCmd;
@@ -91,7 +91,7 @@ import com.cloud.api.commands.RegisterSSHKeyPairCmd;
 import com.cloud.api.commands.StopSystemVmCmd;
 import com.cloud.api.commands.UpdateDomainCmd;
 import com.cloud.api.commands.UpdateHostPasswordCmd;
-import com.cloud.api.commands.UpdateIsoCmd;
+import org.apache.cloudstack.api.user.iso.command.UpdateIsoCmd;
 import com.cloud.api.commands.UpdateTemplateCmd;
 import com.cloud.api.commands.UpdateTemplateOrIsoCmd;
 import com.cloud.api.commands.UpdateVMGroupCmd;

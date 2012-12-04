@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.api.commands;
 
+import org.apache.cloudstack.api.user.iso.command.UpdateIsoCmd;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;

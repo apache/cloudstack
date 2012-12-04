@@ -20,7 +20,7 @@ import java.util.List;
 
 import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.api.commands.AddSwiftCmd;
-import com.cloud.api.commands.DeleteIsoCmd;
+import org.apache.cloudstack.api.user.iso.command.DeleteIsoCmd;
 import com.cloud.api.commands.DeleteTemplateCmd;
 import com.cloud.api.commands.ListSwiftsCmd;
 import com.cloud.exception.DiscoveryException;
