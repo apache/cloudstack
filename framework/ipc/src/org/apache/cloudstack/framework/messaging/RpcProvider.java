@@ -26,8 +26,10 @@ public interface RpcProvider extends TransportMultiplexier {
 	
 	void registerRpcServiceEndpoint(RpcServiceEndpoint rpcEndpoint);
 	void unregisteRpcServiceEndpoint(RpcServiceEndpoint rpcEndpoint);
-	
-	RpcClientCall newCall(String sourceAddress, String targetAddress);
+
+	RpcClientCall newCall(TransportEndpoint sourceEndpoint, String targetAddress);
+	RpcClientCall newCall(String targetAddress);
+
 	void registerCall(RpcClientCall call);
 	void cancelCall(RpcClientCall call);
 	
