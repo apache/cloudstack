@@ -18,19 +18,15 @@ package com.cloud.network.as;
 
 import java.util.List;
 
-import com.cloud.api.commands.CreateAutoScalePolicyCmd;
-import com.cloud.api.commands.CreateAutoScaleVmGroupCmd;
-import com.cloud.api.commands.CreateAutoScaleVmProfileCmd;
-import com.cloud.api.commands.CreateConditionCmd;
+import org.apache.cloudstack.api.user.autoscale.command.CreateAutoScalePolicyCmd;
+import org.apache.cloudstack.api.user.autoscale.command.CreateAutoScaleVmGroupCmd;
+import org.apache.cloudstack.api.user.autoscale.command.CreateAutoScaleVmProfileCmd;
+import org.apache.cloudstack.api.user.autoscale.command.*;
 import com.cloud.api.commands.CreateCounterCmd;
-import com.cloud.api.commands.ListAutoScalePoliciesCmd;
-import com.cloud.api.commands.ListAutoScaleVmGroupsCmd;
-import com.cloud.api.commands.ListAutoScaleVmProfilesCmd;
-import com.cloud.api.commands.ListConditionsCmd;
-import com.cloud.api.commands.ListCountersCmd;
-import com.cloud.api.commands.UpdateAutoScalePolicyCmd;
-import com.cloud.api.commands.UpdateAutoScaleVmGroupCmd;
-import com.cloud.api.commands.UpdateAutoScaleVmProfileCmd;
+import org.apache.cloudstack.api.user.autoscale.command.ListAutoScalePoliciesCmd;
+import org.apache.cloudstack.api.user.autoscale.command.ListConditionsCmd;
+import org.apache.cloudstack.api.user.autoscale.command.UpdateAutoScaleVmGroupCmd;
+import org.apache.cloudstack.api.user.autoscale.command.UpdateAutoScaleVmProfileCmd;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.ResourceUnavailableException;
 

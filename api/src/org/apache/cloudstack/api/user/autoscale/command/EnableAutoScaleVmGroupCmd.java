@@ -15,9 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package com.cloud.api.commands;
-
-import java.util.List;
+package org.apache.cloudstack.api.user.autoscale.command;
 
 import org.apache.log4j.Logger;
 
@@ -33,37 +31,18 @@ import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.network.as.AutoScaleVmGroup;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
-@Implementation(description = "Updates an existing autoscale vm group.", responseObject = AutoScaleVmGroupResponse.class)
-public class UpdateAutoScaleVmGroupCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdateAutoScaleVmGroupCmd.class.getName());
-
-    private static final String s_name = "updateautoscalevmgroupresponse";
+@Implementation(description = "Enables an AutoScale Vm Group", responseObject = AutoScaleVmGroupResponse.class)
+public class EnableAutoScaleVmGroupCmd extends BaseAsyncCmd {
+    public static final Logger s_logger = Logger.getLogger(EnableAutoScaleVmGroupCmd.class.getName());
+    private static final String s_name = "enableautoscalevmGroupresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.MIN_MEMBERS, type = CommandType.INTEGER, description = "the minimum number of members in the vmgroup, the number of instances in the vm group will be equal to or more than this number.")
-    private Integer minMembers;
-
-    @Parameter(name = ApiConstants.MAX_MEMBERS, type = CommandType.INTEGER, description = "the maximum number of members in the vmgroup, The number of instances in the vm group will be equal to or less than this number.")
-    private Integer maxMembers;
-
-    @Parameter(name=ApiConstants.INTERVAL, type=CommandType.INTEGER, description="the frequency at which the conditions have to be evaluated")
-    private Integer interval;
-
-    @IdentityMapper(entityTableName = "autoscale_policies")
-    @Parameter(name = ApiConstants.SCALEUP_POLICY_IDS, type = CommandType.LIST, collectionType = CommandType.LONG, description = "list of scaleup autoscale policies")
-    private List<Long> scaleUpPolicyIds;
-
-    @IdentityMapper(entityTableName = "autoscale_policies")
-    @Parameter(name = ApiConstants.SCALEDOWN_POLICY_IDS, type = CommandType.LIST, collectionType = CommandType.LONG, description = "list of scaledown autoscale policies")
-    private List<Long> scaleDownPolicyIds;
-
-    @IdentityMapper(entityTableName = "autoscale_vmgroups")
-    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, required = true, description = "the ID of the autoscale group")
+    @IdentityMapper(entityTableName="autoscale_vmgroups")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the autoscale group")
     private Long id;
 
     // ///////////////////////////////////////////////////
@@ -72,14 +51,13 @@ public class UpdateAutoScaleVmGroupCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        UserContext.current().setEventDetails("AutoScale Vm Group Id: " + getId());
-        AutoScaleVmGroup result = _autoScaleService.updateAutoScaleVmGroup(this);
+        AutoScaleVmGroup result = _autoScaleService.enableAutoScaleVmGroup(getId());
         if (result != null) {
             AutoScaleVmGroupResponse response = _responseGenerator.createAutoScaleVmGroupResponse(result);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update autoscale VmGroup");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to enable AutoScale Vm Group");
         }
     }
 
@@ -89,36 +67,6 @@ public class UpdateAutoScaleVmGroupCmd extends BaseAsyncCmd {
 
     public Long getId() {
         return id;
-    }
-
-    public Integer getMinMembers() {
-        return minMembers;
-    }
-
-    public Integer getMaxMembers() {
-        return maxMembers;
-    }
-
-    public Integer getInterval() {
-        return interval;
-    }
-
-    public List<Long> getScaleUpPolicyIds() {
-        return scaleUpPolicyIds;
-    }
-
-    public List<Long> getScaleDownPolicyIds() {
-        return scaleDownPolicyIds;
-    }
-
-    @Override
-    public String getEventType() {
-        return EventTypes.EVENT_AUTOSCALEVMGROUP_UPDATE;
-    }
-
-    @Override
-    public String getEventDescription() {
-        return "Updating AutoScale Vm Group. Vm Group Id: "+getId();
     }
 
     @Override
@@ -137,7 +85,18 @@ public class UpdateAutoScaleVmGroupCmd extends BaseAsyncCmd {
     }
 
     @Override
+    public String getEventType() {
+        return EventTypes.EVENT_AUTOSCALEVMGROUP_ENABLE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return "Enabling AutoScale Vm Group. Vm Group Id: "+getId();
+    }
+
+    @Override
     public AsyncJob.Type getInstanceType() {
         return AsyncJob.Type.AutoScaleVmGroup;
     }
+
 }

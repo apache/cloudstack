@@ -14,8 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.user.autoscale.command;
 
 import org.apache.log4j.Logger;
 
@@ -29,44 +28,21 @@ import org.apache.cloudstack.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
-import com.cloud.exception.ResourceInUseException;
-import com.cloud.network.as.Condition;
+import com.cloud.network.as.AutoScaleVmGroup;
 import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 
-@Implementation(description = "Removes a condition", responseObject = SuccessResponse.class)
-public class DeleteConditionCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteConditionCmd.class.getName());
-    private static final String s_name = "deleteconditionresponse";
-
+@Implementation(description = "Deletes a autoscale vm group.", responseObject = SuccessResponse.class)
+public class DeleteAutoScaleVmGroupCmd extends BaseAsyncCmd {
+    public static final Logger s_logger = Logger.getLogger(DeleteAutoScaleVmGroupCmd.class.getName());
+    private static final String s_name = "deleteautoscalevmgroupresponse";
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName = "conditions")
-    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, required = true, description = "the ID of the condition.")
+    @IdentityMapper(entityTableName = "autoscale_vmgroups")
+    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, required = true, description = "the ID of the autoscale group")
     private Long id;
-
-    // ///////////////////////////////////////////////////
-    // ///////////// API Implementation///////////////////
-    // ///////////////////////////////////////////////////
-
-    @Override
-    public void execute() {
-        boolean result = false;
-        try {
-            result = _autoScaleService.deleteCondition(getId());
-        } catch (ResourceInUseException ex) {
-            s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(BaseCmd.RESOURCE_IN_USE_ERROR, ex.getMessage());
-        }
-        if (result) {
-            SuccessResponse response = new SuccessResponse(getCommandName());
-            this.setResponseObject(response);
-        } else {
-            s_logger.warn("Failed to delete condition " + getId());
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete condition.");
-        }
-    }
 
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
@@ -76,10 +52,9 @@ public class DeleteConditionCmd extends BaseAsyncCmd {
         return id;
     }
 
-    @Override
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.Condition;
-    }
+    // ///////////////////////////////////////////////////
+    // ///////////// API Implementation///////////////////
+    // ///////////////////////////////////////////////////
 
     @Override
     public String getCommandName() {
@@ -88,9 +63,9 @@ public class DeleteConditionCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Condition condition = _entityMgr.findById(Condition.class, getId());
-        if (condition != null) {
-            return condition.getAccountId();
+        AutoScaleVmGroup autoScaleVmGroup = _entityMgr.findById(AutoScaleVmGroup.class, getId());
+        if (autoScaleVmGroup != null) {
+            return autoScaleVmGroup.getAccountId();
         }
 
         return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are
@@ -99,11 +74,30 @@ public class DeleteConditionCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_CONDITION_DELETE;
+        return EventTypes.EVENT_AUTOSCALEVMGROUP_DELETE;
     }
 
     @Override
     public String getEventDescription() {
-        return "Deleting a condition.";
+        return "deleting autoscale vm group: " + getId();
+    }
+
+    @Override
+    public void execute() {
+        UserContext.current().setEventDetails("AutoScale Vm Group Id: " + getId());
+        boolean result = _autoScaleService.deleteAutoScaleVmGroup(id);
+
+        if (result) {
+            SuccessResponse response = new SuccessResponse(getCommandName());
+            this.setResponseObject(response);
+        } else {
+            s_logger.warn("Failed to delete autoscale vm group " + getId());
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete autoscale vm group");
+        }
+    }
+
+    @Override
+    public AsyncJob.Type getInstanceType() {
+        return AsyncJob.Type.AutoScaleVmGroup;
     }
 }

@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.user.autoscale.command;
 
 import java.util.List;
 

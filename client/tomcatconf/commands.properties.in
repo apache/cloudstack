@@ -155,25 +155,25 @@ updateLoadBalancerRule=org.apache.cloudstack.api.user.lb.command.UpdateLoadBalan
 
 #### autoscale commands
 createCounter = com.cloud.api.commands.CreateCounterCmd;1
-createCondition = com.cloud.api.commands.CreateConditionCmd;15
-createAutoScalePolicy=com.cloud.api.commands.CreateAutoScalePolicyCmd;15
-createAutoScaleVmProfile=com.cloud.api.commands.CreateAutoScaleVmProfileCmd;15
-createAutoScaleVmGroup=com.cloud.api.commands.CreateAutoScaleVmGroupCmd;15
+createCondition = org.apache.cloudstack.api.user.autoscale.command.CreateConditionCmd;15
+createAutoScalePolicy=org.apache.cloudstack.api.user.autoscale.command.CreateAutoScalePolicyCmd;15
+createAutoScaleVmProfile=org.apache.cloudstack.api.user.autoscale.command.CreateAutoScaleVmProfileCmd;15
+createAutoScaleVmGroup=org.apache.cloudstack.api.user.autoscale.command.CreateAutoScaleVmGroupCmd;15
 deleteCounter = com.cloud.api.commands.DeleteCounterCmd;1
-deleteCondition = com.cloud.api.commands.DeleteConditionCmd;15
-deleteAutoScalePolicy=com.cloud.api.commands.DeleteAutoScalePolicyCmd;15
-deleteAutoScaleVmProfile=com.cloud.api.commands.DeleteAutoScaleVmProfileCmd;15
-deleteAutoScaleVmGroup=com.cloud.api.commands.DeleteAutoScaleVmGroupCmd;15
-listCounters = com.cloud.api.commands.ListCountersCmd;15
-listConditions = com.cloud.api.commands.ListConditionsCmd;15
-listAutoScalePolicies=com.cloud.api.commands.ListAutoScalePoliciesCmd;15
-listAutoScaleVmProfiles=com.cloud.api.commands.ListAutoScaleVmProfilesCmd;15
-listAutoScaleVmGroups=com.cloud.api.commands.ListAutoScaleVmGroupsCmd;15
-enableAutoScaleVmGroup=com.cloud.api.commands.EnableAutoScaleVmGroupCmd;15
-disableAutoScaleVmGroup=com.cloud.api.commands.DisableAutoScaleVmGroupCmd;15
-updateAutoScalePolicy=com.cloud.api.commands.UpdateAutoScalePolicyCmd;15
-updateAutoScaleVmProfile=com.cloud.api.commands.UpdateAutoScaleVmProfileCmd;15
-updateAutoScaleVmGroup=com.cloud.api.commands.UpdateAutoScaleVmGroupCmd;15
+deleteCondition = org.apache.cloudstack.api.user.autoscale.command.DeleteConditionCmd;15
+deleteAutoScalePolicy=org.apache.cloudstack.api.user.autoscale.command.DeleteAutoScalePolicyCmd;15
+deleteAutoScaleVmProfile=org.apache.cloudstack.api.user.autoscale.command.DeleteAutoScaleVmProfileCmd;15
+deleteAutoScaleVmGroup=org.apache.cloudstack.api.user.autoscale.command.DeleteAutoScaleVmGroupCmd;15
+listCounters = org.apache.cloudstack.api.user.autoscale.command.ListCountersCmd;15
+listConditions = org.apache.cloudstack.api.user.autoscale.command.ListConditionsCmd;15
+listAutoScalePolicies=org.apache.cloudstack.api.user.autoscale.command.ListAutoScalePoliciesCmd;15
+listAutoScaleVmProfiles=org.apache.cloudstack.api.user.autoscale.command.ListAutoScaleVmProfilesCmd;15
+listAutoScaleVmGroups=org.apache.cloudstack.api.user.autoscale.command.ListAutoScaleVmGroupsCmd;15
+enableAutoScaleVmGroup=org.apache.cloudstack.api.user.autoscale.command.EnableAutoScaleVmGroupCmd;15
+disableAutoScaleVmGroup=org.apache.cloudstack.api.user.autoscale.command.DisableAutoScaleVmGroupCmd;15
+updateAutoScalePolicy=org.apache.cloudstack.api.user.autoscale.command.UpdateAutoScalePolicyCmd;15
+updateAutoScaleVmProfile=org.apache.cloudstack.api.user.autoscale.command.UpdateAutoScaleVmProfileCmd;15
+updateAutoScaleVmGroup=org.apache.cloudstack.api.user.autoscale.command.UpdateAutoScaleVmGroupCmd;15
 
 #### router commands
 startRouter=com.cloud.api.commands.StartRouterCmd;7
