@@ -36,7 +36,7 @@ import java.util.concurrent.TimeUnit;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.api.user.sg.command.*;
+import org.apache.cloudstack.api.user.securitygroup.command.*;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.log4j.Logger;
 
@@ -45,11 +45,7 @@ import com.cloud.agent.api.NetworkRulesSystemVmCommand;
 import com.cloud.agent.api.SecurityGroupRulesCmd;
 import com.cloud.agent.api.SecurityGroupRulesCmd.IpPortAndProto;
 import com.cloud.agent.manager.Commands;
-import org.apache.cloudstack.api.user.sg.command.AuthorizeSecurityGroupEgressCmd;
-import org.apache.cloudstack.api.user.sg.command.CreateSecurityGroupCmd;
-import org.apache.cloudstack.api.user.sg.command.DeleteSecurityGroupCmd;
-import org.apache.cloudstack.api.user.sg.command.ListSecurityGroupsCmd;
-import org.apache.cloudstack.api.user.sg.command.RevokeSecurityGroupEgressCmd;
+import org.apache.cloudstack.api.user.securitygroup.command.RevokeSecurityGroupEgressCmd;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.domain.dao.DomainDao;

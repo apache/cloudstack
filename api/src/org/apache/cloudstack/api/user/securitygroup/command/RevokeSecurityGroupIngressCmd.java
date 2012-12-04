@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api.user.sg.command;
+package org.apache.cloudstack.api.user.securitygroup.command;
 
 import org.apache.log4j.Logger;
 
@@ -31,18 +31,18 @@ import com.cloud.event.EventTypes;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.user.Account;
 
-@Implementation(responseObject = SuccessResponse.class, description = "Deletes a particular egress rule from this security group", since="3.0.0")
-public class RevokeSecurityGroupEgressCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(RevokeSecurityGroupEgressCmd.class.getName());
+@Implementation(responseObject = SuccessResponse.class, description = "Deletes a particular ingress rule from this security group")
+public class RevokeSecurityGroupIngressCmd extends BaseAsyncCmd {
+    public static final Logger s_logger = Logger.getLogger(RevokeSecurityGroupIngressCmd.class.getName());
 
-    private static final String s_name = "revokesecuritygroupegress";
+    private static final String s_name = "revokesecuritygroupingress";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
     @IdentityMapper(entityTableName="security_group_rule")
-    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, required = true, description = "The ID of the egress rule")
+    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, required = true, description = "The ID of the ingress rule")
     private Long id;
 
     // ///////////////////////////////////////////////////
@@ -63,7 +63,7 @@ public class RevokeSecurityGroupEgressCmd extends BaseAsyncCmd {
     }
 
     public static String getResultObjectName() {
-        return "revokesecuritygroupegress";
+        return "revokesecuritygroupingress";
     }
 
     @Override
@@ -78,22 +78,22 @@ public class RevokeSecurityGroupEgressCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_SECURITY_GROUP_REVOKE_EGRESS;
+        return EventTypes.EVENT_SECURITY_GROUP_REVOKE_INGRESS;
     }
 
     @Override
     public String getEventDescription() {
-        return "revoking egress rule id: " + getId();
+        return "revoking ingress rule id: " + getId();
     }
 
     @Override
     public void execute() {
-        boolean result = _securityGroupService.revokeSecurityGroupEgress(this);
+        boolean result = _securityGroupService.revokeSecurityGroupIngress(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to revoke security group egress rule");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to revoke security group ingress rule");
         }
     }
 

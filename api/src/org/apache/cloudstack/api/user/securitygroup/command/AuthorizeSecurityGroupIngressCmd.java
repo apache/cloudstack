@@ -14,14 +14,16 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api.user.sg.command;
+package org.apache.cloudstack.api.user.securitygroup.command;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
 import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
@@ -29,21 +31,22 @@ import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import com.cloud.api.response.SecurityGroupRuleResponse;
 import com.cloud.api.response.SecurityGroupResponse;
+import com.cloud.api.response.SecurityGroupRuleResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.security.SecurityRule;
 import com.cloud.user.UserContext;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.net.NetUtils;
 
-@Implementation(responseObject = SecurityGroupRuleResponse.class, description = "Authorizes a particular egress rule for this security group", since="3.0.0")
+@Implementation(responseObject = SecurityGroupRuleResponse.class, description = "Authorizes a particular ingress rule for this security group")
 @SuppressWarnings("rawtypes")
-public class AuthorizeSecurityGroupEgressCmd extends BaseAsyncCmd {
+public class AuthorizeSecurityGroupIngressCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AuthorizeSecurityGroupIngressCmd.class.getName());
 
-    private static final String s_name = "authorizesecuritygroupegressresponse";
+    private static final String s_name = "authorizesecuritygroupingressresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -52,10 +55,10 @@ public class AuthorizeSecurityGroupEgressCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, description = "TCP is default. UDP is the other supported protocol")
     private String protocol;
 
-    @Parameter(name = ApiConstants.START_PORT, type = CommandType.INTEGER, description = "start port for this egress rule")
+    @Parameter(name = ApiConstants.START_PORT, type = CommandType.INTEGER, description = "start port for this ingress rule")
     private Integer startPort;
 
-    @Parameter(name = ApiConstants.END_PORT, type = CommandType.INTEGER, description = "end port for this egress rule")
+    @Parameter(name = ApiConstants.END_PORT, type = CommandType.INTEGER, description = "end port for this ingress rule")
     private Integer endPort;
 
     @Parameter(name = ApiConstants.ICMP_TYPE, type = CommandType.INTEGER, description = "type of the icmp message being sent")
@@ -172,7 +175,7 @@ public class AuthorizeSecurityGroupEgressCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_SECURITY_GROUP_AUTHORIZE_EGRESS;
+        return EventTypes.EVENT_SECURITY_GROUP_AUTHORIZE_INGRESS;
     }
 
     @Override
@@ -198,22 +201,28 @@ public class AuthorizeSecurityGroupEgressCmd extends BaseAsyncCmd {
             sb.append("cidr list: ");
             sb.append(StringUtils.join(getCidrList(), ", "));
         } else {
-            sb.append("<error:  no egress parameters>");
+            sb.append("<error:  no ingress parameters>");
         }
 
-        return "authorizing egress to group: " + getSecurityGroupId() + " to " + sb.toString();
+        return "authorizing ingress to group: " + getSecurityGroupId() + " to " + sb.toString();
     }
 
     @Override
     public void execute() {
-        List<? extends SecurityRule> egressRules = _securityGroupService.authorizeSecurityGroupEgress(this);
-        if (egressRules != null && !egressRules.isEmpty()) {
-            SecurityGroupResponse response = _responseGenerator.createSecurityGroupResponseFromSecurityGroupRule(egressRules);
+        if(cidrList != null){
+            for(String cidr : cidrList ){
+                if (!NetUtils.isValidCIDR(cidr)){
+                    throw new ServerApiException(BaseCmd.PARAM_ERROR,  cidr + " is an Invalid CIDR ");
+                }
+            }
+        }
+        List<? extends SecurityRule> ingressRules = _securityGroupService.authorizeSecurityGroupIngress(this);
+        if (ingressRules != null && !ingressRules.isEmpty()) {
+            SecurityGroupResponse response = _responseGenerator.createSecurityGroupResponseFromSecurityGroupRule(ingressRules);
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to authorize security group egress rule(s)");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to authorize security group ingress rule(s)");
         }
-
     }
 
     @Override

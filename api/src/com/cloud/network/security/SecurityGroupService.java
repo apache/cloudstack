@@ -18,10 +18,9 @@ package com.cloud.network.security;
 
 import java.util.List;
 
-import org.apache.cloudstack.api.user.sg.command.*;
-import org.apache.cloudstack.api.user.sg.command.AuthorizeSecurityGroupIngressCmd;
-import org.apache.cloudstack.api.user.sg.command.CreateSecurityGroupCmd;
-import org.apache.cloudstack.api.user.sg.command.RevokeSecurityGroupEgressCmd;
+import org.apache.cloudstack.api.user.securitygroup.command.*;
+import org.apache.cloudstack.api.user.securitygroup.command.AuthorizeSecurityGroupIngressCmd;
+import org.apache.cloudstack.api.user.securitygroup.command.CreateSecurityGroupCmd;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceInUseException;
