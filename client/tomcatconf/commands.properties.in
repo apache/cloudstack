@@ -317,9 +317,9 @@ updateNetwork=org.apache.cloudstack.api.user.network.command.UpdateNetworkCmd;15
 
 #### SSH key pair commands
 registerSSHKeyPair=com.cloud.api.commands.RegisterSSHKeyPairCmd;15
-createSSHKeyPair=com.cloud.api.commands.CreateSSHKeyPairCmd;15
-deleteSSHKeyPair=com.cloud.api.commands.DeleteSSHKeyPairCmd;15
-listSSHKeyPairs=com.cloud.api.commands.ListSSHKeyPairsCmd;15
+createSSHKeyPair=org.apache.cloudstack.api.user.ssh.command.CreateSSHKeyPairCmd;15
+deleteSSHKeyPair=org.apache.cloudstack.api.user.ssh.command.DeleteSSHKeyPairCmd;15
+listSSHKeyPairs=org.apache.cloudstack.api.user.ssh.command.ListSSHKeyPairsCmd;15
 
 #### Projects commands
 createProject=org.apache.cloudstack.api.user.project.command.CreateProjectCmd;15
