@@ -116,7 +116,7 @@ listServiceOfferings=org.apache.cloudstack.api.user.serviceoffering.command.List
 createDiskOffering=com.cloud.api.commands.CreateDiskOfferingCmd;1
 updateDiskOffering=com.cloud.api.commands.UpdateDiskOfferingCmd;1
 deleteDiskOffering=com.cloud.api.commands.DeleteDiskOfferingCmd;1
-listDiskOfferings=com.cloud.api.commands.ListDiskOfferingsCmd;15
+listDiskOfferings=org.apache.cloudstack.api.user.disk.command.ListDiskOfferingsCmd;15
 
 #### vlan commands
 createVlanIpRange=com.cloud.api.commands.CreateVlanIpRangeCmd;1

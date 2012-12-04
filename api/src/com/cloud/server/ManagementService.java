@@ -38,7 +38,7 @@ import org.apache.cloudstack.api.user.configuration.command.ListCapabilitiesCmd;
 import com.cloud.api.commands.ListCapacityCmd;
 import com.cloud.api.commands.ListCfgsByCmd;
 import com.cloud.api.commands.ListClustersCmd;
-import com.cloud.api.commands.ListDiskOfferingsCmd;
+import org.apache.cloudstack.api.user.disk.command.ListDiskOfferingsCmd;
 import org.apache.cloudstack.api.user.event.command.ListEventsCmd;
 import org.apache.cloudstack.api.user.guest.command.ListGuestOsCategoriesCmd;
 import com.cloud.api.commands.ListHostsCmd;
