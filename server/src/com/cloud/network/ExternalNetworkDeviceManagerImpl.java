@@ -29,8 +29,8 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.api.ApiConstants;
-import com.cloud.api.IdentityService;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.IdentityService;
 import com.cloud.api.commands.AddNetworkDeviceCmd;
 import com.cloud.api.commands.DeleteNetworkDeviceCmd;
 import com.cloud.api.commands.ListNetworkDeviceCmd;

@@ -21,9 +21,9 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
-import com.cloud.api.Implementation;
-import com.cloud.api.ServerApiException;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.ServerApiException;
 import com.cloud.api.response.ListResponse;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;

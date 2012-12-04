@@ -27,7 +27,7 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.IdentityMapper;
+import org.apache.cloudstack.api.IdentityMapper;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.utils.Pair;

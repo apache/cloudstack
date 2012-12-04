@@ -16,14 +16,15 @@
 // under the License.
 package com.cloud.api.commands;
 
+import org.apache.cloudstack.api.user.vm.command.UpgradeVMCmd;
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseCmd;
-import com.cloud.api.IdentityMapper;
-import com.cloud.api.Implementation;
-import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.IdentityMapper;
+import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
 import com.cloud.api.response.SystemVmResponse;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.offering.ServiceOffering;

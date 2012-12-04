@@ -33,7 +33,7 @@ import javax.naming.directory.SearchResult;
 import org.apache.log4j.Logger;
 import org.bouncycastle.util.encoders.Base64;
 
-import com.cloud.api.ApiConstants.LDAPParams;
+import org.apache.cloudstack.api.ApiConstants.LDAPParams;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.server.ManagementServer;
 import com.cloud.user.UserAccount;

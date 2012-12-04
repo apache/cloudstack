@@ -28,11 +28,12 @@ import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 
+import org.apache.cloudstack.api.*;
 import org.apache.log4j.Logger;
 
 import com.cloud.acl.ControlledEntity;
 import com.cloud.acl.Role;
-import com.cloud.api.BaseCmd.CommandType;
+import org.apache.cloudstack.api.BaseCmd.CommandType;
 import com.cloud.api.commands.ListEventsCmd;
 import com.cloud.async.AsyncCommandQueued;
 import com.cloud.async.AsyncJobManager;

@@ -18,11 +18,11 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseAsyncCmd;
-import com.cloud.api.IdentityMapper;
-import com.cloud.api.Implementation;
-import com.cloud.api.Parameter;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.IdentityMapper;
+import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.Parameter;
 import com.cloud.api.response.FirewallRuleResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.network.IpAddress;

@@ -20,9 +20,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseCmd.CommandType;
-import com.cloud.api.Parameter;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseCmd.CommandType;
+import org.apache.cloudstack.api.Parameter;
 import com.cloud.serializer.Param;
 import com.cloud.utils.IdentityProxy;
 import com.cloud.utils.Pair;

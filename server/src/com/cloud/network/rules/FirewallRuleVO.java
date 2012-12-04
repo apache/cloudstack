@@ -34,7 +34,7 @@ import javax.persistence.InheritanceType;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
-import com.cloud.api.Identity;
+import org.apache.cloudstack.api.Identity;
 import com.cloud.network.dao.FirewallRulesCidrsDaoImpl;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.GenericDao;

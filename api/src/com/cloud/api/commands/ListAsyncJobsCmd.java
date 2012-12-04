@@ -20,10 +20,10 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseListAccountResourcesCmd;
-import com.cloud.api.Implementation;
-import com.cloud.api.Parameter;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseListAccountResourcesCmd;
+import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.Parameter;
 import com.cloud.api.response.AsyncJobResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.async.AsyncJob;

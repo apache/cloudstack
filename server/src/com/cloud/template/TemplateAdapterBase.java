@@ -23,7 +23,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiConstants;
+import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.commands.DeleteIsoCmd;
 import com.cloud.api.commands.DeleteTemplateCmd;

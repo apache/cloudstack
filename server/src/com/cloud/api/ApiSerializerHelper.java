@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.api;
 
+import org.apache.cloudstack.api.ResponseObject;
 import org.apache.log4j.Logger;
 
 import com.google.gson.Gson;

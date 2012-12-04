@@ -19,6 +19,7 @@ package com.cloud.api;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 
+import org.apache.cloudstack.api.ResponseObject;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.response.ExceptionResponse;

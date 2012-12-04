@@ -18,6 +18,7 @@ package com.cloud.api;
 
 import com.google.gson.GsonBuilder;
 import com.cloud.utils.IdentityProxy;
+import org.apache.cloudstack.api.ResponseObject;
 
 /**
  * The ApiResonseGsonHelper is different from ApiGsonHelper - it registeres one more adapter for String type required for api response encoding

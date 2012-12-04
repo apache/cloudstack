@@ -18,7 +18,7 @@ package com.cloud.projects;
 
 import java.util.Date;
 
-import com.cloud.api.Identity;
+import org.apache.cloudstack.api.Identity;
 import com.cloud.domain.PartOf;
 
 public interface Project extends PartOf, Identity {

@@ -17,7 +17,7 @@
 
 package com.cloud.uuididentity.dao;
 
-import com.cloud.api.IdentityMapper;
+import org.apache.cloudstack.api.IdentityMapper;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;

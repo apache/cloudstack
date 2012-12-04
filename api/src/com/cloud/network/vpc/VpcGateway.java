@@ -17,7 +17,7 @@
 package com.cloud.network.vpc;
 
 import com.cloud.acl.ControlledEntity;
-import com.cloud.api.Identity;
+import org.apache.cloudstack.api.Identity;
 
 public interface VpcGateway extends Identity, ControlledEntity {
     public enum Type {

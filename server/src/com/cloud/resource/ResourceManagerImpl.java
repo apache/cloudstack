@@ -46,7 +46,7 @@ import com.cloud.agent.api.UpdateHostPasswordCommand;
 import com.cloud.agent.manager.AgentAttache;
 import com.cloud.agent.manager.allocator.PodAllocator;
 import com.cloud.agent.transport.Request;
-import com.cloud.api.ApiConstants;
+import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.commands.AddClusterCmd;
 import com.cloud.api.commands.AddHostCmd;

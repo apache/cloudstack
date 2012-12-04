@@ -42,7 +42,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.acl.SecurityChecker;
 import com.cloud.alert.AlertManager;
-import com.cloud.api.ApiConstants.LDAPParams;
+import org.apache.cloudstack.api.ApiConstants.LDAPParams;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.commands.CreateDiskOfferingCmd;
 import com.cloud.api.commands.CreateNetworkOfferingCmd;

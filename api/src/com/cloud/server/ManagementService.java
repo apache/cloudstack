@@ -23,12 +23,12 @@ import java.util.Map;
 import java.util.Set;
 
 import com.cloud.alert.Alert;
-import com.cloud.api.ServerApiException;
+import org.apache.cloudstack.api.ServerApiException;
 import com.cloud.api.commands.CreateSSHKeyPairCmd;
 import com.cloud.api.commands.DeleteSSHKeyPairCmd;
 import com.cloud.api.commands.DestroySystemVmCmd;
 import com.cloud.api.commands.ExtractVolumeCmd;
-import com.cloud.api.commands.GetVMPasswordCmd;
+import org.apache.cloudstack.api.user.vm.command.GetVMPasswordCmd;
 import com.cloud.api.commands.ListAlertsCmd;
 import com.cloud.api.commands.ListAsyncJobsCmd;
 import com.cloud.api.commands.ListCapabilitiesCmd;

@@ -54,20 +54,20 @@ updateResourceCount=com.cloud.api.commands.UpdateResourceCountCmd;7
 listResourceLimits=com.cloud.api.commands.ListResourceLimitsCmd;15
 
 #### VM commands
-deployVirtualMachine=com.cloud.api.commands.DeployVMCmd;15
-destroyVirtualMachine=com.cloud.api.commands.DestroyVMCmd;15
-rebootVirtualMachine=com.cloud.api.commands.RebootVMCmd;15
-startVirtualMachine=com.cloud.api.commands.StartVMCmd;15
-stopVirtualMachine=com.cloud.api.commands.StopVMCmd;15
-resetPasswordForVirtualMachine=com.cloud.api.commands.ResetVMPasswordCmd;15
-changeServiceForVirtualMachine=com.cloud.api.commands.UpgradeVMCmd;15
-updateVirtualMachine=com.cloud.api.commands.UpdateVMCmd;15
-recoverVirtualMachine=com.cloud.api.commands.RecoverVMCmd;7
-listVirtualMachines=com.cloud.api.commands.ListVMsCmd;15
-getVMPassword=com.cloud.api.commands.GetVMPasswordCmd;15
-migrateVirtualMachine=com.cloud.api.commands.MigrateVMCmd;1
-assignVirtualMachine=com.cloud.api.commands.AssignVMCmd;1
-restoreVirtualMachine=com.cloud.api.commands.RestoreVMCmd;15
+deployVirtualMachine=org.apache.cloudstack.api.user.vm.command.DeployVMCmd;15
+destroyVirtualMachine=org.apache.cloudstack.api.user.vm.command.DestroyVMCmd;15
+rebootVirtualMachine=org.apache.cloudstack.api.user.vm.command.RebootVMCmd;15
+startVirtualMachine=org.apache.cloudstack.api.user.vm.command.StartVMCmd;15
+stopVirtualMachine=org.apache.cloudstack.api.user.vm.command.StopVMCmd;15
+resetPasswordForVirtualMachine=org.apache.cloudstack.api.user.vm.command.ResetVMPasswordCmd;15
+updateVirtualMachine=org.apache.cloudstack.api.user.vm.command.UpdateVMCmd;15
+listVirtualMachines=org.apache.cloudstack.api.user.vm.command.ListVMsCmd;15
+getVMPassword=org.apache.cloudstack.api.user.vm.command.GetVMPasswordCmd;15
+restoreVirtualMachine=org.apache.cloudstack.api.user.vm.command.RestoreVMCmd;15
+changeServiceForVirtualMachine=org.apache.cloudstack.api.user.vm.command.UpgradeVMCmd;15
+assignVirtualMachine=org.apache.cloudstack.api.admin.vm.command.AssignVMCmd;1
+migrateVirtualMachine=org.apache.cloudstack.api.admin.vm.command.MigrateVMCmd;1
+recoverVirtualMachine=org.apache.cloudstack.api.admin.vm.command.RecoverVMCmd;7
 
 #### snapshot commands
 createSnapshot=com.cloud.api.commands.CreateSnapshotCmd;15
@@ -294,9 +294,9 @@ uploadCustomCertificate=com.cloud.api.commands.UploadCustomCertificateCmd;1
 listHypervisors=com.cloud.api.commands.ListHypervisorsCmd;15
 
 ### VPN
-createRemoteAccessVpn=com.cloud.api.commands.CreateRemoteAccessVpnCmd;15
-deleteRemoteAccessVpn=com.cloud.api.commands.DeleteRemoteAccessVpnCmd;15
-listRemoteAccessVpns=com.cloud.api.commands.ListRemoteAccessVpnsCmd;15
+createRemoteAccessVpn=org.apache.cloudstack.api.user.vpn.command.CreateRemoteAccessVpnCmd;15
+deleteRemoteAccessVpn=org.apache.cloudstack.api.user.vpn.command.DeleteRemoteAccessVpnCmd;15
+listRemoteAccessVpns=org.apache.cloudstack.api.user.vpn.command.ListRemoteAccessVpnsCmd;15
 
 addVpnUser=com.cloud.api.commands.AddVpnUserCmd;15
 removeVpnUser=com.cloud.api.commands.RemoveVpnUserCmd;15
@@ -414,14 +414,14 @@ deleteTags=com.cloud.api.commands.DeleteTagsCmd;15
 listTags=com.cloud.api.commands.ListTagsCmd;15
 
 ### Site-to-site VPN commands
-createVpnCustomerGateway=com.cloud.api.commands.CreateVpnCustomerGatewayCmd;15
-createVpnGateway=com.cloud.api.commands.CreateVpnGatewayCmd;15
-createVpnConnection=com.cloud.api.commands.CreateVpnConnectionCmd;15
-deleteVpnCustomerGateway=com.cloud.api.commands.DeleteVpnCustomerGatewayCmd;15
-deleteVpnGateway=com.cloud.api.commands.DeleteVpnGatewayCmd;15
-deleteVpnConnection=com.cloud.api.commands.DeleteVpnConnectionCmd;15
-updateVpnCustomerGateway=com.cloud.api.commands.UpdateVpnCustomerGatewayCmd;15
-resetVpnConnection=com.cloud.api.commands.ResetVpnConnectionCmd;15
-listVpnCustomerGateways=com.cloud.api.commands.ListVpnCustomerGatewaysCmd;15
-listVpnGateways=com.cloud.api.commands.ListVpnGatewaysCmd;15
-listVpnConnections=com.cloud.api.commands.ListVpnConnectionsCmd;15
+createVpnCustomerGateway=org.apache.cloudstack.api.user.vpn.command.CreateVpnCustomerGatewayCmd;15
+createVpnGateway=org.apache.cloudstack.api.user.vpn.command.CreateVpnGatewayCmd;15
+createVpnConnection=org.apache.cloudstack.api.user.vpn.command.CreateVpnConnectionCmd;15
+deleteVpnCustomerGateway=org.apache.cloudstack.api.user.vpn.command.DeleteVpnCustomerGatewayCmd;15
+deleteVpnGateway=org.apache.cloudstack.api.user.vpn.command.DeleteVpnGatewayCmd;15
+deleteVpnConnection=org.apache.cloudstack.api.user.vpn.command.DeleteVpnConnectionCmd;15
+updateVpnCustomerGateway=org.apache.cloudstack.api.user.vpn.command.UpdateVpnCustomerGatewayCmd;15
+resetVpnConnection=org.apache.cloudstack.api.user.vpn.command.ResetVpnConnectionCmd;15
+listVpnCustomerGateways=org.apache.cloudstack.api.user.vpn.command.ListVpnCustomerGatewaysCmd;15
+listVpnGateways=org.apache.cloudstack.api.user.vpn.command.ListVpnGatewaysCmd;15
+listVpnConnections=org.apache.cloudstack.api.user.vpn.command.ListVpnConnectionsCmd;15

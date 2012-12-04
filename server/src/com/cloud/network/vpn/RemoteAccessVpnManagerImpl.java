@@ -25,7 +25,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.commands.ListRemoteAccessVpnsCmd;
+import org.apache.cloudstack.api.user.vpn.command.ListRemoteAccessVpnsCmd;
 import com.cloud.api.commands.ListVpnUsersCmd;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;

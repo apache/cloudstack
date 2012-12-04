@@ -20,8 +20,8 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
-import com.cloud.api.Implementation;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Implementation;
 import com.cloud.api.response.CapabilitiesResponse;
 import com.cloud.user.Account;
 

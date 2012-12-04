@@ -19,17 +19,17 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseAsyncCmd;
-import com.cloud.api.Implementation;
-import com.cloud.api.Parameter;
-import com.cloud.api.ApiConstants;
-import com.cloud.api.IdentityMapper;
+import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.IdentityMapper;
 import com.cloud.user.Account;
 import com.cloud.event.EventTypes;
 import com.cloud.async.AsyncJob;
 import com.cloud.api.response.AccountResponse;
-import com.cloud.api.ServerApiException;
-import com.cloud.api.BaseCmd;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.BaseCmd;
 
 @Implementation(description="Marks a default zone for this account", responseObject=AccountResponse.class, since="4.0")
 public class MarkDefaultZoneForAccountCmd extends BaseAsyncCmd {

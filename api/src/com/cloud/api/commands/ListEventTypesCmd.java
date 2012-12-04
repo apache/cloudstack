@@ -20,8 +20,8 @@ import java.util.ArrayList;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
-import com.cloud.api.Implementation;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Implementation;
 import com.cloud.api.response.EventTypeResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.user.Account;

@@ -25,8 +25,8 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
 
-import com.cloud.api.ResponseGenerator;
-import com.cloud.api.ServerApiException;
+import org.apache.cloudstack.api.ResponseGenerator;
+import org.apache.cloudstack.api.ServerApiException;
 import com.cloud.api.commands.AddSecondaryStorageCmd;
 import com.cloud.api.response.HostResponse;
 import com.cloud.host.Host;

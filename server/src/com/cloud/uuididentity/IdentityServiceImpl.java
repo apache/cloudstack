@@ -21,8 +21,8 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import com.cloud.api.IdentityMapper;
-import com.cloud.api.IdentityService;
+import org.apache.cloudstack.api.IdentityMapper;
+import org.apache.cloudstack.api.IdentityService;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.uuididentity.dao.IdentityDao;

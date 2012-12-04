@@ -20,7 +20,7 @@ import java.util.Date;
 import java.util.Map;
 
 import com.cloud.acl.ControlledEntity;
-import com.cloud.api.Identity;
+import org.apache.cloudstack.api.Identity;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.fsm.StateObject;

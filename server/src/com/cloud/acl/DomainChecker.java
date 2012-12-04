@@ -18,7 +18,7 @@ package com.cloud.acl;
 
 import javax.ejb.Local;
 
-import com.cloud.api.BaseCmd;
+import org.apache.cloudstack.api.BaseCmd;
 import com.cloud.dc.DataCenter;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;

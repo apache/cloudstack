@@ -40,11 +40,11 @@ import java.util.zip.ZipOutputStream;
 import org.apache.log4j.Logger;
 
 import com.cloud.alert.AlertManager;
-import com.cloud.api.BaseAsyncCmd;
-import com.cloud.api.BaseAsyncCreateCmd;
-import com.cloud.api.BaseCmd;
-import com.cloud.api.Implementation;
-import com.cloud.api.Parameter;
+import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseAsyncCreateCmd;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.Parameter;
 import com.cloud.api.response.AsyncJobResponse;
 import com.cloud.api.response.BaseResponse;
 import com.cloud.api.response.HostResponse;

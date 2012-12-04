@@ -28,12 +28,12 @@ import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiConstants;
+import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseGsonHelper;
 import com.cloud.api.ApiServer;
-import com.cloud.api.BaseCmd;
-import com.cloud.api.ResponseObject;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.ResponseObject;
 import com.cloud.utils.IdentityProxy;
 import com.cloud.utils.encoding.URLEncoder;
 import com.cloud.utils.exception.CloudRuntimeException;

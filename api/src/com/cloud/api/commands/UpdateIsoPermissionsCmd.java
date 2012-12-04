@@ -18,7 +18,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.Implementation;
+import org.apache.cloudstack.api.Implementation;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;

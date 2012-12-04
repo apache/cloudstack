@@ -19,10 +19,10 @@ package com.cloud.api.commands;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseListCmd;
-import com.cloud.api.Implementation;
-import com.cloud.api.Parameter;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseListCmd;
+import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.SnapshotScheduleResponse;
 import com.cloud.storage.snapshot.SnapshotSchedule;

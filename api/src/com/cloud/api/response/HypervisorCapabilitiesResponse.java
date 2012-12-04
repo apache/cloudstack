@@ -16,7 +16,7 @@
 // under the License.
 package com.cloud.api.response;
 
-import com.cloud.api.ApiConstants;
+import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.utils.IdentityProxy;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.serializer.Param;

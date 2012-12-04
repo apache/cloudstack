@@ -21,12 +21,12 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseListCmd;
-import com.cloud.api.IdentityMapper;
-import com.cloud.api.Implementation;
-import com.cloud.api.Parameter;
-import com.cloud.api.PlugService;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseListCmd;
+import org.apache.cloudstack.api.IdentityMapper;
+import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.PlugService;
 import com.cloud.api.response.ListResponse;
 import com.cloud.host.Host;
 import com.cloud.network.element.JuniperSRXFirewallElementService;

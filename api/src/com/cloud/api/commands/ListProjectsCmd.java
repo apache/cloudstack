@@ -25,11 +25,11 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseListAccountResourcesCmd;
-import com.cloud.api.IdentityMapper;
-import com.cloud.api.Implementation;
-import com.cloud.api.Parameter;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseListAccountResourcesCmd;
+import org.apache.cloudstack.api.IdentityMapper;
+import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.ProjectResponse;
 import com.cloud.exception.InvalidParameterValueException;

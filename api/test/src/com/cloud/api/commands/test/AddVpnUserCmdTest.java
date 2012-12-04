@@ -25,7 +25,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
 
-import com.cloud.api.ServerApiException;
+import org.apache.cloudstack.api.ServerApiException;
 import com.cloud.api.commands.AddVpnUserCmd;
 import com.cloud.network.VpnUser;
 import com.cloud.network.vpn.RemoteAccessVpnService;

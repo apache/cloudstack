@@ -30,7 +30,7 @@ import javax.persistence.TableGenerator;
 import javax.persistence.Transient;
 
 import com.cloud.acl.ControlledEntity;
-import com.cloud.api.Identity;
+import org.apache.cloudstack.api.Identity;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;

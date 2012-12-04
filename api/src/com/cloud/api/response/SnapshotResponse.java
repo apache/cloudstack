@@ -19,7 +19,7 @@ package com.cloud.api.response;
 import java.util.Date;
 import java.util.List;
 
-import com.cloud.api.ApiConstants;
+import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.cloud.storage.Snapshot;
 import com.cloud.utils.IdentityProxy;

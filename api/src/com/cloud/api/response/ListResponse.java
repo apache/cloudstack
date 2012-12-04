@@ -18,7 +18,7 @@ package com.cloud.api.response;
 
 import java.util.List;
 
-import com.cloud.api.ResponseObject;
+import org.apache.cloudstack.api.ResponseObject;
 
 public class ListResponse<T extends ResponseObject> extends BaseResponse {
     List<T> responses;

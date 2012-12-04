@@ -18,7 +18,7 @@ package com.cloud.async;
 
 import java.util.Date;
 
-import com.cloud.api.Identity;
+import org.apache.cloudstack.api.Identity;
 
 public interface AsyncJob extends Identity {
     public enum Type {
