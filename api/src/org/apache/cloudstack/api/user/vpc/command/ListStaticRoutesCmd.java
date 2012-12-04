@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.user.vpc.command;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,18 +31,18 @@ import com.cloud.utils.Pair;
 @Implementation(description="Lists all static routes", responseObject=StaticRouteResponse.class)
 public class ListStaticRoutesCmd extends BaseListTaggedResourcesCmd {
     private static final String s_name = "liststaticroutesresponse";
-    
+
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
     @IdentityMapper(entityTableName="static_routes")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list static route by id")
     private Long id;
-    
+
     @IdentityMapper(entityTableName="vpc")
     @Parameter(name=ApiConstants.VPC_ID, type=CommandType.LONG, description="list static routes by vpc id")
     private Long vpcId;
-    
+
     @IdentityMapper(entityTableName="vpc_gateways")
     @Parameter(name=ApiConstants.GATEWAY_ID, type=CommandType.LONG, description="list static routes by gateway id")
     private Long gatewayId;
@@ -58,7 +58,7 @@ public class ListStaticRoutesCmd extends BaseListTaggedResourcesCmd {
     public Long getGatewayId() {
         return gatewayId;
     }
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -66,20 +66,20 @@ public class ListStaticRoutesCmd extends BaseListTaggedResourcesCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public void execute(){
         Pair<List<? extends StaticRoute>, Integer> result = _vpcService.listStaticRoutes(this);
         ListResponse<StaticRouteResponse> response = new ListResponse<StaticRouteResponse>();
         List<StaticRouteResponse> routeResponses = new ArrayList<StaticRouteResponse>();
-        
+
         for (StaticRoute route : result.first()) {
             StaticRouteResponse ruleData = _responseGenerator.createStaticRouteResponse(route);
             routeResponses.add(ruleData);
         }
         response.setResponses(routeResponses, result.second());
         response.setResponseName(getCommandName());
-        this.setResponseObject(response); 
+        this.setResponseObject(response);
     }
 
 

@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.user.vpc.command;
 
 import org.apache.log4j.Logger;
 
@@ -42,7 +42,7 @@ public class RestartVPCCmd extends BaseAsyncCmd{
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    
+
     @IdentityMapper(entityTableName="vpc")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the id of the VPC")
     private Long id;
@@ -51,11 +51,11 @@ public class RestartVPCCmd extends BaseAsyncCmd{
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-    
+
     public Long getId() {
         return id;
     }
-    
+
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -64,7 +64,7 @@ public class RestartVPCCmd extends BaseAsyncCmd{
     public String getCommandName() {
         return _name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         Vpc vpc = _entityMgr.findById(Vpc.class, getId());
@@ -84,13 +84,13 @@ public class RestartVPCCmd extends BaseAsyncCmd{
                 this.setResponseObject(response);
             } else {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to restart VPC");
-            } 
+            }
         } catch (ResourceUnavailableException ex) {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
         } catch (ConcurrentOperationException ex) {
             s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage()); 
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
         } catch (InsufficientCapacityException ex) {
             s_logger.info(ex);
             s_logger.trace(ex);

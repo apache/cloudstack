@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.user.vpc.command;
 
 import org.apache.log4j.Logger;
 
@@ -79,13 +79,13 @@ public class DeleteVPCCmd extends BaseAsyncCmd{
                 this.setResponseObject(response);
             } else {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete VPC");
-            } 
+            }
         }catch (ResourceUnavailableException ex) {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
         } catch (ConcurrentOperationException ex) {
             s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage()); 
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
         }
     }
 

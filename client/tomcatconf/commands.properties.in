@@ -381,21 +381,21 @@ listNetworkDevice=com.cloud.api.commands.ListNetworkDeviceCmd;1
 deleteNetworkDevice=com.cloud.api.commands.DeleteNetworkDeviceCmd;1
 
 ### VPC commands
-createVPC=com.cloud.api.commands.CreateVPCCmd;15
-listVPCs=com.cloud.api.commands.ListVPCsCmd;15
-deleteVPC=com.cloud.api.commands.DeleteVPCCmd;15
-updateVPC=com.cloud.api.commands.UpdateVPCCmd;15
-restartVPC=com.cloud.api.commands.RestartVPCCmd;15
+createVPC=org.apache.cloudstack.api.user.vpc.command.CreateVPCCmd;15
+listVPCs=org.apache.cloudstack.api.user.vpc.command.ListVPCsCmd;15
+deleteVPC=org.apache.cloudstack.api.user.vpc.command.DeleteVPCCmd;15
+updateVPC=org.apache.cloudstack.api.user.vpc.command.UpdateVPCCmd;15
+restartVPC=org.apache.cloudstack.api.user.vpc.command.RestartVPCCmd;15
 
 #### VPC offering commands
 createVPCOffering=com.cloud.api.commands.CreateVPCOfferingCmd;1
 updateVPCOffering=com.cloud.api.commands.UpdateVPCOfferingCmd;1
 deleteVPCOffering=com.cloud.api.commands.DeleteVPCOfferingCmd;1
-listVPCOfferings=com.cloud.api.commands.ListVPCOfferingsCmd;15
+listVPCOfferings=org.apache.cloudstack.api.user.vpc.command.ListVPCOfferingsCmd;15
 
 #### Private gateway commands
 createPrivateGateway=com.cloud.api.commands.CreatePrivateGatewayCmd;1
-listPrivateGateways=com.cloud.api.commands.ListPrivateGatewaysCmd;15
+listPrivateGateways=org.apache.cloudstack.api.user.vpc.command.ListPrivateGatewaysCmd;15
 deletePrivateGateway=com.cloud.api.commands.DeletePrivateGatewayCmd;1
 
 #### Network ACL commands
@@ -404,9 +404,9 @@ deleteNetworkACL=com.cloud.api.commands.DeleteNetworkACLCmd;15
 listNetworkACLs=com.cloud.api.commands.ListNetworkACLsCmd;15
 
 #### Static route commands
-createStaticRoute=com.cloud.api.commands.CreateStaticRouteCmd;15
-deleteStaticRoute=com.cloud.api.commands.DeleteStaticRouteCmd;15
-listStaticRoutes=com.cloud.api.commands.ListStaticRoutesCmd;15
+createStaticRoute=org.apache.cloudstack.api.user.vpc.command.CreateStaticRouteCmd;15
+deleteStaticRoute=org.apache.cloudstack.api.user.vpc.command.DeleteStaticRouteCmd;15
+listStaticRoutes=org.apache.cloudstack.api.user.vpc.command.ListStaticRoutesCmd;15
 
 #### Tags commands
 createTags=com.cloud.api.commands.CreateTagsCmd;15

@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.user.vpc.command;
 
 import org.apache.log4j.Logger;
 
@@ -38,14 +38,14 @@ public class UpdateVPCCmd extends BaseAsyncCmd{
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    
+
     @IdentityMapper(entityTableName="vpc")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the id of the VPC")
     private Long id;
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the VPC")
     private String vpcName;
-    
+
     @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="the display text of the VPC")
     private String displayText;
 
@@ -53,19 +53,19 @@ public class UpdateVPCCmd extends BaseAsyncCmd{
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-    
+
     public String getVpcName() {
         return vpcName;
     }
-    
+
     public String getDisplayText() {
         return displayText;
     }
-    
+
     public Long getId() {
         return id;
     }
-    
+
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -74,7 +74,7 @@ public class UpdateVPCCmd extends BaseAsyncCmd{
     public String getCommandName() {
         return _name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         Vpc vpc = _entityMgr.findById(Vpc.class, getId());

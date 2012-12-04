@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.user.vpc.command;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,56 +35,56 @@ import com.cloud.network.vpc.Vpc;
 public class ListVPCsCmd extends BaseListTaggedResourcesCmd{
     public static final Logger s_logger = Logger.getLogger(ListVPCsCmd.class.getName());
     private static final String s_name = "listvpcsresponse";
-    
+
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
     @IdentityMapper(entityTableName="vpc")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list VPC by id")
     private Long id;
-    
+
     @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="list by zone")
     private Long zoneId;
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="list by name of the VPC")
     private String vpcName;
-    
+
     @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="List by display text of " +
             "the VPC")
     private String displayText;
-    
+
     @Parameter(name=ApiConstants.CIDR, type=CommandType.STRING, description="list by cidr of the VPC. All VPC " +
             "guest networks' cidrs should be within this CIDR")
     private String cidr;
-    
+
     @IdentityMapper(entityTableName="vpc_offerings")
     @Parameter(name=ApiConstants.VPC_OFF_ID, type=CommandType.LONG, description="list by ID of the VPC offering")
     private Long VpcOffId;
-    
+
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="list by account associated with the VPC. " +
             "Must be used with the domainId parameter.")
     private String accountName;
-    
+
     @IdentityMapper(entityTableName="domain")
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="list by domain ID associated with the VPC. " +
             "If used with the account parameter returns the VPC associated with the account for the specified domain.")
     private Long domainId;
-    
-    @Parameter(name=ApiConstants.SUPPORTED_SERVICES, type=CommandType.LIST, collectionType=CommandType.STRING, 
+
+    @Parameter(name=ApiConstants.SUPPORTED_SERVICES, type=CommandType.LIST, collectionType=CommandType.STRING,
             description="list VPC supporting certain services")
     private List<String> supportedServices;
-    
+
     @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="list VPCs by state")
     private String state;
-    
+
     @Parameter(name=ApiConstants.RESTART_REQUIRED, type=CommandType.BOOLEAN, description="list VPCs by restartRequired option")
     private Boolean restartRequired;
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-    
+
     public String getAccountName() {
         return accountName;
     }
@@ -104,7 +104,7 @@ public class ListVPCsCmd extends BaseListTaggedResourcesCmd{
     public String getCidr() {
         return cidr;
     }
-    
+
     public String getDisplayText() {
         return displayText;
     }
@@ -112,23 +112,23 @@ public class ListVPCsCmd extends BaseListTaggedResourcesCmd{
     public Long getVpcOffId() {
         return VpcOffId;
     }
-    
+
     public Long getId() {
         return id;
     }
-    
+
     public List<String> getSupportedServices() {
         return supportedServices;
     }
-    
+
     public String getState() {
         return state;
     }
-    
+
     public Boolean getRestartRequired() {
         return restartRequired;
     }
-    
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -136,8 +136,8 @@ public class ListVPCsCmd extends BaseListTaggedResourcesCmd{
     @Override
     public void execute() {
         List<? extends Vpc> vpcs = _vpcService.listVpcs(getId(), getVpcName(), getDisplayText(),
-                getSupportedServices(), getCidr(), getVpcOffId(), getState(), getAccountName(), getDomainId(), 
-                this.getKeyword(), this.getStartIndex(), this.getPageSizeVal(), getZoneId(), this.isRecursive(), 
+                getSupportedServices(), getCidr(), getVpcOffId(), getState(), getAccountName(), getDomainId(),
+                this.getKeyword(), this.getStartIndex(), this.getPageSizeVal(), getZoneId(), this.isRecursive(),
                 this.listAll(), getRestartRequired(), getTags(), getProjectId());
         ListResponse<VpcResponse> response = new ListResponse<VpcResponse>();
         List<VpcResponse> offeringResponses = new ArrayList<VpcResponse>();

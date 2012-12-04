@@ -24,8 +24,8 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import com.cloud.acl.ControlledEntity.ACLType;
-import com.cloud.api.commands.ListPrivateGatewaysCmd;
-import com.cloud.api.commands.ListStaticRoutesCmd;
+import org.apache.cloudstack.api.user.vpc.command.ListPrivateGatewaysCmd;
+import org.apache.cloudstack.api.user.vpc.command.ListStaticRoutesCmd;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;

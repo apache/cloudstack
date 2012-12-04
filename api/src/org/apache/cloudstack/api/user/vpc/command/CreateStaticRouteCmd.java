@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.user.vpc.command;
 
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.ApiConstants;
@@ -40,12 +40,12 @@ import com.cloud.user.UserContext;
 public class CreateStaticRouteCmd extends BaseAsyncCreateCmd{
     private static final String s_name = "createstaticrouteresponse";
     public static final Logger s_logger = Logger.getLogger(CreateStaticRouteCmd.class.getName());
-    
+
     @IdentityMapper(entityTableName="vpc_gateways")
-    @Parameter(name=ApiConstants.GATEWAY_ID, type=CommandType.LONG, required=true, 
+    @Parameter(name=ApiConstants.GATEWAY_ID, type=CommandType.LONG, required=true,
                                                 description="the gateway id we are creating static route for")
     private Long gatewayId;
-    
+
     @Parameter(name = ApiConstants.CIDR, required = true, type = CommandType.STRING, description = "static route cidr")
     private String cidr;
 
@@ -100,7 +100,7 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd{
 
             // State is different after the route is applied, so get new object here
             route = _entityMgr.findById(StaticRoute.class, getEntityId());
-            StaticRouteResponse routeResponse = new StaticRouteResponse(); 
+            StaticRouteResponse routeResponse = new StaticRouteResponse();
             if (route != null) {
                 routeResponse = _responseGenerator.createStaticRouteResponse(route);
                 setResponseObject(routeResponse);
@@ -113,7 +113,7 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd{
             }
         }
     }
-    
+
     @Override
     public String getCommandName() {
         return s_name;
@@ -127,7 +127,7 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd{
          }
          return _vpcService.getVpc(gateway.getVpcId()).getAccountId();
     }
-    
+
     @Override
     public String getSyncObjType() {
         return BaseAsyncCmd.vpcSyncObject;
@@ -141,7 +141,7 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd{
         }
         return gateway.getVpcId();
     }
-    
+
     @Override
     public AsyncJob.Type getInstanceType() {
         return AsyncJob.Type.StaticRoute;

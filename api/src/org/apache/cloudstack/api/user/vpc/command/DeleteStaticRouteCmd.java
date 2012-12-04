@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.user.vpc.command;
 
 import org.apache.log4j.Logger;
 
@@ -57,7 +57,7 @@ public class DeleteStaticRouteCmd extends BaseAsyncCmd{
     public Long getId() {
         return id;
     }
-    
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -65,7 +65,7 @@ public class DeleteStaticRouteCmd extends BaseAsyncCmd{
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public String getEventType() {
         return EventTypes.EVENT_STATIC_ROUTE_DELETE;
@@ -75,7 +75,7 @@ public class DeleteStaticRouteCmd extends BaseAsyncCmd{
     public String getEventDescription() {
         return  ("Deleting static route id=" + id);
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         if (ownerId == null) {
@@ -88,12 +88,12 @@ public class DeleteStaticRouteCmd extends BaseAsyncCmd{
         }
         return ownerId;
     }
-    
+
     @Override
     public void execute() throws ResourceUnavailableException {
         UserContext.current().setEventDetails("Route Id: " + id);
         boolean result = _vpcService.revokeStaticRoute(id);
-        
+
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
@@ -101,8 +101,8 @@ public class DeleteStaticRouteCmd extends BaseAsyncCmd{
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete static route");
         }
     }
-    
-    
+
+
     @Override
     public String getSyncObjType() {
         return BaseAsyncCmd.vpcSyncObject;
@@ -116,7 +116,7 @@ public class DeleteStaticRouteCmd extends BaseAsyncCmd{
         }
         return route.getVpcId();
     }
-    
+
     @Override
     public AsyncJob.Type getInstanceType() {
         return AsyncJob.Type.StaticRoute;

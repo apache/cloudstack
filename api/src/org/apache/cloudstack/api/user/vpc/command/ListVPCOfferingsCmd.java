@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.user.vpc.command;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,32 +34,32 @@ import com.cloud.network.vpc.VpcOffering;
 public class ListVPCOfferingsCmd extends BaseListCmd{
     public static final Logger s_logger = Logger.getLogger(ListVPCOfferingsCmd.class.getName());
     private static final String _name = "listvpcofferingsresponse";
-    
+
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
     @IdentityMapper(entityTableName="vpc_offerings")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list VPC offerings by id")
     private Long id;
-    
+
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="list VPC offerings by name")
     private String vpcOffName;
-    
+
     @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="list VPC offerings by display text")
     private String displayText;
-    
+
     @Parameter(name=ApiConstants.IS_DEFAULT, type=CommandType.BOOLEAN, description="true if need to list only default " +
-    		"VPC offerings. Default value is false")
+            "VPC offerings. Default value is false")
     private Boolean isDefault;
-    
-    @Parameter(name=ApiConstants.SUPPORTED_SERVICES, type=CommandType.LIST, collectionType=CommandType.STRING, 
+
+    @Parameter(name=ApiConstants.SUPPORTED_SERVICES, type=CommandType.LIST, collectionType=CommandType.STRING,
             description="list VPC offerings supporting certain services")
     private List<String> supportedServices;
-    
+
     @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="list VPC offerings by state")
     private String state;
-    
-    
+
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -82,11 +82,11 @@ public class ListVPCOfferingsCmd extends BaseListCmd{
     public List<String> getSupportedServices() {
         return supportedServices;
     }
-    
+
     public String getState() {
         return state;
     }
-    
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -107,7 +107,7 @@ public class ListVPCOfferingsCmd extends BaseListCmd{
         this.setResponseObject(response);
     }
 
-    
+
     @Override
     public String getCommandName() {
         return _name;

@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.user.vpc.command;
 
 import org.apache.log4j.Logger;
 
@@ -38,52 +38,52 @@ import com.cloud.user.UserContext;
 public class CreateVPCCmd extends BaseAsyncCreateCmd{
     public static final Logger s_logger = Logger.getLogger(CreateVPCCmd.class.getName());
     private static final String s_name = "createvpcresponse";
-    
+
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account associated with the VPC. " +
-    		"Must be used with the domainId parameter.")
+            "Must be used with the domainId parameter.")
     private String accountName;
-    
+
     @IdentityMapper(entityTableName="domain")
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID associated with the VPC. " +
-    		"If used with the account parameter returns the VPC associated with the account for the specified domain.")
+            "If used with the account parameter returns the VPC associated with the account for the specified domain.")
     private Long domainId;
-    
+
     @IdentityMapper(entityTableName="projects")
     @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="create VPC for the project")
     private Long projectId;
-    
+
     @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="the ID of the availability zone")
     private Long zoneId;
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="the name of the VPC")
     private String vpcName;
-    
+
     @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, required=true, description="the display text of " +
             "the VPC")
     private String displayText;
-    
+
     @Parameter(name=ApiConstants.CIDR, type=CommandType.STRING, required=true, description="the cidr of the VPC. All VPC " +
-    		"guest networks' cidrs should be within this CIDR")
+            "guest networks' cidrs should be within this CIDR")
     private String cidr;
-    
-    
+
+
     @IdentityMapper(entityTableName="vpc_offerings")
     @Parameter(name=ApiConstants.VPC_OFF_ID, type=CommandType.LONG, required=true, description="the ID of the VPC offering")
     private Long vpcOffering;
-    
-    @Parameter(name=ApiConstants.NETWORK_DOMAIN, type=CommandType.STRING, 
+
+    @Parameter(name=ApiConstants.NETWORK_DOMAIN, type=CommandType.STRING,
             description="VPC network domain. All networks inside the VPC will belong to this domain")
     private String networkDomain;
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-    
+
     public String getAccountName() {
         return accountName;
     }
@@ -103,7 +103,7 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd{
     public String getCidr() {
         return cidr;
     }
-    
+
     public String getDisplayText() {
         return displayText;
     }
@@ -111,7 +111,7 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd{
     public Long getVpcOffering() {
         return vpcOffering;
     }
-    
+
     public String getNetworkDomain() {
         return networkDomain;
     }
@@ -126,7 +126,7 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd{
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create a VPC");
         }
     }
-    
+
     @Override
     public void execute() {
         Vpc vpc = null;
@@ -139,13 +139,13 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd{
             throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
         } catch (ConcurrentOperationException ex) {
             s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage()); 
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
         } catch (InsufficientCapacityException ex) {
             s_logger.info(ex);
             s_logger.trace(ex);
             throw new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
         }
-        
+
         if (vpc != null) {
             VpcResponse response = _responseGenerator.createVpcResponse(vpc);
             response.setResponseName(getCommandName());
@@ -171,7 +171,7 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd{
     public String getEventDescription() {
         return  "creating VPC. Id: " + getEntityId();
     }
-    
+
     @Override
     public String getCommandName() {
         return s_name;
@@ -183,7 +183,7 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd{
         if (accountId == null) {
             return UserContext.current().getCaller().getId();
         }
-        
+
         return accountId;
     }
 }

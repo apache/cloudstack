@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.user.vpc.command;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,20 +43,20 @@ public class ListPrivateGatewaysCmd extends BaseListProjectAndAccountResourcesCm
     @IdentityMapper(entityTableName="vpc_gateways")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list private gateway by id")
     private Long id;
-    
+
     @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, description="list gateways by ip address")
     private String ipAddress;
-    
+
     @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, description="list gateways by vlan")
     private String vlan;
-    
+
     @IdentityMapper(entityTableName="vpc")
     @Parameter(name=ApiConstants.VPC_ID, type=CommandType.LONG, description="list gateways by vpc")
     private Long vpcId;
-    
+
     @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="list gateways by state")
     private String state;
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -69,15 +69,15 @@ public class ListPrivateGatewaysCmd extends BaseListProjectAndAccountResourcesCm
     public String getIpAddress() {
         return ipAddress;
     }
-    
+
     public Long getVpcId() {
         return vpcId;
     }
-    
+
     public Long getId() {
         return id;
     }
-    
+
     public String getState() {
         return state;
     }
@@ -89,7 +89,7 @@ public class ListPrivateGatewaysCmd extends BaseListProjectAndAccountResourcesCm
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public void execute() {
         Pair<List<PrivateGateway>, Integer> gateways = _vpcService.listPrivateGateway(this);
@@ -101,7 +101,7 @@ public class ListPrivateGatewaysCmd extends BaseListProjectAndAccountResourcesCm
         }
         response.setResponses(projectResponses, gateways.second());
         response.setResponseName(getCommandName());
-        
+
         this.setResponseObject(response);
     }
 }

@@ -33,8 +33,8 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.acl.ControlledEntity.ACLType;
-import com.cloud.api.commands.ListPrivateGatewaysCmd;
-import com.cloud.api.commands.ListStaticRoutesCmd;
+import org.apache.cloudstack.api.user.vpc.command.ListPrivateGatewaysCmd;
+import org.apache.cloudstack.api.user.vpc.command.ListStaticRoutesCmd;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;
@@ -983,7 +983,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
                 } else {
                     if (_ntwkMgr.areServicesSupportedInNetwork(network.getId(), Service.Lb)) {
                         throw new InvalidParameterValueException("LB service is already supported " +
-                        		"by network " + network + " in VPC " + vpc);
+                                "by network " + network + " in VPC " + vpc);
                     }
                 }
             }
@@ -1070,7 +1070,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
             //5) network domain should be the same as VPC's
             if (!networkDomain.equalsIgnoreCase(vpc.getNetworkDomain())) {
                 throw new InvalidParameterValueException("Network domain of the new network should match network" +
-                		" domain of vpc " + vpc);
+                        " domain of vpc " + vpc);
             }
             
             //6) gateway should never be equal to the cidr subnet
