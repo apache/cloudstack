@@ -387,9 +387,9 @@ updateVPC=org.apache.cloudstack.api.user.vpc.command.UpdateVPCCmd;15
 restartVPC=org.apache.cloudstack.api.user.vpc.command.RestartVPCCmd;15
 
 #### VPC offering commands
-createVPCOffering=com.cloud.api.commands.CreateVPCOfferingCmd;1
-updateVPCOffering=com.cloud.api.commands.UpdateVPCOfferingCmd;1
-deleteVPCOffering=com.cloud.api.commands.DeleteVPCOfferingCmd;1
+createVPCOffering=org.apache.cloudstack.api.admin.vpc.command.CreateVPCOfferingCmd;1
+updateVPCOffering=org.apache.cloudstack.api.admin.vpc.command.UpdateVPCOfferingCmd;1
+deleteVPCOffering=org.apache.cloudstack.api.admin.vpc.command.DeleteVPCOfferingCmd;1
 listVPCOfferings=org.apache.cloudstack.api.user.vpc.command.ListVPCOfferingsCmd;15
 
 #### Private gateway commands
