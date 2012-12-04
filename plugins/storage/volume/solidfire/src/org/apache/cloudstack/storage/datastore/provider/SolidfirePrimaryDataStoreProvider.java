@@ -2,7 +2,7 @@ package org.apache.cloudstack.storage.datastore.provider;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.storage.datastore.DefaultPrimaryDataStoreImpl;
+import org.apache.cloudstack.storage.datastore.DefaultPrimaryDataStore;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreVO;
@@ -36,7 +36,7 @@ public class SolidfirePrimaryDataStoreProvider extends
             return null;
         }
 
-        PrimaryDataStore pds = new DefaultPrimaryDataStoreImpl(driver, dsv, null);
+        PrimaryDataStore pds = new DefaultPrimaryDataStore(driver, dsv, null);
         pds = ComponentInject.inject(pds);
         return pds;
 	}

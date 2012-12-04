@@ -77,4 +77,6 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
     List<Long> listPoolIdsByVolumeCount(long dcId, Long podId, Long clusterId, long accountId);
 
     VolumeVO allocVolume(long size, VolumeType type, String volName, Long templateId);
+    
+    VolumeVO findByVolumeIdAndPoolId(long volumeId, long poolId);
 }

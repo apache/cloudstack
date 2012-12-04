@@ -2,12 +2,12 @@ package org.apache.cloudstack.storage.datastore.driver;
 
 import java.util.List;
 
-import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.command.CreateVolumeAnswer;
 import org.apache.cloudstack.storage.command.CreateVolumeCommand;
 import org.apache.cloudstack.storage.command.CreateVolumeFromBaseImageCommand;
+import org.apache.cloudstack.storage.command.DeleteVolume;
 import org.apache.cloudstack.storage.to.ImageOnPrimayDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeTO;
 import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreInfo;
@@ -28,34 +28,22 @@ public class DefaultPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         // The default driver will send createvolume command to one of hosts
         // which can access its datastore
         List<EndPoint> endPoints = vol.getDataStore().getEndPoints();
-        int retries = 3;
         VolumeInfo volInfo = vol;
         CreateVolumeCommand createCmd = new CreateVolumeCommand(new VolumeTO(volInfo));
-        Answer answer = null;
-        int i = 0;
-        boolean result = false;
+        Answer answer = sendOutCommand(createCmd, endPoints);
 
-        for (EndPoint ep : endPoints) {
-            answer = ep.sendMessage(createCmd);
-            if (answer == null) {
-                if (i < retries) {
-                    s_logger.debug("create volume failed, retrying: " + i);
-                }
-                i++;
-            } else {
-                CreateVolumeAnswer volAnswer = (CreateVolumeAnswer) answer;
-                vol.setPath(volAnswer.getVolumeUuid());
-                result = true;
-            }
-        }
-
-        return result;
+        CreateVolumeAnswer volAnswer = (CreateVolumeAnswer) answer;
+        vol.setPath(volAnswer.getVolumeUuid());
+        return true;
     }
 
     @Override
     public boolean deleteVolume(VolumeObject vo) {
-        // TODO Auto-generated method stub
-        return false;
+        DeleteVolume cmd = new DeleteVolume((VolumeInfo)vo);
+        List<EndPoint> endPoints = vo.getDataStore().getEndPoints();
+        sendOutCommand(cmd, endPoints);
+
+        return true;
     }
 
     @Override
@@ -67,7 +55,7 @@ public class DefaultPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
     @Override
     public boolean revokeAccess(VolumeObject vol, EndPoint ep) {
         // TODO Auto-generated method stub
-        return false;
+        return true;
     }
 
     protected Answer sendOutCommand(Command cmd, List<EndPoint> endPoints) {
@@ -85,6 +73,15 @@ public class DefaultPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
                 break;
             }
         }
+        
+        if (answer == null || answer.getDetails() != null) {
+            if (answer == null) {
+                throw new CloudRuntimeException("Failed to created volume");
+            } else {
+                throw new CloudRuntimeException(answer.getDetails());
+            }
+        }
+        
         return answer;
     }
 
@@ -97,16 +94,20 @@ public class DefaultPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
 
         Answer answer = sendOutCommand(cmd, endPoints);
 
-        if (answer == null || answer.getDetails() != null) {
-            if (answer == null) {
-                throw new CloudRuntimeException("Failed to created volume");
-            } else {
-                throw new CloudRuntimeException(answer.getDetails());
-            }
-        } else {
-            CreateVolumeAnswer volAnswer = (CreateVolumeAnswer) answer;
-            volume.setPath(volAnswer.getVolumeUuid());
-            return true;
-        }
+        CreateVolumeAnswer volAnswer = (CreateVolumeAnswer) answer;
+        volume.setPath(volAnswer.getVolumeUuid());
+        return true;
+    }
+
+    @Override
+    public long getCapacity() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public long getAvailableCapacity() {
+        // TODO Auto-generated method stub
+        return 0;
     }
 }

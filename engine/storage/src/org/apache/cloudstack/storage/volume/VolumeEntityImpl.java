@@ -30,6 +30,7 @@ import org.apache.cloudstack.engine.datacenter.entity.api.StorageEntity;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
 import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeType;
+import org.apache.cloudstack.storage.datastore.PrimaryDataStoreEntityImpl;
 import org.apache.cloudstack.storage.image.TemplateEntityImpl;
 import org.apache.cloudstack.storage.image.TemplateInfo;
 
@@ -43,10 +44,6 @@ public class VolumeEntityImpl implements VolumeEntity {
 
     public VolumeInfo getVolumeInfo() {
         return volumeInfo;
-    }
-
-    public void setVolumeInfo(VolumeInfo vi) {
-        this.volumeInfo = vi;
     }
 
     @Override 
@@ -76,19 +73,17 @@ public class VolumeEntityImpl implements VolumeEntity {
 
     @Override
     public Date getCreatedTime() {
-        return volumeInfo.getCreatedData();
+        return volumeInfo.getCreatedDate();
     }
 
     @Override
     public Date getLastUpdatedTime() {
-        // TODO Auto-generated method stub
-        return null;
+        return volumeInfo.getUpdatedDate();
     }
 
     @Override
     public String getOwner() {
-        // TODO Auto-generated method stub
-        return null;
+        return volumeInfo.getOwner();
     }
 
     @Override
@@ -171,50 +166,27 @@ public class VolumeEntityImpl implements VolumeEntity {
 
     @Override
     public void destroy() {
-        // TODO Auto-generated method stub
-
+        vs.deleteVolume(volumeInfo);
     }
 
     @Override
     public long getSize() {
-        // TODO Auto-generated method stub
-        return 0;
-    }
-
-    @Override
-    public String getTemplatePath() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public String getTemplateUuid() {
-        // TODO Auto-generated method stub
-        return null;
+        return volumeInfo.getSize();
     }
 
     @Override
     public VolumeDiskType getDiskType() {
-        // TODO Auto-generated method stub
-        return null;
+        return volumeInfo.getDiskType();
     }
 
     @Override
     public VolumeType getType() {
-        // TODO Auto-generated method stub
-        return null;
+        return volumeInfo.getType();
     }
 
     @Override
     public StorageEntity getDataStore() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public void setPath(String path) {
-        // TODO Auto-generated method stub
-
+        return new PrimaryDataStoreEntityImpl(volumeInfo.getDataStore());
     }
 
     @Override

@@ -18,7 +18,6 @@
  */
 package org.apache.cloudstack.storage.volume;
 
-import org.apache.cloudstack.engine.cloud.entity.api.TemplateEntity;
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
@@ -48,7 +47,7 @@ public interface VolumeService {
      * @return
      * @throws ConcurrentOperationException
      */
-    boolean deleteVolume(long volumeId);
+    boolean deleteVolume(VolumeInfo volume);
 
     /**
      * 

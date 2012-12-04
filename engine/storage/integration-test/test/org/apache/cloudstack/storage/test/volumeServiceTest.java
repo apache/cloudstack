@@ -44,7 +44,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.type.RootDisk;
 import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeTypeHelper;
 import org.apache.cloudstack.storage.command.CreateVolumeAnswer;
 import org.apache.cloudstack.storage.command.CreateVolumeFromBaseImageCommand;
-import org.apache.cloudstack.storage.datastore.DefaultPrimaryDataStoreImpl;
+import org.apache.cloudstack.storage.datastore.DefaultPrimaryDataStore;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreVO;
 import org.apache.cloudstack.storage.datastore.lifecycle.PrimaryDataStoreLifeCycle;
@@ -293,7 +293,7 @@ public class volumeServiceTest {
 		DefaultPrimaryDatastoreProviderImpl provider = ComponentInject.inject(DefaultPrimaryDatastoreProviderImpl.class);
 		//assertNotNull(provider.dataStoreDao);
 
-		DefaultPrimaryDataStoreImpl dpdsi = new DefaultPrimaryDataStoreImpl(null, null, null);
+		DefaultPrimaryDataStore dpdsi = new DefaultPrimaryDataStore(null, null, null);
 		ComponentInject.inject(dpdsi);
 		//assertNotNull(dpdsi.volumeDao);
 	}

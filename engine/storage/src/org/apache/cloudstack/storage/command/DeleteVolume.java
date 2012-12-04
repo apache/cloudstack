@@ -16,29 +16,25 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.engine.subsystem.api.storage;
+package org.apache.cloudstack.storage.command;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 
-import java.util.Date;
+import com.cloud.agent.api.Command;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
-import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeType;
+public class DeleteVolume extends Command {
 
-import com.cloud.storage.Volume;
+    public DeleteVolume(VolumeInfo volume) {
+        
+    }
+    
+    protected DeleteVolume() {
+        
+    }
+    @Override
+    public boolean executeInSequence() {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-public interface VolumeInfo {
-	public long getSize();
-	public String getUuid();
-	public String getPath();
-	public PrimaryDataStoreInfo getDataStore() ;
-	public String getTemplateUuid();
-	public String getTemplatePath() ;
-	public VolumeType getType();
-	public VolumeDiskType getDiskType();
-	public long getId();
-	public Volume.State getCurrentState();
-	public Volume.State getDesiredState();
-	public Date getCreatedDate();
-	public Date getUpdatedDate();
-	public String getOwner();
 }

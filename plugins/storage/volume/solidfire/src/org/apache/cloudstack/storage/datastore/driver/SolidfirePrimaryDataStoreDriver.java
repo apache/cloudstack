@@ -37,4 +37,16 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 		return false;
 	}
 
+    @Override
+    public long getCapacity() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public long getAvailableCapacity() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
 }

@@ -83,7 +83,7 @@ public class VolumeServiceImpl implements VolumeService {
 
     @DB
     @Override
-    public boolean deleteVolume(long volumeId) {
+    public boolean deleteVolume(VolumeInfo volumeId) {
         return true;
     }
 

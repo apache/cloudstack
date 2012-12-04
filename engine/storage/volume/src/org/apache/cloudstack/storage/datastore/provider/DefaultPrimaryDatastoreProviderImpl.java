@@ -5,7 +5,7 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
-import org.apache.cloudstack.storage.datastore.DefaultPrimaryDataStoreImpl;
+import org.apache.cloudstack.storage.datastore.DefaultPrimaryDataStore;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreProviderVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreVO;
@@ -40,8 +40,7 @@ public class DefaultPrimaryDatastoreProviderImpl implements PrimaryDataStoreProv
             return null;
         }
 
-        PrimaryDataStore pds = new DefaultPrimaryDataStoreImpl(driver, dsv, null);
-        pds = ComponentInject.inject(pds);
+        PrimaryDataStore pds = DefaultPrimaryDataStore.createDataStore(driver, dsv, null);
         return pds;
     }
 

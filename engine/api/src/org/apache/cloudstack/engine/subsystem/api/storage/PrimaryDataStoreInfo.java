@@ -33,4 +33,5 @@ public interface PrimaryDataStoreInfo {
 	public long getAvailableCapacity();
 	public List<EndPoint> getEndPoints();
 	public long getId();
+	public String getUuid();
 }

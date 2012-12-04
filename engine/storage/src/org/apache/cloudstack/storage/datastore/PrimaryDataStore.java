@@ -32,15 +32,13 @@ public interface PrimaryDataStore extends PrimaryDataStoreInfo {
 
     List<VolumeInfo> getVolumes();
 
-    boolean deleteVolume(long id);
+    boolean deleteVolume(VolumeInfo volume);
 
     VolumeInfo createVolume(VolumeInfo vo, VolumeDiskType diskType);
 
     VolumeInfo createVoluemFromBaseImage(VolumeInfo volume, TemplateOnPrimaryDataStoreInfo templateStore);
 
     List<EndPoint> getEndPoints();
-
-    PrimaryDataStoreInfo getDataStoreInfo();
 
     boolean exists(VolumeInfo vi);
 

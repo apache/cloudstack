@@ -76,11 +76,11 @@ public interface VolumeEntity extends CloudStackEntity {
     
     long getSize();
     
-    String getTemplatePath();
-    String getTemplateUuid();
     VolumeDiskType getDiskType();
+    
     VolumeType getType();
+    
     StorageEntity getDataStore();
-    void setPath(String path);
+    
     boolean createVolumeFromTemplate(long dataStoreId, VolumeDiskType diskType, TemplateEntity template);
 }

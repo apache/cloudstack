@@ -27,8 +27,8 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.component.ComponentInject;
 import edu.emory.mathcs.backport.java.util.Collections;
 
-public class DefaultPrimaryDataStoreImpl implements PrimaryDataStore {
-    private static final Logger s_logger = Logger.getLogger(DefaultPrimaryDataStoreImpl.class);
+public class DefaultPrimaryDataStore implements PrimaryDataStore {
+    private static final Logger s_logger = Logger.getLogger(DefaultPrimaryDataStore.class);
     protected PrimaryDataStoreDriver driver;
     protected PrimaryDataStoreVO pdsv;
     protected PrimaryDataStoreInfo pdsInfo;
@@ -39,10 +39,15 @@ public class DefaultPrimaryDataStoreImpl implements PrimaryDataStore {
     @Inject
     TemplatePrimaryDataStoreManager templatePrimaryStoreMgr;
 
-    public DefaultPrimaryDataStoreImpl(PrimaryDataStoreDriver driver, PrimaryDataStoreVO pdsv, PrimaryDataStoreInfo pdsInfo) {
+    private DefaultPrimaryDataStore(PrimaryDataStoreDriver driver, PrimaryDataStoreVO pdsv, PrimaryDataStoreInfo pdsInfo) {
         this.driver = driver;
         this.pdsv = pdsv;
         this.pdsInfo = pdsInfo;
+    }
+    
+    public static DefaultPrimaryDataStore createDataStore(PrimaryDataStoreDriver driver, PrimaryDataStoreVO pdsv, PrimaryDataStoreInfo pdsInfo) {
+        DefaultPrimaryDataStore dataStore = new DefaultPrimaryDataStore(driver, pdsv, pdsInfo);
+        return ComponentInject.inject(dataStore);
     }
 
     @Override
@@ -54,14 +59,17 @@ public class DefaultPrimaryDataStoreImpl implements PrimaryDataStore {
 
     @Override
     public List<VolumeInfo> getVolumes() {
-        // TODO Auto-generated method stub
-        return null;
+        List<VolumeVO> volumes = volumeDao.findByPoolId(this.getId());
+        List<VolumeInfo> volumeInfos = new ArrayList<VolumeInfo>();
+        for (VolumeVO volume : volumes) {
+            volumeInfos.add(VolumeObject.getVolumeObject(this, volume));
+        }
+        return volumeInfos;
     }
 
     @Override
-    public boolean deleteVolume(long id) {
-        // TODO Auto-generated method stub
-        return false;
+    public boolean deleteVolume(VolumeInfo volume) {
+        return this.driver.deleteVolume((VolumeObject)volume);
     }
 
     @Override
@@ -79,12 +87,6 @@ public class DefaultPrimaryDataStoreImpl implements PrimaryDataStore {
         }
         Collections.shuffle(endpoints);
         return endpoints;
-    }
-
-    @Override
-    public PrimaryDataStoreInfo getDataStoreInfo() {
-        // TODO Auto-generated method stub
-        return null;
     }
 
     @Override
@@ -107,14 +109,12 @@ public class DefaultPrimaryDataStoreImpl implements PrimaryDataStore {
 
     @Override
     public long getCapacity() {
-        // TODO Auto-generated method stub
-        return 0;
+       return this.driver.getCapacity();
     }
 
     @Override
     public long getAvailableCapacity() {
-        // TODO Auto-generated method stub
-        return 0;
+        return this.driver.getAvailableCapacity();
     }
 
     @Override
@@ -130,8 +130,8 @@ public class DefaultPrimaryDataStoreImpl implements PrimaryDataStore {
 
     @Override
     public boolean exists(VolumeInfo vi) {
-        // TODO Auto-generated method stub
-        return false;
+        VolumeVO vol = volumeDao.findByVolumeIdAndPoolId(vi.getId(), this.getId());
+        return (vol != null) ? true : false;
     }
 
     @Override

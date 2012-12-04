@@ -14,4 +14,8 @@ public interface PrimaryDataStoreDriver {
     String grantAccess(VolumeObject vol, EndPoint ep);
 
     boolean revokeAccess(VolumeObject vol, EndPoint ep);
+    
+    long getCapacity();
+    
+    long getAvailableCapacity();
 }

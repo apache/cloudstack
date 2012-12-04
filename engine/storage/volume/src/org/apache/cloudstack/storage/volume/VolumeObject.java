@@ -68,7 +68,7 @@ public class VolumeObject implements VolumeInfo {
     }
 
     public PrimaryDataStoreInfo getDataStoreInfo() {
-        return dataStore.getDataStoreInfo();
+        return dataStore;
     }
 
     public Volume.State getState() {
@@ -136,7 +136,7 @@ public class VolumeObject implements VolumeInfo {
     }
 
     @Override
-    public Date getCreatedData() {
+    public Date getCreatedDate() {
         // TODO Auto-generated method stub
         return null;
     }

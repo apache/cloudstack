@@ -46,6 +46,8 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.SearchCriteria2;
+import com.cloud.utils.db.SearchCriteriaService;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -425,5 +427,13 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         VolumeVO vol = new VolumeVO(size, type.toString(), volName, templateId);
         vol = this.persist(vol);
         return vol;
+    }
+
+    @Override
+    public VolumeVO findByVolumeIdAndPoolId(long volumeId, long poolId) {
+        SearchCriteriaService<VolumeVO, VolumeVO> sc = SearchCriteria2.create(VolumeVO.class);
+        sc.addAnd(sc.getEntity().getId(), Op.EQ, volumeId);
+        sc.addAnd(sc.getEntity().getPoolId(), Op.EQ, poolId);
+        return sc.find();
     }
 }
