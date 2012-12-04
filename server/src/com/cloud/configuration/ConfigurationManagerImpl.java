@@ -57,7 +57,7 @@ import com.cloud.api.commands.DeleteVlanIpRangeCmd;
 import com.cloud.api.commands.DeleteZoneCmd;
 import com.cloud.api.commands.LDAPConfigCmd;
 import com.cloud.api.commands.LDAPRemoveCmd;
-import com.cloud.api.commands.ListNetworkOfferingsCmd;
+import org.apache.cloudstack.api.user.network.command.ListNetworkOfferingsCmd;
 import com.cloud.api.commands.UpdateCfgCmd;
 import com.cloud.api.commands.UpdateDiskOfferingCmd;
 import com.cloud.api.commands.UpdateNetworkOfferingCmd;

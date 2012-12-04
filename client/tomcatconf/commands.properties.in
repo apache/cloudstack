@@ -306,14 +306,14 @@ listVpnUsers=com.cloud.api.commands.ListVpnUsersCmd;15
 createNetworkOffering=com.cloud.api.commands.CreateNetworkOfferingCmd;1
 updateNetworkOffering=com.cloud.api.commands.UpdateNetworkOfferingCmd;1
 deleteNetworkOffering=com.cloud.api.commands.DeleteNetworkOfferingCmd;1
-listNetworkOfferings=com.cloud.api.commands.ListNetworkOfferingsCmd;15
+listNetworkOfferings=org.apache.cloudstack.api.user.network.command.ListNetworkOfferingsCmd;15
 
 #### network commands
-createNetwork=com.cloud.api.commands.CreateNetworkCmd;15
-deleteNetwork=com.cloud.api.commands.DeleteNetworkCmd;15
-listNetworks=com.cloud.api.commands.ListNetworksCmd;15
-restartNetwork=com.cloud.api.commands.RestartNetworkCmd;15
-updateNetwork=com.cloud.api.commands.UpdateNetworkCmd;15
+createNetwork=org.apache.cloudstack.api.user.network.command.CreateNetworkCmd;15
+deleteNetwork=org.apache.cloudstack.api.user.network.command.DeleteNetworkCmd;15
+listNetworks=org.apache.cloudstack.api.user.network.command.ListNetworksCmd;15
+restartNetwork=org.apache.cloudstack.api.user.network.command.RestartNetworkCmd;15
+updateNetwork=org.apache.cloudstack.api.user.network.command.UpdateNetworkCmd;15
 
 #### SSH key pair commands
 registerSSHKeyPair=com.cloud.api.commands.RegisterSSHKeyPairCmd;15
@@ -399,9 +399,9 @@ listPrivateGateways=org.apache.cloudstack.api.user.vpc.command.ListPrivateGatewa
 deletePrivateGateway=com.cloud.api.commands.DeletePrivateGatewayCmd;1
 
 #### Network ACL commands
-createNetworkACL=com.cloud.api.commands.CreateNetworkACLCmd;15
-deleteNetworkACL=com.cloud.api.commands.DeleteNetworkACLCmd;15
-listNetworkACLs=com.cloud.api.commands.ListNetworkACLsCmd;15
+createNetworkACL=org.apache.cloudstack.api.user.network.command.CreateNetworkACLCmd;15
+deleteNetworkACL=org.apache.cloudstack.api.user.network.command.DeleteNetworkACLCmd;15
+listNetworkACLs=org.apache.cloudstack.api.user.network.command.ListNetworkACLsCmd;15
 
 #### Static route commands
 createStaticRoute=org.apache.cloudstack.api.user.vpc.command.CreateStaticRouteCmd;15

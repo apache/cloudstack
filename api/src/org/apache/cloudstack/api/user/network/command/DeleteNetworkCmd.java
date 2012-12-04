@@ -14,8 +14,9 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.user.network.command;
 
+import com.cloud.api.commands.DeleteNetworkOfferingCmd;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -26,30 +27,25 @@ import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
-import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.Network;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Deletes a Network ACL", responseObject=SuccessResponse.class)
-public class DeleteNetworkACLCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteNetworkACLCmd.class.getName());
-    private static final String s_name = "deletenetworkaclresponse";
+@Implementation(description="Deletes a network", responseObject=SuccessResponse.class)
+public class DeleteNetworkCmd extends BaseAsyncCmd{
+    public static final Logger s_logger = Logger.getLogger(DeleteNetworkOfferingCmd.class.getName());
+    private static final String s_name = "deletenetworkresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="firewall_rules")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the network ACL")
+    @IdentityMapper(entityTableName="networks")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the network")
     private Long id;
 
-    // unexposed parameter needed for events logging
-    @IdentityMapper(entityTableName="account")
-    @Parameter(name=ApiConstants.ACCOUNT_ID, type=CommandType.LONG, expose=false)
-    private Long ownerId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -58,47 +54,25 @@ public class DeleteNetworkACLCmd extends BaseAsyncCmd {
         return id;
     }
 
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
+
     @Override
     public String getCommandName() {
         return s_name;
     }
 
     @Override
-    public String getEventType() {
-        return EventTypes.EVENT_FIREWALL_CLOSE;
-    }
-
-    @Override
-    public String getEventDescription() {
-        return  ("Deleting Network ACL id=" + id);
-    }
-
-    @Override
-    public long getEntityOwnerId() {
-        if (ownerId == null) {
-            FirewallRule rule = _networkACLService.getNetworkACL(id);
-            if (rule == null) {
-                throw new InvalidParameterValueException("Unable to find network ACL by id=" + id);
-            } else {
-                ownerId = rule.getAccountId();
-            }
-        }
-        return ownerId;
-    }
-
-    @Override
-    public void execute() throws ResourceUnavailableException {
-        UserContext.current().setEventDetails("Network ACL Id: " + id);
-        boolean result = _networkACLService.revokeNetworkACL(id, true);
-
+    public void execute(){
+        UserContext.current().setEventDetails("Network Id: " + id);
+        boolean result = _networkService.deleteNetwork(id);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete network ACL");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete network");
         }
     }
 
@@ -110,12 +84,26 @@ public class DeleteNetworkACLCmd extends BaseAsyncCmd {
 
     @Override
     public Long getSyncObjId() {
-        return _firewallService.getFirewallRule(id).getNetworkId();
+        return id;
     }
 
     @Override
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.FirewallRule;
+    public String getEventType() {
+        return EventTypes.EVENT_NETWORK_DELETE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "Deleting network: " + id;
+    }
+
+    @Override
+    public long getEntityOwnerId() {
+        Network network = _networkService.getNetwork(id);
+        if (network == null) {
+            throw new InvalidParameterValueException("Networkd id=" + id + " doesn't exist");
+        } else {
+            return _networkService.getNetwork(id).getAccountId();
+        }
     }
 }
-
