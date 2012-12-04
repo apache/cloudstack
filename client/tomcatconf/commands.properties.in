@@ -273,13 +273,13 @@ enableStorageMaintenance=com.cloud.api.commands.PreparePrimaryStorageForMaintena
 cancelStorageMaintenance=com.cloud.api.commands.CancelPrimaryStorageMaintenanceCmd;1
 
 #### security group commands
-createSecurityGroup=com.cloud.api.commands.CreateSecurityGroupCmd;15
-deleteSecurityGroup=com.cloud.api.commands.DeleteSecurityGroupCmd;15
-authorizeSecurityGroupIngress=com.cloud.api.commands.AuthorizeSecurityGroupIngressCmd;15
-revokeSecurityGroupIngress=com.cloud.api.commands.RevokeSecurityGroupIngressCmd;15
-authorizeSecurityGroupEgress=com.cloud.api.commands.AuthorizeSecurityGroupEgressCmd;15
-revokeSecurityGroupEgress=com.cloud.api.commands.RevokeSecurityGroupEgressCmd;15
-listSecurityGroups=com.cloud.api.commands.ListSecurityGroupsCmd;15
+createSecurityGroup=org.apache.cloudstack.api.user.sg.command.CreateSecurityGroupCmd;15
+deleteSecurityGroup=org.apache.cloudstack.api.user.sg.command.DeleteSecurityGroupCmd;15
+authorizeSecurityGroupIngress=org.apache.cloudstack.api.user.sg.command.AuthorizeSecurityGroupIngressCmd;15
+revokeSecurityGroupIngress=org.apache.cloudstack.api.user.sg.command.RevokeSecurityGroupIngressCmd;15
+authorizeSecurityGroupEgress=org.apache.cloudstack.api.user.sg.command.AuthorizeSecurityGroupEgressCmd;15
+revokeSecurityGroupEgress=org.apache.cloudstack.api.user.sg.command.RevokeSecurityGroupEgressCmd;15
+listSecurityGroups=org.apache.cloudstack.api.user.sg.command.ListSecurityGroupsCmd;15
 
 #### vm group commands
 createInstanceGroup=com.cloud.api.commands.CreateVMGroupCmd;15
