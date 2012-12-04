@@ -34,7 +34,7 @@ import org.apache.cloudstack.api.user.template.command.UpdateTemplateCmd;
 import org.apache.cloudstack.api.user.vm.command.GetVMPasswordCmd;
 import com.cloud.api.commands.ListAlertsCmd;
 import org.apache.cloudstack.api.user.job.command.ListAsyncJobsCmd;
-import com.cloud.api.commands.ListCapabilitiesCmd;
+import org.apache.cloudstack.api.user.configuration.command.ListCapabilitiesCmd;
 import com.cloud.api.commands.ListCapacityCmd;
 import com.cloud.api.commands.ListCfgsByCmd;
 import com.cloud.api.commands.ListClustersCmd;

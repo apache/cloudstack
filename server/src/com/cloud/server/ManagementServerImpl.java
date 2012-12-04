@@ -73,7 +73,7 @@ import com.cloud.api.commands.DestroySystemVmCmd;
 import com.cloud.api.commands.ExtractVolumeCmd;
 import org.apache.cloudstack.api.user.vm.command.GetVMPasswordCmd;
 import com.cloud.api.commands.ListAlertsCmd;
-import com.cloud.api.commands.ListCapabilitiesCmd;
+import org.apache.cloudstack.api.user.configuration.command.ListCapabilitiesCmd;
 import com.cloud.api.commands.ListCapacityCmd;
 import com.cloud.api.commands.ListCfgsByCmd;
 import com.cloud.api.commands.ListClustersCmd;
