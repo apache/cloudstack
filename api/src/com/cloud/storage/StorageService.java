@@ -21,11 +21,11 @@ import java.util.List;
 
 import com.cloud.api.commands.CancelPrimaryStorageMaintenanceCmd;
 import com.cloud.api.commands.CreateStoragePoolCmd;
-import com.cloud.api.commands.CreateVolumeCmd;
+import org.apache.cloudstack.api.user.volume.command.CreateVolumeCmd;
 import com.cloud.api.commands.DeletePoolCmd;
-import com.cloud.api.commands.ListVolumesCmd;
+import org.apache.cloudstack.api.user.volume.command.ListVolumesCmd;
 import com.cloud.api.commands.UpdateStoragePoolCmd;
-import com.cloud.api.commands.UploadVolumeCmd;
+import org.apache.cloudstack.api.user.volume.command.UploadVolumeCmd;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.PermissionDeniedException;

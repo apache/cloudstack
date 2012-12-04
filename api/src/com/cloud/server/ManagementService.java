@@ -32,7 +32,7 @@ import org.apache.cloudstack.api.user.offering.command.ListServiceOfferingsCmd;
 import org.apache.cloudstack.api.user.ssh.command.CreateSSHKeyPairCmd;
 import org.apache.cloudstack.api.user.ssh.command.DeleteSSHKeyPairCmd;
 import com.cloud.api.commands.DestroySystemVmCmd;
-import com.cloud.api.commands.ExtractVolumeCmd;
+import org.apache.cloudstack.api.user.volume.command.ExtractVolumeCmd;
 import org.apache.cloudstack.api.user.template.command.ListTemplatesCmd;
 import org.apache.cloudstack.api.user.template.command.UpdateTemplateCmd;
 import org.apache.cloudstack.api.user.vm.command.GetVMPasswordCmd;

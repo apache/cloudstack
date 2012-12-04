@@ -72,7 +72,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import org.apache.cloudstack.api.user.ssh.command.CreateSSHKeyPairCmd;
 import com.cloud.api.commands.DestroySystemVmCmd;
-import com.cloud.api.commands.ExtractVolumeCmd;
+import org.apache.cloudstack.api.user.volume.command.ExtractVolumeCmd;
 import org.apache.cloudstack.api.user.vm.command.GetVMPasswordCmd;
 import com.cloud.api.commands.ListAlertsCmd;
 import com.cloud.api.commands.ListCapacityCmd;

@@ -22,13 +22,13 @@ import java.util.Map;
 import javax.naming.InsufficientResourcesException;
 
 import org.apache.cloudstack.api.admin.vm.command.AssignVMCmd;
-import com.cloud.api.commands.AttachVolumeCmd;
+import org.apache.cloudstack.api.user.volume.command.AttachVolumeCmd;
 import org.apache.cloudstack.api.user.template.command.CreateTemplateCmd;
 import org.apache.cloudstack.api.user.vmgroup.command.CreateVMGroupCmd;
 import org.apache.cloudstack.api.user.vmgroup.command.DeleteVMGroupCmd;
 import org.apache.cloudstack.api.user.vm.command.DeployVMCmd;
 import org.apache.cloudstack.api.user.vm.command.DestroyVMCmd;
-import com.cloud.api.commands.DetachVolumeCmd;
+import org.apache.cloudstack.api.user.volume.command.DetachVolumeCmd;
 import org.apache.cloudstack.api.user.vm.command.ListVMsCmd;
 import org.apache.cloudstack.api.user.vm.command.RebootVMCmd;
 import org.apache.cloudstack.api.admin.vm.command.RecoverVMCmd;
