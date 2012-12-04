@@ -37,7 +37,7 @@ import org.apache.cloudstack.api.user.autoscale.command.CreateAutoScalePolicyCmd
 import org.apache.cloudstack.api.user.autoscale.command.CreateAutoScaleVmGroupCmd;
 import org.apache.cloudstack.api.user.autoscale.command.CreateAutoScaleVmProfileCmd;
 import org.apache.cloudstack.api.user.autoscale.command.CreateConditionCmd;
-import com.cloud.api.commands.CreateCounterCmd;
+import org.apache.cloudstack.api.admin.autoscale.command.CreateCounterCmd;
 import org.apache.cloudstack.api.user.vm.command.DeployVMCmd;
 import org.apache.cloudstack.api.user.autoscale.command.ListAutoScalePoliciesCmd;
 import org.apache.cloudstack.api.user.autoscale.command.ListAutoScaleVmGroupsCmd;

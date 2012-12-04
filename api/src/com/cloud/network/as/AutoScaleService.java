@@ -18,11 +18,11 @@ package com.cloud.network.as;
 
 import java.util.List;
 
+import org.apache.cloudstack.api.admin.autoscale.command.CreateCounterCmd;
 import org.apache.cloudstack.api.user.autoscale.command.CreateAutoScalePolicyCmd;
 import org.apache.cloudstack.api.user.autoscale.command.CreateAutoScaleVmGroupCmd;
 import org.apache.cloudstack.api.user.autoscale.command.CreateAutoScaleVmProfileCmd;
 import org.apache.cloudstack.api.user.autoscale.command.*;
-import com.cloud.api.commands.CreateCounterCmd;
 import org.apache.cloudstack.api.user.autoscale.command.ListAutoScalePoliciesCmd;
 import org.apache.cloudstack.api.user.autoscale.command.ListConditionsCmd;
 import org.apache.cloudstack.api.user.autoscale.command.UpdateAutoScaleVmGroupCmd;

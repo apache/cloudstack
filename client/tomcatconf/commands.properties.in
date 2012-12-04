@@ -154,12 +154,12 @@ listLoadBalancerRuleInstances=org.apache.cloudstack.api.user.lb.command.ListLoad
 updateLoadBalancerRule=org.apache.cloudstack.api.user.lb.command.UpdateLoadBalancerRuleCmd;15
 
 #### autoscale commands
-createCounter = com.cloud.api.commands.CreateCounterCmd;1
+createCounter = org.apache.cloudstack.api.admin.autoscale.command.CreateCounterCmd;1
 createCondition = org.apache.cloudstack.api.user.autoscale.command.CreateConditionCmd;15
 createAutoScalePolicy=org.apache.cloudstack.api.user.autoscale.command.CreateAutoScalePolicyCmd;15
 createAutoScaleVmProfile=org.apache.cloudstack.api.user.autoscale.command.CreateAutoScaleVmProfileCmd;15
 createAutoScaleVmGroup=org.apache.cloudstack.api.user.autoscale.command.CreateAutoScaleVmGroupCmd;15
-deleteCounter = com.cloud.api.commands.DeleteCounterCmd;1
+deleteCounter = org.apache.cloudstack.api.admin.autoscale.command.DeleteCounterCmd;1
 deleteCondition = org.apache.cloudstack.api.user.autoscale.command.DeleteConditionCmd;15
 deleteAutoScalePolicy=org.apache.cloudstack.api.user.autoscale.command.DeleteAutoScalePolicyCmd;15
 deleteAutoScaleVmProfile=org.apache.cloudstack.api.user.autoscale.command.DeleteAutoScaleVmProfileCmd;15
