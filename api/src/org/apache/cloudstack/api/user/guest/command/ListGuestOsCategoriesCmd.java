@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.user.guest.command;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,31 +27,27 @@ import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
-import com.cloud.api.response.GuestOSResponse;
+import com.cloud.api.response.GuestOSCategoryResponse;
 import com.cloud.api.response.ListResponse;
-import com.cloud.storage.GuestOS;
+import com.cloud.storage.GuestOsCategory;
 import com.cloud.utils.Pair;
 
-@Implementation(description="Lists all supported OS types for this cloud.", responseObject=GuestOSResponse.class)
-public class ListGuestOsCmd extends BaseListCmd {
+@Implementation(description="Lists all supported OS categories for this cloud.", responseObject=GuestOSCategoryResponse.class)
+public class ListGuestOsCategoriesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListIsosCmd.class.getName());
 
-    private static final String s_name = "listostypesresponse";
+    private static final String s_name = "listoscategoriesresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="guest_os")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list by Os type Id")
+    @IdentityMapper(entityTableName="guest_os_category")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list Os category by id")
     private Long id;
 
-    @IdentityMapper(entityTableName="guest_os_category")
-    @Parameter(name=ApiConstants.OS_CATEGORY_ID, type=CommandType.LONG, description="list by Os Category id")
-    private Long osCategoryId;
-
-    @Parameter(name=ApiConstants.DESCRIPTION, type=CommandType.STRING, description="list os by description", since="3.0.1")
-    private String description;
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="list os category by name", since="3.0.1")
+    private String name;
 
 
     /////////////////////////////////////////////////////
@@ -62,17 +58,14 @@ public class ListGuestOsCmd extends BaseListCmd {
         return id;
     }
 
-    public Long getOsCategoryId() {
-        return osCategoryId;
-    }
-
-    public String getDescription() {
-        return description;
+    public String getName() {
+        return name;
     }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
+
 
     @Override
     public String getCommandName() {
@@ -81,20 +74,19 @@ public class ListGuestOsCmd extends BaseListCmd {
 
     @Override
     public void execute(){
-        Pair<List<? extends GuestOS>, Integer> result = _mgr.listGuestOSByCriteria(this);
-        ListResponse<GuestOSResponse> response = new ListResponse<GuestOSResponse>();
-        List<GuestOSResponse> osResponses = new ArrayList<GuestOSResponse>();
-        for (GuestOS guestOS : result.first()) {
-            GuestOSResponse guestOSResponse = new GuestOSResponse();
-            guestOSResponse.setDescription(guestOS.getDisplayName());
-            guestOSResponse.setId(guestOS.getId());
-            guestOSResponse.setOsCategoryId(guestOS.getCategoryId());
+        Pair<List<? extends GuestOsCategory>, Integer> result = _mgr.listGuestOSCategoriesByCriteria(this);
+        ListResponse<GuestOSCategoryResponse> response = new ListResponse<GuestOSCategoryResponse>();
+        List<GuestOSCategoryResponse> osCatResponses = new ArrayList<GuestOSCategoryResponse>();
+        for (GuestOsCategory osCategory : result.first()) {
+            GuestOSCategoryResponse categoryResponse = new GuestOSCategoryResponse();
+            categoryResponse.setId(osCategory.getId());
+            categoryResponse.setName(osCategory.getName());
 
-            guestOSResponse.setObjectName("ostype");
-            osResponses.add(guestOSResponse);
+            categoryResponse.setObjectName("oscategory");
+            osCatResponses.add(categoryResponse);
         }
 
-        response.setResponses(osResponses, result.second());
+        response.setResponses(osCatResponses, result.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

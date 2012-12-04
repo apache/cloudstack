@@ -42,6 +42,8 @@ import java.util.concurrent.TimeUnit;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.apache.cloudstack.api.user.guest.command.ListGuestOsCategoriesCmd;
+import org.apache.cloudstack.api.user.guest.command.ListGuestOsCmd;
 import org.apache.cloudstack.api.user.iso.command.ListIsosCmd;
 import org.apache.cloudstack.api.user.job.command.ListAsyncJobsCmd;
 import org.apache.cloudstack.api.user.ssh.command.DeleteSSHKeyPairCmd;
@@ -76,8 +78,6 @@ import com.cloud.api.commands.ListCfgsByCmd;
 import com.cloud.api.commands.ListClustersCmd;
 import com.cloud.api.commands.ListDiskOfferingsCmd;
 import org.apache.cloudstack.api.user.event.command.ListEventsCmd;
-import com.cloud.api.commands.ListGuestOsCategoriesCmd;
-import com.cloud.api.commands.ListGuestOsCmd;
 import com.cloud.api.commands.ListHostsCmd;
 import com.cloud.api.commands.ListPodsByCmd;
 import com.cloud.api.commands.ListPublicIpAddressesCmd;

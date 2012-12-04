@@ -103,8 +103,8 @@ listIsoPermissions=org.apache.cloudstack.api.user.iso.command.ListIsoPermissions
 extractIso=org.apache.cloudstack.api.user.iso.command.ExtractIsoCmd;15
 
 #### guest OS commands
-listOsTypes=com.cloud.api.commands.ListGuestOsCmd;15
-listOsCategories=com.cloud.api.commands.ListGuestOsCategoriesCmd;15
+listOsTypes=org.apache.cloudstack.api.user.guest.command.ListGuestOsCmd;15
+listOsCategories=org.apache.cloudstack.api.user.guest.command.ListGuestOsCategoriesCmd;15
 
 #### service offering commands
 createServiceOffering=com.cloud.api.commands.CreateServiceOfferingCmd;1
@@ -226,7 +226,6 @@ listCapacity=com.cloud.api.commands.ListCapacityCmd;3
 #### swift commands^M
 addSwift=com.cloud.api.commands.AddSwiftCmd;1
 listSwifts=com.cloud.api.commands.ListSwiftsCmd;1
-
 
 #### host commands
 addHost=com.cloud.api.commands.AddHostCmd;3
