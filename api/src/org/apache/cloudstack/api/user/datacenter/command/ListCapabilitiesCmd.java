@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api.user.configuration.command;
+package org.apache.cloudstack.api.user.datacenter.command;
 
 import java.util.Map;
 
