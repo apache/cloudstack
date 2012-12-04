@@ -4155,10 +4155,10 @@
                         url: createURL('listZones'),
                         data: data,
                         success: function(json) {
-                          var zones = json.listzonesresponse.zone;													
-													var advZones = $.grep(zones, function(zone) {													  
-													  return zone.networktype == 'Advanced';
-													});		
+                          var zones = json.listzonesresponse.zone;
+                          var advZones = $.grep(zones, function(zone) {
+                            return zone.networktype == 'Advanced' && ! zone.securitygroupsenabled;
+                          });
                           args.response.success({
                             data: $.map(advZones, function(zone) {
                               return {
