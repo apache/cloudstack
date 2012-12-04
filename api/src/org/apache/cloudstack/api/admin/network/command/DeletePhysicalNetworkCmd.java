@@ -14,71 +14,45 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
-
-import java.util.List;
+package org.apache.cloudstack.api.admin.network.command;
 
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
-import com.cloud.api.response.PhysicalNetworkResponse;
+import org.apache.cloudstack.api.ServerApiException;
+import com.cloud.api.response.SuccessResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
-import com.cloud.network.PhysicalNetwork;
 import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 
-@Implementation(description="Updates a physical network", responseObject=PhysicalNetworkResponse.class, since="3.0.0")
-public class UpdatePhysicalNetworkCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdatePhysicalNetworkCmd.class.getName());
+@Implementation(description="Deletes a Physical Network.", responseObject=SuccessResponse.class, since="3.0.0")
+public class DeletePhysicalNetworkCmd extends BaseAsyncCmd {
+    public static final Logger s_logger = Logger.getLogger(DeletePhysicalNetworkCmd.class.getName());
 
-    private static final String s_name = "updatephysicalnetworkresponse";
+    private static final String s_name = "deletephysicalnetworkresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
     @IdentityMapper(entityTableName="physical_network")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="physical network id")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the Physical network")
     private Long id;
 
-    @Parameter(name=ApiConstants.NETWORK_SPEED, type=CommandType.STRING, description="the speed for the physical network[1G/10G]")
-    private String speed;
-
-    @Parameter(name=ApiConstants.TAGS, type=CommandType.LIST, collectionType=CommandType.STRING, description="Tag the physical network")
-    private List<String> tags;
-
-    @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="Enabled/Disabled")
-    private String state;
-
-    @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, description="the VLAN for the physical network")
-    private String vlan;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public List<String> getTags() {
-        return tags;
-    }
-
-    public String getNetworkSpeed() {
-        return speed;
-    }
-
-    public String getState() {
-        return state;
-    }
-
     public Long getId() {
         return id;
     }
 
-    public String getVlan() {
-        return vlan;
-    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -96,20 +70,25 @@ public class UpdatePhysicalNetworkCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        PhysicalNetwork result = _networkService.updatePhysicalNetwork(getId(),getNetworkSpeed(), getTags(), getVlan(), getState());
-        PhysicalNetworkResponse response = _responseGenerator.createPhysicalNetworkResponse(result);
-        response.setResponseName(getCommandName());
-        this.setResponseObject(response);
+        UserContext.current().setEventDetails("Physical Network Id: " + id);
+        boolean result = _networkService.deletePhysicalNetwork(getId());
+        if (result) {
+            SuccessResponse response = new SuccessResponse(getCommandName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete physical network");
+        }
     }
+
 
     @Override
     public String getEventDescription() {
-        return  "Updating Physical network: " + getId();
+        return  "Deleting Physical network: " + getId();
     }
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_PHYSICAL_NETWORK_UPDATE;
+        return EventTypes.EVENT_PHYSICAL_NETWORK_DELETE;
     }
 
     @Override

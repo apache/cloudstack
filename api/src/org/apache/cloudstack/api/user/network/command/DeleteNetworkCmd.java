@@ -16,7 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.user.network.command;
 
-import com.cloud.api.commands.DeleteNetworkOfferingCmd;
+import org.apache.cloudstack.api.admin.network.command.DeleteNetworkOfferingCmd;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;

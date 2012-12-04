@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.admin.network.command;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,8 +38,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
 @Implementation(description="List a storage network IP range.", responseObject=StorageNetworkIpRangeResponse.class, since="3.0.0")
-public class listStorageNetworkIpRangeCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(listStorageNetworkIpRangeCmd.class);
+public class ListStorageNetworkIpRangeCmd extends BaseListCmd {
+    public static final Logger s_logger = Logger.getLogger(ListStorageNetworkIpRangeCmd.class);
 
     String s_name = "liststoragenetworkiprangeresponse";
 

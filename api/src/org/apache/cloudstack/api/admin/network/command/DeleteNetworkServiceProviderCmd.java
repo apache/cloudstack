@@ -14,30 +14,36 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.admin.network.command;
 
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.async.AsyncJob;
+import com.cloud.event.EventTypes;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
-@Implementation(description="Deletes a network offering.", responseObject=SuccessResponse.class, since="3.0.0")
-public class DeleteNetworkOfferingCmd extends BaseCmd{
-    public static final Logger s_logger = Logger.getLogger(DeleteNetworkOfferingCmd.class.getName());
-    private static final String s_name = "deletenetworkofferingresponse";
+@Implementation(description="Deletes a Network Service Provider.", responseObject=SuccessResponse.class, since="3.0.0")
+public class DeleteNetworkServiceProviderCmd extends BaseAsyncCmd {
+    public static final Logger s_logger = Logger.getLogger(DeleteNetworkServiceProviderCmd.class.getName());
+
+    private static final String s_name = "deletenetworkserviceproviderresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="network_offerings")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the network offering")
+    @IdentityMapper(entityTableName="physical_network_service_providers")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the network service provider")
     private Long id;
 
 
@@ -66,12 +72,37 @@ public class DeleteNetworkOfferingCmd extends BaseCmd{
 
     @Override
     public void execute(){
-        boolean result = _configService.deleteNetworkOffering(this);
-        if (result) {
-            SuccessResponse response = new SuccessResponse(getCommandName());
-            this.setResponseObject(response);
-        } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete service offering");
+        try{
+            boolean result = _networkService.deleteNetworkServiceProvider(getId());
+            if (result) {
+                SuccessResponse response = new SuccessResponse(getCommandName());
+                this.setResponseObject(response);
+            } else {
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete network service provider");
+            }
+        } catch (ResourceUnavailableException ex) {
+            s_logger.warn("Exception: ", ex);
+            throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
+        }  catch (ConcurrentOperationException ex) {
+            s_logger.warn("Exception: ", ex);
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
         }
+    }
+
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_SERVICE_PROVIDER_DELETE;
+    }
+
+
+    @Override
+    public String getEventDescription() {
+        return  "Deleting Physical network ServiceProvider: " + getId();
+    }
+
+    @Override
+    public AsyncJob.Type getInstanceType() {
+        return AsyncJob.Type.PhysicalNetworkServiceProvider;
     }
 }

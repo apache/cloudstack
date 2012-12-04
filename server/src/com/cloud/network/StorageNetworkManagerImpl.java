@@ -25,12 +25,12 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.admin.network.command.ListStorageNetworkIpRangeCmd;
+import org.apache.cloudstack.api.admin.network.command.UpdateStorageNetworkIpRangeCmd;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.commands.CreateStorageNetworkIpRangeCmd;
-import com.cloud.api.commands.DeleteStorageNetworkIpRangeCmd;
-import com.cloud.api.commands.UpdateStorageNetworkIpRangeCmd;
-import com.cloud.api.commands.listStorageNetworkIpRangeCmd;
+import org.apache.cloudstack.api.admin.network.command.DeleteStorageNetworkIpRangeCmd;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.StorageNetworkIpRange;
 import com.cloud.dc.StorageNetworkIpAddressVO;
@@ -304,7 +304,7 @@ public class StorageNetworkManagerImpl implements StorageNetworkManager, Storage
 	}
 	
 	@Override
-    public List<StorageNetworkIpRange> listIpRange(listStorageNetworkIpRangeCmd cmd) {
+    public List<StorageNetworkIpRange> listIpRange(ListStorageNetworkIpRangeCmd cmd) {
 		Long rangeId = cmd.getRangeId();
 		Long podId = cmd.getPodId();
 		Long zoneId = cmd.getZoneId();

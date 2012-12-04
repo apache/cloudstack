@@ -302,9 +302,9 @@ removeVpnUser=org.apache.cloudstack.api.user.vpn.command.RemoveVpnUserCmd;15
 listVpnUsers=org.apache.cloudstack.api.user.vpn.command.ListVpnUsersCmd;15
 
 #### network offering commands
-createNetworkOffering=com.cloud.api.commands.CreateNetworkOfferingCmd;1
-updateNetworkOffering=com.cloud.api.commands.UpdateNetworkOfferingCmd;1
-deleteNetworkOffering=com.cloud.api.commands.DeleteNetworkOfferingCmd;1
+createNetworkOffering=org.apache.cloudstack.api.admin.network.command.CreateNetworkOfferingCmd;1
+updateNetworkOffering=org.apache.cloudstack.api.admin.network.command.UpdateNetworkOfferingCmd;1
+deleteNetworkOffering=org.apache.cloudstack.api.admin.network.command.DeleteNetworkOfferingCmd;1
 listNetworkOfferings=org.apache.cloudstack.api.user.network.command.ListNetworkOfferingsCmd;15
 
 #### network commands
@@ -345,16 +345,16 @@ listHypervisorCapabilities=com.cloud.api.commands.ListHypervisorCapabilitiesCmd;
 
 #### Physical Network commands
 createPhysicalNetwork=com.cloud.api.commands.CreatePhysicalNetworkCmd;1
-deletePhysicalNetwork=com.cloud.api.commands.DeletePhysicalNetworkCmd;1
-listPhysicalNetworks=com.cloud.api.commands.ListPhysicalNetworksCmd;1
-updatePhysicalNetwork=com.cloud.api.commands.UpdatePhysicalNetworkCmd;1
+deletePhysicalNetwork=org.apache.cloudstack.api.admin.network.command.DeletePhysicalNetworkCmd;1
+listPhysicalNetworks=org.apache.cloudstack.api.admin.network.command.ListPhysicalNetworksCmd;1
+updatePhysicalNetwork=org.apache.cloudstack.api.admin.network.command.UpdatePhysicalNetworkCmd;1
 
 #### Physical Network Service Provider commands
-listSupportedNetworkServices=com.cloud.api.commands.ListSupportedNetworkServicesCmd;1
-addNetworkServiceProvider=com.cloud.api.commands.AddNetworkServiceProviderCmd;1
-deleteNetworkServiceProvider=com.cloud.api.commands.DeleteNetworkServiceProviderCmd;1
-listNetworkServiceProviders=com.cloud.api.commands.ListNetworkServiceProvidersCmd;1
-updateNetworkServiceProvider=com.cloud.api.commands.UpdateNetworkServiceProviderCmd;1
+listSupportedNetworkServices=org.apache.cloudstack.api.admin.network.command.ListSupportedNetworkServicesCmd;1
+addNetworkServiceProvider=org.apache.cloudstack.api.admin.network.command.AddNetworkServiceProviderCmd;1
+deleteNetworkServiceProvider=org.apache.cloudstack.api.admin.network.command.DeleteNetworkServiceProviderCmd;1
+listNetworkServiceProviders=org.apache.cloudstack.api.admin.network.command.ListNetworkServiceProvidersCmd;1
+updateNetworkServiceProvider=org.apache.cloudstack.api.admin.network.command.UpdateNetworkServiceProviderCmd;1
 
 #### Physical Network Traffic Type commands
 addTrafficType=com.cloud.api.commands.AddTrafficTypeCmd;1
@@ -365,9 +365,9 @@ listTrafficTypeImplementors=com.cloud.api.commands.ListTrafficTypeImplementorsCm
 
 #### Storage Network commands
 createStorageNetworkIpRange=com.cloud.api.commands.CreateStorageNetworkIpRangeCmd;1
-deleteStorageNetworkIpRange=com.cloud.api.commands.DeleteStorageNetworkIpRangeCmd;1
-listStorageNetworkIpRange=com.cloud.api.commands.listStorageNetworkIpRangeCmd;1
-updateStorageNetworkIpRange=com.cloud.api.commands.UpdateStorageNetworkIpRangeCmd;1
+deleteStorageNetworkIpRange=org.apache.cloudstack.api.admin.network.command.DeleteStorageNetworkIpRangeCmd;1
+listStorageNetworkIpRange=org.apache.cloudstack.api.admin.network.command.ListStorageNetworkIpRangeCmd;1
+updateStorageNetworkIpRange=org.apache.cloudstack.api.admin.network.command.UpdateStorageNetworkIpRangeCmd;1
 
 ### Network Devices commands
 addNetworkDevice=com.cloud.api.commands.AddNetworkDeviceCmd;1

@@ -20,9 +20,9 @@ import java.sql.SQLException;
 import java.util.List;
 
 import com.cloud.api.commands.CreateStorageNetworkIpRangeCmd;
-import com.cloud.api.commands.DeleteStorageNetworkIpRangeCmd;
-import com.cloud.api.commands.UpdateStorageNetworkIpRangeCmd;
-import com.cloud.api.commands.listStorageNetworkIpRangeCmd;
+import org.apache.cloudstack.api.admin.network.command.DeleteStorageNetworkIpRangeCmd;
+import org.apache.cloudstack.api.admin.network.command.UpdateStorageNetworkIpRangeCmd;
+import org.apache.cloudstack.api.admin.network.command.ListStorageNetworkIpRangeCmd;
 import com.cloud.dc.StorageNetworkIpRange;
 
 public interface StorageNetworkService {
@@ -30,7 +30,7 @@ public interface StorageNetworkService {
 
     void deleteIpRange(DeleteStorageNetworkIpRangeCmd cmd);
 
-    List<StorageNetworkIpRange> listIpRange(listStorageNetworkIpRangeCmd cmd);
+    List<StorageNetworkIpRange> listIpRange(ListStorageNetworkIpRangeCmd cmd);
 
     StorageNetworkIpRange updateIpRange(UpdateStorageNetworkIpRangeCmd cmd);
 }

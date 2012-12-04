@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.admin.network.command;
 
 import java.util.List;
 
@@ -22,51 +22,64 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
-import com.cloud.api.response.ProviderResponse;
+import com.cloud.api.response.PhysicalNetworkResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
-import com.cloud.network.PhysicalNetworkServiceProvider;
+import com.cloud.network.PhysicalNetwork;
 import com.cloud.user.Account;
 
-@Implementation(description="Updates a network serviceProvider of a physical network", responseObject=ProviderResponse.class, since="3.0.0")
-public class UpdateNetworkServiceProviderCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdateNetworkServiceProviderCmd.class.getName());
+@Implementation(description="Updates a physical network", responseObject=PhysicalNetworkResponse.class, since="3.0.0")
+public class UpdatePhysicalNetworkCmd extends BaseAsyncCmd {
+    public static final Logger s_logger = Logger.getLogger(UpdatePhysicalNetworkCmd.class.getName());
 
-    private static final String s_name = "updatenetworkserviceproviderresponse";
+    private static final String s_name = "updatephysicalnetworkresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="Enabled/Disabled/Shutdown the physical network service provider")
-    private String state;
-
-    @IdentityMapper(entityTableName="physical_network_service_providers")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="network service provider id")
+    @IdentityMapper(entityTableName="physical_network")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="physical network id")
     private Long id;
 
-    @Parameter(name=ApiConstants.SERVICE_LIST, type=CommandType.LIST, collectionType = CommandType.STRING, description="the list of services to be enabled for this physical network service provider")
-    private List<String> enabledServices;
+    @Parameter(name=ApiConstants.NETWORK_SPEED, type=CommandType.STRING, description="the speed for the physical network[1G/10G]")
+    private String speed;
+
+    @Parameter(name=ApiConstants.TAGS, type=CommandType.LIST, collectionType=CommandType.STRING, description="Tag the physical network")
+    private List<String> tags;
+
+    @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="Enabled/Disabled")
+    private String state;
+
+    @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, description="the VLAN for the physical network")
+    private String vlan;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
+    public List<String> getTags() {
+        return tags;
+    }
+
+    public String getNetworkSpeed() {
+        return speed;
+    }
+
     public String getState() {
         return state;
     }
 
-    private Long getId() {
+    public Long getId() {
         return id;
     }
 
-    public List<String> getEnabledServices() {
-        return enabledServices;
+    public String getVlan() {
+        return vlan;
     }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -83,29 +96,24 @@ public class UpdateNetworkServiceProviderCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        PhysicalNetworkServiceProvider result = _networkService.updateNetworkServiceProvider(getId(), getState(), getEnabledServices());
-        if (result != null) {
-            ProviderResponse response = _responseGenerator.createNetworkServiceProviderResponse(result);
-            response.setResponseName(getCommandName());
-            this.setResponseObject(response);
-        }else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update service provider");
-        }
-    }
-
-    @Override
-    public String getEventType() {
-        return EventTypes.EVENT_SERVICE_PROVIDER_UPDATE;
+        PhysicalNetwork result = _networkService.updatePhysicalNetwork(getId(),getNetworkSpeed(), getTags(), getVlan(), getState());
+        PhysicalNetworkResponse response = _responseGenerator.createPhysicalNetworkResponse(result);
+        response.setResponseName(getCommandName());
+        this.setResponseObject(response);
     }
 
     @Override
     public String getEventDescription() {
-        return  "Updating physical network ServiceProvider: " + getId();
+        return  "Updating Physical network: " + getId();
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_PHYSICAL_NETWORK_UPDATE;
     }
 
     @Override
     public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.PhysicalNetworkServiceProvider;
+        return AsyncJob.Type.PhysicalNetwork;
     }
-
 }

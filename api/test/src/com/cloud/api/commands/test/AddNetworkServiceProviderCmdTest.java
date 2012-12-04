@@ -22,6 +22,7 @@ import java.util.List;
 import junit.framework.Assert;
 import junit.framework.TestCase;
 
+import org.apache.cloudstack.api.admin.network.command.AddNetworkServiceProviderCmd;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -29,7 +30,6 @@ import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
 
 import org.apache.cloudstack.api.ServerApiException;
-import com.cloud.api.commands.AddNetworkServiceProviderCmd;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.NetworkService;
 import com.cloud.network.PhysicalNetworkServiceProvider;
