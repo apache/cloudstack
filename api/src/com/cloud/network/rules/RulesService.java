@@ -18,7 +18,7 @@ package com.cloud.network.rules;
 
 import java.util.List;
 
-import com.cloud.api.commands.ListPortForwardingRulesCmd;
+import org.apache.cloudstack.api.user.firewall.command.ListPortForwardingRulesCmd;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;

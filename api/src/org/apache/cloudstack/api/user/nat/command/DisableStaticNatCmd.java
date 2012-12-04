@@ -16,7 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.user.nat.command;
 
-import com.cloud.api.commands.DeletePortForwardingRuleCmd;
+import org.apache.cloudstack.api.user.firewall.command.DeletePortForwardingRuleCmd;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;

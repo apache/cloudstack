@@ -26,9 +26,9 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.user.firewall.command.ListFirewallRulesCmd;
 import org.apache.log4j.Logger;
 
-import com.cloud.api.commands.ListFirewallRulesCmd;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.domain.dao.DomainDao;

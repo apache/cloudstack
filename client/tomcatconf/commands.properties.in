@@ -129,9 +129,9 @@ disassociateIpAddress=org.apache.cloudstack.api.user.address.command.Disassociat
 listPublicIpAddresses=org.apache.cloudstack.api.user.address.command.ListPublicIpAddressesCmd;15
 
 #### firewall commands
-listPortForwardingRules=com.cloud.api.commands.ListPortForwardingRulesCmd;15
-createPortForwardingRule=com.cloud.api.commands.CreatePortForwardingRuleCmd;15
-deletePortForwardingRule=com.cloud.api.commands.DeletePortForwardingRuleCmd;15
+listPortForwardingRules=org.apache.cloudstack.api.user.firewall.command.ListPortForwardingRulesCmd;15
+createPortForwardingRule=org.apache.cloudstack.api.user.firewall.command.CreatePortForwardingRuleCmd;15
+deletePortForwardingRule=org.apache.cloudstack.api.user.firewall.command.DeletePortForwardingRuleCmd;15
 #### updatePortForwardingRule=com.cloud.api.commands.UpdatePortForwardingRuleCmd;15
 
 #### NAT commands
@@ -335,9 +335,9 @@ updateProjectInvitation=org.apache.cloudstack.api.user.project.command.UpdatePro
 deleteProjectInvitation=org.apache.cloudstack.api.user.project.command.DeleteProjectInvitationCmd;15
 
 #### 
-createFirewallRule=com.cloud.api.commands.CreateFirewallRuleCmd;15
-deleteFirewallRule=com.cloud.api.commands.DeleteFirewallRuleCmd;15
-listFirewallRules=com.cloud.api.commands.ListFirewallRulesCmd;15
+createFirewallRule=org.apache.cloudstack.api.user.firewall.command.CreateFirewallRuleCmd;15
+deleteFirewallRule=org.apache.cloudstack.api.user.firewall.command.DeleteFirewallRuleCmd;15
+listFirewallRules=org.apache.cloudstack.api.user.firewall.command.ListFirewallRulesCmd;15
 
 #### hypervisor capabilities commands
 updateHypervisorCapabilities=com.cloud.api.commands.UpdateHypervisorCapabilitiesCmd;1

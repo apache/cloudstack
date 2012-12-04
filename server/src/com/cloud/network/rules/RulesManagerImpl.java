@@ -27,7 +27,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.commands.ListPortForwardingRulesCmd;
+import org.apache.cloudstack.api.user.firewall.command.ListPortForwardingRulesCmd;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;

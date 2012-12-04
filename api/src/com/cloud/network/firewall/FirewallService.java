@@ -19,7 +19,7 @@ package com.cloud.network.firewall;
 
 import java.util.List;
 
-import com.cloud.api.commands.ListFirewallRulesCmd;
+import org.apache.cloudstack.api.user.firewall.command.ListFirewallRulesCmd;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.rules.FirewallRule;

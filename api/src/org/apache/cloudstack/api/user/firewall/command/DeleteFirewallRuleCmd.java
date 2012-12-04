@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.user.firewall.command;
 
 import org.apache.log4j.Logger;
 
@@ -29,20 +29,21 @@ import com.cloud.api.response.SuccessResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.network.rules.PortForwardingRule;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Deletes a port forwarding rule", responseObject=SuccessResponse.class)
-public class DeletePortForwardingRuleCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DeletePortForwardingRuleCmd.class.getName());
-    private static final String s_name = "deleteportforwardingruleresponse";
+@Implementation(description="Deletes a firewall rule", responseObject=SuccessResponse.class)
+public class DeleteFirewallRuleCmd extends BaseAsyncCmd {
+    public static final Logger s_logger = Logger.getLogger(DeleteFirewallRuleCmd.class.getName());
+    private static final String s_name = "deletefirewallruleresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
     @IdentityMapper(entityTableName="firewall_rules")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the port forwarding rule")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the firewall rule")
     private Long id;
 
     // unexposed parameter needed for events logging
@@ -67,40 +68,37 @@ public class DeletePortForwardingRuleCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_NET_RULE_DELETE;
+        return EventTypes.EVENT_FIREWALL_CLOSE;
     }
 
     @Override
     public String getEventDescription() {
-        return  ("Deleting port forwarding rule for id=" + id);
+        return  ("Deleting firewall rule id=" + id);
     }
 
     @Override
     public long getEntityOwnerId() {
         if (ownerId == null) {
-            PortForwardingRule rule = _entityMgr.findById(PortForwardingRule.class, id);
+            FirewallRule rule = _entityMgr.findById(FirewallRule.class, id);
             if (rule == null) {
-                throw new InvalidParameterValueException("Unable to find port forwarding rule by id=" + id);
+                throw new InvalidParameterValueException("Unable to find firewall rule by id=" + id);
             } else {
-                ownerId = _entityMgr.findById(PortForwardingRule.class, id).getAccountId();
+                ownerId = _entityMgr.findById(FirewallRule.class, id).getAccountId();
             }
-
         }
         return ownerId;
     }
 
     @Override
-    public void execute(){
-        UserContext.current().setEventDetails("Rule Id: "+id);
-        //revoke corresponding firewall rule first
-        boolean result  = _firewallService.revokeRelatedFirewallRule(id, true);
-        result = result &&  _rulesService.revokePortForwardingRule(id, true);
+    public void execute() throws ResourceUnavailableException {
+        UserContext.current().setEventDetails("Rule Id: " + id);
+        boolean result = _firewallService.revokeFirewallRule(id, true);
 
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete port forwarding rule");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete firewall rule");
         }
     }
 
@@ -112,7 +110,7 @@ public class DeletePortForwardingRuleCmd extends BaseAsyncCmd {
 
     @Override
     public Long getSyncObjId() {
-        return _rulesService.getPortForwardigRule(id).getNetworkId();
+        return _firewallService.getFirewallRule(id).getNetworkId();
     }
 
     @Override
