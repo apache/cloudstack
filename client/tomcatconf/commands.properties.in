@@ -214,8 +214,8 @@ deleteZone=com.cloud.api.commands.DeleteZoneCmd;1
 listZones=com.cloud.api.commands.ListZonesByCmd;15
 
 #### events commands
-listEvents=com.cloud.api.commands.ListEventsCmd;15
-listEventTypes=com.cloud.api.commands.ListEventTypesCmd;15
+listEvents=org.apache.cloudstack.api.user.event.command.ListEventsCmd;15
+listEventTypes=org.apache.cloudstack.api.user.event.command.ListEventTypesCmd;15
 
 #### alerts commands
 listAlerts=com.cloud.api.commands.ListAlertsCmd;3
