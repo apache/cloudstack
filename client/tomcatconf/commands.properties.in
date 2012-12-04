@@ -80,7 +80,7 @@ listSnapshotPolicies=org.apache.cloudstack.api.user.snapshot.command.ListSnapsho
 
 #### template commands
 createTemplate=org.apache.cloudstack.api.user.template.command.CreateTemplateCmd;15
-registerTemplate=com.cloud.api.commands.RegisterTemplateCmd;15
+registerTemplate=org.apache.cloudstack.api.user.template.command.RegisterTemplateCmd;15
 updateTemplate=org.apache.cloudstack.api.user.template.command.UpdateTemplateCmd;15
 copyTemplate=org.apache.cloudstack.api.user.template.command.CopyTemplateCmd;15
 deleteTemplate=org.apache.cloudstack.api.user.template.command.DeleteTemplateCmd;15
@@ -94,7 +94,7 @@ prepareTemplate=com.cloud.api.commands.PrepareTemplateCmd;1
 attachIso=org.apache.cloudstack.api.user.iso.command.AttachIsoCmd;15
 detachIso=org.apache.cloudstack.api.user.iso.command.DetachIsoCmd;15
 listIsos=org.apache.cloudstack.api.user.iso.command.ListIsosCmd;15
-registerIso=com.cloud.api.commands.RegisterIsoCmd;15
+registerIso=org.apache.cloudstack.api.user.iso.command.RegisterIsoCmd;15
 updateIso=org.apache.cloudstack.api.user.iso.command.UpdateIsoCmd;15
 deleteIso=org.apache.cloudstack.api.user.iso.command.DeleteIsoCmd;15
 copyIso=org.apache.cloudstack.api.user.template.command.CopyTemplateCmd;15
@@ -316,7 +316,7 @@ restartNetwork=org.apache.cloudstack.api.user.network.command.RestartNetworkCmd;
 updateNetwork=org.apache.cloudstack.api.user.network.command.UpdateNetworkCmd;15
 
 #### SSH key pair commands
-registerSSHKeyPair=com.cloud.api.commands.RegisterSSHKeyPairCmd;15
+registerSSHKeyPair=org.apache.cloudstack.api.user.ssh.command.RegisterSSHKeyPairCmd;15
 createSSHKeyPair=org.apache.cloudstack.api.user.ssh.command.CreateSSHKeyPairCmd;15
 deleteSSHKeyPair=org.apache.cloudstack.api.user.ssh.command.DeleteSSHKeyPairCmd;15
 listSSHKeyPairs=org.apache.cloudstack.api.user.ssh.command.ListSSHKeyPairsCmd;15

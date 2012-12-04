@@ -44,6 +44,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 import org.apache.cloudstack.api.user.iso.command.ListIsosCmd;
 import org.apache.cloudstack.api.user.ssh.command.DeleteSSHKeyPairCmd;
+import org.apache.cloudstack.api.user.ssh.command.RegisterSSHKeyPairCmd;
 import org.apache.cloudstack.api.user.template.command.ListTemplatesCmd;
 import org.apache.cloudstack.api.user.template.command.UpdateTemplateCmd;
 import org.apache.cloudstack.api.user.vmgroup.command.ListVMGroupsCmd;
@@ -88,7 +89,6 @@ import com.cloud.api.commands.ListSystemVMsCmd;
 import com.cloud.api.commands.ListVlanIpRangesCmd;
 import com.cloud.api.commands.ListZonesByCmd;
 import com.cloud.api.commands.RebootSystemVmCmd;
-import com.cloud.api.commands.RegisterSSHKeyPairCmd;
 import com.cloud.api.commands.StopSystemVmCmd;
 import com.cloud.api.commands.UpdateDomainCmd;
 import com.cloud.api.commands.UpdateHostPasswordCmd;

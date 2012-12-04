@@ -26,14 +26,14 @@ import java.util.List;
 import javax.ejb.Local;
 
 import org.apache.cloudstack.api.user.iso.command.DeleteIsoCmd;
+import org.apache.cloudstack.api.user.iso.command.RegisterIsoCmd;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.DeleteTemplateCommand;
 import org.apache.cloudstack.api.user.template.command.DeleteTemplateCmd;
-import com.cloud.api.commands.RegisterIsoCmd;
-import com.cloud.api.commands.RegisterTemplateCmd;
+import org.apache.cloudstack.api.user.template.command.RegisterTemplateCmd;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.event.EventTypes;

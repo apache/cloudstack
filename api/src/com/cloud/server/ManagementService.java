@@ -54,7 +54,7 @@ import org.apache.cloudstack.api.user.vmgroup.command.ListVMGroupsCmd;
 import com.cloud.api.commands.ListVlanIpRangesCmd;
 import com.cloud.api.commands.ListZonesByCmd;
 import com.cloud.api.commands.RebootSystemVmCmd;
-import com.cloud.api.commands.RegisterSSHKeyPairCmd;
+import org.apache.cloudstack.api.user.ssh.command.RegisterSSHKeyPairCmd;
 import com.cloud.api.commands.StopSystemVmCmd;
 import com.cloud.api.commands.UpdateDomainCmd;
 import com.cloud.api.commands.UpdateHostPasswordCmd;

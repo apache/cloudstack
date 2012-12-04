@@ -19,14 +19,14 @@ package com.cloud.template;
 import java.net.URISyntaxException;
 import java.util.List;
 
+import org.apache.cloudstack.api.user.iso.command.RegisterIsoCmd;
 import org.apache.cloudstack.api.user.template.command.CopyTemplateCmd;
 import org.apache.cloudstack.api.user.iso.command.DeleteIsoCmd;
 import org.apache.cloudstack.api.user.template.command.DeleteTemplateCmd;
 import org.apache.cloudstack.api.user.iso.command.ExtractIsoCmd;
 import org.apache.cloudstack.api.user.template.command.ExtractTemplateCmd;
 import com.cloud.api.commands.ListTemplateOrIsoPermissionsCmd;
-import com.cloud.api.commands.RegisterIsoCmd;
-import com.cloud.api.commands.RegisterTemplateCmd;
+import org.apache.cloudstack.api.user.template.command.RegisterTemplateCmd;
 import com.cloud.api.commands.UpdateTemplateOrIsoPermissionsCmd;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.ResourceAllocationException;
