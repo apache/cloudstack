@@ -26,7 +26,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.commands.ListTagsCmd;
+import org.apache.cloudstack.api.user.tag.command.ListTagsCmd;
 import com.cloud.domain.Domain;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;

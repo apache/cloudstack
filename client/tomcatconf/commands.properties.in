@@ -409,9 +409,9 @@ deleteStaticRoute=org.apache.cloudstack.api.user.vpc.command.DeleteStaticRouteCm
 listStaticRoutes=org.apache.cloudstack.api.user.vpc.command.ListStaticRoutesCmd;15
 
 #### Tags commands
-createTags=com.cloud.api.commands.CreateTagsCmd;15
-deleteTags=com.cloud.api.commands.DeleteTagsCmd;15
-listTags=com.cloud.api.commands.ListTagsCmd;15
+createTags=org.apache.cloudstack.api.user.tag.command.CreateTagsCmd;15
+deleteTags=org.apache.cloudstack.api.user.tag.command.DeleteTagsCmd;15
+listTags=org.apache.cloudstack.api.user.tag.command.ListTagsCmd;15
 
 ### Site-to-site VPN commands
 createVpnCustomerGateway=org.apache.cloudstack.api.user.vpn.command.CreateVpnCustomerGatewayCmd;15
