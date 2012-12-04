@@ -25,6 +25,7 @@ import java.util.concurrent.Executors;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.user.template.command.CreateTemplateCmd;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -33,7 +34,6 @@ import com.cloud.agent.api.baremetal.IpmISetBootDevCommand;
 import com.cloud.agent.api.baremetal.IpmiBootorResetCommand;
 import com.cloud.agent.manager.Commands;
 import com.cloud.api.commands.AttachVolumeCmd;
-import com.cloud.api.commands.CreateTemplateCmd;
 import org.apache.cloudstack.api.user.vm.command.DeployVMCmd;
 import com.cloud.api.commands.DetachVolumeCmd;
 import org.apache.cloudstack.api.user.vm.command.StartVMCmd;

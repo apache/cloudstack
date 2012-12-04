@@ -36,6 +36,9 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.user.iso.command.*;
 import org.apache.cloudstack.api.user.template.command.CopyTemplateCmd;
+import org.apache.cloudstack.api.user.template.command.ExtractTemplateCmd;
+import org.apache.cloudstack.api.user.template.command.ListTemplatePermissionsCmd;
+import org.apache.cloudstack.api.user.template.command.UpdateTemplatePermissionsCmd;
 import org.apache.log4j.Logger;
 
 import com.cloud.acl.SecurityChecker.AccessType;
@@ -47,14 +50,11 @@ import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.to.SwiftTO;
-import com.cloud.api.commands.DeleteTemplateCmd;
-import com.cloud.api.commands.ExtractTemplateCmd;
+import org.apache.cloudstack.api.user.template.command.DeleteTemplateCmd;
 import com.cloud.api.commands.ListTemplateOrIsoPermissionsCmd;
-import com.cloud.api.commands.ListTemplatePermissionsCmd;
 import com.cloud.api.commands.RegisterIsoCmd;
 import com.cloud.api.commands.RegisterTemplateCmd;
 import com.cloud.api.commands.UpdateTemplateOrIsoPermissionsCmd;
-import com.cloud.api.commands.UpdateTemplatePermissionsCmd;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.configuration.Config;

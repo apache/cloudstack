@@ -19,7 +19,7 @@ package com.cloud.template;
 import java.util.Map;
 
 import org.apache.cloudstack.api.user.iso.command.DeleteIsoCmd;
-import com.cloud.api.commands.DeleteTemplateCmd;
+import org.apache.cloudstack.api.user.template.command.DeleteTemplateCmd;
 import com.cloud.api.commands.RegisterIsoCmd;
 import com.cloud.api.commands.RegisterTemplateCmd;
 import com.cloud.exception.ResourceAllocationException;

@@ -26,7 +26,7 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import org.apache.cloudstack.api.user.iso.command.DeleteIsoCmd;
-import com.cloud.api.commands.DeleteTemplateCmd;
+import org.apache.cloudstack.api.user.template.command.DeleteTemplateCmd;
 import com.cloud.api.commands.RegisterIsoCmd;
 import com.cloud.api.commands.RegisterTemplateCmd;
 import com.cloud.configuration.Resource.ResourceType;

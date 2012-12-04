@@ -23,7 +23,7 @@ import javax.naming.InsufficientResourcesException;
 
 import org.apache.cloudstack.api.admin.vm.command.AssignVMCmd;
 import com.cloud.api.commands.AttachVolumeCmd;
-import com.cloud.api.commands.CreateTemplateCmd;
+import org.apache.cloudstack.api.user.template.command.CreateTemplateCmd;
 import com.cloud.api.commands.CreateVMGroupCmd;
 import com.cloud.api.commands.DeleteVMGroupCmd;
 import org.apache.cloudstack.api.user.vm.command.DeployVMCmd;

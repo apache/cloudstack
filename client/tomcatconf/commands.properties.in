@@ -79,15 +79,15 @@ listSnapshotPolicies=com.cloud.api.commands.ListSnapshotPoliciesCmd;15
 
 
 #### template commands
-createTemplate=com.cloud.api.commands.CreateTemplateCmd;15
+createTemplate=org.apache.cloudstack.api.user.template.command.CreateTemplateCmd;15
 registerTemplate=com.cloud.api.commands.RegisterTemplateCmd;15
-updateTemplate=com.cloud.api.commands.UpdateTemplateCmd;15
+updateTemplate=org.apache.cloudstack.api.user.template.command.UpdateTemplateCmd;15
 copyTemplate=org.apache.cloudstack.api.user.template.command.CopyTemplateCmd;15
-deleteTemplate=com.cloud.api.commands.DeleteTemplateCmd;15
-listTemplates=com.cloud.api.commands.ListTemplatesCmd;15
-updateTemplatePermissions=com.cloud.api.commands.UpdateTemplatePermissionsCmd;15
-listTemplatePermissions=com.cloud.api.commands.ListTemplatePermissionsCmd;15
-extractTemplate=com.cloud.api.commands.ExtractTemplateCmd;15
+deleteTemplate=org.apache.cloudstack.api.user.template.command.DeleteTemplateCmd;15
+listTemplates=org.apache.cloudstack.api.user.template.command.ListTemplatesCmd;15
+updateTemplatePermissions=org.apache.cloudstack.api.user.template.command.UpdateTemplatePermissionsCmd;15
+listTemplatePermissions=org.apache.cloudstack.api.user.template.command.ListTemplatePermissionsCmd;15
+extractTemplate=org.apache.cloudstack.api.user.template.command.ExtractTemplateCmd;15
 prepareTemplate=com.cloud.api.commands.PrepareTemplateCmd;1
 
 #### iso commands

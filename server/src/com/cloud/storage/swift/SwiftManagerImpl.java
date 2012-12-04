@@ -26,6 +26,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.user.iso.command.DeleteIsoCmd;
+import org.apache.cloudstack.api.user.template.command.DeleteTemplateCmd;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -33,7 +34,6 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.DeleteObjectFromSwiftCommand;
 import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.api.commands.AddSwiftCmd;
-import com.cloud.api.commands.DeleteTemplateCmd;
 import com.cloud.api.commands.ListSwiftsCmd;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;

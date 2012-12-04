@@ -21,9 +21,9 @@ import java.util.List;
 
 import org.apache.cloudstack.api.user.template.command.CopyTemplateCmd;
 import org.apache.cloudstack.api.user.iso.command.DeleteIsoCmd;
-import com.cloud.api.commands.DeleteTemplateCmd;
+import org.apache.cloudstack.api.user.template.command.DeleteTemplateCmd;
 import org.apache.cloudstack.api.user.iso.command.ExtractIsoCmd;
-import com.cloud.api.commands.ExtractTemplateCmd;
+import org.apache.cloudstack.api.user.template.command.ExtractTemplateCmd;
 import com.cloud.api.commands.ListTemplateOrIsoPermissionsCmd;
 import com.cloud.api.commands.RegisterIsoCmd;
 import com.cloud.api.commands.RegisterTemplateCmd;

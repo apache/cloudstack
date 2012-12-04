@@ -39,7 +39,7 @@ import com.cloud.agent.api.storage.UploadAnswer;
 import com.cloud.agent.api.storage.UploadCommand;
 import com.cloud.agent.api.storage.UploadProgressCommand;
 import com.cloud.agent.api.storage.UploadProgressCommand.RequestType;
-import com.cloud.api.commands.ExtractTemplateCmd;
+import org.apache.cloudstack.api.user.template.command.ExtractTemplateCmd;
 import com.cloud.api.commands.ExtractVolumeCmd;
 import com.cloud.api.response.ExtractResponse;
 import com.cloud.async.AsyncJobManager;

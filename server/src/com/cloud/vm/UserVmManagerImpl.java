@@ -31,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.user.template.command.CreateTemplateCmd;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
@@ -60,7 +61,6 @@ import com.cloud.api.ApiDBUtils;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.admin.vm.command.AssignVMCmd;
 import com.cloud.api.commands.AttachVolumeCmd;
-import com.cloud.api.commands.CreateTemplateCmd;
 import com.cloud.api.commands.CreateVMGroupCmd;
 import com.cloud.api.commands.DeleteVMGroupCmd;
 import org.apache.cloudstack.api.user.vm.command.DeployVMCmd;
