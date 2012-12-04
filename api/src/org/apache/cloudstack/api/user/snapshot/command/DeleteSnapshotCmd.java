@@ -14,38 +14,36 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
-
-import java.util.List;
+package org.apache.cloudstack.api.user.snapshot.command;
 
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.async.AsyncJob;
+import com.cloud.event.EventTypes;
+import com.cloud.storage.Snapshot;
 import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 
-@Implementation(description="Deletes snapshot policies for the account.", responseObject=SuccessResponse.class)
-public class DeleteSnapshotPoliciesCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteSnapshotPoliciesCmd.class.getName());
-
-    private static final String s_name = "deletesnapshotpoliciesresponse";
+@Implementation(description="Deletes a snapshot of a disk volume.", responseObject=SuccessResponse.class)
+public class DeleteSnapshotCmd extends BaseAsyncCmd {
+    public static final Logger s_logger = Logger.getLogger(DeleteSnapshotCmd.class.getName());
+    private static final String s_name = "deletesnapshotresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="snapshot_policy")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the Id of the snapshot policy")
+    @IdentityMapper(entityTableName="snapshots")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="The ID of the snapshot")
     private Long id;
-
-    @IdentityMapper(entityTableName="snapshot_policy")
-    @Parameter(name=ApiConstants.IDS, type=CommandType.LIST, collectionType=CommandType.LONG, description="list of snapshots policy IDs separated by comma")
-    private List<Long> ids;
 
 
     /////////////////////////////////////////////////////
@@ -55,11 +53,6 @@ public class DeleteSnapshotPoliciesCmd extends BaseCmd {
     public Long getId() {
         return id;
     }
-
-    public List<Long> getIds() {
-        return ids;
-    }
-
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -72,17 +65,41 @@ public class DeleteSnapshotPoliciesCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-        return Account.ACCOUNT_ID_SYSTEM;
+        Snapshot snapshot = _entityMgr.findById(Snapshot.class, getId());
+        if (snapshot != null) {
+            return snapshot.getAccountId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_SNAPSHOT_DELETE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "deleting snapshot: " + getId();
+    }
+
+    public AsyncJob.Type getInstanceType() {
+        return AsyncJob.Type.Snapshot;
+    }
+
+    public Long getInstanceId() {
+        return getId();
     }
 
     @Override
     public void execute(){
-        boolean result = _snapshotService.deleteSnapshotPolicies(this);
+        UserContext.current().setEventDetails("Snapshot Id: "+getId());
+        boolean result = _snapshotService.deleteSnapshot(getId());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete snapshot policy");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete snapshot");
         }
     }
 }

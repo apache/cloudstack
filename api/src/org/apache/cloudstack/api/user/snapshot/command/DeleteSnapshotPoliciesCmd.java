@@ -14,43 +14,52 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.user.snapshot.command;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseListCmd;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
-import com.cloud.api.response.ListResponse;
-import com.cloud.api.response.SnapshotPolicyResponse;
-import com.cloud.storage.snapshot.SnapshotPolicy;
+import org.apache.cloudstack.api.ServerApiException;
+import com.cloud.api.response.SuccessResponse;
+import com.cloud.user.Account;
 
-@Implementation(description="Lists snapshot policies.", responseObject=SnapshotPolicyResponse.class)
-public class ListSnapshotPoliciesCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListSnapshotPoliciesCmd.class.getName());
+@Implementation(description="Deletes snapshot policies for the account.", responseObject=SuccessResponse.class)
+public class DeleteSnapshotPoliciesCmd extends BaseCmd {
+    public static final Logger s_logger = Logger.getLogger(DeleteSnapshotPoliciesCmd.class.getName());
 
-    private static final String s_name = "listsnapshotpoliciesresponse";
+    private static final String s_name = "deletesnapshotpoliciesresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="volumes")
-    @Parameter(name=ApiConstants.VOLUME_ID, type=CommandType.LONG, required=true, description="the ID of the disk volume")
-    private Long volumeId;
+    @IdentityMapper(entityTableName="snapshot_policy")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the Id of the snapshot policy")
+    private Long id;
+
+    @IdentityMapper(entityTableName="snapshot_policy")
+    @Parameter(name=ApiConstants.IDS, type=CommandType.LIST, collectionType=CommandType.LONG, description="list of snapshots policy IDs separated by comma")
+    private List<Long> ids;
+
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getVolumeId() {
-        return volumeId;
+    public Long getId() {
+        return id;
     }
+
+    public List<Long> getIds() {
+        return ids;
+    }
+
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -62,17 +71,18 @@ public class ListSnapshotPoliciesCmd extends BaseListCmd {
     }
 
     @Override
+    public long getEntityOwnerId() {
+        return Account.ACCOUNT_ID_SYSTEM;
+    }
+
+    @Override
     public void execute(){
-        List<? extends SnapshotPolicy> result = _snapshotService.listPoliciesforVolume(this);
-        ListResponse<SnapshotPolicyResponse> response = new ListResponse<SnapshotPolicyResponse>();
-        List<SnapshotPolicyResponse> policyResponses = new ArrayList<SnapshotPolicyResponse>();
-        for (SnapshotPolicy policy : result) {
-            SnapshotPolicyResponse policyResponse = _responseGenerator.createSnapshotPolicyResponse(policy);
-            policyResponse.setObjectName("snapshotpolicy");
-            policyResponses.add(policyResponse);
+        boolean result = _snapshotService.deleteSnapshotPolicies(this);
+        if (result) {
+            SuccessResponse response = new SuccessResponse(getCommandName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete snapshot policy");
         }
-        response.setResponses(policyResponses);
-        response.setResponseName(getCommandName());
-        this.setResponseObject(response);
     }
 }

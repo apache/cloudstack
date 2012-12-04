@@ -70,12 +70,12 @@ migrateVirtualMachine=org.apache.cloudstack.api.admin.vm.command.MigrateVMCmd;1
 recoverVirtualMachine=org.apache.cloudstack.api.admin.vm.command.RecoverVMCmd;7
 
 #### snapshot commands
-createSnapshot=com.cloud.api.commands.CreateSnapshotCmd;15
-listSnapshots=com.cloud.api.commands.ListSnapshotsCmd;15
-deleteSnapshot=com.cloud.api.commands.DeleteSnapshotCmd;15
-createSnapshotPolicy=com.cloud.api.commands.CreateSnapshotPolicyCmd;15
-deleteSnapshotPolicies=com.cloud.api.commands.DeleteSnapshotPoliciesCmd;15
-listSnapshotPolicies=com.cloud.api.commands.ListSnapshotPoliciesCmd;15
+createSnapshot=org.apache.cloudstack.api.user.snapshot.command.CreateSnapshotCmd;15
+listSnapshots=org.apache.cloudstack.api.user.snapshot.command.ListSnapshotsCmd;15
+deleteSnapshot=org.apache.cloudstack.api.user.snapshot.command.DeleteSnapshotCmd;15
+createSnapshotPolicy=org.apache.cloudstack.api.user.snapshot.command.CreateSnapshotPolicyCmd;15
+deleteSnapshotPolicies=org.apache.cloudstack.api.user.snapshot.command.DeleteSnapshotPoliciesCmd;15
+listSnapshotPolicies=org.apache.cloudstack.api.user.snapshot.command.ListSnapshotPoliciesCmd;15
 
 
 #### template commands

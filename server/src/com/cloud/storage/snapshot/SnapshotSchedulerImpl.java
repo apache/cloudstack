@@ -26,12 +26,12 @@ import java.util.TimerTask;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.user.snapshot.command.CreateSnapshotCmd;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.api.ApiDispatcher;
 import com.cloud.api.ApiGsonHelper;
-import com.cloud.api.commands.CreateSnapshotCmd;
 import com.cloud.user.Account;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobResult;
