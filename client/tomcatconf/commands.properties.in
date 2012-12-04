@@ -142,16 +142,16 @@ listIpForwardingRules=org.apache.cloudstack.api.user.nat.command.ListIpForwardin
 disableStaticNat=org.apache.cloudstack.api.user.nat.command.DisableStaticNatCmd;15
 
 #### load balancer commands
-createLoadBalancerRule=com.cloud.api.commands.CreateLoadBalancerRuleCmd;15
-deleteLoadBalancerRule=com.cloud.api.commands.DeleteLoadBalancerRuleCmd;15
-removeFromLoadBalancerRule=com.cloud.api.commands.RemoveFromLoadBalancerRuleCmd;15
-assignToLoadBalancerRule=com.cloud.api.commands.AssignToLoadBalancerRuleCmd;15
-createLBStickinessPolicy=com.cloud.api.commands.CreateLBStickinessPolicyCmd;15
-deleteLBStickinessPolicy=com.cloud.api.commands.DeleteLBStickinessPolicyCmd;15
-listLoadBalancerRules=com.cloud.api.commands.ListLoadBalancerRulesCmd;15
-listLBStickinessPolicies=com.cloud.api.commands.ListLBStickinessPoliciesCmd;15
-listLoadBalancerRuleInstances=com.cloud.api.commands.ListLoadBalancerRuleInstancesCmd;15
-updateLoadBalancerRule=com.cloud.api.commands.UpdateLoadBalancerRuleCmd;15
+createLoadBalancerRule=org.apache.cloudstack.api.user.lb.command.CreateLoadBalancerRuleCmd;15
+deleteLoadBalancerRule=org.apache.cloudstack.api.user.lb.command.DeleteLoadBalancerRuleCmd;15
+removeFromLoadBalancerRule=org.apache.cloudstack.api.user.lb.command.RemoveFromLoadBalancerRuleCmd;15
+assignToLoadBalancerRule=org.apache.cloudstack.api.user.lb.command.AssignToLoadBalancerRuleCmd;15
+createLBStickinessPolicy=org.apache.cloudstack.api.user.lb.command.CreateLBStickinessPolicyCmd;15
+deleteLBStickinessPolicy=org.apache.cloudstack.api.user.lb.command.DeleteLBStickinessPolicyCmd;15
+listLoadBalancerRules=org.apache.cloudstack.api.user.lb.command.ListLoadBalancerRulesCmd;15
+listLBStickinessPolicies=org.apache.cloudstack.api.user.lb.command.ListLBStickinessPoliciesCmd;15
+listLoadBalancerRuleInstances=org.apache.cloudstack.api.user.lb.command.ListLoadBalancerRuleInstancesCmd;15
+updateLoadBalancerRule=org.apache.cloudstack.api.user.lb.command.UpdateLoadBalancerRuleCmd;15
 
 #### autoscale commands
 createCounter = com.cloud.api.commands.CreateCounterCmd;1

@@ -18,7 +18,7 @@ package com.cloud.network.lb;
 
 import java.util.List;
 
-import com.cloud.api.commands.CreateLoadBalancerRuleCmd;
+import org.apache.cloudstack.api.user.lb.command.CreateLoadBalancerRuleCmd;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
