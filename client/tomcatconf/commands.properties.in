@@ -88,7 +88,7 @@ listTemplates=org.apache.cloudstack.api.user.template.command.ListTemplatesCmd;1
 updateTemplatePermissions=org.apache.cloudstack.api.user.template.command.UpdateTemplatePermissionsCmd;15
 listTemplatePermissions=org.apache.cloudstack.api.user.template.command.ListTemplatePermissionsCmd;15
 extractTemplate=org.apache.cloudstack.api.user.template.command.ExtractTemplateCmd;15
-prepareTemplate=com.cloud.api.commands.PrepareTemplateCmd;1
+prepareTemplate=org.apache.cloudstack.api.admin.template.command.PrepareTemplateCmd;1
 
 #### iso commands
 attachIso=org.apache.cloudstack.api.user.iso.command.AttachIsoCmd;15
