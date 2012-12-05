@@ -360,8 +360,8 @@ updateNetworkServiceProvider=org.apache.cloudstack.api.admin.network.command.Upd
 addTrafficType=org.apache.cloudstack.api.admin.usage.command.AddTrafficTypeCmd;1
 deleteTrafficType=org.apache.cloudstack.api.admin.usage.command.DeleteTrafficTypeCmd;1
 listTrafficTypes=org.apache.cloudstack.api.admin.usage.command.ListTrafficTypesCmd;1
-updateTrafficType=com.cloud.api.commands.UpdateTrafficTypeCmd;1
-listTrafficTypeImplementors=com.cloud.api.commands.ListTrafficTypeImplementorsCmd;1
+updateTrafficType=org.apache.cloudstack.api.admin.usage.command.UpdateTrafficTypeCmd;1
+listTrafficTypeImplementors=org.apache.cloudstack.api.admin.usage.command.ListTrafficTypeImplementorsCmd;1
 
 #### Storage Network commands
 createStorageNetworkIpRange=org.apache.cloudstack.api.admin.network.command.CreateStorageNetworkIpRangeCmd;1
