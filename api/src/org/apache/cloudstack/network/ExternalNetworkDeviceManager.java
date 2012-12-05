@@ -14,15 +14,17 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network;
+package org.apache.cloudstack.network;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import com.cloud.network.Network;
 import org.apache.cloudstack.api.admin.network.command.AddNetworkDeviceCmd;
 import org.apache.cloudstack.api.admin.network.command.DeleteNetworkDeviceCmd;
 import org.apache.cloudstack.api.admin.network.command.ListNetworkDeviceCmd;
 import com.cloud.host.Host;
-import com.cloud.server.api.response.NetworkDeviceResponse;
+import org.apache.cloudstack.api.admin.network.response.NetworkDeviceResponse;
 import com.cloud.utils.component.Manager;
 
 public interface ExternalNetworkDeviceManager extends Manager {

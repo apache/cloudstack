@@ -28,6 +28,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.admin.network.command.AddNetworkDeviceCmd;
 import org.apache.cloudstack.api.admin.network.command.ListNetworkDeviceCmd;
+import org.apache.cloudstack.network.ExternalNetworkDeviceManager;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -58,7 +59,7 @@ import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.server.ManagementServer;
-import com.cloud.server.api.response.NetworkDeviceResponse;
+import org.apache.cloudstack.api.admin.network.response.NetworkDeviceResponse;
 import com.cloud.server.api.response.NwDeviceDhcpResponse;
 import com.cloud.server.api.response.PxePingResponse;
 import com.cloud.user.AccountManager;

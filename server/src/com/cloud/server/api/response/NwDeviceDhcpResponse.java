@@ -19,6 +19,7 @@ package com.cloud.server.api.response;
 import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
+import org.apache.cloudstack.api.admin.network.response.NetworkDeviceResponse;
 
 public class NwDeviceDhcpResponse extends NetworkDeviceResponse {
 	@SerializedName(ApiConstants.ZONE_ID) @Param(description="Zone where to add PXE server")

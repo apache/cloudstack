@@ -31,9 +31,9 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
-import com.cloud.network.ExternalNetworkDeviceManager;
+import org.apache.cloudstack.network.ExternalNetworkDeviceManager;
 import com.cloud.server.ManagementService;
-import com.cloud.server.api.response.NetworkDeviceResponse;
+import org.apache.cloudstack.api.admin.network.response.NetworkDeviceResponse;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.exception.CloudRuntimeException;
 

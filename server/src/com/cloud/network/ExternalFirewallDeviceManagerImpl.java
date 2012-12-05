@@ -58,7 +58,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
-import com.cloud.network.ExternalNetworkDeviceManager.NetworkDevice;
+import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.ExternalFirewallDeviceDao;
 import com.cloud.network.dao.IPAddressDao;

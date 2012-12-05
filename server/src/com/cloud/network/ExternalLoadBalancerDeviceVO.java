@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.network;
 
+import org.apache.cloudstack.network.ExternalNetworkDeviceManager;
+
 import java.util.UUID;
 
 import javax.persistence.Column;
