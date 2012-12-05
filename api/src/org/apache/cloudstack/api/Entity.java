@@ -16,38 +16,13 @@
 // under the License.
 package org.apache.cloudstack.api;
 
-import static java.lang.annotation.ElementType.FIELD;
-
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
 
-import org.apache.cloudstack.api.BaseCmd.CommandType;
-
+/* There is a one on one mapping between the Entity and the EntityResponse
+ * to the OTW layer. Value is the actual entity class it refers to.
+ */
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ FIELD })
-public @interface Parameter {
-    String name() default "";
-
-    String description() default "";
-
-    boolean required() default false;
-
-    CommandType type() default CommandType.OBJECT;
-
-    CommandType collectionType() default CommandType.OBJECT;
-
-    Class<?>[] entityType() default Object.class;
-
-    boolean expose() default true;
-
-    boolean includeInApiDoc() default true;
-
-    int length() default 255;
-
-    String since() default "";
-
-    Class<?>[] resourceType() default Object.class;
-
-    String retrieveMethod() default "getById";
+public @interface Entity {
+    Class[] value() default {};
 }

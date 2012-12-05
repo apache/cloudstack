@@ -17,10 +17,13 @@
 package com.cloud.api.response;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.Entity;
+import com.cloud.domain.Domain;
 import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
+@Entity(value = Domain.class)
 public class DomainResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the domain")
     private IdentityProxy id = new IdentityProxy("domain");

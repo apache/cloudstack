@@ -19,11 +19,14 @@ package com.cloud.api.response;
 import java.util.Date;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.Entity;
+import com.cloud.vm.InstanceGroup;
 import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
+@Entity(value = InstanceGroup.class)
 public class InstanceGroupResponse extends BaseResponse implements ControlledEntityResponse{
     @SerializedName(ApiConstants.ID) @Param(description="the id of the instance group")
     private IdentityProxy id = new IdentityProxy("instance_group");

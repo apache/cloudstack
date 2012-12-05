@@ -19,11 +19,14 @@ package com.cloud.api.response;
 import java.util.List;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.Entity;
+import com.cloud.projects.ProjectAccount;
 import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
+@Entity(value = ProjectAccount.class)
 public class NetworkResponse extends BaseResponse implements ControlledEntityResponse{
 
     @SerializedName(ApiConstants.ID) @Param(description="the id of the network")
