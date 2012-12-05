@@ -14,27 +14,29 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api.user.vpn.command;
+package org.apache.cloudstack.api.user.user.command;
 
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import com.cloud.api.response.SuccessResponse;
+import com.cloud.api.response.VpnUsersResponse;
+import com.cloud.domain.Domain;
 import com.cloud.event.EventTypes;
+import com.cloud.network.VpnUser;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Removes vpn user", responseObject=SuccessResponse.class)
-public class RemoveVpnUserCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(RemoveVpnUserCmd.class.getName());
+@Implementation(description="Adds vpn users", responseObject=VpnUsersResponse.class)
+public class AddVpnUserCmd extends BaseAsyncCreateCmd {
+    public static final Logger s_logger = Logger.getLogger(AddVpnUserCmd.class.getName());
 
-    private static final String s_name = "removevpnuserresponse";
+    private static final String s_name = "addvpnuserresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -42,11 +44,14 @@ public class RemoveVpnUserCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required=true, description="username for the vpn user")
     private String userName;
 
+    @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, required=true, description="password for the username")
+    private String password;
+
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="an optional account for the vpn user. Must be used with domainId.")
     private String accountName;
 
     @IdentityMapper(entityTableName="projects")
-    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="remove vpn user from the project")
+    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="add vpn user to the specific project")
     private Long projectId;
 
     @IdentityMapper(entityTableName="domain")
@@ -70,10 +75,13 @@ public class RemoveVpnUserCmd extends BaseAsyncCmd {
         return userName;
     }
 
-    public Long getProjecId() {
-        return projectId;
+    public String getPassword() {
+        return password;
     }
 
+    public Long getProjectId() {
+        return projectId;
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -94,29 +102,49 @@ public class RemoveVpnUserCmd extends BaseAsyncCmd {
         return accountId;
     }
 
-    @Override
-    public String getEventDescription() {
-        return "Remove Remote Access VPN user for account " + getEntityOwnerId() + " username= " + getUserName();
+    public String getEntityTable() {
+        return "vpn_users";
     }
 
+    @Override
+    public String getEventDescription() {
+        return "Add Remote Access VPN user for account " + getEntityOwnerId() + " username= " + getUserName();
+    }
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_VPN_USER_REMOVE;
+        return EventTypes.EVENT_VPN_USER_ADD;
     }
 
     @Override
     public void execute(){
-        Account owner = _accountService.getAccount(getEntityOwnerId());
-        boolean result = _ravService.removeVpnUser(owner.getId(), userName, UserContext.current().getCaller());
-        if (!result) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to remove vpn user");
-        }
+            VpnUser vpnUser = _entityMgr.findById(VpnUser.class, getEntityId());
+            Account account = _entityMgr.findById(Account.class, vpnUser.getAccountId());
+            if (!_ravService.applyVpnUsers(vpnUser.getAccountId(), userName)) {
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add vpn user");
+            }
 
-        if (!_ravService.applyVpnUsers(owner.getId(), userName)) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to apply vpn user removal");
+            VpnUsersResponse vpnResponse = new VpnUsersResponse();
+            vpnResponse.setId(vpnUser.getId());
+            vpnResponse.setUserName(vpnUser.getUsername());
+            vpnResponse.setAccountName(account.getAccountName());
+
+            vpnResponse.setDomainId(account.getDomainId());
+            vpnResponse.setDomainName(_entityMgr.findById(Domain.class, account.getDomainId()).getName());
+
+            vpnResponse.setResponseName(getCommandName());
+            vpnResponse.setObjectName("vpnuser");
+            this.setResponseObject(vpnResponse);
+    }
+
+    @Override
+    public void create() {
+        Account owner = _accountService.getAccount(getEntityOwnerId());
+
+        VpnUser vpnUser = _ravService.addVpnUser(owner.getId(), userName, password);
+        if (vpnUser == null) {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add vpn user");
         }
-        SuccessResponse response = new SuccessResponse(getCommandName());
-        setResponseObject(response);
+        setEntityId(vpnUser.getId());
     }
 }

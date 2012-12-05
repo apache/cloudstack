@@ -19,7 +19,7 @@ package src.com.cloud.api.commands.test;
 import junit.framework.Assert;
 import junit.framework.TestCase;
 
-import org.apache.cloudstack.api.user.vpn.command.AddVpnUserCmd;
+import org.apache.cloudstack.api.user.user.command.AddVpnUserCmd;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
