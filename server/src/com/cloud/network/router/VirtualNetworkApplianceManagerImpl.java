@@ -36,6 +36,7 @@ import java.util.concurrent.TimeUnit;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.admin.router.command.UpgradeRouterCmd;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -80,7 +81,6 @@ import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
-import com.cloud.api.commands.UpgradeRouterCmd;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.ManagementServerNode;
 import com.cloud.cluster.dao.ManagementServerHostDao;

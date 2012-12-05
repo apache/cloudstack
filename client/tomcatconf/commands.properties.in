@@ -176,14 +176,15 @@ updateAutoScaleVmProfile=org.apache.cloudstack.api.user.autoscale.command.Update
 updateAutoScaleVmGroup=org.apache.cloudstack.api.user.autoscale.command.UpdateAutoScaleVmGroupCmd;15
 
 #### router commands
-startRouter=com.cloud.api.commands.StartRouterCmd;7
-rebootRouter=com.cloud.api.commands.RebootRouterCmd;7
-stopRouter=com.cloud.api.commands.StopRouterCmd;7
-destroyRouter=com.cloud.api.commands.DestroyRouterCmd;7
-changeServiceForRouter=com.cloud.api.commands.UpgradeRouterCmd;7
-listRouters=com.cloud.api.commands.ListRoutersCmd;7
-listVirtualRouterElements=com.cloud.api.commands.ListVirtualRouterElementsCmd;7
-configureVirtualRouterElement=com.cloud.api.commands.ConfigureVirtualRouterElementCmd;7
+startRouter=org.apache.cloudstack.api.admin.router.command.StartRouterCmd;7
+rebootRouter=org.apache.cloudstack.api.admin.router.command.RebootRouterCmd;7
+stopRouter=org.apache.cloudstack.api.admin.router.command.StopRouterCmd;7
+destroyRouter=org.apache.cloudstack.api.admin.router.command.DestroyRouterCmd;7
+changeServiceForRouter=org.apache.cloudstack.api.admin.router.command.UpgradeRouterCmd;7
+listRouters=org.apache.cloudstack.api.admin.router.command.ListRoutersCmd;7
+listVirtualRouterElements=org.apache.cloudstack.api.admin.router.command.ListVirtualRouterElementsCmd;7
+configureVirtualRouterElement=org.apache.cloudstack.api.admin.router.command.ConfigureVirtualRouterElementCmd;7
+createVirtualRouterElement=org.apache.cloudstack.api.admin.router.command.CreateVirtualRouterElementCmd;7
 
 #### system vm commands
 startSystemVm=com.cloud.api.commands.StartSystemVMCmd;1

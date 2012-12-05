@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.admin.router.command;
 
 import org.apache.log4j.Logger;
 
@@ -29,46 +29,42 @@ import com.cloud.api.response.DomainRouterResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
+@Implementation(description = "Stops a router.", responseObject = DomainRouterResponse.class)
+public class StopRouterCmd extends BaseAsyncCmd {
+    public static final Logger s_logger = Logger.getLogger(StopRouterCmd.class.getName());
+    private static final String s_name = "stoprouterresponse";
 
-@Implementation(responseObject=DomainRouterResponse.class, description="Starts a router.")
-public class StartRouterCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(StartRouterCmd.class.getName());
-    private static final String s_name = "startrouterresponse";
-
-
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // ////////////// API parameters /////////////////////
+    // ///////////////////////////////////////////////////
 
     @IdentityMapper(entityTableName="vm_instance")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the router")
+    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, required = true, description = "the ID of the router")
     private Long id;
 
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
+    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false, description = "Force stop the VM. The caller knows the VM is stopped.")
+    private Boolean forced;
+
+    // ///////////////////////////////////////////////////
+    // ///////////////// Accessors ///////////////////////
+    // ///////////////////////////////////////////////////
 
     public Long getId() {
         return id;
     }
 
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // ///////////// API Implementation///////////////////
+    // ///////////////////////////////////////////////////
 
     @Override
     public String getCommandName() {
         return s_name;
-    }
-
-    public static String getResultObjectName() {
-        return "router";
     }
 
     @Override
@@ -83,32 +79,38 @@ public class StartRouterCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_ROUTER_START;
+        return EventTypes.EVENT_ROUTER_STOP;
     }
 
     @Override
     public String getEventDescription() {
-        return  "starting router: " + getId();
+        return "stopping router: " + getId();
     }
 
+    @Override
     public AsyncJob.Type getInstanceType() {
         return AsyncJob.Type.DomainRouter;
     }
 
+    @Override
     public Long getInstanceId() {
         return getId();
     }
 
+    public boolean isForced() {
+        return (forced != null) ? forced : false;
+    }
+
     @Override
-    public void execute() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
+    public void execute() throws ConcurrentOperationException, ResourceUnavailableException {
         UserContext.current().setEventDetails("Router Id: "+getId());
-        VirtualRouter result = _routerService.startRouter(id);
-        if (result != null){
-            DomainRouterResponse routerResponse = _responseGenerator.createDomainRouterResponse(result);
-            routerResponse.setResponseName(getCommandName());
-            this.setResponseObject(routerResponse);
+        VirtualRouter result = _routerService.stopRouter(getId(), isForced());
+        if (result != null) {
+            DomainRouterResponse response = _responseGenerator.createDomainRouterResponse(result);
+            response.setResponseName(getCommandName());
+            this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to start router");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to stop router");
         }
     }
 }

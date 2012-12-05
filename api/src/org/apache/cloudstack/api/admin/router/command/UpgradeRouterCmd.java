@@ -14,39 +14,36 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.admin.router.command;
 
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import com.cloud.api.response.DomainRouterResponse;
-import com.cloud.async.AsyncJob;
-import com.cloud.event.EventTypes;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
-@Implementation(description="Starts a router.", responseObject=DomainRouterResponse.class)
-public class RebootRouterCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(RebootRouterCmd.class.getName());
-    private static final String s_name = "rebootrouterresponse";
+@Implementation(description="Upgrades domain router to a new service offering", responseObject=DomainRouterResponse.class)
+public class UpgradeRouterCmd extends BaseCmd {
+    public static final Logger s_logger = Logger.getLogger(UpgradeRouterCmd.class.getName());
+    private static final String s_name = "changeserviceforrouterresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
     @IdentityMapper(entityTableName="vm_instance")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the router")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="The ID of the router")
     private Long id;
+
+    @IdentityMapper(entityTableName="disk_offering")
+    @Parameter(name=ApiConstants.SERVICE_OFFERING_ID, type=CommandType.LONG, required=true, description="the service offering ID to apply to the domain router")
+    private Long serviceOfferingId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -56,13 +53,17 @@ public class RebootRouterCmd extends BaseAsyncCmd {
         return id;
     }
 
+    public Long getServiceOfferingId() {
+        return serviceOfferingId;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
     @Override
     public String getCommandName() {
-        return s_name;
+         return s_name;
     }
 
     @Override
@@ -76,34 +77,14 @@ public class RebootRouterCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public String getEventType() {
-        return EventTypes.EVENT_ROUTER_REBOOT;
-    }
-
-    @Override
-    public String getEventDescription() {
-        return  "rebooting router: " + getId();
-    }
-
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.DomainRouter;
-    }
-
-    public Long getInstanceId() {
-        return getId();
-    }
-
-
-    @Override
-    public void execute() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
-        UserContext.current().setEventDetails("Router Id: "+getId());
-        VirtualRouter result = _routerService.rebootRouter(this.getId(), true);
-        if (result != null){
-            DomainRouterResponse response = _responseGenerator.createDomainRouterResponse(result);
-            response.setResponseName("router");
-            this.setResponseObject(response);
+    public void execute(){
+        VirtualRouter router = _routerService.upgradeRouter(this);
+        if (router != null){
+            DomainRouterResponse routerResponse = _responseGenerator.createDomainRouterResponse(router);
+            routerResponse.setResponseName(getCommandName());
+            this.setResponseObject(routerResponse);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to reboot router");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to upgrade router");
         }
     }
 }

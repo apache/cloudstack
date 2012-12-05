@@ -19,7 +19,7 @@ package org.apache.cloudstack.api.user.datacenter.command;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.cloud.api.commands.UpgradeRouterCmd;
+import org.apache.cloudstack.api.admin.router.command.UpgradeRouterCmd;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;

@@ -24,10 +24,10 @@ import java.util.Set;
 
 import javax.ejb.Local;
 
+import org.apache.cloudstack.api.admin.router.command.ConfigureVirtualRouterElementCmd;
+import org.apache.cloudstack.api.admin.router.command.ListVirtualRouterElementsCmd;
 import org.apache.log4j.Logger;
 
-import com.cloud.api.commands.ConfigureVirtualRouterElementCmd;
-import com.cloud.api.commands.ListVirtualRouterElementsCmd;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;

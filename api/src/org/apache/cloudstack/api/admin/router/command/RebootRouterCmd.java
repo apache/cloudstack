@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.admin.router.command;
 
 import org.apache.log4j.Logger;
 
@@ -24,57 +24,36 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.PlugService;
 import org.apache.cloudstack.api.ServerApiException;
-import com.cloud.api.response.VirtualRouterProviderResponse;
-import com.cloud.network.VirtualRouterProvider;
-import com.cloud.network.element.VirtualRouterElementService;
+import com.cloud.api.response.DomainRouterResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(responseObject=VirtualRouterProviderResponse.class, description="Configures a virtual router element.")
-public class ConfigureVirtualRouterElementCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(ConfigureVirtualRouterElementCmd.class.getName());
-    private static final String s_name = "configurevirtualrouterelementresponse";
-
-    @PlugService
-    private VirtualRouterElementService _service;
+@Implementation(description="Starts a router.", responseObject=DomainRouterResponse.class)
+public class RebootRouterCmd extends BaseAsyncCmd {
+    public static final Logger s_logger = Logger.getLogger(RebootRouterCmd.class.getName());
+    private static final String s_name = "rebootrouterresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName = "virtual_router_providers")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the virtual router provider")
+    @IdentityMapper(entityTableName="vm_instance")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the router")
     private Long id;
-
-    @IdentityMapper(entityTableName = "physical_network_service_providers")
-    @Parameter(name=ApiConstants.ENABLED, type=CommandType.BOOLEAN, required=true, description="Enabled/Disabled the service provider")
-    private Boolean enabled;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
     public Long getId() {
         return id;
-    }
-
-    public void setEnabled(Boolean enabled) {
-        this.enabled = enabled;
-    }
-
-    public Boolean getEnabled() {
-        return enabled;
     }
 
     /////////////////////////////////////////////////////
@@ -86,43 +65,45 @@ public class ConfigureVirtualRouterElementCmd extends BaseAsyncCmd {
         return s_name;
     }
 
-    public static String getResultObjectName() {
-        return "boolean";
-    }
-
     @Override
     public long getEntityOwnerId() {
-        return Account.ACCOUNT_ID_SYSTEM;
+        VirtualRouter router = _entityMgr.findById(VirtualRouter.class, getId());
+        if (router != null) {
+            return router.getAccountId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_NETWORK_ELEMENT_CONFIGURE;
+        return EventTypes.EVENT_ROUTER_REBOOT;
     }
 
     @Override
     public String getEventDescription() {
-        return  "configuring virtual router provider: " + id;
+        return  "rebooting router: " + getId();
     }
 
     public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.None;
+        return AsyncJob.Type.DomainRouter;
     }
 
     public Long getInstanceId() {
-        return id;
+        return getId();
     }
+
 
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
-        UserContext.current().setEventDetails("Virtual router element: " + id);
-        VirtualRouterProvider result = _service.configure(this);
+        UserContext.current().setEventDetails("Router Id: "+getId());
+        VirtualRouter result = _routerService.rebootRouter(this.getId(), true);
         if (result != null){
-            VirtualRouterProviderResponse routerResponse = _responseGenerator.createVirtualRouterProviderResponse(result);
-            routerResponse.setResponseName(getCommandName());
-            this.setResponseObject(routerResponse);
+            DomainRouterResponse response = _responseGenerator.createDomainRouterResponse(result);
+            response.setResponseName("router");
+            this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to configure the virtual router provider");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to reboot router");
         }
     }
 }
