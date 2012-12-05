@@ -19,7 +19,7 @@ package com.cloud.network;
 import java.sql.SQLException;
 import java.util.List;
 
-import com.cloud.api.commands.CreateStorageNetworkIpRangeCmd;
+import org.apache.cloudstack.api.admin.network.command.CreateStorageNetworkIpRangeCmd;
 import org.apache.cloudstack.api.admin.network.command.DeleteStorageNetworkIpRangeCmd;
 import org.apache.cloudstack.api.admin.network.command.UpdateStorageNetworkIpRangeCmd;
 import org.apache.cloudstack.api.admin.network.command.ListStorageNetworkIpRangeCmd;

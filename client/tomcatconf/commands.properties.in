@@ -344,7 +344,7 @@ updateHypervisorCapabilities=com.cloud.api.commands.UpdateHypervisorCapabilities
 listHypervisorCapabilities=com.cloud.api.commands.ListHypervisorCapabilitiesCmd;1
 
 #### Physical Network commands
-createPhysicalNetwork=com.cloud.api.commands.CreatePhysicalNetworkCmd;1
+createPhysicalNetwork=org.apache.cloudstack.api.admin.network.command.CreatePhysicalNetworkCmd;1
 deletePhysicalNetwork=org.apache.cloudstack.api.admin.network.command.DeletePhysicalNetworkCmd;1
 listPhysicalNetworks=org.apache.cloudstack.api.admin.network.command.ListPhysicalNetworksCmd;1
 updatePhysicalNetwork=org.apache.cloudstack.api.admin.network.command.UpdatePhysicalNetworkCmd;1
@@ -364,7 +364,7 @@ updateTrafficType=com.cloud.api.commands.UpdateTrafficTypeCmd;1
 listTrafficTypeImplementors=com.cloud.api.commands.ListTrafficTypeImplementorsCmd;1
 
 #### Storage Network commands
-createStorageNetworkIpRange=com.cloud.api.commands.CreateStorageNetworkIpRangeCmd;1
+createStorageNetworkIpRange=org.apache.cloudstack.api.admin.network.command.CreateStorageNetworkIpRangeCmd;1
 deleteStorageNetworkIpRange=org.apache.cloudstack.api.admin.network.command.DeleteStorageNetworkIpRangeCmd;1
 listStorageNetworkIpRange=org.apache.cloudstack.api.admin.network.command.ListStorageNetworkIpRangeCmd;1
 updateStorageNetworkIpRange=org.apache.cloudstack.api.admin.network.command.UpdateStorageNetworkIpRangeCmd;1
