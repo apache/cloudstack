@@ -475,6 +475,39 @@
             }
           },
 
+          reset: {
+            label: 'Reset VM',
+            messages:{
+              confirm:function(args) {
+                 return 'Do you want to restore the VM ?';
+                },
+               notification:function(args) {
+                return 'Reset VM';
+               }
+            },
+
+            action:function(args){
+                $.ajax({
+                url: createURL("restoreVirtualMachine&virtualmachineid=" + args.context.instances[0].id),
+                dataType: "json",
+                async: true,
+                success: function(json) {
+                  var item = json.restorevmresponse;
+                  args.response.success({data:item});
+                }
+              });
+
+            },
+
+           notification: {
+              poll: function(args) {
+                args.complete({ data: { state: 'Stopped' }});
+              }
+            }
+
+           },
+
+
           edit: {
             label: 'label.edit',
             action: function(args) {
@@ -1201,6 +1234,7 @@
       allowedActions.push("restart");
       allowedActions.push("destroy");
       allowedActions.push("changeService");
+      allowedActions.push("reset");
 
       if (isAdmin())
         allowedActions.push("migrate");
@@ -1222,6 +1256,7 @@
       allowedActions.push("edit");
       allowedActions.push("start");
       allowedActions.push("destroy");
+      allowedActions.push("reset");
 
       if(isAdmin())
         allowedActions.push("migrateToAnotherStorage");
