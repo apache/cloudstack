@@ -141,7 +141,7 @@ public abstract class BaseCmd {
     public static NetworkACLService _networkACLService;
     public static Site2SiteVpnService _s2sVpnService;
 
-    static void setComponents(ResponseGenerator generator) {
+    public static void setComponents(ResponseGenerator generator) {
         ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
         _mgr = (ManagementService) ComponentLocator.getComponent(ManagementService.Name);
         _accountService = locator.getManager(AccountService.class);
