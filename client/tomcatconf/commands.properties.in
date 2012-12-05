@@ -357,9 +357,9 @@ listNetworkServiceProviders=org.apache.cloudstack.api.admin.network.command.List
 updateNetworkServiceProvider=org.apache.cloudstack.api.admin.network.command.UpdateNetworkServiceProviderCmd;1
 
 #### Physical Network Traffic Type commands
-addTrafficType=com.cloud.api.commands.AddTrafficTypeCmd;1
-deleteTrafficType=com.cloud.api.commands.DeleteTrafficTypeCmd;1
-listTrafficTypes=com.cloud.api.commands.ListTrafficTypesCmd;1
+addTrafficType=org.apache.cloudstack.api.admin.usage.command.AddTrafficTypeCmd;1
+deleteTrafficType=org.apache.cloudstack.api.admin.usage.command.DeleteTrafficTypeCmd;1
+listTrafficTypes=org.apache.cloudstack.api.admin.usage.command.ListTrafficTypesCmd;1
 updateTrafficType=com.cloud.api.commands.UpdateTrafficTypeCmd;1
 listTrafficTypeImplementors=com.cloud.api.commands.ListTrafficTypeImplementorsCmd;1
 
