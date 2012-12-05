@@ -9,8 +9,6 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreVO;
 import org.apache.cloudstack.storage.datastore.driver.SolidfirePrimaryDataStoreDriver;
 import org.springframework.stereotype.Component;
 
-import com.cloud.utils.component.ComponentInject;
-
 @Component
 public class SolidfirePrimaryDataStoreProvider extends
 	DefaultPrimaryDatastoreProviderImpl {
@@ -36,8 +34,7 @@ public class SolidfirePrimaryDataStoreProvider extends
             return null;
         }
 
-        PrimaryDataStore pds = new DefaultPrimaryDataStore(driver, dsv, null);
-        pds = ComponentInject.inject(pds);
+        PrimaryDataStore pds = DefaultPrimaryDataStore.createDataStore(driver, dsv, null);
         return pds;
 	}
 }

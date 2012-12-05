@@ -18,7 +18,12 @@
  */
 package org.apache.cloudstack.storage.volume.db;
 
-import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreStateMachine;
 
-public interface TemplatePrimaryDataStoreDao extends GenericDao<TemplatePrimaryDataStoreVO, Long> {
+import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.fsm.StateDao;
+
+public interface TemplatePrimaryDataStoreDao extends GenericDao<TemplatePrimaryDataStoreVO, Long>, StateDao<TemplateOnPrimaryDataStoreStateMachine.State, TemplateOnPrimaryDataStoreStateMachine.Event, TemplatePrimaryDataStoreVO> {
+    public TemplatePrimaryDataStoreVO findByTemplateIdAndPoolId(long templateId, long poolId);
+    public TemplatePrimaryDataStoreVO findByTemplateIdAndPoolIdAndReady(long templateId, long poolId);
 }

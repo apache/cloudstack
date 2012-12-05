@@ -22,6 +22,8 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.storage.image.TemplateInfo;
+import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreStateMachine.Event;
+import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreStateMachine.State;
 import org.apache.cloudstack.storage.volume.db.TemplatePrimaryDataStoreDao;
 import org.apache.cloudstack.storage.volume.db.TemplatePrimaryDataStoreVO;
 import org.springframework.stereotype.Component;
@@ -30,18 +32,64 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.db.SearchCriteriaService;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.fsm.StateMachine2;
 
 @Component
 public class TemplatePrimaryDataStoreManagerImpl implements TemplatePrimaryDataStoreManager {
     @Inject
     TemplatePrimaryDataStoreDao templateStoreDao;
-
+    protected long waitingTime = 1800; //half an hour
+    protected long waitingReties = 10;
+    protected StateMachine2<State, Event, TemplatePrimaryDataStoreVO> stateMachines;
+    public TemplatePrimaryDataStoreManagerImpl() {
+        stateMachines = new StateMachine2<State, Event, TemplatePrimaryDataStoreVO>();
+        stateMachines.addTransition(TemplateOnPrimaryDataStoreStateMachine.State.Allocated, Event.CreateRequested, TemplateOnPrimaryDataStoreStateMachine.State.Creating);
+        stateMachines.addTransition(TemplateOnPrimaryDataStoreStateMachine.State.Creating, Event.OperationSuccessed, TemplateOnPrimaryDataStoreStateMachine.State.Ready);
+        stateMachines.addTransition(TemplateOnPrimaryDataStoreStateMachine.State.Creating, Event.OperationFailed, TemplateOnPrimaryDataStoreStateMachine.State.Failed);
+        stateMachines.addTransition(TemplateOnPrimaryDataStoreStateMachine.State.Failed, Event.CreateRequested, TemplateOnPrimaryDataStoreStateMachine.State.Creating);
+        stateMachines.addTransition(TemplateOnPrimaryDataStoreStateMachine.State.Ready, Event.DestroyRequested, TemplateOnPrimaryDataStoreStateMachine.State.Destroying);
+        stateMachines.addTransition(TemplateOnPrimaryDataStoreStateMachine.State.Destroying, Event.OperationSuccessed, TemplateOnPrimaryDataStoreStateMachine.State.Destroyed);
+        stateMachines.addTransition(TemplateOnPrimaryDataStoreStateMachine.State.Destroying, Event.OperationFailed, TemplateOnPrimaryDataStoreStateMachine.State.Destroying);
+        stateMachines.addTransition(TemplateOnPrimaryDataStoreStateMachine.State.Destroying, Event.DestroyRequested, TemplateOnPrimaryDataStoreStateMachine.State.Destroying);
+    }
+    
+    private TemplatePrimaryDataStoreVO waitingForTemplateDownload(TemplateInfo template, PrimaryDataStoreInfo dataStore) {
+        //the naive version, polling.
+        long retries = waitingReties;
+        TemplatePrimaryDataStoreVO templateStoreVO = null;
+        do {
+            try {
+                Thread.sleep(waitingTime);
+            } catch (InterruptedException e) {
+                
+            }
+            
+            templateStoreVO = templateStoreDao.findByTemplateIdAndPoolIdAndReady(template.getId(), dataStore.getId());
+            if (templateStoreVO != null) {
+                break;
+            }
+            retries--;
+        } while (retries > 0);
+        
+        return templateStoreVO;
+    }
     @Override
     public TemplateOnPrimaryDataStoreObject createTemplateOnPrimaryDataStore(TemplateInfo template, PrimaryDataStoreInfo dataStore) {
 
         TemplatePrimaryDataStoreVO templateStoreVO = new TemplatePrimaryDataStoreVO(dataStore.getId(), template.getId());
-        templateStoreVO = templateStoreDao.persist(templateStoreVO);
-        TemplateOnPrimaryDataStoreObject templateStoreObject = new TemplateOnPrimaryDataStoreObject(dataStore, template, templateStoreVO, templateStoreDao);
+        try {
+            templateStoreVO = templateStoreDao.persist(templateStoreVO);
+        } catch (Throwable th) {
+            templateStoreVO = templateStoreDao.findByTemplateIdAndPoolId(template.getId(), dataStore.getId());
+            if (templateStoreVO != null) {
+                templateStoreVO = waitingForTemplateDownload(template, dataStore);
+            } else {
+                throw new CloudRuntimeException("Failed create db entry: " + th.toString());
+            }
+        }
+        
+        TemplateOnPrimaryDataStoreObject templateStoreObject = new TemplateOnPrimaryDataStoreObject(dataStore, template, templateStoreVO, templateStoreDao, this);
         return templateStoreObject;
     }
 
@@ -56,7 +104,13 @@ public class TemplatePrimaryDataStoreManagerImpl implements TemplatePrimaryDataS
         	return null;
         }
         
-        TemplateOnPrimaryDataStoreObject templateStoreObject = new TemplateOnPrimaryDataStoreObject(dataStore, template, templateStoreVO, templateStoreDao);
+        TemplateOnPrimaryDataStoreObject templateStoreObject = new TemplateOnPrimaryDataStoreObject(dataStore, template, templateStoreVO, templateStoreDao, this);
         return templateStoreObject;
     }
+    
+    @Override
+    public StateMachine2<State, Event, TemplatePrimaryDataStoreVO> getStateMachine() {
+        return stateMachines;
+    }
+     
 }

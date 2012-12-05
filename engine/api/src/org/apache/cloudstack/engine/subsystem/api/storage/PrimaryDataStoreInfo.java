@@ -21,6 +21,7 @@ package org.apache.cloudstack.engine.subsystem.api.storage;
 
 import java.util.List;
 
+import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -34,4 +35,6 @@ public interface PrimaryDataStoreInfo {
 	public List<EndPoint> getEndPoints();
 	public long getId();
 	public String getUuid();
+	public State getManagedState();
+	public String getName();
 }

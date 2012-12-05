@@ -20,23 +20,32 @@ package org.apache.cloudstack.storage.volume;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.storage.image.TemplateInfo;
+import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreStateMachine.Event;
+import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreStateMachine.State;
 import org.apache.cloudstack.storage.volume.db.TemplatePrimaryDataStoreDao;
 import org.apache.cloudstack.storage.volume.db.TemplatePrimaryDataStoreVO;
 
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.fsm.NoTransitionException;
+import com.cloud.utils.fsm.StateMachine2;
 
 public class TemplateOnPrimaryDataStoreObject implements TemplateOnPrimaryDataStoreInfo {
     protected PrimaryDataStoreInfo dataStore;
     protected TemplateInfo template;
     protected TemplatePrimaryDataStoreVO vo;
-    TemplatePrimaryDataStoreDao templateStoreDao;
+    protected TemplatePrimaryDataStoreDao templateStoreDao;
+    protected TemplatePrimaryDataStoreManager mgr;
+    protected StateMachine2<State, Event, TemplatePrimaryDataStoreVO> stateMachine;
 
     public TemplateOnPrimaryDataStoreObject(PrimaryDataStoreInfo primaryDataStore, TemplateInfo template, TemplatePrimaryDataStoreVO vo,
-    		TemplatePrimaryDataStoreDao templateStoreDao) {
+    		TemplatePrimaryDataStoreDao templateStoreDao, TemplatePrimaryDataStoreManager mgr) {
         this.dataStore = primaryDataStore;
         this.template = template;
         this.vo = vo;
         this.templateStoreDao = templateStoreDao;
+        this.mgr = mgr;
+        this.stateMachine = mgr.getStateMachine();
     }
 
     @Override
@@ -63,5 +72,12 @@ public class TemplateOnPrimaryDataStoreObject implements TemplateOnPrimaryDataSt
         vo.setDownloadState(status);
         templateStoreDao.update(vo.getId(), vo);
     }
-
+    
+    public void stateTransit(TemplateOnPrimaryDataStoreStateMachine.Event event) {
+        try {
+            this.stateMachine.transitTo(vo, event, null, templateStoreDao);
+        } catch (NoTransitionException e) {
+           throw new CloudRuntimeException(e.toString());
+        }
+    }
 }

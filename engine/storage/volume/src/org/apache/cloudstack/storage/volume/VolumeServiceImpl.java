@@ -134,12 +134,15 @@ public class VolumeServiceImpl implements VolumeService {
 
     protected TemplateOnPrimaryDataStoreObject createBaseImage(PrimaryDataStore dataStore, TemplateInfo template) {
         TemplateOnPrimaryDataStoreObject templateOnPrimaryStoreObj = (TemplateOnPrimaryDataStoreObject) templatePrimaryStoreMgr.createTemplateOnPrimaryDataStore(template, dataStore);
+        templateOnPrimaryStoreObj.stateTransit(TemplateOnPrimaryDataStoreStateMachine.Event.CreateRequested);
         templateOnPrimaryStoreObj.updateStatus(Status.CREATING);
         try {
             dataStore.installTemplate(templateOnPrimaryStoreObj);
             templateOnPrimaryStoreObj.updateStatus(Status.CREATED);
+           
         } catch (Exception e) {
             templateOnPrimaryStoreObj.updateStatus(Status.ABANDONED);
+            templateOnPrimaryStoreObj.stateTransit(TemplateOnPrimaryDataStoreStateMachine.Event.OperationFailed);
             throw new CloudRuntimeException(e.toString());
         }
 
@@ -147,8 +150,10 @@ public class VolumeServiceImpl implements VolumeService {
         try {
             imageMotion.copyTemplate(templateOnPrimaryStoreObj);
             templateOnPrimaryStoreObj.updateStatus(Status.DOWNLOADED);
+            templateOnPrimaryStoreObj.stateTransit(TemplateOnPrimaryDataStoreStateMachine.Event.OperationSuccessed);
         } catch (Exception e) {
             templateOnPrimaryStoreObj.updateStatus(Status.ABANDONED);
+            templateOnPrimaryStoreObj.stateTransit(TemplateOnPrimaryDataStoreStateMachine.Event.OperationFailed);
             throw new CloudRuntimeException(e.toString());
         }
 

@@ -18,18 +18,31 @@
  */
 package org.apache.cloudstack.storage.volume;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
-import org.apache.cloudstack.storage.image.TemplateInfo;
-import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreStateMachine.Event;
-import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreStateMachine.State;
-import org.apache.cloudstack.storage.volume.db.TemplatePrimaryDataStoreVO;
+import com.cloud.utils.fsm.StateObject;
 
-import com.cloud.utils.fsm.StateMachine2;
+public interface TemplateOnPrimaryDataStoreStateMachine extends StateObject<TemplateOnPrimaryDataStoreStateMachine.State> {
+    enum State {
+        Allocated("The initial state"),
+        Creating("The template is being downloading to data store"),
+        Ready("Template downloading is complished"),
+        Destroying("Template is destroying"),
+        Destroyed("Template is destroyed"),
+        Failed("Failed to download template");
+        String _description;
 
-public interface TemplatePrimaryDataStoreManager {
-    public TemplateOnPrimaryDataStoreInfo createTemplateOnPrimaryDataStore(TemplateInfo template, PrimaryDataStoreInfo dataStore);
+        private State(String description) {
+            _description = description;
+        }
 
-    public TemplateOnPrimaryDataStoreInfo findTemplateOnPrimaryDataStore(TemplateInfo template, PrimaryDataStoreInfo dataStore);
+        public String getDescription() {
+            return _description;
+        }
+    }
     
-    public StateMachine2<State, Event, TemplatePrimaryDataStoreVO> getStateMachine();
+    enum Event {
+        CreateRequested,
+        DestroyRequested,
+        OperationSuccessed,
+        OperationFailed,
+    }
 }

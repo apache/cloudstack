@@ -32,12 +32,13 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
-
+import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreStateMachine;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.fsm.StateObject;
 
 @Entity
 @Table(name = "template_spool_ref")
-public class TemplatePrimaryDataStoreVO {
+public class TemplatePrimaryDataStoreVO implements StateObject<TemplateOnPrimaryDataStoreStateMachine.State> {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     long id;
@@ -79,6 +80,25 @@ public class TemplatePrimaryDataStoreVO {
 
     @Column(name = "marked_for_gc")
     boolean markedForGC;
+    
+    @Column(name = "state")
+    @Enumerated(EnumType.STRING)
+    TemplateOnPrimaryDataStoreStateMachine.State state;
+
+    @Column(name="update_count", updatable = true, nullable=false)
+    protected long updatedCount;
+    
+    public long getUpdatedCount() {
+        return this.updatedCount;
+    }
+    
+    public void incrUpdatedCount() {
+        this.updatedCount++;
+    }
+    
+    public void decrUpdatedCount() {
+        this.updatedCount--;
+    }
 
     public String getInstallPath() {
         return installPath;
@@ -222,6 +242,11 @@ public class TemplatePrimaryDataStoreVO {
     @Override
     public String toString() {
         return new StringBuilder("TmplPool[").append(id).append("-").append(templateId).append("-").append("poolId").append("-").append(installPath).append("]").toString();
+    }
+
+    @Override
+    public TemplateOnPrimaryDataStoreStateMachine.State getState() {
+        return this.state;
     }
 
 }

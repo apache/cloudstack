@@ -10,7 +10,6 @@ import org.apache.cloudstack.storage.datastore.lifecycle.PrimaryDataStoreLifeCyc
 public interface PrimaryDataStoreProvider {
     public PrimaryDataStore getDataStore(long dataStoreId);
     public PrimaryDataStoreLifeCycle getDataStoreLifeCycle();
-    public PrimaryDataStoreInfo getDataStoreInfo(long dataStoreId);
     public long getId();
     public String getName();
     public boolean register(PrimaryDataStoreProviderVO provider, Map<String, Object> params);

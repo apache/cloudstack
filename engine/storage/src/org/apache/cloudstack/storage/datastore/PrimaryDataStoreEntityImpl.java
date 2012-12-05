@@ -137,14 +137,12 @@ public class PrimaryDataStoreEntityImpl implements StorageEntity {
 
     @Override
     public State getState() {
-        // TODO Auto-generated method stub
-        return null;
+        return this.dataStore.getManagedState();
     }
 
     @Override
     public String getName() {
-        // TODO Auto-generated method stub
-        return null;
+        return this.dataStore.getName();
     }
 
     @Override
