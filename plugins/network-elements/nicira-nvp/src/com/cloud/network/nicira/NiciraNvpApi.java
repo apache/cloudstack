@@ -240,14 +240,7 @@ public class NiciraNvpApi {
     public NatRule createLogicalRouterNatRule(String logicalRouterUuid, NatRule natRule) throws NiciraNvpApiException {
     	String uri = "/ws.v1/lrouter/" + logicalRouterUuid + "/nat";
     	
-    	if (natRule instanceof SourceNatRule) {
-    		return executeCreateObject(natRule, new TypeToken<SourceNatRule>(){}.getType(), uri, Collections.<String,String>emptyMap());
-    	}
-    	else if (natRule instanceof DestinationNatRule) {
-    		return executeCreateObject(natRule, new TypeToken<DestinationNatRule>(){}.getType(), uri, Collections.<String,String>emptyMap());
-    	}
-    	
-    	throw new NiciraNvpApiException("Unknown NatRule type");
+    	return executeCreateObject(natRule, new TypeToken<NatRule>(){}.getType(), uri, Collections.<String,String>emptyMap());
     }
     
     public void modifyLogicalRouterNatRule(String logicalRouterUuid, NatRule natRule) throws NiciraNvpApiException {

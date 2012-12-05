@@ -60,9 +60,7 @@ import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
-import com.cloud.network.nicira.Attachment;
 import com.cloud.network.nicira.ControlClusterStatus;
-import com.cloud.network.nicira.DestinationNatRule;
 import com.cloud.network.nicira.L3GatewayAttachment;
 import com.cloud.network.nicira.LogicalRouterConfig;
 import com.cloud.network.nicira.LogicalRouterPort;
@@ -77,12 +75,9 @@ import com.cloud.network.nicira.NiciraNvpTag;
 import com.cloud.network.nicira.PatchAttachment;
 import com.cloud.network.nicira.RouterNextHop;
 import com.cloud.network.nicira.SingleDefaultRouteImplictRoutingConfig;
-import com.cloud.network.nicira.SourceNatRule;
 import com.cloud.network.nicira.TransportZoneBinding;
 import com.cloud.network.nicira.VifAttachment;
 import com.cloud.resource.ServerResource;
-
-import edu.emory.mathcs.backport.java.util.Arrays;
 
 public class NiciraNvpResource implements ServerResource {
     private static final Logger s_logger = Logger.getLogger(NiciraNvpResource.class);
@@ -307,7 +302,13 @@ public class NiciraNvpResource implements ServerResource {
 
             LogicalSwitchPort logicalSwitchPort = new LogicalSwitchPort(attachmentUuid, tags, true);
             LogicalSwitchPort newPort = _niciraNvpApi.createLogicalSwitchPort(logicalSwitchUuid, logicalSwitchPort);
-            _niciraNvpApi.modifyLogicalSwitchPortAttachment(cmd.getLogicalSwitchUuid(), newPort.getUuid(), new VifAttachment(attachmentUuid));
+            try {
+            	_niciraNvpApi.modifyLogicalSwitchPortAttachment(cmd.getLogicalSwitchUuid(), newPort.getUuid(), new VifAttachment(attachmentUuid));
+            } catch (NiciraNvpApiException ex) {
+            	s_logger.warn("modifyLogicalSwitchPort failed after switchport was created, removing switchport");
+            	_niciraNvpApi.deleteLogicalSwitchPort(cmd.getLogicalSwitchUuid(), newPort.getUuid());
+            	throw (ex); // Rethrow the original exception
+            }
             return new CreateLogicalSwitchPortAnswer(cmd, true, "Logical switch port " + newPort.getUuid() + " created", newPort.getUuid());
         } catch (NiciraNvpApiException e) {
         	if (numRetries > 0) {
@@ -404,6 +405,9 @@ public class NiciraNvpResource implements ServerResource {
         			new RouterNextHop(publicNetworkNextHopIp)));
         	lrc = _niciraNvpApi.createLogicalRouter(lrc);
         	
+        	// store the switchport for rollback
+        	LogicalSwitchPort lsp = null;
+        	
         	try {
 	        	// Create the outside port for the router
 	        	LogicalRouterPort lrpo = new LogicalRouterPort();
@@ -433,7 +437,7 @@ public class NiciraNvpResource implements ServerResource {
 	        	lrpi = _niciraNvpApi.createLogicalRouterPort(lrc.getUuid(),lrpi);
 	        	
 	        	// Create the inside port on the lswitch
-	            LogicalSwitchPort lsp = new LogicalSwitchPort(truncate(routerName + "-inside-port", 40), tags, true);
+	            lsp = new LogicalSwitchPort(truncate(routerName + "-inside-port", 40), tags, true);
 	            lsp = _niciraNvpApi.createLogicalSwitchPort(logicalSwitchUuid, lsp);
 	       	
 	        	// Attach the inside router port to the lswitch port with a PatchAttachment
@@ -445,7 +449,8 @@ public class NiciraNvpResource implements ServerResource {
 	            		new PatchAttachment(lrpi.getUuid()));
 	            
 	            // Setup the source nat rule
-	            SourceNatRule snr = new SourceNatRule();
+	            NatRule snr = new NatRule();
+	            snr.setType("SourceNatRule");
 	            snr.setToSourceIpAddressMin(publicNetworkIpAddress.split("/")[0]);
 	            snr.setToSourceIpAddressMax(publicNetworkIpAddress.split("/")[0]);
 	            Match match = new Match();
@@ -454,10 +459,12 @@ public class NiciraNvpResource implements ServerResource {
 	            _niciraNvpApi.createLogicalRouterNatRule(lrc.getUuid(), snr);
         	} catch (NiciraNvpApiException e) {
         		// We need to destroy the router if we already created it
-        		// this will also take care of any router ports
-        		// TODO Clean up the switchport
+        		// this will also take care of any router ports and rules
         		try {
         			_niciraNvpApi.deleteLogicalRouter(lrc.getUuid());
+        			if (lsp != null) {
+        				_niciraNvpApi.deleteLogicalSwitchPort(logicalSwitchUuid, lsp.getUuid());
+        			}
         		} catch (NiciraNvpApiException ex) {}
         		
         		throw e;
@@ -498,7 +505,8 @@ public class NiciraNvpResource implements ServerResource {
     		lrp.setIpAddresses(cmd.getPublicCidrs());
     		_niciraNvpApi.modifyLogicalRouterPort(cmd.getLogicalRouterUuid(), lrp);
     		
-    		return new ConfigurePublicIpsOnLogicalRouterAnswer(cmd, true, "Logical Router deleted (uuid " + cmd.getLogicalRouterUuid() + ")");
+    		return new ConfigurePublicIpsOnLogicalRouterAnswer(cmd, true, "Configured " + cmd.getPublicCidrs().size() + 
+    				" ip addresses on logical router uuid " + cmd.getLogicalRouterUuid());
         } catch (NiciraNvpApiException e) {
         	if (numRetries > 0) {
         		return retry(cmd, --numRetries);
@@ -581,21 +589,23 @@ public class NiciraNvpResource implements ServerResource {
 					// create the dnat rule
 					Match m = new Match();
 					m.setDestinationIpAddresses(outsideCidr);
-					DestinationNatRule newDnatRule = new DestinationNatRule();
+					NatRule newDnatRule = new NatRule();
+					newDnatRule.setType("DestinationNatRule");
 					newDnatRule.setMatch(m);
 					newDnatRule.setToDestinationIpAddressMin(insideIp);
 					newDnatRule.setToDestinationIpAddressMax(insideIp);
-					newDnatRule = (DestinationNatRule) _niciraNvpApi.createLogicalRouterNatRule(cmd.getLogicalRouterUuid(), newDnatRule);
+					newDnatRule = _niciraNvpApi.createLogicalRouterNatRule(cmd.getLogicalRouterUuid(), newDnatRule);
 					s_logger.debug("Created " + natRuleToString(newDnatRule));
 
 					// create matching snat rule
 					m = new Match();
 					m.setSourceIpAddresses(insideIp + "/32");
-					SourceNatRule newSnatRule = new SourceNatRule();
+					NatRule newSnatRule = new NatRule();
+					newSnatRule.setType("SourceNatRule");
 					newSnatRule.setMatch(m);
 					newSnatRule.setToSourceIpAddressMin(outsideIp);
 					newSnatRule.setToSourceIpAddressMax(outsideIp);
-					newSnatRule = (SourceNatRule) _niciraNvpApi.createLogicalRouterNatRule(cmd.getLogicalRouterUuid(), newSnatRule);
+					newSnatRule = _niciraNvpApi.createLogicalRouterNatRule(cmd.getLogicalRouterUuid(), newSnatRule);
 					s_logger.debug("Created " + natRuleToString(newSnatRule));
 					
 				}
@@ -698,12 +708,13 @@ public class NiciraNvpResource implements ServerResource {
 					}
 					m.setDestinationPortMin(rule.getSrcPortRange()[0]);
 					m.setDestinationPortMax(rule.getSrcPortRange()[1]);
-					DestinationNatRule newDnatRule = new DestinationNatRule();
+					NatRule newDnatRule = new NatRule();
+					newDnatRule.setType("DestinationNatRule");
 					newDnatRule.setMatch(m);
 					newDnatRule.setToDestinationIpAddressMin(insideIp);
 					newDnatRule.setToDestinationIpAddressMax(insideIp);
 					newDnatRule.setToDestinationPort(rule.getDstPortRange()[0]);
-					newDnatRule = (DestinationNatRule) _niciraNvpApi.createLogicalRouterNatRule(cmd.getLogicalRouterUuid(), newDnatRule);
+					newDnatRule = _niciraNvpApi.createLogicalRouterNatRule(cmd.getLogicalRouterUuid(), newDnatRule);
 					s_logger.debug("Created " + natRuleToString(newDnatRule));
 					
 					// create matching snat rule
@@ -717,13 +728,14 @@ public class NiciraNvpResource implements ServerResource {
 					}
 					m.setSourcePortMin(rule.getDstPortRange()[0]);
 					m.setSourcePortMax(rule.getDstPortRange()[1]);
-					SourceNatRule newSnatRule = new SourceNatRule();
+					NatRule newSnatRule = new NatRule();
+					newSnatRule.setType("SourceNatRule");
 					newSnatRule.setMatch(m);
 					newSnatRule.setToSourceIpAddressMin(outsideIp);
 					newSnatRule.setToSourceIpAddressMax(outsideIp);
 					newSnatRule.setToSourcePortMin(rule.getSrcPortRange()[0]);
 					newSnatRule.setToSourcePortMax(rule.getSrcPortRange()[1]);
-					newSnatRule = (SourceNatRule) _niciraNvpApi.createLogicalRouterNatRule(cmd.getLogicalRouterUuid(), newSnatRule);
+					newSnatRule = _niciraNvpApi.createLogicalRouterNatRule(cmd.getLogicalRouterUuid(), newSnatRule);
 					s_logger.debug("Created " + natRuleToString(newSnatRule));
 					
 				}
@@ -749,9 +761,8 @@ public class NiciraNvpResource implements ServerResource {
     }    
 
     private Answer retry(Command cmd, int numRetries) {
-        int numRetriesRemaining = numRetries - 1;
-        s_logger.warn("Retrying " + cmd.getClass().getSimpleName() + ". Number of retries remaining: " + numRetriesRemaining);
-        return executeRequest(cmd, numRetriesRemaining);
+        s_logger.warn("Retrying " + cmd.getClass().getSimpleName() + ". Number of retries remaining: " + numRetries);
+        return executeRequest(cmd, numRetries);
     }
     
     private String natRuleToString(NatRule rule) {
@@ -806,6 +817,19 @@ public class NiciraNvpResource implements ServerResource {
     	else {
     		return string.substring(0, length);
     	}
+    }
+    
+    private NatRule[] generateStaticNatRulePair(String insideIp, String outsideIp) {
+    	NatRule[] rulepair = new NatRule[2];
+    	rulepair[0] = new NatRule();
+    	rulepair[0].setType("DestinationNatRule");
+    	rulepair[1] = new NatRule();
+    	rulepair[1].setType("SourceNatRule");
+    	
+    	//FIXME Implement
+    	
+    	return rulepair;
+    	
     }
     
 }
