@@ -26,14 +26,14 @@ import java.util.concurrent.ScheduledExecutorService;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.admin.network.command.AddNetworkDeviceCmd;
+import org.apache.cloudstack.api.admin.network.command.ListNetworkDeviceCmd;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.IdentityService;
-import com.cloud.api.commands.AddNetworkDeviceCmd;
-import com.cloud.api.commands.DeleteNetworkDeviceCmd;
-import com.cloud.api.commands.ListNetworkDeviceCmd;
+import org.apache.cloudstack.api.admin.network.command.DeleteNetworkDeviceCmd;
 import com.cloud.baremetal.ExternalDhcpManager;
 import com.cloud.baremetal.PxeServerManager;
 import com.cloud.baremetal.PxeServerProfile;

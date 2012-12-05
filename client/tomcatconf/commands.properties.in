@@ -370,14 +370,9 @@ listStorageNetworkIpRange=org.apache.cloudstack.api.admin.network.command.ListSt
 updateStorageNetworkIpRange=org.apache.cloudstack.api.admin.network.command.UpdateStorageNetworkIpRangeCmd;1
 
 ### Network Devices commands
-addNetworkDevice=com.cloud.api.commands.AddNetworkDeviceCmd;1
-listNetworkDevice=com.cloud.api.commands.ListNetworkDeviceCmd;1
-deleteNetworkDevice=com.cloud.api.commands.DeleteNetworkDeviceCmd;1
-
-### Network Devices commands
-addNetworkDevice=com.cloud.api.commands.AddNetworkDeviceCmd;1
-listNetworkDevice=com.cloud.api.commands.ListNetworkDeviceCmd;1
-deleteNetworkDevice=com.cloud.api.commands.DeleteNetworkDeviceCmd;1
+addNetworkDevice=org.apache.cloudstack.api.admin.network.command.AddNetworkDeviceCmd;1
+listNetworkDevice=org.apache.cloudstack.api.admin.network.command.ListNetworkDeviceCmd;1
+deleteNetworkDevice=org.apache.cloudstack.api.admin.network.command.DeleteNetworkDeviceCmd;1
 
 ### VPC commands
 createVPC=org.apache.cloudstack.api.user.vpc.command.CreateVPCCmd;15

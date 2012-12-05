@@ -14,51 +14,43 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
-
-import java.util.Map;
+package org.apache.cloudstack.api.admin.network.command;
 
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import com.cloud.api.response.SuccessResponse;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.host.Host;
 import com.cloud.network.ExternalNetworkDeviceManager;
 import com.cloud.server.ManagementService;
-import com.cloud.server.api.response.NetworkDeviceResponse;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Implementation(description="Adds a network device of one of the following types: ExternalDhcp, ExternalFirewall, ExternalLoadBalancer, PxeServer", responseObject = NetworkDeviceResponse.class)
-public class AddNetworkDeviceCmd extends BaseCmd {
-	public static final Logger s_logger = Logger.getLogger(AddNetworkDeviceCmd.class);
-	private static final String s_name = "addnetworkdeviceresponse";
+@Implementation(description="Deletes network device.", responseObject=SuccessResponse.class)
+public class DeleteNetworkDeviceCmd extends BaseCmd {
+	public static final Logger s_logger = Logger.getLogger(DeleteNetworkDeviceCmd.class);
+	private static final String s_name = "deletenetworkdeviceresponse";
 	
-	// ///////////////////////////////////////////////////
-    // ////////////// API parameters /////////////////////
-    // ///////////////////////////////////////////////////
+	/////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @IdentityMapper(entityTableName="host")
+	@Parameter(name = ApiConstants.ID, type = CommandType.LONG, required=true, description = "Id of network device to delete")
+    private Long id;
+    
 	
-	@Parameter(name = ApiConstants.NETWORK_DEVICE_TYPE, type = CommandType.STRING, description = "Network device type, now supports ExternalDhcp, PxeServer, NetscalerMPXLoadBalancer, NetscalerVPXLoadBalancer, NetscalerSDXLoadBalancer, F5BigIpLoadBalancer, JuniperSRXFirewall")
-    private String type;
-	
-	@Parameter(name = ApiConstants.NETWORK_DEVICE_PARAMETER_LIST, type = CommandType.MAP, description = "parameters for network device")
-    private Map paramList;
-	
-	
-	public String getDeviceType() {
-		return type;
-	}
-	
-	public Map getParamList() {
-		return paramList;
+	public Long getId() {
+		return id;
 	}
 	
 	@Override
@@ -68,11 +60,14 @@ public class AddNetworkDeviceCmd extends BaseCmd {
 			ExternalNetworkDeviceManager nwDeviceMgr;
 			ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
 			nwDeviceMgr = locator.getManager(ExternalNetworkDeviceManager.class);
-			Host device = nwDeviceMgr.addNetworkDevice(this);
-			NetworkDeviceResponse response = nwDeviceMgr.getApiResponse(device);
-			response.setObjectName("networkdevice");
-			response.setResponseName(getCommandName());
-			this.setResponseObject(response);
+			boolean result = nwDeviceMgr.deleteNetworkDevice(this);
+			if (result) {
+				SuccessResponse response = new SuccessResponse(getCommandName());
+				response.setResponseName(getCommandName());
+				this.setResponseObject(response);
+			} else {
+				throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete network device:" + getId());
+			}
 		} catch (InvalidParameterValueException ipve) {
 			throw new ServerApiException(BaseCmd.PARAM_ERROR, ipve.getMessage());
 		} catch (CloudRuntimeException cre) {
