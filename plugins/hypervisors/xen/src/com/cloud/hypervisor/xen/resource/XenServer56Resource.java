@@ -74,11 +74,6 @@ public class XenServer56Resource extends CitrixResourceBase {
         }
     }
     
-    @Override
-    protected void setMemory(Connection conn, VM vm, long memsize) throws XmlRpcException, XenAPIException {
-        vm.setMemoryLimits(conn, memsize, memsize, memsize, memsize);
-    }
-    
 
     @Override
     protected String getGuestOsType(String stdType, boolean bootFromCD) {
