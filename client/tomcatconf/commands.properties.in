@@ -388,9 +388,9 @@ deleteVPCOffering=org.apache.cloudstack.api.admin.vpc.command.DeleteVPCOfferingC
 listVPCOfferings=org.apache.cloudstack.api.user.vpc.command.ListVPCOfferingsCmd;15
 
 #### Private gateway commands
-createPrivateGateway=com.cloud.api.commands.CreatePrivateGatewayCmd;1
+createPrivateGateway=org.apache.cloudstack.api.admin.vpc.command.CreatePrivateGatewayCmd;1
 listPrivateGateways=org.apache.cloudstack.api.user.vpc.command.ListPrivateGatewaysCmd;15
-deletePrivateGateway=com.cloud.api.commands.DeletePrivateGatewayCmd;1
+deletePrivateGateway=org.apache.cloudstack.api.admin.vpc.command.DeletePrivateGatewayCmd;1
 
 #### Network ACL commands
 createNetworkACL=org.apache.cloudstack.api.user.network.command.CreateNetworkACLCmd;15
