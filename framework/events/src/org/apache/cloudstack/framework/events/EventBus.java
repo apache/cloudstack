@@ -20,30 +20,37 @@
 package org.apache.cloudstack.framework.events;
 
 import com.cloud.utils.component.Adapter;
-import java.util.Map;
 
 /**
- * Publish and Subscribe provider interface
+ * Interface to publish and subscribe to CloudStack events
  *
  */
 public interface EventBus extends Adapter{
-    /**
-     * Publish an event
-     * 
-     * @param category category of the event being published (e.g. action, usage, alert etc)
-     * @param type type of the event (e.g. vm stop, volume delete etc)
-     * @param description description of the event
-     * @return true if the event has been successfully published.
-     */
-    boolean publish(String category, String type, Map<String, String> description);
 
     /**
-     * Subscribe to events of a category and a type
-     *  
-     * @param category category of the event being subscribed (e.g. action, usage, alert etc)
-     * @param type type of the event (e.g. vm stop, volume delete etc)
-     * @param subscriber class that is intends to receive subscribed event
-     * @return true if the subscribe has been successfully registered.
+     * publish an event
+     *
+     * @param event event that needs to be published
+     * @return true if the event has been successfully published on event bus
      */
-    boolean subscribe(String category, String type, EventSubscriber subscriber);
+    boolean publish(Event event);
+
+    /**
+     * subscribe to events of a category and a type
+     *
+     * @param topic defines category and type of the events being subscribed to
+     * @param subscriber subscriber that intends to receive event notification
+     * @return true if the subscriber has been successfully registered.
+     */
+    boolean subscribe(EventTopic topic, EventSubscriber subscriber);
+
+    /**
+     * unsubscribe to events of a category and a type
+     *
+     * @param topic defines category and type of the events to unsubscribe
+     * @param subscriber subscriber that intends to unsubscribe from the event notification
+     * @return true if the subscriber has been successfully unsubscribed.
+     */
+    boolean unsubscribe(EventTopic topic, EventSubscriber subscriber);
+
 }

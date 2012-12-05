@@ -3,7 +3,7 @@ package com.cloud.event;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import org.apache.cloudstack.framework.events.EventBus;
-import org.apache.cloudstack.framework.events.EventCategory;
+import org.apache.cloudstack.framework.events.Event;
 
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -54,7 +54,9 @@ public class UsageEventGenerator {
             }
             eventDescription.put("resourceName", resourceName);
             eventDescription.put("resourceType", resourceType);
-            _eventBus.publish(EventCategory.USAGE_EVENT, usageType, eventDescription);
+            Event event = new Event(EventCategory.USAGE_EVENT.getName(), usageType, usageType);
+            event.setDescription(eventDescription);
+            _eventBus.publish(event);
         }
     }
 

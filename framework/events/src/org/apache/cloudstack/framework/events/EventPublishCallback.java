@@ -19,21 +19,18 @@
 
 package org.apache.cloudstack.framework.events;
 
-import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Method;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
-
 import com.cloud.utils.component.Adapters;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.AnnotationInterceptor;
-
+import com.cloud.utils.component.ComponentLocator;
 import net.sf.cglib.proxy.Callback;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 
-public class EventPublisher implements MethodInterceptor, AnnotationInterceptor<Publish> {
+import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Method;
+import java.util.Enumeration;
+
+public class EventPublishCallback implements MethodInterceptor, AnnotationInterceptor<Publish> {
 
     private static EventBus _eventBus = null;
 
@@ -58,7 +55,7 @@ public class EventPublisher implements MethodInterceptor, AnnotationInterceptor<
     public boolean needToIntercept(AnnotatedElement element) {
         if (!(element instanceof Method)) {
             return false;
-            
+
         }
         Method method = (Method)element;
         Publish event = method.getAnnotation(Publish.class);
@@ -77,9 +74,7 @@ public class EventPublisher implements MethodInterceptor, AnnotationInterceptor<
     public void interceptComplete(AnnotatedElement element, Publish event) {
         _eventBus = getEventBus();
         if (_eventBus != null) {
-            Map<String, String> description = new HashMap<String, String>();
-            description.put("description", event.eventDescription());
-            _eventBus.publish(event.eventCategory(), event.eventType(), description);
+
         }
     }
 
@@ -92,7 +87,7 @@ public class EventPublisher implements MethodInterceptor, AnnotationInterceptor<
     public Callback getCallback() {
         return this;
     }
-    
+
     private EventBus getEventBus() {
         if (_eventBus == null) {
             ComponentLocator locator = ComponentLocator.getLocator("management-server");

@@ -23,8 +23,8 @@ import com.cloud.utils.component.ComponentLocator;
 import net.sf.cglib.proxy.Callback;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
+import org.apache.cloudstack.framework.events.Event;
 import org.apache.cloudstack.framework.events.EventBus;
-import org.apache.cloudstack.framework.events.EventCategory;
 
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
@@ -86,7 +86,7 @@ public class ActionEventCallback implements MethodInterceptor, AnnotationInterce
                     eventDescription += ". "+ctx.getEventDetails();
                 }
                 EventUtils.saveStartedActionEvent(userId, accountId, actionEvent.eventType(), eventDescription, startEventId);
-                publishOnEventBus(userId, accountId, actionEvent.eventType(), Event.State.Started, eventDescription);
+                publishOnEventBus(userId, accountId, actionEvent.eventType(), com.cloud.event.Event.State.Started, eventDescription);
             }
         }
         return event;
@@ -108,11 +108,11 @@ public class ActionEventCallback implements MethodInterceptor, AnnotationInterce
             if(actionEvent.create()){
                 //This start event has to be used for subsequent events of this action
                 startEventId = EventUtils.saveCreatedActionEvent(userId, accountId, EventVO.LEVEL_INFO, actionEvent.eventType(), "Successfully created entity for "+eventDescription);
-                publishOnEventBus(userId, accountId, actionEvent.eventType(), Event.State.Created, "Successfully created entity for " + eventDescription);
+                publishOnEventBus(userId, accountId, actionEvent.eventType(), com.cloud.event.Event.State.Created, "Successfully created entity for " + eventDescription);
                 ctx.setStartEventId(startEventId);
             } else {
                 EventUtils.saveActionEvent(userId, accountId, EventVO.LEVEL_INFO, actionEvent.eventType(), "Successfully completed "+eventDescription, startEventId);
-                publishOnEventBus(userId, accountId, actionEvent.eventType(), Event.State.Completed, "Successfully completed " + eventDescription + startEventId);
+                publishOnEventBus(userId, accountId, actionEvent.eventType(), com.cloud.event.Event.State.Completed, "Successfully completed " + eventDescription + startEventId);
             }
         }
     }
@@ -144,14 +144,16 @@ public class ActionEventCallback implements MethodInterceptor, AnnotationInterce
         return this;
     }
 
-    void publishOnEventBus(long userId, long accountId, String type, Event.State state, String description) {
+    void publishOnEventBus(long userId, long accountId, String type, com.cloud.event.Event.State state, String description) {
         if (getEventBus() != null) {
             Map<String, String> eventDescription = new HashMap<String, String>();
             eventDescription.put("user", String.valueOf(userId));
             eventDescription.put("account", String.valueOf(accountId));
             eventDescription.put("state", state.toString());
             eventDescription.put("description", description);
-            _eventBus.publish(EventCategory.ACTION_EVENT, type, eventDescription);
+            Event event = new Event(EventCategory.ACTION_EVENT.getName(), type, type);
+            event.setDescription(eventDescription);
+            _eventBus.publish(event);
         }
     }
 

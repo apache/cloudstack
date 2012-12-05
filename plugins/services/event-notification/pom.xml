@@ -19,29 +19,23 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <artifactId>cloud-framework-events</artifactId>
-  <name>Apache CloudStack Event Notification Framework</name>
+  <artifactId>cloud-plugin-event-notification-service</artifactId>
+  <name>Apache CloudStack Pluggable Service - Event Notifications</name>
   <parent>
     <groupId>org.apache.cloudstack</groupId>
-    <artifactId>cloudstack</artifactId>
+    <artifactId>cloudstack-plugins</artifactId>
     <version>4.1.0-SNAPSHOT</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
-  <dependencies>
-    <dependency>
-      <groupId>org.apache.cloudstack</groupId>
+    <dependencies>
+      <dependency>
+        <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloud-utils</artifactId>
         <version>${project.version}</version>
-    </dependency>
-    <dependency>
-        <groupId>com.google.code.gson</groupId>
-        <artifactId>gson</artifactId>
-        <version>${cs.gson.version}</version>
-    </dependency>
+      </dependency>
   </dependencies>
   <build>
     <defaultGoal>install</defaultGoal>
     <sourceDirectory>src</sourceDirectory>
-    <testSourceDirectory>test</testSourceDirectory>
   </build>
 </project>

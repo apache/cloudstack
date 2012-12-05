@@ -3,7 +3,7 @@ package com.cloud.event;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import org.apache.cloudstack.framework.events.EventBus;
-import org.apache.cloudstack.framework.events.EventCategory;
+import org.apache.cloudstack.framework.events.Event;
 
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -25,7 +25,9 @@ public class AlertGenerator {
             eventDescription.put("podId", Long.toString(podId));
             eventDescription.put("subject", subject);
             eventDescription.put("body", body);
-            _eventBus.publish(EventCategory.ALERT_EVENT, alertType, eventDescription);
+            Event event = new Event(EventCategory.ALERT_EVENT.getName(), alertType, alertType);
+            event.setDescription(eventDescription);
+            _eventBus.publish(event);
         }
     }
 

@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *   http://www.apache.org/licenses/LICENSE2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
@@ -17,16 +17,8 @@
  * under the License.
  */
 
-package org.apache.cloudstack.framework.events;
+package org.apache.cloudstack.Events.Notifications;
 
-public interface EventSubscriber {
+public class EndpointHandler {
 
-    /**
-     * Callback method. EventBus calls this method on occurrence of subscribed event
-     *
-     * @param category category of the event being subscribed (e.g. action, usage, alert etc)
-     * @param type type of the event (e.g. vm stop, volume delete etc)
-     * @param description description of the event
-     */
-    void recieve(Event event);
 }

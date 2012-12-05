@@ -17,29 +17,18 @@
  * under the License.
  */
 
-package org.apache.cloudstack.framework.events;
+package org.apache.cloudstack.Events.Notifications;
 
-import java.util.ArrayList;
+import org.apache.cloudstack.framework.events.EventTopic;
+
 import java.util.List;
 
-public class EventCategory {
-    private static List<EventCategory> eventCategories = new ArrayList<EventCategory>();
-    private String eventCategoryName;
+public interface EventNotificationService {
 
-    public  EventCategory(String categoryName) {
-        this.eventCategoryName = categoryName;
-    }
+    void subscribe(EventTopic topic, Endpoint endpoint);
 
-    public String getName() {
-        return eventCategoryName;
-    }
+    void unsubscribe(EventTopic topic, Endpoint endpoint);
 
-    public static List<EventCategory> listAllEventCategory() {
-        return eventCategories;
-    }
-
-    public static final EventCategory ACTION_EVENT = new EventCategory("Action Events");
-    public static final EventCategory ALERT_EVENT  = new EventCategory("Alert Event");
-    public static final EventCategory USAGE_EVENT  = new EventCategory("Usage Event");
+    List<EventTopic> listSubscribedTopics();
 
 }

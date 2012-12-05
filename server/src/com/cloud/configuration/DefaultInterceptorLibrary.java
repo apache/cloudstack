@@ -22,7 +22,7 @@ import com.cloud.event.ActionEventCallback;
 import com.cloud.utils.component.AnnotationInterceptor;
 import com.cloud.utils.component.InterceptorLibrary;
 import com.cloud.utils.db.DatabaseCallback;
-import org.apache.cloudstack.framework.events.EventPublisher;
+import org.apache.cloudstack.framework.events.EventPublishCallback;
 
 public class DefaultInterceptorLibrary implements InterceptorLibrary {
 
@@ -30,6 +30,6 @@ public class DefaultInterceptorLibrary implements InterceptorLibrary {
     public void addInterceptors(List<AnnotationInterceptor<?>> interceptors) {
         interceptors.add(new DatabaseCallback());
         interceptors.add(new ActionEventCallback());
-        interceptors.add(new EventPublisher());
+        interceptors.add(new EventPublishCallback());
     }
 }

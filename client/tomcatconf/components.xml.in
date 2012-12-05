@@ -173,9 +173,9 @@ under the License.
             <adapter name="BasicAgentAuthorizer" class="com.cloud.agent.manager.authn.impl.BasicAgentAuthManager"/>
         </adapters>
         <adapters key="org.apache.cloudstack.framework.events.EventBus">
-            <adapter name="RabbitMQ Message Broker" class="org.apache.cloudstack.mom.rabbitmq.RabbitMQEventBus">
-            <param name="server">localhost</param>
-            <param name="port">55672</param>
+            <adapter name="RabbitMQMessageBroker" class="org.apache.cloudstack.mom.rabbitmq.RabbitMQEventBus">
+            <param name="server">127.0.0.1</param>
+            <param name="port">5672</param>
             <param name="username">guest</param>
             <param name="password">guest</param>
             </adapter>
