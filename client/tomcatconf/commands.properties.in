@@ -29,14 +29,14 @@ listAccounts=org.apache.cloudstack.api.user.account.command.ListAccountsCmd;15
 markDefaultZoneForAccount=com.cloud.api.commands.MarkDefaultZoneForAccountCmd;1
 
 #### User commands
-createUser=com.cloud.api.commands.CreateUserCmd;3
-deleteUser=com.cloud.api.commands.DeleteUserCmd;3
-updateUser=com.cloud.api.commands.UpdateUserCmd;3
-listUsers=com.cloud.api.commands.ListUsersCmd;7
+createUser=org.apache.cloudstack.api.admin.user.command.CreateUserCmd;3
+deleteUser=org.apache.cloudstack.api.admin.user.command.DeleteUserCmd;3
+updateUser=org.apache.cloudstack.api.admin.user.command.UpdateUserCmd;3
+listUsers=org.apache.cloudstack.api.admin.user.command.ListUsersCmd;7
 ####lockUser=com.cloud.api.commands.LockUserCmd;7
-disableUser=com.cloud.api.commands.DisableUserCmd;7
-enableUser=com.cloud.api.commands.EnableUserCmd;7
-getUser=com.cloud.api.commands.GetUserCmd;1
+disableUser=org.apache.cloudstack.api.admin.user.command.DisableUserCmd;7
+enableUser=org.apache.cloudstack.api.admin.user.command.EnableUserCmd;7
+getUser=org.apache.cloudstack.api.admin.user.command.GetUserCmd;1
 
 #### Domain commands
 createDomain=com.cloud.api.commands.CreateDomainCmd;1

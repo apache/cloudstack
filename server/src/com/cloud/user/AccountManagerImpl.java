@@ -36,6 +36,7 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.admin.user.command.ListUsersCmd;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
@@ -43,12 +44,11 @@ import com.cloud.acl.ControlledEntity;
 import com.cloud.acl.SecurityChecker;
 import com.cloud.acl.SecurityChecker.AccessType;
 import com.cloud.api.ApiDBUtils;
-import com.cloud.api.commands.DeleteUserCmd;
+import org.apache.cloudstack.api.admin.user.command.DeleteUserCmd;
 import org.apache.cloudstack.api.user.account.command.ListAccountsCmd;
-import com.cloud.api.commands.ListUsersCmd;
 import com.cloud.api.commands.RegisterCmd;
 import com.cloud.api.commands.UpdateAccountCmd;
-import com.cloud.api.commands.UpdateUserCmd;
+import org.apache.cloudstack.api.admin.user.command.UpdateUserCmd;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ResourceLimit;

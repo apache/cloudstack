@@ -14,37 +14,41 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.admin.user.command;
 
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
+import com.cloud.api.response.SuccessResponse;
 import com.cloud.api.response.UserResponse;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.user.UserAccount;
+import com.cloud.user.Account;
+import com.cloud.user.User;
+import com.cloud.user.UserContext;
 
-@Implementation(description="Find user account by API key", responseObject=UserResponse.class)
-public class GetUserCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(GetUserCmd.class.getName());
+@Implementation(description="Creates a user for an account", responseObject=UserResponse.class)
+public class DeleteUserCmd extends BaseCmd {
+    public static final Logger s_logger = Logger.getLogger(DeleteUserCmd.class.getName());
 
-    private static final String s_name = "getuserresponse";
+    private static final String s_name = "deleteuserresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-
-    @Parameter(name=ApiConstants.API_KEY, type=CommandType.STRING, required=true, description="API key of the user")
-    private String apiKey;
+    @IdentityMapper(entityTableName="user")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="Deletes a user")
+    private Long id;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public String getApiKey() {
-        return apiKey;
+    public Long getId() {
+        return id;
     }
 
     /////////////////////////////////////////////////////
@@ -58,19 +62,23 @@ public class GetUserCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-        return 0;
+        User user = _entityMgr.findById(User.class, getId());
+        if (user != null) {
+            return user.getAccountId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
 
     @Override
     public void execute(){
-        UserAccount result = _accountService.getUserByApiKey(getApiKey());
-        if(result != null){
-            UserResponse response = _responseGenerator.createUserResponse(result);
-            response.setResponseName(getCommandName());
-            response.setResponseName(getCommandName());
+        UserContext.current().setEventDetails("UserId: "+getId());
+        boolean result = _accountService.deleteUser(this);
+        if (result) {
+            SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new InvalidParameterValueException("User with specified API key does not exist");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete user");
         }
     }
 }

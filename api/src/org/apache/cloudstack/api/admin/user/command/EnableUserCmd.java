@@ -14,37 +14,35 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.admin.user.command;
 
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import com.cloud.api.response.UserResponse;
-import com.cloud.async.AsyncJob;
-import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Disables a user account", responseObject=UserResponse.class)
-public class DisableUserCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DisableUserCmd.class.getName());
-    private static final String s_name = "disableuserresponse";
+@Implementation(description="Enables a user account", responseObject=UserResponse.class)
+public class EnableUserCmd extends BaseCmd {
+    public static final Logger s_logger = Logger.getLogger(EnableUserCmd.class.getName());
+    private static final String s_name = "enableuserresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
     @IdentityMapper(entityTableName="user")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="Disables user by user ID.")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="Enables user by user ID.")
     private Long id;
+
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -64,11 +62,6 @@ public class DisableUserCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public String getEventType() {
-        return EventTypes.EVENT_USER_DISABLE;
-    }
-
-    @Override
     public long getEntityOwnerId() {
         User user = _entityMgr.findById(User.class, getId());
         if (user != null) {
@@ -79,26 +72,15 @@ public class DisableUserCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public String getEventDescription() {
-        return  "disabling user: " + getId();
-    }
-
-
-    @Override
     public void execute(){
         UserContext.current().setEventDetails("UserId: "+getId());
-        UserAccount user = _accountService.disableUser(getId());
+        UserAccount user = _accountService.enableUser(getId());
         if (user != null){
             UserResponse response = _responseGenerator.createUserResponse(user);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to disable user");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to enable user");
         }
-    }
-
-    @Override
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.User;
     }
 }

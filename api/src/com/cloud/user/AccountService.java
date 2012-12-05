@@ -21,12 +21,12 @@ import java.util.Map;
 
 import com.cloud.acl.ControlledEntity;
 import com.cloud.acl.SecurityChecker.AccessType;
-import com.cloud.api.commands.DeleteUserCmd;
+import org.apache.cloudstack.api.admin.user.command.DeleteUserCmd;
+import org.apache.cloudstack.api.admin.user.command.UpdateUserCmd;
 import org.apache.cloudstack.api.user.account.command.ListAccountsCmd;
-import com.cloud.api.commands.ListUsersCmd;
+import org.apache.cloudstack.api.admin.user.command.ListUsersCmd;
 import com.cloud.api.commands.RegisterCmd;
 import com.cloud.api.commands.UpdateAccountCmd;
-import com.cloud.api.commands.UpdateUserCmd;
 import com.cloud.domain.Domain;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.PermissionDeniedException;

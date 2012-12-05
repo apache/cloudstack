@@ -14,33 +14,36 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.admin.user.command;
 
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import com.cloud.api.response.SuccessResponse;
 import com.cloud.api.response.UserResponse;
+import com.cloud.async.AsyncJob;
+import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.user.User;
+import com.cloud.user.UserAccount;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Creates a user for an account", responseObject=UserResponse.class)
-public class DeleteUserCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteUserCmd.class.getName());
-
-    private static final String s_name = "deleteuserresponse";
+@Implementation(description="Disables a user account", responseObject=UserResponse.class)
+public class DisableUserCmd extends BaseAsyncCmd {
+    public static final Logger s_logger = Logger.getLogger(DisableUserCmd.class.getName());
+    private static final String s_name = "disableuserresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
+
     @IdentityMapper(entityTableName="user")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="Deletes a user")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="Disables user by user ID.")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -61,6 +64,11 @@ public class DeleteUserCmd extends BaseCmd {
     }
 
     @Override
+    public String getEventType() {
+        return EventTypes.EVENT_USER_DISABLE;
+    }
+
+    @Override
     public long getEntityOwnerId() {
         User user = _entityMgr.findById(User.class, getId());
         if (user != null) {
@@ -71,14 +79,26 @@ public class DeleteUserCmd extends BaseCmd {
     }
 
     @Override
+    public String getEventDescription() {
+        return  "disabling user: " + getId();
+    }
+
+
+    @Override
     public void execute(){
         UserContext.current().setEventDetails("UserId: "+getId());
-        boolean result = _accountService.deleteUser(this);
-        if (result) {
-            SuccessResponse response = new SuccessResponse(getCommandName());
+        UserAccount user = _accountService.disableUser(getId());
+        if (user != null){
+            UserResponse response = _responseGenerator.createUserResponse(user);
+            response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete user");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to disable user");
         }
+    }
+
+    @Override
+    public AsyncJob.Type getInstanceType() {
+        return AsyncJob.Type.User;
     }
 }

@@ -14,42 +14,37 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.admin.user.command;
 
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
 import com.cloud.api.response.UserResponse;
-import com.cloud.user.Account;
-import com.cloud.user.User;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.UserAccount;
-import com.cloud.user.UserContext;
 
-@Implementation(description="Enables a user account", responseObject=UserResponse.class)
-public class EnableUserCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(EnableUserCmd.class.getName());
-    private static final String s_name = "enableuserresponse";
+@Implementation(description="Find user account by API key", responseObject=UserResponse.class)
+public class GetUserCmd extends BaseCmd {
+    public static final Logger s_logger = Logger.getLogger(GetUserCmd.class.getName());
+
+    private static final String s_name = "getuserresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="user")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="Enables user by user ID.")
-    private Long id;
-
+    @Parameter(name=ApiConstants.API_KEY, type=CommandType.STRING, required=true, description="API key of the user")
+    private String apiKey;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getId() {
-        return id;
+    public String getApiKey() {
+        return apiKey;
     }
 
     /////////////////////////////////////////////////////
@@ -63,24 +58,19 @@ public class EnableUserCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-        User user = _entityMgr.findById(User.class, getId());
-        if (user != null) {
-            return user.getAccountId();
-        }
-
-        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+        return 0;
     }
 
     @Override
     public void execute(){
-        UserContext.current().setEventDetails("UserId: "+getId());
-        UserAccount user = _accountService.enableUser(getId());
-        if (user != null){
-            UserResponse response = _responseGenerator.createUserResponse(user);
+        UserAccount result = _accountService.getUserByApiKey(getApiKey());
+        if(result != null){
+            UserResponse response = _responseGenerator.createUserResponse(result);
+            response.setResponseName(getCommandName());
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to enable user");
+            throw new InvalidParameterValueException("User with specified API key does not exist");
         }
     }
 }
