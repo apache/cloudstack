@@ -19,16 +19,25 @@ package com.cloud.network.resource;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentMatcher;
+
+import com.cloud.agent.api.ConfigurePortForwardingRulesOnLogicalRouterAnswer;
+import com.cloud.agent.api.ConfigurePortForwardingRulesOnLogicalRouterCommand;
 import com.cloud.agent.api.ConfigurePublicIpsOnLogicalRouterAnswer;
 import com.cloud.agent.api.ConfigurePublicIpsOnLogicalRouterCommand;
+import com.cloud.agent.api.ConfigureStaticNatRulesOnLogicalRouterAnswer;
+import com.cloud.agent.api.ConfigureStaticNatRulesOnLogicalRouterCommand;
 import com.cloud.agent.api.CreateLogicalRouterAnswer;
 import com.cloud.agent.api.CreateLogicalRouterCommand;
 import com.cloud.agent.api.CreateLogicalSwitchAnswer;
@@ -47,6 +56,8 @@ import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.UpdateLogicalSwitchPortAnswer;
 import com.cloud.agent.api.UpdateLogicalSwitchPortCommand;
+import com.cloud.agent.api.to.PortForwardingRuleTO;
+import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.host.Host;
 import com.cloud.network.nicira.Attachment;
 import com.cloud.network.nicira.ControlClusterStatus;
@@ -404,6 +415,382 @@ public class NiciraNvpResourceTest {
 				(ConfigurePublicIpsOnLogicalRouterAnswer) _resource.executeRequest(cmd);
 		assertFalse(answer.getResult());
 		
+	}
+	
+	@Test
+	public void testConfigureStaticNatRulesOnLogicalRouter() throws ConfigurationException, NiciraNvpApiException {
+		_resource.configure("NiciraNvpResource", _parameters);
+		/* StaticNat
+		 * Outside IP: 11.11.11.11
+		 * Inside IP:  10.10.10.10
+		 */
+		
+		// Mock the command
+		ConfigureStaticNatRulesOnLogicalRouterCommand cmd = mock(ConfigureStaticNatRulesOnLogicalRouterCommand.class);
+		StaticNatRuleTO rule = new StaticNatRuleTO(1,"11.11.11.11", null, null, "10.10.10.10", null, null, null, false, false);
+		List<StaticNatRuleTO> rules = new ArrayList<StaticNatRuleTO>();
+		rules.add(rule);
+		when(cmd.getRules()).thenReturn(rules);
+		when(cmd.getLogicalRouterUuid()).thenReturn("aaaaa");
+		
+		// Mock the api find call
+		@SuppressWarnings("unchecked")
+		NiciraNvpList<NatRule> storedRules = mock(NiciraNvpList.class);
+		when(_nvpApi.findNatRulesByLogicalRouterUuid("aaaaa")).thenReturn(storedRules);
+		
+		// Mock the api create calls
+		NatRule[] rulepair = _resource.generateStaticNatRulePair("10.10.10.10", "11.11.11.11");
+		rulepair[0].setUuid("bbbbb");
+		rulepair[1].setUuid("ccccc");
+		when(_nvpApi.createLogicalRouterNatRule(eq("aaaaa"), (NatRule)any())).thenReturn(rulepair[0]).thenReturn(rulepair[1]);
+		
+		ConfigureStaticNatRulesOnLogicalRouterAnswer a = (ConfigureStaticNatRulesOnLogicalRouterAnswer) _resource.executeRequest(cmd);
+		
+		assertTrue(a.getResult());
+		verify(_nvpApi, atLeast(2)).createLogicalRouterNatRule(eq("aaaaa"), argThat(new ArgumentMatcher<NatRule>() {
+			@Override
+			public boolean matches(Object argument) {
+				NatRule rule = (NatRule) argument;
+				if (rule.getType().equals("DestinationNatRule") &&
+						rule.getToDestinationIpAddressMin().equals("10.10.10.10")) {
+					return true;
+				}
+				if (rule.getType().equals("SourceNatRule") &&
+						rule.getToSourceIpAddressMin().equals("11.11.11.11")) {
+					return true;
+				}
+				return false;
+			} }));
+	}
+
+	@Test
+	public void testConfigureStaticNatRulesOnLogicalRouterExistingRules() throws ConfigurationException, NiciraNvpApiException {
+		_resource.configure("NiciraNvpResource", _parameters);
+		/* StaticNat
+		 * Outside IP: 11.11.11.11
+		 * Inside IP:  10.10.10.10
+		 */
+		
+		// Mock the command
+		ConfigureStaticNatRulesOnLogicalRouterCommand cmd = mock(ConfigureStaticNatRulesOnLogicalRouterCommand.class);
+		StaticNatRuleTO rule = new StaticNatRuleTO(1,"11.11.11.11", null, null, "10.10.10.10", null, null, null, false, false);
+		List<StaticNatRuleTO> rules = new ArrayList<StaticNatRuleTO>();
+		rules.add(rule);
+		when(cmd.getRules()).thenReturn(rules);
+		when(cmd.getLogicalRouterUuid()).thenReturn("aaaaa");
+		
+		// Mock the api create calls
+		NatRule[] rulepair = _resource.generateStaticNatRulePair("10.10.10.10", "11.11.11.11");
+		rulepair[0].setUuid("bbbbb");
+		rulepair[1].setUuid("ccccc");
+		when(_nvpApi.createLogicalRouterNatRule(eq("aaaaa"), (NatRule)any())).thenReturn(rulepair[0]).thenReturn(rulepair[1]);
+
+		// Mock the api find call
+		@SuppressWarnings("unchecked")
+		NiciraNvpList<NatRule> storedRules = mock(NiciraNvpList.class);
+		when(storedRules.getResultCount()).thenReturn(2);
+		when(storedRules.getResults()).thenReturn(Arrays.asList(rulepair));
+		when(_nvpApi.findNatRulesByLogicalRouterUuid("aaaaa")).thenReturn(storedRules);
+		
+		ConfigureStaticNatRulesOnLogicalRouterAnswer a = (ConfigureStaticNatRulesOnLogicalRouterAnswer) _resource.executeRequest(cmd);
+		
+		assertTrue(a.getResult());
+		verify(_nvpApi, never()).createLogicalRouterNatRule(eq("aaaaa"), argThat(new ArgumentMatcher<NatRule>() {
+			@Override
+			public boolean matches(Object argument) {
+				NatRule rule = (NatRule) argument;
+				if (rule.getType().equals("DestinationNatRule") &&
+						rule.getToDestinationIpAddressMin().equals("10.10.10.10")) {
+					return true;
+				}
+				if (rule.getType().equals("SourceNatRule") &&
+						rule.getToSourceIpAddressMin().equals("11.11.11.11")) {
+					return true;
+				}
+				return false;
+			} }));
+	}
+
+	@Test
+	public void testConfigureStaticNatRulesOnLogicalRouterRemoveRules() throws ConfigurationException, NiciraNvpApiException {
+		_resource.configure("NiciraNvpResource", _parameters);
+		/* StaticNat
+		 * Outside IP: 11.11.11.11
+		 * Inside IP:  10.10.10.10
+		 */
+		
+		// Mock the command
+		ConfigureStaticNatRulesOnLogicalRouterCommand cmd = mock(ConfigureStaticNatRulesOnLogicalRouterCommand.class);
+		StaticNatRuleTO rule = new StaticNatRuleTO(1,"11.11.11.11", null, null, "10.10.10.10", null, null, null, true, false);
+		List<StaticNatRuleTO> rules = new ArrayList<StaticNatRuleTO>();
+		rules.add(rule);
+		when(cmd.getRules()).thenReturn(rules);
+		when(cmd.getLogicalRouterUuid()).thenReturn("aaaaa");
+		
+		// Mock the api create calls
+		NatRule[] rulepair = _resource.generateStaticNatRulePair("10.10.10.10", "11.11.11.11");
+		rulepair[0].setUuid("bbbbb");
+		rulepair[1].setUuid("ccccc");
+		when(_nvpApi.createLogicalRouterNatRule(eq("aaaaa"), (NatRule)any())).thenReturn(rulepair[0]).thenReturn(rulepair[1]);
+
+		// Mock the api find call
+		@SuppressWarnings("unchecked")
+		NiciraNvpList<NatRule> storedRules = mock(NiciraNvpList.class);
+		when(storedRules.getResultCount()).thenReturn(2);
+		when(storedRules.getResults()).thenReturn(Arrays.asList(rulepair));
+		when(_nvpApi.findNatRulesByLogicalRouterUuid("aaaaa")).thenReturn(storedRules);
+		
+		ConfigureStaticNatRulesOnLogicalRouterAnswer a = (ConfigureStaticNatRulesOnLogicalRouterAnswer) _resource.executeRequest(cmd);
+		
+		assertTrue(a.getResult());
+		verify(_nvpApi, atLeast(2)).deleteLogicalRouterNatRule(eq("aaaaa"), argThat(new ArgumentMatcher<String>() {
+			@Override
+			public boolean matches(Object argument) {
+				String uuid = (String) argument;
+				if ("bbbbb".equals(uuid) || "ccccc".equals(uuid)) {
+					return true;
+				}
+				return false;
+			} }));
+	}
+
+	@Test
+	public void testConfigureStaticNatRulesOnLogicalRouterRollback() throws ConfigurationException, NiciraNvpApiException {
+		_resource.configure("NiciraNvpResource", _parameters);
+		/* StaticNat
+		 * Outside IP: 11.11.11.11
+		 * Inside IP:  10.10.10.10
+		 */
+		
+		// Mock the command
+		ConfigureStaticNatRulesOnLogicalRouterCommand cmd = mock(ConfigureStaticNatRulesOnLogicalRouterCommand.class);
+		StaticNatRuleTO rule = new StaticNatRuleTO(1,"11.11.11.11", null, null, "10.10.10.10", null, null, null, false, false);
+		List<StaticNatRuleTO> rules = new ArrayList<StaticNatRuleTO>();
+		rules.add(rule);
+		when(cmd.getRules()).thenReturn(rules);
+		when(cmd.getLogicalRouterUuid()).thenReturn("aaaaa");
+		
+		// Mock the api create calls
+		NatRule[] rulepair = _resource.generateStaticNatRulePair("10.10.10.10", "11.11.11.11");
+		rulepair[0].setUuid("bbbbb");
+		rulepair[1].setUuid("ccccc");
+		when(_nvpApi.createLogicalRouterNatRule(eq("aaaaa"), (NatRule)any())).thenReturn(rulepair[0]).thenThrow(new NiciraNvpApiException());
+
+		// Mock the api find call
+		@SuppressWarnings("unchecked")
+		NiciraNvpList<NatRule> storedRules = mock(NiciraNvpList.class);
+		when(storedRules.getResultCount()).thenReturn(0);
+		when(_nvpApi.findNatRulesByLogicalRouterUuid("aaaaa")).thenReturn(storedRules);
+		
+		ConfigureStaticNatRulesOnLogicalRouterAnswer a = (ConfigureStaticNatRulesOnLogicalRouterAnswer) _resource.executeRequest(cmd);
+		
+		assertFalse(a.getResult());
+		verify(_nvpApi, atLeastOnce()).deleteLogicalRouterNatRule(eq("aaaaa"), eq("bbbbb"));
+	}
+
+	@Test
+	public void testConfigurePortForwardingRulesOnLogicalRouter() throws ConfigurationException, NiciraNvpApiException {
+		_resource.configure("NiciraNvpResource", _parameters);
+		/* StaticNat
+		 * Outside IP: 11.11.11.11
+		 * Inside IP:  10.10.10.10
+		 */
+		
+		// Mock the command
+		ConfigurePortForwardingRulesOnLogicalRouterCommand cmd = mock(ConfigurePortForwardingRulesOnLogicalRouterCommand.class);
+		PortForwardingRuleTO rule = new PortForwardingRuleTO(1,"11.11.11.11", 80, 80, "10.10.10.10", 8080, 8080, "tcp", false, false);
+		List<PortForwardingRuleTO> rules = new ArrayList<PortForwardingRuleTO>();
+		rules.add(rule);
+		when(cmd.getRules()).thenReturn(rules);
+		when(cmd.getLogicalRouterUuid()).thenReturn("aaaaa");
+		
+		// Mock the api find call
+		@SuppressWarnings("unchecked")
+		NiciraNvpList<NatRule> storedRules = mock(NiciraNvpList.class);
+		when(_nvpApi.findNatRulesByLogicalRouterUuid("aaaaa")).thenReturn(storedRules);
+		
+		// Mock the api create calls
+		NatRule[] rulepair = _resource.generatePortForwardingRulePair("10.10.10.10", new int[] { 8080, 8080 }, "11.11.11.11", new int[] { 80, 80}, "tcp");
+		rulepair[0].setUuid("bbbbb");
+		rulepair[1].setUuid("ccccc");
+		when(_nvpApi.createLogicalRouterNatRule(eq("aaaaa"), (NatRule)any())).thenReturn(rulepair[0]).thenReturn(rulepair[1]);
+		
+		ConfigurePortForwardingRulesOnLogicalRouterAnswer a = (ConfigurePortForwardingRulesOnLogicalRouterAnswer) _resource.executeRequest(cmd);
+		
+		assertTrue(a.getResult());
+		verify(_nvpApi, atLeast(2)).createLogicalRouterNatRule(eq("aaaaa"), argThat(new ArgumentMatcher<NatRule>() {
+			@Override
+			public boolean matches(Object argument) {
+				NatRule rule = (NatRule) argument;
+				if (rule.getType().equals("DestinationNatRule") &&
+						rule.getToDestinationIpAddressMin().equals("10.10.10.10")) {
+					return true;
+				}
+				if (rule.getType().equals("SourceNatRule") &&
+						rule.getToSourceIpAddressMin().equals("11.11.11.11")) {
+					return true;
+				}
+				return false;
+			} }));
+	}
+
+	@Test
+	public void testConfigurePortForwardingRulesOnLogicalRouterExistingRules() throws ConfigurationException, NiciraNvpApiException {
+		_resource.configure("NiciraNvpResource", _parameters);
+		/* StaticNat
+		 * Outside IP: 11.11.11.11
+		 * Inside IP:  10.10.10.10
+		 */
+		
+		// Mock the command
+		ConfigurePortForwardingRulesOnLogicalRouterCommand cmd = mock(ConfigurePortForwardingRulesOnLogicalRouterCommand.class);
+		PortForwardingRuleTO rule = new PortForwardingRuleTO(1,"11.11.11.11", 80, 80, "10.10.10.10", 8080, 8080, "tcp", false, true);
+		List<PortForwardingRuleTO> rules = new ArrayList<PortForwardingRuleTO>();
+		rules.add(rule);
+		when(cmd.getRules()).thenReturn(rules);
+		when(cmd.getLogicalRouterUuid()).thenReturn("aaaaa");
+		
+		// Mock the api create calls
+		NatRule[] rulepair = _resource.generatePortForwardingRulePair("10.10.10.10", new int[] { 8080, 8080 }, "11.11.11.11", new int[] { 80, 80}, "tcp");
+		rulepair[0].setUuid("bbbbb");
+		rulepair[1].setUuid("ccccc");
+		when(_nvpApi.createLogicalRouterNatRule(eq("aaaaa"), (NatRule)any())).thenReturn(rulepair[0]).thenReturn(rulepair[1]);
+
+		// Mock the api find call
+		@SuppressWarnings("unchecked")
+		NiciraNvpList<NatRule> storedRules = mock(NiciraNvpList.class);
+		when(storedRules.getResultCount()).thenReturn(2);
+		when(storedRules.getResults()).thenReturn(Arrays.asList(rulepair));
+		when(_nvpApi.findNatRulesByLogicalRouterUuid("aaaaa")).thenReturn(storedRules);
+		
+		ConfigurePortForwardingRulesOnLogicalRouterAnswer a = (ConfigurePortForwardingRulesOnLogicalRouterAnswer) _resource.executeRequest(cmd);
+		
+		assertTrue(a.getResult());
+		verify(_nvpApi, never()).createLogicalRouterNatRule(eq("aaaaa"), argThat(new ArgumentMatcher<NatRule>() {
+			@Override
+			public boolean matches(Object argument) {
+				NatRule rule = (NatRule) argument;
+				if (rule.getType().equals("DestinationNatRule") &&
+						rule.getToDestinationIpAddressMin().equals("10.10.10.10")) {
+					return true;
+				}
+				if (rule.getType().equals("SourceNatRule") &&
+						rule.getToSourceIpAddressMin().equals("11.11.11.11")) {
+					return true;
+				}
+				return false;
+			} }));
+	}
+
+	@Test
+	public void testConfigurePortForwardingRulesOnLogicalRouterRemoveRules() throws ConfigurationException, NiciraNvpApiException {
+		_resource.configure("NiciraNvpResource", _parameters);
+		/* StaticNat
+		 * Outside IP: 11.11.11.11
+		 * Inside IP:  10.10.10.10
+		 */
+		
+		// Mock the command
+		ConfigurePortForwardingRulesOnLogicalRouterCommand cmd = mock(ConfigurePortForwardingRulesOnLogicalRouterCommand.class);
+		PortForwardingRuleTO rule = new PortForwardingRuleTO(1,"11.11.11.11", 80, 80, "10.10.10.10", 8080, 8080, "tcp", true, true);
+		List<PortForwardingRuleTO> rules = new ArrayList<PortForwardingRuleTO>();
+		rules.add(rule);
+		when(cmd.getRules()).thenReturn(rules);
+		when(cmd.getLogicalRouterUuid()).thenReturn("aaaaa");
+		
+		// Mock the api create calls
+		NatRule[] rulepair = _resource.generatePortForwardingRulePair("10.10.10.10", new int[] { 8080, 8080 }, "11.11.11.11", new int[] { 80, 80}, "tcp");
+		rulepair[0].setUuid("bbbbb");
+		rulepair[1].setUuid("ccccc");
+		when(_nvpApi.createLogicalRouterNatRule(eq("aaaaa"), (NatRule)any())).thenReturn(rulepair[0]).thenReturn(rulepair[1]);
+
+		// Mock the api find call
+		@SuppressWarnings("unchecked")
+		NiciraNvpList<NatRule> storedRules = mock(NiciraNvpList.class);
+		when(storedRules.getResultCount()).thenReturn(2);
+		when(storedRules.getResults()).thenReturn(Arrays.asList(rulepair));
+		when(_nvpApi.findNatRulesByLogicalRouterUuid("aaaaa")).thenReturn(storedRules);
+		
+		ConfigurePortForwardingRulesOnLogicalRouterAnswer a = (ConfigurePortForwardingRulesOnLogicalRouterAnswer) _resource.executeRequest(cmd);
+		
+		assertTrue(a.getResult());
+		verify(_nvpApi, atLeast(2)).deleteLogicalRouterNatRule(eq("aaaaa"), argThat(new ArgumentMatcher<String>() {
+			@Override
+			public boolean matches(Object argument) {
+				String uuid = (String) argument;
+				if ("bbbbb".equals(uuid) || "ccccc".equals(uuid)) {
+					return true;
+				}
+				return false;
+			} }));
+	}
+
+	@Test
+	public void testConfigurePortForwardingRulesOnLogicalRouterRollback() throws ConfigurationException, NiciraNvpApiException {
+		_resource.configure("NiciraNvpResource", _parameters);
+		/* StaticNat
+		 * Outside IP: 11.11.11.11
+		 * Inside IP:  10.10.10.10
+		 */
+		
+		// Mock the command
+		ConfigurePortForwardingRulesOnLogicalRouterCommand cmd = mock(ConfigurePortForwardingRulesOnLogicalRouterCommand.class);
+		PortForwardingRuleTO rule = new PortForwardingRuleTO(1,"11.11.11.11", 80, 80, "10.10.10.10", 8080, 8080, "tcp", false, false);
+		List<PortForwardingRuleTO> rules = new ArrayList<PortForwardingRuleTO>();
+		rules.add(rule);
+		when(cmd.getRules()).thenReturn(rules);
+		when(cmd.getLogicalRouterUuid()).thenReturn("aaaaa");
+		
+		// Mock the api create calls
+		NatRule[] rulepair = _resource.generatePortForwardingRulePair("10.10.10.10", new int[] { 8080, 8080 }, "11.11.11.11", new int[] { 80, 80}, "tcp");
+		rulepair[0].setUuid("bbbbb");
+		rulepair[1].setUuid("ccccc");
+		when(_nvpApi.createLogicalRouterNatRule(eq("aaaaa"), (NatRule)any())).thenReturn(rulepair[0]).thenThrow(new NiciraNvpApiException());
+
+		// Mock the api find call
+		@SuppressWarnings("unchecked")
+		NiciraNvpList<NatRule> storedRules = mock(NiciraNvpList.class);
+		when(storedRules.getResultCount()).thenReturn(0);
+		when(_nvpApi.findNatRulesByLogicalRouterUuid("aaaaa")).thenReturn(storedRules);
+		
+		ConfigurePortForwardingRulesOnLogicalRouterAnswer a = (ConfigurePortForwardingRulesOnLogicalRouterAnswer) _resource.executeRequest(cmd);
+		
+		assertFalse(a.getResult());
+		verify(_nvpApi, atLeastOnce()).deleteLogicalRouterNatRule(eq("aaaaa"), eq("bbbbb"));
+	}
+	
+	@Test
+	public void testGenerateStaticNatRulePair() {
+		NatRule[] rules = _resource.generateStaticNatRulePair("10.10.10.10", "11.11.11.11");
+		assertTrue("DestinationNatRule".equals(rules[0].getType()));
+		assertTrue("SourceNatRule".equals(rules[1].getType()));
+		
+		assertTrue(rules[0].getToDestinationIpAddressMin().equals("10.10.10.10") && rules[0].getToDestinationIpAddressMax().equals("10.10.10.10"));
+		assertTrue(rules[0].getToDestinationPort() == null);
+		assertTrue(rules[0].getMatch().getDestinationIpAddresses().equals("11.11.11.11"));	
+		
+		assertTrue(rules[1].getToSourceIpAddressMin().equals("11.11.11.11") && rules[1].getToSourceIpAddressMax().equals("11.11.11.11"));
+		assertTrue(rules[1].getToSourcePortMin() == null && rules[1].getToSourcePortMax() == null);
+		assertTrue(rules[1].getMatch().getSourceIpAddresses().equals("10.10.10.10"));
+	}
+
+	@Test
+	public void testGeneratePortForwardingRulePair() {
+		NatRule[] rules = _resource.generatePortForwardingRulePair("10.10.10.10", new int[] { 8080,  8080 }, "11.11.11.11", new int[] { 80, 80 }, "tcp" );
+		assertTrue("DestinationNatRule".equals(rules[0].getType()));
+		assertTrue("SourceNatRule".equals(rules[1].getType()));
+		
+		assertTrue(rules[0].getToDestinationIpAddressMin().equals("10.10.10.10") && rules[0].getToDestinationIpAddressMax().equals("10.10.10.10"));
+		assertTrue(rules[0].getToDestinationPort() == 8080);
+		assertTrue(rules[0].getMatch().getDestinationIpAddresses().equals("11.11.11.11"));	
+		assertTrue(rules[0].getMatch().getDestinationPortMin() == 80 && rules[0].getMatch().getDestinationPortMax() == 80);
+		assertTrue(rules[0].getMatch().getEthertype().equals("IPv4") && rules[0].getMatch().getProtocol() == 6);
+		
+		assertTrue(rules[1].getToSourceIpAddressMin().equals("11.11.11.11") && rules[1].getToSourceIpAddressMax().equals("11.11.11.11"));
+		assertTrue(rules[1].getToSourcePortMin() == 80 && rules[1].getToSourcePortMax() == 80);
+		assertTrue(rules[1].getMatch().getSourceIpAddresses().equals("10.10.10.10"));
+		assertTrue(rules[1].getMatch().getSourcePortMin() == 8080 && rules[1].getMatch().getSourcePortMax() == 8080);
+		assertTrue(rules[1].getMatch().getEthertype().equals("IPv4") && rules[1].getMatch().getProtocol() == 6);
 	}
 }
 
