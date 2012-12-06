@@ -90,7 +90,7 @@ class Services:
                         "displaytext": "Small Instance",
                         "cpunumber": 1,
                         "cpuspeed": 100,
-                        "memory": 256
+                        "memory": 256,
                     },
                 "medium":
                     {
@@ -100,7 +100,7 @@ class Services:
                         "displaytext": "Medium Instance",
                         "cpunumber": 1,
                         "cpuspeed": 100,
-                        "memory": 256
+                        "memory": 256,
                     }
                 },
                 "iso":  # ISO settings for Attach/Detach ISO tests
@@ -125,7 +125,6 @@ class Services:
             #Migrate VM to hostid
             "ostype": 'CentOS 5.3 (64-bit)',
             # CentOS 5.3 (64-bit)
-            "mode":'advanced',
         }
 
 
@@ -139,6 +138,14 @@ class TestDeployVM(cloudstackTestCase):
         # Get Zone, Domain and templates
         domain = get_domain(self.apiclient, self.services)
         zone = get_zone(self.apiclient, self.services)
+        self.services['mode'] = zone.networktype
+
+        #if local storage is enabled, alter the offerings to use localstorage
+        #this step is needed for devcloud
+        if zone.localstorageenabled == True:
+            self.services["service_offerings"]["tiny"]["storagetype"] = 'local'
+            self.services["service_offerings"]["small"]["storagetype"] = 'local'
+            self.services["service_offerings"]["medium"]["storagetype"] = 'local'
 
         template = get_template(
                             self.apiclient,
@@ -170,7 +177,7 @@ class TestDeployVM(cloudstackTestCase):
                         self.account
                         ]
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"])
     def test_deploy_vm(self):
         """Test Deploy Virtual Machine
         """
@@ -185,7 +192,8 @@ class TestDeployVM(cloudstackTestCase):
                                     self.services["small"],
                                     accountid=self.account.account.name,
                                     domainid=self.account.account.domainid,
-                                    serviceofferingid=self.service_offering.id
+                                    serviceofferingid=self.service_offering.id,
+                                    mode=self.services['mode']
                                 )
 
         list_vm_response = list_virtual_machines(
@@ -242,6 +250,15 @@ class TestVMLifeCycle(cloudstackTestCase):
         # Get Zone, Domain and templates
         domain = get_domain(cls.api_client, cls.services)
         zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = zone.networktype
+
+        #if local storage is enabled, alter the offerings to use localstorage
+        #this step is needed for devcloud
+        if zone.localstorageenabled == True:
+            cls.services["service_offerings"]["tiny"]["storagetype"] = 'local'
+            cls.services["service_offerings"]["small"]["storagetype"] = 'local'
+            cls.services["service_offerings"]["medium"]["storagetype"] = 'local'
+
         template = get_template(
                             cls.api_client,
                             zone.id,
@@ -319,7 +336,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         return
 
     
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"])
     def test_01_stop_vm(self):
         """Test Stop Virtual Machine
         """
@@ -355,7 +372,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                         )
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"])
     def test_02_start_vm(self):
         """Test Start Virtual Machine
         """
@@ -393,7 +410,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                         )
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"])
     def test_03_reboot_vm(self):
         """Test Reboot Virtual Machine
         """
@@ -669,7 +686,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                         )
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"])
     def test_06_destroy_vm(self):
         """Test destroy Virtual Machine
         """
@@ -705,7 +722,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                         )
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"])
     def test_07_restore_vm(self):
         """Test recover Virtual Machine
         """
@@ -818,7 +835,7 @@ class TestVMLifeCycle(cloudstackTestCase):
 
     @attr(configuration = "expunge.interval")
     @attr(configuration = "expunge.delay")
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"])
     def test_09_expunge_vm(self):
         """Test destroy(expunge) Virtual Machine
         """
