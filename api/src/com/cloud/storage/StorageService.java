@@ -19,12 +19,12 @@ package com.cloud.storage;
 import java.net.UnknownHostException;
 import java.util.List;
 
-import com.cloud.api.commands.CancelPrimaryStorageMaintenanceCmd;
-import com.cloud.api.commands.CreateStoragePoolCmd;
+import org.apache.cloudstack.api.admin.storagepool.command.CancelPrimaryStorageMaintenanceCmd;
+import org.apache.cloudstack.api.admin.storagepool.command.CreateStoragePoolCmd;
+import org.apache.cloudstack.api.admin.storagepool.command.UpdateStoragePoolCmd;
 import org.apache.cloudstack.api.user.volume.command.CreateVolumeCmd;
-import com.cloud.api.commands.DeletePoolCmd;
+import org.apache.cloudstack.api.admin.storagepool.command.DeletePoolCmd;
 import org.apache.cloudstack.api.user.volume.command.ListVolumesCmd;
-import com.cloud.api.commands.UpdateStoragePoolCmd;
 import org.apache.cloudstack.api.user.volume.command.UploadVolumeCmd;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;

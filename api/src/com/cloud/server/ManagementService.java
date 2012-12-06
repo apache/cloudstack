@@ -49,7 +49,7 @@ import org.apache.cloudstack.api.user.guest.command.ListGuestOsCategoriesCmd;
 import org.apache.cloudstack.api.user.iso.command.ListIsosCmd;
 import com.cloud.api.commands.ListPodsByCmd;
 import org.apache.cloudstack.api.user.ssh.command.ListSSHKeyPairsCmd;
-import com.cloud.api.commands.ListStoragePoolsCmd;
+import org.apache.cloudstack.api.admin.storagepool.command.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.admin.systemvm.command.ListSystemVMsCmd;
 import org.apache.cloudstack.api.user.vmgroup.command.ListVMGroupsCmd;
 import com.cloud.api.commands.ListVlanIpRangesCmd;

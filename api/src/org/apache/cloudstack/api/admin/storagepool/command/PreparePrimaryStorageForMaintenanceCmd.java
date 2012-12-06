@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.admin.storagepool.command;
 
 import org.apache.log4j.Logger;
 
@@ -28,25 +28,24 @@ import org.apache.cloudstack.api.ServerApiException;
 import com.cloud.api.response.StoragePoolResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.storage.StoragePool;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Cancels maintenance for primary storage", responseObject=StoragePoolResponse.class)
-public class CancelPrimaryStorageMaintenanceCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(CancelPrimaryStorageMaintenanceCmd.class.getName());
-
-    private static final String s_name = "cancelprimarystoragemaintenanceresponse";
+@Implementation(description="Puts storage pool into maintenance state", responseObject=StoragePoolResponse.class)
+public class PreparePrimaryStorageForMaintenanceCmd extends BaseAsyncCmd {
+    public static final Logger s_logger = Logger.getLogger(PreparePrimaryStorageForMaintenanceCmd.class.getName());
+    private static final String s_name = "prepareprimarystorageformaintenanceresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
     @IdentityMapper(entityTableName="storage_pool")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the primary storage ID")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="Primary storage ID")
     private Long id;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -55,7 +54,6 @@ public class CancelPrimaryStorageMaintenanceCmd extends BaseAsyncCmd {
     public Long getId() {
         return id;
     }
-
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -87,28 +85,28 @@ public class CancelPrimaryStorageMaintenanceCmd extends BaseAsyncCmd {
             return account.getId();
         }
 
-        return Account.ACCOUNT_ID_SYSTEM;
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_MAINTENANCE_CANCEL_PRIMARY_STORAGE;
+        return EventTypes.EVENT_MAINTENANCE_PREPARE_PRIMARY_STORAGE;
     }
 
     @Override
     public String getEventDescription() {
-        return  "canceling maintenance for primary storage pool: " + getId();
+        return  "preparing storage pool: " + getId() + " for maintenance";
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException{
-        StoragePool result = _storageService.cancelPrimaryStorageForMaintenance(this);
-        if (result != null) {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException{
+        StoragePool result = _storageService.preparePrimaryStorageForMaintenance(getId());
+        if (result != null){
             StoragePoolResponse response = _responseGenerator.createStoragePoolResponse(result);
-            response.setResponseName(getCommandName());
+            response.setResponseName("storagepool");
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to cancel primary storage maintenance");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to prepare primary storage for maintenance");
         }
     }
 }

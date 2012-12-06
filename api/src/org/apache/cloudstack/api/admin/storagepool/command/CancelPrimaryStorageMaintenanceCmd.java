@@ -14,38 +14,38 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
-
-import java.util.List;
+package org.apache.cloudstack.api.admin.storagepool.command;
 
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import com.cloud.api.response.StoragePoolResponse;
+import com.cloud.async.AsyncJob;
+import com.cloud.event.EventTypes;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.storage.StoragePool;
 import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 
-@Implementation(description="Updates a storage pool.", responseObject=StoragePoolResponse.class, since="3.0.0")
-public class UpdateStoragePoolCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdateStoragePoolCmd.class.getName());
+@Implementation(description="Cancels maintenance for primary storage", responseObject=StoragePoolResponse.class)
+public class CancelPrimaryStorageMaintenanceCmd extends BaseAsyncCmd {
+    public static final Logger s_logger = Logger.getLogger(CancelPrimaryStorageMaintenanceCmd.class.getName());
 
-    private static final String s_name = "updatestoragepoolresponse";
+    private static final String s_name = "cancelprimarystoragemaintenanceresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
     @IdentityMapper(entityTableName="storage_pool")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the Id of the storage pool")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the primary storage ID")
     private Long id;
-
-    @Parameter(name=ApiConstants.TAGS, type=CommandType.LIST, collectionType=CommandType.STRING, description="comma-separated list of tags for the storage pool")
-    private List<String> tags;
 
 
     /////////////////////////////////////////////////////
@@ -56,9 +56,6 @@ public class UpdateStoragePoolCmd extends BaseCmd {
         return id;
     }
 
-    public List<String> getTags() {
-        return tags;
-    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -69,20 +66,49 @@ public class UpdateStoragePoolCmd extends BaseCmd {
         return s_name;
     }
 
+    public static String getResultObjectName() {
+        return "primarystorage";
+    }
+
+    @Override
+    public AsyncJob.Type getInstanceType() {
+        return AsyncJob.Type.StoragePool;
+    }
+
+    @Override
+    public Long getInstanceId() {
+        return getId();
+    }
+
     @Override
     public long getEntityOwnerId() {
+        Account account = UserContext.current().getCaller();
+        if (account != null) {
+            return account.getId();
+        }
+
         return Account.ACCOUNT_ID_SYSTEM;
     }
 
     @Override
-    public void execute(){
-        StoragePool result = _storageService.updateStoragePool(this);
-        if (result != null){
+    public String getEventType() {
+        return EventTypes.EVENT_MAINTENANCE_CANCEL_PRIMARY_STORAGE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "canceling maintenance for primary storage pool: " + getId();
+    }
+
+    @Override
+    public void execute() throws ResourceUnavailableException{
+        StoragePool result = _storageService.cancelPrimaryStorageForMaintenance(this);
+        if (result != null) {
             StoragePoolResponse response = _responseGenerator.createStoragePoolResponse(result);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update storage pool");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to cancel primary storage maintenance");
         }
     }
 }
