@@ -99,7 +99,7 @@ create_from_file() {
   local volimg="$2"
   local volname=$3
   if [ -b $volimg ]; then
-      $qemu-img convert -f raw -O qcow2 "$volimg" /$volfs/$volname
+      $qemu_img convert -f raw -O qcow2 "$volimg" /$volfs/$volname
   else
       $qemu_img convert -f qcow2 -O qcow2 "$volimg" /$volfs/$volname >& /dev/null
   fi
