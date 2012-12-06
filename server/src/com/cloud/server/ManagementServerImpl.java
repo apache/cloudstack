@@ -87,7 +87,7 @@ import org.apache.cloudstack.api.user.address.command.ListPublicIpAddressesCmd;
 import org.apache.cloudstack.api.user.ssh.command.ListSSHKeyPairsCmd;
 import org.apache.cloudstack.api.admin.storagepool.command.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.admin.systemvm.command.ListSystemVMsCmd;
-import com.cloud.api.commands.ListVlanIpRangesCmd;
+import org.apache.cloudstack.api.admin.vlan.command.ListVlanIpRangesCmd;
 import org.apache.cloudstack.api.admin.systemvm.command.RebootSystemVmCmd;
 import org.apache.cloudstack.api.admin.systemvm.command.StopSystemVmCmd;
 import org.apache.cloudstack.api.admin.domain.command.UpdateDomainCmd;

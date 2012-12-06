@@ -20,19 +20,19 @@ import java.util.List;
 
 import javax.naming.NamingException;
 
+import org.apache.cloudstack.api.admin.ldap.command.LDAPRemoveCmd;
 import org.apache.cloudstack.api.admin.offering.command.*;
 import org.apache.cloudstack.api.admin.network.command.CreateNetworkOfferingCmd;
 import org.apache.cloudstack.api.admin.offering.command.CreateServiceOfferingCmd;
-import com.cloud.api.commands.CreateVlanIpRangeCmd;
+import org.apache.cloudstack.api.admin.vlan.command.CreateVlanIpRangeCmd;
 import org.apache.cloudstack.api.admin.offering.command.CreateDiskOfferingCmd;
 import org.apache.cloudstack.api.admin.pod.command.DeletePodCmd;
+import org.apache.cloudstack.api.admin.vlan.command.DeleteVlanIpRangeCmd;
 import org.apache.cloudstack.api.admin.zone.command.CreateZoneCmd;
 import org.apache.cloudstack.api.admin.offering.command.DeleteDiskOfferingCmd;
 import org.apache.cloudstack.api.admin.network.command.DeleteNetworkOfferingCmd;
-import com.cloud.api.commands.DeleteVlanIpRangeCmd;
 import org.apache.cloudstack.api.admin.zone.command.DeleteZoneCmd;
-import com.cloud.api.commands.LDAPConfigCmd;
-import com.cloud.api.commands.LDAPRemoveCmd;
+import org.apache.cloudstack.api.admin.ldap.command.LDAPConfigCmd;
 import org.apache.cloudstack.api.user.network.command.ListNetworkOfferingsCmd;
 import org.apache.cloudstack.api.admin.config.command.UpdateCfgCmd;
 import org.apache.cloudstack.api.admin.offering.command.UpdateDiskOfferingCmd;

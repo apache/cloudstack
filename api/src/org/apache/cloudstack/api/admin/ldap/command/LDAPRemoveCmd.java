@@ -14,44 +14,48 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.admin.ldap.command;
+
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
-import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
-import com.cloud.api.response.SuccessResponse;
+import com.cloud.api.response.LDAPConfigResponse;
+import com.cloud.api.response.LDAPRemoveResponse;
 import com.cloud.user.Account;
 
-@Implementation(description="Creates a VLAN IP range.", responseObject=SuccessResponse.class)
-public class DeleteVlanIpRangeCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteVlanIpRangeCmd.class.getName());
+@Implementation(description="Remove the LDAP context for this site.", responseObject=LDAPConfigResponse.class, since="3.0.1")
+public class LDAPRemoveCmd extends BaseCmd  {
+    public static final Logger s_logger = Logger.getLogger(LDAPRemoveCmd.class.getName());
 
-    private static final String s_name = "deletevlaniprangeresponse";
+    private static final String s_name = "ldapremoveresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="vlan")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the id of the VLAN IP range")
-    private Long id;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getId() {
-        return id;
-    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
+
+
+    @Override
+    public void execute(){
+          boolean result = _configService.removeLDAP(this);
+          if (result){
+              LDAPRemoveResponse lr = new LDAPRemoveResponse();
+              lr.setObjectName("ldapremove");
+              lr.setResponseName(getCommandName());
+              this.setResponseObject(lr);
+          }
+    }
 
     @Override
     public String getCommandName() {
@@ -63,14 +67,5 @@ public class DeleteVlanIpRangeCmd extends BaseCmd {
         return Account.ACCOUNT_ID_SYSTEM;
     }
 
-    @Override
-    public void execute(){
-        boolean result = _configService.deleteVlanIpRange(this);
-        if (result) {
-            SuccessResponse response = new SuccessResponse(getCommandName());
-            this.setResponseObject(response);
-        } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete vlan ip range");
-        }
-    }
+
 }

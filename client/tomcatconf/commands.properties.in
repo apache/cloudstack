@@ -119,9 +119,9 @@ deleteDiskOffering=org.apache.cloudstack.api.admin.offering.command.DeleteDiskOf
 listDiskOfferings=org.apache.cloudstack.api.user.offering.command.ListDiskOfferingsCmd;15
 
 #### vlan commands
-createVlanIpRange=com.cloud.api.commands.CreateVlanIpRangeCmd;1
-deleteVlanIpRange=com.cloud.api.commands.DeleteVlanIpRangeCmd;1
-listVlanIpRanges=com.cloud.api.commands.ListVlanIpRangesCmd;1
+createVlanIpRange=org.apache.cloudstack.api.admin.vlan.command.CreateVlanIpRangeCmd;1
+deleteVlanIpRange=org.apache.cloudstack.api.admin.vlan.command.DeleteVlanIpRangeCmd;1
+listVlanIpRanges=org.apache.cloudstack.api.admin.vlan.command.ListVlanIpRangesCmd;1
 
 #### address commands
 associateIpAddress=org.apache.cloudstack.api.user.address.command.AssociateIPAddrCmd;15
@@ -198,8 +198,8 @@ changeServiceForSystemVm=org.apache.cloudstack.api.admin.systemvm.command.Upgrad
 #### configuration commands
 updateConfiguration=org.apache.cloudstack.api.admin.config.command.UpdateCfgCmd;1
 listConfigurations=org.apache.cloudstack.api.admin.config.command.ListCfgsByCmd;1
-ldapConfig=com.cloud.api.commands.LDAPConfigCmd;1
-ldapRemove=com.cloud.api.commands.LDAPRemoveCmd;1
+ldapConfig=org.apache.cloudstack.api.admin.ldap.command.LDAPConfigCmd;1
+ldapRemove=org.apache.cloudstack.api.admin.ldap.command.LDAPRemoveCmd;1
 listCapabilities=org.apache.cloudstack.api.user.config.command.ListCapabilitiesCmd;15
 
 #### pod commands
@@ -225,8 +225,8 @@ listAlerts=com.cloud.api.commands.ListAlertsCmd;3
 listCapacity=com.cloud.api.commands.ListCapacityCmd;3
 
 #### swift commands^M
-addSwift=com.cloud.api.commands.AddSwiftCmd;1
-listSwifts=com.cloud.api.commands.ListSwiftsCmd;1
+addSwift=org.apache.cloudstack.api.admin.swift.command.AddSwiftCmd;1
+listSwifts=org.apache.cloudstack.api.admin.swift.command.ListSwiftsCmd;1
 
 #### host commands
 addHost=org.apache.cloudstack.api.admin.host.command.AddHostCmd;3

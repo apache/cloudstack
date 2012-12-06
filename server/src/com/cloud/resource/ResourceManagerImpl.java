@@ -32,6 +32,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.admin.cluster.command.AddClusterCmd;
 import org.apache.cloudstack.api.admin.host.command.*;
+import org.apache.cloudstack.api.admin.swift.command.AddSwiftCmd;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -52,10 +53,9 @@ import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import org.apache.cloudstack.api.admin.host.command.AddHostCmd;
 import org.apache.cloudstack.api.admin.host.command.AddSecondaryStorageCmd;
-import com.cloud.api.commands.AddSwiftCmd;
 import org.apache.cloudstack.api.admin.host.command.CancelMaintenanceCmd;
 import org.apache.cloudstack.api.admin.cluster.command.DeleteClusterCmd;
-import com.cloud.api.commands.ListSwiftsCmd;
+import org.apache.cloudstack.api.admin.swift.command.ListSwiftsCmd;
 import org.apache.cloudstack.api.admin.host.command.PrepareForMaintenanceCmd;
 import org.apache.cloudstack.api.admin.host.command.UpdateHostCmd;
 import com.cloud.capacity.Capacity;
