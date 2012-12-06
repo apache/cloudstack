@@ -24,7 +24,7 @@ deleteAccount=org.apache.cloudstack.api.admin.account.command.DeleteAccountCmd;3
 updateAccount=org.apache.cloudstack.api.admin.account.command.UpdateAccountCmd;3
 disableAccount=org.apache.cloudstack.api.admin.account.command.DisableAccountCmd;7
 enableAccount=org.apache.cloudstack.api.admin.account.command.EnableAccountCmd;7
-###lockAccount=com.cloud.api.commands.LockAccountCmd;7
+lockAccount=org.apache.cloudstack.api.admin.account.command.LockAccountCmd;7
 listAccounts=org.apache.cloudstack.api.user.account.command.ListAccountsCmd;15
 markDefaultZoneForAccount=org.apache.cloudstack.api.admin.zone.command.MarkDefaultZoneForAccountCmd;1
 
@@ -33,7 +33,7 @@ createUser=org.apache.cloudstack.api.admin.user.command.CreateUserCmd;3
 deleteUser=org.apache.cloudstack.api.admin.user.command.DeleteUserCmd;3
 updateUser=org.apache.cloudstack.api.admin.user.command.UpdateUserCmd;3
 listUsers=org.apache.cloudstack.api.admin.user.command.ListUsersCmd;7
-####lockUser=com.cloud.api.commands.LockUserCmd;7
+lockUser=org.apache.cloudstack.api.admin.user.command.LockUserCmd;7
 disableUser=org.apache.cloudstack.api.admin.user.command.DisableUserCmd;7
 enableUser=org.apache.cloudstack.api.admin.user.command.EnableUserCmd;7
 getUser=org.apache.cloudstack.api.admin.user.command.GetUserCmd;1
@@ -132,7 +132,7 @@ listPublicIpAddresses=org.apache.cloudstack.api.user.address.command.ListPublicI
 listPortForwardingRules=org.apache.cloudstack.api.user.firewall.command.ListPortForwardingRulesCmd;15
 createPortForwardingRule=org.apache.cloudstack.api.user.firewall.command.CreatePortForwardingRuleCmd;15
 deletePortForwardingRule=org.apache.cloudstack.api.user.firewall.command.DeletePortForwardingRuleCmd;15
-#### updatePortForwardingRule=com.cloud.api.commands.UpdatePortForwardingRuleCmd;15
+updatePortForwardingRule=org.apache.cloudstack.api.user.firewall.command.UpdatePortForwardingRuleCmd;15
 
 #### NAT commands
 enableStaticNat=org.apache.cloudstack.api.user.nat.command.EnableStaticNatCmd;15
