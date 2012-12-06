@@ -117,6 +117,7 @@ import com.cloud.network.rules.RulesManagerImpl;
 import com.cloud.network.rules.dao.PortForwardingRulesDaoImpl;
 import com.cloud.network.security.SecurityGroupManagerImpl2;
 import com.cloud.network.security.dao.SecurityGroupDaoImpl;
+import com.cloud.network.security.dao.SecurityGroupJoinDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupRuleDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupRulesDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupVMMapDaoImpl;
@@ -220,6 +221,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("UserVmDao", UserVmDaoImpl.class);
         addDao("UserVmJoinDao", UserVmJoinDaoImpl.class);
         addDao("DomainRouterJoinDao", DomainRouterJoinDaoImpl.class);
+        addDao("SecurityGroupJoinDao", SecurityGroupJoinDaoImpl.class);
         ComponentInfo<? extends GenericDao<?, ? extends Serializable>> info = addDao("ServiceOfferingDao", ServiceOfferingDaoImpl.class);
         info.addParameter("cache.size", "50");
         info.addParameter("cache.time.to.live", "600");

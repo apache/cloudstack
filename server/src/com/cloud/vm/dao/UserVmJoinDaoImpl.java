@@ -164,16 +164,12 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
             Long securityGroupId = userVm.getSecurityGroupId();
             if (securityGroupId != null && securityGroupId.longValue() != 0) {
                 SecurityGroupResponse resp = new SecurityGroupResponse();
-                resp.setId(userVm.getSecurityGroupId()); // TODO: change
-                                                         // SecurityGroupResponse
-                                                         // IdentityProxy
+                resp.setId(userVm.getSecurityGroupUuid());
                 resp.setName(userVm.getSecurityGroupName());
                 resp.setDescription(userVm.getSecurityGroupDescription());
                 resp.setObjectName("securitygroup");
                 if (userVm.getAccountType() == Account.ACCOUNT_TYPE_PROJECT) {
-                    resp.setProjectId(userVm.getProjectId()); // TODO: pending
-                                                              // SecurityGroupResponse
-                                                              // uuid change
+                    resp.setProjectId(userVm.getProjectUuid());
                     resp.setProjectName(userVm.getProjectName());
                 } else {
                     resp.setAccountName(userVm.getAccountName());
@@ -246,16 +242,12 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
         Long securityGroupId = uvo.getSecurityGroupId();
         if (securityGroupId != null && securityGroupId.longValue() != 0) {
             SecurityGroupResponse resp = new SecurityGroupResponse();
-            resp.setId(uvo.getSecurityGroupId()); // TODO: change
-                                                  // SecurityGroupResponse
-                                                  // IdentityProxy
+            resp.setId(uvo.getSecurityGroupUuid());
             resp.setName(uvo.getSecurityGroupName());
             resp.setDescription(uvo.getSecurityGroupDescription());
             resp.setObjectName("securitygroup");
             if (uvo.getAccountType() == Account.ACCOUNT_TYPE_PROJECT) {
-                resp.setProjectId(uvo.getProjectId()); // TODO: pending
-                                                       // SecurityGroupResponse
-                                                       // uuid change
+                resp.setProjectId(uvo.getProjectUuid());
                 resp.setProjectName(uvo.getProjectName());
             } else {
                 resp.setAccountName(uvo.getAccountName());

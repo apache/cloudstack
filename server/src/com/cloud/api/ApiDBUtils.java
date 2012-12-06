@@ -24,8 +24,10 @@ import java.util.Set;
 
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import com.cloud.api.response.DomainRouterResponse;
+import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.api.view.vo.DomainRouterJoinVO;
+import com.cloud.api.view.vo.SecurityGroupJoinVO;
 import com.cloud.api.view.vo.UserVmJoinVO;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
@@ -94,6 +96,7 @@ import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.security.dao.SecurityGroupDao;
+import com.cloud.network.security.dao.SecurityGroupJoinDao;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
@@ -196,6 +199,7 @@ public class ApiDBUtils {
     private static IPAddressDao _ipAddressDao;
     private static LoadBalancerDao _loadBalancerDao;
     private static SecurityGroupDao _securityGroupDao;
+    private static SecurityGroupJoinDao _securityGroupJoinDao;
     private static NetworkRuleConfigDao _networkRuleConfigDao;
     private static HostPodDao _podDao;
     private static ServiceOfferingDao _serviceOfferingDao;
@@ -283,6 +287,7 @@ public class ApiDBUtils {
         _volumeHostDao = locator.getDao(VolumeHostDao.class);
         _zoneDao = locator.getDao(DataCenterDao.class);
         _securityGroupDao = locator.getDao(SecurityGroupDao.class);
+        _securityGroupJoinDao = locator.getDao(SecurityGroupJoinDao.class);
         _networkOfferingDao = locator.getDao(NetworkOfferingDao.class);
         _networkDao = locator.getDao(NetworkDao.class);
         _configDao = locator.getDao(ConfigurationDao.class);
@@ -924,5 +929,21 @@ public class ApiDBUtils {
 
     public static List<UserVmJoinVO> newUserVmView(UserVm... userVms){
         return _userVmJoinDao.newUserVmView(userVms);
+    }
+
+    public static SecurityGroupResponse newSecurityGroupResponse(SecurityGroupJoinVO vsg, Account caller) {
+        return _securityGroupJoinDao.newSecurityGroupResponse(vsg, caller);
+    }
+
+    public static SecurityGroupResponse fillSecurityGroupDetails(SecurityGroupResponse vsgData, SecurityGroupJoinVO sg){
+         return _securityGroupJoinDao.setSecurityGroupResponse(vsgData, sg);
+    }
+
+    public static List<SecurityGroupJoinVO> newSecurityGroupView(SecurityGroup sg){
+        return _securityGroupJoinDao.newSecurityGroupView(sg);
+    }
+
+    public static List<SecurityGroupJoinVO> findSecurityGroupViewById(Long sgId){
+        return _securityGroupJoinDao.searchByIds(sgId);
     }
 }

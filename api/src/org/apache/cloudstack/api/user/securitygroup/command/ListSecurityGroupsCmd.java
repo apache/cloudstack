@@ -25,11 +25,14 @@ import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
+import com.cloud.api.response.DomainRouterResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.SecurityGroupResponse;
+import com.cloud.api.view.vo.DomainRouterJoinVO;
+import com.cloud.api.view.vo.SecurityGroupJoinVO;
 import com.cloud.async.AsyncJob;
 import com.cloud.network.security.SecurityGroupRules;
-
+import com.cloud.utils.Pair;
 
 @Implementation(description="Lists security groups", responseObject=SecurityGroupResponse.class)
 public class ListSecurityGroupsCmd extends BaseListTaggedResourcesCmd {
@@ -78,11 +81,12 @@ public class ListSecurityGroupsCmd extends BaseListTaggedResourcesCmd {
 
     @Override
     public void execute(){
-        List<? extends SecurityGroupRules> securityGroups = _securityGroupService.searchForSecurityGroupRules(this);
+        Pair<List<SecurityGroupJoinVO>, Integer> result = _securityGroupService.searchForSecurityGroupRules(this);
+        ListResponse<SecurityGroupResponse> response = new ListResponse<SecurityGroupResponse>();
+        List<SecurityGroupResponse> routerResponses = _responseGenerator.createSecurityGroupResponses(result.first());
+        response.setResponses(routerResponses, result.second());
 
-        ListResponse<SecurityGroupResponse> response = _responseGenerator.createSecurityGroupResponses(securityGroups);
         response.setResponseName(getCommandName());
-        this.setResponseObject(response);
     }
 
     @Override

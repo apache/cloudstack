@@ -153,6 +153,7 @@ import com.cloud.user.UserAccount;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.InstanceGroup;
 import com.cloud.api.view.vo.DomainRouterJoinVO;
+import com.cloud.api.view.vo.SecurityGroupJoinVO;
 import com.cloud.api.view.vo.UserVmJoinVO;
 import com.cloud.vm.VirtualMachine;
 
@@ -243,7 +244,10 @@ public interface ResponseGenerator {
 
     List<TemplateResponse> createTemplateResponses(long templateId, Long snapshotId, Long volumeId, boolean readyOnly);
 
-    ListResponse<SecurityGroupResponse> createSecurityGroupResponses(List<? extends SecurityGroupRules> networkGroups);
+    //ListResponse<SecurityGroupResponse> createSecurityGroupResponses(List<? extends SecurityGroupRules> networkGroups);
+
+    List<SecurityGroupResponse> createSecurityGroupResponses(List<SecurityGroupJoinVO> securityGroups);
+
 
     SecurityGroupResponse createSecurityGroupResponseFromSecurityGroupRule(List<? extends SecurityRule> SecurityRules);
 

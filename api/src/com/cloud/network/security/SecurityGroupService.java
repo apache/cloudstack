@@ -24,6 +24,8 @@ import org.apache.cloudstack.api.user.securitygroup.command.CreateSecurityGroupC
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceInUseException;
+import com.cloud.api.view.vo.SecurityGroupJoinVO;
+import com.cloud.utils.Pair;
 
 public interface SecurityGroupService {
     /**
@@ -42,7 +44,7 @@ public interface SecurityGroupService {
      * The search terms are specified in the search criteria.
      * @return the list of security groups and associated ingress rules
      */
-    public List<? extends SecurityGroupRules> searchForSecurityGroupRules(ListSecurityGroupsCmd cmd) throws PermissionDeniedException, InvalidParameterValueException;
+    public Pair<List<SecurityGroupJoinVO>, Integer> searchForSecurityGroupRules(ListSecurityGroupsCmd cmd) throws PermissionDeniedException, InvalidParameterValueException;
 
     public List<? extends SecurityRule> authorizeSecurityGroupIngress(AuthorizeSecurityGroupIngressCmd cmd);
 

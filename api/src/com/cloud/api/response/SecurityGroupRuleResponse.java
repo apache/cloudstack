@@ -23,7 +23,7 @@ import com.google.gson.annotations.SerializedName;
 
 public class SecurityGroupRuleResponse extends BaseResponse {
     @SerializedName("ruleid") @Param(description="the id of the security group rule")
-    private IdentityProxy ruleId = new IdentityProxy("security_group_rule");
+    private String ruleId;
 
     @SerializedName("protocol") @Param(description="the protocol of the security group rule")
     private String protocol;
@@ -49,12 +49,12 @@ public class SecurityGroupRuleResponse extends BaseResponse {
     @SerializedName(ApiConstants.CIDR) @Param(description="the CIDR notation for the base IP address of the security group rule")
     private String cidr;
 
-    public Long getRuleId() {
-        return ruleId.getValue();
+    public String getRuleId() {
+        return ruleId;
     }
 
-    public void setRuleId(Long ruleId) {
-        this.ruleId.setValue(ruleId);
+    public void setRuleId(String ruleId) {
+        this.ruleId = ruleId;
     }
 
     public String getProtocol() {
@@ -119,5 +119,32 @@ public class SecurityGroupRuleResponse extends BaseResponse {
 
     public void setCidr(String cidr) {
         this.cidr = cidr;
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        String oid = this.getRuleId();
+        result = prime * result + ((oid== null) ? 0 : oid.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        SecurityGroupRuleResponse other = (SecurityGroupRuleResponse) obj;
+        String oid = this.getRuleId();
+        if (oid == null) {
+            if (other.getRuleId() != null)
+                return false;
+        } else if (!oid.equals(other.getRuleId()))
+            return false;
+        return true;
     }
 }

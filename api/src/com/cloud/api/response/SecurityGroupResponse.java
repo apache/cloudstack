@@ -16,7 +16,10 @@
 // under the License.
 package com.cloud.api.response;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.Entity;
@@ -27,9 +30,10 @@ import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 @Entity(value = SecurityGroup.class)
-public class SecurityGroupResponse extends BaseResponse implements ControlledEntityResponse{
+public class SecurityGroupResponse extends BaseResponse implements ControlledViewEntityResponse{
+
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the security group")
-    private IdentityProxy id = new IdentityProxy("security_group");
+    private String id;
 
     @SerializedName(ApiConstants.NAME) @Param(description="the name of the security group")
     private String name;
@@ -41,33 +45,45 @@ public class SecurityGroupResponse extends BaseResponse implements ControlledEnt
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the group")
-    private IdentityProxy projectId = new IdentityProxy("projects");
+    private String projectId;
 
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the group")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain ID of the security group")
-    private IdentityProxy domainId = new IdentityProxy("domain");
+    private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the security group")
     private String domainName;
 
     @SerializedName("ingressrule")  @Param(description="the list of ingress rules associated with the security group", responseObject = SecurityGroupRuleResponse.class)
-    private List<SecurityGroupRuleResponse> ingressRules;
+    private Set<SecurityGroupRuleResponse> ingressRules;
 
     @SerializedName("egressrule")  @Param(description="the list of egress rules associated with the security group", responseObject = SecurityGroupRuleResponse.class)
-    private List<SecurityGroupRuleResponse> egressRules;
+    private Set<SecurityGroupRuleResponse> egressRules;
 
     @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with the rule", responseObject = ResourceTagResponse.class)
-    private List<ResourceTagResponse> tags;
+    private Set<ResourceTagResponse> tags;
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public SecurityGroupResponse(){
+        this.ingressRules = new HashSet<SecurityGroupRuleResponse>();
+        this.egressRules = new HashSet<SecurityGroupRuleResponse>();
+        this.tags = new HashSet<ResourceTagResponse>();
     }
 
-    public Long getId() {
-        return id.getValue();
+    @Override
+    public String getObjectUuid() {
+        return this.getId();
     }
+
+    public String getId() {
+        return id;
+     }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
 
     public void setName(String name) {
         this.name = name;
@@ -81,25 +97,29 @@ public class SecurityGroupResponse extends BaseResponse implements ControlledEnt
         this.accountName = accountName;
     }
 
-    public void setDomainId(Long domainId) {
-        this.domainId.setValue(domainId);
+    @Override
+    public void setDomainId(String domainId) {
+        this.domainId = domainId;
     }
 
     public void setDomainName(String domainName) {
         this.domainName = domainName;
     }
 
-    public void setSecurityGroupIngressRules(List<SecurityGroupRuleResponse> securityGroupRules) {
+    public void setSecurityGroupIngressRules(Set<SecurityGroupRuleResponse> securityGroupRules) {
         this.ingressRules = securityGroupRules;
     }
 
-    public void setSecurityGroupEgressRules(List<SecurityGroupRuleResponse> securityGroupRules) {
+    public void addSecurityGroupIngressRule(SecurityGroupRuleResponse rule){
+        this.ingressRules.add(rule);
+    }
+
+    public void setSecurityGroupEgressRules(Set<SecurityGroupRuleResponse> securityGroupRules) {
         this.egressRules = securityGroupRules;
     }
 
-    @Override
-    public Long getObjectId() {
-        return getId();
+    public void addSecurityGroupEgressRule(SecurityGroupRuleResponse rule){
+        this.egressRules.add(rule);
     }
 
     @Override
@@ -128,8 +148,8 @@ public class SecurityGroupResponse extends BaseResponse implements ControlledEnt
     }
 
     @Override
-    public void setProjectId(Long projectId) {
-        this.projectId.setValue(projectId);
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
     }
 
     @Override
@@ -137,7 +157,11 @@ public class SecurityGroupResponse extends BaseResponse implements ControlledEnt
         this.projectName = projectName;
     }
 
-    public void setTags(List<ResourceTagResponse> tags) {
+    public void setTags(Set<ResourceTagResponse> tags) {
         this.tags = tags;
+    }
+
+    public void addTag(ResourceTagResponse tag){
+        this.tags.add(tag);
     }
 }

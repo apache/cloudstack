@@ -118,6 +118,7 @@ import com.cloud.api.response.VpnUsersResponse;
 import com.cloud.api.response.ZoneResponse;
 import com.cloud.api.view.vo.DomainRouterJoinVO;
 import com.cloud.api.view.vo.ControlledViewEntity;
+import com.cloud.api.view.vo.SecurityGroupJoinVO;
 import com.cloud.api.view.vo.UserVmJoinVO;
 import com.cloud.async.AsyncJob;
 import com.cloud.capacity.Capacity;
@@ -2029,91 +2030,31 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public ListResponse<SecurityGroupResponse> createSecurityGroupResponses(
-            List<? extends SecurityGroupRules> networkGroups) {
-        List<SecurityGroupResultObject> groupResultObjs = SecurityGroupResultObject
-        .transposeNetworkGroups(networkGroups);
+    public List<SecurityGroupResponse> createSecurityGroupResponses(List<SecurityGroupJoinVO> securityGroups) {
+        Account caller = UserContext.current().getCaller();
+        Hashtable<Long, SecurityGroupResponse> vrDataList = new Hashtable<Long, SecurityGroupResponse>();
+        // Initialise the vrdatalist with the input data
+        for (SecurityGroupJoinVO vr : securityGroups) {
+            SecurityGroupResponse vrData = vrDataList.get(vr.getId());
+            if ( vrData == null ) {
+                // first time encountering this sg
+                vrData = ApiDBUtils.newSecurityGroupResponse(vr, caller);
 
-        ListResponse<SecurityGroupResponse> response = new ListResponse<SecurityGroupResponse>();
-        List<SecurityGroupResponse> netGrpResponses = new ArrayList<SecurityGroupResponse>();
-        for (SecurityGroupResultObject networkGroup : groupResultObjs) {
-            SecurityGroupResponse netGrpResponse = new SecurityGroupResponse();
-            netGrpResponse.setId(networkGroup.getId());
-            netGrpResponse.setName(networkGroup.getName());
-            netGrpResponse.setDescription(networkGroup.getDescription());
-
-            populateOwner(netGrpResponse, networkGroup);
-
-            List<SecurityGroupRuleResultObject> securityGroupRules = networkGroup
-            .getSecurityGroupRules();
-            if ((securityGroupRules != null) && !securityGroupRules.isEmpty()) {
-                List<SecurityGroupRuleResponse> ingressRulesResponse = new ArrayList<SecurityGroupRuleResponse>();
-                List<SecurityGroupRuleResponse> egressRulesResponse = new ArrayList<SecurityGroupRuleResponse>();
-                for (SecurityGroupRuleResultObject securityGroupRule : securityGroupRules) {
-                    SecurityGroupRuleResponse ruleData = new SecurityGroupRuleResponse();
-                    ruleData.setRuleId(securityGroupRule.getId());
-                    ruleData.setProtocol(securityGroupRule.getProtocol());
-
-                    if ("icmp".equalsIgnoreCase(securityGroupRule.getProtocol())) {
-                        ruleData.setIcmpType(securityGroupRule.getStartPort());
-                        ruleData.setIcmpCode(securityGroupRule.getEndPort());
-                    } else {
-                        ruleData.setStartPort(securityGroupRule.getStartPort());
-                        ruleData.setEndPort(securityGroupRule.getEndPort());
-                    }
-
-                    if (securityGroupRule.getAllowedSecurityGroup() != null) {
-                        ruleData.setSecurityGroupName(securityGroupRule
-                                .getAllowedSecurityGroup());
-                        ruleData.setAccountName(securityGroupRule
-                                .getAllowedSecGroupAcct());
-                    } else {
-                        ruleData.setCidr(securityGroupRule
-                                .getAllowedSourceIpCidr());
-                    }
-
-                    if (securityGroupRule.getRuleType() == SecurityRuleType.IngressRule) {
-                        ruleData.setObjectName("ingressrule");
-                        ingressRulesResponse.add(ruleData);
-                    } else {
-                        ruleData.setObjectName("egressrule");
-                        egressRulesResponse.add(ruleData);
-                    }
-                }
-                //set tag information
-                List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.UserVm, networkGroup.getId());
-                List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
-                for (ResourceTag tag : tags) {
-                    ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
-                    tagResponses.add(tagResponse);
-                }
-                netGrpResponse.setTags(tagResponses);
-
-                netGrpResponse
-                .setSecurityGroupIngressRules(ingressRulesResponse);
-                netGrpResponse.setSecurityGroupEgressRules(egressRulesResponse);
+            } else {
+                // update rules for 1 to many mapping fields
+                vrData = ApiDBUtils.fillSecurityGroupDetails(vrData, vr);
             }
-            netGrpResponse.setObjectName("securitygroup");
-            netGrpResponses.add(netGrpResponse);
+            vrDataList.put(vr.getId(), vrData);
         }
-
-        response.setResponses(netGrpResponses);
-        return response;
+        return new ArrayList<SecurityGroupResponse>(vrDataList.values());
     }
 
     @Override
     public SecurityGroupResponse createSecurityGroupResponse(SecurityGroup group) {
-        SecurityGroupResponse response = new SecurityGroupResponse();
-
-        populateOwner(response, group);
-
-        response.setDescription(group.getDescription());
-        response.setId(group.getId());
-        response.setName(group.getName());
-
-        response.setObjectName("securitygroup");
-        return response;
-
+        List<SecurityGroupJoinVO> viewSgs = ApiDBUtils.newSecurityGroupView(group);
+        List<SecurityGroupResponse> listSgs = createSecurityGroupResponses(viewSgs);
+        assert listSgs != null && listSgs.size() == 1 : "There should be one security group returned";
+        return listSgs.get(0);
     }
 
     @Override
@@ -2471,27 +2412,27 @@ public class ApiResponseHelper implements ResponseGenerator {
         Map<Long, Account> allowedSecuriytGroupAccounts = new HashMap<Long, Account>();
 
         if ((securityRules != null) && !securityRules.isEmpty()) {
-            SecurityGroup securityGroup = ApiDBUtils.findSecurityGroupById(securityRules.get(0).getSecurityGroupId());
-            response.setId(securityGroup.getId());
+            SecurityGroupJoinVO securityGroup = ApiDBUtils.findSecurityGroupViewById(securityRules.get(0).getSecurityGroupId()).get(0);
+            response.setId(securityGroup.getUuid());
             response.setName(securityGroup.getName());
             response.setDescription(securityGroup.getDescription());
 
             Account account = securiytGroupAccounts.get(securityGroup.getAccountId());
 
-            if (account == null) {
-                account = ApiDBUtils.findAccountById(securityGroup.getAccountId());
-                securiytGroupAccounts.put(securityGroup.getAccountId(), account);
+            if (securityGroup.getAccountType() == Account.ACCOUNT_TYPE_PROJECT) {
+                response.setProjectId(securityGroup.getProjectUuid());
+                response.setProjectName(securityGroup.getProjectName());
+            } else {
+                response.setAccountName(securityGroup.getAccountName());
             }
 
-            populateAccount(response, account.getId());
-            populateDomain(response, account.getDomainId());
+            response.setDomainId(securityGroup.getDomainUuid());
+            response.setDomainName(securityGroup.getDomainName());
 
-            List<SecurityGroupRuleResponse> egressResponses = new ArrayList<SecurityGroupRuleResponse>();
-            List<SecurityGroupRuleResponse> ingressResponses = new ArrayList<SecurityGroupRuleResponse>();
             for (SecurityRule securityRule : securityRules) {
                 SecurityGroupRuleResponse securityGroupData = new SecurityGroupRuleResponse();
 
-                securityGroupData.setRuleId(securityRule.getId());
+                securityGroupData.setRuleId(securityRule.getUuid());
                 securityGroupData.setProtocol(securityRule.getProtocol());
                 if ("icmp".equalsIgnoreCase(securityRule.getProtocol())) {
                     securityGroupData.setIcmpType(securityRule.getStartPort());
@@ -2503,35 +2444,24 @@ public class ApiResponseHelper implements ResponseGenerator {
 
                 Long allowedSecurityGroupId = securityRule.getAllowedNetworkId();
                 if (allowedSecurityGroupId != null) {
-                    SecurityGroup allowedSecurityGroup = allowedSecurityGroups.get(allowedSecurityGroupId);
-                    if (allowedSecurityGroup == null) {
-                        allowedSecurityGroup = ApiDBUtils.findSecurityGroupById(allowedSecurityGroupId);
-                        allowedSecurityGroups.put(allowedSecurityGroupId, allowedSecurityGroup);
+                    List<SecurityGroupJoinVO> sgs = ApiDBUtils.findSecurityGroupViewById(allowedSecurityGroupId);
+                    if (sgs != null && sgs.size() > 0) {
+                        SecurityGroupJoinVO sg = sgs.get(0);
+                        securityGroupData.setSecurityGroupName(sg.getName());
+                        securityGroupData.setAccountName(sg.getAccountName());
                     }
-
-                    securityGroupData.setSecurityGroupName(allowedSecurityGroup.getName());
-
-                    Account allowedAccount = allowedSecuriytGroupAccounts.get(allowedSecurityGroup.getAccountId());
-                    if (allowedAccount == null) {
-                        allowedAccount = ApiDBUtils.findAccountById(allowedSecurityGroup.getAccountId());
-                        allowedSecuriytGroupAccounts.put(allowedAccount.getId(), allowedAccount);
-                    }
-
-                    securityGroupData.setAccountName(allowedAccount.getAccountName());
                 } else {
                     securityGroupData.setCidr(securityRule.getAllowedSourceIpCidr());
                 }
                 if (securityRule.getRuleType() == SecurityRuleType.IngressRule) {
                     securityGroupData.setObjectName("ingressrule");
-                    ingressResponses.add(securityGroupData);
+                    response.addSecurityGroupIngressRule(securityGroupData);
                 } else {
                     securityGroupData.setObjectName("egressrule");
-                    egressResponses.add(securityGroupData);
+                    response.addSecurityGroupEgressRule(securityGroupData);
                 }
 
             }
-            response.setSecurityGroupIngressRules(ingressResponses);
-            response.setSecurityGroupEgressRules(egressResponses);
             response.setObjectName("securitygroup");
 
         }
