@@ -526,56 +526,37 @@ public class NiciraNvpResource implements ServerResource {
     		// Any other SourceNat rule should have a corresponding DestinationNat rule
     		
     		for (StaticNatRuleTO rule : cmd.getRules()) {
-    			// Find if a DestinationNat rule exists for this rule
-				String insideIp = rule.getDstIp();
-				String insideCidr = rule.getDstIp() + "/32";
-				String outsideIp = rule.getSrcIp();
-				String outsideCidr = rule.getSrcIp() + "/32";
-				
+    			
+    			NatRule[] rulepair = generateStaticNatRulePair(rule.getDstIp(), rule.getSrcIp());
+    							
 				NatRule incoming = null;
 				NatRule outgoing = null;
 
 				for (NatRule storedRule : existingRules.getResults()) {					
-    				if ("SourceNatRule".equals(storedRule.getType())) {
-    					if (outsideIp.equals(storedRule.getToSourceIpAddressMin()) && 
-    							outsideIp.equals(storedRule.getToSourceIpAddressMax()) &&
-    							storedRule.getToSourcePortMin() == null) {
-        					// The outgoing rule exists
-        					outgoing = storedRule;
-        				}    					
-    				}
-    				if ("DestinationNatRule".equals(storedRule.getType()) &&
-    						storedRule.getToDestinationPort() != null) {
-    					// Skip PortForwarding rules
-    					continue;
-    				}
-    				// Compare against Ip as it should be a /32 cidr and the /32 is omitted
-    				if (outsideIp.equals(storedRule.getMatch().getDestinationIpAddresses())) {
+    				if (storedRule.equalsIgnoreUuid(rulepair[1])) {
+						// The outgoing rule exists
+    					outgoing = storedRule;
+    					s_logger.debug("Found matching outgoing rule " + outgoing.getUuid());
+    					if (incoming != null) {
+    						break;
+    					}
+        			}    					
+    				else if (storedRule.equalsIgnoreUuid(rulepair[0])) {
     					// The incoming rule exists
     					incoming = storedRule;
+    					s_logger.debug("Found matching incoming rule " + incoming.getUuid());
+    					if (outgoing != null) {
+    						break;
+    					}
     				}
     			}
 				if (incoming != null && outgoing != null) {
-					if (insideIp.equals(incoming.getToDestinationIpAddressMin())) {
-						if (rule.revoked()) {
-							s_logger.debug("Deleting incoming rule " + incoming.getUuid());
-							_niciraNvpApi.deleteLogicalRouterNatRule(cmd.getLogicalRouterUuid(), incoming.getUuid());
-							
-							s_logger.debug("Deleting outgoing rule " + outgoing.getUuid());
-							_niciraNvpApi.deleteLogicalRouterNatRule(cmd.getLogicalRouterUuid(), outgoing.getUuid());
-						}
-					}
-					else {
-						s_logger.debug("Updating outgoing rule " + outgoing.getUuid());
-						outgoing.setToDestinationIpAddressMin(insideIp);
-						outgoing.setToDestinationIpAddressMax(insideIp);
-						_niciraNvpApi.modifyLogicalRouterNatRule(cmd.getLogicalRouterUuid(), outgoing);
-
-						s_logger.debug("Updating incoming rule " + outgoing.getUuid());
-						incoming.setToSourceIpAddressMin(insideIp);
-						incoming.setToSourceIpAddressMax(insideIp);
-						_niciraNvpApi.modifyLogicalRouterNatRule(cmd.getLogicalRouterUuid(), incoming);
-						break;
+					if (rule.revoked()) {
+						s_logger.debug("Deleting incoming rule " + incoming.getUuid());
+						_niciraNvpApi.deleteLogicalRouterNatRule(cmd.getLogicalRouterUuid(), incoming.getUuid());
+						
+						s_logger.debug("Deleting outgoing rule " + outgoing.getUuid());
+						_niciraNvpApi.deleteLogicalRouterNatRule(cmd.getLogicalRouterUuid(), outgoing.getUuid());
 					}
 				}
 				else {
@@ -585,28 +566,17 @@ public class NiciraNvpResource implements ServerResource {
 						break;
 					}
 					
-					// api createLogicalRouterNatRule
-					// create the dnat rule
-					Match m = new Match();
-					m.setDestinationIpAddresses(outsideCidr);
-					NatRule newDnatRule = new NatRule();
-					newDnatRule.setType("DestinationNatRule");
-					newDnatRule.setMatch(m);
-					newDnatRule.setToDestinationIpAddressMin(insideIp);
-					newDnatRule.setToDestinationIpAddressMax(insideIp);
-					newDnatRule = _niciraNvpApi.createLogicalRouterNatRule(cmd.getLogicalRouterUuid(), newDnatRule);
-					s_logger.debug("Created " + natRuleToString(newDnatRule));
-
-					// create matching snat rule
-					m = new Match();
-					m.setSourceIpAddresses(insideIp + "/32");
-					NatRule newSnatRule = new NatRule();
-					newSnatRule.setType("SourceNatRule");
-					newSnatRule.setMatch(m);
-					newSnatRule.setToSourceIpAddressMin(outsideIp);
-					newSnatRule.setToSourceIpAddressMax(outsideIp);
-					newSnatRule = _niciraNvpApi.createLogicalRouterNatRule(cmd.getLogicalRouterUuid(), newSnatRule);
-					s_logger.debug("Created " + natRuleToString(newSnatRule));
+					rulepair[0] = _niciraNvpApi.createLogicalRouterNatRule(cmd.getLogicalRouterUuid(), rulepair[0]);
+					s_logger.debug("Created " + natRuleToString(rulepair[0]));
+					
+					try {
+						rulepair[1] = _niciraNvpApi.createLogicalRouterNatRule(cmd.getLogicalRouterUuid(), rulepair[1]);
+						s_logger.debug("Created " + natRuleToString(rulepair[1]));
+					} catch (NiciraNvpApiException ex) {
+						s_logger.debug("Failed to create SourceNatRule, rolling back DestinationNatRule");
+						_niciraNvpApi.deleteLogicalRouterNatRule(cmd.getLogicalRouterUuid(), rulepair[0].getUuid());
+						throw ex; // Rethrow original exception
+					}
 					
 				}
     		}
@@ -619,7 +589,6 @@ public class NiciraNvpResource implements ServerResource {
         		return new ConfigureStaticNatRulesOnLogicalRouterAnswer(cmd, e);
         	}
         }
-    	
     }
 
     private Answer executeRequest(ConfigurePortForwardingRulesOnLogicalRouterCommand cmd, int numRetries) {
@@ -630,63 +599,41 @@ public class NiciraNvpResource implements ServerResource {
     		// Any other SourceNat rule should have a corresponding DestinationNat rule
     		
     		for (PortForwardingRuleTO rule : cmd.getRules()) {
-    			if (rule.isAlreadyAdded()) {
+    			if (rule.isAlreadyAdded() && !rule.revoked()) {
     				// Don't need to do anything
     				continue;
     			}
     			
-    			// Find if a DestinationNat rule exists for this rule
-				String insideIp = rule.getDstIp();
-				String insideCidr = rule.getDstIp() + "/32";
-				String outsideIp = rule.getSrcIp();
-				String outsideCidr = rule.getSrcIp() + "/32";
+    			NatRule[] rulepair = generatePortForwardingRulePair(rule.getDstIp(), rule.getDstPortRange(), rule.getSrcIp(), rule.getSrcPortRange(), rule.getProtocol());
 				
 				NatRule incoming = null;
 				NatRule outgoing = null;
 
 				for (NatRule storedRule : existingRules.getResults()) {
-    				if ("SourceNatRule".equals(storedRule.getType())) {
-    					if (outsideIp.equals(storedRule.getToSourceIpAddressMin()) && 
-    							outsideIp.equals(storedRule.getToSourceIpAddressMax()) &&
-    							storedRule.getToSourcePortMin() == rule.getSrcPortRange()[0] &&
-    							storedRule.getToSourcePortMax() == rule.getSrcPortRange()[1]) {
-        					// The outgoing rule exists
-        					outgoing = storedRule;
-        				}    					
-    				}
-    				else if ("DestinationNatRule".equals(storedRule.getType())) {
-    					if (insideIp.equals(storedRule.getToDestinationIpAddressMin()) && 
-    							insideIp.equals(storedRule.getToDestinationIpAddressMax()) &&
-    							storedRule.getToDestinationPort() == rule.getDstPortRange()[0]) {
-        					// The incoming rule exists
-        					incoming = storedRule;
-        				}    					
+    				if (storedRule.equalsIgnoreUuid(rulepair[1])) {
+						// The outgoing rule exists
+    					outgoing = storedRule;
+    					s_logger.debug("Found matching outgoing rule " + outgoing.getUuid());
+    					if (incoming != null) {
+    						break;
+    					}
+        			}    					
+    				else if (storedRule.equalsIgnoreUuid(rulepair[0])) {
+    					// The incoming rule exists
+    					incoming = storedRule;
+    					s_logger.debug("Found matching incoming rule " + incoming.getUuid());
+    					if (outgoing != null) {
+    						break;
+    					}
     				}
 				}
 				if (incoming != null && outgoing != null) {
-					if (insideIp.equals(incoming.getToDestinationIpAddressMin())) {
-						if (rule.revoked()) {
-							s_logger.debug("Deleting incoming rule " + incoming.getUuid());
-							_niciraNvpApi.deleteLogicalRouterNatRule(cmd.getLogicalRouterUuid(), incoming.getUuid());
-							
-							s_logger.debug("Deleting outgoing rule " + outgoing.getUuid());
-							_niciraNvpApi.deleteLogicalRouterNatRule(cmd.getLogicalRouterUuid(), outgoing.getUuid());
-						}
-					}
-					else {
-						s_logger.debug("Updating outgoing rule " + outgoing.getUuid());
-						outgoing.setToDestinationIpAddressMin(insideIp);
-						outgoing.setToDestinationIpAddressMax(insideIp);
-						outgoing.setToDestinationPort(rule.getDstPortRange()[0]);
-						_niciraNvpApi.modifyLogicalRouterNatRule(cmd.getLogicalRouterUuid(), outgoing);
-
-						s_logger.debug("Updating incoming rule " + outgoing.getUuid());
-						incoming.setToSourceIpAddressMin(insideIp);
-						incoming.setToSourceIpAddressMax(insideIp);
-						incoming.setToSourcePortMin(rule.getSrcPortRange()[0]);
-						incoming.setToSourcePortMax(rule.getSrcPortRange()[1]);
-						_niciraNvpApi.modifyLogicalRouterNatRule(cmd.getLogicalRouterUuid(), incoming);
-						break;
+					if (rule.revoked()) {
+						s_logger.debug("Deleting incoming rule " + incoming.getUuid());
+						_niciraNvpApi.deleteLogicalRouterNatRule(cmd.getLogicalRouterUuid(), incoming.getUuid());
+						
+						s_logger.debug("Deleting outgoing rule " + outgoing.getUuid());
+						_niciraNvpApi.deleteLogicalRouterNatRule(cmd.getLogicalRouterUuid(), outgoing.getUuid());
 					}
 				}
 				else {
@@ -696,47 +643,17 @@ public class NiciraNvpResource implements ServerResource {
 						break;
 					}
 					
-					// api createLogicalRouterNatRule
-					// create the dnat rule
-					Match m = new Match();
-					m.setDestinationIpAddresses(outsideCidr);
-					if ("tcp".equals(rule.getProtocol())) {
-						m.setProtocol(6);
-					}
-					else if ("udp".equals(rule.getProtocol())) {
-						m.setProtocol(17);
-					}
-					m.setDestinationPortMin(rule.getSrcPortRange()[0]);
-					m.setDestinationPortMax(rule.getSrcPortRange()[1]);
-					NatRule newDnatRule = new NatRule();
-					newDnatRule.setType("DestinationNatRule");
-					newDnatRule.setMatch(m);
-					newDnatRule.setToDestinationIpAddressMin(insideIp);
-					newDnatRule.setToDestinationIpAddressMax(insideIp);
-					newDnatRule.setToDestinationPort(rule.getDstPortRange()[0]);
-					newDnatRule = _niciraNvpApi.createLogicalRouterNatRule(cmd.getLogicalRouterUuid(), newDnatRule);
-					s_logger.debug("Created " + natRuleToString(newDnatRule));
+					rulepair[0] = _niciraNvpApi.createLogicalRouterNatRule(cmd.getLogicalRouterUuid(), rulepair[0]);
+					s_logger.debug("Created " + natRuleToString(rulepair[0]));
 					
-					// create matching snat rule
-					m = new Match();
-					m.setSourceIpAddresses(insideIp + "/32");
-					if ("tcp".equals(rule.getProtocol())) {
-						m.setProtocol(6);
+					try {
+						rulepair[1] = _niciraNvpApi.createLogicalRouterNatRule(cmd.getLogicalRouterUuid(), rulepair[1]);
+						s_logger.debug("Created " + natRuleToString(rulepair[1]));
+					} catch (NiciraNvpApiException ex) {
+						s_logger.warn("NiciraNvpApiException during create call, rolling back previous create");
+						_niciraNvpApi.deleteLogicalRouterNatRule(cmd.getLogicalRouterUuid(), rulepair[0].getUuid());
+						throw ex; // Rethrow the original exception
 					}
-					else if ("udp".equals(rule.getProtocol())) {
-						m.setProtocol(17);
-					}
-					m.setSourcePortMin(rule.getDstPortRange()[0]);
-					m.setSourcePortMax(rule.getDstPortRange()[1]);
-					NatRule newSnatRule = new NatRule();
-					newSnatRule.setType("SourceNatRule");
-					newSnatRule.setMatch(m);
-					newSnatRule.setToSourceIpAddressMin(outsideIp);
-					newSnatRule.setToSourceIpAddressMax(outsideIp);
-					newSnatRule.setToSourcePortMin(rule.getSrcPortRange()[0]);
-					newSnatRule.setToSourcePortMax(rule.getSrcPortRange()[1]);
-					newSnatRule = _niciraNvpApi.createLogicalRouterNatRule(cmd.getLogicalRouterUuid(), newSnatRule);
-					s_logger.debug("Created " + natRuleToString(newSnatRule));
 					
 				}
     		}
@@ -779,7 +696,7 @@ public class NiciraNvpResource implements ServerResource {
 		natRuleStr.append(" ");
 		natRuleStr.append(m.getSourceIpAddresses());
 		natRuleStr.append(" [");
-		natRuleStr.append(m.getSource_port_min());
+		natRuleStr.append(m.getSourcePortMin());
 		natRuleStr.append("-");
 		natRuleStr.append(m.getSourcePortMax());
 		natRuleStr.append(" ] -> ");
@@ -819,17 +736,59 @@ public class NiciraNvpResource implements ServerResource {
     	}
     }
     
-    private NatRule[] generateStaticNatRulePair(String insideIp, String outsideIp) {
+    protected NatRule[] generateStaticNatRulePair(String insideIp, String outsideIp) {
     	NatRule[] rulepair = new NatRule[2];
     	rulepair[0] = new NatRule();
     	rulepair[0].setType("DestinationNatRule");
     	rulepair[1] = new NatRule();
     	rulepair[1].setType("SourceNatRule");
     	
-    	//FIXME Implement
+		Match m = new Match();
+		m.setDestinationIpAddresses(outsideIp);
+		rulepair[0].setMatch(m);
+		rulepair[0].setToDestinationIpAddressMin(insideIp);
+		rulepair[0].setToDestinationIpAddressMax(insideIp);
+
+		// create matching snat rule
+		m = new Match();
+		m.setSourceIpAddresses(insideIp);
+		rulepair[1].setMatch(m);
+		rulepair[1].setToSourceIpAddressMin(outsideIp);
+		rulepair[1].setToSourceIpAddressMax(outsideIp);
     	
     	return rulepair;
     	
+    }
+    
+    protected NatRule[] generatePortForwardingRulePair(String insideIp, int[] insidePorts, String outsideIp, int[] outsidePorts, String protocol) {
+       	// Start with a basic static nat rule, then add port and protocol details
+    	NatRule[] rulepair = generateStaticNatRulePair(insideIp, outsideIp);
+    	
+    	rulepair[0].setToDestinationPort(insidePorts[0]);
+    	rulepair[0].getMatch().setDestinationPortMin(outsidePorts[0]);
+    	rulepair[0].getMatch().setDestinationPortMax(outsidePorts[1]);
+    	rulepair[0].getMatch().setEthertype("IPv4");
+		if ("tcp".equals(protocol)) {
+			rulepair[0].getMatch().setProtocol(6);
+		}
+		else if ("udp".equals(protocol)) {
+			rulepair[0].getMatch().setProtocol(17);
+		}
+
+    	rulepair[1].setToSourcePortMin(outsidePorts[0]);
+    	rulepair[1].setToSourcePortMax(outsidePorts[1]);
+    	rulepair[1].getMatch().setSourcePortMin(insidePorts[0]);
+    	rulepair[1].getMatch().setSourcePortMax(insidePorts[1]);
+    	rulepair[1].getMatch().setEthertype("IPv4");
+		if ("tcp".equals(protocol)) {
+			rulepair[1].getMatch().setProtocol(6);
+		}
+		else if ("udp".equals(protocol)) {
+			rulepair[1].getMatch().setProtocol(17);
+		}
+
+		return rulepair;
+   	
     }
     
 }

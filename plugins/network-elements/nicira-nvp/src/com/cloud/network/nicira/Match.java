@@ -41,7 +41,7 @@ public class Match {
 		this.protocol = protocol;
 	}
 	
-	public Integer getSource_port_min() {
+	public Integer getSourcePortMin() {
 		return source_port_min;
 	}
 	

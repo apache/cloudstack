@@ -219,5 +219,64 @@ public class NatRule {
 		return true;
 	}
 	
+	public boolean equalsIgnoreUuid(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		NatRule other = (NatRule) obj;
+		if (match == null) {
+			if (other.match != null)
+				return false;
+		} else if (!match.equals(other.match))
+			return false;
+		if (to_destination_ip_address_max == null) {
+			if (other.to_destination_ip_address_max != null)
+				return false;
+		} else if (!to_destination_ip_address_max
+				.equals(other.to_destination_ip_address_max))
+			return false;
+		if (to_destination_ip_address_min == null) {
+			if (other.to_destination_ip_address_min != null)
+				return false;
+		} else if (!to_destination_ip_address_min
+				.equals(other.to_destination_ip_address_min))
+			return false;
+		if (to_destination_port == null) {
+			if (other.to_destination_port != null)
+				return false;
+		} else if (!to_destination_port.equals(other.to_destination_port))
+			return false;
+		if (to_source_ip_address_max == null) {
+			if (other.to_source_ip_address_max != null)
+				return false;
+		} else if (!to_source_ip_address_max
+				.equals(other.to_source_ip_address_max))
+			return false;
+		if (to_source_ip_address_min == null) {
+			if (other.to_source_ip_address_min != null)
+				return false;
+		} else if (!to_source_ip_address_min
+				.equals(other.to_source_ip_address_min))
+			return false;
+		if (to_source_port_max == null) {
+			if (other.to_source_port_max != null)
+				return false;
+		} else if (!to_source_port_max.equals(other.to_source_port_max))
+			return false;
+		if (to_source_port_min == null) {
+			if (other.to_source_port_min != null)
+				return false;
+		} else if (!to_source_port_min.equals(other.to_source_port_min))
+			return false;
+		if (type == null) {
+			if (other.type != null)
+				return false;
+		} else if (!type.equals(other.type))
+			return false;
+		return true;
+	}
 	
 }
