@@ -19,7 +19,7 @@ package com.cloud.vm.dao;
 import java.util.EnumSet;
 import java.util.List;
 
-import com.cloud.api.ApiConstants.VMDetails;
+import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.api.view.vo.UserVmJoinVO;
 import com.cloud.user.Account;

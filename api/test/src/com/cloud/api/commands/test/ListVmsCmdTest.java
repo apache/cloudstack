@@ -32,12 +32,12 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
 
-import com.cloud.api.ApiConstants;
-import com.cloud.api.ApiConstants.VMDetails;
-import com.cloud.api.BaseCmd;
-import com.cloud.api.ResponseGenerator;
-import com.cloud.api.ServerApiException;
-import com.cloud.api.commands.ListVMsCmd;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiConstants.VMDetails;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.ResponseGenerator;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.user.vm.command.ListVMsCmd;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.api.view.vo.UserVmJoinVO;

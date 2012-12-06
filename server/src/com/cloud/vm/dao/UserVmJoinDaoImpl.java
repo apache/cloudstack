@@ -31,7 +31,7 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
-import com.cloud.api.ApiConstants.VMDetails;
+import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import com.cloud.api.response.NicResponse;
 import com.cloud.api.response.ResourceTagResponse;
 import com.cloud.api.response.SecurityGroupResponse;

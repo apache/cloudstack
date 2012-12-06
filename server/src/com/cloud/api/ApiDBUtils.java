@@ -896,8 +896,7 @@ public class ApiDBUtils {
 
     public static CounterVO getCounter(long counterId) {
         return _counterDao.findById(counterId);
-    }}
-
+    }
 
     ///////////////////////////////////////////////////////////////////////
     //  Newly Added Utility Methods for List API refactoring             //

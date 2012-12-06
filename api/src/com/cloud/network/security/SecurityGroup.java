@@ -18,7 +18,7 @@ package com.cloud.network.security;
 
 import com.cloud.acl.ControlledEntity;
 
-@doc("")
+//FIXME: Annotation @doc("")
 public interface SecurityGroup extends ControlledEntity {
     long getId();
 

@@ -29,10 +29,9 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
 
-
-import com.cloud.api.ResponseGenerator;
-import com.cloud.api.ServerApiException;
-import com.cloud.api.commands.ListRoutersCmd;
+import org.apache.cloudstack.api.ResponseGenerator;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.admin.router.command.ListRoutersCmd;
 import com.cloud.api.response.DomainRouterResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.view.vo.DomainRouterJoinVO;
