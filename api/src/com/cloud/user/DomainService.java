@@ -18,8 +18,8 @@ package com.cloud.user;
 
 import java.util.List;
 
-import com.cloud.api.commands.ListDomainChildrenCmd;
-import com.cloud.api.commands.ListDomainsCmd;
+import org.apache.cloudstack.api.admin.domain.command.ListDomainChildrenCmd;
+import org.apache.cloudstack.api.admin.domain.command.ListDomainsCmd;
 import com.cloud.domain.Domain;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.utils.Pair;

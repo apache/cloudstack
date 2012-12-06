@@ -90,7 +90,7 @@ import org.apache.cloudstack.api.admin.systemvm.command.ListSystemVMsCmd;
 import com.cloud.api.commands.ListVlanIpRangesCmd;
 import org.apache.cloudstack.api.admin.systemvm.command.RebootSystemVmCmd;
 import org.apache.cloudstack.api.admin.systemvm.command.StopSystemVmCmd;
-import com.cloud.api.commands.UpdateDomainCmd;
+import org.apache.cloudstack.api.admin.domain.command.UpdateDomainCmd;
 import org.apache.cloudstack.api.admin.host.command.UpdateHostPasswordCmd;
 import org.apache.cloudstack.api.user.iso.command.UpdateIsoCmd;
 import com.cloud.api.commands.UpdateTemplateOrIsoCmd;

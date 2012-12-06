@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.admin.domain.command;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,25 +31,25 @@ import com.cloud.api.response.ListResponse;
 import com.cloud.domain.Domain;
 import com.cloud.utils.Pair;
 
-@Implementation(description="Lists all children domains belonging to a specified domain", responseObject=DomainResponse.class)
-public class ListDomainChildrenCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListDomainChildrenCmd.class.getName());
+@Implementation(description="Lists domains and provides detailed information for listed domains", responseObject=DomainResponse.class)
+public class ListDomainsCmd extends BaseListCmd {
+    public static final Logger s_logger = Logger.getLogger(ListDomainsCmd.class.getName());
 
-    private static final String s_name = "listdomainchildrenresponse";
+    private static final String s_name = "listdomainsresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
     @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list children domain by parent domain ID.")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="List domain by domain ID.")
     private Long id;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="list children domains by name")
-    private String domainName;
+    @Parameter(name=ApiConstants.LEVEL, type=CommandType.INTEGER, description="List domains by domain level.")
+    private Integer level;
 
-    @Parameter(name=ApiConstants.IS_RECURSIVE, type=CommandType.BOOLEAN, description="to return the entire tree, use the value \"true\". To return the first level children, use the value \"false\".")
-    private Boolean recursive;
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="List domain by domain name.")
+    private String domainName;
 
     @Parameter(name=ApiConstants.LIST_ALL, type=CommandType.BOOLEAN, description="If set to false, list only resources belonging to the command's caller; if set to true - list resources that the caller is authorized to see. Default value is false")
     private Boolean listAll;
@@ -62,16 +62,16 @@ public class ListDomainChildrenCmd extends BaseListCmd {
         return id;
     }
 
+    public Integer getLevel() {
+        return level;
+    }
+
     public String getDomainName() {
         return domainName;
     }
 
     public boolean listAll() {
         return listAll == null ? false : listAll;
-    }
-
-    public boolean isRecursive() {
-        return recursive == null ? false : recursive;
     }
 
     /////////////////////////////////////////////////////
@@ -85,7 +85,7 @@ public class ListDomainChildrenCmd extends BaseListCmd {
 
     @Override
     public void execute(){
-        Pair<List<? extends Domain>, Integer> result = _domainService.searchForDomainChildren(this);
+        Pair<List<? extends Domain>, Integer> result = _domainService.searchForDomains(this);
         ListResponse<DomainResponse> response = new ListResponse<DomainResponse>();
         List<DomainResponse> domainResponses = new ArrayList<DomainResponse>();
         for (Domain domain : result.first()) {

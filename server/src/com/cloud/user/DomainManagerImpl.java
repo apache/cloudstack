@@ -24,10 +24,10 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.admin.domain.command.ListDomainChildrenCmd;
 import org.apache.log4j.Logger;
 
-import com.cloud.api.commands.ListDomainChildrenCmd;
-import com.cloud.api.commands.ListDomainsCmd;
+import org.apache.cloudstack.api.admin.domain.command.ListDomainsCmd;
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.configuration.dao.ResourceCountDao;
 import com.cloud.domain.Domain;

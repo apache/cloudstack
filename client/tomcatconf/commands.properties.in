@@ -39,11 +39,11 @@ enableUser=org.apache.cloudstack.api.admin.user.command.EnableUserCmd;7
 getUser=org.apache.cloudstack.api.admin.user.command.GetUserCmd;1
 
 #### Domain commands
-createDomain=com.cloud.api.commands.CreateDomainCmd;1
-updateDomain=com.cloud.api.commands.UpdateDomainCmd;1
-deleteDomain=com.cloud.api.commands.DeleteDomainCmd;1
-listDomains=com.cloud.api.commands.ListDomainsCmd;7
-listDomainChildren=com.cloud.api.commands.ListDomainChildrenCmd;7
+createDomain=org.apache.cloudstack.api.admin.domain.command.CreateDomainCmd;1
+updateDomain=org.apache.cloudstack.api.admin.domain.command.UpdateDomainCmd;1
+deleteDomain=org.apache.cloudstack.api.admin.domain.command.DeleteDomainCmd;1
+listDomains=org.apache.cloudstack.api.admin.domain.command.ListDomainsCmd;7
+listDomainChildren=org.apache.cloudstack.api.admin.domain.command.ListDomainChildrenCmd;7
 
 ####Cloud Identifier commands
 getCloudIdentifier=org.apache.cloudstack.api.user.resource.command.GetCloudIdentifierCmd;15

@@ -57,7 +57,7 @@ import org.apache.cloudstack.api.user.zone.command.ListZonesByCmd;
 import org.apache.cloudstack.api.admin.systemvm.command.RebootSystemVmCmd;
 import org.apache.cloudstack.api.user.ssh.command.RegisterSSHKeyPairCmd;
 import org.apache.cloudstack.api.admin.systemvm.command.StopSystemVmCmd;
-import com.cloud.api.commands.UpdateDomainCmd;
+import org.apache.cloudstack.api.admin.domain.command.UpdateDomainCmd;
 import org.apache.cloudstack.api.user.iso.command.UpdateIsoCmd;
 import org.apache.cloudstack.api.user.vmgroup.command.UpdateVMGroupCmd;
 import org.apache.cloudstack.api.admin.systemvm.command.UpgradeSystemVMCmd;
