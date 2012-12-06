@@ -1198,6 +1198,14 @@
                                   startport: 'All',
                                   endport: 'All'
                                 });
+                              } else if (rule.protocol == 'tcp' || rule.protocol == 'udp') {
+                                if (!rule.startport) {
+                                  rule.startport = ' ';
+                                }
+
+                                if (!rule.endport) {
+                                  rule.endport = ' ';
+                                }
                               }
 
                               return rule;
