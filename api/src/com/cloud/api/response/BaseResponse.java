@@ -46,23 +46,40 @@ public abstract class BaseResponse implements ResponseObject {
         this.objectName = objectName;
     }
 
+    //TODO: TO be replaced by getObjectUuid() after all response refactoring
     public Long getObjectId() {
         return null;
     }
 
+    public String getObjectUuid(){
+        return null;
+    }
+
     // For use by list commands with pending async jobs
-    @SerializedName(ApiConstants.JOB_ID) @Param(description="the ID of the latest async job acting on this object")
+    //TODO: To be replaced by jobUuid after all response refactoring
     protected IdentityProxy jobId = new IdentityProxy("async_job");
+
+    @SerializedName(ApiConstants.JOB_ID) @Param(description="the UUID of the latest async job acting on this object")
+    protected String jobUuid;
 
     @SerializedName(ApiConstants.JOB_STATUS) @Param(description="the current status of the latest async job acting on this object")
     private Integer jobStatus;
 
+    //TODO: TO be replaced by getter and setters for jobUuid.
     public Long getJobId() {
         return jobId.getValue();
     }
 
     public void setJobId(Long jobId) {
         this.jobId.setValue(jobId);
+    }
+
+    public String getJobUuid() {
+        return jobUuid;
+    }
+
+    public void setJobUuid(String jobUuid) {
+        this.jobUuid = jobUuid;
     }
 
     public Integer getJobStatus() {

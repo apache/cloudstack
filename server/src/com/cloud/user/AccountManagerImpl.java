@@ -41,6 +41,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
 import com.cloud.acl.ControlledEntity;
+import com.cloud.api.view.vo.ControlledViewEntity;
 import com.cloud.acl.SecurityChecker;
 import com.cloud.acl.SecurityChecker.AccessType;
 import com.cloud.api.ApiDBUtils;
@@ -2380,8 +2381,51 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         }
     }
 
-	@Override
-	public UserAccount getUserByApiKey(String apiKey) {
-		return _userAccountDao.getUserByApiKey(apiKey);
-	}
+    @Override
+    public void buildACLViewSearchBuilder(SearchBuilder<? extends ControlledViewEntity> sb, Long domainId,
+            boolean isRecursive, List<Long> permittedAccounts, ListProjectResourcesCriteria listProjectResourcesCriteria) {
+
+        sb.and("accountIdIN", sb.entity().getAccountId(), SearchCriteria.Op.IN);
+        sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
+
+        if (((permittedAccounts.isEmpty()) && (domainId != null) && isRecursive)) {
+            // if accountId isn't specified, we can do a domain match for the
+            // admin case if isRecursive is true
+            sb.and("domainPath", sb.entity().getDomainPath(), SearchCriteria.Op.LIKE);
+        }
+
+        if (listProjectResourcesCriteria != null) {
+            if (listProjectResourcesCriteria == Project.ListProjectResourcesCriteria.ListProjectResourcesOnly) {
+                sb.and("accountType", sb.entity().getAccountType(), SearchCriteria.Op.EQ);
+            } else if (listProjectResourcesCriteria == Project.ListProjectResourcesCriteria.SkipProjectResources) {
+                sb.and("accountType", sb.entity().getAccountType(), SearchCriteria.Op.NEQ);
+            }
+        }
+
+    }
+
+    @Override
+    public void buildACLViewSearchCriteria(SearchCriteria<? extends ControlledViewEntity> sc,
+            Long domainId, boolean isRecursive, List<Long> permittedAccounts, ListProjectResourcesCriteria listProjectResourcesCriteria) {
+
+        if (listProjectResourcesCriteria != null) {
+            sc.setParameters("accountType", Account.ACCOUNT_TYPE_PROJECT);
+        }
+
+        if (!permittedAccounts.isEmpty()) {
+            sc.setParameters("accountIdIN", permittedAccounts.toArray());
+        } else if (domainId != null) {
+            DomainVO domain = _domainDao.findById(domainId);
+            if (isRecursive) {
+                sc.setParameters("domainPath", domain.getPath() + "%");
+            } else {
+                sc.setParameters("domainId", domainId);
+            }
+        }
+    }
+
+    @Override
+    public UserAccount getUserByApiKey(String apiKey) {
+        return _userAccountDao.getUserByApiKey(apiKey);
+    }
 }

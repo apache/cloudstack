@@ -44,6 +44,7 @@ import org.apache.cloudstack.api.user.vm.command.RestoreVMCmd;
 import org.apache.cloudstack.api.user.vm.command.StartVMCmd;
 import org.apache.cloudstack.api.user.vm.command.UpdateVMCmd;
 import org.apache.cloudstack.api.user.vm.command.UpgradeVMCmd;
+import com.cloud.api.view.vo.UserVmJoinVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
@@ -192,7 +193,7 @@ public class MockUserVmManagerImpl implements UserVmManager, UserVmService, Mana
     }
 
     @Override
-    public Pair<List<UserVmVO>, Integer> searchForUserVMs(Criteria c, Account caller, Long domainId, boolean isRecursive, List<Long> permittedAccounts, boolean listAll, ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags) {
+    public Pair<List<UserVmJoinVO>, Integer> searchForUserVMs(Criteria c, Account caller, Long domainId, boolean isRecursive, List<Long> permittedAccounts, boolean listAll, ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -401,7 +402,7 @@ public class MockUserVmManagerImpl implements UserVmManager, UserVmService, Mana
 	}
 
     @Override
-    public Pair<List<? extends UserVm>, Integer> searchForUserVMs(ListVMsCmd cmd) {
+    public Pair<List<UserVmJoinVO>, Integer> searchForUserVMs(ListVMsCmd cmd) {
         // TODO Auto-generated method stub
         return null;
     }

@@ -32,8 +32,8 @@ import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
+import com.cloud.api.view.vo.UserVmJoinVO;
 
 
 @Implementation(description="List the virtual machines owned by the account.", responseObject=UserVmResponse.class)
@@ -199,16 +199,10 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
 
     @Override
     public void execute(){
-        Pair<List<? extends UserVm>, Integer> result = _userVmService.searchForUserVMs(this);
+        Pair<List<UserVmJoinVO>, Integer> result = _userVmService.searchForUserVMs(this);
         ListResponse<UserVmResponse> response = new ListResponse<UserVmResponse>();
         EnumSet<VMDetails> details = getDetails();
-        List<UserVmResponse> vmResponses;
-        if (details.contains(VMDetails.all)){ // for all use optimized version
-            vmResponses = _responseGenerator.createUserVmResponse("virtualmachine", result.first().toArray(new UserVm[result.first().size()]));
-        }
-        else {
-             vmResponses = _responseGenerator.createUserVmResponse("virtualmachine", getDetails(), result.first().toArray(new UserVm[result.first().size()]));
-        }
+        List<UserVmResponse> vmResponses = _responseGenerator.createUserVmResponse("virtualmachine", getDetails(), result.first().toArray(new UserVmJoinVO[result.first().size()]));
         response.setResponses(vmResponses, result.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);

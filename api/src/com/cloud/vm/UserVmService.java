@@ -37,6 +37,7 @@ import org.apache.cloudstack.api.user.vm.command.RestoreVMCmd;
 import org.apache.cloudstack.api.user.vm.command.StartVMCmd;
 import org.apache.cloudstack.api.user.vm.command.UpdateVMCmd;
 import org.apache.cloudstack.api.user.vm.command.UpgradeVMCmd;
+import com.cloud.api.view.vo.UserVmJoinVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -379,7 +380,7 @@ public interface UserVmService {
      *            the API command that wraps the search criteria
      * @return List of UserVMs.
      */
-    Pair<List<? extends UserVm>, Integer> searchForUserVMs(ListVMsCmd cmd);
+    Pair<List<UserVmJoinVO>, Integer> searchForUserVMs(ListVMsCmd cmd);
 
     HypervisorType getHypervisorTypeOfUserVM(long vmid);
 

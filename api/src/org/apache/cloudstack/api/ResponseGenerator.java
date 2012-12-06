@@ -152,6 +152,8 @@ import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.InstanceGroup;
+import com.cloud.api.view.vo.DomainRouterJoinVO;
+import com.cloud.api.view.vo.UserVmJoinVO;
 import com.cloud.vm.VirtualMachine;
 
 public interface ResponseGenerator {
@@ -175,6 +177,10 @@ public interface ResponseGenerator {
 
     SnapshotPolicyResponse createSnapshotPolicyResponse(SnapshotPolicy policy);
 
+    List<UserVmResponse> createUserVmResponse(String objectName, UserVmJoinVO... userVms);
+
+    List<UserVmResponse> createUserVmResponse(String objectName, EnumSet<VMDetails> details, UserVmJoinVO... userVms);
+
     List<UserVmResponse> createUserVmResponse(String objectName, UserVm... userVms);
 
     List<UserVmResponse> createUserVmResponse(String objectName, EnumSet<VMDetails> details, UserVm... userVms);
@@ -182,6 +188,8 @@ public interface ResponseGenerator {
     SystemVmResponse createSystemVmResponse(VirtualMachine systemVM);
 
     DomainRouterResponse createDomainRouterResponse(VirtualRouter router);
+
+    List<DomainRouterResponse> createDomainRouterResponse(DomainRouterJoinVO... router);
 
     HostResponse createHostResponse(Host host, EnumSet<HostDetails> details);
 

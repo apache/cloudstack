@@ -78,6 +78,8 @@ import org.apache.http.protocol.ResponseDate;
 import org.apache.http.protocol.ResponseServer;
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.api.admin.router.command.ListRoutersCmd;
+import org.apache.cloudstack.api.user.vm.command.ListVMsCmd;
 import com.cloud.acl.ControlledEntity;
 import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.ExceptionResponse;
@@ -435,7 +437,7 @@ public class ApiServer implements HttpRequestHandler {
 
             // if the command is of the listXXXCommand, we will need to also return the
             // the job id and status if possible
-            if (cmdObj instanceof BaseListCmd) {
+            if (cmdObj instanceof BaseListCmd && !(cmdObj instanceof ListVMsCmd) && !(cmdObj instanceof ListRoutersCmd)) {
                 buildAsyncListResponse((BaseListCmd) cmdObj, caller);
             }
 

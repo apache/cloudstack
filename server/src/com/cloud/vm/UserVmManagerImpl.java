@@ -74,6 +74,7 @@ import org.apache.cloudstack.api.user.vm.command.RestoreVMCmd;
 import org.apache.cloudstack.api.user.vm.command.StartVMCmd;
 import org.apache.cloudstack.api.user.vm.command.UpdateVMCmd;
 import org.apache.cloudstack.api.user.vm.command.UpgradeVMCmd;
+import com.cloud.api.view.vo.UserVmJoinVO;
 import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
@@ -151,6 +152,8 @@ import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
+import com.cloud.projects.Project;
+import com.cloud.projects.ProjectInvitationVO;
 import com.cloud.projects.ProjectManager;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
@@ -222,6 +225,7 @@ import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.fsm.NoTransitionException;
@@ -232,6 +236,7 @@ import com.cloud.vm.dao.InstanceGroupVMMapDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.UserVmJoinDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value = { UserVmManager.class, UserVmService.class })
@@ -258,6 +263,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     protected DomainDao _domainDao = null;
     @Inject
     protected UserVmDao _vmDao = null;
+    @Inject
+    protected UserVmJoinDao _vmJoinDao = null;
     @Inject
     protected VolumeDao _volsDao = null;
     @Inject
@@ -3040,7 +3047,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     }
 
     @Override
-    public Pair<List<? extends UserVm>, Integer> searchForUserVMs(ListVMsCmd cmd) {
+    public Pair<List<UserVmJoinVO>, Integer> searchForUserVMs(ListVMsCmd cmd) {
         Account caller = UserContext.current().getCaller();
         List<Long> permittedAccounts = new ArrayList<Long>();
         String hypervisor = cmd.getHypervisor();
@@ -3054,7 +3061,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         Boolean isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
-        Criteria c = new Criteria("id", Boolean.TRUE, cmd.getStartIndex(), cmd.getPageSizeVal());
+        // removing order by, orderBy shouold be specified in ListVMsCmd parameters
+        //Criteria c = new Criteria("id", Boolean.TRUE, cmd.getStartIndex(), cmd.getPageSizeVal());
+        Criteria c = new Criteria(null, Boolean.FALSE, cmd.getStartIndex(), cmd.getPageSizeVal());
         c.addCriteria(Criteria.KEYWORD, cmd.getKeyword());
         c.addCriteria(Criteria.ID, cmd.getId());
         c.addCriteria(Criteria.NAME, cmd.getInstanceName());
@@ -3089,18 +3098,19 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
         c.addCriteria(Criteria.ISADMIN, _accountMgr.isAdmin(caller.getType()));
 
-        Pair<List<UserVmVO>, Integer> result = searchForUserVMs(c, caller, domainId, isRecursive,
+        return searchForUserVMs(c, caller, domainId, isRecursive,
                 permittedAccounts, listAll, listProjectResourcesCriteria, tags);
-        return new Pair<List<? extends UserVm>, Integer>(result.first(), result.second());
     }
 
     @Override
-    public Pair<List<UserVmVO>, Integer> searchForUserVMs(Criteria c, Account caller, Long domainId, boolean isRecursive, 
+    public Pair<List<UserVmJoinVO>, Integer> searchForUserVMs(Criteria c, Account caller, Long domainId, boolean isRecursive,
             List<Long> permittedAccounts, boolean listAll, ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags) {
-        Filter searchFilter = new Filter(UserVmVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
+        Filter searchFilter = new Filter(UserVmJoinVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
 
-        SearchBuilder<UserVmVO> sb = _vmDao.createSearchBuilder();
-        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        //first search distinct vm id by using query criteria and pagination
+        SearchBuilder<UserVmJoinVO> sb = _vmJoinDao.createSearchBuilder();
+        sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct ids
+        _accountMgr.buildACLViewSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
         
         Object id = c.getCriteria(Criteria.ID);
         Object name = c.getCriteria(Criteria.NAME);
@@ -3127,88 +3137,60 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         sb.and("stateEQ", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("stateNEQ", sb.entity().getState(), SearchCriteria.Op.NEQ);
         sb.and("stateNIN", sb.entity().getState(), SearchCriteria.Op.NIN);
-        sb.and("dataCenterId", sb.entity().getDataCenterIdToDeployIn(), SearchCriteria.Op.EQ);
-        sb.and("podId", sb.entity().getPodIdToDeployIn(), SearchCriteria.Op.EQ);
+        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
         sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
         sb.and("hostIdEQ", sb.entity().getHostId(), SearchCriteria.Op.EQ);
-        sb.and("hostIdIN", sb.entity().getHostId(), SearchCriteria.Op.IN);
+        sb.and("hostName", sb.entity().getHostName(), SearchCriteria.Op.LIKE);
         sb.and("templateId", sb.entity().getTemplateId(), SearchCriteria.Op.EQ);
-        sb.and("isoId", sb.entity().getTemplateId(), SearchCriteria.Op.EQ);
+        sb.and("isoId", sb.entity().getIsoId(), SearchCriteria.Op.EQ);
+        sb.and("instanceGroupId", sb.entity().getInstanceGroupId(), SearchCriteria.Op.EQ);
 
-        if (groupId != null && (Long) groupId == -1) {
-            SearchBuilder<InstanceGroupVMMapVO> vmSearch = _groupVMMapDao.createSearchBuilder();
-            vmSearch.and("instanceId", vmSearch.entity().getInstanceId(), SearchCriteria.Op.EQ);
-            sb.join("vmSearch", vmSearch, sb.entity().getId(), vmSearch.entity().getInstanceId(), JoinBuilder.JoinType.LEFTOUTER);
-        } else if (groupId != null) {
-            SearchBuilder<InstanceGroupVMMapVO> groupSearch = _groupVMMapDao.createSearchBuilder();
-            groupSearch.and("groupId", groupSearch.entity().getGroupId(), SearchCriteria.Op.EQ);
-            sb.join("groupSearch", groupSearch, sb.entity().getId(), groupSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
+        if (groupId != null && (Long) groupId != -1) {
+            sb.and("instanceGroupId", sb.entity().getInstanceGroupId(), SearchCriteria.Op.EQ);
         }
 
         if (tags != null && !tags.isEmpty()) {
-            SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
             for (int count=0; count < tags.size(); count++) {
-                tagSearch.or().op("key" + String.valueOf(count), tagSearch.entity().getKey(), SearchCriteria.Op.EQ);
-                tagSearch.and("value" + String.valueOf(count), tagSearch.entity().getValue(), SearchCriteria.Op.EQ);
-                tagSearch.cp();
+                sb.or().op("key" + String.valueOf(count), sb.entity().getTagKey(), SearchCriteria.Op.EQ);
+                sb.and("value" + String.valueOf(count), sb.entity().getTagValue(), SearchCriteria.Op.EQ);
+                sb.cp();
             }
-            tagSearch.and("resourceType", tagSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
-            sb.groupBy(sb.entity().getId());
-            sb.join("tagSearch", tagSearch, sb.entity().getId(), tagSearch.entity().getResourceId(), JoinBuilder.JoinType.INNER);
         }
 
         if (networkId != null) {
-            SearchBuilder<NicVO> nicSearch = _nicDao.createSearchBuilder();
-            nicSearch.and("networkId", nicSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
-
-            SearchBuilder<NetworkVO> networkSearch = _networkDao.createSearchBuilder();
-            networkSearch.and("networkId", networkSearch.entity().getId(), SearchCriteria.Op.EQ);
-            nicSearch.join("networkSearch", networkSearch, nicSearch.entity().getNetworkId(), networkSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-
-            sb.join("nicSearch", nicSearch, sb.entity().getId(), nicSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
+            sb.and("networkId", sb.entity().getNetworkId(), SearchCriteria.Op.EQ);
         }
         
         if(vpcId != null && networkId == null){
-            SearchBuilder<NicVO> nicSearch = _nicDao.createSearchBuilder();
-
-            SearchBuilder<NetworkVO> networkSearch = _networkDao.createSearchBuilder();
-            nicSearch.join("networkSearch", networkSearch, nicSearch.entity().getNetworkId(), networkSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-            
-            SearchBuilder<VpcVO> vpcSearch = _vpcDao.createSearchBuilder();
-            vpcSearch.and("vpcId", vpcSearch.entity().getId(), SearchCriteria.Op.EQ);
-            networkSearch.join("vpcSearch", vpcSearch, networkSearch.entity().getVpcId(), vpcSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-            
-            sb.join("nicSearch", nicSearch, sb.entity().getId(), nicSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
+            sb.and("vpcId", sb.entity().getVpcId(), SearchCriteria.Op.EQ);
         }
 
         if (storageId != null) {
-            SearchBuilder<VolumeVO> volumeSearch = _volsDao.createSearchBuilder();
-            volumeSearch.and("poolId", volumeSearch.entity().getPoolId(), SearchCriteria.Op.EQ);
-            sb.join("volumeSearch", volumeSearch, sb.entity().getId(), volumeSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
+            sb.and("poolId", sb.entity().getPoolId(), SearchCriteria.Op.EQ);
         }
 
         // populate the search criteria with the values passed in
-        SearchCriteria<UserVmVO> sc = sb.create();
-        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        SearchCriteria<UserVmJoinVO> sc = sb.create();
+
+        // building ACL condition
+        _accountMgr.buildACLViewSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         if (tags != null && !tags.isEmpty()) {
             int count = 0;
-            sc.setJoinParameters("tagSearch", "resourceType", TaggedResourceType.UserVm.toString());
-            for (String key : tags.keySet()) {
-                sc.setJoinParameters("tagSearch", "key" + String.valueOf(count), key);
-                sc.setJoinParameters("tagSearch", "value" + String.valueOf(count), tags.get(key));
+             for (String key : tags.keySet()) {
+                sc.setParameters("key" + String.valueOf(count), key);
+                sc.setParameters("value" + String.valueOf(count), tags.get(key));
                 count++;
             }
         }
 
-        if (groupId != null && (Long) groupId == -1) {
-            sc.setJoinParameters("vmSearch", "instanceId", (Object) null);
-        } else if (groupId != null) {
-            sc.setJoinParameters("groupSearch", "groupId", groupId);
+        if (groupId != null && (Long)groupId != -1) {
+            sc.setParameters("instanceGroupId", groupId);
         }
 
         if (keyword != null) {
-            SearchCriteria<UserVmVO> ssc = _vmDao.createSearchCriteria();
+            SearchCriteria<UserVmJoinVO> ssc = _vmJoinDao.createSearchCriteria();
             ssc.addOr("displayName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("hostName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("instanceName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
@@ -3230,11 +3212,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
 
         if (networkId != null) {
-            sc.setJoinParameters("nicSearch", "networkId", networkId);
+            sc.setParameters("networkId", networkId);
         }
         
         if(vpcId != null && networkId == null){
-            sc.setJoinParameters("vpcSearch", "vpcId", vpcId);
+            sc.setParameters("vpcId", vpcId);
         }
 
         if (name != null) {
@@ -3277,25 +3259,29 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             sc.setParameters("hostIdEQ", hostId);
         } else {
             if (hostName != null) {
-                List<HostVO> hosts = _resourceMgr.listHostsByNameLike((String) hostName);
-                if (hosts != null & !hosts.isEmpty()) {
-                    Long[] hostIds = new Long[hosts.size()];
-                    for (int i = 0; i < hosts.size(); i++) {
-                        HostVO host = hosts.get(i);
-                        hostIds[i] = host.getId();
-                    }
-                    sc.setParameters("hostIdIN", (Object[]) hostIds);
-                } else {
-                    return new Pair<List<UserVmVO>, Integer>(new ArrayList<UserVmVO>(), 0);
-                }
+                sc.setParameters("hostName", hostName);
             }
         }
 
         if (storageId != null) {
-            sc.setJoinParameters("volumeSearch", "poolId", storageId);
+            sc.setParameters("poolId", storageId);
         }
-        
-        return _vmDao.searchAndCount(sc, searchFilter);
+
+        // search vm details by ids
+        Pair<List<UserVmJoinVO>, Integer> uniqueVmPair =  _vmJoinDao.searchAndCount(sc, searchFilter);
+        Integer count = uniqueVmPair.second();
+        if ( count.intValue() == 0 ){
+            // handle empty result cases
+            return uniqueVmPair;
+        }
+        List<UserVmJoinVO> uniqueVms = uniqueVmPair.first();
+        Long[] vmIds = new Long[uniqueVms.size()];
+        int i = 0;
+        for (UserVmJoinVO v : uniqueVms ){
+            vmIds[i++] = v.getId();
+        }
+        List<UserVmJoinVO> vms = _vmJoinDao.searchByIds(vmIds);
+        return new Pair<List<UserVmJoinVO>, Integer>(vms, count);
     }
 
     @Override

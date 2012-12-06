@@ -30,6 +30,7 @@ import org.apache.cloudstack.api.user.account.command.ListAccountsCmd;
 import com.cloud.api.commands.RegisterCmd;
 import com.cloud.api.commands.UpdateAccountCmd;
 import org.apache.cloudstack.api.admin.user.command.UpdateUserCmd;
+import com.cloud.api.view.vo.ControlledViewEntity;
 import com.cloud.domain.Domain;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.PermissionDeniedException;
@@ -331,6 +332,18 @@ public class MockAccountManagerImpl implements Manager, AccountManager, AccountS
 
     @Override
     public void buildACLSearchParameters(Account caller, Long id, String accountName, Long projectId, List<Long> permittedAccounts, Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject, boolean listAll, boolean forProjectInvitation) {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
+    public void buildACLViewSearchBuilder(SearchBuilder<? extends ControlledViewEntity> sb, Long domainId,
+            boolean isRecursive, List<Long> permittedAccounts, ListProjectResourcesCriteria listProjectResourcesCriteria) {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
+    public void buildACLViewSearchCriteria(SearchCriteria<? extends ControlledViewEntity> sc, Long domainId,
+            boolean isRecursive, List<Long> permittedAccounts, ListProjectResourcesCriteria listProjectResourcesCriteria) {
         // TODO Auto-generated method stub
     }
 

@@ -153,7 +153,7 @@ public class KeystoreTest extends TestCase {
 */    
     public void testUuid() {
     	UserVmResponse vm = new UserVmResponse();
-    	vm.setId(3L);
+        vm.setId(Long.toString(3L));
 /*    	
     	vm.setAccountName("admin");
     	vm.setName("i-2-3-KY");

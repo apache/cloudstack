@@ -98,6 +98,8 @@ import org.apache.cloudstack.api.user.vmgroup.command.UpdateVMGroupCmd;
 import com.cloud.api.commands.UpgradeSystemVMCmd;
 import com.cloud.api.commands.UploadCustomCertificateCmd;
 import com.cloud.api.response.ExtractResponse;
+import com.cloud.api.view.vo.DomainRouterJoinVO;
+import com.cloud.api.view.vo.UserVmJoinVO;
 import com.cloud.async.AsyncJob;
 import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
@@ -236,6 +238,7 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.JoinBuilder.JoinType;
+import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
@@ -258,6 +261,7 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
+import com.cloud.vm.dao.DomainRouterJoinDao;
 import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
@@ -275,6 +279,7 @@ public class ManagementServerImpl implements ManagementServer {
     private final AlertManager _alertMgr;
     private final IPAddressDao _publicIpAddressDao;
     private final DomainRouterDao _routerDao;
+    private final DomainRouterJoinDao _routerJoinDao;
     private final ConsoleProxyDao _consoleProxyDao;
     private final ClusterDao _clusterDao;
     private final SecondaryStorageVmDao _secStorageVmDao;
@@ -349,6 +354,7 @@ public class ManagementServerImpl implements ManagementServer {
         ComponentLocator locator = ComponentLocator.getLocator(Name);
         _configDao = locator.getDao(ConfigurationDao.class);
         _routerDao = locator.getDao(DomainRouterDao.class);
+        _routerJoinDao = locator.getDao(DomainRouterJoinDao.class);
         _eventDao = locator.getDao(EventDao.class);
         _dcDao = locator.getDao(DataCenterDao.class);
         _vlanDao = locator.getDao(VlanDao.class);
@@ -1635,7 +1641,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public Pair<List<? extends VirtualRouter>, Integer> searchForRouters(ListRoutersCmd cmd) {
+    public Pair<List<DomainRouterJoinVO>, Integer> searchForRouters(ListRoutersCmd cmd) {
         Long id = cmd.getId();
         String name = cmd.getRouterName();
         String state = cmd.getState();
@@ -1655,16 +1661,19 @@ public class ManagementServerImpl implements ManagementServer {
         Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
-        Filter searchFilter = new Filter(DomainRouterVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-        SearchBuilder<DomainRouterVO> sb = _routerDao.createSearchBuilder();
-        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        // no default orderBy
+        //Filter searchFilter = new Filter(DomainRouterJoinVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        Filter searchFilter = new Filter(DomainRouterJoinVO.class, null, true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        SearchBuilder<DomainRouterJoinVO> sb = _routerJoinDao.createSearchBuilder();
+        sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct ids to get number of records with pagination
+        _accountMgr.buildACLViewSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         sb.and("name", sb.entity().getHostName(), SearchCriteria.Op.LIKE);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.IN);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
-        sb.and("dataCenterId", sb.entity().getDataCenterIdToDeployIn(), SearchCriteria.Op.EQ);
-        sb.and("podId", sb.entity().getPodIdToDeployIn(), SearchCriteria.Op.EQ);
+        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
         sb.and("hostId", sb.entity().getHostId(), SearchCriteria.Op.EQ);
         sb.and("vpcId", sb.entity().getVpcId(), SearchCriteria.Op.EQ);
         
@@ -1677,20 +1686,14 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         if (networkId != null) {
-            SearchBuilder<NicVO> nicSearch = _nicDao.createSearchBuilder();
-            nicSearch.and("networkId", nicSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
-            SearchBuilder<NetworkVO> networkSearch = _networkDao.createSearchBuilder();
-            networkSearch.and("networkId", networkSearch.entity().getId(), SearchCriteria.Op.EQ);
-            nicSearch.join("networkSearch", networkSearch, nicSearch.entity().getNetworkId(), networkSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-
-            sb.join("nicSearch", nicSearch, sb.entity().getId(), nicSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
+            sb.and("networkId", sb.entity().getNetworkId(), SearchCriteria.Op.EQ);
         }
-        
-        SearchCriteria<DomainRouterVO> sc = sb.create();
-        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+
+        SearchCriteria<DomainRouterJoinVO> sc = sb.create();
+        _accountMgr.buildACLViewSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         if (keyword != null) {
-            SearchCriteria<DomainRouterVO> ssc = _routerDao.createSearchCriteria();
+            SearchCriteria<DomainRouterJoinVO> ssc = _routerJoinDao.createSearchCriteria();
             ssc.addOr("hostName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("instanceName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("state", SearchCriteria.Op.LIKE, "%" + keyword + "%");
@@ -1730,8 +1733,21 @@ public class ManagementServerImpl implements ManagementServer {
             sc.setParameters("vpcId", vpcId);
         }
 
-        Pair<List<DomainRouterVO>, Integer> result = _routerDao.searchAndCount(sc, searchFilter);
-        return new Pair<List<? extends VirtualRouter>, Integer>(result.first(), result.second());
+        // search VR details by ids
+        Pair<List<DomainRouterJoinVO>, Integer> uniqueVrPair =  _routerJoinDao.searchAndCount(sc, searchFilter);
+        Integer count = uniqueVrPair.second();
+        if ( count.intValue() == 0 ) {
+            // empty result
+            return uniqueVrPair;
+        }
+        List<DomainRouterJoinVO> uniqueVrs = uniqueVrPair.first();
+        Long[] vrIds = new Long[uniqueVrs.size()];
+        int i = 0;
+        for (DomainRouterJoinVO v : uniqueVrs ){
+            vrIds[i++] = v.getId();
+        }
+        List<DomainRouterJoinVO> vrs =  _routerJoinDao.searchByIds(vrIds);
+        return new Pair<List<DomainRouterJoinVO>, Integer>(vrs, count);
     }
 
     @Override

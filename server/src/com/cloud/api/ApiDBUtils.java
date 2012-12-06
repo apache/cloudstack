@@ -17,11 +17,16 @@
 package com.cloud.api;
 
 import java.util.ArrayList;
-import java.util.Hashtable;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.cloudstack.api.ApiConstants.VMDetails;
+import com.cloud.api.response.DomainRouterResponse;
+import com.cloud.api.response.UserVmResponse;
+import com.cloud.api.view.vo.DomainRouterJoinVO;
+import com.cloud.api.view.vo.UserVmJoinVO;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.capacity.CapacityVO;
@@ -84,6 +89,7 @@ import com.cloud.network.dao.NetworkDomainDao;
 import com.cloud.network.dao.NetworkRuleConfigDao;
 import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.SecurityGroupVO;
@@ -160,9 +166,11 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
+import com.cloud.vm.dao.DomainRouterJoinDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmData;
 import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.UserVmJoinDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class ApiDBUtils {
@@ -181,6 +189,7 @@ public class ApiDBUtils {
     private static DiskOfferingDao _diskOfferingDao;
     private static DomainDao _domainDao;
     private static DomainRouterDao _domainRouterDao;
+    private static DomainRouterJoinDao _domainRouterJoinDao;
     private static GuestOSDao _guestOSDao;
     private static GuestOSCategoryDao _guestOSCategoryDao;
     private static HostDao _hostDao;
@@ -200,6 +209,7 @@ public class ApiDBUtils {
     private static UserDao _userDao;
     private static UserStatisticsDao _userStatsDao;
     private static UserVmDao _userVmDao;
+    private static UserVmJoinDao _userVmJoinDao;
     private static VlanDao _vlanDao;
     private static VolumeDao _volumeDao;
     private static Site2SiteVpnGatewayDao _site2SiteVpnGatewayDao;
@@ -246,6 +256,7 @@ public class ApiDBUtils {
         _diskOfferingDao = locator.getDao(DiskOfferingDao.class);
         _domainDao = locator.getDao(DomainDao.class);
         _domainRouterDao = locator.getDao(DomainRouterDao.class);
+        _domainRouterJoinDao = locator.getDao(DomainRouterJoinDao.class);
         _guestOSDao = locator.getDao(GuestOSDao.class);
         _guestOSCategoryDao = locator.getDao(GuestOSCategoryDao.class);
         _hostDao = locator.getDao(HostDao.class);
@@ -264,6 +275,7 @@ public class ApiDBUtils {
         _userDao = locator.getDao(UserDao.class);
         _userStatsDao = locator.getDao(UserStatisticsDao.class);
         _userVmDao = locator.getDao(UserVmDao.class);
+        _userVmJoinDao = locator.getDao(UserVmJoinDao.class);
         _vlanDao = locator.getDao(VlanDao.class);
         _volumeDao = locator.getDao(VolumeDao.class);
         _site2SiteVpnGatewayDao = locator.getDao(Site2SiteVpnGatewayDao.class);
@@ -344,7 +356,7 @@ public class ApiDBUtils {
         return _ms.getVersion();
     }
 
-    public static List<UserVmVO> searchForUserVMs(Criteria c, List<Long> permittedAccounts) {
+    public static List<UserVmJoinVO> searchForUserVMs(Criteria c, List<Long> permittedAccounts) {
         return _userVmMgr.searchForUserVMs(c, _accountDao.findById(Account.ACCOUNT_ID_SYSTEM),
                 null, false, permittedAccounts, false, null, null).first();
     }
@@ -745,10 +757,6 @@ public class ApiDBUtils {
         return _firewallCidrsDao.getSourceCidrs(id);
     }
 
-    public static Hashtable<Long, UserVmData> listVmDetails(Hashtable<Long, UserVmData> vmData){
-        return _userVmDao.listVmDetails(vmData);
-    }
-
     public static Account getProjectOwner(long projectId) {
         return _projectMgr.getProjectOwner(projectId);
     }
@@ -889,3 +897,33 @@ public class ApiDBUtils {
     public static CounterVO getCounter(long counterId) {
         return _counterDao.findById(counterId);
     }}
+
+
+    ///////////////////////////////////////////////////////////////////////
+    //  Newly Added Utility Methods for List API refactoring             //
+    ///////////////////////////////////////////////////////////////////////
+
+    public static DomainRouterResponse newDomainRouterResponse(DomainRouterJoinVO vr, Account caller) {
+        return _domainRouterJoinDao.newDomainRouterResponse(vr, caller);
+    }
+
+    public static DomainRouterResponse fillRouterDetails(DomainRouterResponse vrData, DomainRouterJoinVO vr){
+         return _domainRouterJoinDao.setDomainRouterResponse(vrData, vr);
+    }
+
+    public static List<DomainRouterJoinVO> newDomainRouterView(VirtualRouter vr){
+        return _domainRouterJoinDao.newDomainRouterView(vr);
+    }
+
+    public static UserVmResponse newUserVmResponse(String objectName, UserVmJoinVO userVm, EnumSet<VMDetails> details, Account caller) {
+        return _userVmJoinDao.newUserVmResponse(objectName, userVm, details, caller);
+    }
+
+    public static UserVmResponse fillVmDetails(UserVmResponse vmData, UserVmJoinVO vm){
+         return _userVmJoinDao.setUserVmResponse(vmData, vm);
+    }
+
+    public static List<UserVmJoinVO> newUserVmView(UserVm... userVms){
+        return _userVmJoinDao.newUserVmView(userVms);
+    }
+}

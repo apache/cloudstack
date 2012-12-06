@@ -17,7 +17,6 @@
 package com.cloud.api.response;
 
 import org.apache.cloudstack.api.ApiConstants;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
@@ -25,10 +24,10 @@ import com.google.gson.annotations.SerializedName;
 public class NicResponse extends BaseResponse {
 
     @SerializedName("id") @Param(description="the ID of the nic")
-    private final IdentityProxy id = new IdentityProxy("nics");
+    private String id;
 
     @SerializedName("networkid") @Param(description="the ID of the corresponding network")
-    private final IdentityProxy networkId = new IdentityProxy("networks");
+    private String networkId;
 
     @SerializedName("networkname") @Param(description="the name of the corresponding network")
     private String  networkName ;
@@ -60,16 +59,21 @@ public class NicResponse extends BaseResponse {
     @SerializedName("macaddress") @Param(description="true if nic is default, false otherwise")
     private String macAddress;
 
-    public Long getId() {
-        return id.getValue();
+    public String getId() {
+        return id;
     }
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public void setNetworkid(Long networkid) {
-        this.networkId.setValue(networkid);
+    @Override
+    public String getObjectUuid() {
+        return this.getId();
+    }
+
+    public void setNetworkid(String networkid) {
+        this.networkId = networkid;
     }
 
     public void setNetworkName(String networkname) {
@@ -116,7 +120,8 @@ public class NicResponse extends BaseResponse {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((id == null) ? 0 : id.hashCode());
+        String oid = this.getId();
+        result = prime * result + ((oid== null) ? 0 : oid.hashCode());
         return result;
     }
 
@@ -129,10 +134,11 @@ public class NicResponse extends BaseResponse {
         if (getClass() != obj.getClass())
             return false;
         NicResponse other = (NicResponse) obj;
-        if (id == null) {
-            if (other.id != null)
+        String oid = this.getId();
+        if (oid == null) {
+            if (other.getId() != null)
                 return false;
-        } else if (!id.equals(other.id))
+        } else if (!oid.equals(other.getId()))
             return false;
         return true;
     }

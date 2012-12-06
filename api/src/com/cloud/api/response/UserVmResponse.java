@@ -17,20 +17,21 @@
 package com.cloud.api.response;
 
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.Entity;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.serializer.Param;
-import com.cloud.utils.IdentityProxy;
 import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 @Entity(value = VirtualMachine.class)
 public class UserVmResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the virtual machine")
-    private IdentityProxy id = new IdentityProxy("vm_instance");
+    private String id;
 
     @SerializedName(ApiConstants.NAME) @Param(description="the name of the virtual machine")
     private String name;
@@ -42,13 +43,13 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the vm")
-    private IdentityProxy projectId = new IdentityProxy("projects");
+    private String projectId;
 
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the vm")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the ID of the domain in which the virtual machine exists")
-    private IdentityProxy domainId = new IdentityProxy("domain");
+    private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the name of the domain in which the virtual machine exists")
     private String domainName;
@@ -63,25 +64,25 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     private Boolean haEnable;
 
     @SerializedName(ApiConstants.GROUP_ID) @Param(description="the group ID of the virtual machine")
-    private IdentityProxy groupId = new IdentityProxy("instance_group");
+    private String groupId;
 
     @SerializedName(ApiConstants.GROUP) @Param(description="the group name of the virtual machine")
     private String group;
 
     @SerializedName(ApiConstants.ZONE_ID) @Param(description="the ID of the availablility zone for the virtual machine")
-    private IdentityProxy zoneId = new IdentityProxy("data_center");
+    private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the name of the availability zone for the virtual machine")
     private String zoneName;
 
     @SerializedName(ApiConstants.HOST_ID) @Param(description="the ID of the host for the virtual machine")
-    private IdentityProxy hostId = new IdentityProxy("host");
+    private String hostId;
 
     @SerializedName("hostname") @Param(description="the name of the host for the virtual machine")
     private String hostName;
 
     @SerializedName(ApiConstants.TEMPLATE_ID) @Param(description="the ID of the template for the virtual machine. A -1 is returned if the virtual machine was created from an ISO file.")
-    private IdentityProxy templateId = new IdentityProxy("vm_template");
+    private String templateId;
 
     @SerializedName("templatename") @Param(description="the name of the template for the virtual machine")
     private String templateName;
@@ -93,7 +94,7 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     private Boolean passwordEnabled;
 
     @SerializedName("isoid") @Param(description="the ID of the ISO attached to the virtual machine")
-    private IdentityProxy isoId = new IdentityProxy("vm_template");
+    private String isoId;
 
     @SerializedName("isoname") @Param(description="the name of the ISO attached to the virtual machine")
     private String isoName;
@@ -102,7 +103,7 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     private String isoDisplayText;
 
     @SerializedName(ApiConstants.SERVICE_OFFERING_ID) @Param(description="the ID of the service offering of the virtual machine")
-    private IdentityProxy serviceOfferingId = new IdentityProxy("disk_offering");
+    private String serviceOfferingId;
 
     @SerializedName("serviceofferingname") @Param(description="the name of the service offering of the virtual machine")
     private String serviceOfferingName;
@@ -129,7 +130,7 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     private Long networkKbsWrite;
 
     @SerializedName("guestosid") @Param(description="Os type ID of the virtual machine")
-    private IdentityProxy guestOsId = new IdentityProxy("guest_os");
+    private String guestOsId;
 
     @SerializedName("rootdeviceid") @Param(description="device ID of the root volume")
     private Long rootDeviceId;
@@ -138,19 +139,19 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     private String rootDeviceType;
 
     @SerializedName("securitygroup") @Param(description="list of security groups associated with the virtual machine", responseObject = SecurityGroupResponse.class)
-    private List<SecurityGroupResponse> securityGroupList;
+    private Set<SecurityGroupResponse> securityGroupList;
 
     @SerializedName(ApiConstants.PASSWORD) @Param(description="the password (if exists) of the virtual machine")
     private String password;
 
     @SerializedName("nic")  @Param(description="the list of nics associated with vm", responseObject = NicResponse.class)
-    private List<NicResponse> nics;
+    private Set<NicResponse> nics;
 
     @SerializedName("hypervisor") @Param(description="the hypervisor on which the template runs")
     private String hypervisor;
 
     @SerializedName(ApiConstants.PUBLIC_IP_ID) @Param(description="public IP address id associated with vm via Static nat rule")
-    private IdentityProxy publicIpId = new IdentityProxy("user_ip_address");
+    private String publicIpId;
 
     @SerializedName(ApiConstants.PUBLIC_IP) @Param(description="public IP address id associated with vm via Static nat rule")
     private String publicIp;
@@ -159,21 +160,32 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     private String instanceName;
 
     @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with vm", responseObject = ResourceTagResponse.class)
-    private List<ResourceTagResponse> tags;
+    private Set<ResourceTagResponse> tags;
 
     @SerializedName(ApiConstants.SSH_KEYPAIR) @Param(description="ssh key-pair")
     private String keyPairName;
+
+    public UserVmResponse(){
+        securityGroupList = new HashSet<SecurityGroupResponse>();
+        nics = new HashSet<NicResponse>();
+        tags = new HashSet<ResourceTagResponse>();
+    }
 
     public void setHypervisor(String hypervisor) {
         this.hypervisor = hypervisor;
     }
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public Long getId() {
-        return this.id.getValue();
+    public String getId() {
+        return this.id;
+    }
+
+    @Override
+    public String getObjectUuid() {
+        return this.getId();
     }
 
     public void setName(String name) {
@@ -188,8 +200,8 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
         this.accountName = accountName;
     }
 
-    public void setDomainId(Long domainId) {
-        this.domainId.setValue(domainId);
+    public void setDomainId(String domainId) {
+        this.domainId = domainId;
     }
 
     public void setDomainName(String domainName) {
@@ -208,32 +220,32 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
         this.haEnable = haEnable;
     }
 
-    public void setGroupId(Long groupId) {
-        this.groupId.setValue(groupId);
+    public void setGroupId(String groupId) {
+        this.groupId = groupId;
     }
 
     public void setGroup(String group) {
         this.group = group;
     }
 
-    public void setZoneId(Long zoneId) {
-        this.zoneId.setValue(zoneId);
+    public void setZoneId(String zoneId) {
+        this.zoneId = zoneId;
     }
 
     public void setZoneName(String zoneName) {
         this.zoneName = zoneName;
     }
 
-    public void setHostId(Long hostId) {
-        this.hostId.setValue(hostId);
+    public void setHostId(String hostId) {
+        this.hostId = hostId;
     }
 
     public void setHostName(String hostName) {
         this.hostName = hostName;
     }
 
-    public void setTemplateId(Long templateId) {
-        this.templateId.setValue(templateId);
+    public void setTemplateId(String templateId) {
+        this.templateId = templateId;
     }
 
     public void setTemplateName(String templateName) {
@@ -248,8 +260,8 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
         this.passwordEnabled = passwordEnabled;
     }
 
-    public void setIsoId(Long isoId) {
-        this.isoId.setValue(isoId);
+    public void setIsoId(String isoId) {
+        this.isoId = isoId;
     }
 
     public void setIsoName(String isoName) {
@@ -260,8 +272,8 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
         this.isoDisplayText = isoDisplayText;
     }
 
-    public void setServiceOfferingId(Long serviceOfferingId) {
-        this.serviceOfferingId.setValue(serviceOfferingId);
+    public void setServiceOfferingId(String serviceOfferingId) {
+        this.serviceOfferingId = serviceOfferingId;
     }
 
     public void setServiceOfferingName(String serviceOfferingName) {
@@ -292,8 +304,8 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
         this.networkKbsWrite = networkKbsWrite;
     }
 
-    public void setGuestOsId(Long guestOsId) {
-        this.guestOsId.setValue(guestOsId);
+    public void setGuestOsId(String guestOsId) {
+        this.guestOsId = guestOsId;
     }
 
     public void setRootDeviceId(Long rootDeviceId) {
@@ -308,30 +320,24 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
         this.password = password;
     }
 
-/*
-    public void setJobId(Long jobId) {
-        super.setJobId(jobId);
-    }
-
-    public void setJobStatus(Integer jobStatus) {
-        this.jobStatus = jobStatus;
-    }
-*/
     public void setForVirtualNetwork(Boolean forVirtualNetwork) {
         this.forVirtualNetwork = forVirtualNetwork;
     }
 
-    public void setNics(List<NicResponse> nics) {
+    public void setNics(Set<NicResponse> nics) {
         this.nics = nics;
     }
 
-    public void setSecurityGroupList(List<SecurityGroupResponse> securityGroups) {
+    public void addNic(NicResponse nic) {
+        this.nics.add(nic);
+    }
+
+    public void setSecurityGroupList(Set<SecurityGroupResponse> securityGroups) {
         this.securityGroupList = securityGroups;
     }
 
-    @Override
-    public void setProjectId(Long projectId) {
-        this.projectId.setValue(projectId);
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
     }
 
     @Override
@@ -339,8 +345,8 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
         this.projectName = projectName;
     }
 
-    public void setPublicIpId(Long publicIpId) {
-        this.publicIpId.setValue(publicIpId);
+    public void setPublicIpId(String publicIpId) {
+        this.publicIpId = publicIpId;
     }
 
     public void setPublicIp(String publicIp) {
@@ -351,11 +357,33 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
         this.instanceName = instanceName;
     }
 
-    public void setTags(List<ResourceTagResponse> tags) {
+    public void setTags(Set<ResourceTagResponse> tags) {
         this.tags = tags;
+    }
+
+    public void addTag(ResourceTagResponse tag){
+        this.tags.add(tag);
     }
 
     public void setKeyPairName(String keyPairName) {
         this.keyPairName = keyPairName;
+    }
+
+    @Override
+    public void setProjectId(Long projectId) {
+        // TODO: remove this later
+    }
+
+    @Override
+    public void setDomainId(Long domainId) {
+        // TODO: remove this later
+    }
+
+    public void setProjectUuid(String projectUuid){
+        this.projectId = projectUuid;
+    }
+
+    public void setDomainUuid(String domainUuid){
+        this.domainId = domainUuid;
     }
 }

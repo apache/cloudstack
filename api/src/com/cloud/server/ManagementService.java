@@ -62,6 +62,7 @@ import org.apache.cloudstack.api.user.iso.command.UpdateIsoCmd;
 import org.apache.cloudstack.api.user.vmgroup.command.UpdateVMGroupCmd;
 import com.cloud.api.commands.UpgradeSystemVMCmd;
 import com.cloud.api.commands.UploadCustomCertificateCmd;
+import com.cloud.api.view.vo.DomainRouterJoinVO;
 import com.cloud.async.AsyncJob;
 import com.cloud.capacity.Capacity;
 import com.cloud.configuration.Configuration;
@@ -184,7 +185,7 @@ public interface ManagementService {
      * @param cmd
      * @return List of DomainRouters.
      */
-    Pair<List<? extends VirtualRouter>, Integer> searchForRouters(ListRoutersCmd cmd);
+    Pair<List<DomainRouterJoinVO>, Integer> searchForRouters(ListRoutersCmd cmd);
 
     /**
      * Obtains a list of IP Addresses by the specified search criteria. Can search by: "userId", "dataCenterId",

@@ -198,11 +198,13 @@ import com.cloud.vm.ItWorkDaoImpl;
 import com.cloud.vm.UserVmManagerImpl;
 import com.cloud.vm.dao.ConsoleProxyDaoImpl;
 import com.cloud.vm.dao.DomainRouterDaoImpl;
+import com.cloud.vm.dao.DomainRouterJoinDaoImpl;
 import com.cloud.vm.dao.InstanceGroupDaoImpl;
 import com.cloud.vm.dao.InstanceGroupVMMapDaoImpl;
 import com.cloud.vm.dao.NicDaoImpl;
 import com.cloud.vm.dao.SecondaryStorageVmDaoImpl;
 import com.cloud.vm.dao.UserVmDaoImpl;
+import com.cloud.vm.dao.UserVmJoinDaoImpl;
 import com.cloud.vm.dao.UserVmDetailsDaoImpl;
 import com.cloud.vm.dao.VMInstanceDaoImpl;
 
@@ -216,6 +218,8 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("HostDao", HostDaoImpl.class);
         addDao("VMInstanceDao", VMInstanceDaoImpl.class);
         addDao("UserVmDao", UserVmDaoImpl.class);
+        addDao("UserVmJoinDao", UserVmJoinDaoImpl.class);
+        addDao("DomainRouterJoinDao", DomainRouterJoinDaoImpl.class);
         ComponentInfo<? extends GenericDao<?, ? extends Serializable>> info = addDao("ServiceOfferingDao", ServiceOfferingDaoImpl.class);
         info.addParameter("cache.size", "50");
         info.addParameter("cache.time.to.live", "600");
@@ -359,6 +363,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         if (_daos.size() == 0) {
             populateDaos();
         }
+        //FIXME: Incorrect method return definition
         return _daos;
     }
 

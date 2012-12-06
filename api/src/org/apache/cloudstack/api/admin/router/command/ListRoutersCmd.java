@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.admin.router.command;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 
 import org.apache.log4j.Logger;
@@ -26,8 +27,17 @@ import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ApiConstants.VMDetails;
+
+import com.cloud.api.response.UserVmResponse;
+import com.cloud.api.view.vo.DomainRouterJoinVO;
+import com.cloud.api.view.vo.UserVmJoinVO;
+
 import com.cloud.api.response.DomainRouterResponse;
 import com.cloud.api.response.ListResponse;
+import com.cloud.api.response.UserVmResponse;
+import com.cloud.api.view.vo.DomainRouterJoinVO;
+import com.cloud.api.view.vo.UserVmJoinVO;
 import com.cloud.async.AsyncJob;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.utils.Pair;
@@ -130,15 +140,10 @@ public class ListRoutersCmd extends BaseListProjectAndAccountResourcesCmd {
 
     @Override
     public void execute(){
-        Pair<List<? extends VirtualRouter>, Integer> result = _mgr.searchForRouters(this);
+        Pair<List<DomainRouterJoinVO>, Integer> result = _mgr.searchForRouters(this);
         ListResponse<DomainRouterResponse> response = new ListResponse<DomainRouterResponse>();
-        List<DomainRouterResponse> routerResponses = new ArrayList<DomainRouterResponse>();
-        for (VirtualRouter router : result.first()) {
-            DomainRouterResponse routerResponse = _responseGenerator.createDomainRouterResponse(router);
-            routerResponse.setObjectName("router");
-            routerResponses.add(routerResponse);
-        }
 
+        List<DomainRouterResponse> routerResponses = _responseGenerator.createDomainRouterResponse(result.first().toArray(new DomainRouterJoinVO[result.first().size()]));
         response.setResponses(routerResponses, result.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);

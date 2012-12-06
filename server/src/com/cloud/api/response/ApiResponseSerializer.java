@@ -21,6 +21,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -210,8 +211,8 @@ public class ApiResponseSerializer {
                     if (isAsync) {
                         sb.append("</jobresult>");
                     }
-                } else if (fieldValue instanceof List<?>) {
-                    List<?> subResponseList = (List<Object>) fieldValue;                    
+                } else if (fieldValue instanceof Collection<?>) {
+                    Collection<?> subResponseList = (Collection<Object>) fieldValue;
                     boolean usedUuidList = false;
                     for (Object value : subResponseList) {
                         if (value instanceof ResponseObject) {
