@@ -48,7 +48,7 @@ import com.cloud.api.ApiDBUtils;
 import org.apache.cloudstack.api.admin.user.command.DeleteUserCmd;
 import org.apache.cloudstack.api.user.account.command.ListAccountsCmd;
 import com.cloud.api.commands.RegisterCmd;
-import com.cloud.api.commands.UpdateAccountCmd;
+import org.apache.cloudstack.api.admin.account.command.UpdateAccountCmd;
 import org.apache.cloudstack.api.admin.user.command.UpdateUserCmd;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;

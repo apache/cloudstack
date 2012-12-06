@@ -19,9 +19,9 @@
 ### Please standardize naming conventions to camel-case (even for acronyms).
 
 ### Account commands
-createAccount=com.cloud.api.commands.CreateAccountCmd;3
-deleteAccount=com.cloud.api.commands.DeleteAccountCmd;3
-updateAccount=com.cloud.api.commands.UpdateAccountCmd;3
+createAccount=org.apache.cloudstack.api.admin.account.command.CreateAccountCmd;3
+deleteAccount=org.apache.cloudstack.api.admin.account.command.DeleteAccountCmd;3
+updateAccount=org.apache.cloudstack.api.admin.account.command.UpdateAccountCmd;3
 disableAccount=org.apache.cloudstack.api.admin.account.command.DisableAccountCmd;7
 enableAccount=org.apache.cloudstack.api.admin.account.command.EnableAccountCmd;7
 ###lockAccount=com.cloud.api.commands.LockAccountCmd;7

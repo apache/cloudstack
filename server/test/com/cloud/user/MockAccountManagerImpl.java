@@ -28,7 +28,7 @@ import org.apache.cloudstack.api.admin.user.command.DeleteUserCmd;
 import org.apache.cloudstack.api.admin.user.command.ListUsersCmd;
 import org.apache.cloudstack.api.user.account.command.ListAccountsCmd;
 import com.cloud.api.commands.RegisterCmd;
-import com.cloud.api.commands.UpdateAccountCmd;
+import org.apache.cloudstack.api.admin.account.command.UpdateAccountCmd;
 import org.apache.cloudstack.api.admin.user.command.UpdateUserCmd;
 import com.cloud.api.view.vo.ControlledViewEntity;
 import com.cloud.domain.Domain;
