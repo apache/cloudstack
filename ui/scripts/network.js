@@ -804,6 +804,7 @@
             tabFilter: function(args) {
               var networkOfferingHavingELB = false;
               var hasNetworkACL = false;
+              var hasSRXFirewall = false;
               var isVPC = false;
               var isAdvancedSGZone = false;
               var hiddenTabs = [];
@@ -832,6 +833,18 @@
                         }
                       });
                     }
+
+                    if (thisService.name == 'Firewall') {
+                      $(thisService.provider).each(function() {
+                        if (this.name == 'JuniperSRX') {
+                          hasSRXFirewall = true;
+
+                          return false;
+                        }
+
+                        return true;
+                      });
+                    }
                   });
                 }
               });
@@ -854,7 +867,7 @@
                 hiddenTabs.push("addloadBalancer");
               }
 
-              if (isVPC || isAdvancedSGZone) {
+              if (isVPC || isAdvancedSGZone || hasSRXFirewall) {
                 hiddenTabs.push('egressRules');
               }
               
