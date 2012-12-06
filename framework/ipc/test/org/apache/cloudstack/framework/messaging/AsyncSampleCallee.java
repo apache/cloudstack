@@ -18,30 +18,24 @@
  */
 package org.apache.cloudstack.framework.messaging;
 
-public class SampleComponent {
+public class AsyncSampleCallee {
+	AsyncSampleCallee _driver;
 
-	RpcProvider _rpcProvider;
-	EventBus _eventBus;
-	
-	public SampleComponent() {
-	}
-	
-	public void init() {
+	public TestVolume createVolume(Object realParam, AsyncCompletionCallback callback) {
+		_driver.createVolume(realParam,
+				new AsyncCompletionCallback(this)
+					.setOperationName("volume.driver.create")
+					.setContextParam("dsCompletion", callback)
+		);
 		
-		_rpcProvider.registerRpcServiceEndpoint("AgentManager", 
-			RpcServiceDispatcher.getDispatcher(this));
+		return null;
+	}
+	
+	@AsyncCallbackHandler(operationName="volume.driver.create")
+	public void onDriverCreateVolumeCallback(AsyncCompletionCallback driverCompletion) {
+		AsyncCompletionCallback dsCompletionCallback = driverCompletion.getContextParam("dsCompletion");
 		
-		// subscribe to all network events (for example)
-		_eventBus.subscribe("network", 
-			EventDispatcher.getDispatcher(this));
-	}
-	
-	@RpcServiceHandler(command="StartCommand")
-	void onStartCommand(RpcServerCall call) {
-		call.completeCall("Call response");
-	}
-	
-	@EventHandler(topic="network.prepare")
-	void onPrepareNetwork(String sender, String topic, Object args) {
+		String str = driverCompletion.getResult();
+		dsCompletionCallback.complete(str);
 	}
 }

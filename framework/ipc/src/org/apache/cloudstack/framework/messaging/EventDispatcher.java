@@ -23,8 +23,38 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
-public class EventDispatcher {
+public class EventDispatcher implements Subscriber {
 	private static Map<Class<?>, Method> s_handlerCache = new HashMap<Class<?>, Method>();
+	
+	private static Map<Object, EventDispatcher> s_targetMap = new HashMap<Object, EventDispatcher>();
+	private Object _targetObject;
+	
+	public EventDispatcher(Object targetObject) {
+		_targetObject = targetObject;
+	}
+	
+	@Override
+	public void onPublishEvent(String senderAddress, String subject, Object args) {
+		dispatch(_targetObject, subject, senderAddress, args);
+	}
+	
+	public static EventDispatcher getDispatcher(Object targetObject) {
+		EventDispatcher dispatcher;
+		synchronized(s_targetMap) {
+			dispatcher = s_targetMap.get(targetObject);
+			if(dispatcher == null) {
+				dispatcher = new EventDispatcher(targetObject);
+				s_targetMap.put(targetObject, dispatcher);
+			}
+		}
+		return dispatcher;
+	}
+	
+	public static void removeDispatcher(Object targetObject) {
+		synchronized(s_targetMap) {
+			s_targetMap.remove(targetObject);
+		}
+	}
 	
 	public static boolean dispatch(Object target, String subject, String senderAddress, Object args) {
 		assert(subject != null);

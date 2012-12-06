@@ -69,14 +69,14 @@ public class RpcProviderImpl implements RpcProvider {
 	}
 
 	@Override
-	public void registerRpcServiceEndpoint(RpcServiceEndpoint rpcEndpoint) {
+	public void registerRpcServiceEndpoint(String serviceAddress, RpcServiceEndpoint rpcEndpoint) {
 		synchronized(_serviceEndpoints) {
 			_serviceEndpoints.add(rpcEndpoint);
 		}
 	}
 
 	@Override
-	public void unregisteRpcServiceEndpoint(RpcServiceEndpoint rpcEndpoint) {
+	public void unregisteRpcServiceEndpoint(RpcAddressable serviceAddress, RpcServiceEndpoint rpcEndpoint) {
 		synchronized(_serviceEndpoints) {
 			_serviceEndpoints.remove(rpcEndpoint);
 		}

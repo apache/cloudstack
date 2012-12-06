@@ -18,30 +18,21 @@
  */
 package org.apache.cloudstack.framework.messaging;
 
-public class SampleComponent {
-
-	RpcProvider _rpcProvider;
-	EventBus _eventBus;
+public class AsyncSampleCaller {
+	AsyncSampleCallee _ds;
 	
-	public SampleComponent() {
-	}
-	
-	public void init() {
+	public void MethodThatWillCallAsyncMethod() {
+		TestVolume vol = new TestVolume();
 		
-		_rpcProvider.registerRpcServiceEndpoint("AgentManager", 
-			RpcServiceDispatcher.getDispatcher(this));
+		_ds.createVolume(vol,
+			new AsyncCompletionCallback(this).setContextParam("vol", vol));
+	}
+	
+	@AsyncCallbackHandler(operationName="volume.create")
+	public void onCreateVolumeCallback(AsyncCompletionCallback callback) {
+		TestVolume contextVol = callback.getContextParam("vol");
 		
-		// subscribe to all network events (for example)
-		_eventBus.subscribe("network", 
-			EventDispatcher.getDispatcher(this));
-	}
-	
-	@RpcServiceHandler(command="StartCommand")
-	void onStartCommand(RpcServerCall call) {
-		call.completeCall("Call response");
-	}
-	
-	@EventHandler(topic="network.prepare")
-	void onPrepareNetwork(String sender, String topic, Object args) {
+		TestVolume result = callback.getResult();
+		// do something
 	}
 }

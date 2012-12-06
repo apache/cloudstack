@@ -18,30 +18,49 @@
  */
 package org.apache.cloudstack.framework.messaging;
 
-public class SampleComponent {
+import java.util.HashMap;
+import java.util.Map;
 
-	RpcProvider _rpcProvider;
-	EventBus _eventBus;
+public class AsyncCompletionCallback {	
+	private Map<String, Object> _contextMap = new HashMap<String, Object>();
+	private String _operationName;
+	private Object _targetObject;
 	
-	public SampleComponent() {
+	public AsyncCompletionCallback(Object target) {
+		_targetObject = target;
 	}
 	
-	public void init() {
+	public AsyncCompletionCallback setContextParam(String key, Object param) {
+		// ???
+		return this;
+	}
+	
+	public AsyncCompletionCallback attachDriver(AsyncCallbackDriver driver) {
+		// ???
+		return this;
+	}
+	
+	public AsyncCompletionCallback setOperationName(String name) {
+		_operationName = name;
+		return this;
+	}
+	
+	public String getOperationName() {
+		return _operationName;
+	}
+	
+	public <T> T getContextParam(String key) {
+		// ???
+		return null;
+	}
+	
+	public void complete(Object resultObject) {
+		///
+	}
+	
+	public <T> T getResult() {
 		
-		_rpcProvider.registerRpcServiceEndpoint("AgentManager", 
-			RpcServiceDispatcher.getDispatcher(this));
-		
-		// subscribe to all network events (for example)
-		_eventBus.subscribe("network", 
-			EventDispatcher.getDispatcher(this));
-	}
-	
-	@RpcServiceHandler(command="StartCommand")
-	void onStartCommand(RpcServerCall call) {
-		call.completeCall("Call response");
-	}
-	
-	@EventHandler(topic="network.prepare")
-	void onPrepareNetwork(String sender, String topic, Object args) {
+		// ???
+		return null;
 	}
 }

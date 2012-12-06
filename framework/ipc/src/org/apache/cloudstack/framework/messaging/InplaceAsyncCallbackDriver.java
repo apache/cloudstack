@@ -18,6 +18,10 @@
  */
 package org.apache.cloudstack.framework.messaging;
 
-public interface ComponentContainer {
-	ComponentEndpoint wire(ComponentEndpoint endpoint, String predefinedAddress);
+public class InplaceAsyncCallbackDriver implements AsyncCallbackDriver {
+
+	@Override
+	public void performCompletionCallback(AsyncCompletionCallback callback) {
+		// TODO Auto-generated method stub
+	}
 }

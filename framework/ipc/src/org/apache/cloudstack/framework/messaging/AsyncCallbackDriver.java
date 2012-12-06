@@ -18,30 +18,6 @@
  */
 package org.apache.cloudstack.framework.messaging;
 
-public class SampleComponent {
-
-	RpcProvider _rpcProvider;
-	EventBus _eventBus;
-	
-	public SampleComponent() {
-	}
-	
-	public void init() {
-		
-		_rpcProvider.registerRpcServiceEndpoint("AgentManager", 
-			RpcServiceDispatcher.getDispatcher(this));
-		
-		// subscribe to all network events (for example)
-		_eventBus.subscribe("network", 
-			EventDispatcher.getDispatcher(this));
-	}
-	
-	@RpcServiceHandler(command="StartCommand")
-	void onStartCommand(RpcServerCall call) {
-		call.completeCall("Call response");
-	}
-	
-	@EventHandler(topic="network.prepare")
-	void onPrepareNetwork(String sender, String topic, Object args) {
-	}
+public interface AsyncCallbackDriver {
+	public void performCompletionCallback(AsyncCompletionCallback callback);
 }

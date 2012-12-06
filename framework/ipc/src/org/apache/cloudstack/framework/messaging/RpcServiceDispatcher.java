@@ -23,9 +23,34 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
-public class RpcServiceDispatcher {
+public class RpcServiceDispatcher implements RpcServiceEndpoint {
 
 	private static Map<Class<?>, Method> s_handlerCache = new HashMap<Class<?>, Method>();
+
+	private static Map<Object, RpcServiceDispatcher> s_targetMap = new HashMap<Object, RpcServiceDispatcher>();
+	private Object _targetObject;
+	
+	public RpcServiceDispatcher(Object targetObject) {
+		_targetObject = targetObject;
+	}
+	
+	public static RpcServiceDispatcher getDispatcher(Object targetObject) {
+		RpcServiceDispatcher dispatcher;
+		synchronized(s_targetMap) {
+			dispatcher = s_targetMap.get(targetObject);
+			if(dispatcher == null) {
+				dispatcher = new RpcServiceDispatcher(targetObject);
+				s_targetMap.put(targetObject, dispatcher);
+			}
+		}
+		return dispatcher;
+	}
+	
+	public static void removeDispatcher(Object targetObject) {
+		synchronized(s_targetMap) {
+			s_targetMap.remove(targetObject);
+		}
+	}
 	
 	public static boolean dispatch(Object target, RpcServerCall serviceCall) {
 		assert(serviceCall != null);
@@ -66,5 +91,10 @@ public class RpcServiceDispatcher {
 		}
 		
 		return null;
+	}
+
+	@Override
+	public boolean onCallReceive(RpcServerCall call) {
+		return dispatch(_targetObject, call);
 	}
 }

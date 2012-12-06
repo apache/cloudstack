@@ -86,9 +86,10 @@ public class RpcClientCallImpl implements RpcClientCall {
 		return this;
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
-	public Object getContextParam(String key) {
-		return _contextParams.get(key);
+	public <T> T getContextParam(String key) {
+		return (T)_contextParams.get(key);
 	}
 
 	@Override

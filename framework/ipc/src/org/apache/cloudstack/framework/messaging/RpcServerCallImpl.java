@@ -42,7 +42,7 @@ public class RpcServerCallImpl implements RpcServerCall {
 	}
 
 	@Override
-	public Object getCommandArgument() {
+	public <T> T getCommandArgument() {
 		if(_requestPdu.getSerializedCommandArg() == null)
 			return null;
 		

@@ -16,32 +16,45 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.cloudstack.framework.messaging;
 
-public class SampleComponent {
-
-	RpcProvider _rpcProvider;
-	EventBus _eventBus;
+public class EventBusEndpoint {
+	private EventBus _eventBus;
+	private String _sender;
+	private PublishScope _scope;
 	
-	public SampleComponent() {
+	public EventBusEndpoint(EventBus eventBus, String sender, PublishScope scope) {
+		_eventBus = eventBus;
+		_sender = sender;
+		_scope = scope;
 	}
 	
-	public void init() {
-		
-		_rpcProvider.registerRpcServiceEndpoint("AgentManager", 
-			RpcServiceDispatcher.getDispatcher(this));
-		
-		// subscribe to all network events (for example)
-		_eventBus.subscribe("network", 
-			EventDispatcher.getDispatcher(this));
+	public EventBusEndpoint setEventBus(EventBus eventBus) {
+		_eventBus = eventBus;
+		return this;
 	}
 	
-	@RpcServiceHandler(command="StartCommand")
-	void onStartCommand(RpcServerCall call) {
-		call.completeCall("Call response");
+	public EventBusEndpoint setScope(PublishScope scope) {
+		_scope = scope;
+		return this;
 	}
 	
-	@EventHandler(topic="network.prepare")
-	void onPrepareNetwork(String sender, String topic, Object args) {
+	public PublishScope getScope() {
+		return _scope;
+	}
+	
+	public EventBusEndpoint setSender(String sender) {
+		_sender = sender;
+		return this;
+	}
+	
+	public String getSender() {
+		return _sender;
+	}
+	
+	public void Publish(String subject, Object args) {
+		assert(_eventBus != null);
+		_eventBus.publish(_sender, subject, _scope, args);
 	}
 }
