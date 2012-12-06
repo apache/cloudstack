@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.admin.pod.command;
 
 import org.apache.log4j.Logger;
 
@@ -24,15 +24,14 @@ import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import com.cloud.api.response.PodResponse;
-import com.cloud.dc.Pod;
+import com.cloud.api.response.SuccessResponse;
 import com.cloud.user.Account;
 
-@Implementation(description="Updates a Pod.", responseObject=PodResponse.class)
-public class UpdatePodCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdatePodCmd.class.getName());
+@Implementation(description="Deletes a Pod.", responseObject=SuccessResponse.class)
+public class DeletePodCmd extends BaseCmd {
+    public static final Logger s_logger = Logger.getLogger(DeletePodCmd.class.getName());
 
-    private static final String s_name = "updatepodresponse";
+    private static final String s_name = "deletepodresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -42,60 +41,19 @@ public class UpdatePodCmd extends BaseCmd {
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the Pod")
     private Long id;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the Pod")
-    private String podName;
-
-    @Parameter(name=ApiConstants.START_IP, type=CommandType.STRING, description="the starting IP address for the Pod")
-    private String startIp;
-
-    @Parameter(name=ApiConstants.END_IP, type=CommandType.STRING, description="the ending IP address for the Pod")
-    private String endIp;
-
-    @Parameter(name=ApiConstants.NETMASK, type=CommandType.STRING, description="the netmask of the Pod")
-    private String netmask;
-
-    @Parameter(name=ApiConstants.GATEWAY, type=CommandType.STRING, description="the gateway for the Pod")
-    private String gateway;
-
-    @Parameter(name=ApiConstants.ALLOCATION_STATE, type=CommandType.STRING, description="Allocation state of this cluster for allocation of new resources")
-    private String allocationState;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public String getNetmask() {
-        return netmask;
-    }
-
-    public String getEndIp() {
-        return endIp;
-    }
-
-    public String getGateway() {
-        return gateway;
-    }
-
     public Long getId() {
         return id;
     }
 
-    public String getPodName() {
-        return podName;
-    }
-
-    public String getStartIp() {
-        return startIp;
-    }
-
-    public String getAllocationState() {
-        return allocationState;
-    }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-    @Override
     public String getCommandName() {
         return s_name;
     }
@@ -107,13 +65,12 @@ public class UpdatePodCmd extends BaseCmd {
 
     @Override
     public void execute(){
-        Pod result = _configService.editPod(this);
-        if (result != null) {
-            PodResponse response = _responseGenerator.createPodResponse(result,false);
-            response.setResponseName(getCommandName());
+        boolean result = _configService.deletePod(this);
+        if (result) {
+            SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update pod");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete pod");
         }
     }
 }

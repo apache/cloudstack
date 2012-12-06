@@ -82,7 +82,7 @@ import com.cloud.api.commands.ListCapacityCmd;
 import com.cloud.api.commands.ListClustersCmd;
 import org.apache.cloudstack.api.user.event.command.ListEventsCmd;
 import org.apache.cloudstack.api.admin.host.command.ListHostsCmd;
-import com.cloud.api.commands.ListPodsByCmd;
+import org.apache.cloudstack.api.admin.pod.command.ListPodsByCmd;
 import org.apache.cloudstack.api.user.address.command.ListPublicIpAddressesCmd;
 import org.apache.cloudstack.api.user.ssh.command.ListSSHKeyPairsCmd;
 import org.apache.cloudstack.api.admin.storagepool.command.ListStoragePoolsCmd;

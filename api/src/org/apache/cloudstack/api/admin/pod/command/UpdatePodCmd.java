@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.admin.pod.command;
 
 import org.apache.log4j.Logger;
 
@@ -28,35 +28,36 @@ import com.cloud.api.response.PodResponse;
 import com.cloud.dc.Pod;
 import com.cloud.user.Account;
 
-@Implementation(description="Creates a new Pod.", responseObject=PodResponse.class)
-public class CreatePodCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(CreatePodCmd.class.getName());
+@Implementation(description="Updates a Pod.", responseObject=PodResponse.class)
+public class UpdatePodCmd extends BaseCmd {
+    public static final Logger s_logger = Logger.getLogger(UpdatePodCmd.class.getName());
 
-    private static final String s_name = "createpodresponse";
+    private static final String s_name = "updatepodresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="the name of the Pod")
+
+    @IdentityMapper(entityTableName="host_pod_ref")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the Pod")
+    private Long id;
+
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the Pod")
     private String podName;
 
-    @IdentityMapper(entityTableName="data_center")
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="the Zone ID in which the Pod will be created   ")
-    private Long zoneId;
-
-    @Parameter(name=ApiConstants.START_IP, type=CommandType.STRING, required=true, description="the starting IP address for the Pod")
+    @Parameter(name=ApiConstants.START_IP, type=CommandType.STRING, description="the starting IP address for the Pod")
     private String startIp;
 
     @Parameter(name=ApiConstants.END_IP, type=CommandType.STRING, description="the ending IP address for the Pod")
     private String endIp;
 
-    @Parameter(name=ApiConstants.NETMASK, type=CommandType.STRING, required=true, description="the netmask for the Pod")
+    @Parameter(name=ApiConstants.NETMASK, type=CommandType.STRING, description="the netmask of the Pod")
     private String netmask;
 
-    @Parameter(name=ApiConstants.GATEWAY, type=CommandType.STRING, required=true, description="the gateway for the Pod")
+    @Parameter(name=ApiConstants.GATEWAY, type=CommandType.STRING, description="the gateway for the Pod")
     private String gateway;
 
-    @Parameter(name=ApiConstants.ALLOCATION_STATE, type=CommandType.STRING, description="Allocation state of this Pod for allocation of new resources")
+    @Parameter(name=ApiConstants.ALLOCATION_STATE, type=CommandType.STRING, description="Allocation state of this cluster for allocation of new resources")
     private String allocationState;
 
     /////////////////////////////////////////////////////
@@ -75,6 +76,10 @@ public class CreatePodCmd extends BaseCmd {
         return gateway;
     }
 
+    public Long getId() {
+        return id;
+    }
+
     public String getPodName() {
         return podName;
     }
@@ -83,14 +88,9 @@ public class CreatePodCmd extends BaseCmd {
         return startIp;
     }
 
-    public Long getZoneId() {
-        return zoneId;
-    }
-
     public String getAllocationState() {
         return allocationState;
     }
-
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -107,13 +107,13 @@ public class CreatePodCmd extends BaseCmd {
 
     @Override
     public void execute(){
-        Pod result = _configService.createPod(getZoneId(), getPodName(), getStartIp(), getEndIp(), getGateway(), getNetmask(), getAllocationState());
+        Pod result = _configService.editPod(this);
         if (result != null) {
-            PodResponse response = _responseGenerator.createPodResponse(result, false);
+            PodResponse response = _responseGenerator.createPodResponse(result,false);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create pod");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update pod");
         }
     }
 }

@@ -203,10 +203,10 @@ ldapRemove=com.cloud.api.commands.LDAPRemoveCmd;1
 listCapabilities=org.apache.cloudstack.api.user.config.command.ListCapabilitiesCmd;15
 
 #### pod commands
-createPod=com.cloud.api.commands.CreatePodCmd;1
-updatePod=com.cloud.api.commands.UpdatePodCmd;1
-deletePod=com.cloud.api.commands.DeletePodCmd;1
-listPods=com.cloud.api.commands.ListPodsByCmd;3
+createPod=org.apache.cloudstack.api.admin.pod.command.CreatePodCmd;1
+updatePod=org.apache.cloudstack.api.admin.pod.command.UpdatePodCmd;1
+deletePod=org.apache.cloudstack.api.admin.pod.command.DeletePodCmd;1
+listPods=org.apache.cloudstack.api.admin.pod.command.ListPodsByCmd;3
 
 #### zone commands
 createZone=org.apache.cloudstack.api.admin.zone.command.CreateZoneCmd;1
