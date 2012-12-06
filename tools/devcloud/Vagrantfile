@@ -19,8 +19,8 @@
 # under the License.
 
 Vagrant::Config.run do |config|
-  config.vm.box = "devcloud"
-  #config.vm.box = "devcloudbase-xen"
+  #config.vm.box = "devcloud"
+  config.vm.box = "devcloudbase-xen"
   #config.vm.box_url = "http://basho-cloudstack.s3.amazonaws.com/devcloud.box"
 
   config.vm.guest = :xen
