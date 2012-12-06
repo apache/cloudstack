@@ -53,7 +53,7 @@ import org.apache.cloudstack.api.admin.storagepool.command.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.admin.systemvm.command.ListSystemVMsCmd;
 import org.apache.cloudstack.api.user.vmgroup.command.ListVMGroupsCmd;
 import com.cloud.api.commands.ListVlanIpRangesCmd;
-import org.apache.cloudstack.api.user.datacenter.command.ListZonesByCmd;
+import org.apache.cloudstack.api.user.zone.command.ListZonesByCmd;
 import org.apache.cloudstack.api.admin.systemvm.command.RebootSystemVmCmd;
 import org.apache.cloudstack.api.user.ssh.command.RegisterSSHKeyPairCmd;
 import org.apache.cloudstack.api.admin.systemvm.command.StopSystemVmCmd;

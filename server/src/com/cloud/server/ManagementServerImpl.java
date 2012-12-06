@@ -55,6 +55,7 @@ import org.apache.cloudstack.api.user.ssh.command.RegisterSSHKeyPairCmd;
 import org.apache.cloudstack.api.user.template.command.ListTemplatesCmd;
 import org.apache.cloudstack.api.user.template.command.UpdateTemplateCmd;
 import org.apache.cloudstack.api.user.vmgroup.command.ListVMGroupsCmd;
+import org.apache.cloudstack.api.user.zone.command.ListZonesByCmd;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
@@ -87,7 +88,6 @@ import org.apache.cloudstack.api.user.ssh.command.ListSSHKeyPairsCmd;
 import org.apache.cloudstack.api.admin.storagepool.command.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.admin.systemvm.command.ListSystemVMsCmd;
 import com.cloud.api.commands.ListVlanIpRangesCmd;
-import org.apache.cloudstack.api.user.datacenter.command.ListZonesByCmd;
 import org.apache.cloudstack.api.admin.systemvm.command.RebootSystemVmCmd;
 import org.apache.cloudstack.api.admin.systemvm.command.StopSystemVmCmd;
 import com.cloud.api.commands.UpdateDomainCmd;
