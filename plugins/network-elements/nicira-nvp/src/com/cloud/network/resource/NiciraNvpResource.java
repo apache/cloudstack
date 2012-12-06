@@ -604,6 +604,10 @@ public class NiciraNvpResource implements ServerResource {
     				continue;
     			}
     			
+    			if (rule.getDstPortRange()[0] != rule.getDstPortRange()[1]) {
+    				return new ConfigurePortForwardingRulesOnLogicalRouterAnswer(cmd, false, "Nicira NVP doesn't support port ranges for port forwarding");
+    			}
+    			
     			NatRule[] rulepair = generatePortForwardingRulePair(rule.getDstIp(), rule.getDstPortRange(), rule.getSrcIp(), rule.getSrcPortRange(), rule.getProtocol());
 				
 				NatRule incoming = null;

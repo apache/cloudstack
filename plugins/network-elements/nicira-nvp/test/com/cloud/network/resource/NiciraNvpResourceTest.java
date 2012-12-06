@@ -758,7 +758,41 @@ public class NiciraNvpResourceTest {
 		assertFalse(a.getResult());
 		verify(_nvpApi, atLeastOnce()).deleteLogicalRouterNatRule(eq("aaaaa"), eq("bbbbb"));
 	}
-	
+
+	@Test
+	public void testConfigurePortForwardingRulesOnLogicalRouterPortRange() throws ConfigurationException, NiciraNvpApiException {
+		_resource.configure("NiciraNvpResource", _parameters);
+		/* StaticNat
+		 * Outside IP: 11.11.11.11
+		 * Inside IP:  10.10.10.10
+		 */
+		
+		// Mock the command
+		ConfigurePortForwardingRulesOnLogicalRouterCommand cmd = mock(ConfigurePortForwardingRulesOnLogicalRouterCommand.class);
+		PortForwardingRuleTO rule = new PortForwardingRuleTO(1,"11.11.11.11", 80, 85, "10.10.10.10", 80, 85, "tcp", false, false);
+		List<PortForwardingRuleTO> rules = new ArrayList<PortForwardingRuleTO>();
+		rules.add(rule);
+		when(cmd.getRules()).thenReturn(rules);
+		when(cmd.getLogicalRouterUuid()).thenReturn("aaaaa");
+		
+		// Mock the api find call
+		@SuppressWarnings("unchecked")
+		NiciraNvpList<NatRule> storedRules = mock(NiciraNvpList.class);
+		when(_nvpApi.findNatRulesByLogicalRouterUuid("aaaaa")).thenReturn(storedRules);
+		
+		// Mock the api create calls
+		NatRule[] rulepair = _resource.generatePortForwardingRulePair("10.10.10.10", new int[] { 80, 85 }, "11.11.11.11", new int[] { 80, 85}, "tcp");
+		rulepair[0].setUuid("bbbbb");
+		rulepair[1].setUuid("ccccc");
+		when(_nvpApi.createLogicalRouterNatRule(eq("aaaaa"), (NatRule)any())).thenReturn(rulepair[0]).thenReturn(rulepair[1]);
+		
+		ConfigurePortForwardingRulesOnLogicalRouterAnswer a = (ConfigurePortForwardingRulesOnLogicalRouterAnswer) _resource.executeRequest(cmd);
+		
+		// The expected result is false, Nicira does not support port ranges in DNAT
+		assertFalse(a.getResult());
+
+	}
+
 	@Test
 	public void testGenerateStaticNatRulePair() {
 		NatRule[] rules = _resource.generateStaticNatRulePair("10.10.10.10", "11.11.11.11");
