@@ -219,10 +219,10 @@ listEvents=org.apache.cloudstack.api.user.event.command.ListEventsCmd;15
 listEventTypes=org.apache.cloudstack.api.user.event.command.ListEventTypesCmd;15
 
 #### alerts commands
-listAlerts=com.cloud.api.commands.ListAlertsCmd;3
+listAlerts=org.apache.cloudstack.api.admin.resource.command.ListAlertsCmd;3
 
 #### system capacity commands
-listCapacity=com.cloud.api.commands.ListCapacityCmd;3
+listCapacity=org.apache.cloudstack.api.admin.resource.command.ListCapacityCmd;3
 
 #### swift commands^M
 addSwift=org.apache.cloudstack.api.admin.swift.command.AddSwiftCmd;1
@@ -288,10 +288,10 @@ updateInstanceGroup=org.apache.cloudstack.api.user.vmgroup.command.UpdateVMGroup
 listInstanceGroups=org.apache.cloudstack.api.user.vmgroup.command.ListVMGroupsCmd;15
 
 ### Certificate commands
-uploadCustomCertificate=com.cloud.api.commands.UploadCustomCertificateCmd;1
+uploadCustomCertificate=org.apache.cloudstack.api.admin.resource.command.UploadCustomCertificateCmd;1
 
 ### other commands
-listHypervisors=org.apache.cloudstack.api.user.hypervisor.command.ListHypervisorsCmd;15
+listHypervisors=org.apache.cloudstack.api.user.resource.command.ListHypervisorsCmd;15
 
 ### VPN
 createRemoteAccessVpn=org.apache.cloudstack.api.user.vpn.command.CreateRemoteAccessVpnCmd;15
