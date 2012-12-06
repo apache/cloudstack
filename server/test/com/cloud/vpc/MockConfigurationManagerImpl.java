@@ -25,6 +25,7 @@ import javax.naming.ConfigurationException;
 import javax.naming.NamingException;
 
 import com.cloud.api.commands.CreateDiskOfferingCmd;
+import org.apache.cloudstack.api.admin.config.command.UpdateCfgCmd;
 import org.apache.cloudstack.api.admin.network.command.CreateNetworkOfferingCmd;
 import com.cloud.api.commands.CreateServiceOfferingCmd;
 import com.cloud.api.commands.CreateVlanIpRangeCmd;
@@ -39,7 +40,6 @@ import com.cloud.api.commands.LDAPConfigCmd;
 import com.cloud.api.commands.LDAPRemoveCmd;
 import org.apache.cloudstack.api.admin.zone.command.UpdateZoneCmd;
 import org.apache.cloudstack.api.user.network.command.ListNetworkOfferingsCmd;
-import com.cloud.api.commands.UpdateCfgCmd;
 import com.cloud.api.commands.UpdateDiskOfferingCmd;
 import org.apache.cloudstack.api.admin.network.command.UpdateNetworkOfferingCmd;
 import com.cloud.api.commands.UpdatePodCmd;

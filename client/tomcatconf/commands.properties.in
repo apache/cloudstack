@@ -196,11 +196,11 @@ migrateSystemVm=org.apache.cloudstack.api.admin.systemvm.command.MigrateSystemVM
 changeServiceForSystemVm=org.apache.cloudstack.api.admin.systemvm.command.UpgradeSystemVMCmd;1
 
 #### configuration commands
-updateConfiguration=com.cloud.api.commands.UpdateCfgCmd;1
-listConfigurations=com.cloud.api.commands.ListCfgsByCmd;1
+updateConfiguration=org.apache.cloudstack.api.admin.config.command.UpdateCfgCmd;1
+listConfigurations=org.apache.cloudstack.api.admin.config.command.ListCfgsByCmd;1
 ldapConfig=com.cloud.api.commands.LDAPConfigCmd;1
 ldapRemove=com.cloud.api.commands.LDAPRemoveCmd;1
-listCapabilities=org.apache.cloudstack.api.user.resource.command.ListCapabilitiesCmd;15
+listCapabilities=org.apache.cloudstack.api.user.config.command.ListCapabilitiesCmd;15
 
 #### pod commands
 createPod=com.cloud.api.commands.CreatePodCmd;1
@@ -341,8 +341,8 @@ deleteFirewallRule=org.apache.cloudstack.api.user.firewall.command.DeleteFirewal
 listFirewallRules=org.apache.cloudstack.api.user.firewall.command.ListFirewallRulesCmd;15
 
 #### hypervisor capabilities commands
-updateHypervisorCapabilities=com.cloud.api.commands.UpdateHypervisorCapabilitiesCmd;1
-listHypervisorCapabilities=com.cloud.api.commands.ListHypervisorCapabilitiesCmd;1
+updateHypervisorCapabilities=org.apache.cloudstack.api.admin.config.command.UpdateHypervisorCapabilitiesCmd;1
+listHypervisorCapabilities=org.apache.cloudstack.api.admin.config.command.ListHypervisorCapabilitiesCmd;1
 
 #### Physical Network commands
 createPhysicalNetwork=org.apache.cloudstack.api.admin.network.command.CreatePhysicalNetworkCmd;1

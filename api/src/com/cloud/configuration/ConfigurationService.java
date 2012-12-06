@@ -34,7 +34,7 @@ import org.apache.cloudstack.api.admin.zone.command.DeleteZoneCmd;
 import com.cloud.api.commands.LDAPConfigCmd;
 import com.cloud.api.commands.LDAPRemoveCmd;
 import org.apache.cloudstack.api.user.network.command.ListNetworkOfferingsCmd;
-import com.cloud.api.commands.UpdateCfgCmd;
+import org.apache.cloudstack.api.admin.config.command.UpdateCfgCmd;
 import com.cloud.api.commands.UpdateDiskOfferingCmd;
 import org.apache.cloudstack.api.admin.network.command.UpdateNetworkOfferingCmd;
 import com.cloud.api.commands.UpdatePodCmd;

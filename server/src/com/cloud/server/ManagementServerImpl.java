@@ -42,8 +42,9 @@ import java.util.concurrent.TimeUnit;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.apache.cloudstack.api.admin.config.command.ListCfgsByCmd;
 import org.apache.cloudstack.api.admin.router.command.ListRoutersCmd;
-import org.apache.cloudstack.api.user.resource.command.ListCapabilitiesCmd;
+import org.apache.cloudstack.api.user.config.command.ListCapabilitiesCmd;
 import org.apache.cloudstack.api.user.guest.command.ListGuestOsCategoriesCmd;
 import org.apache.cloudstack.api.user.guest.command.ListGuestOsCmd;
 import org.apache.cloudstack.api.user.iso.command.ListIsosCmd;
@@ -78,7 +79,6 @@ import org.apache.cloudstack.api.user.volume.command.ExtractVolumeCmd;
 import org.apache.cloudstack.api.user.vm.command.GetVMPasswordCmd;
 import com.cloud.api.commands.ListAlertsCmd;
 import com.cloud.api.commands.ListCapacityCmd;
-import com.cloud.api.commands.ListCfgsByCmd;
 import com.cloud.api.commands.ListClustersCmd;
 import org.apache.cloudstack.api.user.event.command.ListEventsCmd;
 import org.apache.cloudstack.api.admin.host.command.ListHostsCmd;

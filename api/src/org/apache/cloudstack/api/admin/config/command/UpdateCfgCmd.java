@@ -14,63 +14,49 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.admin.config.command;
 
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import com.cloud.api.response.HypervisorCapabilitiesResponse;
-import com.cloud.api.response.ServiceOfferingResponse;
-import com.cloud.hypervisor.HypervisorCapabilities;
+import com.cloud.api.response.ConfigurationResponse;
+import com.cloud.configuration.Configuration;
 import com.cloud.user.Account;
 
-
-@Implementation(description="Updates a hypervisor capabilities.", responseObject=ServiceOfferingResponse.class, since="3.0.0")
-public class UpdateHypervisorCapabilitiesCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdateHypervisorCapabilitiesCmd.class.getName());
-    private static final String s_name = "updatehypervisorcapabilitiesresponse";
+@Implementation(description="Updates a configuration.", responseObject=ConfigurationResponse.class)
+public class UpdateCfgCmd extends BaseCmd {
+    public static final Logger s_logger = Logger.getLogger(UpdateCfgCmd.class.getName());
+    private static final String s_name = "updateconfigurationresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="hypervisor_capabilities")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="ID of the hypervisor capability")
-    private Long id;
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="the name of the configuration")
+    private String cfgName;
 
-    @Parameter(name=ApiConstants.SECURITY_GROUP_EANBLED, type=CommandType.BOOLEAN, description="set true to enable security group for this hypervisor.")
-    private Boolean securityGroupEnabled;
-
-    @Parameter(name=ApiConstants.MAX_GUESTS_LIMIT, type=CommandType.LONG, description="the max number of Guest VMs per host for this hypervisor.")
-    private Long maxGuestsLimit;
+    @Parameter(name=ApiConstants.VALUE, type=CommandType.STRING, description="the value of the configuration", length=4095)
+    private String value;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Boolean getSecurityGroupEnabled() {
-        return securityGroupEnabled;
+    public String getCfgName() {
+        return cfgName;
     }
 
-    public Long getId() {
-        return id;
+    public String getValue() {
+        return value;
     }
-
-    public Long getMaxGuestsLimit() {
-        return maxGuestsLimit;
-    }
-
-
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
 
     @Override
     public String getCommandName() {
@@ -84,13 +70,13 @@ public class UpdateHypervisorCapabilitiesCmd extends BaseCmd {
 
     @Override
     public void execute(){
-        HypervisorCapabilities result = _mgr.updateHypervisorCapabilities(getId(), getMaxGuestsLimit(), getSecurityGroupEnabled());
-        if (result != null){
-            HypervisorCapabilitiesResponse response = _responseGenerator.createHypervisorCapabilitiesResponse(result);
+        Configuration cfg = _configService.updateConfiguration(this);
+        if (cfg != null) {
+            ConfigurationResponse response = _responseGenerator.createConfigurationResponse(cfg);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update hypervisor capabilities");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update config");
         }
     }
 }

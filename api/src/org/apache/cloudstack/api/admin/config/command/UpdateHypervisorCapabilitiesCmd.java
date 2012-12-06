@@ -14,29 +14,26 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
-
-import java.util.ArrayList;
-import java.util.List;
+package org.apache.cloudstack.api.admin.config.command;
 
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseListCmd;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
 import com.cloud.api.response.HypervisorCapabilitiesResponse;
-import com.cloud.api.response.ListResponse;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.api.response.ServiceOfferingResponse;
 import com.cloud.hypervisor.HypervisorCapabilities;
-import com.cloud.utils.Pair;
+import com.cloud.user.Account;
 
-@Implementation(description="Lists all hypervisor capabilities.", responseObject=HypervisorCapabilitiesResponse.class, since="3.0.0")
-public class ListHypervisorCapabilitiesCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListHypervisorCapabilitiesCmd.class.getName());
 
-    private static final String s_name = "listhypervisorcapabilitiesresponse";
+@Implementation(description="Updates a hypervisor capabilities.", responseObject=ServiceOfferingResponse.class, since="3.0.0")
+public class UpdateHypervisorCapabilitiesCmd extends BaseCmd {
+    public static final Logger s_logger = Logger.getLogger(UpdateHypervisorCapabilitiesCmd.class.getName());
+    private static final String s_name = "updatehypervisorcapabilitiesresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -46,29 +43,34 @@ public class ListHypervisorCapabilitiesCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="ID of the hypervisor capability")
     private Long id;
 
-    @Parameter(name=ApiConstants.HYPERVISOR, type=CommandType.STRING, description="the hypervisor for which to restrict the search")
-    private String hypervisor;
+    @Parameter(name=ApiConstants.SECURITY_GROUP_EANBLED, type=CommandType.BOOLEAN, description="set true to enable security group for this hypervisor.")
+    private Boolean securityGroupEnabled;
 
+    @Parameter(name=ApiConstants.MAX_GUESTS_LIMIT, type=CommandType.LONG, description="the max number of Guest VMs per host for this hypervisor.")
+    private Long maxGuestsLimit;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
+    public Boolean getSecurityGroupEnabled() {
+        return securityGroupEnabled;
+    }
+
     public Long getId() {
         return id;
     }
 
-    public HypervisorType getHypervisor() {
-        if(hypervisor != null){
-            return HypervisorType.getType(hypervisor);
-        }else{
-            return null;
-        }
+    public Long getMaxGuestsLimit() {
+        return maxGuestsLimit;
     }
+
+
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
+
 
     @Override
     public String getCommandName() {
@@ -76,19 +78,19 @@ public class ListHypervisorCapabilitiesCmd extends BaseListCmd {
     }
 
     @Override
-    public void execute(){
-        Pair<List<? extends HypervisorCapabilities>, Integer> hpvCapabilities = _mgr.listHypervisorCapabilities(getId(),
-                getHypervisor(), getKeyword(), this.getStartIndex(), this.getPageSizeVal());
-        ListResponse<HypervisorCapabilitiesResponse> response = new ListResponse<HypervisorCapabilitiesResponse>();
-        List<HypervisorCapabilitiesResponse> hpvCapabilitiesResponses = new ArrayList<HypervisorCapabilitiesResponse>();
-        for (HypervisorCapabilities capability : hpvCapabilities.first()) {
-            HypervisorCapabilitiesResponse hpvCapabilityResponse = _responseGenerator.createHypervisorCapabilitiesResponse(capability);
-            hpvCapabilityResponse.setObjectName("hypervisorCapabilities");
-            hpvCapabilitiesResponses.add(hpvCapabilityResponse);
-        }
+    public long getEntityOwnerId() {
+        return Account.ACCOUNT_ID_SYSTEM;
+    }
 
-        response.setResponses(hpvCapabilitiesResponses, hpvCapabilities.second());
-        response.setResponseName(getCommandName());
-        this.setResponseObject(response);
+    @Override
+    public void execute(){
+        HypervisorCapabilities result = _mgr.updateHypervisorCapabilities(getId(), getMaxGuestsLimit(), getSecurityGroupEnabled());
+        if (result != null){
+            HypervisorCapabilitiesResponse response = _responseGenerator.createHypervisorCapabilitiesResponse(result);
+            response.setResponseName(getCommandName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update hypervisor capabilities");
+        }
     }
 }
