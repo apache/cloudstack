@@ -147,7 +147,6 @@ public class PrimaryDataStoreEntityImpl implements StorageEntity {
 
     @Override
     public StoragePoolType getPoolType() {
-        // TODO Auto-generated method stub
         return null;
     }
 

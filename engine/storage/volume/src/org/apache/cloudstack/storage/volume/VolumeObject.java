@@ -140,4 +140,16 @@ public class VolumeObject implements VolumeInfo {
         // TODO Auto-generated method stub
         return null;
     }
+
+    @Override
+    public Date getUpdatedDate() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public String getOwner() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 }

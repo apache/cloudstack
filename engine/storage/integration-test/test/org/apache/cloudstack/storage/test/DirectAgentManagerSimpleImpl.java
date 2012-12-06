@@ -18,9 +18,13 @@
  */
 package org.apache.cloudstack.storage.test;
 
+import java.util.HashMap;
 import java.util.Map;
 
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
+
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -35,11 +39,16 @@ import com.cloud.exception.ConnectionException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status.Event;
+import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.xen.resource.XcpOssResource;
 import com.cloud.resource.ServerResource;
 
-public class DirectAgentManagerImpl implements AgentManager {
-
+public class DirectAgentManagerSimpleImpl implements AgentManager {
+    private static final Logger logger = Logger.getLogger(DirectAgentManagerSimpleImpl.class);
+    private Map<Long, ServerResource> hostResourcesMap = new HashMap<Long, ServerResource>();
+    @Inject
+    HostDao hostDao;
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         // TODO Auto-generated method stub
@@ -70,10 +79,43 @@ public class DirectAgentManagerImpl implements AgentManager {
         return null;
     }
 
+    protected void loadResource(Long hostId) {
+        HostVO host = hostDao.findById(hostId);
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("guid", host.getGuid());
+        params.put("ipaddress", host.getPrivateIpAddress());
+        params.put("username", "root");
+        params.put("password", "password");
+        params.put("zone", String.valueOf(host.getDataCenterId()));
+        params.put("pod", String.valueOf(host.getPodId()));
+        
+        ServerResource resource = null;
+        if (host.getHypervisorType() == HypervisorType.XenServer) {
+             resource = new XcpOssResource();
+        }
+        
+        try {
+            resource.configure(host.getName(), params);
+            hostResourcesMap.put(hostId, resource);
+        } catch (ConfigurationException e) {
+            logger.debug("Failed to load resource:" + e.toString());
+        }
+    }
+
     @Override
-    public Answer send(Long hostId, Command cmd) throws AgentUnavailableException, OperationTimedoutException {
-        // TODO Auto-generated method stub
-        return null;
+    public synchronized Answer send(Long hostId, Command cmd) throws AgentUnavailableException, OperationTimedoutException {
+        ServerResource resource = hostResourcesMap.get(hostId);
+        if (resource == null) {
+            loadResource(hostId);
+            resource = hostResourcesMap.get(hostId);
+        }
+        
+        if (resource == null) {
+            return null;
+        }
+        
+        Answer answer = resource.executeRequest(cmd);
+        return answer;
     }
 
     @Override

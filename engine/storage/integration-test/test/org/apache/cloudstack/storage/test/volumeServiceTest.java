@@ -293,8 +293,7 @@ public class volumeServiceTest {
 		DefaultPrimaryDatastoreProviderImpl provider = ComponentInject.inject(DefaultPrimaryDatastoreProviderImpl.class);
 		//assertNotNull(provider.dataStoreDao);
 
-		DefaultPrimaryDataStore dpdsi = new DefaultPrimaryDataStore(null, null, null);
-		ComponentInject.inject(dpdsi);
+		DefaultPrimaryDataStore dpdsi = DefaultPrimaryDataStore.createDataStore(null, null, null);
 		//assertNotNull(dpdsi.volumeDao);
 	}
 

@@ -5,6 +5,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
@@ -167,5 +168,29 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
     public boolean installTemplate(TemplateOnPrimaryDataStoreInfo template) {
         // TODO Auto-generated method stub
         return true;
+    }
+
+    @Override
+    public String getUuid() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public State getManagedState() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public String getName() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public String getType() {
+        // TODO Auto-generated method stub
+        return null;
     }
 }

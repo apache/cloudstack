@@ -139,7 +139,6 @@ public class VolumeServiceImpl implements VolumeService {
         try {
             dataStore.installTemplate(templateOnPrimaryStoreObj);
             templateOnPrimaryStoreObj.updateStatus(Status.CREATED);
-           
         } catch (Exception e) {
             templateOnPrimaryStoreObj.updateStatus(Status.ABANDONED);
             templateOnPrimaryStoreObj.stateTransit(TemplateOnPrimaryDataStoreStateMachine.Event.OperationFailed);

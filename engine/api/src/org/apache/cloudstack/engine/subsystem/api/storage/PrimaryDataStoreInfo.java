@@ -37,4 +37,5 @@ public interface PrimaryDataStoreInfo {
 	public String getUuid();
 	public State getManagedState();
 	public String getName();
+	public String getType();
 }
