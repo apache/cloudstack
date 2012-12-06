@@ -458,7 +458,6 @@ setup_redundant_router() {
     mkdir -p /ramdisk
     mount tmpfs /ramdisk -t tmpfs
     mkdir -p /ramdisk/rrouter
-    rm /tmp/rrouter.lock
     ip route delete default
     cp /root/redundant_router/keepalived.conf.templ /etc/keepalived/keepalived.conf
     cp /root/redundant_router/conntrackd.conf.templ /etc/conntrackd/conntrackd.conf
@@ -596,6 +595,10 @@ setup_vpcrouter() {
 
   if [ "$hyp" == "vmware" ]; then
     setup_vmware_extra_nics
+  fi
+
+  if [ -f /etc/hosts ]; then
+    grep -q $NAME /etc/hosts || echo "127.0.0.1 $NAME" >> /etc/hosts;
   fi
 
     cat > /etc/network/interfaces << EOF
@@ -816,6 +819,8 @@ change_password() {
 }
 
 start() {
+  # Clear /tmp for file lock
+  rm -f /tmp/*.lock
   local hyp=$(hypervisor)
   [ $? -ne 0 ] && log_it "Failed to detect hypervisor type, bailing out of early init" && exit 10
   log_it "Detected that we are running inside $hyp guest"
