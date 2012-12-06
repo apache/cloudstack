@@ -257,7 +257,7 @@ migrateVolume=org.apache.cloudstack.api.user.volume.command.MigrateVolumeCmd;15
 ####                                 use that key...the key is stored in the db associated w/
 ####                                 the userId...every request to the developer API should be
 ####                                 checked against the key
-registerUserKeys=com.cloud.api.commands.RegisterCmd;1
+registerUserKeys=org.apache.cloudstack.api.admin.user.command.RegisterCmd;1
 
 ### async-query command
 queryAsyncJobResult=org.apache.cloudstack.api.user.job.command.QueryAsyncJobResultCmd;15

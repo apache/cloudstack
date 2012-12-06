@@ -37,6 +37,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.admin.user.command.ListUsersCmd;
+import org.apache.cloudstack.api.admin.user.command.RegisterCmd;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
@@ -47,7 +48,6 @@ import com.cloud.acl.SecurityChecker.AccessType;
 import com.cloud.api.ApiDBUtils;
 import org.apache.cloudstack.api.admin.user.command.DeleteUserCmd;
 import org.apache.cloudstack.api.user.account.command.ListAccountsCmd;
-import com.cloud.api.commands.RegisterCmd;
 import org.apache.cloudstack.api.admin.account.command.UpdateAccountCmd;
 import org.apache.cloudstack.api.admin.user.command.UpdateUserCmd;
 import com.cloud.configuration.Config;
