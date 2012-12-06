@@ -14,19 +14,31 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
-# The loopback network interface
 auto lo
 iface lo inet loopback
 
-# The primary network interface
-auto xenbr0
-iface xenbr0 inet dhcp
-    gateway 10.0.2.2
-    bridge_ports eth0
-
-
 auto eth0
-iface eth0 inet dhcp
+iface eth0 inet manual
+
+allow-hotplug eth1
+iface eth1 inet manual
+
+auto xenbr0
+iface xenbr0 inet static
+        bridge_ports eth0
+        address 192.168.56.10
+        netmask 255.255.255.0
+        network 192.168.56.0
+        broadcast 192.168.56.255
+        gateway 192.168.56.1
+        dns_nameservers 8.8.8.8 8.8.4.4
+        post-up route del default gw 192.168.56.1; route add default gw 192.168.56.1 metric 100;
+
+auto xenbr1
+iface xenbr1 inet dhcp
+        bridge_ports eth1
+        dns_nameservers 8.8.8.8 8.8.4.4
+        post-up route add default gw 10.0.2.2
+
 pre-up iptables-save < /etc/iptables.save
 pre-up /etc/init.d/ebtables load
