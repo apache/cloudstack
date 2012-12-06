@@ -14,50 +14,47 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
-
-import java.util.List;
+package org.apache.cloudstack.api.admin.host.command;
 
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import com.cloud.api.response.HostResponse;
-import com.cloud.exception.DiscoveryException;
+import com.cloud.async.AsyncJob;
+import com.cloud.event.EventTypes;
 import com.cloud.host.Host;
 import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 
-@Implementation(description="Adds secondary storage.", responseObject=HostResponse.class)
-public class AddSecondaryStorageCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(AddSecondaryStorageCmd.class.getName());
-    private static final String s_name = "addsecondarystorageresponse";
+@Implementation(description="Cancels host maintenance.", responseObject=HostResponse.class)
+public class CancelMaintenanceCmd extends BaseAsyncCmd  {
+    public static final Logger s_logger = Logger.getLogger(CancelMaintenanceCmd.class.getName());
+
+    private static final String s_name = "cancelhostmaintenanceresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.URL, type=CommandType.STRING, required=true, description="the URL for the secondary storage")
-    private String url;
+    @IdentityMapper(entityTableName="host")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the host ID")
+    private Long id;
 
-    @IdentityMapper(entityTableName="data_center")
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the Zone ID for the secondary storage")
-    private Long zoneId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public String getUrl() {
-        return url;
+    public Long getId() {
+        return id;
     }
 
-    public Long getZoneId() {
-        return zoneId;
-    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -68,30 +65,49 @@ public class AddSecondaryStorageCmd extends BaseCmd {
         return s_name;
     }
 
+    public static String getResultObjectName() {
+        return "host";
+    }
+
     @Override
     public long getEntityOwnerId() {
+        Account account = UserContext.current().getCaller();
+        if (account != null) {
+            return account.getId();
+        }
+
         return Account.ACCOUNT_ID_SYSTEM;
     }
 
     @Override
+    public String getEventType() {
+        return EventTypes.EVENT_MAINTENANCE_CANCEL;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "canceling maintenance for host: " + getId();
+    }
+
+    @Override
+    public AsyncJob.Type getInstanceType() {
+        return AsyncJob.Type.Host;
+    }
+
+    @Override
+    public Long getInstanceId() {
+        return getId();
+    }
+
+    @Override
     public void execute(){
-        try {
-            List<? extends Host> result = _resourceService.discoverHosts(this);
-            HostResponse hostResponse = null;
-            if (result != null && result.size() > 0) {
-                for (Host host : result) {
-                    // There should only be one secondary storage host per add
-                    hostResponse = _responseGenerator.createHostResponse(host);
-                    hostResponse.setResponseName(getCommandName());
-                    hostResponse.setObjectName("secondarystorage");
-                    this.setResponseObject(hostResponse);
-                }
-            } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add secondary storage");
-            }
-        } catch (DiscoveryException ex) {
-            s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
+        Host result = _resourceService.cancelMaintenance(this);
+        if (result != null) {
+            HostResponse response = _responseGenerator.createHostResponse(result);
+            response.setResponseName(getCommandName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to cancel host maintenance");
         }
     }
 }

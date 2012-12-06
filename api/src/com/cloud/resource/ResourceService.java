@@ -19,16 +19,15 @@ package com.cloud.resource;
 import java.util.List;
 
 import com.cloud.api.commands.AddClusterCmd;
-import com.cloud.api.commands.AddHostCmd;
-import com.cloud.api.commands.AddSecondaryStorageCmd;
+import org.apache.cloudstack.api.admin.host.command.AddHostCmd;
+import org.apache.cloudstack.api.admin.host.command.AddSecondaryStorageCmd;
 import com.cloud.api.commands.AddSwiftCmd;
-import com.cloud.api.commands.CancelMaintenanceCmd;
+import org.apache.cloudstack.api.admin.host.command.CancelMaintenanceCmd;
 import com.cloud.api.commands.DeleteClusterCmd;
 import com.cloud.api.commands.ListSwiftsCmd;
-import com.cloud.api.commands.PrepareForMaintenanceCmd;
-import com.cloud.api.commands.ReconnectHostCmd;
-import com.cloud.api.commands.UpdateHostCmd;
-import com.cloud.api.commands.UpdateHostPasswordCmd;
+import org.apache.cloudstack.api.admin.host.command.PrepareForMaintenanceCmd;
+import org.apache.cloudstack.api.admin.host.command.*;
+import org.apache.cloudstack.api.admin.host.command.UpdateHostCmd;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceInUseException;
@@ -37,6 +36,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Cluster;
 import com.cloud.storage.Swift;
 import com.cloud.utils.fsm.NoTransitionException;
+import org.apache.cloudstack.api.admin.host.command.ReconnectHostCmd;
 
 public interface ResourceService {
     /**

@@ -229,18 +229,18 @@ addSwift=com.cloud.api.commands.AddSwiftCmd;1
 listSwifts=com.cloud.api.commands.ListSwiftsCmd;1
 
 #### host commands
-addHost=com.cloud.api.commands.AddHostCmd;3
+addHost=org.apache.cloudstack.api.admin.host.command.AddHostCmd;3
 addCluster=com.cloud.api.commands.AddClusterCmd;1
 deleteCluster=com.cloud.api.commands.DeleteClusterCmd;1
 updateCluster=com.cloud.api.commands.UpdateClusterCmd;1
-reconnectHost=com.cloud.api.commands.ReconnectHostCmd;1
-updateHost=com.cloud.api.commands.UpdateHostCmd;1
-deleteHost=com.cloud.api.commands.DeleteHostCmd;3
-prepareHostForMaintenance=com.cloud.api.commands.PrepareForMaintenanceCmd;1
-cancelHostMaintenance=com.cloud.api.commands.CancelMaintenanceCmd;1
-listHosts=com.cloud.api.commands.ListHostsCmd;3
-addSecondaryStorage=com.cloud.api.commands.AddSecondaryStorageCmd;1
-updateHostPassword=com.cloud.api.commands.UpdateHostPasswordCmd;1
+reconnectHost=org.apache.cloudstack.api.admin.host.command.ReconnectHostCmd;1
+updateHost=org.apache.cloudstack.api.admin.host.command.UpdateHostCmd;1
+deleteHost=org.apache.cloudstack.api.admin.host.command.DeleteHostCmd;3
+prepareHostForMaintenance=org.apache.cloudstack.api.admin.host.command.PrepareForMaintenanceCmd;1
+cancelHostMaintenance=org.apache.cloudstack.api.admin.host.command.CancelMaintenanceCmd;1
+listHosts=org.apache.cloudstack.api.admin.host.command.ListHostsCmd;3
+addSecondaryStorage=org.apache.cloudstack.api.admin.host.command.AddSecondaryStorageCmd;1
+updateHostPassword=org.apache.cloudstack.api.admin.host.command.UpdateHostPasswordCmd;1
 
 #### volume commands
 attachVolume=org.apache.cloudstack.api.user.volume.command.AttachVolumeCmd;15

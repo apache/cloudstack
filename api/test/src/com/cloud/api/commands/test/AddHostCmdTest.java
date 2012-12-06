@@ -19,6 +19,7 @@ package src.com.cloud.api.commands.test;
 import junit.framework.Assert;
 import junit.framework.TestCase;
 
+import org.apache.cloudstack.api.admin.host.command.AddHostCmd;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -27,7 +28,6 @@ import org.mockito.Mockito;
 
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ServerApiException;
-import com.cloud.api.commands.AddHostCmd;
 import com.cloud.api.response.HostResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.exception.DiscoveryException;

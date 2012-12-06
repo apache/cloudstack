@@ -14,62 +14,53 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.admin.host.command;
 
 import org.apache.log4j.Logger;
-
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.user.Account;
 
-@Implementation(description = "Update password of a host/pool on management server.", responseObject = SuccessResponse.class)
-public class UpdateHostPasswordCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdateHostPasswordCmd.class.getName());
+@Implementation(description = "Deletes a host.", responseObject = SuccessResponse.class)
+public class DeleteHostCmd extends BaseCmd {
+    public static final Logger s_logger = Logger.getLogger(DeleteHostCmd.class.getName());
 
-    private static final String s_name = "updatehostpasswordresponse";
+    private static final String s_name = "deletehostresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    // TO DO - this is of no use currently. Probably need to remove it.
     @IdentityMapper(entityTableName="host")
-    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.LONG, description="the host ID")
-    private Long hostId;
+    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, required = true, description = "the host ID")
+    private Long id;
 
-    @IdentityMapper(entityTableName="cluster")
-    @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.LONG, description="the cluster ID")
-    private Long clusterId;
+    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, description = "Force delete the host. All HA enabled vms running on the host will be put to HA; HA disabled ones will be stopped")
+    private Boolean forced;
 
-    @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required=true, description="the username for the host/cluster")
-    private String username;
-
-    @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, required=true, description="the new password for the host/cluster")
-    private String password;
+    @Parameter(name = ApiConstants.FORCED_DESTROY_LOCAL_STORAGE, type = CommandType.BOOLEAN, description = "Force destroy local storage on this host. All VMs created on this local storage will be destroyed")
+    private Boolean forceDestroyLocalStorage;
 
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
 
-    public Long getHostId() {
-        return hostId;
+    public Long getId() {
+        return id;
     }
 
-    public Long getClusterId() {
-        return clusterId;
+    public boolean isForced() {
+        return (forced != null) ? forced : false;
     }
 
-    public String getPassword() {
-        return password;
-    }
-
-    public String getUsername() {
-        return username;
+    public boolean isForceDestoryLocalStorage() {
+        return (forceDestroyLocalStorage != null) ? forceDestroyLocalStorage : true;
     }
 
     // ///////////////////////////////////////////////////
@@ -88,8 +79,12 @@ public class UpdateHostPasswordCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        _mgr.updateHostPassword(this);
-        _resourceService.updateHostPassword(this);
-        this.setResponseObject(new SuccessResponse(getCommandName()));
+        boolean result = _resourceService.deleteHost(getId(), isForced(), isForceDestoryLocalStorage());
+        if (result) {
+            SuccessResponse response = new SuccessResponse(getCommandName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete host");
+        }
     }
 }
