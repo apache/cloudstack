@@ -107,15 +107,15 @@ listOsTypes=org.apache.cloudstack.api.user.guest.command.ListGuestOsCmd;15
 listOsCategories=org.apache.cloudstack.api.user.guest.command.ListGuestOsCategoriesCmd;15
 
 #### service offering commands
-createServiceOffering=com.cloud.api.commands.CreateServiceOfferingCmd;1
-deleteServiceOffering=com.cloud.api.commands.DeleteServiceOfferingCmd;1
-updateServiceOffering=com.cloud.api.commands.UpdateServiceOfferingCmd;1
+createServiceOffering=org.apache.cloudstack.api.admin.offering.command.CreateServiceOfferingCmd;1
+deleteServiceOffering=org.apache.cloudstack.api.admin.offering.command.DeleteServiceOfferingCmd;1
+updateServiceOffering=org.apache.cloudstack.api.admin.offering.command.UpdateServiceOfferingCmd;1
 listServiceOfferings=org.apache.cloudstack.api.user.offering.command.ListServiceOfferingsCmd;15
 
 #### disk offering commands
-createDiskOffering=com.cloud.api.commands.CreateDiskOfferingCmd;1
-updateDiskOffering=com.cloud.api.commands.UpdateDiskOfferingCmd;1
-deleteDiskOffering=com.cloud.api.commands.DeleteDiskOfferingCmd;1
+createDiskOffering=org.apache.cloudstack.api.admin.offering.command.CreateDiskOfferingCmd;1
+updateDiskOffering=org.apache.cloudstack.api.admin.offering.command.UpdateDiskOfferingCmd;1
+deleteDiskOffering=org.apache.cloudstack.api.admin.offering.command.DeleteDiskOfferingCmd;1
 listDiskOfferings=org.apache.cloudstack.api.user.offering.command.ListDiskOfferingsCmd;15
 
 #### vlan commands

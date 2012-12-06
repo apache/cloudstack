@@ -14,7 +14,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.admin.offering.command;
+
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -23,50 +24,29 @@ import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import com.cloud.api.response.DiskOfferingResponse;
-import com.cloud.offering.DiskOffering;
+import com.cloud.api.response.SuccessResponse;
 import com.cloud.user.Account;
 
-@Implementation(description="Updates a disk offering.", responseObject=DiskOfferingResponse.class)
-public class UpdateDiskOfferingCmd extends BaseCmd{
-    public static final Logger s_logger = Logger.getLogger(UpdateDiskOfferingCmd.class.getName());
-    private static final String s_name = "updatediskofferingresponse";
+@Implementation(description="Deletes a service offering.", responseObject=SuccessResponse.class)
+public class DeleteServiceOfferingCmd extends BaseCmd{
+    public static final Logger s_logger = Logger.getLogger(DeleteServiceOfferingCmd.class.getName());
+    private static final String s_name = "deleteserviceofferingresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="updates alternate display text of the disk offering with this value", length=4096)
-    private String displayText;
-
     @IdentityMapper(entityTableName="disk_offering")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="ID of the disk offering")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the service offering")
     private Long id;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="updates name of the disk offering with this value")
-    private String diskOfferingName;
-
-    @Parameter(name=ApiConstants.SORT_KEY, type=CommandType.INTEGER, description="sort key of the disk offering, integer")
-    private Integer sortKey;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public String getDisplayText() {
-        return displayText;
-    }
-
     public Long getId() {
         return id;
-    }
-
-    public String getDiskOfferingName() {
-        return diskOfferingName;
-    }
-
-    public Integer getSortKey() {
-        return sortKey;
     }
 
 
@@ -86,13 +66,12 @@ public class UpdateDiskOfferingCmd extends BaseCmd{
 
     @Override
     public void execute(){
-        DiskOffering result = _configService.updateDiskOffering(this);
-        if (result != null){
-            DiskOfferingResponse response = _responseGenerator.createDiskOfferingResponse(result);
-            response.setResponseName(getCommandName());
+        boolean result = _configService.deleteServiceOffering(this);
+        if (result) {
+            SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update disk offering");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete service offering");
         }
     }
 }
