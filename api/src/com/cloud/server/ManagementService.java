@@ -24,6 +24,7 @@ import java.util.Set;
 
 import com.cloud.alert.Alert;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.admin.cluster.command.ListClustersCmd;
 import org.apache.cloudstack.api.admin.host.command.ListHostsCmd;
 import org.apache.cloudstack.api.admin.host.command.UpdateHostPasswordCmd;
 import org.apache.cloudstack.api.admin.pod.command.ListPodsByCmd;
@@ -44,7 +45,6 @@ import com.cloud.api.commands.ListAlertsCmd;
 import org.apache.cloudstack.api.user.job.command.ListAsyncJobsCmd;
 import com.cloud.api.commands.ListCapacityCmd;
 import org.apache.cloudstack.api.admin.config.command.ListCfgsByCmd;
-import com.cloud.api.commands.ListClustersCmd;
 import org.apache.cloudstack.api.user.event.command.ListEventsCmd;
 import org.apache.cloudstack.api.user.guest.command.ListGuestOsCategoriesCmd;
 import org.apache.cloudstack.api.user.iso.command.ListIsosCmd;

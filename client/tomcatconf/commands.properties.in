@@ -230,9 +230,9 @@ listSwifts=com.cloud.api.commands.ListSwiftsCmd;1
 
 #### host commands
 addHost=org.apache.cloudstack.api.admin.host.command.AddHostCmd;3
-addCluster=com.cloud.api.commands.AddClusterCmd;1
-deleteCluster=com.cloud.api.commands.DeleteClusterCmd;1
-updateCluster=com.cloud.api.commands.UpdateClusterCmd;1
+addCluster=org.apache.cloudstack.api.admin.cluster.command.AddClusterCmd;1
+deleteCluster=org.apache.cloudstack.api.admin.cluster.command.DeleteClusterCmd;1
+updateCluster=org.apache.cloudstack.api.admin.cluster.command.UpdateClusterCmd;1
 reconnectHost=org.apache.cloudstack.api.admin.host.command.ReconnectHostCmd;1
 updateHost=org.apache.cloudstack.api.admin.host.command.UpdateHostCmd;1
 deleteHost=org.apache.cloudstack.api.admin.host.command.DeleteHostCmd;3
@@ -268,7 +268,7 @@ listStoragePools=org.apache.cloudstack.api.admin.storagepool.command.ListStorage
 createStoragePool=org.apache.cloudstack.api.admin.storagepool.command.CreateStoragePoolCmd;1
 updateStoragePool=org.apache.cloudstack.api.admin.storagepool.command.UpdateStoragePoolCmd;1
 deleteStoragePool=org.apache.cloudstack.api.admin.storagepool.command.DeletePoolCmd;1
-listClusters=com.cloud.api.commands.ListClustersCmd;3
+listClusters=org.apache.cloudstack.api.admin.cluster.command.ListClustersCmd;3
 enableStorageMaintenance=org.apache.cloudstack.api.admin.storagepool.command.PreparePrimaryStorageForMaintenanceCmd;1
 cancelStorageMaintenance=org.apache.cloudstack.api.admin.storagepool.command.CancelPrimaryStorageMaintenanceCmd;1
 
