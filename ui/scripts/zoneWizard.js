@@ -368,9 +368,14 @@
                 success: function(json) {								 
 									var items = json.listhypervisorsresponse.hypervisor;
 									var array1 = [];
+									
+									var firstOption = "XenServer";
+									if(args.context.zones[0]['network-model']	== "Advanced" && args.context.zones[0]['zone-advanced-sg-enabled'] ==	"on")
+									  firstOption = "KVM";
+									
 									if(items != null) {
 									  for(var i = 0; i < items.length; i++) {
-										  if(items[i].name == "XenServer")
+										  if(items[i].name == firstOption)
 											  array1.unshift({id: items[i].name, description: items[i].name});
 											else
 											  array1.push({id: items[i].name, description: items[i].name});
