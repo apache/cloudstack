@@ -187,13 +187,13 @@ configureVirtualRouterElement=org.apache.cloudstack.api.admin.router.command.Con
 createVirtualRouterElement=org.apache.cloudstack.api.admin.router.command.CreateVirtualRouterElementCmd;7
 
 #### system vm commands
-startSystemVm=com.cloud.api.commands.StartSystemVMCmd;1
-rebootSystemVm=com.cloud.api.commands.RebootSystemVmCmd;1
-stopSystemVm=com.cloud.api.commands.StopSystemVmCmd;1
-destroySystemVm=com.cloud.api.commands.DestroySystemVmCmd;1
-listSystemVms=com.cloud.api.commands.ListSystemVMsCmd;3
-migrateSystemVm=com.cloud.api.commands.MigrateSystemVMCmd;1
-changeServiceForSystemVm=com.cloud.api.commands.UpgradeSystemVMCmd;1
+startSystemVm=org.apache.cloudstack.api.admin.systemvm.command.StartSystemVMCmd;1
+rebootSystemVm=org.apache.cloudstack.api.admin.systemvm.command.RebootSystemVmCmd;1
+stopSystemVm=org.apache.cloudstack.api.admin.systemvm.command.StopSystemVmCmd;1
+destroySystemVm=org.apache.cloudstack.api.admin.systemvm.command.DestroySystemVmCmd;1
+listSystemVms=org.apache.cloudstack.api.admin.systemvm.command.ListSystemVMsCmd;3
+migrateSystemVm=org.apache.cloudstack.api.admin.systemvm.command.MigrateSystemVMCmd;1
+changeServiceForSystemVm=org.apache.cloudstack.api.admin.systemvm.command.UpgradeSystemVMCmd;1
 
 #### configuration commands
 updateConfiguration=com.cloud.api.commands.UpdateCfgCmd;1

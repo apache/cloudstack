@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.admin.systemvm.command;
 
 import org.apache.log4j.Logger;
 
@@ -32,11 +32,11 @@ import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.vm.VirtualMachine;
 
-@Implementation(description="Reboots a system VM.", responseObject=SystemVmResponse.class)
-public class RebootSystemVmCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(RebootSystemVmCmd.class.getName());
+@Implementation(responseObject=SystemVmResponse.class, description="Starts a system virtual machine.")
+public class StartSystemVMCmd extends BaseAsyncCmd {
+    public static final Logger s_logger = Logger.getLogger(StartSystemVMCmd.class.getName());
 
-    private static final String s_name = "rebootsystemvmresponse";
+    private static final String s_name = "startsystemvmresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -63,6 +63,10 @@ public class RebootSystemVmCmd extends BaseAsyncCmd {
         return s_name;
     }
 
+    public static String getResultObjectName() {
+        return "systemvm";
+    }
+
     @Override
     public long getEntityOwnerId() {
         Account account = UserContext.current().getCaller();
@@ -77,16 +81,16 @@ public class RebootSystemVmCmd extends BaseAsyncCmd {
     public String getEventType() {
         VirtualMachine.Type type = _mgr.findSystemVMTypeById(getId());
         if(type == VirtualMachine.Type.ConsoleProxy){
-            return EventTypes.EVENT_PROXY_REBOOT;
+            return EventTypes.EVENT_PROXY_START;
         }
         else{
-            return EventTypes.EVENT_SSVM_REBOOT;
+            return EventTypes.EVENT_SSVM_START;
         }
     }
 
     @Override
     public String getEventDescription() {
-        return  "rebooting system vm: " + getId();
+        return  "starting system vm: " + getId();
     }
 
     public AsyncJob.Type getInstanceType() {
@@ -100,13 +104,13 @@ public class RebootSystemVmCmd extends BaseAsyncCmd {
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Vm Id: "+getId());
-        VirtualMachine result = _mgr.rebootSystemVM(this);
-        if (result != null) {
-            SystemVmResponse response = _responseGenerator.createSystemVmResponse(result);
+        VirtualMachine instance = _mgr.startSystemVM(getId());
+        if (instance != null) {
+            SystemVmResponse response = _responseGenerator.createSystemVmResponse(instance);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Fail to reboot system vm");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Fail to start system vm");
         }
     }
 }
