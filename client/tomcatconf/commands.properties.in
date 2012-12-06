@@ -26,7 +26,7 @@ disableAccount=org.apache.cloudstack.api.admin.account.command.DisableAccountCmd
 enableAccount=org.apache.cloudstack.api.admin.account.command.EnableAccountCmd;7
 ###lockAccount=com.cloud.api.commands.LockAccountCmd;7
 listAccounts=org.apache.cloudstack.api.user.account.command.ListAccountsCmd;15
-markDefaultZoneForAccount=com.cloud.api.commands.MarkDefaultZoneForAccountCmd;1
+markDefaultZoneForAccount=org.apache.cloudstack.api.admin.zone.command.MarkDefaultZoneForAccountCmd;1
 
 #### User commands
 createUser=org.apache.cloudstack.api.admin.user.command.CreateUserCmd;3
@@ -209,9 +209,9 @@ deletePod=com.cloud.api.commands.DeletePodCmd;1
 listPods=com.cloud.api.commands.ListPodsByCmd;3
 
 #### zone commands
-createZone=com.cloud.api.commands.CreateZoneCmd;1
-updateZone=com.cloud.api.commands.UpdateZoneCmd;1
-deleteZone=com.cloud.api.commands.DeleteZoneCmd;1
+createZone=org.apache.cloudstack.api.admin.zone.command.CreateZoneCmd;1
+updateZone=org.apache.cloudstack.api.admin.zone.command.UpdateZoneCmd;1
+deleteZone=org.apache.cloudstack.api.admin.zone.command.DeleteZoneCmd;1
 listZones=org.apache.cloudstack.api.user.zone.command.ListZonesByCmd;15
 
 #### events commands

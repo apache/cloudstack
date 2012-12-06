@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.admin.zone.command;
 
 import org.apache.log4j.Logger;
 
