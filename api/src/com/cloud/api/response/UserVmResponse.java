@@ -336,6 +336,10 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
         this.securityGroupList = securityGroups;
     }
 
+    public void addSecurityGroup(SecurityGroupResponse securityGroup){
+        this.securityGroupList.add(securityGroup);
+    }
+
     public void setProjectId(String projectId) {
         this.projectId = projectId;
     }

@@ -473,58 +473,61 @@ public class ApiDispatcher {
 	            	//for maps, specify access to be checkd on key or value.
 	            	
 	            	if(parameterAnnotation.resourceType() != null){
-	            		 Class<?>[] entity = parameterAnnotation.resourceType();
-	            				 
-	            		 if(ControlledEntity.class.isAssignableFrom(entity)){
-	                         if (s_logger.isDebugEnabled()) {
-	                             s_logger.debug("entity name is:" + entity.getName());
-	                         }
-	                         
-	                         if(s_instance._daoNameMap.containsKey(entity.getName())){
-	                        	 Class<? extends GenericDao> daoClass = s_instance._daoNameMap.get(entity.getName());
-	                        	 GenericDao daoClassInstance =  s_instance._locator.getDao(daoClass);
-	                        	 
-	                        	 //Check if the parameter type is a single Id or list of id's/name's
-	                        	 switch (fieldType) {                        	 
-			                         case LIST:
-		                                 CommandType listType = parameterAnnotation.collectionType();
-		                                 switch (listType) {
-    		                                 case LONG: 
-    		                                	 List<Long> listParam = new ArrayList<Long>();
-     											 listParam = (List)field.get(cmd);
-    
-    		                                	 for(Long entityId : listParam){
-    			    	                        	 ControlledEntity entityObj = (ControlledEntity)daoClassInstance.findById(entityId);
-    			    	                        	 entitiesToAccess.add(entityObj);
-    		                                	 }
-    			    	                     break;
-    		                                 /*case STRING:
-    		                                	 List<String> listParam = new ArrayList<String>();
-    		                                	 listParam = (List)field.get(cmd);
-    		                                	 for(String entityName: listParam){
-    			    	                        	 ControlledEntity entityObj = (ControlledEntity)daoClassInstance(entityId);
-    			    	                        	 entitiesToAccess.add(entityObj);
-    		                                	 }
-    		                                     break;
-    		                                  */
-    		                                 default:
-    		                                 break;
-		                                 }
-			                             break;
-			                         case LONG:
-			                        	 Long entityId = (Long)field.get(cmd);
-			                        	 ControlledEntity entityObj = (ControlledEntity)daoClassInstance.findById(entityId);
-			                        	 entitiesToAccess.add(entityObj);
-			                        	 break;
-			                         default:
-			                        	 break;
-	                        	 }
-	                             
-	                        	 
-	                         }
-	            			 
-	            		 }
-	            		 
+				 Class<?>[] entityList = parameterAnnotation.resourceType();
+				 for (Class entity : entityList){
+                            if (ControlledEntity.class.isAssignableFrom(entity)) {
+                                if (s_logger.isDebugEnabled()) {
+                                    s_logger.debug("entity name is:" + entity.getName());
+                                }
+
+                                if (s_instance._daoNameMap.containsKey(entity.getName())) {
+                                    Class<? extends GenericDao> daoClass = s_instance._daoNameMap.get(entity.getName());
+                                    GenericDao daoClassInstance = s_instance._locator.getDao(daoClass);
+
+                                    // Check if the parameter type is a single
+                                    // Id or list of id's/name's
+                                    switch (fieldType) {
+                                    case LIST:
+                                        CommandType listType = parameterAnnotation.collectionType();
+                                        switch (listType) {
+                                        case LONG:
+                                            List<Long> listParam = new ArrayList<Long>();
+                                            listParam = (List) field.get(cmd);
+
+                                            for (Long entityId : listParam) {
+                                                ControlledEntity entityObj = (ControlledEntity) daoClassInstance.findById(entityId);
+                                                entitiesToAccess.add(entityObj);
+                                            }
+                                            break;
+                                        /*
+                                         * case STRING: List<String> listParam =
+                                         * new ArrayList<String>(); listParam =
+                                         * (List)field.get(cmd); for(String
+                                         * entityName: listParam){
+                                         * ControlledEntity entityObj =
+                                         * (ControlledEntity
+                                         * )daoClassInstance(entityId);
+                                         * entitiesToAccess.add(entityObj); }
+                                         * break;
+                                         */
+                                        default:
+                                            break;
+                                        }
+                                        break;
+                                    case LONG:
+                                        Long entityId = (Long) field.get(cmd);
+                                        ControlledEntity entityObj = (ControlledEntity) daoClassInstance.findById(entityId);
+                                        entitiesToAccess.add(entityObj);
+                                        break;
+                                    default:
+                                        break;
+                                    }
+
+                                }
+
+                            }
+                        }
+
 	            	}
 	            	
 	            }

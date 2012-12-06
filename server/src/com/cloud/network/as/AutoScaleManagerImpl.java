@@ -353,7 +353,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleManager, AutoScaleSe
          * For ex. if projectId is given as a string instead of an long value, this
          * will be throwing an error.
          */
-        ApiDispatcher.setupParameters(new DeployVMCmd(), deployParams);
+        ApiDispatcher.setupParameters(new DeployVMCmd(), deployParams, new ArrayList<ControlledEntity>());
 
         if (autoscaleUserId == null) {
             autoscaleUserId = UserContext.current().getCallerUserId();
