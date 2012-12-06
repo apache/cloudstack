@@ -28,6 +28,9 @@ import com.cloud.user.Account;
 import com.cloud.event.EventTypes;
 import com.cloud.async.AsyncJob;
 import com.cloud.api.response.AccountResponse;
+import com.cloud.api.response.DomainResponse;
+import com.cloud.api.response.ZoneResponse;
+
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.BaseCmd;
 
@@ -41,16 +44,16 @@ public class MarkDefaultZoneForAccountCmd extends BaseAsyncCmd {
     ////////////////API parameters //////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="account")
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, required=true, description="Name of the account that is to be marked.")
+    //@IdentityMapper(entityTableName="account")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, required=true, description="Name of the account that is to be marked.", entityType=AccountResponse.class)
     private String accountName;
 
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, required=true, description="Marks the account that belongs to the specified domain.")
+    //@IdentityMapper(entityTableName="domain")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, required=true, description="Marks the account that belongs to the specified domain.", entityType=DomainResponse.class)
     private Long domainId;
 
-    @IdentityMapper(entityTableName="data_center")
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="The Zone ID with which the account is to be marked.")
+    //@IdentityMapper(entityTableName="data_center")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="The Zone ID with which the account is to be marked.", entityType=ZoneResponse.class)
     private Long defaultZoneId;
 
     /////////////////////////////////////////////////////
