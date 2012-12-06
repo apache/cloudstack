@@ -23,8 +23,8 @@
 # in cloud.spec, add a %changelog entry there, and add an 
 # entry in debian/changelog. SHORTVERSION is used in package
 # naming for deb/rpm, VERSION is used for tarball and bin 
-VERSION = '4.0.0-incubating'
-SHORTVERSION = '4.0.0'
+VERSION = '4.0.1-incubating'
+SHORTVERSION = '4.0.1'
 APPNAME = 'cloud'
 
 import shutil,os
