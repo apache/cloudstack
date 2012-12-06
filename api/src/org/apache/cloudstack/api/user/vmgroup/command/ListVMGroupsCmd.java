@@ -42,7 +42,7 @@ public class ListVMGroupsCmd extends BaseListProjectAndAccountResourcesCmd {
     /////////////////////////////////////////////////////
 
     @IdentityMapper(entityTableName="instance_group")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list instance groups by ID")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list instance groups by ID", entityType=InstanceGroupResponse.class)
     private Long id;
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="list instance groups by name")

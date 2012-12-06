@@ -24,6 +24,8 @@ import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+
+import com.cloud.api.response.InstanceGroupResponse;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.user.Account;
 import com.cloud.vm.InstanceGroup;
@@ -37,8 +39,8 @@ public class DeleteVMGroupCmd extends BaseCmd{
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="instance_group")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the instance group")
+    //@IdentityMapper(entityTableName="instance_group")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the instance group", entityType=InstanceGroupResponse.class)
     private Long id;
 
     /////////////////////////////////////////////////////

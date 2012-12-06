@@ -38,8 +38,8 @@ public class UpdateVMGroupCmd extends BaseCmd{
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="instance_group")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="Instance group ID")
+    //@IdentityMapper(entityTableName="instance_group")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="Instance group ID", entityType=InstanceGroupResponse.class)
     private Long id;
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="new instance group name")

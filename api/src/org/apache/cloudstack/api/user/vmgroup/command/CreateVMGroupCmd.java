@@ -24,7 +24,10 @@ import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+
+import com.cloud.api.response.DomainResponse;
 import com.cloud.api.response.InstanceGroupResponse;
+import com.cloud.api.response.ProjectAccountResponse;
 import com.cloud.user.UserContext;
 import com.cloud.vm.InstanceGroup;
 
@@ -44,12 +47,12 @@ public class CreateVMGroupCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "the account of the instance group. The account parameter must be used with the domainId parameter.")
     private String accountName;
 
-    @IdentityMapper(entityTableName = "domain")
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.LONG, description = "the domain ID of account owning the instance group")
+    //@IdentityMapper(entityTableName = "domain")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.LONG, description = "the domain ID of account owning the instance group", entityType=DomainResponse.class)
     private Long domainId;
 
-    @IdentityMapper(entityTableName = "projects")
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.LONG, description = "The project of the instance group")
+    //@IdentityMapper(entityTableName = "projects")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.LONG, description = "The project of the instance group", entityType=ProjectAccountResponse.class)
     private Long projectId;
 
     // ///////////////////////////////////////////////////
