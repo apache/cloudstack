@@ -1,0 +1,7 @@
+rvm use ruby-1.9.3@vagrant-xen-cloudstack --create
+export VAGRANT_HOME=$HOME/.vagrant.d-xen-cloudstack
+bundle check > /dev/null 2>&1
+RETVAL=$?
+if [ $RETVAL -ne 0 ]; then
+    bundle install
+fi

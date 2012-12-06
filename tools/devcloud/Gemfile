@@ -1,0 +1,2 @@
+source 'https://rubygems.org'
+gem 'vagrant', :git => 'https://github.com/chipchilders/vagrant'

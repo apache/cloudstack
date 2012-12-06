@@ -1,0 +1,34 @@
+GIT
+  remote: https://github.com/chipchilders/vagrant
+  revision: 781b2d974108a5421765883034fc27dd9857e9c0
+  specs:
+    vagrant (1.1.0.dev)
+      archive-tar-minitar (= 0.5.2)
+      childprocess (~> 0.3.1)
+      erubis (~> 2.7.0)
+      i18n (~> 0.6.0)
+      json (~> 1.6.6)
+      log4r (~> 1.1.9)
+      net-scp (~> 1.0.4)
+      net-ssh (~> 2.2.2)
+
+GEM
+  remote: https://rubygems.org/
+  specs:
+    archive-tar-minitar (0.5.2)
+    childprocess (0.3.6)
+      ffi (~> 1.0, >= 1.0.6)
+    erubis (2.7.0)
+    ffi (1.2.0)
+    i18n (0.6.1)
+    json (1.6.7)
+    log4r (1.1.10)
+    net-scp (1.0.4)
+      net-ssh (>= 1.99.1)
+    net-ssh (2.2.2)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  vagrant!

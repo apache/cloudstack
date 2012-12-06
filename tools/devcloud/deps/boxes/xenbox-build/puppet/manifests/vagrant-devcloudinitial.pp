@@ -1,0 +1,1 @@
+node default { include devcloudinitial }
