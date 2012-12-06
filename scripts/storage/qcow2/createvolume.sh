@@ -101,7 +101,13 @@ create_from_file() {
   if [ -b $volimg ]; then
       $qemu_img convert -f raw -O qcow2 "$volimg" /$volfs/$volname
   else
+    # if backing image exists, we need to combine them, otherwise
+    # copy the image to preserve snapshots/compression
+    if $qemu_img info "$volimg" | grep -q backing; then
       $qemu_img convert -f qcow2 -O qcow2 "$volimg" /$volfs/$volname >& /dev/null
+    else
+      cp -f $volimg /$volfs/$volname
+    fi
   fi
   
   if [ "$cleanup" == "true" ]

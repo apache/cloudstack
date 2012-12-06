@@ -688,10 +688,16 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         PhysicalDiskFormat destFormat = newDisk.getFormat();
 
         if ((srcPool.getType() != StoragePoolType.RBD) && (destPool.getType() != StoragePoolType.RBD)) {
-            Script.runSimpleBashScript("qemu-img convert -f " + sourceFormat
-                + " -O " + destFormat
-                + " " + sourcePath
-                + " " + destPath);
+            if (sourceFormat.equals(destFormat) && 
+                Script.runSimpleBashScript("qemu-img info " + sourcePath + "|grep backing") == null) {
+                Script.runSimpleBashScript("cp -f " + sourcePath + " " + destPath);
+
+            } else {
+                Script.runSimpleBashScript("qemu-img convert -f " + sourceFormat
+                    + " -O " + destFormat
+                    + " " + sourcePath
+                    + " " + destPath);
+            }
         } else if ((srcPool.getType() != StoragePoolType.RBD) && (destPool.getType() == StoragePoolType.RBD))  {
             Script.runSimpleBashScript("qemu-img convert -f " + sourceFormat
                     + " -O " + destFormat
