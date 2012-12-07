@@ -24,9 +24,11 @@ import java.util.Set;
 
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import com.cloud.api.response.DomainRouterResponse;
+import com.cloud.api.response.ResourceTagResponse;
 import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.api.view.vo.DomainRouterJoinVO;
+import com.cloud.api.view.vo.ResourceTagJoinVO;
 import com.cloud.api.view.vo.SecurityGroupJoinVO;
 import com.cloud.api.view.vo.UserVmJoinVO;
 import com.cloud.async.AsyncJobManager;
@@ -141,6 +143,7 @@ import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplateSwiftDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeHostDao;
+import com.cloud.tags.dao.ResourceTagJoinDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountDetailsDao;
 import com.cloud.user.AccountVO;
@@ -243,6 +246,8 @@ public class ApiDBUtils {
     private static AutoScaleVmGroupPolicyMapDao _asVmGroupPolicyMapDao;
     private static AutoScalePolicyDao _asPolicyDao;
     private static CounterDao _counterDao;
+    private static ResourceTagJoinDao _tagJoinDao;
+
     static {
         _ms = (ManagementServer) ComponentLocator.getComponent(ManagementServer.Name);
         ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
@@ -311,6 +316,7 @@ public class ApiDBUtils {
         _asVmGroupPolicyMapDao = locator.getDao(AutoScaleVmGroupPolicyMapDao.class);
         _asVmGroupPolicyMapDao = locator.getDao(AutoScaleVmGroupPolicyMapDao.class);
         _counterDao = locator.getDao(CounterDao.class);
+        _tagJoinDao = locator.getDao(ResourceTagJoinDao.class);
 
         // Note: stats collector should already have been initialized by this time, otherwise a null instance is returned
         _statsCollector = StatsCollector.getInstance();
@@ -616,8 +622,8 @@ public class ApiDBUtils {
         return _site2SiteVpnGatewayDao.findById(vpnGatewayId);
     }
     
-    public static Site2SiteCustomerGatewayVO findCustomerGatewayById(Long customerGatewayId) {    	
-    	return _site2SiteCustomerGatewayDao.findById(customerGatewayId);
+    public static Site2SiteCustomerGatewayVO findCustomerGatewayById(Long customerGatewayId) {      
+        return _site2SiteCustomerGatewayDao.findById(customerGatewayId);
     }
     
     public static List<UserVO> listUsersByAccount(long accountId) {
@@ -945,5 +951,23 @@ public class ApiDBUtils {
 
     public static List<SecurityGroupJoinVO> findSecurityGroupViewById(Long sgId){
         return _securityGroupJoinDao.searchByIds(sgId);
+    }
+
+    public static ResourceTagResponse newResourceTagResponse(ResourceTagJoinVO vsg, boolean keyValueOnly) {
+        return _tagJoinDao.newResourceTagResponse(vsg, keyValueOnly);
+    }
+
+    public static ResourceTagJoinVO newResourceTagView(ResourceTag sg){
+        return _tagJoinDao.newResourceTagView(sg);
+    }
+
+    public static ResourceTagJoinVO findResourceTagViewById(Long tagId){
+        List<ResourceTagJoinVO> tags = _tagJoinDao.searchByIds(tagId);
+        if ( tags != null && tags.size() > 0 ){
+            return tags.get(0);
+        }
+        else{
+            return null;
+        }
     }
 }

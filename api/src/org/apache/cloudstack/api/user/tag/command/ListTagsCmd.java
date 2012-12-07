@@ -26,6 +26,7 @@ import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.ResourceTagResponse;
+import com.cloud.api.view.vo.ResourceTagJoinVO;
 import com.cloud.server.ResourceTag;
 import com.cloud.utils.Pair;
 
@@ -56,15 +57,10 @@ public class ListTagsCmd extends BaseListProjectAndAccountResourcesCmd{
     @Override
     public void execute() {
 
-      Pair<List<? extends ResourceTag>, Integer> tags = _taggedResourceService.listTags(this);
+      Pair<List<ResourceTagJoinVO>, Integer> tags = _taggedResourceService.listTags(this);
       ListResponse<ResourceTagResponse> response = new ListResponse<ResourceTagResponse>();
-      List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
-      for (ResourceTag tag : tags.first()) {
-          ResourceTagResponse tagResponse = _responseGenerator.createResourceTagResponse(tag, false);
-          tagResponses.add(tagResponse);
-      }
+      List<ResourceTagResponse> tagResponses = _responseGenerator.createResourceTagResponse(false, tags.first().toArray(new ResourceTagJoinVO[tags.first().size()]));
       response.setResponses(tagResponses, tags.second());
-
       response.setResponseName(getCommandName());
       this.setResponseObject(response);
     }

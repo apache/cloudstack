@@ -37,6 +37,7 @@ import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.api.response.SecurityGroupRuleResponse;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.api.view.vo.DomainRouterJoinVO;
+import com.cloud.api.view.vo.ResourceTagJoinVO;
 import com.cloud.api.view.vo.SecurityGroupJoinVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.network.Network;
@@ -126,29 +127,10 @@ public class SecurityGroupJoinDaoImpl extends GenericDaoBase<SecurityGroupJoinVO
         // update tag information
         Long tag_id = vsg.getTagId();
         if (tag_id != null && tag_id.longValue() > 0) {
-            ResourceTagResponse tag = new ResourceTagResponse();
-            tag.setKey(vsg.getTagKey());
-            tag.setValue(vsg.getTagValue());
-            if (vsg.getTagResourceType() != null) {
-                tag.setResourceType(vsg.getTagResourceType().toString());
+            ResourceTagJoinVO vtag = ApiDBUtils.findResourceTagViewById(tag_id);
+            if ( vtag != null ){
+                sgResponse.addTag(ApiDBUtils.newResourceTagResponse(vtag, false));
             }
-            tag.setId(vsg.getTagResourceUuid()); // tag resource uuid
-            tag.setCustomer(vsg.getTagCustomer());
-            // TODO: assuming tagAccountId and tagDomainId are the same as VM
-            // accountId and domainId
-            tag.setDomainId(vsg.getTagDomainId());
-            if (vsg.getAccountType() == Account.ACCOUNT_TYPE_PROJECT) {
-                tag.setProjectId(vsg.getProjectId());
-                tag.setProjectName(vsg.getProjectName());
-            } else {
-                tag.setAccountName(vsg.getAccountName());
-            }
-            tag.setDomainId(vsg.getDomainId()); // TODO: pending tag resource
-                                                // response uuid change
-            tag.setDomainName(vsg.getDomainName());
-
-            tag.setObjectName("tag");
-            sgResponse.addTag(tag);
         }
         sgResponse.setObjectName("securitygroup");
 
@@ -194,29 +176,10 @@ public class SecurityGroupJoinDaoImpl extends GenericDaoBase<SecurityGroupJoinVO
         // update tag information
         Long tag_id = vsg.getTagId();
         if (tag_id != null && tag_id.longValue() > 0 ) {
-            ResourceTagResponse tag = new ResourceTagResponse();
-            tag.setKey(vsg.getTagKey());
-            tag.setValue(vsg.getTagValue());
-            if (vsg.getTagResourceType() != null) {
-                tag.setResourceType(vsg.getTagResourceType().toString());
+            ResourceTagJoinVO vtag = ApiDBUtils.findResourceTagViewById(tag_id);
+            if ( vtag != null ){
+                vsgData.addTag(ApiDBUtils.newResourceTagResponse(vtag, false));
             }
-            tag.setId(vsg.getTagResourceUuid()); // tag resource uuid
-            tag.setCustomer(vsg.getTagCustomer());
-            // TODO: assuming tagAccountId and tagDomainId are the same as VM
-            // accountId and domainId
-            tag.setDomainId(vsg.getTagDomainId());
-            if (vsg.getAccountType() == Account.ACCOUNT_TYPE_PROJECT) {
-                tag.setProjectId(vsg.getProjectId());
-                tag.setProjectName(vsg.getProjectName());
-            } else {
-                tag.setAccountName(vsg.getAccountName());
-            }
-            tag.setDomainId(vsg.getDomainId()); // TODO: pending tag resource
-                                                // response uuid change
-            tag.setDomainName(vsg.getDomainName());
-
-            tag.setObjectName("tag");
-            vsgData.addTag(tag);
         }
         return vsgData;
     }

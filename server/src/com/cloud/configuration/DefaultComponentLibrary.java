@@ -171,6 +171,7 @@ import com.cloud.storage.snapshot.SnapshotSchedulerImpl;
 import com.cloud.storage.swift.SwiftManagerImpl;
 import com.cloud.storage.upload.UploadMonitorImpl;
 import com.cloud.tags.TaggedResourceManagerImpl;
+import com.cloud.tags.dao.ResourceTagJoinDaoImpl;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.template.HyervisorTemplateAdapter;
 import com.cloud.template.TemplateAdapter;
@@ -222,6 +223,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("UserVmJoinDao", UserVmJoinDaoImpl.class);
         addDao("DomainRouterJoinDao", DomainRouterJoinDaoImpl.class);
         addDao("SecurityGroupJoinDao", SecurityGroupJoinDaoImpl.class);
+        addDao("ResourceTagJoinDao", ResourceTagJoinDaoImpl.class);
         ComponentInfo<? extends GenericDao<?, ? extends Serializable>> info = addDao("ServiceOfferingDao", ServiceOfferingDaoImpl.class);
         info.addParameter("cache.size", "50");
         info.addParameter("cache.time.to.live", "600");

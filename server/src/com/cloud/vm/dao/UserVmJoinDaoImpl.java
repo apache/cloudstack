@@ -36,6 +36,7 @@ import com.cloud.api.response.NicResponse;
 import com.cloud.api.response.ResourceTagResponse;
 import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.api.response.UserVmResponse;
+import com.cloud.api.view.vo.ResourceTagJoinVO;
 import com.cloud.api.view.vo.UserVmJoinVO;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
@@ -209,29 +210,10 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
         // update tag information
         long tag_id = userVm.getTagId();
         if (tag_id > 0) {
-            ResourceTagResponse tag = new ResourceTagResponse();
-            tag.setKey(userVm.getTagKey());
-            tag.setValue(userVm.getTagValue());
-            if (userVm.getTagResourceType() != null) {
-                tag.setResourceType(userVm.getTagResourceType().toString());
+            ResourceTagJoinVO vtag = ApiDBUtils.findResourceTagViewById(tag_id);
+            if ( vtag != null ){
+                userVmResponse.addTag(ApiDBUtils.newResourceTagResponse(vtag, false));
             }
-            tag.setId(userVm.getTagResourceUuid()); // tag resource uuid
-            tag.setCustomer(userVm.getTagCustomer());
-            // TODO: assuming tagAccountId and tagDomainId are the same as VM
-            // accountId and domainId
-            tag.setDomainId(userVm.getTagDomainId());
-            if (userVm.getAccountType() == Account.ACCOUNT_TYPE_PROJECT) {
-                tag.setProjectId(userVm.getProjectId());
-                tag.setProjectName(userVm.getProjectName());
-            } else {
-                tag.setAccountName(userVm.getAccountName());
-            }
-            tag.setDomainId(userVm.getDomainId()); // TODO: pending tag resource
-                                                // response uuid change
-            tag.setDomainName(userVm.getDomainName());
-
-            tag.setObjectName("tag");
-            userVmResponse.addTag(tag);
         }
         userVmResponse.setObjectName(objectName);
 
@@ -283,29 +265,10 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
 
         long tag_id = uvo.getTagId();
         if (tag_id > 0) {
-            ResourceTagResponse tag = new ResourceTagResponse();
-            tag.setKey(uvo.getTagKey());
-            tag.setValue(uvo.getTagValue());
-            if (uvo.getTagResourceType() != null) {
-                tag.setResourceType(uvo.getTagResourceType().toString());
+            ResourceTagJoinVO vtag = ApiDBUtils.findResourceTagViewById(tag_id);
+            if ( vtag != null ){
+                userVmData.addTag(ApiDBUtils.newResourceTagResponse(vtag, false));
             }
-            tag.setId(uvo.getTagResourceUuid()); // tag resource uuid
-            tag.setCustomer(uvo.getTagCustomer());
-            // TODO: assuming tagAccountId and tagDomainId are the same as VM
-            // accountId and domainId
-            tag.setDomainId(uvo.getTagDomainId());
-            if (uvo.getAccountType() == Account.ACCOUNT_TYPE_PROJECT) {
-                tag.setProjectId(uvo.getProjectId());
-                tag.setProjectName(uvo.getProjectName());
-            } else {
-                tag.setAccountName(uvo.getAccountName());
-            }
-            tag.setDomainId(uvo.getDomainId()); // TODO: pending tag resource
-                                                // response uuid change
-            tag.setDomainName(uvo.getDomainName());
-
-            tag.setObjectName("tag");
-            userVmData.addTag(tag);
         }
         return userVmData;
     }

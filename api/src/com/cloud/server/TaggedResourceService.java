@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.api.user.tag.command.ListTagsCmd;
+
+import com.cloud.api.view.vo.ResourceTagJoinVO;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.utils.Pair;
 
@@ -47,7 +49,7 @@ public interface TaggedResourceService {
      * @param listTagsCmd
      * @return
      */
-    Pair<List<? extends ResourceTag>, Integer> listTags(ListTagsCmd listTagsCmd);
+    Pair<List<ResourceTagJoinVO>, Integer> listTags(ListTagsCmd listTagsCmd);
 
     /**
      * @param resourceIds

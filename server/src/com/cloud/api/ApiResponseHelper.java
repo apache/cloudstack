@@ -118,6 +118,7 @@ import com.cloud.api.response.VpnUsersResponse;
 import com.cloud.api.response.ZoneResponse;
 import com.cloud.api.view.vo.DomainRouterJoinVO;
 import com.cloud.api.view.vo.ControlledViewEntity;
+import com.cloud.api.view.vo.ResourceTagJoinVO;
 import com.cloud.api.view.vo.SecurityGroupJoinVO;
 import com.cloud.api.view.vo.UserVmJoinVO;
 import com.cloud.async.AsyncJob;
@@ -1080,27 +1081,27 @@ public class ApiResponseHelper implements ResponseGenerator {
         volResponse.setVolumeType(volume.getVolumeType().toString());
         volResponse.setDeviceId(volume.getDeviceId());
         
-        	Long instanceId = volume.getInstanceId();
-	        if (instanceId != null && volume.getState() != Volume.State.Destroy) {
-	            VMInstanceVO vm = ApiDBUtils.findVMInstanceById(instanceId);
-	            if (vm != null) {
-	                volResponse.setVirtualMachineId(vm.getId());
-	                volResponse.setVirtualMachineName(vm.getHostName());
-	                UserVm userVm = ApiDBUtils.findUserVmById(vm.getId());
-	                if (userVm != null) {
-	                    if (userVm.getDisplayName() != null) {
-	                        volResponse.setVirtualMachineDisplayName(userVm.getDisplayName());
-	                    } else {
-	                        volResponse.setVirtualMachineDisplayName(userVm.getHostName());
-	                    }
-	                    volResponse.setVirtualMachineState(vm.getState().toString());
-	                } else {
-	                    s_logger.error("User Vm with Id: " + instanceId + " does not exist for volume " + volume.getId());
-	                }
-	            } else {
-	                s_logger.error("Vm with Id: " + instanceId + " does not exist for volume " + volume.getId());
-	            }
-	        }
+            Long instanceId = volume.getInstanceId();
+            if (instanceId != null && volume.getState() != Volume.State.Destroy) {
+                VMInstanceVO vm = ApiDBUtils.findVMInstanceById(instanceId);
+                if (vm != null) {
+                    volResponse.setVirtualMachineId(vm.getId());
+                    volResponse.setVirtualMachineName(vm.getHostName());
+                    UserVm userVm = ApiDBUtils.findUserVmById(vm.getId());
+                    if (userVm != null) {
+                        if (userVm.getDisplayName() != null) {
+                            volResponse.setVirtualMachineDisplayName(userVm.getDisplayName());
+                        } else {
+                            volResponse.setVirtualMachineDisplayName(userVm.getHostName());
+                        }
+                        volResponse.setVirtualMachineState(vm.getState().toString());
+                    } else {
+                        s_logger.error("User Vm with Id: " + instanceId + " does not exist for volume " + volume.getId());
+                    }
+                } else {
+                    s_logger.error("Vm with Id: " + instanceId + " does not exist for volume " + volume.getId());
+                }
+            }
 
         // Show the virtual size of the volume
         volResponse.setSize(volume.getSize());
@@ -1108,7 +1109,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         volResponse.setCreated(volume.getCreated());
         volResponse.setState(volume.getState().toString());
         if(volume.getState() == Volume.State.UploadOp){
-        	com.cloud.storage.VolumeHostVO volumeHostRef = ApiDBUtils.findVolumeHostRef(volume.getId(), volume.getDataCenterId());
+            com.cloud.storage.VolumeHostVO volumeHostRef = ApiDBUtils.findVolumeHostRef(volume.getId(), volume.getDataCenterId());
             volResponse.setSize(volumeHostRef.getSize());
             volResponse.setCreated(volumeHostRef.getCreated());
             Account caller = UserContext.current().getCaller();
@@ -1126,17 +1127,17 @@ public class ApiResponseHelper implements ResponseGenerator {
                 } else {
                     volumeStatus = volumeHostRef.getErrorString();
                     if(volumeHostRef.getDownloadState() == VMTemplateHostVO.Status.NOT_DOWNLOADED){
-                    	volResponse.setState("UploadNotStarted");
+                        volResponse.setState("UploadNotStarted");
                     }else {
-                    	volResponse.setState("UploadError");
+                        volResponse.setState("UploadError");
                     }
                 }
                 volResponse.setStatus(volumeStatus);
             } else if (volumeHostRef.getDownloadState() == VMTemplateHostVO.Status.DOWNLOADED) {
-            	volResponse.setStatus("Upload Complete");
-            	volResponse.setState("Uploaded");
+                volResponse.setStatus("Upload Complete");
+                volResponse.setState("Uploaded");
             } else {
-            	volResponse.setStatus("Successfully Installed");
+                volResponse.setStatus("Successfully Installed");
             }
         }
 
@@ -1169,27 +1170,27 @@ public class ApiResponseHelper implements ResponseGenerator {
         // return hypervisor for ROOT and Resource domain only
         Account caller = UserContext.current().getCaller();
         if ((caller.getType() == Account.ACCOUNT_TYPE_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) && volume.getState() != Volume.State.UploadOp) {            
-        	volResponse.setHypervisor(ApiDBUtils.getVolumeHyperType(volume.getId()).toString());            
+            volResponse.setHypervisor(ApiDBUtils.getVolumeHyperType(volume.getId()).toString());            
         }
 
         volResponse.setAttached(volume.getAttached());
         volResponse.setDestroyed(volume.getState() == Volume.State.Destroy);
-	        boolean isExtractable = true;
-	        if (volume.getVolumeType() != Volume.Type.DATADISK) { // Datadisk dont have any template dependence.
-	            VMTemplateVO template = ApiDBUtils.findTemplateById(volume.getTemplateId());
+            boolean isExtractable = true;
+            if (volume.getVolumeType() != Volume.Type.DATADISK) { // Datadisk dont have any template dependence.
+                VMTemplateVO template = ApiDBUtils.findTemplateById(volume.getTemplateId());
             if (template != null) { // For ISO based volumes template = null and we allow extraction of all ISO based volumes
-	                isExtractable = template.isExtractable() && template.getTemplateType() != Storage.TemplateType.SYSTEM;
-	            }
-	        }
-	
-	        //set tag information
-	        List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.Volume, volume.getId());
-	        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
-	        for (ResourceTag tag : tags) {
-	            ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
-	            tagResponses.add(tagResponse);
-	        }
-	        volResponse.setTags(tagResponses);
+                    isExtractable = template.isExtractable() && template.getTemplateType() != Storage.TemplateType.SYSTEM;
+                }
+            }
+    
+            //set tag information
+            List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.Volume, volume.getId());
+            List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
+            for (ResourceTag tag : tags) {
+                ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
+                tagResponses.add(tagResponse);
+            }
+            volResponse.setTags(tagResponses);
 
         volResponse.setExtractable(isExtractable);
         volResponse.setObjectName("volume");
@@ -2593,7 +2594,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setBroadcastUri(broadcastUri);
             String vlan="N/A";
             if (broadcastUri.startsWith("vlan")) {
-            	vlan = broadcastUri.substring("vlan://".length(), broadcastUri.length());
+                vlan = broadcastUri.substring("vlan://".length(), broadcastUri.length());
             }
             //return vlan information only to Root admin
             response.setVlan(vlan);
@@ -3159,41 +3160,20 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public ResourceTagResponse createResourceTagResponse(ResourceTag resourceTag, boolean keyValueOnly) {
-        ResourceTagResponse response = new ResourceTagResponse();
-        response.setKey(resourceTag.getKey());
-        response.setValue(resourceTag.getValue());
-
-        if (!keyValueOnly) {
-        response.setResourceType(resourceTag.getResourceType().toString());        
-        response.setId(ApiDBUtils.getUuid(String.valueOf(resourceTag.getResourceId()),resourceTag.getResourceType()));
-        Long accountId = resourceTag.getAccountId();
-        Long domainId = resourceTag.getDomainId();
-        if (accountId != null) {
-            Account account = ApiDBUtils.findAccountByIdIncludingRemoved(resourceTag.getAccountId());
-
-            if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
-                // find the project
-                Project project = ApiDBUtils.findProjectByProjectAccountIdIncludingRemoved(account.getId());
-                response.setProjectId(project.getId());
-                response.setProjectName(project.getName());
-            } else {
-                response.setAccountName(account.getAccountName());
-            }
-        }
-        
-        if (domainId != null) {
-            response.setDomainId(domainId);
-            response.setDomainName(ApiDBUtils.findDomainById(domainId).getName());
-        }
-        
-        response.setCustomer(resourceTag.getCustomer());
-        }
-        
-        response.setObjectName("ag");
-  
-        return response;
+        ResourceTagJoinVO rto = ApiDBUtils.newResourceTagView(resourceTag);
+        return ApiDBUtils.newResourceTagResponse(rto, keyValueOnly);
     }
+
     
+    @Override
+    public List<ResourceTagResponse> createResourceTagResponse(boolean keyValueOnly, ResourceTagJoinVO... tags) {
+        List<ResourceTagResponse> respList = new ArrayList<ResourceTagResponse>();
+        for (ResourceTagJoinVO vt : tags){
+            respList.add(ApiDBUtils.newResourceTagResponse(vt, keyValueOnly));
+        }
+        return respList;
+    }
+
     @Override
     public VpcOfferingResponse createVpcOfferingResponse(VpcOffering offering) {
         VpcOfferingResponse response = new VpcOfferingResponse();
@@ -3442,7 +3422,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     
     @Override
     public Site2SiteVpnGatewayResponse createSite2SiteVpnGatewayResponse(Site2SiteVpnGateway result) {
-    	Site2SiteVpnGatewayResponse response = new Site2SiteVpnGatewayResponse();
+        Site2SiteVpnGatewayResponse response = new Site2SiteVpnGatewayResponse();
         response.setId(result.getId());
         response.setIp(ApiDBUtils.findIpAddressById(result.getAddrId()).getAddress().toString());
         response.setVpcId(result.getVpcId());
@@ -3485,22 +3465,22 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setVpnGatewayId(result.getVpnGatewayId()); 
         Long vpnGatewayId = result.getVpnGatewayId();
         if(vpnGatewayId != null) {
-        	Site2SiteVpnGatewayVO vpnGateway = ApiDBUtils.findVpnGatewayById(vpnGatewayId);
-        	
-        	long ipId = vpnGateway.getAddrId();
-        	IPAddressVO ipObj = ApiDBUtils.findIpAddressById(ipId);
-        	response.setIp(ipObj.getAddress().addr());  
+            Site2SiteVpnGatewayVO vpnGateway = ApiDBUtils.findVpnGatewayById(vpnGatewayId);
+            
+            long ipId = vpnGateway.getAddrId();
+            IPAddressVO ipObj = ApiDBUtils.findIpAddressById(ipId);
+            response.setIp(ipObj.getAddress().addr());  
         }
         
         response.setCustomerGatewayId(result.getCustomerGatewayId()); 
         Long customerGatewayId = result.getCustomerGatewayId();
         if(customerGatewayId != null) {
-        	Site2SiteCustomerGatewayVO customerGateway = ApiDBUtils.findCustomerGatewayById(customerGatewayId);
-        	response.setGatewayIp(customerGateway.getGatewayIp());
-        	response.setGuestCidrList(customerGateway.getGuestCidrList());
-        	response.setIpsecPsk(customerGateway.getIpsecPsk());
-        	response.setIkePolicy(customerGateway.getIkePolicy());
-        	response.setEspPolicy(customerGateway.getEspPolicy());
+            Site2SiteCustomerGatewayVO customerGateway = ApiDBUtils.findCustomerGatewayById(customerGatewayId);
+            response.setGatewayIp(customerGateway.getGatewayIp());
+            response.setGuestCidrList(customerGateway.getGuestCidrList());
+            response.setIpsecPsk(customerGateway.getIpsecPsk());
+            response.setIkePolicy(customerGateway.getIkePolicy());
+            response.setEspPolicy(customerGateway.getEspPolicy());
                 response.setIkeLifetime(customerGateway.getIkeLifetime());
                 response.setEspLifetime(customerGateway.getEspLifetime());
                 response.setDpd(customerGateway.getDpd());

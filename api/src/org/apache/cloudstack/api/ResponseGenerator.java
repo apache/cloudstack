@@ -153,6 +153,7 @@ import com.cloud.user.UserAccount;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.InstanceGroup;
 import com.cloud.api.view.vo.DomainRouterJoinVO;
+import com.cloud.api.view.vo.ResourceTagJoinVO;
 import com.cloud.api.view.vo.SecurityGroupJoinVO;
 import com.cloud.api.view.vo.UserVmJoinVO;
 import com.cloud.vm.VirtualMachine;
@@ -326,6 +327,9 @@ public interface ResponseGenerator {
      * @return
      */
     ResourceTagResponse createResourceTagResponse(ResourceTag resourceTag, boolean keyValueOnly);
+
+    List<ResourceTagResponse> createResourceTagResponse(boolean keyValueOnly, ResourceTagJoinVO... resourceTag);
+
 
     Site2SiteVpnGatewayResponse createSite2SiteVpnGatewayResponse(Site2SiteVpnGateway result);
 

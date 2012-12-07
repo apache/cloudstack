@@ -27,6 +27,8 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.user.tag.command.ListTagsCmd;
+
+import com.cloud.api.view.vo.ResourceTagJoinVO;
 import com.cloud.domain.Domain;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
@@ -50,6 +52,7 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.tags.dao.ResourceTagDao;
+import com.cloud.tags.dao.ResourceTagJoinDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
@@ -82,6 +85,8 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
     AccountManager _accountMgr;
     @Inject
     ResourceTagDao _resourceTagDao;
+    @Inject
+    ResourceTagJoinDao _resourceTagJoinDao;
     @Inject
     IdentityDao _identityDao;
     @Inject
@@ -269,7 +274,7 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
                     _accountMgr.checkAccess(caller, _domainMgr.getDomain(domainId));
                 } else {
                     throw new PermissionDeniedException("Account " + caller + " doesn't have permissions to create tags" +
-                    		" for resource " + key);
+                            " for resource " + key);
                 }
                 
                 String value = tags.get(key);
@@ -322,7 +327,7 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
     }
 
     @Override
-    public Pair<List<? extends ResourceTag>, Integer> listTags(ListTagsCmd cmd) {
+    public Pair<List<ResourceTagJoinVO>, Integer> listTags(ListTagsCmd cmd) {
         Account caller = UserContext.current().getCaller();
         List<Long> permittedAccounts = new ArrayList<Long>();
         String key = cmd.getKey();
@@ -340,10 +345,10 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
         Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
-        Filter searchFilter = new Filter(ResourceTagVO.class, "resourceType", false, cmd.getStartIndex(), cmd.getPageSizeVal());
+        Filter searchFilter = new Filter(ResourceTagJoinVO.class, "resourceType", false, cmd.getStartIndex(), cmd.getPageSizeVal());
 
-        SearchBuilder<ResourceTagVO> sb = _resourceTagDao.createSearchBuilder();
-        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        SearchBuilder<ResourceTagJoinVO> sb = _resourceTagJoinDao.createSearchBuilder();
+        _accountMgr.buildACLViewSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         sb.and("key", sb.entity().getKey(), SearchCriteria.Op.EQ);
         sb.and("value", sb.entity().getValue(), SearchCriteria.Op.EQ);
@@ -358,8 +363,8 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
         sb.and("customer", sb.entity().getCustomer(), SearchCriteria.Op.EQ);
 
         // now set the SC criteria...
-        SearchCriteria<ResourceTagVO> sc = sb.create();
-        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        SearchCriteria<ResourceTagJoinVO> sc = sb.create();
+        _accountMgr.buildACLViewSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         if (key != null) {
             sc.setParameters("key", key);
@@ -382,8 +387,8 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
             sc.setParameters("customer", customerName);
         }
 
-        Pair<List<ResourceTagVO>, Integer> result = _resourceTagDao.searchAndCount(sc, searchFilter);
-        return new Pair<List<? extends ResourceTag>, Integer> (result.first(), result.second());
+        Pair<List<ResourceTagJoinVO>, Integer> result = _resourceTagJoinDao.searchAndCount(sc, searchFilter);
+        return new Pair<List<ResourceTagJoinVO>, Integer> (result.first(), result.second());
     }
 
     @Override

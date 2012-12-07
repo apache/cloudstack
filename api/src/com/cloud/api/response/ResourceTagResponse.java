@@ -22,7 +22,7 @@ import com.cloud.utils.IdentityProxy;
 import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
-public class ResourceTagResponse extends BaseResponse implements ControlledEntityResponse{
+public class ResourceTagResponse extends BaseResponse implements ControlledViewEntityResponse{
     @SerializedName(ApiConstants.KEY) @Param(description="tag key name")
     private String key;
 
@@ -33,21 +33,21 @@ public class ResourceTagResponse extends BaseResponse implements ControlledEntit
     private String resourceType;
 
     @SerializedName(ApiConstants.RESOURCE_ID) @Param(description="id of the resource")
-    private String id;
+    private String resourceId;
 
     @SerializedName(ApiConstants.ACCOUNT)
     @Param(description = "the account associated with the tag")
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id the tag belongs to")
-    private IdentityProxy projectId = new IdentityProxy("projects");
+    private String projectId;
 
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name where tag belongs to")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
     @Param(description = "the ID of the domain associated with the tag")
-    private IdentityProxy domainId = new IdentityProxy("domain");
+    private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
     @Param(description = "the domain associated with the tag")
@@ -68,25 +68,28 @@ public class ResourceTagResponse extends BaseResponse implements ControlledEntit
         this.resourceType = resourceType;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setResourceId(String id) {
+        this.resourceId = id;
     }
 
+    @Override
     public void setAccountName(String accountName) {
         this.accountName = accountName;
     }
 
-    public void setDomainId(Long domainId) {
-        this.domainId.setValue(domainId);
+    @Override
+    public void setDomainId(String domainId) {
+        this.domainId = domainId;
     }
 
+    @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
     }
 
     @Override
-    public void setProjectId(Long projectId) {
-        this.projectId.setValue(projectId);
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
     }
 
     @Override

@@ -2774,3 +2774,31 @@ inner join domain on security_group.domain_id=domain.id
 left join projects on projects.project_account_id = security_group.account_id
 left join resource_tags on resource_tags.resource_id = security_group.id and resource_tags.resource_type = "SecurityGroup"
 left join async_job on async_job.instance_id = security_group.id and async_job.instance_type = "SecurityGroup" and async_job.job_status = 0;
+
+DROP VIEW IF EXISTS `cloud`.`resource_tag_view`;
+CREATE VIEW resource_tag_view AS
+select
+resource_tags.id,
+resource_tags.uuid,
+resource_tags.key,
+resource_tags.value,
+resource_tags.resource_id,
+resource_tags.resource_uuid,
+resource_tags.resource_type,
+resource_tags.customer,
+account.id account_id,
+account.uuid account_uuid,
+account.account_name account_name,
+account.type account_type,
+domain.id domain_id,
+domain.uuid domain_uuid,
+domain.name domain_name,
+domain.path domain_path,
+projects.id project_id,
+projects.uuid project_uuid,
+projects.name project_name
+from resource_tags
+inner join account on resource_tags.account_id=account.id
+inner join domain on resource_tags.domain_id=domain.id
+left join projects on projects.project_account_id = resource_tags.account_id;
+
