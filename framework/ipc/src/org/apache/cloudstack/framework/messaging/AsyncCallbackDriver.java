@@ -19,5 +19,5 @@
 package org.apache.cloudstack.framework.messaging;
 
 public interface AsyncCallbackDriver {
-	public void performCompletionCallback(AsyncCompletionCallback callback);
+	public void performCompletionCallback(AsyncCallbackDispatcher dispatcher);
 }

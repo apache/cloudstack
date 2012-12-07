@@ -21,21 +21,14 @@ package org.apache.cloudstack.framework.messaging;
 public class AsyncSampleCallee {
 	AsyncSampleCallee _driver;
 
-	public TestVolume createVolume(Object realParam, AsyncCompletionCallback callback) {
-		_driver.createVolume(realParam,
-				new AsyncCompletionCallback(this)
-					.setOperationName("volume.driver.create")
-					.setContextParam("dsCompletion", callback)
-		);
+	public <T> void createVolume(Object realParam, AsyncCompletionCallback<TestVolume> callback) {
 		
-		return null;
-	}
-	
-	@AsyncCallbackHandler(operationName="volume.driver.create")
-	public void onDriverCreateVolumeCallback(AsyncCompletionCallback driverCompletion) {
-		AsyncCompletionCallback dsCompletionCallback = driverCompletion.getContextParam("dsCompletion");
+		// async executed logic
+		{
+			
+		TestVolume resultObject = new TestVolume();
+		callback.complete(resultObject);
 		
-		String str = driverCompletion.getResult();
-		dsCompletionCallback.complete(str);
+		}
 	}
 }

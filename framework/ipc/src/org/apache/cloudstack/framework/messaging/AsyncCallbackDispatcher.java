@@ -24,10 +24,61 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
-public class AsyncCallbackDispatcher {
+public class AsyncCallbackDispatcher implements AsyncCompletionCallback {
 	private static Map<Class<?>, Method> s_handlerCache = new HashMap<Class<?>, Method>();
 	
-	public static boolean dispatch(Object target, AsyncCompletionCallback callback) {
+	private Map<String, Object> _contextMap = new HashMap<String, Object>();
+	private String _operationName;
+	private Object _targetObject;
+	private Object _resultObject;
+	private AsyncCallbackDriver _driver = new InplaceAsyncCallbackDriver(); 
+	
+	public AsyncCallbackDispatcher(Object target) {
+		assert(target != null);
+		_targetObject = target;
+	}
+	
+	public AsyncCallbackDispatcher setContextParam(String key, Object param) {
+		_contextMap.put(key, param);
+		return this;
+	}
+	
+	public AsyncCallbackDispatcher attachDriver(AsyncCallbackDriver driver) {
+		assert(driver != null);
+		_driver = driver;
+		
+		return this;
+	}
+	
+	public AsyncCallbackDispatcher setOperationName(String name) {
+		_operationName = name;
+		return this;
+	}
+	
+	public String getOperationName() {
+		return _operationName;
+	}
+	
+	public Object getTargetObject() {
+		return _targetObject;
+	}
+	
+	@SuppressWarnings("unchecked")
+	public <T> T getContextParam(String key) {
+		return (T)_contextMap.get(key);
+	}
+	
+	public void complete(Object resultObject) {
+		_resultObject = resultObject;
+		_driver.performCompletionCallback(this);
+	}
+	
+	@SuppressWarnings("unchecked")
+	public <T> T getResult() {
+		return (T)_resultObject;
+	}
+	
+	public static boolean dispatch(Object target, AsyncCallbackDispatcher callback) {
 		assert(callback != null);
 		assert(target != null);
 		

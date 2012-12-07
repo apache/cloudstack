@@ -18,13 +18,19 @@
  */
 package org.apache.cloudstack.framework.messaging;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-public @interface AsyncCallbackHandler {
-	String operationName();
+public class AsyncSampleListenerStyleCaller {
+	AsyncSampleCallee _ds;
+	
+	public void MethodThatWillCallAsyncMethod() {
+		TestVolume vol = new TestVolume();
+		
+		_ds.createVolume(vol,
+			new AsyncCompletionCallback<TestVolume>() {
+				@Override
+				public void complete(TestVolume resultObject) {
+					// TODO Auto-generated method stub
+					
+				}
+		});
+	}
 }
