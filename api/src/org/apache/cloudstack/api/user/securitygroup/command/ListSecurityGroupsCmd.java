@@ -87,6 +87,7 @@ public class ListSecurityGroupsCmd extends BaseListTaggedResourcesCmd {
         response.setResponses(routerResponses, result.second());
 
         response.setResponseName(getCommandName());
+        this.setResponseObject(response);
     }
 
     @Override

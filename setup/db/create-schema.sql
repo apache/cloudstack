@@ -2725,3 +2725,52 @@ left join nics on vm_instance.id=nics.instance_id
 left join networks on nics.network_id=networks.id
 left join vpc on networks.vpc_id = vpc.id
 left join async_job on async_job.instance_id = vm_instance.id and async_job.instance_type = "DomainRouter" and async_job.job_status = 0;
+
+DROP VIEW IF EXISTS `cloud`.`security_group_view`;
+CREATE VIEW security_group_view AS
+select
+security_group.id id,
+security_group.name name,
+security_group.description description,
+security_group.uuid uuid,
+account.id account_id,
+account.uuid account_uuid,
+account.account_name account_name,
+account.type account_type,
+domain.id domain_id,
+domain.uuid domain_uuid,
+domain.name domain_name,
+domain.path domain_path,
+projects.id project_id,
+projects.uuid project_uuid,
+projects.name project_name,
+security_group_rule.id rule_id,
+security_group_rule.uuid rule_uuid,
+security_group_rule.type rule_type,
+security_group_rule.start_port rule_start_port,
+security_group_rule.end_port rule_end_port,
+security_group_rule.protocol rule_protocol,
+security_group_rule.allowed_network_id rule_allowed_network_id,
+security_group_rule.allowed_ip_cidr rule_allowed_ip_cidr,
+security_group_rule.create_status rule_create_status,
+resource_tags.id tag_id,
+resource_tags.uuid tag_uuid,
+resource_tags.key tag_key,
+resource_tags.value tag_value,
+resource_tags.domain_id tag_domain_id,
+resource_tags.account_id tag_account_id,
+resource_tags.resource_id tag_resource_id,
+resource_tags.resource_uuid tag_resource_uuid,
+resource_tags.resource_type tag_resource_type,
+resource_tags.customer tag_customer,
+async_job.id job_id,
+async_job.uuid job_uuid,
+async_job.job_status job_status,
+async_job.account_id job_account_id
+from security_group
+left join security_group_rule on security_group.id = security_group_rule.security_group_id
+inner join account on security_group.account_id=account.id
+inner join domain on security_group.domain_id=domain.id
+left join projects on projects.project_account_id = security_group.account_id
+left join resource_tags on resource_tags.resource_id = security_group.id and resource_tags.resource_type = "SecurityGroup"
+left join async_job on async_job.instance_id = security_group.id and async_job.instance_type = "SecurityGroup" and async_job.job_status = 0;
