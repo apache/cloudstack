@@ -27,9 +27,9 @@ Vagrant::Config.run do |config|
   config.vm.guest = :xen
   config.ssh.username = "devcloud"
   config.vm.host_name = "devcloud.local"
- # Uncomment this line to enable the console for debugging the
+  # Uncomment this line to enable the console for debugging the
   # build process.
-   config.vm.boot_mode = :gui
+  # config.vm.boot_mode = :gui
 
   # Setup port forwarding
   config.vm.forward_port 22, 7222

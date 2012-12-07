@@ -27,87 +27,85 @@ else {
     "linux-headers-${::kernelrelease}":
       ensure => latest;
     "xen-hypervisor-4.1-${debarch}":
-      ensure => latest,
+      ensure  => latest,
       require => Package["linux-headers-${::kernelrelease}"];
-    "xcp-xapi":
-      require => Package["xen-hypervisor-4.1-${debarch}"],
+    'xcp-xapi':
+      ensure  => latest,
+      require => Package["xen-hypervisor-4.1-${debarch}"];
+    'iptables':
       ensure  => latest;
-    "iptables":
-      ensure  => latest;
-    "ebtables":
+    'ebtables':
       ensure  => latest;
   }
 
   file {
-     '/etc/iptables.save':
-        require => Package['iptables'],
-        ensure  => 'file',
-        source  => 'puppet:///modules/devcloudinitial/iptables.save',
-        group   => '0',
-        mode    => '644',
-        owner   => '0';
-     '/etc/xcp/network.conf':
-        require => Package['xcp-xapi'],
-        ensure  => 'file',
-        source  => 'puppet:///modules/devcloudinitial/network.conf',
-        group   => '0',
-        mode    => '644',
-        owner   => '0';
-    '/etc/init.d/xend':
-        require => Package['xcp-xapi'],
-        ensure  => 'file',
-        source  => 'puppet:///modules/devcloudinitial/xend',
-        group   => '0',
-        owner   => '0',
-        mode    => '755';
-    '/etc/default/grub':
-        require => Package["xen-hypervisor-4.1-${debarch}"],
-        ensure  => 'file',
-        source  => 'puppet:///modules/devcloudinitial/grub',
-        group   => '0',
-        mode    => '644',
-        owner   => '0';
-    '/usr/share/qemu':
-        require => Package["xen-hypervisor-4.1-${debarch}"],
-        ensure => 'directory',
-        group  => '0',
-        mode   => '755',
-        owner  => '0';
-    '/usr/share/qemu/keymaps':
-        require => File['/usr/share/qemu'],
-        ensure => 'link',
-        group  => '0',
-        mode   => '777',
-        owner  => '0',
-        target => '/usr/share/qemu-linaro/keymaps';
-    '/etc/network/interfaces':
-        ensure  => 'file',
-        source  => 'puppet:///modules/devcloudinitial/interfaces',
-        group   => '0',
-        mode    => '644',
-        owner   => '0';
-    '/etc/default/xen':
-        require => Package["xen-hypervisor-4.1-${debarch}"],
-        ensure  => 'file',
-        source  => 'puppet:///modules/devcloudinitial/xen-defaults',
-        group   => '0',
-        mode    => '644',
-        owner   => '0';
-
+  '/etc/iptables.save':
+      ensure  => 'file',
+      require => Package['iptables'],
+      source  => 'puppet:///modules/devcloudinitial/iptables.save',
+      group   => '0',
+      mode    => '0644',
+      owner   => '0';
+  '/etc/xcp/network.conf':
+      ensure  => 'file',
+      require => Package['xcp-xapi'],
+      source  => 'puppet:///modules/devcloudinitial/network.conf',
+      group   => '0',
+      mode    => '0644',
+      owner   => '0';
+  '/etc/init.d/xend':
+      ensure  => 'file',
+      require => Package['xcp-xapi'],
+      source  => 'puppet:///modules/devcloudinitial/xend',
+      group   => '0',
+      owner   => '0',
+      mode    => '0755';
+  '/etc/default/grub':
+      ensure  => 'file',
+      require => Package["xen-hypervisor-4.1-${debarch}"],
+      source  => 'puppet:///modules/devcloudinitial/grub',
+      group   => '0',
+      mode    => '0644',
+      owner   => '0';
+  '/usr/share/qemu':
+      ensure  => 'directory',
+      require => Package["xen-hypervisor-4.1-${debarch}"],
+      group   => '0',
+      mode    => '0755',
+      owner   => '0';
+  '/usr/share/qemu/keymaps':
+      ensure  => 'link',
+      require => File['/usr/share/qemu'],
+      group   => '0',
+      mode    => '0777',
+      owner   => '0',
+      target  => '/usr/share/qemu-linaro/keymaps';
+  '/etc/network/interfaces':
+      ensure  => 'file',
+      source  => 'puppet:///modules/devcloudinitial/interfaces',
+      group   => '0',
+      mode    => '0644',
+      owner   => '0';
+  '/etc/default/xen':
+      ensure  => 'file',
+      require => Package["xen-hypervisor-4.1-${debarch}"],
+      source  => 'puppet:///modules/devcloudinitial/xen-defaults',
+      group   => '0',
+      mode    => '0644',
+      owner   => '0';
   }
 
   service {
     'xendomains':
-      require => Package['xcp-xapi'],
       ensure  => 'stopped',
+      require => Package['xcp-xapi'],
       enable  => false;
   }
 
-
-  exec { "/usr/sbin/update-grub":
-    subscribe => File['/etc/default/grub'],
+  exec { '/usr/sbin/update-grub':
+    subscribe   => File['/etc/default/grub'],
     refreshonly => true,
-    cwd       => '/',
+    cwd         => '/',
   }
 
 }
