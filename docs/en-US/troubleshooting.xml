@@ -26,9 +26,9 @@
   <title>Troubleshooting</title>
   <xi:include href="events.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
   <xi:include href="troubleshooting-working-with-server-logs.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-  <xi:include href="troubleshooting-dataloss-on-exported-primary-storage.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="troublesht-dataloss-on-exp-primary-storage.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
   <xi:include href="troubleshooting-recover-lost-virtual-router.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-  <xi:include href="troubleshooting-maintenance-mode-not-working-on-vCenter.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="troublesht-mtn-mode-not-working-on-vCenter.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
   <xi:include href="troubleshooting-unable-to-deploy-vms.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
   <xi:include href="troubleshooting-unable-to-power-on-vm.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
   <xi:include href="troubleshooting-lb-rules-fails.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
