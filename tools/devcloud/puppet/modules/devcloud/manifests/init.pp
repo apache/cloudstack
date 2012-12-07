@@ -56,6 +56,7 @@ class devcloud (
   package
   { [ 'ant',
       'git',
+      'python-mysql.connector',
       'mkisofs',
       'mysql-server',
       'nfs-server',
@@ -200,7 +201,14 @@ class devcloud (
       mode    => '0755',
       owner   => '0',
       group   => '0',
-      content => template('devcloud/builddevcloud.sh.erb');
+      content => template('devcloud/buildcloudstack.sh.erb');
+
+    "${cs_dir}/startcloudstack.sh":
+      ensure  => 'file',
+      mode    => '0755',
+      owner   => '0',
+      group   => '0',
+      content => template('devcloud/startcloudstack.sh.erb');
 
     '/root/.ssh' :
       ensure => 'directory',
