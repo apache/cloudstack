@@ -33,8 +33,8 @@ class devcloud (
   $md5sum_local    = $devcloud::params::md5sum_local,
   $md5sum_remote   = $devcloud::params::md5sum_remote,
   $hostuuid        = $::xen_hostuuid,
-  $bridge_device_mac = $::macaddress_xenbr0
-
+  $bridge_device_mac = $::macaddress_xenbr0,
+  $build_cloudstack  = $devcloud::params::build_cloudstack
 ) inherits devcloud::params {
 
 
@@ -43,7 +43,6 @@ class devcloud (
 
   service {
     'ebtables':
-      require => Package['ebtables'],
       ensure  => 'running',
       enable  => true;
   'nfs-kernel-server':
@@ -55,8 +54,6 @@ class devcloud (
 
   package { [
             "ant",
-            "ebtables",
-            "iptables",
             "git",
             "mkisofs",
             "mysql-server",
@@ -102,7 +99,6 @@ class devcloud (
       unless  => '/usr/bin/xe sr-list | /bin/egrep \'local-storage|Cloud Stack Local EXT Storage Pool\'',
       require => [
         File["${storage_dir}/primary"],
-        File["/etc/iptables.save"]
         ];
 
     "configvnc":
@@ -131,19 +127,6 @@ class devcloud (
       require => Exec['unziptomcat'],
       timeout => '0';
 
-	"build_cloudstack":
-		require => [
-		  Package["ant"],
-		  Exec["install_maven"],
-		  File["${cs_dir}/incubator-cloudstack/dist"],
-	  File["${cs_dir}/incubator-cloudstack/target"],
-		  Package['mkisofs'],
-		  File["${cs_dir}/buildcloudstack.sh"]
-		  ],
-		command => "/opt/cloudstack/buildcloudstack.sh",
-		cwd => "/opt/cloudstack/",
-	timeout => '0';
-
 
     "install_maven":
       require => Exec["downloadmaven"],
@@ -165,13 +148,29 @@ class devcloud (
       require => [
         Service['ebtables']
         ],
-      command   => "/sbin/ebtables -I FORWARD -d ! $bridge_device_mac -i eth0 -p IPV4 --ip-prot udp --ip-dport 67:68 -j DROP",
-      subscribe => Package["ebtables"],
-      unless    => "/sbin/ebtables -L | grep \"-I FORWARD -d ! $bridge_device_mac -i eth0 -p IPV4 --ip-prot udp --ip-dport 67:68 -j DROP\"",
+      command   => "/sbin/ebtables -I FORWARD -d ! $bridge_device_mac -i eth1 -p IPV4 --ip-prot udp --ip-dport 67:68 -j DROP",
+      unless    => "/sbin/ebtables -L | grep \"-I FORWARD -d ! $bridge_device_mac -i eth1 -p IPV4 --ip-prot udp --ip-dport 67:68 -j DROP\"",
       refreshonly => true,
       cwd       => "/",
       path      => "/sbin/:/usr/bin/:/bin"
 }
+
+  if $build_cloudstack {
+
+    exec {
+      "build_cloudstack":
+        require => [
+        Package["ant"],
+        Exec["install_maven"],
+        File["${cs_dir}/incubator-cloudstack/dist"],
+        File["${cs_dir}/incubator-cloudstack/target"],
+        Package['mkisofs'],
+        File["${cs_dir}/buildcloudstack.sh"]],
+        command => "${cs_dir}/buildcloudstack.sh",
+        cwd => "${cs_dir}",
+        timeout => '0';
+    }
+  }
 
 
   file {

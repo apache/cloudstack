@@ -34,6 +34,8 @@ else {
       ensure  => latest;
     "iptables":
       ensure  => latest;
+    "ebtables":
+      ensure  => latest;
   }
 
   file {

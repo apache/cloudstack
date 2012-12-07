@@ -19,7 +19,7 @@
 # under the License.
 
 Vagrant::Config.run do |config|
-  config.vm.network :hostonly, "192.168.56.10"
+  config.vm.network :hostonly, "192.168.56.10", :auto_config => false
   #config.vm.box = "devcloud"
   config.vm.box = "devcloudbase-xen"
   #config.vm.box_url = "http://basho-cloudstack.s3.amazonaws.com/devcloud.box"

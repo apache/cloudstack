@@ -27,7 +27,7 @@ class devcloud::params {
   $md5sum_local   = "${storage_dir}/secondary/template/tmpl/1/md5sum.txt"
   $template_dir   = "${storage_dir}/secondary/template/tmpl/1"
   $gitrepo        = "https://github.com/apache/incubator-cloudstack.git"
-
+  $build_cloudstack = true
 
 
   $downloads =  [

@@ -20,9 +20,10 @@
 export CATALINA_HOME=<%= @tomcat_home %>
 export M2_HOME=<%= @maven_home %>
 export M2=$M2_HOME/bin
-MAVEN_OPTS="-Xms256m -Xmx512m"
+MAVEN_OPTS="-Xmx1024m -XX:MaxPermSize=800m -Xdebug -Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=n"
 PATH=$M2:$PATH
 cd <%= @cs_dir %>/incubator-cloudstack/
-<%= @maven_home %>/bin/mvn -P developer clean install
-<%= @maven_home %>/bin/mvn -P developer -pl developer,tools/devcloud -Ddeploydb
+<%= @maven_home %>/bin/mvn clean install -P developer,systemvm
+<%= @maven_home %>/bin/mvn -pl developer,tools/devcloud -Ddeploydb -P developer
 <%= @maven_home %>/bin/mvn -P developer -pl tools/devcloud -Ddeploysvr
+<%= @maven_home %>/bin/mvn -pl client jetty:run
