@@ -26,4 +26,3 @@ cd <%= @cs_dir %>/incubator-cloudstack/
 <%= @maven_home %>/bin/mvn clean install -P developer,systemvm
 <%= @maven_home %>/bin/mvn -pl developer,tools/devcloud -Ddeploydb -P developer
 <%= @maven_home %>/bin/mvn -P developer -pl tools/devcloud -Ddeploysvr
-<%= @maven_home %>/bin/mvn -pl client jetty:run
