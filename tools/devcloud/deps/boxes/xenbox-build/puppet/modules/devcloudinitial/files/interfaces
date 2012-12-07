@@ -24,8 +24,14 @@ allow-hotplug eth1
 iface eth1 inet manual
 
 auto xenbr0
-iface xenbr0 inet static
+iface xenbr0 inet dhcp
         bridge_ports eth0
+        dns_nameservers 8.8.8.8 8.8.4.4
+        post-up route add default gw 10.0.2.2
+
+auto xenbr1
+iface xenbr1 inet static
+        bridge_ports eth1
         address 192.168.56.10
         netmask 255.255.255.0
         network 192.168.56.0
@@ -34,11 +40,6 @@ iface xenbr0 inet static
         dns_nameservers 8.8.8.8 8.8.4.4
         post-up route del default gw 192.168.56.1; route add default gw 192.168.56.1 metric 100;
 
-auto xenbr1
-iface xenbr1 inet dhcp
-        bridge_ports eth1
-        dns_nameservers 8.8.8.8 8.8.4.4
-        post-up route add default gw 10.0.2.2
 
 pre-up iptables-save < /etc/iptables.save
 pre-up /etc/init.d/ebtables load
