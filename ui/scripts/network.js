@@ -4550,6 +4550,7 @@
                 fields: {
 								  name: {
 									  label: 'label.name',
+                    docID: 'helpVPNGatewayName',
 										validation: { required: true }
 									},								
 									gateway: { 
@@ -4563,21 +4564,25 @@
 									},
                   gateway: {
                     label: 'label.gateway',
+                    docID: 'helpVPNGatewayGateway',
                     validation: { required: true }
                   },
                   cidrlist: {
                     label: 'label.CIDR.list',
                     desc:'Please enter a comma separated list of CIDRs if more than one',    
+                    docID: 'helpVPNGatewayCIDRList',
                     validation: { required: true }
                   },
                   ipsecpsk: {
                     label: 'label.IPsec.preshared.key',
+                    docID: 'helpVPNGatewayIPsecPresharedKey',
                     validation: { required: true }
                   },                 								
 									
                   //IKE Policy									
 									ikeEncryption: {
                     label: 'label.IKE.encryption',
+                    docID: 'helpVPNGatewayIKEEncryption',
                     select: function(args) {
                       var items = [];
                       items.push({id: '3des', description: '3des'});
@@ -4589,6 +4594,7 @@
                   },									
 									ikeHash: {
                     label: 'label.IKE.hash',
+                    docID: 'helpVPNGatewayIKEHash',
                     select: function(args) {
                       var items = [];
                       items.push({id: 'md5', description: 'md5'});
@@ -4598,6 +4604,7 @@
                   },									
 									ikeDh: {
                     label: 'label.IKE.DH',
+                    docID: 'helpVPNGatewayIKEDH',
                     select: function(args) {
                       var items = [];
                       items.push({id: '', description: 'None'});
@@ -4610,6 +4617,7 @@
 									//ESP Policy
                   espEncryption: {
                     label: 'label.ESP.encryption',
+                    docID: 'helpVPNGatewayESPLifetime',
                     select: function(args) {
                       var items = [];
                       items.push({id: '3des', description: '3des'});
@@ -4621,6 +4629,7 @@
                   },									
 									espHash: {
                     label: 'label.ESP.hash',
+                    docID: 'helpVPNGatewayESPHash',
                     select: function(args) {
                       var items = [];
                       items.push({id: 'md5', description: 'md5'});
@@ -4630,6 +4639,7 @@
                   },									
 									perfectForwardSecrecy: {
                     label: 'label.perfect.forward.secrecy',
+                    docID: 'helpVPNGatewayPerfectForwardSecrecy',
                     select: function(args) {
                       var items = [];
                       items.push({id: '', description: 'None'});
@@ -4641,17 +4651,20 @@
 									
 									ikelifetime: {
                     label: 'label.IKE.lifetime',
+                    docID: 'helpVPNGatewayIKELifetime',
                     defaultValue: '86400',
                     validation: { required: false, number: true }
                   },
 									esplifetime: {
                     label: 'label.ESP.lifetime',
+                    docID: 'helpVPNGatewayESPLifetime',
                     defaultValue: '3600',
                     validation: { required: false, number: true }
                   },
 									
 									dpd: {
 									  label: 'label.dead.peer.detection',
+                    docID: 'helpVPNGatewayDeadPeerDetection',
 										isBoolean: true,
 										isChecked: false
 									}                 

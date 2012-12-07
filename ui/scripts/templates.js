@@ -836,18 +836,22 @@
                 fields: {
                   name: {
                     label: 'label.name',
+                    docID: 'helpRegisterISOName',
                     validation: { required: true }
                   },
                   description: {
                     label: 'label.description',
+                    docID: 'helpRegisterISODescription',
                     validation: { required: true }
                   },
                   url: {
                     label: 'URL',
+                    docID: 'helpRegisterISOURL',
                     validation: { required: true }
                   },
                   zone: {
                     label: 'label.zone',
+                    docID: 'helpRegisterISOZone',
                     select: function(args) {
                       $.ajax({
                         url: createURL("listZones&available=true"),
@@ -870,12 +874,14 @@
 
                   isBootable: {
                     label: "label.bootable",
+                    docID: 'helpRegisterISOBootable',
                     isBoolean: true,
                     isChecked: true
                   },
 
                   osTypeId: {
                     label: 'label.os.type',
+                    docID: 'helpRegisterISOOSType',
                     dependsOn: 'isBootable',
                     isHidden: false,
                     validation: { required: true },
@@ -899,17 +905,20 @@
 
                   isExtractable: {
                     label: "extractable",
+                    docID: 'helpRegisterISOExtractable',
                     isBoolean: true
                   },
 
                   isPublic: {
                     label: "label.public",
+                    docID: 'helpRegisterISOPublic',
                     isBoolean: true,
                     isHidden: true
                   },
 
                   isFeatured: {
                     label: "label.featured",
+                    docID: 'helpRegisterISOFeatured',
                     isBoolean: true,
                     isHidden: true
                   }
