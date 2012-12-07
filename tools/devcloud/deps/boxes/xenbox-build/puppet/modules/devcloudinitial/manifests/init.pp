@@ -32,9 +32,18 @@ else {
     "xcp-xapi":
       require => Package["xen-hypervisor-4.1-${debarch}"],
       ensure  => latest;
+    "iptables":
+      ensure  => latest;
   }
 
   file {
+     '/etc/iptables.save':
+        require => Package['iptables'],
+        ensure  => 'file',
+        source  => 'puppet:///modules/devcloudinitial/iptables.save',
+        group   => '0',
+        mode    => '644',
+        owner   => '0';
      '/etc/xcp/network.conf':
         require => Package['xcp-xapi'],
         ensure  => 'file',

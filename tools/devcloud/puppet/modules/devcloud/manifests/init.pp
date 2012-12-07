@@ -223,20 +223,13 @@ class devcloud (
       mode    => '755',
       owner   => 'root',
       group   => 'root';
-	'/etc/iptables.save':
-		require => Package['iptables'],
-		ensure  => 'file',
-		source  => 'puppet:///modules/devcloud/iptables.save',
-		group   => '0',
-		mode    => '644',
-		owner   => '0';
-	"/etc/exports":
-		require => Package['nfs-server'],
-		ensure  => 'file',
-		source  => 'puppet:///modules/devcloud/exports',
-		mode    => '644',
-		owner   => '0',
-		group   => '0';
+    "/etc/exports":
+      require => Package['nfs-server'],
+      ensure  => 'file',
+      source  => 'puppet:///modules/devcloud/exports',
+      mode    => '644',
+      owner   => '0',
+      group   => '0';
 
     }
 
