@@ -28,10 +28,9 @@
   </parent>
   <build>
     <defaultGoal>install</defaultGoal>
-    <sourceDirectory>src</sourceDirectory>
-    <testSourceDirectory>test</testSourceDirectory>
   </build>
   <modules>
     <module>ipc</module>
+    <module>rest</module>
   </modules>
 </project>
