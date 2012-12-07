@@ -1,3 +1,9 @@
+cloud (1:4.0.1-incubating) unstable; urgency=low
+
+  * Bumping the version to to 4.0.1-incubating
+
+ -- David Nalley <david@gnsa.us> Fri 7 Dec 2012 17:30:00 +0000
+
 cloud (1:4.0.0-incubating) unstable; urgency=low
 
   * Bumping the version to 4.0.0-incubating
