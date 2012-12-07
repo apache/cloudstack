@@ -24,6 +24,7 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
+@SuppressWarnings("rawtypes")
 public class AsyncCallbackDispatcher implements AsyncCompletionCallback {
 	private static Map<Class<?>, Method> s_handlerCache = new HashMap<Class<?>, Method>();
 	

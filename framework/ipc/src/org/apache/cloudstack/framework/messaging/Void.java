@@ -18,17 +18,10 @@
  */
 package org.apache.cloudstack.framework.messaging;
 
-public class AsyncSampleCallee {
-	AsyncSampleCallee _driver;
-
-	public void createVolume(Object realParam, AsyncCompletionCallback<TestVolume> callback) {
-		
-		// async executed logic
-		{
-			
-		TestVolume resultObject = new TestVolume();
-		callback.complete(resultObject);
-		
-		}
-	}
+/**
+ * This is place-holder class to help AsyncMethod to indicate void return value
+ * public void AsyncMethod(Object realParam, AsyncCompletionCallback<Void> callback) {
+ *
+ */
+public class Void {
 }
