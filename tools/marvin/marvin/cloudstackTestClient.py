@@ -119,8 +119,6 @@ class cloudstackTestClient(object):
     def close(self):
         if self.connection is not None:
             self.connection.close()
-        if self.dbConnection is not None:
-            self.dbConnection.close()
         
     def getDbConnection(self):
         return self.dbConnection
