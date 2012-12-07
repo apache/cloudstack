@@ -29,7 +29,7 @@
     <xi:include href="ipaddress-usage-record-format.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="disk-volume-usage-record-format.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="template-iso-snapshot-usage-record-format.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="loadbalancer-policy-port-forwarding-rule-usage-record-format.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="lb-policy-pfwd-rule-usage-record-format.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="network-offering-usage-record-format.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="VPN-user-usage-record-format.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
 </section>
