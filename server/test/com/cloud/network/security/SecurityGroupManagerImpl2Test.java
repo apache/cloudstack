@@ -34,6 +34,7 @@ import com.cloud.domain.dao.DomainDaoImpl;
 import com.cloud.event.dao.UsageEventDaoImpl;
 import com.cloud.network.MockNetworkManagerImpl;
 import com.cloud.network.security.dao.SecurityGroupDaoImpl;
+import com.cloud.network.security.dao.SecurityGroupJoinDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupRuleDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupRulesDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupVMMapDaoImpl;
@@ -66,6 +67,7 @@ public class SecurityGroupManagerImpl2Test extends TestCase {
         locator.addDao("SecurityGroupDao", SecurityGroupDaoImpl.class);
         
         locator.addDao("SecurityGroupRuleDao", SecurityGroupRuleDaoImpl.class);
+        locator.addDao("SecurityGroupJoinDao", SecurityGroupJoinDaoImpl.class);
         locator.addDao("SecurityGroupVMMapDao", SecurityGroupVMMapDaoImpl.class);
         locator.addDao("SecurityGroupRulesDao", SecurityGroupRulesDaoImpl.class);
         locator.addDao("UserVmDao", UserVmDaoImpl.class);
