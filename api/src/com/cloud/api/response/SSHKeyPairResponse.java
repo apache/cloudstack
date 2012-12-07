@@ -28,7 +28,6 @@ public class SSHKeyPairResponse extends BaseResponse {
     @SerializedName("fingerprint") @Param(description="Fingerprint of the public key")
     private String fingerprint;
     
-    @SerializedName("privatekey") @Param(description="Private key")
     private String privateKey;
 
     public SSHKeyPairResponse() {}
