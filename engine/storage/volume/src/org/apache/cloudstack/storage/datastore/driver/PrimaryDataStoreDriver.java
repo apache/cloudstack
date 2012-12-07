@@ -1,5 +1,7 @@
 package org.apache.cloudstack.storage.datastore.driver;
 
+import java.util.Map;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreInfo;
 import org.apache.cloudstack.storage.volume.VolumeObject;
@@ -18,4 +20,11 @@ public interface PrimaryDataStoreDriver {
     long getCapacity();
     
     long getAvailableCapacity();
+    
+    
+    //Lifecycle API
+    boolean initialize(Map<String, String> params);
+    boolean grantAccess(EndPoint ep);
+    boolean revokeAccess(EndPoint ep);
+    
 }

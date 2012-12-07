@@ -72,23 +72,35 @@ public class TemplatePrimaryDataStoreManagerImpl implements TemplatePrimaryDataS
             retries--;
         } while (retries > 0);
         
+        if (templateStoreVO == null) {
+            throw new CloudRuntimeException("waiting too long for template downloading, marked it as failed");
+        }
+        
         return templateStoreVO;
     }
     @Override
     public TemplateOnPrimaryDataStoreObject createTemplateOnPrimaryDataStore(TemplateInfo template, PrimaryDataStoreInfo dataStore) {
-
-        TemplatePrimaryDataStoreVO templateStoreVO = new TemplatePrimaryDataStoreVO(dataStore.getId(), template.getId());
-        try {
-            templateStoreVO = templateStoreDao.persist(templateStoreVO);
-        } catch (Throwable th) {
-            templateStoreVO = templateStoreDao.findByTemplateIdAndPoolId(template.getId(), dataStore.getId());
-            if (templateStoreVO != null) {
-                templateStoreVO = waitingForTemplateDownload(template, dataStore);
-            } else {
-                throw new CloudRuntimeException("Failed create db entry: " + th.toString());
+        TemplatePrimaryDataStoreVO templateStoreVO = null;
+        boolean freshNewTemplate = false;
+        templateStoreVO = templateStoreDao.findByTemplateIdAndPoolId(template.getId(), dataStore.getId());
+        if (templateStoreVO == null) {
+            try {
+                templateStoreVO = new TemplatePrimaryDataStoreVO(dataStore.getId(), template.getId());
+                templateStoreVO = templateStoreDao.persist(templateStoreVO);
+                freshNewTemplate = true;
+            } catch (Throwable th) {
+                templateStoreVO = templateStoreDao.findByTemplateIdAndPoolId(template.getId(), dataStore.getId());
+                if (templateStoreVO == null) {
+                    throw new CloudRuntimeException("Failed create db entry: " + th.toString());
+                }
             }
         }
         
+        //If it's not a fresh template downloading, waiting for other people downloading finished.
+        if (!freshNewTemplate && templateStoreVO.getState() != TemplateOnPrimaryDataStoreStateMachine.State.Ready) {
+            templateStoreVO = waitingForTemplateDownload(template, dataStore);
+        }
+
         TemplateOnPrimaryDataStoreObject templateStoreObject = new TemplateOnPrimaryDataStoreObject(dataStore, template, templateStoreVO, templateStoreDao, this);
         return templateStoreObject;
     }

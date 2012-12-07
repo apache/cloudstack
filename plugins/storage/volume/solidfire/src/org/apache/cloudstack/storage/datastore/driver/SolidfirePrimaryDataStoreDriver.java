@@ -1,5 +1,7 @@
 package org.apache.cloudstack.storage.datastore.driver;
 
+import java.util.Map;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreInfo;
 import org.apache.cloudstack.storage.volume.VolumeObject;
@@ -47,6 +49,24 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     public long getAvailableCapacity() {
         // TODO Auto-generated method stub
         return 0;
+    }
+
+    @Override
+    public boolean initialize(Map<String, String> params) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean grantAccess(EndPoint ep) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean revokeAccess(EndPoint ep) {
+        // TODO Auto-generated method stub
+        return false;
     }
 
 }

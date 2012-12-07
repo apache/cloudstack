@@ -8,10 +8,13 @@ import javax.inject.Inject;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
 import org.apache.cloudstack.storage.HypervisorHostEndPoint;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreVO;
+import org.apache.cloudstack.storage.datastore.driver.DefaultPrimaryDataStoreDriverImpl;
 import org.apache.cloudstack.storage.datastore.driver.PrimaryDataStoreDriver;
 import org.apache.cloudstack.storage.image.TemplateInfo;
 import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreInfo;
@@ -33,6 +36,7 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
     protected PrimaryDataStoreDriver driver;
     protected PrimaryDataStoreVO pdsv;
     protected PrimaryDataStoreInfo pdsInfo;
+    protected PrimaryDataStoreLifeCycle lifeCycle;
     @Inject
     private VolumeDao volumeDao;
     @Inject
@@ -40,14 +44,20 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
     @Inject
     TemplatePrimaryDataStoreManager templatePrimaryStoreMgr;
 
-    private DefaultPrimaryDataStore(PrimaryDataStoreDriver driver, PrimaryDataStoreVO pdsv, PrimaryDataStoreInfo pdsInfo) {
-        this.driver = driver;
+    private DefaultPrimaryDataStore(PrimaryDataStoreVO pdsv) {
         this.pdsv = pdsv;
-        this.pdsInfo = pdsInfo;
     }
     
-    public static DefaultPrimaryDataStore createDataStore(PrimaryDataStoreDriver driver, PrimaryDataStoreVO pdsv, PrimaryDataStoreInfo pdsInfo) {
-        DefaultPrimaryDataStore dataStore = new DefaultPrimaryDataStore(driver, pdsv, pdsInfo);
+    public void setDriver(PrimaryDataStoreDriver driver) {
+        this.driver = driver;
+    }
+    
+    public void setLifeCycle(PrimaryDataStoreLifeCycle lifeCycle) {
+        this.lifeCycle = lifeCycle;
+    }
+    
+    public static DefaultPrimaryDataStore createDataStore(PrimaryDataStoreVO pdsv) {
+        DefaultPrimaryDataStore dataStore = new DefaultPrimaryDataStore(pdsv);
         return ComponentInject.inject(dataStore);
     }
 
@@ -120,7 +130,7 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
 
     @Override
     public VolumeObject createVolume(VolumeInfo vi, VolumeDiskType diskType) {
-        if (!pdsInfo.isVolumeDiskTypeSupported(diskType)) {
+        if (!isVolumeDiskTypeSupported(diskType)) {
             return null;
         }
         VolumeObject vo = (VolumeObject) vi;
@@ -190,6 +200,18 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
 
     @Override
     public String getType() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public PrimaryDataStoreLifeCycle getLifeCycle() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public PrimaryDataStoreProvider getProvider() {
         // TODO Auto-generated method stub
         return null;
     }

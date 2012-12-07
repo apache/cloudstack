@@ -12,11 +12,11 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
 import org.apache.cloudstack.storage.command.CreateVolumeAnswer;
 import org.apache.cloudstack.storage.command.CreateVolumeFromBaseImageCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.lifecycle.PrimaryDataStoreLifeCycle;
-import org.apache.cloudstack.storage.datastore.provider.PrimaryDataStoreProvider;
 import org.apache.cloudstack.storage.datastore.provider.PrimaryDataStoreProviderManager;
 import org.junit.Before;
 import org.junit.Test;
@@ -120,13 +120,12 @@ public class VolumeTest {
 		try {
 			primaryDataStoreProviderMgr.configure("primary data store mgr", new HashMap<String, Object>());
 			PrimaryDataStoreProvider provider = primaryDataStoreProviderMgr.getDataStoreProvider("Solidfre Primary Data Store Provider");
-			PrimaryDataStoreLifeCycle lifeCycle = provider.getDataStoreLifeCycle();
 			Map<String, String> params = new HashMap<String, String>();
 			params.put("url", "nfs://test/test");
 			params.put("dcId", dcId.toString());
 			params.put("clusterId", clusterId.toString());
 			params.put("name", "my primary data store");
-			PrimaryDataStoreInfo primaryDataStoreInfo = lifeCycle.registerDataStore(params);
+			PrimaryDataStoreInfo primaryDataStoreInfo = provider.registerDataStore(params);
 			return primaryDataStoreInfo;
 		} catch (ConfigurationException e) {
 			return null;

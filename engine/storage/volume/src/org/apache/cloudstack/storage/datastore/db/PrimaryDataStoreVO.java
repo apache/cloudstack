@@ -108,7 +108,7 @@ public class PrimaryDataStoreVO implements Identity {
     }
 
     public PrimaryDataStoreVO() {
-        // TODO Auto-generated constructor stub
+        this.status = DataStoreStatus.Initial;
     }
 
     public String getName() {

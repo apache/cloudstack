@@ -20,12 +20,13 @@ package org.apache.cloudstack.storage.datastore.manager;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreProviderDao;
-import org.apache.cloudstack.storage.datastore.lifecycle.PrimaryDataStoreLifeCycle;
-import org.apache.cloudstack.storage.datastore.provider.PrimaryDataStoreProvider;
 import org.apache.cloudstack.storage.datastore.provider.PrimaryDataStoreProviderManager;
 import org.springframework.stereotype.Component;
 
@@ -43,14 +44,7 @@ public class DefaultPrimaryDataStoreManagerImpl implements PrimaryDataStoreManag
         PrimaryDataStoreVO dataStoreVO = dataStoreDao.findById(dataStoreId);
         Long providerId = dataStoreVO.getStorageProviderId();
         PrimaryDataStoreProvider provider = providerManager.getDataStoreProvider(providerId);
-        PrimaryDataStore dataStore = provider.getDataStore(dataStoreId);
+        PrimaryDataStore dataStore = (PrimaryDataStore)provider.getDataStore(dataStoreId);
         return dataStore;
     }
-
-    @Override
-    public PrimaryDataStoreLifeCycle getPrimaryDataStoreLifeCycle(long dataStoreId) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
 }

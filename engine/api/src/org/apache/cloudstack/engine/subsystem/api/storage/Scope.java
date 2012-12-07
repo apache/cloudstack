@@ -18,26 +18,7 @@
  */
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
-
-import java.util.List;
-
-import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State;
-import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
-
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-
-public interface PrimaryDataStoreInfo {
-	public boolean isHypervisorSupported(HypervisorType hypervisor);
-	public boolean isLocalStorageSupported();
-	public boolean isVolumeDiskTypeSupported(VolumeDiskType diskType);
-	public long getCapacity();
-	public long getAvailableCapacity();
-	public List<EndPoint> getEndPoints();
-	public long getId();
-	public String getUuid();
-	public State getManagedState();
-	public String getName();
-	public String getType();
-	public PrimaryDataStoreLifeCycle getLifeCycle();
-	PrimaryDataStoreProvider getProvider();
+public interface Scope {
+    public ScopeType getScopeType();
+    public long getScopeId();
 }

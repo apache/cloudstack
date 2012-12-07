@@ -25,18 +25,23 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
+import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
+import org.apache.cloudstack.engine.subsystem.api.storage.ScopeType;
+import org.apache.cloudstack.storage.datastore.DataStoreStatus;
+import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreProviderDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreVO;
-import org.apache.cloudstack.storage.datastore.provider.PrimaryDataStoreProvider;
 import org.springframework.stereotype.Component;
 
 public class DefaultPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
-    private final PrimaryDataStoreProvider provider;
+    protected PrimaryDataStoreInfo dataStore;
     protected PrimaryDataStoreDao dataStoreDao;
-    public DefaultPrimaryDataStoreLifeCycleImpl(PrimaryDataStoreProvider provider, PrimaryDataStoreDao dataStoreDao) {
-        this.provider = provider;
+    public DefaultPrimaryDataStoreLifeCycleImpl(PrimaryDataStoreDao dataStoreDao, PrimaryDataStore dataStore) {
         this.dataStoreDao = dataStoreDao;
+        this.dataStore = dataStore;
     }
     
     protected class DataStoreUrlParser {
@@ -75,54 +80,54 @@ public class DefaultPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLif
     }
     
     @Override
-    public PrimaryDataStoreInfo registerDataStore(Map<String, String> dsInfos) {
+    public boolean initialize(Map<String, String> dsInfos) {
         DataStoreUrlParser parser = new DataStoreUrlParser(dsInfos.get("url"));
-        PrimaryDataStoreVO dataStore = new PrimaryDataStoreVO();
+        PrimaryDataStoreVO dataStore = dataStoreDao.findById(this.dataStore.getId());
         dataStore.setName(dsInfos.get("name"));
         dataStore.setPoolType(parser.getSchema());
         dataStore.setPort(parser.port);
-        dataStore.setDataCenterId(Integer.parseInt(dsInfos.get("dcId")));
         dataStore.setHostAddress(parser.getHost());
         dataStore.setPath(parser.getPath());
-        dataStore.setStorageProviderId(this.provider.getId());
-        dataStore.setClusterId(Long.parseLong(dsInfos.get("clusterId")));
-        dataStore = dataStoreDao.persist(dataStore);
+        dataStore.setStatus(DataStoreStatus.Initialized);
+        dataStoreDao.update(this.dataStore.getId(), dataStore);
         //TODO: add extension point for each data store
-        return this.provider.getDataStore(dataStore.getId());
+        
+        this.dataStore = this.dataStore.getProvider().getDataStore(dataStore.getId());
+        return true;
     }
 
     @Override
-    public boolean attach(long scope) {
+    public boolean attach(Scope scope) {
+        //if (scope.getScopeType() == ScopeType.CLUSTER) 
+        return false;
+    }
+
+    @Override
+    public boolean dettach() {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public boolean dettach(long dataStoreId) {
+    public boolean unmanaged() {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public boolean unmanaged(long dataStoreId) {
+    public boolean maintain() {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public boolean maintain(long dataStoreId) {
+    public boolean cancelMaintain() {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public boolean cancelMaintain(long dataStoreId) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public boolean deleteDataStore(long dataStoreId) {
+    public boolean deleteDataStore() {
         // TODO Auto-generated method stub
         return false;
     }

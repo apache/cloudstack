@@ -24,6 +24,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreProviderDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreProviderVO;
 import org.springframework.stereotype.Component;
@@ -60,10 +61,9 @@ public class PrimaryDataStoreProviderManagerImpl implements PrimaryDataStoreProv
                 PrimaryDataStoreProviderVO dataStoreProvider = new PrimaryDataStoreProviderVO();
                 dataStoreProvider.setName(provider.getName());
                 dataStoreProvider = providerDao.persist(dataStoreProvider);
-                provider.register(dataStoreProvider, params);
             }
-            PrimaryDataStoreProviderVO providervo = providerDao.findByName(provider.getName());
-            provider.init(providervo);
+            
+            provider.configure();
         }
         return true;
     }

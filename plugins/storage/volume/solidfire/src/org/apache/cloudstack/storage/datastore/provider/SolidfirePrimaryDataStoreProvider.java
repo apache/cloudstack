@@ -1,24 +1,21 @@
 package org.apache.cloudstack.storage.datastore.provider;
 
-import javax.inject.Inject;
-
 import org.apache.cloudstack.storage.datastore.DefaultPrimaryDataStore;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreVO;
 import org.apache.cloudstack.storage.datastore.driver.SolidfirePrimaryDataStoreDriver;
+import org.apache.cloudstack.storage.datastore.lifecycle.DefaultPrimaryDataStoreLifeCycleImpl;
 import org.springframework.stereotype.Component;
 
 @Component
 public class SolidfirePrimaryDataStoreProvider extends
 	DefaultPrimaryDatastoreProviderImpl {
 	private final String name = "Solidfre Primary Data Store Provider";
-	private SolidfirePrimaryDataStoreDriver driver;
-	
-	@Inject
-	public SolidfirePrimaryDataStoreProvider(PrimaryDataStoreDao dataStoreDao) {
-		super(dataStoreDao);
-		driver = new SolidfirePrimaryDataStoreDriver();
+
+
+	public SolidfirePrimaryDataStoreProvider() {
+	    super();
+		
 		// TODO Auto-generated constructor stub
 	}
 	
@@ -34,7 +31,12 @@ public class SolidfirePrimaryDataStoreProvider extends
             return null;
         }
 
-        PrimaryDataStore pds = DefaultPrimaryDataStore.createDataStore(driver, dsv, null);
+        DefaultPrimaryDataStore pds = DefaultPrimaryDataStore.createDataStore(dsv);
+        SolidfirePrimaryDataStoreDriver driver = new SolidfirePrimaryDataStoreDriver();
+        pds.setDriver(driver);
+        
+        DefaultPrimaryDataStoreLifeCycleImpl lifeCycle = new DefaultPrimaryDataStoreLifeCycleImpl(super.dataStoreDao, pds);
+        pds.setLifeCycle(lifeCycle);
         return pds;
 	}
 }

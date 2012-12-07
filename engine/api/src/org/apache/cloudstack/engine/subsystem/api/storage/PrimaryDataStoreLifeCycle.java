@@ -18,26 +18,20 @@
  */
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
+import java.util.Map;
 
-import java.util.List;
+public interface PrimaryDataStoreLifeCycle {
+    public boolean initialize(Map<String, String> dsInfos);
 
-import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State;
-import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
+    public boolean attach(Scope scope);
 
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
+    public boolean dettach();
 
-public interface PrimaryDataStoreInfo {
-	public boolean isHypervisorSupported(HypervisorType hypervisor);
-	public boolean isLocalStorageSupported();
-	public boolean isVolumeDiskTypeSupported(VolumeDiskType diskType);
-	public long getCapacity();
-	public long getAvailableCapacity();
-	public List<EndPoint> getEndPoints();
-	public long getId();
-	public String getUuid();
-	public State getManagedState();
-	public String getName();
-	public String getType();
-	public PrimaryDataStoreLifeCycle getLifeCycle();
-	PrimaryDataStoreProvider getProvider();
+    public boolean unmanaged();
+
+    public boolean maintain();
+
+    public boolean cancelMaintain();
+
+    public boolean deleteDataStore();
 }

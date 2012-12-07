@@ -16,24 +16,27 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.datastore.lifecycle;
+package org.apache.cloudstack.storage.scope;
 
-import java.util.Map;
+import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
+import org.apache.cloudstack.engine.subsystem.api.storage.ScopeType;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
+public class ZoneScope implements Scope {
+    private ScopeType type = ScopeType.ZONE;
+    private long zoneId;
+    
+    public ZoneScope(long zoneId) {
+        this.zoneId = zoneId;
+    }
+    
+    @Override
+    public ScopeType getScopeType() {
+        return this.type;
+    }
 
-public interface PrimaryDataStoreLifeCycle {
-    public PrimaryDataStoreInfo registerDataStore(Map<String, String> dsInfos);
+    @Override
+    public long getScopeId() {
+        return this.zoneId;
+    }
 
-    public boolean attach(long scope);
-
-    public boolean dettach(long dataStoreId);
-
-    public boolean unmanaged(long dataStoreId);
-
-    public boolean maintain(long dataStoreId);
-
-    public boolean cancelMaintain(long dataStoreId);
-
-    public boolean deleteDataStore(long dataStoreId);
 }

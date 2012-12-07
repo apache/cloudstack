@@ -1,6 +1,7 @@
 package org.apache.cloudstack.storage.datastore.driver;
 
 import java.util.List;
+import java.util.Map;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
@@ -8,6 +9,7 @@ import org.apache.cloudstack.storage.command.CreateVolumeAnswer;
 import org.apache.cloudstack.storage.command.CreateVolumeCommand;
 import org.apache.cloudstack.storage.command.CreateVolumeFromBaseImageCommand;
 import org.apache.cloudstack.storage.command.DeleteVolume;
+import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
 import org.apache.cloudstack.storage.to.ImageOnPrimayDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeTO;
 import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreInfo;
@@ -19,10 +21,13 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Component
 public class DefaultPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver {
     private static final Logger s_logger = Logger.getLogger(DefaultPrimaryDataStoreDriverImpl.class);
-
+    protected PrimaryDataStore dataStore;
+    public DefaultPrimaryDataStoreDriverImpl(PrimaryDataStore dataStore) {
+        this.dataStore = dataStore;
+    }
+    
     @Override
     public boolean createVolume(VolumeObject vol) {
         // The default driver will send createvolume command to one of hosts
@@ -109,5 +114,23 @@ public class DefaultPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
     public long getAvailableCapacity() {
         // TODO Auto-generated method stub
         return 0;
+    }
+
+    @Override
+    public boolean initialize(Map<String, String> params) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean grantAccess(EndPoint ep) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean revokeAccess(EndPoint ep) {
+        // TODO Auto-generated method stub
+        return false;
     }
 }

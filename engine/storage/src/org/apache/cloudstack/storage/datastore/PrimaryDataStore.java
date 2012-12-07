@@ -49,5 +49,4 @@ public interface PrimaryDataStore extends PrimaryDataStoreInfo {
     boolean installTemplate(TemplateOnPrimaryDataStoreInfo template);
 
     VolumeDiskType getDefaultDiskType();
-
 }

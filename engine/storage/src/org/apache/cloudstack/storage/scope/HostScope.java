@@ -16,8 +16,24 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.datastore;
+package org.apache.cloudstack.storage.scope;
 
-public enum DataStoreStatus {
-    Initial, Initialized, Creating, Up, PrepareForMaintenance, ErrorInMaintenance, CancelMaintenance, Maintenance, Removed;
+import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
+import org.apache.cloudstack.engine.subsystem.api.storage.ScopeType;
+
+public class HostScope implements Scope {
+    private ScopeType type = ScopeType.HOST;
+    private long hostId;
+    public HostScope(long hostId) {
+        this.hostId = hostId;
+    }
+    @Override
+    public ScopeType getScopeType() {
+        return this.type;
+    }
+
+    @Override
+    public long getScopeId() {
+        return this.hostId;
+    }
 }
