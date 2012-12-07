@@ -24,6 +24,7 @@ import sys
 import os
 import xml.dom.minidom
 from optparse import OptionParser, OptionGroup, OptParseError, BadOptionError, OptionError, OptionConflictError, OptionValueError
+import re
 iptables = Command("iptables")
 bash = Command("/bin/bash")
 virsh = Command("virsh")
@@ -425,7 +426,7 @@ def network_rules_for_rebooted_vm(vmName):
         brName = "cloudbr0"
     else:
         brName.pop()
-        brName = brName[0].split("-")[1]
+        brName = re.sub("^BF-", "", brName[0])
 
     if 1 in [ vm_name.startswith(c) for c in ['r-', 's-', 'v-'] ]:
         
