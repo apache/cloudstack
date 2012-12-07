@@ -161,6 +161,7 @@ public class NiciraNvpApiTest {
 		when(header.getValue()).thenReturn("text/html");
 		when(_method.getResponseHeader("Content-Type")).thenReturn(header);
 		when(_method.getResponseBodyAsString()).thenReturn("Off to timbuktu, won't be back later.");
+		when(_method.isRequestSent()).thenReturn(true);
 		try {
 			ls = _api.executeCreateObject(ls, LogicalSwitch.class, "/", Collections.<String, String> emptyMap());
 		} finally {
@@ -204,6 +205,7 @@ public class NiciraNvpApiTest {
 		when(header.getValue()).thenReturn("text/html");
 		when(_method.getResponseHeader("Content-Type")).thenReturn(header);
 		when(_method.getResponseBodyAsString()).thenReturn("Off to timbuktu, won't be back later.");
+		when(_method.isRequestSent()).thenReturn(true);
 		try {
 			_api.executeUpdateObject(ls, "/", Collections.<String, String> emptyMap());
 		} finally {
@@ -241,6 +243,7 @@ public class NiciraNvpApiTest {
 		when(header.getValue()).thenReturn("text/html");
 		when(_method.getResponseHeader("Content-Type")).thenReturn(header);
 		when(_method.getResponseBodyAsString()).thenReturn("Off to timbuktu, won't be back later.");
+		when(_method.isRequestSent()).thenReturn(true);
 		try {
 			_api.executeDeleteObject("/");
 		} finally {
@@ -279,6 +282,7 @@ public class NiciraNvpApiTest {
 		when(header.getValue()).thenReturn("text/html");
 		when(_method.getResponseHeader("Content-Type")).thenReturn(header);
 		when(_method.getResponseBodyAsString()).thenReturn("Off to timbuktu, won't be back later.");
+		when(_method.isRequestSent()).thenReturn(true);
 		try {
 			_api.executeRetrieveObject(LogicalSwitch.class, "/", Collections.<String, String> emptyMap());
 		} finally {
