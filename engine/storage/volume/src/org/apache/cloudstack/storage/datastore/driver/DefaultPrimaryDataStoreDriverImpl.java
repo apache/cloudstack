@@ -28,6 +28,15 @@ public class DefaultPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         this.dataStore = dataStore;
     }
     
+    public DefaultPrimaryDataStoreDriverImpl() {
+        
+    }
+    
+    @Override
+    public void setDataStore(PrimaryDataStore dataStore) {
+        this.dataStore = dataStore;
+    }
+    
     @Override
     public boolean createVolume(VolumeObject vol) {
         // The default driver will send createvolume command to one of hosts

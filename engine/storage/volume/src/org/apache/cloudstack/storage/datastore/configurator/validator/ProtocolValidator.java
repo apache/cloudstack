@@ -16,27 +16,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.engine.subsystem.api.storage;
+package org.apache.cloudstack.storage.datastore.configurator.validator;
 
+import java.util.List;
 import java.util.Map;
 
-public interface PrimaryDataStoreLifeCycle {
-    public boolean initialize(Map<String, String> dsInfos);
-
-    public boolean attach(Scope scope);
-
-    public boolean dettach();
-
-    public boolean unmanaged();
-
-    public boolean maintain();
-
-    public boolean cancelMaintain();
-
-    public boolean deleteDataStore();
-
-    /**
-     * @param dataStore
-     */
-    void setDataStore(PrimaryDataStoreInfo dataStore);
+public interface ProtocolValidator {
+    public boolean validate(Map<String, String> params);
+    public List<String> getInputParamNames();
 }

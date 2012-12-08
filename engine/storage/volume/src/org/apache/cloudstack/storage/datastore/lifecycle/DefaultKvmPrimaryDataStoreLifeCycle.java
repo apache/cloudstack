@@ -16,27 +16,19 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.engine.subsystem.api.storage;
+package org.apache.cloudstack.storage.datastore.lifecycle;
 
-import java.util.Map;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 
-public interface PrimaryDataStoreLifeCycle {
-    public boolean initialize(Map<String, String> dsInfos);
-
-    public boolean attach(Scope scope);
-
-    public boolean dettach();
-
-    public boolean unmanaged();
-
-    public boolean maintain();
-
-    public boolean cancelMaintain();
-
-    public boolean deleteDataStore();
+public class DefaultKvmPrimaryDataStoreLifeCycle extends DefaultPrimaryDataStoreLifeCycleImpl {
 
     /**
+     * @param dataStoreDao
      * @param dataStore
      */
-    void setDataStore(PrimaryDataStoreInfo dataStore);
+    public DefaultKvmPrimaryDataStoreLifeCycle(PrimaryDataStoreDao dataStoreDao) {
+        super(dataStoreDao);
+        // TODO Auto-generated constructor stub
+    }
+
 }

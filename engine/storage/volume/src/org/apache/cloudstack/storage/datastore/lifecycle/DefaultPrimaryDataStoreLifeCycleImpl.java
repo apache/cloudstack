@@ -39,8 +39,12 @@ import org.springframework.stereotype.Component;
 public class DefaultPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
     protected PrimaryDataStoreInfo dataStore;
     protected PrimaryDataStoreDao dataStoreDao;
-    public DefaultPrimaryDataStoreLifeCycleImpl(PrimaryDataStoreDao dataStoreDao, PrimaryDataStore dataStore) {
+    public DefaultPrimaryDataStoreLifeCycleImpl(PrimaryDataStoreDao dataStoreDao) {
         this.dataStoreDao = dataStoreDao;
+    }
+    
+    @Override
+    public void setDataStore(PrimaryDataStoreInfo dataStore) {
         this.dataStore = dataStore;
     }
     

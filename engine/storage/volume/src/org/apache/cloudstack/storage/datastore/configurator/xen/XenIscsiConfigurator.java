@@ -16,27 +16,31 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.engine.subsystem.api.storage;
+package org.apache.cloudstack.storage.datastore.configurator.xen;
 
-import java.util.Map;
+import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
+import org.apache.cloudstack.storage.datastore.configurator.PrimaryDataStoreConfigurator;
 
-public interface PrimaryDataStoreLifeCycle {
-    public boolean initialize(Map<String, String> dsInfos);
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 
-    public boolean attach(Scope scope);
+public class XenIscsiConfigurator implements PrimaryDataStoreConfigurator {
 
-    public boolean dettach();
+    @Override
+    public HypervisorType getSupportedHypervisor() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-    public boolean unmanaged();
+    @Override
+    public String getSupportedDataStoreType() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-    public boolean maintain();
+    @Override
+    public PrimaryDataStore getDataStore() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-    public boolean cancelMaintain();
-
-    public boolean deleteDataStore();
-
-    /**
-     * @param dataStore
-     */
-    void setDataStore(PrimaryDataStoreInfo dataStore);
 }

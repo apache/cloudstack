@@ -16,27 +16,26 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.engine.subsystem.api.storage;
+package org.apache.cloudstack.storage.datastore.configurator.vmware;
 
-import java.util.Map;
+import org.apache.cloudstack.storage.datastore.configurator.validator.ISCSIValiator;
+import org.apache.cloudstack.storage.datastore.configurator.validator.ProtocolValidator;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
-public interface PrimaryDataStoreLifeCycle {
-    public boolean initialize(Map<String, String> dsInfos);
+import com.cloud.storage.Storage.StoragePoolType;
 
-    public boolean attach(Scope scope);
+@Component
+@Qualifier("defaultProvider")
+public class VmwareIsciConfigurator extends AbstractVmwareConfigurator {
 
-    public boolean dettach();
+    @Override
+    public StoragePoolType getSupportedDataStoreType() {
+        return StoragePoolType.Iscsi;
+    }
 
-    public boolean unmanaged();
-
-    public boolean maintain();
-
-    public boolean cancelMaintain();
-
-    public boolean deleteDataStore();
-
-    /**
-     * @param dataStore
-     */
-    void setDataStore(PrimaryDataStoreInfo dataStore);
+    @Override
+    public ProtocolValidator getValidator() {
+        return new ISCSIValiator();
+    }
 }

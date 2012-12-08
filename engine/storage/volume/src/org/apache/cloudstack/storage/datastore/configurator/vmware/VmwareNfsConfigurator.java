@@ -16,27 +16,22 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.engine.subsystem.api.storage;
+package org.apache.cloudstack.storage.datastore.configurator.vmware;
 
-import java.util.Map;
+import org.apache.cloudstack.storage.datastore.configurator.validator.NfsValidator;
+import org.apache.cloudstack.storage.datastore.configurator.validator.ProtocolValidator;
 
-public interface PrimaryDataStoreLifeCycle {
-    public boolean initialize(Map<String, String> dsInfos);
+import com.cloud.storage.Storage.StoragePoolType;
 
-    public boolean attach(Scope scope);
+public class VmwareNfsConfigurator extends AbstractVmwareConfigurator {
 
-    public boolean dettach();
+    @Override
+    public StoragePoolType getSupportedDataStoreType() {
+        return StoragePoolType.NetworkFilesystem;
+    }
 
-    public boolean unmanaged();
-
-    public boolean maintain();
-
-    public boolean cancelMaintain();
-
-    public boolean deleteDataStore();
-
-    /**
-     * @param dataStore
-     */
-    void setDataStore(PrimaryDataStoreInfo dataStore);
+    @Override
+    public ProtocolValidator getValidator() {
+        return new NfsValidator();
+    }
 }

@@ -16,27 +16,17 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.engine.subsystem.api.storage;
+package org.apache.cloudstack.storage.datastore.configurator;
 
-import java.util.Map;
+import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
+import org.apache.cloudstack.storage.datastore.configurator.validator.ProtocolValidator;
 
-public interface PrimaryDataStoreLifeCycle {
-    public boolean initialize(Map<String, String> dsInfos);
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.Storage.StoragePoolType;
 
-    public boolean attach(Scope scope);
-
-    public boolean dettach();
-
-    public boolean unmanaged();
-
-    public boolean maintain();
-
-    public boolean cancelMaintain();
-
-    public boolean deleteDataStore();
-
-    /**
-     * @param dataStore
-     */
-    void setDataStore(PrimaryDataStoreInfo dataStore);
+public interface PrimaryDataStoreConfigurator {
+    public HypervisorType getSupportedHypervisor();
+    public StoragePoolType getSupportedDataStoreType();
+    public PrimaryDataStore getDataStore(long dataStoreId);
+    public ProtocolValidator getValidator();
 }

@@ -16,27 +16,18 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.engine.subsystem.api.storage;
+package org.apache.cloudstack.storage.volume.test;
 
-import java.util.Map;
+import org.apache.cloudstack.storage.image.motion.ImageMotionService;
+import org.mockito.Mockito;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
-public interface PrimaryDataStoreLifeCycle {
-    public boolean initialize(Map<String, String> dsInfos);
 
-    public boolean attach(Scope scope);
-
-    public boolean dettach();
-
-    public boolean unmanaged();
-
-    public boolean maintain();
-
-    public boolean cancelMaintain();
-
-    public boolean deleteDataStore();
-
-    /**
-     * @param dataStore
-     */
-    void setDataStore(PrimaryDataStoreInfo dataStore);
+@Configuration
+public class TestConfiguration {
+    @Bean
+    public ImageMotionService imageMotion() {
+        return Mockito.mock(ImageMotionService.class);
+    }
 }

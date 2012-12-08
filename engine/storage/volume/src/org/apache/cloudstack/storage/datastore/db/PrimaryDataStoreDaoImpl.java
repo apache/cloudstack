@@ -46,6 +46,7 @@ import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+@Component
 public class PrimaryDataStoreDaoImpl extends GenericDaoBase<PrimaryDataStoreVO, Long> implements PrimaryDataStoreDao {
     protected final SearchBuilder<PrimaryDataStoreVO> AllFieldSearch;
     protected final SearchBuilder<PrimaryDataStoreVO> DcPodSearch;

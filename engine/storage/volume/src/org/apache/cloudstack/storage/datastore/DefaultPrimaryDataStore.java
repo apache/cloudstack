@@ -49,10 +49,12 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
     }
     
     public void setDriver(PrimaryDataStoreDriver driver) {
+        driver.setDataStore(this);
         this.driver = driver;
     }
     
     public void setLifeCycle(PrimaryDataStoreLifeCycle lifeCycle) {
+        lifeCycle.setDataStore(this);
         this.lifeCycle = lifeCycle;
     }
     
