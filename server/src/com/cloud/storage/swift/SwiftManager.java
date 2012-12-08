@@ -19,10 +19,10 @@ package com.cloud.storage.swift;
 import java.util.List;
 
 import com.cloud.agent.api.to.SwiftTO;
-import org.apache.cloudstack.api.admin.swift.command.AddSwiftCmd;
-import org.apache.cloudstack.api.admin.swift.command.ListSwiftsCmd;
-import org.apache.cloudstack.api.user.iso.command.DeleteIsoCmd;
-import org.apache.cloudstack.api.user.template.command.DeleteTemplateCmd;
+import org.apache.cloudstack.api.command.admin.swift.AddSwiftCmd;
+import org.apache.cloudstack.api.command.admin.swift.ListSwiftsCmd;
+import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
+import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.storage.Swift;
 import com.cloud.storage.SwiftVO;

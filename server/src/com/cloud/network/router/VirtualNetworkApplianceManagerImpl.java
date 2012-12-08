@@ -36,7 +36,7 @@ import java.util.concurrent.TimeUnit;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.api.admin.router.command.UpgradeRouterCmd;
+import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;

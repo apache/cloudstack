@@ -24,8 +24,8 @@ import java.util.Set;
 
 import javax.ejb.Local;
 
-import org.apache.cloudstack.api.admin.router.command.ConfigureVirtualRouterElementCmd;
-import org.apache.cloudstack.api.admin.router.command.ListVirtualRouterElementsCmd;
+import org.apache.cloudstack.api.command.admin.router.ConfigureVirtualRouterElementCmd;
+import org.apache.cloudstack.api.command.admin.router.ListVirtualRouterElementsCmd;
 import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ConfigurationManager;

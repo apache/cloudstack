@@ -18,7 +18,7 @@ package com.cloud.async;
 
 import java.util.List;
 
-import org.apache.cloudstack.api.user.job.command.QueryAsyncJobResultCmd;
+import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
 import com.cloud.utils.component.Manager;
 
 public interface AsyncJobManager extends Manager {

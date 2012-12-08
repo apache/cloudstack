@@ -44,6 +44,7 @@ import java.util.concurrent.TimeUnit;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.command.admin.storagepool.*;
 import org.apache.cloudstack.api.user.volume.command.CreateVolumeCmd;
 import org.apache.log4j.Logger;
 
@@ -72,11 +73,10 @@ import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
-import org.apache.cloudstack.api.admin.storagepool.command.CancelPrimaryStorageMaintenanceCmd;
-import org.apache.cloudstack.api.admin.storagepool.command.CreateStoragePoolCmd;
-import org.apache.cloudstack.api.admin.storagepool.command.DeletePoolCmd;
+import org.apache.cloudstack.api.command.admin.storagepool.CancelPrimaryStorageMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.storagepool.CreateStoragePoolCmd;
 import org.apache.cloudstack.api.user.volume.command.ListVolumesCmd;
-import org.apache.cloudstack.api.admin.storagepool.command.UpdateStoragePoolCmd;
+import org.apache.cloudstack.api.command.admin.storagepool.UpdateStoragePoolCmd;
 import org.apache.cloudstack.api.user.volume.command.UploadVolumeCmd;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.capacity.Capacity;

@@ -25,7 +25,7 @@ import java.util.concurrent.Executors;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.api.user.template.command.CreateTemplateCmd;
+import org.apache.cloudstack.api.command.user.template.CreateTemplateCmd;
 import org.apache.cloudstack.api.user.volume.command.AttachVolumeCmd;
 import org.apache.cloudstack.api.user.volume.command.DetachVolumeCmd;
 import org.apache.log4j.Logger;

@@ -20,10 +20,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.cloudstack.api.admin.usage.command.ListTrafficTypeImplementorsCmd;
-import org.apache.cloudstack.api.user.network.command.CreateNetworkCmd;
-import org.apache.cloudstack.api.user.network.command.ListNetworksCmd;
-import org.apache.cloudstack.api.user.network.command.RestartNetworkCmd;
+import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
+import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
+import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
+import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;

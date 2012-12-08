@@ -19,7 +19,7 @@ package com.cloud.server;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.cloudstack.api.user.tag.command.ListTagsCmd;
+import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
 
 import com.cloud.api.view.vo.ResourceTagJoinVO;
 import com.cloud.server.ResourceTag.TaggedResourceType;

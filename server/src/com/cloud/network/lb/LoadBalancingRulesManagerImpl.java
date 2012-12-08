@@ -30,12 +30,12 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.api.user.lb.command.*;
+import org.apache.cloudstack.api.command.user.loadbalancer.*;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.user.lb.command.CreateLBStickinessPolicyCmd;
-import org.apache.cloudstack.api.user.lb.command.ListLoadBalancerRuleInstancesCmd;
-import org.apache.cloudstack.api.user.lb.command.ListLoadBalancerRulesCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.CreateLBStickinessPolicyCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.ListLoadBalancerRuleInstancesCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.ListLoadBalancerRulesCmd;
 import com.cloud.api.response.ServiceResponse;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;

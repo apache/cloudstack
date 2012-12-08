@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.api.user.job.command.QueryAsyncJobResultCmd;
+import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 

@@ -19,7 +19,7 @@ package src.com.cloud.api.commands.test;
 import junit.framework.Assert;
 import junit.framework.TestCase;
 
-import org.apache.cloudstack.api.admin.host.command.AddHostCmd;
+import org.apache.cloudstack.api.command.admin.host.AddHostCmd;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;

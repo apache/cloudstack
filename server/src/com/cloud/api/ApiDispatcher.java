@@ -34,7 +34,7 @@ import org.apache.log4j.Logger;
 import com.cloud.acl.ControlledEntity;
 import com.cloud.acl.Role;
 import org.apache.cloudstack.api.BaseCmd.CommandType;
-import org.apache.cloudstack.api.user.event.command.ListEventsCmd;
+import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import com.cloud.async.AsyncCommandQueued;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.configuration.Config;

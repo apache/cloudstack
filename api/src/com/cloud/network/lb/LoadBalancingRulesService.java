@@ -18,9 +18,9 @@ package com.cloud.network.lb;
 
 import java.util.List;
 
-import org.apache.cloudstack.api.user.lb.command.*;
-import org.apache.cloudstack.api.user.lb.command.CreateLBStickinessPolicyCmd;
-import org.apache.cloudstack.api.user.lb.command.UpdateLoadBalancerRuleCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.*;
+import org.apache.cloudstack.api.command.user.loadbalancer.CreateLBStickinessPolicyCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.UpdateLoadBalancerRuleCmd;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -28,7 +28,6 @@ import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.StickinessPolicy;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
-import org.apache.cloudstack.api.user.lb.command.ListLoadBalancerRulesCmd;
 
 
 public interface LoadBalancingRulesService {

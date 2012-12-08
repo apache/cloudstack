@@ -25,12 +25,12 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.api.admin.network.command.CreateStorageNetworkIpRangeCmd;
-import org.apache.cloudstack.api.admin.network.command.ListStorageNetworkIpRangeCmd;
-import org.apache.cloudstack.api.admin.network.command.UpdateStorageNetworkIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.network.CreateStorageNetworkIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.network.ListStorageNetworkIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.network.UpdateStorageNetworkIpRangeCmd;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.admin.network.command.DeleteStorageNetworkIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.network.DeleteStorageNetworkIpRangeCmd;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.StorageNetworkIpRange;
 import com.cloud.dc.StorageNetworkIpAddressVO;

@@ -20,9 +20,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import junit.framework.Assert;
 import junit.framework.TestCase;
 
+import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -31,7 +31,6 @@ import org.mockito.Mockito;
 
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.admin.router.command.ListRoutersCmd;
 import com.cloud.api.response.DomainRouterResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.view.vo.DomainRouterJoinVO;

@@ -26,15 +26,15 @@ import java.util.concurrent.ScheduledExecutorService;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.api.admin.network.command.AddNetworkDeviceCmd;
-import org.apache.cloudstack.api.admin.network.command.ListNetworkDeviceCmd;
+import org.apache.cloudstack.api.command.admin.network.AddNetworkDeviceCmd;
+import org.apache.cloudstack.api.command.admin.network.ListNetworkDeviceCmd;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.IdentityService;
-import org.apache.cloudstack.api.admin.network.command.DeleteNetworkDeviceCmd;
+import org.apache.cloudstack.api.command.admin.network.DeleteNetworkDeviceCmd;
 import com.cloud.baremetal.ExternalDhcpManager;
 import com.cloud.baremetal.PxeServerManager;
 import com.cloud.baremetal.PxeServerProfile;
@@ -59,7 +59,7 @@ import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.server.ManagementServer;
-import org.apache.cloudstack.api.admin.network.response.NetworkDeviceResponse;
+import org.apache.cloudstack.api.response.NetworkDeviceResponse;
 import com.cloud.server.api.response.NwDeviceDhcpResponse;
 import com.cloud.server.api.response.PxePingResponse;
 import com.cloud.user.AccountManager;

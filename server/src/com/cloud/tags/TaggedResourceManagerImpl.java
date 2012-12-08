@@ -24,9 +24,8 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
 import org.apache.log4j.Logger;
-
-import org.apache.cloudstack.api.user.tag.command.ListTagsCmd;
 
 import com.cloud.api.view.vo.ResourceTagJoinVO;
 import com.cloud.domain.Domain;

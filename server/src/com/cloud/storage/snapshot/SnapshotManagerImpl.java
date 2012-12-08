@@ -25,7 +25,8 @@ import java.util.TimeZone;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.api.user.snapshot.command.*;
+import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotPolicyCmd;
+import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotsCmd;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -40,9 +41,9 @@ import com.cloud.agent.api.ManageSnapshotCommand;
 import com.cloud.agent.api.downloadSnapshotFromSwiftCommand;
 import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.alert.AlertManager;
-import org.apache.cloudstack.api.user.snapshot.command.DeleteSnapshotPoliciesCmd;
+import org.apache.cloudstack.api.command.user.snapshot.DeleteSnapshotPoliciesCmd;
 import com.cloud.api.commands.ListRecurringSnapshotScheduleCmd;
-import org.apache.cloudstack.api.user.snapshot.command.ListSnapshotPoliciesCmd;
+import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotPoliciesCmd;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;

@@ -26,7 +26,7 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.api.user.firewall.command.ListFirewallRulesCmd;
+import org.apache.cloudstack.api.command.user.firewall.ListFirewallRulesCmd;
 import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;

@@ -26,7 +26,7 @@ import java.util.TimerTask;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.api.user.snapshot.command.CreateSnapshotCmd;
+import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotCmd;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;

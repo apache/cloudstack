@@ -18,11 +18,11 @@ package com.cloud.storage.snapshot;
 
 import java.util.List;
 
-import org.apache.cloudstack.api.user.snapshot.command.CreateSnapshotPolicyCmd;
-import org.apache.cloudstack.api.user.snapshot.command.DeleteSnapshotPoliciesCmd;
+import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotPolicyCmd;
+import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotsCmd;
+import org.apache.cloudstack.api.command.user.snapshot.DeleteSnapshotPoliciesCmd;
 import com.cloud.api.commands.ListRecurringSnapshotScheduleCmd;
-import org.apache.cloudstack.api.user.snapshot.command.ListSnapshotPoliciesCmd;
-import org.apache.cloudstack.api.user.snapshot.command.ListSnapshotsCmd;
+import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotPoliciesCmd;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.Snapshot;

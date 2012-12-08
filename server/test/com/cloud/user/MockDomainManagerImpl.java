@@ -23,8 +23,8 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.api.admin.domain.command.ListDomainChildrenCmd;
-import org.apache.cloudstack.api.admin.domain.command.ListDomainsCmd;
+import org.apache.cloudstack.api.command.admin.domain.ListDomainChildrenCmd;
+import org.apache.cloudstack.api.command.admin.domain.ListDomainsCmd;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.exception.PermissionDeniedException;

@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.api.user.lb.command.CreateLoadBalancerRuleCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.CreateLoadBalancerRuleCmd;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;

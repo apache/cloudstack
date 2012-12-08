@@ -25,10 +25,10 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import com.cloud.acl.ControlledEntity.ACLType;
-import org.apache.cloudstack.api.admin.usage.command.ListTrafficTypeImplementorsCmd;
-import org.apache.cloudstack.api.user.network.command.CreateNetworkCmd;
-import org.apache.cloudstack.api.user.network.command.ListNetworksCmd;
-import org.apache.cloudstack.api.user.network.command.RestartNetworkCmd;
+import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
+import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
+import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
+import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;

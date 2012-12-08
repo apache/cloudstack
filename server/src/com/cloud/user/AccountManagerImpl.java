@@ -36,8 +36,9 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.api.admin.user.command.ListUsersCmd;
-import org.apache.cloudstack.api.admin.user.command.RegisterCmd;
+import org.apache.cloudstack.api.command.admin.user.*;
+import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
+import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
@@ -46,10 +47,9 @@ import com.cloud.api.view.vo.ControlledViewEntity;
 import com.cloud.acl.SecurityChecker;
 import com.cloud.acl.SecurityChecker.AccessType;
 import com.cloud.api.ApiDBUtils;
-import org.apache.cloudstack.api.admin.user.command.DeleteUserCmd;
-import org.apache.cloudstack.api.user.account.command.ListAccountsCmd;
-import org.apache.cloudstack.api.admin.account.command.UpdateAccountCmd;
-import org.apache.cloudstack.api.admin.user.command.UpdateUserCmd;
+import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
+import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
+import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ResourceLimit;

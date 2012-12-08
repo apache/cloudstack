@@ -50,6 +50,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.apache.cloudstack.api.*;
+import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.ConnectionClosedException;
 import org.apache.http.HttpException;
@@ -78,10 +79,9 @@ import org.apache.http.protocol.ResponseDate;
 import org.apache.http.protocol.ResponseServer;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.admin.router.command.ListRoutersCmd;
-import org.apache.cloudstack.api.user.event.command.ListEventsCmd;
-import org.apache.cloudstack.api.user.securitygroup.command.ListSecurityGroupsCmd;
-import org.apache.cloudstack.api.user.tag.command.ListTagsCmd;
+import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
+import org.apache.cloudstack.api.command.user.securitygroup.ListSecurityGroupsCmd;
+import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
 import org.apache.cloudstack.api.user.vm.command.ListVMsCmd;
 import com.cloud.acl.ControlledEntity;
 import com.cloud.api.response.ApiResponseSerializer;

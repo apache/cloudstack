@@ -40,8 +40,9 @@ import java.util.concurrent.TimeUnit;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.api.admin.usage.command.ListTrafficTypeImplementorsCmd;
-import org.apache.cloudstack.api.user.network.command.CreateNetworkCmd;
+import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
+import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
+import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
 import org.apache.log4j.Logger;
 
 import com.cloud.acl.ControlledEntity.ACLType;
@@ -58,8 +59,7 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.alert.AlertManager;
-import org.apache.cloudstack.api.user.network.command.ListNetworksCmd;
-import org.apache.cloudstack.api.user.network.command.RestartNetworkCmd;
+import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;

@@ -24,12 +24,12 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.acl.ControlledEntity;
 import com.cloud.acl.SecurityChecker.AccessType;
-import org.apache.cloudstack.api.admin.user.command.DeleteUserCmd;
-import org.apache.cloudstack.api.admin.user.command.ListUsersCmd;
-import org.apache.cloudstack.api.admin.user.command.RegisterCmd;
-import org.apache.cloudstack.api.user.account.command.ListAccountsCmd;
-import org.apache.cloudstack.api.admin.account.command.UpdateAccountCmd;
-import org.apache.cloudstack.api.admin.user.command.UpdateUserCmd;
+import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
+import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
+import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
+import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
+import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
+import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import com.cloud.api.view.vo.ControlledViewEntity;
 import com.cloud.domain.Domain;
 import com.cloud.exception.ConcurrentOperationException;

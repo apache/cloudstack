@@ -19,13 +19,13 @@ package src.com.cloud.api.commands.test;
 import junit.framework.Assert;
 import junit.framework.TestCase;
 
+import org.apache.cloudstack.api.command.user.project.ActivateProjectCmd;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
 
-import org.apache.cloudstack.api.user.project.command.ActivateProjectCmd;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectService;
