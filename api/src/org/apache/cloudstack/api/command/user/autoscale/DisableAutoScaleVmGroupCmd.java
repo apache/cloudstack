@@ -26,7 +26,7 @@ import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import com.cloud.api.response.AutoScaleVmGroupResponse;
+import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.network.as.AutoScaleVmGroup;

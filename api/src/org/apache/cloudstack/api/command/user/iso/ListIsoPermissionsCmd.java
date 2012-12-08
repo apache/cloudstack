@@ -23,21 +23,21 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.template.VirtualMachineTemplate;
 
 public class ListIsoPermissionsCmd extends ListTemplateOrIsoPermissionsCmd {
-	protected String getResponseName() {
-    	return "listisopermissionsresponse";
+    protected String getResponseName() {
+        return "listisopermissionsresponse";
     }
 
-	@Override
+    @Override
     public String getMediaType() {
-    	return "iso";
+        return "iso";
     }
 
-	@Override
+    @Override
     protected Logger getLogger() {
-		return Logger.getLogger(ListIsoPermissionsCmd.class.getName());
-	}
+        return Logger.getLogger(ListIsoPermissionsCmd.class.getName());
+    }
 
-	protected boolean templateIsCorrectType(VirtualMachineTemplate template) {
-		return template.getFormat().equals(ImageFormat.ISO);
-	}
+    protected boolean templateIsCorrectType(VirtualMachineTemplate template) {
+        return template.getFormat().equals(ImageFormat.ISO);
+    }
 }

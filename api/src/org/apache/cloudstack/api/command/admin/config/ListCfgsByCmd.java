@@ -25,8 +25,8 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
-import com.cloud.api.response.ConfigurationResponse;
-import com.cloud.api.response.ListResponse;
+import org.apache.cloudstack.api.response.ConfigurationResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.configuration.Configuration;
 import com.cloud.utils.Pair;
 

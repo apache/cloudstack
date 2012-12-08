@@ -23,8 +23,8 @@ import org.junit.After;
 import org.junit.Before;
 
 import com.cloud.api.ApiSerializerHelper;
-import com.cloud.api.response.AlertResponse;
-import com.cloud.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.AlertResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
 
 public class KeystoreTest extends TestCase {
     private final static Logger s_logger = Logger.getLogger(KeystoreTest.class);

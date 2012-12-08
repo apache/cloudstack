@@ -20,11 +20,8 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.acl.ControlledEntity;
-import com.cloud.acl.SecurityChecker.AccessType;
-import com.cloud.api.view.vo.ControlledViewEntity;
-import com.cloud.domain.Domain;
+import org.apache.cloudstack.api.view.vo.ControlledViewEntity;
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.utils.Pair;

@@ -22,7 +22,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Implementation;
-import com.cloud.api.response.CapabilitiesResponse;
+import org.apache.cloudstack.api.response.CapabilitiesResponse;
 import com.cloud.user.Account;
 
 @Implementation(description="Lists capabilities", responseObject=CapabilitiesResponse.class)

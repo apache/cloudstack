@@ -26,7 +26,7 @@ import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import com.cloud.api.response.SuccessResponse;
+import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.user.Account;
 
 @Implementation(description="Deletes snapshot policies for the account.", responseObject=SuccessResponse.class)

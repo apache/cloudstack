@@ -28,7 +28,7 @@ import org.mockito.Mockito;
 
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ServerApiException;
-import com.cloud.api.response.SwiftResponse;
+import org.apache.cloudstack.api.response.SwiftResponse;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.resource.ResourceService;
 import com.cloud.storage.Swift;

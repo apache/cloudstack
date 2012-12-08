@@ -36,7 +36,7 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLBStickinessPolicyCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.ListLoadBalancerRuleInstancesCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.ListLoadBalancerRulesCmd;
-import com.cloud.api.response.ServiceResponse;
+import org.apache.cloudstack.api.response.ServiceResponse;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;

@@ -31,9 +31,9 @@ import org.mockito.Mockito;
 
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ServerApiException;
-import com.cloud.api.response.DomainRouterResponse;
-import com.cloud.api.response.ListResponse;
-import com.cloud.api.view.vo.DomainRouterJoinVO;
+import org.apache.cloudstack.api.response.DomainRouterResponse;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.view.vo.DomainRouterJoinVO;
 import com.cloud.server.ManagementService;
 import com.cloud.utils.Pair;
 

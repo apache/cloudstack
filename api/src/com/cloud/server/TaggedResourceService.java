@@ -21,7 +21,7 @@ import java.util.Map;
 
 import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
 
-import com.cloud.api.view.vo.ResourceTagJoinVO;
+import org.apache.cloudstack.api.view.vo.ResourceTagJoinVO;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.utils.Pair;
 

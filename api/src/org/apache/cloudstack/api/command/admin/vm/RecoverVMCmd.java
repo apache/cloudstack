@@ -23,7 +23,7 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import com.cloud.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;

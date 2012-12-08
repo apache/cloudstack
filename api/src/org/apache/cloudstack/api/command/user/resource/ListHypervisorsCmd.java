@@ -27,8 +27,8 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
-import com.cloud.api.response.HypervisorResponse;
-import com.cloud.api.response.ListResponse;
+import org.apache.cloudstack.api.response.HypervisorResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.user.Account;
 
 @Implementation(description = "List hypervisors", responseObject = HypervisorResponse.class)

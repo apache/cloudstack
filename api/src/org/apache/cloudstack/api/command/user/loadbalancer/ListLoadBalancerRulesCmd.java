@@ -26,8 +26,8 @@ import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
-import com.cloud.api.response.ListResponse;
-import com.cloud.api.response.LoadBalancerResponse;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.LoadBalancerResponse;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.utils.Pair;
 

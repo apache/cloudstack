@@ -20,6 +20,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.cloud.utils.IdentityProxy;
 import com.google.gson.annotations.SerializedName;
+import org.apache.cloudstack.api.BaseResponse;
 
 public class NiciraNvpDeviceResponse extends BaseResponse {
     @SerializedName(ApiConstants.NICIRA_NVP_DEVICE_ID) @Param(description="device id of the Nicire Nvp")

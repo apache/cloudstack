@@ -16,44 +16,23 @@
 // under the License.
 package com.cloud.vm.dao;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Hashtable;
 import java.util.List;
 
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
-import com.cloud.api.response.DomainRouterResponse;
-import com.cloud.api.response.NicResponse;
-import com.cloud.api.response.ResourceTagResponse;
-import com.cloud.api.response.SecurityGroupResponse;
-import com.cloud.api.response.UserVmResponse;
-import com.cloud.api.view.vo.DomainRouterJoinVO;
-import com.cloud.dc.DataCenter;
-import com.cloud.network.Network;
+import org.apache.cloudstack.api.response.DomainRouterResponse;
+import org.apache.cloudstack.api.response.NicResponse;
+import org.apache.cloudstack.api.view.vo.DomainRouterJoinVO;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.router.VirtualRouter;
-import com.cloud.offering.ServiceOffering;
 import com.cloud.user.Account;
-import com.cloud.uservm.UserVm;
-import com.cloud.utils.Pair;
-import com.cloud.utils.db.Attribute;
-import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.NicProfile;
 
 
 @Local(value={DomainRouterJoinDao.class})

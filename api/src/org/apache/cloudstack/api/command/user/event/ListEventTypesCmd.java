@@ -22,8 +22,8 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Implementation;
-import com.cloud.api.response.EventTypeResponse;
-import com.cloud.api.response.ListResponse;
+import org.apache.cloudstack.api.response.EventTypeResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.user.Account;
 
 @Implementation(description = "List Event Types", responseObject = EventTypeResponse.class)

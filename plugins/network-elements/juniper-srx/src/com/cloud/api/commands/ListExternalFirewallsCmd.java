@@ -28,7 +28,7 @@ import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.PlugService;
-import com.cloud.api.response.ListResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.host.Host;
 import com.cloud.network.element.JuniperSRXFirewallElementService;
 import com.cloud.server.api.response.ExternalFirewallResponse;

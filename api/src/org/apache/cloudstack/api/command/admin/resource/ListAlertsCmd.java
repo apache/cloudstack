@@ -27,8 +27,8 @@ import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
-import com.cloud.api.response.AlertResponse;
-import com.cloud.api.response.ListResponse;
+import org.apache.cloudstack.api.response.AlertResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.utils.Pair;
 
 @Implementation(description = "Lists all alerts.", responseObject = AlertResponse.class)

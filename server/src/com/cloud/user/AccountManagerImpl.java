@@ -43,7 +43,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
 import com.cloud.acl.ControlledEntity;
-import com.cloud.api.view.vo.ControlledViewEntity;
+import org.apache.cloudstack.api.view.vo.ControlledViewEntity;
 import com.cloud.acl.SecurityChecker;
 import com.cloud.acl.SecurityChecker.AccessType;
 import com.cloud.api.ApiDBUtils;

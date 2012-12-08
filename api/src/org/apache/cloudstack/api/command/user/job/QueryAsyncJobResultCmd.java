@@ -23,7 +23,7 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
-import com.cloud.api.response.AsyncJobResponse;
+import org.apache.cloudstack.api.response.AsyncJobResponse;
 import com.cloud.user.Account;
 
 @Implementation(description="Retrieves the current status of asynchronous job.", responseObject=AsyncJobResponse.class)

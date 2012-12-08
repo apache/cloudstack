@@ -26,10 +26,10 @@ import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 
-import com.cloud.api.view.vo.DomainRouterJoinVO;
+import org.apache.cloudstack.api.view.vo.DomainRouterJoinVO;
 
-import com.cloud.api.response.DomainRouterResponse;
-import com.cloud.api.response.ListResponse;
+import org.apache.cloudstack.api.response.DomainRouterResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.utils.Pair;
 

@@ -16,7 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api;
 
-import com.cloud.api.response.CreateCmdResponse;
+import org.apache.cloudstack.api.response.CreateCmdResponse;
 import com.cloud.exception.ResourceAllocationException;
 
 public abstract class BaseAsyncCreateCmd extends BaseAsyncCmd {

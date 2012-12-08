@@ -27,7 +27,7 @@ import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.PlugService;
 import org.apache.cloudstack.api.ServerApiException;
-import com.cloud.api.response.ListResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.api.response.NetscalerLoadBalancerResponse;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;

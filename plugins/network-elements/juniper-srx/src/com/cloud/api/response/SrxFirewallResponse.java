@@ -20,6 +20,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
+import org.apache.cloudstack.api.BaseResponse;
 
 @SuppressWarnings("unused")
 public class SrxFirewallResponse extends BaseResponse {

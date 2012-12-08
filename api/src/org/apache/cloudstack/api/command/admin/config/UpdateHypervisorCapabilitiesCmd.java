@@ -24,8 +24,8 @@ import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import com.cloud.api.response.HypervisorCapabilitiesResponse;
-import com.cloud.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.HypervisorCapabilitiesResponse;
+import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import com.cloud.hypervisor.HypervisorCapabilities;
 import com.cloud.user.Account;
 

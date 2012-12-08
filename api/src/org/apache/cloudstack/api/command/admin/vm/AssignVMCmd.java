@@ -19,7 +19,7 @@ package org.apache.cloudstack.api.command.admin.vm;
 
 import java.util.List;
 
-import org.apache.cloudstack.api.user.vm.command.DeployVMCmd;
+import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -28,10 +28,10 @@ import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 
-import com.cloud.api.response.DomainResponse;
-import com.cloud.api.response.NetworkResponse;
-import com.cloud.api.response.SecurityGroupResponse;
-import com.cloud.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.NetworkResponse;
+import org.apache.cloudstack.api.response.SecurityGroupResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 

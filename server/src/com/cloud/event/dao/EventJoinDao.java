@@ -18,10 +18,9 @@ package com.cloud.event.dao;
 
 import java.util.List;
 
-import com.cloud.api.response.EventResponse;
-import com.cloud.api.view.vo.EventJoinVO;
+import org.apache.cloudstack.api.response.EventResponse;
+import org.apache.cloudstack.api.view.vo.EventJoinVO;
 import com.cloud.event.Event;
-import com.cloud.event.EventVO;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.SearchCriteria;

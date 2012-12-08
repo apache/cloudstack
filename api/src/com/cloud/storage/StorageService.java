@@ -23,9 +23,9 @@ import org.apache.cloudstack.api.command.admin.storagepool.CancelPrimaryStorageM
 import org.apache.cloudstack.api.command.admin.storagepool.CreateStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storagepool.DeletePoolCmd;
 import org.apache.cloudstack.api.command.admin.storagepool.UpdateStoragePoolCmd;
-import org.apache.cloudstack.api.user.volume.command.CreateVolumeCmd;
-import org.apache.cloudstack.api.user.volume.command.ListVolumesCmd;
-import org.apache.cloudstack.api.user.volume.command.UploadVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
+import org.apache.cloudstack.api.command.user.volume.UploadVolumeCmd;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.PermissionDeniedException;

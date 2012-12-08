@@ -26,7 +26,7 @@ import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.PlugService;
 import org.apache.cloudstack.api.ServerApiException;
-import com.cloud.api.response.VirtualRouterProviderResponse;
+import org.apache.cloudstack.api.response.VirtualRouterProviderResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.VirtualRouterProvider;

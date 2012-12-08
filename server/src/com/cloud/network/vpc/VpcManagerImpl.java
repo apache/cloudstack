@@ -30,11 +30,11 @@ import java.util.concurrent.TimeUnit;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.command.user.vpc.ListStaticRoutesCmd;
 import org.apache.log4j.Logger;
 
 import com.cloud.acl.ControlledEntity.ACLType;
-import org.apache.cloudstack.api.user.vpc.command.ListPrivateGatewaysCmd;
-import org.apache.cloudstack.api.user.vpc.command.ListStaticRoutesCmd;
+import org.apache.cloudstack.api.command.user.vpc.ListPrivateGatewaysCmd;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;

@@ -16,7 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api;
 
-import com.cloud.api.response.AsyncJobResponse;
+import org.apache.cloudstack.api.response.AsyncJobResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;

@@ -26,9 +26,9 @@ import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.user.Account;
 import com.cloud.event.EventTypes;
 import com.cloud.async.AsyncJob;
-import com.cloud.api.response.AccountResponse;
-import com.cloud.api.response.DomainResponse;
-import com.cloud.api.response.ZoneResponse;
+import org.apache.cloudstack.api.response.AccountResponse;
+import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.BaseCmd;

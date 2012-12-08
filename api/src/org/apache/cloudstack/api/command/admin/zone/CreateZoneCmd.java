@@ -24,8 +24,8 @@ import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 
-import com.cloud.api.response.DomainResponse;
-import com.cloud.api.response.ZoneResponse;
+import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 import com.cloud.dc.DataCenter;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;

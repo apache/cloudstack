@@ -21,8 +21,8 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Implementation;
-import com.cloud.api.response.LDAPConfigResponse;
-import com.cloud.api.response.LDAPRemoveResponse;
+import org.apache.cloudstack.api.response.LDAPConfigResponse;
+import org.apache.cloudstack.api.response.LDAPRemoveResponse;
 import com.cloud.user.Account;
 
 @Implementation(description="Remove the LDAP context for this site.", responseObject=LDAPConfigResponse.class, since="3.0.1")

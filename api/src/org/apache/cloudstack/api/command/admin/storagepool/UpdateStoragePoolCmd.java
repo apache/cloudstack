@@ -26,7 +26,7 @@ import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import com.cloud.api.response.StoragePoolResponse;
+import org.apache.cloudstack.api.response.StoragePoolResponse;
 import com.cloud.storage.StoragePool;
 import com.cloud.user.Account;
 

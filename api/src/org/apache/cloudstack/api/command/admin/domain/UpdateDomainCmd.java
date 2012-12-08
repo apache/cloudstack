@@ -24,7 +24,7 @@ import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import com.cloud.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.DomainResponse;
 import com.cloud.domain.Domain;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;

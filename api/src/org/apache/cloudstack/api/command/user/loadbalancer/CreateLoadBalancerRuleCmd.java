@@ -27,7 +27,7 @@ import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import com.cloud.api.response.LoadBalancerResponse;
+import org.apache.cloudstack.api.response.LoadBalancerResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;

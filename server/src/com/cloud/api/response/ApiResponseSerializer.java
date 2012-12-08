@@ -27,6 +27,8 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.*;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -103,7 +105,7 @@ public class ApiResponseSerializer {
                 }
             } else if (result instanceof SuccessResponse) {
                 sb.append("{ \"success\" : \"").append(((SuccessResponse) result).getSuccess()).append("\"} ");
-            } else if (result instanceof ExceptionResponse) {            	
+            } else if (result instanceof ExceptionResponse) {
             	String jsonErrorText = gson.toJson((ExceptionResponse) result);
             	jsonErrorText = unescape(jsonErrorText);
             	sb.append(jsonErrorText);            	

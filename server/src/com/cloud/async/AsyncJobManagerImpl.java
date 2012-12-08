@@ -44,7 +44,7 @@ import com.cloud.api.ApiSerializerHelper;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ServerApiException;
-import com.cloud.api.response.ExceptionResponse;
+import org.apache.cloudstack.api.response.ExceptionResponse;
 import com.cloud.async.dao.AsyncJobDao;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.ClusterManagerListener;

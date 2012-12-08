@@ -20,8 +20,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.cloudstack.api.user.vpc.command.ListPrivateGatewaysCmd;
-import org.apache.cloudstack.api.user.vpc.command.ListStaticRoutesCmd;
+import org.apache.cloudstack.api.command.user.vpc.ListPrivateGatewaysCmd;
+import org.apache.cloudstack.api.command.user.vpc.ListStaticRoutesCmd;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;

@@ -25,7 +25,7 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import com.cloud.api.response.CounterResponse;
+import org.apache.cloudstack.api.response.CounterResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.network.as.Counter;

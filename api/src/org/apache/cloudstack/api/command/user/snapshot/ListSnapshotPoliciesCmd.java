@@ -26,8 +26,8 @@ import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
-import com.cloud.api.response.ListResponse;
-import com.cloud.api.response.SnapshotPolicyResponse;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.SnapshotPolicyResponse;
 import com.cloud.storage.snapshot.SnapshotPolicy;
 
 @Implementation(description="Lists snapshot policies.", responseObject=SnapshotPolicyResponse.class)

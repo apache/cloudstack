@@ -26,8 +26,8 @@ import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
-import com.cloud.api.response.ListResponse;
-import com.cloud.api.response.PodResponse;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.PodResponse;
 import com.cloud.dc.Pod;
 import com.cloud.utils.Pair;
 

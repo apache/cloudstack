@@ -30,7 +30,7 @@ import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
-import com.cloud.api.view.vo.ControlledViewEntity;
+import org.apache.cloudstack.api.view.vo.ControlledViewEntity;
 import com.cloud.domain.Domain;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.PermissionDeniedException;

@@ -26,8 +26,8 @@ import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
-import com.cloud.api.response.ListResponse;
-import com.cloud.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
 import com.cloud.uservm.UserVm;
 
 @Implementation(description="List all virtual machine instances that are assigned to a load balancer rule.", responseObject=UserVmResponse.class)

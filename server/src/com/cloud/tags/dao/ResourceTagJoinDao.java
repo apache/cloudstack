@@ -18,10 +18,9 @@ package com.cloud.tags.dao;
 
 import java.util.List;
 
-import com.cloud.api.response.ResourceTagResponse;
-import com.cloud.api.view.vo.ResourceTagJoinVO;
+import org.apache.cloudstack.api.response.ResourceTagResponse;
+import org.apache.cloudstack.api.view.vo.ResourceTagJoinVO;
 import com.cloud.server.ResourceTag;
-import com.cloud.user.Account;
 import com.cloud.utils.db.GenericDao;
 
 public interface ResourceTagJoinDao extends GenericDao<ResourceTagJoinVO, Long> {

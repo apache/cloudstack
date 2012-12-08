@@ -23,7 +23,7 @@ import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import com.cloud.api.response.DiskOfferingResponse;
+import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import com.cloud.offering.DiskOffering;
 import com.cloud.user.Account;
 

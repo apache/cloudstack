@@ -24,7 +24,7 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import com.cloud.api.response.SuccessResponse;
+import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;

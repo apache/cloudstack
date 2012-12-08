@@ -26,8 +26,8 @@ import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
-import com.cloud.api.response.ListResponse;
-import com.cloud.api.response.VlanIpRangeResponse;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.VlanIpRangeResponse;
 import com.cloud.dc.Vlan;
 import com.cloud.utils.Pair;
 

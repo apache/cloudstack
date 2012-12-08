@@ -28,7 +28,7 @@ import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import com.cloud.api.response.IPAddressResponse;
+import org.apache.cloudstack.api.response.IPAddressResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;

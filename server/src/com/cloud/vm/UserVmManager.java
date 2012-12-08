@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.agent.api.VmStatsEntry;
-import com.cloud.api.view.vo.UserVmJoinVO;
+import org.apache.cloudstack.api.view.vo.UserVmJoinVO;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;

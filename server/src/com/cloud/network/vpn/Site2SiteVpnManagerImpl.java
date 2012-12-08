@@ -25,17 +25,17 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.user.vpn.command.CreateVpnConnectionCmd;
-import org.apache.cloudstack.api.user.vpn.command.CreateVpnCustomerGatewayCmd;
-import org.apache.cloudstack.api.user.vpn.command.CreateVpnGatewayCmd;
-import org.apache.cloudstack.api.user.vpn.command.DeleteVpnConnectionCmd;
-import org.apache.cloudstack.api.user.vpn.command.DeleteVpnCustomerGatewayCmd;
-import org.apache.cloudstack.api.user.vpn.command.DeleteVpnGatewayCmd;
-import org.apache.cloudstack.api.user.vpn.command.ListVpnConnectionsCmd;
-import org.apache.cloudstack.api.user.vpn.command.ListVpnCustomerGatewaysCmd;
-import org.apache.cloudstack.api.user.vpn.command.ListVpnGatewaysCmd;
-import org.apache.cloudstack.api.user.vpn.command.ResetVpnConnectionCmd;
-import org.apache.cloudstack.api.user.vpn.command.UpdateVpnCustomerGatewayCmd;
+import org.apache.cloudstack.api.command.user.vpn.CreateVpnConnectionCmd;
+import org.apache.cloudstack.api.command.user.vpn.CreateVpnCustomerGatewayCmd;
+import org.apache.cloudstack.api.command.user.vpn.CreateVpnGatewayCmd;
+import org.apache.cloudstack.api.command.user.vpn.DeleteVpnConnectionCmd;
+import org.apache.cloudstack.api.command.user.vpn.DeleteVpnCustomerGatewayCmd;
+import org.apache.cloudstack.api.command.user.vpn.DeleteVpnGatewayCmd;
+import org.apache.cloudstack.api.command.user.vpn.ListVpnConnectionsCmd;
+import org.apache.cloudstack.api.command.user.vpn.ListVpnCustomerGatewaysCmd;
+import org.apache.cloudstack.api.command.user.vpn.ListVpnGatewaysCmd;
+import org.apache.cloudstack.api.command.user.vpn.ResetVpnConnectionCmd;
+import org.apache.cloudstack.api.command.user.vpn.UpdateVpnCustomerGatewayCmd;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.event.ActionEvent;

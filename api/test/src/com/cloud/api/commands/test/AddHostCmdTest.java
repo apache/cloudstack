@@ -28,8 +28,8 @@ import org.mockito.Mockito;
 
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ServerApiException;
-import com.cloud.api.response.HostResponse;
-import com.cloud.api.response.ListResponse;
+import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;

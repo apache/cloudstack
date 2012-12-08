@@ -31,7 +31,7 @@ import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
-import com.cloud.api.response.ListResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.projects.Project;
 import com.cloud.server.ManagementServerExt;
 import com.cloud.server.api.response.UsageRecordResponse;

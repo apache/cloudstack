@@ -22,7 +22,7 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.ServerApiException;
-import com.cloud.api.response.TemplateResponse;
+import org.apache.cloudstack.api.response.TemplateResponse;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 

@@ -20,8 +20,8 @@ import java.util.EnumSet;
 import java.util.List;
 
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
-import com.cloud.api.response.UserVmResponse;
-import com.cloud.api.view.vo.UserVmJoinVO;
+import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.view.vo.UserVmJoinVO;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.db.GenericDao;

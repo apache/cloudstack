@@ -26,8 +26,8 @@ import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
-import com.cloud.api.response.DiskOfferingResponse;
-import com.cloud.api.response.ListResponse;
+import org.apache.cloudstack.api.response.DiskOfferingResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.offering.DiskOffering;
 
 @Implementation(description="Lists all available disk offerings.", responseObject=DiskOfferingResponse.class)

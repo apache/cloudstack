@@ -23,7 +23,7 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
-import com.cloud.api.response.SSHKeyPairResponse;
+import org.apache.cloudstack.api.response.SSHKeyPairResponse;
 import com.cloud.user.SSHKeyPair;
 import com.cloud.user.UserContext;
 

@@ -33,7 +33,7 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.rules.StickinessPolicy;
-import com.cloud.api.response.LBStickinessResponse;
+import org.apache.cloudstack.api.response.LBStickinessResponse;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;

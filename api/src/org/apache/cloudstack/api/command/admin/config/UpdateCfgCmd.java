@@ -23,7 +23,7 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import com.cloud.api.response.ConfigurationResponse;
+import org.apache.cloudstack.api.response.ConfigurationResponse;
 import com.cloud.configuration.Configuration;
 import com.cloud.user.Account;
 

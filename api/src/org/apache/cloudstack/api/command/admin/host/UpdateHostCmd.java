@@ -26,7 +26,7 @@ import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import com.cloud.api.response.HostResponse;
+import org.apache.cloudstack.api.response.HostResponse;
 import com.cloud.host.Host;
 import com.cloud.user.Account;
 

@@ -25,9 +25,9 @@ import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
-import com.cloud.api.response.ListResponse;
-import com.cloud.api.response.SecurityGroupResponse;
-import com.cloud.api.view.vo.SecurityGroupJoinVO;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.SecurityGroupResponse;
+import org.apache.cloudstack.api.view.vo.SecurityGroupJoinVO;
 import com.cloud.async.AsyncJob;
 import com.cloud.utils.Pair;
 

@@ -16,12 +16,7 @@
 // under the License.
 package com.cloud.network.security.dao;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Hashtable;
 import java.util.List;
 
 import javax.ejb.Local;
@@ -30,35 +25,16 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
-import com.cloud.api.response.DomainRouterResponse;
-import com.cloud.api.response.NicResponse;
-import com.cloud.api.response.ResourceTagResponse;
-import com.cloud.api.response.SecurityGroupResponse;
-import com.cloud.api.response.SecurityGroupRuleResponse;
-import com.cloud.api.response.UserVmResponse;
-import com.cloud.api.view.vo.DomainRouterJoinVO;
-import com.cloud.api.view.vo.ResourceTagJoinVO;
-import com.cloud.api.view.vo.SecurityGroupJoinVO;
-import com.cloud.dc.DataCenter;
-import com.cloud.network.Network;
-import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.router.VirtualRouter;
+import org.apache.cloudstack.api.response.SecurityGroupResponse;
+import org.apache.cloudstack.api.response.SecurityGroupRuleResponse;
+import org.apache.cloudstack.api.view.vo.ResourceTagJoinVO;
+import org.apache.cloudstack.api.view.vo.SecurityGroupJoinVO;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityRule.SecurityRuleType;
-import com.cloud.offering.ServiceOffering;
 import com.cloud.user.Account;
-import com.cloud.uservm.UserVm;
-import com.cloud.utils.Pair;
-import com.cloud.utils.db.Attribute;
-import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.NicProfile;
 
 @Local(value={SecurityGroupJoinDao.class})
 public class SecurityGroupJoinDaoImpl extends GenericDaoBase<SecurityGroupJoinVO, Long> implements SecurityGroupJoinDao {

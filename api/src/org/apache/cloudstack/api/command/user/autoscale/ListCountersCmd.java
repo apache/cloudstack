@@ -27,8 +27,8 @@ import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
-import com.cloud.api.response.CounterResponse;
-import com.cloud.api.response.ListResponse;
+import org.apache.cloudstack.api.response.CounterResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.network.as.Counter;
 import com.cloud.user.Account;
 

@@ -26,8 +26,8 @@ import org.apache.cloudstack.api.BaseListAccountResourcesCmd;
 import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
-import com.cloud.api.response.AutoScalePolicyResponse;
-import com.cloud.api.response.ListResponse;
+import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.network.as.AutoScalePolicy;
 
 @Implementation(description = "Lists autoscale policies.", responseObject = AutoScalePolicyResponse.class)

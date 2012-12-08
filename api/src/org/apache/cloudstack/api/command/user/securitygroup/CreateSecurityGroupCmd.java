@@ -24,7 +24,7 @@ import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import com.cloud.api.response.SecurityGroupResponse;
+import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;

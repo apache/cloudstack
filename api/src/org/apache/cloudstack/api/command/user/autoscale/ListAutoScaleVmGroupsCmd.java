@@ -26,8 +26,8 @@ import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
-import com.cloud.api.response.AutoScaleVmGroupResponse;
-import com.cloud.api.response.ListResponse;
+import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.as.AutoScaleVmGroup;
 

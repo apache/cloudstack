@@ -25,7 +25,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import org.apache.cloudstack.api.command.user.iso.ExtractIsoCmd;
-import org.apache.cloudstack.api.user.volume.command.ExtractVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.ExtractVolumeCmd;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
@@ -41,7 +41,7 @@ import com.cloud.agent.api.storage.UploadCommand;
 import com.cloud.agent.api.storage.UploadProgressCommand;
 import com.cloud.agent.api.storage.UploadProgressCommand.RequestType;
 import org.apache.cloudstack.api.command.user.template.ExtractTemplateCmd;
-import com.cloud.api.response.ExtractResponse;
+import org.apache.cloudstack.api.response.ExtractResponse;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobResult;
 import com.cloud.exception.AgentUnavailableException;

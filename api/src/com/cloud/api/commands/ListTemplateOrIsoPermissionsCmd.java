@@ -25,7 +25,7 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
-import com.cloud.api.response.TemplatePermissionsResponse;
+import org.apache.cloudstack.api.response.TemplatePermissionsResponse;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;

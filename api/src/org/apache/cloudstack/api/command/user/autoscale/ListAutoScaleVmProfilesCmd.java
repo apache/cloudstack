@@ -26,8 +26,8 @@ import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
-import com.cloud.api.response.AutoScaleVmProfileResponse;
-import com.cloud.api.response.ListResponse;
+import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.network.as.AutoScaleVmProfile;
 
 @Implementation(description = "Lists autoscale vm profiles.", responseObject = AutoScaleVmProfileResponse.class)

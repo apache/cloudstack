@@ -23,7 +23,7 @@ import org.apache.cloudstack.api.command.user.securitygroup.AuthorizeSecurityGro
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceInUseException;
-import com.cloud.api.view.vo.SecurityGroupJoinVO;
+import org.apache.cloudstack.api.view.vo.SecurityGroupJoinVO;
 import com.cloud.utils.Pair;
 
 public interface SecurityGroupService {

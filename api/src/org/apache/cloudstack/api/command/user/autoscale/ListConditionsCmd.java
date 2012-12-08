@@ -27,9 +27,9 @@ import org.apache.cloudstack.api.BaseListAccountResourcesCmd;
 import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
-import com.cloud.api.response.ConditionResponse;
-import com.cloud.api.response.CounterResponse;
-import com.cloud.api.response.ListResponse;
+import org.apache.cloudstack.api.response.ConditionResponse;
+import org.apache.cloudstack.api.response.CounterResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.network.as.Condition;
 
 @Implementation(description = "List Conditions for the specific user", responseObject = CounterResponse.class)

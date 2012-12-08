@@ -31,7 +31,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.PlugService;
 import org.apache.cloudstack.api.ServerApiException;
 import com.cloud.api.response.F5LoadBalancerResponse;
-import com.cloud.api.response.ListResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;

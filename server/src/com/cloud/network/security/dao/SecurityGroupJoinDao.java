@@ -18,8 +18,8 @@ package com.cloud.network.security.dao;
 
 import java.util.List;
 
-import com.cloud.api.response.SecurityGroupResponse;
-import com.cloud.api.view.vo.SecurityGroupJoinVO;
+import org.apache.cloudstack.api.response.SecurityGroupResponse;
+import org.apache.cloudstack.api.view.vo.SecurityGroupJoinVO;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.user.Account;
 import com.cloud.utils.db.GenericDao;

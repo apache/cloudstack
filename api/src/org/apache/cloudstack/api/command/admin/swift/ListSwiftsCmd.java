@@ -25,9 +25,9 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
-import com.cloud.api.response.HostResponse;
-import com.cloud.api.response.ListResponse;
-import com.cloud.api.response.SwiftResponse;
+import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.SwiftResponse;
 import com.cloud.storage.Swift;
 import com.cloud.user.Account;
 

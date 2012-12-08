@@ -18,8 +18,8 @@ package com.cloud.vm.dao;
 
 import java.util.List;
 
-import com.cloud.api.response.DomainRouterResponse;
-import com.cloud.api.view.vo.DomainRouterJoinVO;
+import org.apache.cloudstack.api.response.DomainRouterResponse;
+import org.apache.cloudstack.api.view.vo.DomainRouterJoinVO;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.user.Account;
 import com.cloud.utils.db.GenericDao;

@@ -24,8 +24,8 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListAccountResourcesCmd;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
-import com.cloud.api.response.AsyncJobResponse;
-import com.cloud.api.response.ListResponse;
+import org.apache.cloudstack.api.response.AsyncJobResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.utils.Pair;
 

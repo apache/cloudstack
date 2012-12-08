@@ -23,7 +23,7 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
-import com.cloud.api.response.RegisterResponse;
+import org.apache.cloudstack.api.response.RegisterResponse;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 

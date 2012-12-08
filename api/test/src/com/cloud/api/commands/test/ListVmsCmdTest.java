@@ -18,29 +18,24 @@ package src.com.cloud.api.commands.test;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
-import junit.framework.Assert;
 import junit.framework.TestCase;
 
+import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
 
-import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.user.vm.command.ListVMsCmd;
-import com.cloud.api.response.ListResponse;
-import com.cloud.api.response.UserVmResponse;
-import com.cloud.api.view.vo.UserVmJoinVO;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.view.vo.UserVmJoinVO;
 import com.cloud.utils.Pair;
 import com.cloud.vm.UserVmService;
 

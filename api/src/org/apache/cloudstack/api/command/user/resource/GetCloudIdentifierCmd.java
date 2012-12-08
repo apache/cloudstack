@@ -26,7 +26,7 @@ import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import com.cloud.api.response.CloudIdentifierResponse;
+import org.apache.cloudstack.api.response.CloudIdentifierResponse;
 import com.cloud.user.Account;
 
 @Implementation(description="Retrieves a cloud identifier.", responseObject=CloudIdentifierResponse.class)

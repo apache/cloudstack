@@ -27,8 +27,8 @@ import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
-import com.cloud.api.response.ClusterResponse;
-import com.cloud.api.response.ListResponse;
+import org.apache.cloudstack.api.response.ClusterResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.org.Cluster;
 import com.cloud.utils.Pair;
 

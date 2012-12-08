@@ -26,9 +26,9 @@ import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
-import com.cloud.api.response.EventResponse;
-import com.cloud.api.response.ListResponse;
-import com.cloud.api.view.vo.EventJoinVO;
+import org.apache.cloudstack.api.response.EventResponse;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.view.vo.EventJoinVO;
 import com.cloud.utils.Pair;
 
 @Implementation(description="A command to list events.", responseObject=EventResponse.class)

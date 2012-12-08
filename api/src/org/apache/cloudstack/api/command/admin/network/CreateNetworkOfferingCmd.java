@@ -31,7 +31,7 @@ import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import com.cloud.api.response.NetworkOfferingResponse;
+import org.apache.cloudstack.api.response.NetworkOfferingResponse;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Service;

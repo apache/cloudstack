@@ -25,7 +25,7 @@ import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import com.cloud.api.response.VpcOfferingResponse;
+import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.network.vpc.VpcOffering;
 import com.cloud.user.Account;

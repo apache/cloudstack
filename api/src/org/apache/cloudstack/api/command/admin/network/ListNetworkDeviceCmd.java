@@ -30,7 +30,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager;
 import org.apache.cloudstack.api.response.NetworkDeviceResponse;
-import com.cloud.api.response.ListResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -43,57 +43,57 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @Implementation(description="List network devices", responseObject = NetworkDeviceResponse.class)
 public class ListNetworkDeviceCmd extends BaseListCmd {
-	public static final Logger s_logger = Logger.getLogger(ListNetworkDeviceCmd.class);
-	private static final String s_name = "listnetworkdevice";
-	
+    public static final Logger s_logger = Logger.getLogger(ListNetworkDeviceCmd.class);
+    private static final String s_name = "listnetworkdevice";
+
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-	@Parameter(name = ApiConstants.NETWORK_DEVICE_TYPE, type = CommandType.STRING, description = "Network device type, now supports ExternalDhcp, PxeServer, NetscalerMPXLoadBalancer, NetscalerVPXLoadBalancer, NetscalerSDXLoadBalancer, F5BigIpLoadBalancer, JuniperSRXFirewall")
+    @Parameter(name = ApiConstants.NETWORK_DEVICE_TYPE, type = CommandType.STRING, description = "Network device type, now supports ExternalDhcp, PxeServer, NetscalerMPXLoadBalancer, NetscalerVPXLoadBalancer, NetscalerSDXLoadBalancer, F5BigIpLoadBalancer, JuniperSRXFirewall")
     private String type;
-	
-	@Parameter(name = ApiConstants.NETWORK_DEVICE_PARAMETER_LIST, type = CommandType.MAP, description = "parameters for network device")
-    private Map paramList;
-    
-	public String getDeviceType() {
-		return type;
-	}
-	
-	public Map getParamList() {
-		return paramList;
-	}
-	
-	@Override
-	public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
-			ResourceAllocationException {
-		try {
-			ExternalNetworkDeviceManager nwDeviceMgr;
-			ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
-			nwDeviceMgr = locator.getManager(ExternalNetworkDeviceManager.class);
-			List<Host> devices = nwDeviceMgr.listNetworkDevice(this);
-			List<NetworkDeviceResponse> nwdeviceResponses = new ArrayList<NetworkDeviceResponse>();
-			ListResponse<NetworkDeviceResponse> listResponse = new ListResponse<NetworkDeviceResponse>();
-			for (Host d : devices) {
-				NetworkDeviceResponse response = nwDeviceMgr.getApiResponse(d);
-				response.setObjectName("networkdevice");
-				response.setResponseName(getCommandName());
-				nwdeviceResponses.add(response);
-			}
-			
-	        listResponse.setResponses(nwdeviceResponses);
-	        listResponse.setResponseName(getCommandName());
-	        this.setResponseObject(listResponse);
-		} catch (InvalidParameterValueException ipve) {
-			throw new ServerApiException(BaseCmd.PARAM_ERROR, ipve.getMessage());
-		} catch (CloudRuntimeException cre) {
-			throw new ServerApiException(BaseCmd.INTERNAL_ERROR, cre.getMessage());
-		}
-	}
 
-	@Override
-	public String getCommandName() {
-		return s_name;
-	}
+    @Parameter(name = ApiConstants.NETWORK_DEVICE_PARAMETER_LIST, type = CommandType.MAP, description = "parameters for network device")
+    private Map paramList;
+
+    public String getDeviceType() {
+        return type;
+    }
+
+    public Map getParamList() {
+        return paramList;
+    }
+
+    @Override
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+            ResourceAllocationException {
+        try {
+            ExternalNetworkDeviceManager nwDeviceMgr;
+            ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
+            nwDeviceMgr = locator.getManager(ExternalNetworkDeviceManager.class);
+            List<Host> devices = nwDeviceMgr.listNetworkDevice(this);
+            List<NetworkDeviceResponse> nwdeviceResponses = new ArrayList<NetworkDeviceResponse>();
+            ListResponse<NetworkDeviceResponse> listResponse = new ListResponse<NetworkDeviceResponse>();
+            for (Host d : devices) {
+                NetworkDeviceResponse response = nwDeviceMgr.getApiResponse(d);
+                response.setObjectName("networkdevice");
+                response.setResponseName(getCommandName());
+                nwdeviceResponses.add(response);
+            }
+
+            listResponse.setResponses(nwdeviceResponses);
+            listResponse.setResponseName(getCommandName());
+            this.setResponseObject(listResponse);
+        } catch (InvalidParameterValueException ipve) {
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, ipve.getMessage());
+        } catch (CloudRuntimeException cre) {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, cre.getMessage());
+        }
+    }
+
+    @Override
+    public String getCommandName() {
+        return s_name;
+    }
 
 }

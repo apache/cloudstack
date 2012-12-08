@@ -23,7 +23,7 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
-import com.cloud.api.response.FirewallRuleResponse;
+import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.network.IpAddress;
 import com.cloud.user.Account;

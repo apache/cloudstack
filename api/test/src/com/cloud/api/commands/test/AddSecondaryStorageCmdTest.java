@@ -28,7 +28,7 @@ import org.mockito.Mockito;
 
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ServerApiException;
-import com.cloud.api.response.HostResponse;
+import org.apache.cloudstack.api.response.HostResponse;
 import com.cloud.host.Host;
 import com.cloud.resource.ResourceService;
 

@@ -46,7 +46,7 @@ import com.cloud.agent.api.SecurityGroupRulesCmd;
 import com.cloud.agent.api.SecurityGroupRulesCmd.IpPortAndProto;
 import com.cloud.agent.manager.Commands;
 import org.apache.cloudstack.api.command.user.securitygroup.RevokeSecurityGroupEgressCmd;
-import com.cloud.api.view.vo.SecurityGroupJoinVO;
+import org.apache.cloudstack.api.view.vo.SecurityGroupJoinVO;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.domain.dao.DomainDao;

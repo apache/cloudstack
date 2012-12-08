@@ -25,7 +25,7 @@ import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import com.cloud.api.response.VpnUsersResponse;
+import org.apache.cloudstack.api.response.VpnUsersResponse;
 import com.cloud.domain.Domain;
 import com.cloud.event.EventTypes;
 import com.cloud.network.VpnUser;

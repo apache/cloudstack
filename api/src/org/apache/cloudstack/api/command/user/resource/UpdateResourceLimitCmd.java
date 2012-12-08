@@ -24,7 +24,7 @@ import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import com.cloud.api.response.ResourceLimitResponse;
+import org.apache.cloudstack.api.response.ResourceLimitResponse;
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.user.UserContext;
 

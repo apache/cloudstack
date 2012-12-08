@@ -28,7 +28,7 @@ import org.apache.cloudstack.api.response.NetworkDeviceResponse;
 import com.cloud.utils.component.Manager;
 
 public interface ExternalNetworkDeviceManager extends Manager {
-    
+
     public static class NetworkDevice {
         private String _name;
         private String _provider;
@@ -49,7 +49,7 @@ public interface ExternalNetworkDeviceManager extends Manager {
             _provider = ntwkServiceprovider;
             supportedNetworkDevices.add(this);
         }
-        
+
         public String getName() {
             return _name;
         }
@@ -69,11 +69,11 @@ public interface ExternalNetworkDeviceManager extends Manager {
     }
 
     public Host addNetworkDevice(AddNetworkDeviceCmd cmd);
-    
+
     public NetworkDeviceResponse getApiResponse(Host device);
-    
+
     public List<Host> listNetworkDevice(ListNetworkDeviceCmd cmd);
-    
+
     public boolean deleteNetworkDevice(DeleteNetworkDeviceCmd cmd);
-    
+
 }
