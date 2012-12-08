@@ -26,6 +26,7 @@ import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import com.cloud.api.response.GetVMPasswordResponse;
+import com.cloud.api.response.UserVmResponse;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
@@ -39,8 +40,8 @@ public class GetVMPasswordCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="vm_instance")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="The ID of the virtual machine")
+    //@IdentityMapper(entityTableName="vm_instance")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="The ID of the virtual machine", entityType=UserVmResponse.class)
     private Long id;
 
 

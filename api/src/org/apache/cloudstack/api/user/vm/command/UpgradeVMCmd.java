@@ -24,6 +24,8 @@ import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+
+import com.cloud.api.response.DiskOfferingResponse;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.offering.ServiceOffering;
@@ -43,11 +45,11 @@ public class UpgradeVMCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @IdentityMapper(entityTableName="vm_instance")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="The ID of the virtual machine")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="The ID of the virtual machine", entityType=UserVmResponse.class)
     private Long id;
 
     @IdentityMapper(entityTableName="disk_offering")
-    @Parameter(name=ApiConstants.SERVICE_OFFERING_ID, type=CommandType.LONG, required=true, description="the service offering ID to apply to the virtual machine")
+    @Parameter(name=ApiConstants.SERVICE_OFFERING_ID, type=CommandType.LONG, required=true, description="the service offering ID to apply to the virtual machine", entityType=DiskOfferingResponse.class)
     private Long serviceOfferingId;
 
     /////////////////////////////////////////////////////

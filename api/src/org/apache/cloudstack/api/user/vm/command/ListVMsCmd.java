@@ -28,8 +28,18 @@ import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
+
+import com.cloud.api.response.HostResponse;
+import com.cloud.api.response.InstanceGroupResponse;
+import com.cloud.api.response.IsoVmResponse;
 import com.cloud.api.response.ListResponse;
+import com.cloud.api.response.NetworkResponse;
+import com.cloud.api.response.PodResponse;
+import com.cloud.api.response.StoragePoolResponse;
+import com.cloud.api.response.TemplateResponse;
 import com.cloud.api.response.UserVmResponse;
+import com.cloud.api.response.VpcResponse;
+import com.cloud.api.response.ZoneResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.Pair;
@@ -46,60 +56,60 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="instance_group")
-    @Parameter(name=ApiConstants.GROUP_ID, type=CommandType.LONG, description="the group ID")
+    //@IdentityMapper(entityTableName="instance_group")
+    @Parameter(name=ApiConstants.GROUP_ID, type=CommandType.LONG, description="the group ID", entityType=InstanceGroupResponse.class)
     private Long groupId;
 
-    @IdentityMapper(entityTableName="host")
-    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.LONG, description="the host ID")
+    //@IdentityMapper(entityTableName="host")
+    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.LONG, description="the host ID", entityType=HostResponse.class)
     private Long hostId;
 
-    @IdentityMapper(entityTableName="vm_instance")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the ID of the virtual machine")
+    //@IdentityMapper(entityTableName="vm_instance")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the ID of the virtual machine", entityType=UserVmResponse.class)
     private Long id;
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="name of the virtual machine")
     private String instanceName;
 
-    @IdentityMapper(entityTableName="host_pod_ref")
-    @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, description="the pod ID")
+    //@IdentityMapper(entityTableName="host_pod_ref")
+    @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, description="the pod ID", entityType=PodResponse.class)
     private Long podId;
 
     @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="state of the virtual machine")
     private String state;
 
-    @IdentityMapper(entityTableName="data_center")
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the availability zone ID")
+    //@IdentityMapper(entityTableName="data_center")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the availability zone ID", entityType=ZoneResponse.class)
     private Long zoneId;
 
     @Parameter(name=ApiConstants.FOR_VIRTUAL_NETWORK, type=CommandType.BOOLEAN, description="list by network type; true if need to list vms using Virtual Network, false otherwise")
     private Boolean forVirtualNetwork;
 
-    @IdentityMapper(entityTableName="networks")
-    @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, description="list by network id")
+    //@IdentityMapper(entityTableName="networks")
+    @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, description="list by network id", entityType=NetworkResponse.class)
     private Long networkId;
 
     @Parameter(name=ApiConstants.HYPERVISOR, type=CommandType.STRING, description="the target hypervisor for the template")
     private String hypervisor;
 
-    @IdentityMapper(entityTableName="storage_pool")
-    @Parameter(name=ApiConstants.STORAGE_ID, type=CommandType.LONG, description="the storage ID where vm's volumes belong to")
+    //@IdentityMapper(entityTableName="storage_pool")
+    @Parameter(name=ApiConstants.STORAGE_ID, type=CommandType.LONG, description="the storage ID where vm's volumes belong to", entityType=StoragePoolResponse.class)
     private Long storageId;
 
     @Parameter(name=ApiConstants.DETAILS, type=CommandType.LIST, collectionType=CommandType.STRING, description="comma separated list of host details requested, " +
             "value can be a list of [all, group, nics, stats, secgrp, tmpl, servoff, iso, volume, min]. If no parameter is passed in, the details will be defaulted to all" )
     private List<String> viewDetails;
 
-    @IdentityMapper(entityTableName="vm_template")
-    @Parameter(name=ApiConstants.TEMPLATE_ID, type=CommandType.LONG, description="list vms by template")
+    //@IdentityMapper(entityTableName="vm_template")
+    @Parameter(name=ApiConstants.TEMPLATE_ID, type=CommandType.LONG, description="list vms by template", entityType=TemplateResponse.class)
     private Long templateId;
 
-    @IdentityMapper(entityTableName="vm_template")
-    @Parameter(name=ApiConstants.ISO_ID, type=CommandType.LONG, description="list vms by iso")
+    //@IdentityMapper(entityTableName="vm_template")
+    @Parameter(name=ApiConstants.ISO_ID, type=CommandType.LONG, description="list vms by iso", entityType=IsoVmResponse.class)
     private Long isoId;
 
-    @IdentityMapper(entityTableName="vpc")
-    @Parameter(name=ApiConstants.VPC_ID, type=CommandType.LONG, description="list vms by vpc")
+    //@IdentityMapper(entityTableName="vpc")
+    @Parameter(name=ApiConstants.VPC_ID, type=CommandType.LONG, description="list vms by vpc", entityType=VpcResponse.class)
     private Long vpcId;
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////

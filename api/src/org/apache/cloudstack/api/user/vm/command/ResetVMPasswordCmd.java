@@ -47,7 +47,7 @@ public class ResetVMPasswordCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @IdentityMapper(entityTableName="vm_instance")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="The ID of the virtual machine")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="The ID of the virtual machine", entityType=UserVmResponse.class)
     private Long id;
 
     // unexposed parameter needed for serializing/deserializing the command

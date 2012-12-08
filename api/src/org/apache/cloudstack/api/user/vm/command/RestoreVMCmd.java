@@ -41,7 +41,7 @@ public class RestoreVMCmd extends BaseAsyncCmd {
     private static final String s_name = "restorevmresponse";
 
     @IdentityMapper(entityTableName="vm_instance")
-    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, required=true, description="Virtual Machine ID")
+    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, required=true, description="Virtual Machine ID", entityType=UserVmResponse.class)
     private Long vmId;
 
     @Override

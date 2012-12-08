@@ -25,6 +25,8 @@ import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+
+import com.cloud.api.response.HostResponse;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
@@ -50,11 +52,11 @@ public class StartVMCmd extends BaseAsyncCmd {
     // ///////////////////////////////////////////////////
 
     @IdentityMapper(entityTableName = "vm_instance")
-    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, required = true, description = "The ID of the virtual machine")
+    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, required = true, description = "The ID of the virtual machine", entityType=UserVmResponse.class)
     private Long id;
 
     @IdentityMapper(entityTableName="host")
-    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.LONG, description="destination Host ID to deploy the VM to - parameter available for root admin only", since="3.0.1")
+    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.LONG, description="destination Host ID to deploy the VM to - parameter available for root admin only", entityType=HostResponse.class, since="3.0.1")
     private Long hostId;
 
     // ///////////////////////////////////////////////////

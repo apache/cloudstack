@@ -45,7 +45,7 @@ public class StopVMCmd extends BaseAsyncCmd {
     // ///////////////////////////////////////////////////
 
     @IdentityMapper(entityTableName = "vm_instance")
-    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, required = true, description = "The ID of the virtual machine")
+    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, required = true, description = "The ID of the virtual machine", entityType=UserVmResponse.class)
     private Long id;
 
     @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false, description = "Force stop the VM " +
