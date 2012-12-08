@@ -18,21 +18,49 @@
  */
 package org.apache.cloudstack.storage.datastore.configurator.validator;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class NfsValidator implements ProtocolValidator {
 
     @Override
     public boolean validate(Map<String, String> params) {
-        // TODO Auto-generated method stub
-        return false;
+    	String url = params.get("url");
+    	
+    	try {
+			URI uri = new URI(url);
+			if (!"nfs".equalsIgnoreCase(uri.getScheme())) {
+				throw new CloudRuntimeException("invalid protocol, must starting with nfs");
+			}
+	        String storageHost = uri.getHost();
+	        String hostPath = uri.getPath();
+	        String userInfo = uri.getUserInfo();
+	        int port = uri.getPort();
+	        if (port == -1) {
+                port = 2049;
+            }
+			params.put("server", storageHost);
+			params.put("path", hostPath);
+			params.put("user", userInfo);
+			params.put("port", String.valueOf(port));
+			
+		} catch (URISyntaxException e) {
+			throw new CloudRuntimeException("invalid url: " + e.toString());
+		}
+        return true;
     }
 
     @Override
     public List<String> getInputParamNames() {
-        // TODO Auto-generated method stub
-        return null;
+        List<String> paramNames = new ArrayList<String>();
+        paramNames.add("server");
+        paramNames.add("path");
+        return paramNames;
     }
 
 }

@@ -18,16 +18,29 @@
  */
 package org.apache.cloudstack.storage.volume.test;
 
+import static org.junit.Assert.*;
+
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.inject.Inject;
+import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
 import org.apache.cloudstack.storage.datastore.configurator.PrimaryDataStoreConfigurator;
+import org.apache.cloudstack.storage.datastore.provider.PrimaryDataStoreProviderManager;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import com.cloud.dc.ClusterVO;
+import com.cloud.dc.dao.ClusterDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations="classpath:/resource/testContext.xml")
@@ -36,10 +49,53 @@ public class ConfiguratorTest {
     @Qualifier("defaultProvider")
     List<PrimaryDataStoreConfigurator> configurators;
     
+    @Inject 
+    List<PrimaryDataStoreProvider> providers;
+    
+    @Inject
+    PrimaryDataStoreProviderManager providerMgr;
+    @Inject
+    ClusterDao clusterDao;
+    @Before
+    public void setup() {
+        ClusterVO cluster = new ClusterVO();
+        cluster.setHypervisorType(HypervisorType.XenServer.toString());
+        Mockito.when(clusterDao.findById(Mockito.anyLong())).thenReturn(cluster);
+        try {
+            providerMgr.configure("manager", null);
+        } catch (ConfigurationException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
     @Test
     public void testLoadConfigurator() {
         for (PrimaryDataStoreConfigurator configurator : configurators) {
             System.out.println(configurator.getClass().getName());
         }
+    }
+    
+    @Test
+    public void testProvider() {
+        for (PrimaryDataStoreProvider provider : providers) {
+            if (provider.getName().startsWith("default")) {
+                assertTrue(true);
+            }
+        }
+    }
+    
+    @Test
+    public void getProvider() {
+        assertNotNull(providerMgr.getDataStoreProvider("default primary data store provider"));
+    }
+    
+    @Test
+    public void createDataStore() {
+        PrimaryDataStoreProvider provider = providerMgr.getDataStoreProvider("default primary data store provider");
+        Map<String, String> params = new HashMap<String, String>();
+        params.put("url", "nfs://localhost/mnt");
+        params.put("clusterId", "1");
+        params.put("name", "nfsprimary");
+        assertNotNull(provider.registerDataStore(params));
     }
 }

@@ -30,8 +30,8 @@ import com.cloud.storage.Storage.StoragePoolType;
 public class KvmRBDConfigurator extends AbstractKvmConfigurator {
 
     @Override
-    public StoragePoolType getSupportedDataStoreType() {
-        return StoragePoolType.RBD;
+    public String getSupportedDataStoreType() {
+        return "rbd";
     }
 
     @Override

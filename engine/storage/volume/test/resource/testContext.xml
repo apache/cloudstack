@@ -12,13 +12,23 @@
                                           http://www.springframework.org/schema/context/spring-context-3.0.xsd">
   <context:annotation-config />
   <context:component-scan base-package="org.apache.cloudstack.storage" />
-  <context:component-scan base-package="org.apache.cloudstack.engine.subsystem.api.storage" />
+  <context:component-scan
+    base-package="org.apache.cloudstack.engine.subsystem.api.storage" />
   <context:component-scan base-package="com.cloud.utils.db" />
   <context:component-scan base-package="com.cloud.utils.component" />
   <context:component-scan base-package="com.cloud.host.dao" />
   <context:component-scan base-package="com.cloud.dc.dao" />
- 
-   <context:component-scan base-package=" com.cloud.upgrade.dao" />
-   <tx:annotation-driven transaction-manager="transactionManager" />
-  <bean class="org.cloudstack.storage.volume.test.TestConfiguration" />
+
+  <context:component-scan base-package=" com.cloud.upgrade.dao" />
+  <tx:annotation-driven transaction-manager="transactionManager" />
+  <bean class="org.apache.cloudstack.storage.volume.test.TestConfiguration" />
+  <aop:config proxy-target-class="true">
+    <aop:aspect id="dbContextBuilder" ref="transactionContextBuilder">
+      <aop:pointcut id="captureAnyMethod" expression="@annotation(com.cloud.utils.db.DB)" />
+      <aop:around pointcut-ref="captureAnyMethod" method="AroundAnyMethod" />
+    </aop:aspect>
+  </aop:config>
+
+  <bean id="transactionContextBuilder" class="com.cloud.utils.db.TransactionContextBuilder" />
+  
 </beans>

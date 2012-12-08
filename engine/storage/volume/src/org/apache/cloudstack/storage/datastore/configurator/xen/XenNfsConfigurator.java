@@ -18,29 +18,24 @@
  */
 package org.apache.cloudstack.storage.datastore.configurator.xen;
 
-import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
-import org.apache.cloudstack.storage.datastore.configurator.PrimaryDataStoreConfigurator;
+import org.apache.cloudstack.storage.datastore.configurator.validator.NfsValidator;
+import org.apache.cloudstack.storage.datastore.configurator.validator.ProtocolValidator;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.Storage.StoragePoolType;
 
-public class XenNfsConfigurator implements PrimaryDataStoreConfigurator {
+@Component
+@Qualifier("defaultProvider")
+public class XenNfsConfigurator extends AbstractXenConfigurator {
 
-    @Override
-    public HypervisorType getSupportedHypervisor() {
-        // TODO Auto-generated method stub
-        return null;
-    }
+	@Override
+	public String getSupportedDataStoreType() {
+		return "nfs";
+	}
 
-    @Override
-    public String getSupportedDataStoreType() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public PrimaryDataStore getDataStore() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
+	@Override
+	public ProtocolValidator getValidator() {
+		return new NfsValidator();
+	}
 }

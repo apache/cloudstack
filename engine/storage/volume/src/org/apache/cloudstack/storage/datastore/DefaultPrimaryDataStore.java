@@ -37,6 +37,9 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
     protected PrimaryDataStoreVO pdsv;
     protected PrimaryDataStoreInfo pdsInfo;
     protected PrimaryDataStoreLifeCycle lifeCycle;
+    protected PrimaryDataStoreProvider provider;
+    private HypervisorType supportedHypervisor;
+    private boolean isLocalStorageSupported = false;
     @Inject
     private VolumeDao volumeDao;
     @Inject
@@ -56,6 +59,10 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
     public void setLifeCycle(PrimaryDataStoreLifeCycle lifeCycle) {
         lifeCycle.setDataStore(this);
         this.lifeCycle = lifeCycle;
+    }
+    
+    public void setProvider(PrimaryDataStoreProvider provider) {
+        this.provider = provider;
     }
     
     public static DefaultPrimaryDataStore createDataStore(PrimaryDataStoreVO pdsv) {
@@ -102,16 +109,22 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
         return endpoints;
     }
 
+    public void setSupportedHypervisor(HypervisorType type) {
+        this.supportedHypervisor = type;
+    }
+    
     @Override
     public boolean isHypervisorSupported(HypervisorType hypervisor) {
-        // TODO Auto-generated method stub
-        return false;
+        return (this.supportedHypervisor == hypervisor) ? true : false;
+    }
+    
+    public void setLocalStorageFlag(boolean supported) {
+        this.isLocalStorageSupported = supported;
     }
 
     @Override
     public boolean isLocalStorageSupported() {
-        // TODO Auto-generated method stub
-        return false;
+        return this.isLocalStorageSupported;
     }
 
     @Override
@@ -208,13 +221,11 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
 
     @Override
     public PrimaryDataStoreLifeCycle getLifeCycle() {
-        // TODO Auto-generated method stub
-        return null;
+        return lifeCycle;
     }
 
     @Override
     public PrimaryDataStoreProvider getProvider() {
-        // TODO Auto-generated method stub
-        return null;
+        return this.provider;
     }
 }

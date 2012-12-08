@@ -23,15 +23,13 @@ import org.apache.cloudstack.storage.datastore.configurator.validator.ProtocolVa
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
-import com.cloud.storage.Storage.StoragePoolType;
-
 @Component
 @Qualifier("defaultProvider")
 public class KvmNfsConfigurator extends AbstractKvmConfigurator {
 
     @Override
-    public StoragePoolType getSupportedDataStoreType() {
-        return StoragePoolType.NetworkFilesystem;
+    public String getSupportedDataStoreType() {
+        return "nfs";
     }
 
     @Override

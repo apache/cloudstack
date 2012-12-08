@@ -23,19 +23,18 @@ import org.apache.cloudstack.storage.datastore.configurator.validator.ProtocolVa
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
-import com.cloud.storage.Storage.StoragePoolType;
-
 @Component
 @Qualifier("defaultProvider")
 public class VmwareIsciConfigurator extends AbstractVmwareConfigurator {
 
     @Override
-    public StoragePoolType getSupportedDataStoreType() {
-        return StoragePoolType.Iscsi;
+    public String getSupportedDataStoreType() {
+        return "iscsi";
     }
 
     @Override
     public ProtocolValidator getValidator() {
         return new ISCSIValiator();
     }
+    
 }

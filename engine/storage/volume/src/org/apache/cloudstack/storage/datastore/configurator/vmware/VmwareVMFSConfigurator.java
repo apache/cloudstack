@@ -20,14 +20,18 @@ package org.apache.cloudstack.storage.datastore.configurator.vmware;
 
 import org.apache.cloudstack.storage.datastore.configurator.validator.ProtocolValidator;
 import org.apache.cloudstack.storage.datastore.configurator.validator.VMFSValidator;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
 import com.cloud.storage.Storage.StoragePoolType;
 
+@Component
+@Qualifier("defaultProvider")
 public class VmwareVMFSConfigurator extends AbstractVmwareConfigurator {
 
     @Override
-    public StoragePoolType getSupportedDataStoreType() {
-        return StoragePoolType.VMFS;
+    public String getSupportedDataStoreType() {
+        return "vmfs";
     }
 
     @Override

@@ -18,7 +18,6 @@
  */
 package org.apache.cloudstack.storage.datastore.lifecycle;
 
-import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 
 public class DefaultXenPrimaryDataStoreLifeCycle extends DefaultPrimaryDataStoreLifeCycleImpl {
@@ -27,8 +26,8 @@ public class DefaultXenPrimaryDataStoreLifeCycle extends DefaultPrimaryDataStore
      * @param dataStoreDao
      * @param dataStore
      */
-    public DefaultXenPrimaryDataStoreLifeCycle(PrimaryDataStoreDao dataStoreDao, PrimaryDataStore dataStore) {
-        super(dataStoreDao, dataStore);
+    public DefaultXenPrimaryDataStoreLifeCycle(PrimaryDataStoreDao dataStoreDao) {
+        super(dataStoreDao);
         // TODO Auto-generated constructor stub
     }
 

@@ -18,23 +18,18 @@
  */
 package org.apache.cloudstack.storage.datastore.configurator.kvm;
 
-import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
-import org.apache.cloudstack.storage.datastore.configurator.PrimaryDataStoreConfigurator;
 import org.apache.cloudstack.storage.datastore.configurator.validator.CLVMValidator;
 import org.apache.cloudstack.storage.datastore.configurator.validator.ProtocolValidator;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
-
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.storage.Storage.StoragePoolType;
 
 @Component
 @Qualifier("defaultProvider")
 public class KvmCLVMConfigurator extends AbstractKvmConfigurator {
 
     @Override
-    public StoragePoolType getSupportedDataStoreType() {
-        return StoragePoolType.CLVM;
+    public String getSupportedDataStoreType() {
+        return "clvm";
     }
 
     @Override

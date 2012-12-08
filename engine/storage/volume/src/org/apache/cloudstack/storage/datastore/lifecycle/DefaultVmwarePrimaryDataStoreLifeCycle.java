@@ -27,13 +27,9 @@ public class DefaultVmwarePrimaryDataStoreLifeCycle extends DefaultPrimaryDataSt
      * @param dataStoreDao
      * @param dataStore
      */
-    public DefaultVmwarePrimaryDataStoreLifeCycle(PrimaryDataStoreDao dataStoreDao, PrimaryDataStore dataStore) {
-        super(dataStoreDao, dataStore);
+    public DefaultVmwarePrimaryDataStoreLifeCycle(PrimaryDataStoreDao dataStoreDao) {
+        super(dataStoreDao);
         // TODO Auto-generated constructor stub
-    }
-    
-    public DefaultVmwarePrimaryDataStoreLifeCycle() {
-        super(null, null);
     }
 
 }

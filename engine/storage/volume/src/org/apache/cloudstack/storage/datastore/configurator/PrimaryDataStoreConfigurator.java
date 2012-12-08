@@ -26,7 +26,7 @@ import com.cloud.storage.Storage.StoragePoolType;
 
 public interface PrimaryDataStoreConfigurator {
     public HypervisorType getSupportedHypervisor();
-    public StoragePoolType getSupportedDataStoreType();
+    public String getSupportedDataStoreType();
     public PrimaryDataStore getDataStore(long dataStoreId);
     public ProtocolValidator getValidator();
 }

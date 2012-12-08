@@ -48,55 +48,12 @@ public class DefaultPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLif
         this.dataStore = dataStore;
     }
     
-    protected class DataStoreUrlParser {
-        private String schema;
-        private String host;
-        private String path;
-        private int port;
-        
-        public DataStoreUrlParser(String url) {
-            try {
-                URI uri = new URI(url);
-                schema = uri.getScheme();
-                host = uri.getHost();
-                path = uri.getPath();
-                port = (uri.getPort() == -1) ? 0 : uri.getPort();
-            } catch (URISyntaxException e) {
-               
-            }
-        }
-        
-        public String getSchema() {
-            return this.schema;
-        }
-        
-        public String getHost() {
-            return this.host;
-        }
-        
-        public String getPath() {
-            return this.path;
-        }
-        
-        public int getPort() {
-            return this.port;
-        }
-    }
-    
     @Override
     public boolean initialize(Map<String, String> dsInfos) {
-        DataStoreUrlParser parser = new DataStoreUrlParser(dsInfos.get("url"));
         PrimaryDataStoreVO dataStore = dataStoreDao.findById(this.dataStore.getId());
-        dataStore.setName(dsInfos.get("name"));
-        dataStore.setPoolType(parser.getSchema());
-        dataStore.setPort(parser.port);
-        dataStore.setHostAddress(parser.getHost());
-        dataStore.setPath(parser.getPath());
         dataStore.setStatus(DataStoreStatus.Initialized);
         dataStoreDao.update(this.dataStore.getId(), dataStore);
         //TODO: add extension point for each data store
-        
-        this.dataStore = this.dataStore.getProvider().getDataStore(dataStore.getId());
         return true;
     }
 

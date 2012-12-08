@@ -18,29 +18,23 @@
  */
 package org.apache.cloudstack.storage.datastore.configurator.xen;
 
-import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
-import org.apache.cloudstack.storage.datastore.configurator.PrimaryDataStoreConfigurator;
+import org.apache.cloudstack.storage.datastore.configurator.validator.ISCSIValiator;
+import org.apache.cloudstack.storage.datastore.configurator.validator.ProtocolValidator;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
+@Component
+@Qualifier("defaultProvider")
+public class XenIscsiConfigurator extends AbstractXenConfigurator {
 
-public class XenIscsiConfigurator implements PrimaryDataStoreConfigurator {
+	@Override
+	public String getSupportedDataStoreType() {
+		return "iscsi";
+	}
 
-    @Override
-    public HypervisorType getSupportedHypervisor() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public String getSupportedDataStoreType() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public PrimaryDataStore getDataStore() {
-        // TODO Auto-generated method stub
-        return null;
-    }
+	@Override
+	public ProtocolValidator getValidator() {
+		return new ISCSIValiator();
+	}
 
 }

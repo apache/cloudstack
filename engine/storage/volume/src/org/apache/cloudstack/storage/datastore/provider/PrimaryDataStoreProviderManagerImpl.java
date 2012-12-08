@@ -29,6 +29,8 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreProviderDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreProviderVO;
 import org.springframework.stereotype.Component;
 
+import com.cloud.utils.db.DB;
+
 @Component
 public class PrimaryDataStoreProviderManagerImpl implements PrimaryDataStoreProviderManager {
     @Inject
@@ -47,6 +49,7 @@ public class PrimaryDataStoreProviderManagerImpl implements PrimaryDataStoreProv
     }
 
     @Override
+    @DB
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         List<PrimaryDataStoreProviderVO> providerVos = providerDao.listAll();
         for (PrimaryDataStoreProvider provider : providers) {

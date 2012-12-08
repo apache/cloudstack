@@ -98,6 +98,9 @@ public class PrimaryDataStoreVO implements Identity {
 
     @Column(name = "cluster_id")
     private Long clusterId;
+    
+    @Column(name = "configurator_key")
+    private String key;
 
     public long getId() {
         return id;
@@ -233,6 +236,14 @@ public class PrimaryDataStoreVO implements Identity {
 
     public void setName(String name) {
         this.name = name;
+    }
+    
+    public void setKey(String key) {
+    	this.key = key;
+    }
+    
+    public String getKey() {
+    	return this.key;
     }
 
     @Override
