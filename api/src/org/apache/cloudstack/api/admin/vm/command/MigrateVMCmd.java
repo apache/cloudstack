@@ -25,6 +25,9 @@ import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+
+import com.cloud.api.response.HostResponse;
+import com.cloud.api.response.StoragePoolResponse;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -49,16 +52,16 @@ public class MigrateVMCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="host")
-    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.LONG, required=false, description="Destination Host ID to migrate VM to. Required for live migrating a VM from host to host")
+    //@IdentityMapper(entityTableName="host")
+    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.LONG, required=false, description="Destination Host ID to migrate VM to. Required for live migrating a VM from host to host", entityType=HostResponse.class)
     private Long hostId;
 
     @IdentityMapper(entityTableName="vm_instance")
-    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, required=true, description="the ID of the virtual machine")
+    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, required=true, description="the ID of the virtual machine", entityType=UserVmResponse.class)
     private Long virtualMachineId;
 
     @IdentityMapper(entityTableName="storage_pool")
-    @Parameter(name=ApiConstants.STORAGE_ID, type=CommandType.LONG, required=false, description="Destination storage pool ID to migrate VM volumes to. Required for migrating the root disk volume")
+    @Parameter(name=ApiConstants.STORAGE_ID, type=CommandType.LONG, required=false, description="Destination storage pool ID to migrate VM volumes to. Required for migrating the root disk volume", entityType=StoragePoolResponse.class)
     private Long storageId;
 
     /////////////////////////////////////////////////////
