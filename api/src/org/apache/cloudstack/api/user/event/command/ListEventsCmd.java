@@ -29,7 +29,11 @@ import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import com.cloud.api.response.EventResponse;
 import com.cloud.api.response.ListResponse;
+import com.cloud.api.response.ResourceTagResponse;
+import com.cloud.api.view.vo.EventJoinVO;
+import com.cloud.api.view.vo.ResourceTagJoinVO;
 import com.cloud.event.Event;
+import com.cloud.utils.Pair;
 
 @Implementation(description="A command to list events.", responseObject=EventResponse.class)
 public class ListEventsCmd extends BaseListProjectAndAccountResourcesCmd {
@@ -106,14 +110,10 @@ public class ListEventsCmd extends BaseListProjectAndAccountResourcesCmd {
 
     @Override
     public void execute(){
-        List<? extends Event> result = _mgr.searchForEvents(this);
+        Pair<List<EventJoinVO>, Integer> result = _mgr.searchForEvents(this);
         ListResponse<EventResponse> response = new ListResponse<EventResponse>();
-        List<EventResponse> eventResponses = new ArrayList<EventResponse>();
-        for (Event event : result) {
-            eventResponses.add(_responseGenerator.createEventResponse(event));
-        }
-
-        response.setResponses(eventResponses);
+        List<EventResponse> eventResponses = _responseGenerator.createEventResponse(result.first().toArray(new EventJoinVO[result.first().size()]));
+        response.setResponses(eventResponses, result.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

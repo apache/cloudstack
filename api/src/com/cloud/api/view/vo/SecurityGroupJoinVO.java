@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -16,22 +16,14 @@
 // under the License.
 package com.cloud.api.view.vo;
 
-import java.net.URI;
-import java.util.Date;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Table;
 
-import com.cloud.network.Network.GuestType;
-import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.router.VirtualRouter.RedundantState;
 import com.cloud.network.security.SecurityRule.SecurityRuleType;
 import com.cloud.server.ResourceTag.TaggedResourceType;
-import com.cloud.utils.db.GenericDao;
-import com.cloud.vm.VirtualMachine.State;
 
 @Entity
 @Table(name="security_group_view")
@@ -173,6 +165,7 @@ public class SecurityGroupJoinVO implements ControlledViewEntity {
         this.name = name;
     }
 
+    @Override
     public long getAccountId() {
         return accountId;
     }
@@ -181,6 +174,7 @@ public class SecurityGroupJoinVO implements ControlledViewEntity {
         this.accountId = accountId;
     }
 
+    @Override
     public String getAccountUuid() {
         return accountUuid;
     }
@@ -189,6 +183,7 @@ public class SecurityGroupJoinVO implements ControlledViewEntity {
         this.accountUuid = accountUuid;
     }
 
+    @Override
     public String getAccountName() {
         return accountName;
     }
@@ -197,6 +192,7 @@ public class SecurityGroupJoinVO implements ControlledViewEntity {
         this.accountName = accountName;
     }
 
+    @Override
     public short getAccountType() {
         return accountType;
     }
@@ -205,6 +201,7 @@ public class SecurityGroupJoinVO implements ControlledViewEntity {
         this.accountType = accountType;
     }
 
+    @Override
     public long getDomainId() {
         return domainId;
     }
@@ -222,6 +219,7 @@ public class SecurityGroupJoinVO implements ControlledViewEntity {
         this.domainUuid = domainUuid;
     }
 
+    @Override
     public String getDomainName() {
         return domainName;
     }
@@ -230,6 +228,7 @@ public class SecurityGroupJoinVO implements ControlledViewEntity {
         this.domainName = domainName;
     }
 
+    @Override
     public String getDomainPath() {
         return domainPath;
     }
@@ -246,6 +245,7 @@ public class SecurityGroupJoinVO implements ControlledViewEntity {
         this.projectId = projectId;
     }
 
+    @Override
     public String getProjectUuid() {
         return projectUuid;
     }
@@ -254,6 +254,7 @@ public class SecurityGroupJoinVO implements ControlledViewEntity {
         this.projectUuid = projectUuid;
     }
 
+    @Override
     public String getProjectName() {
         return projectName;
     }

@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -79,7 +79,9 @@ import org.apache.http.protocol.ResponseServer;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.admin.router.command.ListRoutersCmd;
+import org.apache.cloudstack.api.user.event.command.ListEventsCmd;
 import org.apache.cloudstack.api.user.securitygroup.command.ListSecurityGroupsCmd;
+import org.apache.cloudstack.api.user.tag.command.ListTagsCmd;
 import org.apache.cloudstack.api.user.vm.command.ListVMsCmd;
 import com.cloud.acl.ControlledEntity;
 import com.cloud.api.response.ApiResponseSerializer;
@@ -137,7 +139,7 @@ public class ApiServer implements HttpRequestHandler {
     private static final DateFormat _dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
     @Inject(adapter = APIAccessChecker.class)
     protected Adapters<APIAccessChecker> _apiAccessCheckers;
-    
+
     private static ExecutorService _executor = new ThreadPoolExecutor(10, 150, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("ApiServer"));
 
 
@@ -191,7 +193,7 @@ public class ApiServer implements HttpRequestHandler {
         if (apiPort != null) {
             ListenerThread listenerThread = new ListenerThread(this, apiPort);
             listenerThread.start();
-        } 
+        }
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
@@ -246,7 +248,7 @@ public class ApiServer implements HttpRequestHandler {
 
                 writeResponse(response, responseText, HttpStatus.SC_OK, responseType, null);
             } catch (ServerApiException se) {
-                String responseText = getSerializedApiError(se.getErrorCode(), se.getDescription(), parameterMap, responseType, se);                
+                String responseText = getSerializedApiError(se.getErrorCode(), se.getDescription(), parameterMap, responseType, se);
                 writeResponse(response, responseText, se.getErrorCode(), responseType, se.getDescription());
                 sb.append(" " + se.getErrorCode() + " " + se.getDescription());
             } catch (RuntimeException e) {
@@ -325,7 +327,7 @@ public class ApiServer implements HttpRequestHandler {
         } catch (Exception ex) {
             if (ex instanceof InvalidParameterValueException) {
             	InvalidParameterValueException ref = (InvalidParameterValueException)ex;
-            	ServerApiException e = new ServerApiException(BaseCmd.PARAM_ERROR, ex.getMessage());            	
+		ServerApiException e = new ServerApiException(BaseCmd.PARAM_ERROR, ex.getMessage());
                 // copy over the IdentityProxy information as well and throw the serverapiexception.
                 ArrayList<IdentityProxy> idList = ref.getIdProxyList();
                 if (idList != null) {
@@ -380,11 +382,11 @@ public class ApiServer implements HttpRequestHandler {
             } else {
             	List<ControlledEntity> entitiesToAccess = new ArrayList<ControlledEntity>();
                 ApiDispatcher.setupParameters(cmdObj, params, entitiesToAccess);
-                
+
                 if(!entitiesToAccess.isEmpty()){
 	                Account owner = s_instance._accountMgr.getActiveAccountById(cmdObj.getEntityOwnerId());
 	        		s_instance._accountMgr.checkAccess(caller, null, true, owner);
-	        		 
+
 	        		s_instance._accountMgr.checkAccess(caller, null, true, (ControlledEntity[])entitiesToAccess.toArray());
                 }
             }
@@ -402,7 +404,7 @@ public class ApiServer implements HttpRequestHandler {
             asyncCmd.setStartEventId(startEventId);
 
             // save the scheduled event
-            Long eventId = EventUtils.saveScheduledEvent((callerUserId == null) ? User.UID_SYSTEM : callerUserId, 
+            Long eventId = EventUtils.saveScheduledEvent((callerUserId == null) ? User.UID_SYSTEM : callerUserId,
                     asyncCmd.getEntityOwnerId(), asyncCmd.getEventType(), asyncCmd.getEventDescription(),
                     startEventId);
             if (startEventId == 0) {
@@ -414,8 +416,8 @@ public class ApiServer implements HttpRequestHandler {
 
             ctx.setAccountId(asyncCmd.getEntityOwnerId());
 
-            Long instanceId = (objectId == null) ? asyncCmd.getInstanceId() : objectId;            
-            AsyncJobVO job = new AsyncJobVO(callerUserId, caller.getId(), cmdObj.getClass().getName(), 
+            Long instanceId = (objectId == null) ? asyncCmd.getInstanceId() : objectId;
+            AsyncJobVO job = new AsyncJobVO(callerUserId, caller.getId(), cmdObj.getClass().getName(),
                     ApiGsonHelper.getBuilder().create().toJson(params), instanceId, asyncCmd.getInstanceType());
 
             long jobId = _asyncMgr.submitAsyncJob(job);
@@ -439,7 +441,9 @@ public class ApiServer implements HttpRequestHandler {
             // if the command is of the listXXXCommand, we will need to also return the
             // the job id and status if possible
             if (cmdObj instanceof BaseListCmd && !(cmdObj instanceof ListVMsCmd) && !(cmdObj instanceof ListRoutersCmd)
-                    && !(cmdObj instanceof ListSecurityGroupsCmd)) {
+                    && !(cmdObj instanceof ListSecurityGroupsCmd)
+                    && !(cmdObj instanceof ListTagsCmd)
+                    && !(cmdObj instanceof ListEventsCmd)) {
                 buildAsyncListResponse((BaseListCmd) cmdObj, caller);
             }
 
@@ -653,7 +657,7 @@ public class ApiServer implements HttpRequestHandler {
         }
         return false;
     }
-    
+
     public Long fetchDomainId(String domainUUID){
         ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
         IdentityDao identityDao = locator.getDao(IdentityDao.class);
@@ -704,19 +708,19 @@ public class ApiServer implements HttpRequestHandler {
             if(user.getUuid() != null){
                 session.setAttribute("user_UUID", user.getUuid());
             }
-            
+
             session.setAttribute("username", userAcct.getUsername());
             session.setAttribute("firstname", userAcct.getFirstname());
             session.setAttribute("lastname", userAcct.getLastname());
             session.setAttribute("accountobj", account);
             session.setAttribute("account", account.getAccountName());
-            
+
             session.setAttribute("domainid", account.getDomainId());
             DomainVO domain = (DomainVO) _domainMgr.getDomain(account.getDomainId());
             if(domain.getUuid() != null){
                 session.setAttribute("domain_UUID", domain.getUuid());
             }
-            
+
             session.setAttribute("type", Short.valueOf(account.getType()).toString());
             session.setAttribute("registrationtoken", userAcct.getRegistrationToken());
             session.setAttribute("registered", new Boolean(userAcct.isRegistered()).toString());
@@ -760,14 +764,14 @@ public class ApiServer implements HttpRequestHandler {
 
     private boolean isCommandAvailable(User user, String commandName) {
         boolean isCommandAvailable = false;
-        
+
         for(APIAccessChecker apichecker : _apiAccessCheckers){
         	isCommandAvailable = apichecker.canAccessAPI(user, commandName);
         }
-        
+
         return isCommandAvailable;
     }
-    
+
     // FIXME: rather than isError, we might was to pass in the status code to give more flexibility
     private void writeResponse(HttpResponse resp, final String responseText, final int statusCode, String responseType, String reasonPhrase) {
         try {
@@ -942,7 +946,7 @@ public class ApiServer implements HttpRequestHandler {
             				for (int i=0; i < idList.size(); i++) {
             					IdentityProxy id = idList.get(i);
             					apiResponse.addProxyObject(id.getTableName(), id.getValue(), id.getidFieldName());
-            				}            				
+					}
             			}
             			// Also copy over the cserror code and the function/layer in which it was thrown.
             			apiResponse.setCSErrorCode(ref.getCSErrorCode());
@@ -953,7 +957,7 @@ public class ApiServer implements HttpRequestHandler {
             				for (int i=0; i < idList.size(); i++) {
             					IdentityProxy id = idList.get(i);
             					apiResponse.addProxyObject(id.getTableName(), id.getValue(), id.getidFieldName());
-            				}            				
+					}
             			}
             			// Also copy over the cserror code and the function/layer in which it was thrown.
             			apiResponse.setCSErrorCode(ref.getCSErrorCode());
@@ -964,7 +968,7 @@ public class ApiServer implements HttpRequestHandler {
             				for (int i=0; i < idList.size(); i++) {
             					IdentityProxy id = idList.get(i);
             					apiResponse.addProxyObject(id.getTableName(), id.getValue(), id.getidFieldName());
-            				}            				
+					}
             			}
             			// Also copy over the cserror code and the function/layer in which it was thrown.
             			apiResponse.setCSErrorCode(ref.getCSErrorCode());
@@ -975,7 +979,7 @@ public class ApiServer implements HttpRequestHandler {
             responseText = ApiResponseSerializer.toSerializedString(apiResponse, responseType);
 
         } catch (Exception e) {
-            s_logger.error("Exception responding to http request", e);            
+            s_logger.error("Exception responding to http request", e);
         }
         return responseText;
     }

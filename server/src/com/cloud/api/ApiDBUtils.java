@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -24,10 +24,12 @@ import java.util.Set;
 
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import com.cloud.api.response.DomainRouterResponse;
+import com.cloud.api.response.EventResponse;
 import com.cloud.api.response.ResourceTagResponse;
 import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.api.view.vo.DomainRouterJoinVO;
+import com.cloud.api.view.vo.EventJoinVO;
 import com.cloud.api.view.vo.ResourceTagJoinVO;
 import com.cloud.api.view.vo.SecurityGroupJoinVO;
 import com.cloud.api.view.vo.UserVmJoinVO;
@@ -53,6 +55,8 @@ import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.event.Event;
+import com.cloud.event.dao.EventJoinDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.Host;
@@ -247,6 +251,7 @@ public class ApiDBUtils {
     private static AutoScalePolicyDao _asPolicyDao;
     private static CounterDao _counterDao;
     private static ResourceTagJoinDao _tagJoinDao;
+    private static EventJoinDao _eventJoinDao;
 
     static {
         _ms = (ManagementServer) ComponentLocator.getComponent(ManagementServer.Name);
@@ -317,6 +322,7 @@ public class ApiDBUtils {
         _asVmGroupPolicyMapDao = locator.getDao(AutoScaleVmGroupPolicyMapDao.class);
         _counterDao = locator.getDao(CounterDao.class);
         _tagJoinDao = locator.getDao(ResourceTagJoinDao.class);
+        _eventJoinDao = locator.getDao(EventJoinDao.class);
 
         // Note: stats collector should already have been initialized by this time, otherwise a null instance is returned
         _statsCollector = StatsCollector.getInstance();
@@ -621,11 +627,11 @@ public class ApiDBUtils {
     public static Site2SiteVpnGatewayVO findVpnGatewayById(Long vpnGatewayId) {
         return _site2SiteVpnGatewayDao.findById(vpnGatewayId);
     }
-    
-    public static Site2SiteCustomerGatewayVO findCustomerGatewayById(Long customerGatewayId) {      
+
+    public static Site2SiteCustomerGatewayVO findCustomerGatewayById(Long customerGatewayId) {
         return _site2SiteCustomerGatewayDao.findById(customerGatewayId);
     }
-    
+
     public static List<UserVO> listUsersByAccount(long accountId) {
         return _userDao.listByAccount(accountId);
     }
@@ -775,11 +781,11 @@ public class ApiDBUtils {
     public static Project findProjectByProjectAccountId(long projectAccountId) {
         return _projectMgr.findByProjectAccountId(projectAccountId);
     }
-    
+
     public static Project findProjectByProjectAccountIdIncludingRemoved(long projectAccountId) {
         return _projectMgr.findByProjectAccountIdIncludingRemoved(projectAccountId);
     }
-    
+
     public static Project findProjectById(long projectId) {
         return _projectMgr.getProject(projectId);
     }
@@ -833,15 +839,15 @@ public class ApiDBUtils {
     public static String getHaTag() {
         return _haMgr.getHaTag();
     }
-    
+
     public static Map<Service, Set<Provider>> listVpcOffServices(long vpcOffId) {
         return _vpcMgr.getVpcOffSvcProvidersMap(vpcOffId);
     }
-    
+
     public static List<? extends Network> listVpcNetworks(long vpcId) {
         return _networkMgr.listNetworksByVpc(vpcId);
     }
-    
+
     public static boolean canUseForDeploy(Network network) {
         return _networkMgr.canUseForDeploy(network);
     }
@@ -849,7 +855,7 @@ public class ApiDBUtils {
     public static String getUuid(String resourceId, TaggedResourceType resourceType) {
         return _taggedResourceService.getUuid(resourceId, resourceType);
     }
-    
+
     public static boolean isOfferingForVpc(NetworkOffering offering) {
         boolean vpcProvider = _configMgr.isOfferingForVpc(offering);
         return vpcProvider;
@@ -969,5 +975,13 @@ public class ApiDBUtils {
         else{
             return null;
         }
+    }
+
+    public static EventResponse newEventResponse(EventJoinVO ve) {
+        return _eventJoinDao.newEventResponse(ve);
+    }
+
+    public static EventJoinVO newEventView(Event e){
+        return _eventJoinDao.newEventView(e);
     }
 }

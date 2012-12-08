@@ -63,6 +63,7 @@ import org.apache.cloudstack.api.user.vmgroup.command.UpdateVMGroupCmd;
 import org.apache.cloudstack.api.admin.systemvm.command.UpgradeSystemVMCmd;
 import org.apache.cloudstack.api.admin.resource.command.UploadCustomCertificateCmd;
 import com.cloud.api.view.vo.DomainRouterJoinVO;
+import com.cloud.api.view.vo.EventJoinVO;
 import com.cloud.async.AsyncJob;
 import com.cloud.capacity.Capacity;
 import com.cloud.configuration.Configuration;
@@ -174,7 +175,7 @@ public interface ManagementService {
      * @param c
      * @return List of Events.
      */
-    List<? extends Event> searchForEvents(ListEventsCmd c);
+    Pair<List<EventJoinVO>, Integer> searchForEvents(ListEventsCmd c);
 
     /**
      * Obtains a list of routers by the specified search criteria. Can search by: "userId", "name", "state",

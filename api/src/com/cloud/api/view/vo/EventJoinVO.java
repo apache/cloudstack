@@ -16,17 +16,20 @@
 // under the License.
 package com.cloud.api.view.vo;
 
+import java.util.Date;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Table;
 
-import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.utils.db.GenericDao;
+import com.cloud.event.Event.State;
 
 @Entity
-@Table(name="resource_tag_view")
-public class ResourceTagJoinVO implements ControlledViewEntity {
+@Table(name="event_view")
+public class EventJoinVO implements ControlledViewEntity {
 
     @Column(name="id", updatable=false, nullable = false)
     private long id;
@@ -34,27 +37,36 @@ public class ResourceTagJoinVO implements ControlledViewEntity {
     @Column(name="uuid")
     private String uuid;
 
-    @Column(name="key")
-    private String key;
+    @Column(name="type")
+    private String type;
 
-    @Column(name="value")
-    String value;
-
-
-
-    @Column(name="resource_id")
-    long resourceId;
-
-    @Column(name="resource_uuid")
-    private String resourceUuid;
-
-    @Column(name="resource_type")
     @Enumerated(value=EnumType.STRING)
-    private TaggedResourceType resourceType;
+    @Column(name="state")
+    private State state;
 
-    @Column(name="customer")
-    String customer;
+    @Column(name="description")
+    private String description;
 
+    @Column(name=GenericDao.CREATED_COLUMN)
+    private Date createDate;
+
+    @Column(name="user_id")
+    private long userId;
+
+    @Column(name="user_name")
+    private String userName;
+
+    @Column(name="level")
+    private String level;
+
+    @Column(name="start_id")
+    private long startId;
+
+    @Column(name="start_uuid")
+    private String startUuid;
+
+    @Column(name="parameters", length=1024)
+    private String parameters;
 
 
     @Column(name="account_id")
@@ -92,7 +104,7 @@ public class ResourceTagJoinVO implements ControlledViewEntity {
 
 
 
-    public ResourceTagJoinVO() {
+    public EventJoinVO() {
     }
 
     public String getUuid() {
@@ -212,52 +224,87 @@ public class ResourceTagJoinVO implements ControlledViewEntity {
 
 
 
-    public String getKey() {
-        return key;
+
+
+    public String getType() {
+        return type;
     }
 
-    public void setKey(String key) {
-        this.key = key;
+    public void setType(String type) {
+        this.type = type;
     }
 
-    public String getValue() {
-        return value;
+    public State getState() {
+        return state;
     }
 
-    public void setValue(String value) {
-        this.value = value;
+    public void setState(State state) {
+        this.state = state;
     }
 
-    public long getResourceId() {
-        return resourceId;
+    public String getDescription() {
+        return description;
     }
 
-    public void setResourceId(long resourceId) {
-        this.resourceId = resourceId;
+    public void setDescription(String description) {
+        this.description = description;
     }
 
-    public String getResourceUuid() {
-        return resourceUuid;
+    public Date getCreateDate() {
+        return createDate;
     }
 
-    public void setResourceUuid(String resourceUuid) {
-        this.resourceUuid = resourceUuid;
+    public void setCreateDate(Date createDate) {
+        this.createDate = createDate;
     }
 
-    public TaggedResourceType getResourceType() {
-        return resourceType;
+    public long getUserId() {
+        return userId;
     }
 
-    public void setResourceType(TaggedResourceType resourceType) {
-        this.resourceType = resourceType;
+    public void setUserId(long userId) {
+        this.userId = userId;
     }
 
-    public String getCustomer() {
-        return customer;
+    public String getUserName() {
+        return userName;
     }
 
-    public void setCustomer(String customer) {
-        this.customer = customer;
+    public void setUserName(String userName) {
+        this.userName = userName;
+    }
+
+    public String getLevel() {
+        return level;
+    }
+
+    public void setLevel(String level) {
+        this.level = level;
+    }
+
+    public long getStartId() {
+        return startId;
+    }
+
+    public void setStartId(long startId) {
+        this.startId = startId;
+    }
+
+
+    public String getStartUuid() {
+        return startUuid;
+    }
+
+    public void setStartUuid(String startUuid) {
+        this.startUuid = startUuid;
+    }
+
+    public String getParameters() {
+        return parameters;
+    }
+
+    public void setParameters(String parameters) {
+        this.parameters = parameters;
     }
 
     @Override
@@ -276,7 +323,7 @@ public class ResourceTagJoinVO implements ControlledViewEntity {
             return false;
         if (getClass() != obj.getClass())
             return false;
-        ResourceTagJoinVO other = (ResourceTagJoinVO) obj;
+        EventJoinVO other = (EventJoinVO) obj;
         if (id != other.id)
             return false;
         return true;

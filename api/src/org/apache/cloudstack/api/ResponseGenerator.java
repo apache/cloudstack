@@ -153,6 +153,7 @@ import com.cloud.user.UserAccount;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.InstanceGroup;
 import com.cloud.api.view.vo.DomainRouterJoinVO;
+import com.cloud.api.view.vo.EventJoinVO;
 import com.cloud.api.view.vo.ResourceTagJoinVO;
 import com.cloud.api.view.vo.SecurityGroupJoinVO;
 import com.cloud.api.view.vo.UserVmJoinVO;
@@ -261,6 +262,8 @@ public interface ResponseGenerator {
     AsyncJobResponse createAsyncJobResponse(AsyncJob job);
 
     EventResponse createEventResponse(Event event);
+
+    List<EventResponse> createEventResponse(EventJoinVO... events);
 
     TemplateResponse createIsoResponse(VirtualMachineTemplate result);
 

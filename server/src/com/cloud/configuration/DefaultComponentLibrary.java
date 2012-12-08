@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -209,6 +209,7 @@ import com.cloud.vm.dao.UserVmDaoImpl;
 import com.cloud.vm.dao.UserVmJoinDaoImpl;
 import com.cloud.vm.dao.UserVmDetailsDaoImpl;
 import com.cloud.vm.dao.VMInstanceDaoImpl;
+import com.cloud.event.dao.EventJoinDaoImpl;
 
 
 public class DefaultComponentLibrary extends ComponentLibraryBase implements ComponentLibrary {
@@ -224,6 +225,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("DomainRouterJoinDao", DomainRouterJoinDaoImpl.class);
         addDao("SecurityGroupJoinDao", SecurityGroupJoinDaoImpl.class);
         addDao("ResourceTagJoinDao", ResourceTagJoinDaoImpl.class);
+        addDao("EventJoinDao", EventJoinDaoImpl.class);
         ComponentInfo<? extends GenericDao<?, ? extends Serializable>> info = addDao("ServiceOfferingDao", ServiceOfferingDaoImpl.class);
         info.addParameter("cache.size", "50");
         info.addParameter("cache.time.to.live", "600");

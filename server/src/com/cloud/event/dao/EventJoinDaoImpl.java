@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.tags.dao;
+package com.cloud.event.dao;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -31,13 +31,18 @@ import org.apache.log4j.Logger;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.response.DomainRouterResponse;
+import com.cloud.api.response.EventResponse;
 import com.cloud.api.response.NicResponse;
 import com.cloud.api.response.ResourceTagResponse;
 import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.api.view.vo.DomainRouterJoinVO;
+import com.cloud.api.view.vo.EventJoinVO;
 import com.cloud.api.view.vo.ResourceTagJoinVO;
 import com.cloud.dc.DataCenter;
+import com.cloud.event.Event;
+import com.cloud.event.EventVO;
+import com.cloud.event.Event.State;
 import com.cloud.network.Network;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.router.VirtualRouter;
@@ -45,6 +50,7 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.projects.Project;
 import com.cloud.server.ResourceTag;
 import com.cloud.user.Account;
+import com.cloud.user.User;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Attribute;
@@ -59,15 +65,17 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
 
 
-@Local(value={ResourceTagJoinDao.class})
-public class ResourceTagJoinDaoImpl extends GenericDaoBase<ResourceTagJoinVO, Long> implements ResourceTagJoinDao {
-    public static final Logger s_logger = Logger.getLogger(ResourceTagJoinDaoImpl.class);
+@Local(value={EventJoinDao.class})
+public class EventJoinDaoImpl extends GenericDaoBase<EventJoinVO, Long> implements EventJoinDao {
+    public static final Logger s_logger = Logger.getLogger(EventJoinDaoImpl.class);
 
-    private SearchBuilder<ResourceTagJoinVO> vrSearch;
+    private SearchBuilder<EventJoinVO> vrSearch;
 
-    private SearchBuilder<ResourceTagJoinVO> vrIdSearch;
+    private SearchBuilder<EventJoinVO> vrIdSearch;
 
-    protected ResourceTagJoinDaoImpl() {
+    private SearchBuilder<EventJoinVO> CompletedEventSearch;
+
+    protected EventJoinDaoImpl() {
 
         vrSearch = createSearchBuilder();
         vrSearch.and("idIN", vrSearch.entity().getId(), SearchCriteria.Op.IN);
@@ -77,53 +85,69 @@ public class ResourceTagJoinDaoImpl extends GenericDaoBase<ResourceTagJoinVO, Lo
         vrIdSearch.and("id", vrIdSearch.entity().getId(), SearchCriteria.Op.EQ);
         vrIdSearch.done();
 
-        this._count = "select count(distinct id) from resource_tag_view WHERE ";
+        CompletedEventSearch = createSearchBuilder();
+        CompletedEventSearch.and("state",CompletedEventSearch.entity().getState(),SearchCriteria.Op.EQ);
+        CompletedEventSearch.and("startId", CompletedEventSearch.entity().getStartId(), SearchCriteria.Op.EQ);
+        CompletedEventSearch.done();
+
+
+        this._count = "select count(distinct id) from event_view WHERE ";
     }
 
 
 
-
-
     @Override
-    public ResourceTagResponse newResourceTagResponse(ResourceTagJoinVO resourceTag, boolean keyValueOnly) {
-        ResourceTagResponse response = new ResourceTagResponse();
-        response.setKey(resourceTag.getKey());
-        response.setValue(resourceTag.getValue());
-
-        if (!keyValueOnly) {
-            response.setResourceType(resourceTag.getResourceType().toString());
-            response.setResourceId(resourceTag.getResourceUuid());
-
-            ApiResponseHelper.populateOwner(response, resourceTag);
-
-            response.setDomainId(resourceTag.getDomainUuid());
-            response.setDomainName(resourceTag.getDomainName());
-
-            response.setCustomer(resourceTag.getCustomer());
-        }
-
-        response.setObjectName("tag");
-
-        return response;
+    public List<EventJoinVO> searchAllEvents(SearchCriteria<EventJoinVO> sc, Filter filter) {
+        return listIncludingRemovedBy(sc, filter);
     }
 
 
+
     @Override
-    public List<ResourceTagJoinVO> searchByIds(Long... ids) {
-        SearchCriteria<ResourceTagJoinVO> sc = vrSearch.create();
+    public EventJoinVO findCompletedEvent(long startId) {
+        SearchCriteria<EventJoinVO> sc = CompletedEventSearch.create();
+        sc.setParameters("state", State.Completed);
+        sc.setParameters("startId", startId);
+        return findOneIncludingRemovedBy(sc);
+    }
+
+
+
+    @Override
+    public EventResponse newEventResponse(EventJoinVO event) {
+        EventResponse responseEvent = new EventResponse();
+        responseEvent.setCreated(event.getCreateDate());
+        responseEvent.setDescription(event.getDescription());
+        responseEvent.setEventType(event.getType());
+        responseEvent.setId(event.getUuid());
+        responseEvent.setLevel(event.getLevel());
+        responseEvent.setParentId(event.getStartUuid());
+        responseEvent.setState(event.getState());
+        responseEvent.setUsername(event.getUserName());
+
+        ApiResponseHelper.populateOwner(responseEvent, event);
+        responseEvent.setObjectName("event");
+        return responseEvent;
+    }
+
+
+
+    @Override
+    public List<EventJoinVO> searchByIds(Long... ids) {
+        SearchCriteria<EventJoinVO> sc = vrSearch.create();
         sc.setParameters("idIN", ids);
         return searchIncludingRemoved(sc, null, null, false);
     }
 
 
     @Override
-    public ResourceTagJoinVO newResourceTagView(ResourceTag vr) {
+    public EventJoinVO newEventView(Event vr) {
 
-        List<ResourceTagJoinVO> uvList = new ArrayList<ResourceTagJoinVO>();
-        SearchCriteria<ResourceTagJoinVO> sc = vrIdSearch.create();
+        List<EventJoinVO> uvList = new ArrayList<EventJoinVO>();
+        SearchCriteria<EventJoinVO> sc = vrIdSearch.create();
         sc.setParameters("id", vr.getId());
-        List<ResourceTagJoinVO> vms = searchIncludingRemoved(sc, null, null, false);
-        assert vms != null && vms.size() == 1 : "No tag found for tag id " + vr.getId();
+        List<EventJoinVO> vms = searchIncludingRemoved(sc, null, null, false);
+        assert vms != null && vms.size() == 1 : "No event found for event id " + vr.getId();
         return vms.get(0);
 
     }
