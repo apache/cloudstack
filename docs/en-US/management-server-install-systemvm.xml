@@ -37,8 +37,7 @@
       <para>If your secondary storage mount point is not named /mnt/secondary, substitute your own
         mount point name.</para>
       <para>If you set the &PRODUCT; database encryption type to "web" when you set up the database,
-        you must now add the parameter -s &lt;management-server-secret-key&gt;. See About Password
-        and Key Encryption.</para>
+          you must now add the parameter -s &lt;management-server-secret-key&gt;. See <xref linkend="about-password-encryption" />.</para>
       <para>This process will require approximately 5 GB of free space on the local file system and
         up to 30 minutes each time it runs.</para>
       <itemizedlist>

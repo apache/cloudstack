@@ -26,6 +26,7 @@
   <title>Managing the Cloud</title>
   <xi:include href="tagging-resources.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
   <xi:include href="change-database-config.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="change-database-password.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
   <xi:include href="admin-alerts.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
   <xi:include href="customizing-dns.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
   <xi:include href="stop-restart-management-server.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
