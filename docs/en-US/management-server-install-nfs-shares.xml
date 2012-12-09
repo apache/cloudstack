@@ -25,11 +25,13 @@
 <section id="prepare-nfs-shares">
     <title>Prepare NFS Shares</title>
     <para>&PRODUCT; needs a place to keep primary and secondary storage (see Cloud Infrastructure Overview). Both of these can be NFS shares. This section tells how to set up the NFS shares before adding the storage to &PRODUCT;.</para>
-    <para>For primary storage, you can use iSCSI instead.</para> 
+    <note><title>Alternative Storage</title>
+        <para>NFS is not the only option for primary or secondary storage. For example, you may use a Ceph RDB cluster, GlusterFS, iSCSI, and otthers.</para>
+    </note>
     <para>The requirements for primary and secondary storage are described in:</para>
     <itemizedlist>
-        <listitem><para>About Primary Storage</para></listitem>
-        <listitem><para>About Secondary Storage</para></listitem>
+        <listitem><para><xref linkend="about-primary-storage"/></para></listitem>
+        <listitem><para><xref linkend="about-secondary-storage"/></para></listitem>
     </itemizedlist>
     <para>A production installation typically uses a separate NFS server. See <xref linkend="nfs-shares-on-separate-server"/>.</para>
     <para>You can also use the Management Server node as the NFS server. This is more typical of a trial installation, but is technically possible in a larger deployment. See <xref linkend="nfs-shares-on-management-server"/>.</para>
