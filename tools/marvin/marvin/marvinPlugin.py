@@ -119,6 +119,6 @@ class MarvinPlugin(Plugin):
         setattr(test, "config", self.config)
         setattr(test, "debug", partial(testCaseLogger, logger=testcaselogger))
         setattr(test, "clstestclient", self.testclient)
-        if hasattr(test, "UserName"):
-            self.testclient.createNewApiClient(test.UserName, test.DomainName, test.AcctType)
+        if hasattr(test, "user"): #when the class-level attr applied. all test runs as 'user'
+            self.testclient.createUserApiClient(test.UserName, test.DomainName, test.AcctType)
             
