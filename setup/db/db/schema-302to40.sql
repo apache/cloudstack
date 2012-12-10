@@ -477,3 +477,4 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'manag
 UPDATE `cloud`.`configuration` set description ='Uuid of the service offering used by console proxy; if NULL - system offering will be used' where name ='consoleproxy.service.offering';
 
 UPDATE `cloud`.`user` SET PASSWORD=RAND() WHERE id=1;
+ALTER TABLE `cloud_usage`.`account` ADD COLUMN `default_zone_id` bigint unsigned;
