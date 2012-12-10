@@ -202,6 +202,7 @@ import com.cloud.vm.dao.ConsoleProxyDaoImpl;
 import com.cloud.vm.dao.DomainRouterDaoImpl;
 import com.cloud.vm.dao.DomainRouterJoinDaoImpl;
 import com.cloud.vm.dao.InstanceGroupDaoImpl;
+import com.cloud.vm.dao.InstanceGroupJoinDaoImpl;
 import com.cloud.vm.dao.InstanceGroupVMMapDaoImpl;
 import com.cloud.vm.dao.NicDaoImpl;
 import com.cloud.vm.dao.SecondaryStorageVmDaoImpl;
@@ -311,6 +312,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("NetworkOfferingDao", NetworkOfferingDaoImpl.class);
         addDao("NicDao", NicDaoImpl.class);
         addDao("InstanceGroupDao", InstanceGroupDaoImpl.class);
+        addDao("InstanceGroupJoinDao", InstanceGroupJoinDaoImpl.class);
         addDao("InstanceGroupVMMapDao", InstanceGroupVMMapDaoImpl.class);
         addDao("RemoteAccessVpnDao", RemoteAccessVpnDaoImpl.class);
         addDao("VpnUserDao", VpnUserDaoImpl.class);
