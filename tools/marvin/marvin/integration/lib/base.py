@@ -1039,7 +1039,8 @@ class ServiceOffering:
         cmd.displaytext = services["displaytext"]
         cmd.memory = services["memory"]
         cmd.name = services["name"]
-        cmd.storagetype = services["storagetype"]
+        if hasattr(cmd, "storagetype"):
+            cmd.storagetype = services["storagetype"]
 
         # Service Offering private to that domain
         if domainid:

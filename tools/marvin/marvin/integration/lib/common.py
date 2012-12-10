@@ -64,6 +64,7 @@ def get_domain(apiclient, services=None):
     domains = apiclient.listDomains(cmd)
 
     if isinstance(domains, list):
+        assert len(domains) > 0
         return domains[0]
     else:
         raise Exception("Failed to find specified domain.")
@@ -80,6 +81,7 @@ def get_zone(apiclient, services=None):
     zones = apiclient.listZones(cmd)
 
     if isinstance(zones, list):
+        assert len(zones) > 0
         return zones[0]
     else:
         raise Exception("Failed to find specified zone.")
@@ -98,6 +100,7 @@ def get_pod(apiclient, zoneid, services=None):
     pods = apiclient.listPods(cmd)
 
     if isinstance(pods, list):
+        assert len(pods) > 0
         return pods[0]
     else:
         raise Exception("Exception: Failed to find specified pod.")
