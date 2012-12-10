@@ -137,7 +137,13 @@ class cloudstackTestClient(object):
     def getApiClient(self):
         return self.apiClient
 
-    def getUserApiClient(self):
+    def getUserApiClient(self, account, domain, type=0):
+        """
+        0 - user
+        1 - admin
+        2 - domain admin
+        """
+        self.createUserApiClient(account, domain, type)
         if hasattr(self, "userApiClient"):
             return self.userApiClient
         return None

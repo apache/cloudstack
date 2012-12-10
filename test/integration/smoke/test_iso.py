@@ -218,7 +218,7 @@ class TestISO(cloudstackTestCase):
         cls.services["account"] = cls.account.account.name
         # Finding the OsTypeId from Ostype
         ostypes = list_os_types(
-                    self.apiclient,
+                    cls.apiclient,
                     description=self.services["ostype"]
                     )
         if not isinstance(ostypes, list):
