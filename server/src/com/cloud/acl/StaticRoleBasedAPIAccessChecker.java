@@ -1,3 +1,19 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 package com.cloud.acl;
 
 import java.io.File;
@@ -34,7 +50,7 @@ import com.cloud.utils.component.PluggableService;
 @Local(value=APIAccessChecker.class)
 public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIAccessChecker {
 
-	protected static final Logger s_logger = Logger.getLogger(StaticRoleBasedAPIAccessChecker.class);
+    protected static final Logger s_logger = Logger.getLogger(StaticRoleBasedAPIAccessChecker.class);
     public static final short ADMIN_COMMAND = 1;
     public static final short DOMAIN_ADMIN_COMMAND = 4;
     public static final short RESOURCE_DOMAIN_ADMIN_COMMAND = 2;
@@ -45,35 +61,35 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
     private static List<String> s_resourceDomainAdminCommands = null;
     private static List<String> s_allCommands = null;
     private static List<String> s_pluggableServiceCommands = null;
-    
+
     protected @Inject AccountManager _accountMgr;
 
     static {
-    	s_allCommands = new ArrayList<String>();
-    	s_userCommands = new ArrayList<String>();
+        s_allCommands = new ArrayList<String>();
+        s_userCommands = new ArrayList<String>();
         s_resellerCommands = new ArrayList<String>();
         s_adminCommands = new ArrayList<String>();
         s_resourceDomainAdminCommands = new ArrayList<String>();
         s_pluggableServiceCommands = new ArrayList<String>();
     }
 
-	@Override
-	public boolean canAccessAPI(User user, String apiCommandName)
-			throws PermissionDeniedException{
-	
-		boolean commandExists = s_allCommands.contains(apiCommandName);
+    @Override
+    public boolean canAccessAPI(User user, String apiCommandName)
+            throws PermissionDeniedException{
 
-		if(commandExists && user != null){
-				Long accountId = user.getAccountId();
-		        Account userAccount = _accountMgr.getAccount(accountId);
-		        short accountType = userAccount.getType();
-		        return isCommandAvailableForAccount(accountType, apiCommandName);
-		}
-		
-		return commandExists;
-	}
+        boolean commandExists = s_allCommands.contains(apiCommandName);
 
-   private static boolean isCommandAvailableForAccount(short accountType, String commandName) {
+        if(commandExists && user != null){
+                Long accountId = user.getAccountId();
+                Account userAccount = _accountMgr.getAccount(accountId);
+                short accountType = userAccount.getType();
+                return isCommandAvailableForAccount(accountType, apiCommandName);
+        }
+
+        return commandExists;
+    }
+
+    private static boolean isCommandAvailableForAccount(short accountType, String commandName) {
         boolean isCommandAvailable = false;
         switch (accountType) {
         case Account.ACCOUNT_TYPE_ADMIN:
@@ -92,24 +108,23 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
         return isCommandAvailable;
     }
 
-	
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-    	super.configure(name, params);
-    	
-    	//load command.properties to build the static map per role.
+        super.configure(name, params);
+
+        //load command.properties to build the static map per role.
         ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
         String[] apiConfig = ((ManagementServer) ComponentLocator.getComponent(ManagementServer.Name)).getApiConfig();
 
         processConfigFiles(apiConfig, false);
-        
+
         // get commands for all pluggable services
         String[] pluggableServicesApiConfigs = getPluggableServicesApiConfigs();
         processConfigFiles(pluggableServicesApiConfigs, true);
-        
-    	return true;
+
+        return true;
     }
-    
+
 
     private String[] getPluggableServicesApiConfigs() {
         List<String> pluggableServicesApiConfigs = new ArrayList<String>();
@@ -121,9 +136,9 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
         }
         return pluggableServicesApiConfigs.toArray(new String[0]);
     }
-    
+
     private void processConfigFiles(String[] apiConfig, boolean pluggableServicesConfig) {
-		try {
+        try {
             Properties preProcessedCommands = new Properties();
             if (apiConfig != null) {
                 for (String configFile : apiConfig) {
@@ -146,11 +161,11 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
                     String preProcessedCommand = preProcessedCommands.getProperty((String) key);
                     String[] commandParts = preProcessedCommand.split(";");
 
-                    
+
                     if (pluggableServicesConfig) {
                         s_pluggableServiceCommands.add(commandParts[0]);
                     }
-                    
+
                     if (commandParts.length > 1) {
                         try {
                             short cmdPermissions = Short.parseShort(commandParts[1]);
@@ -178,11 +193,10 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
 
             }
         } catch (FileNotFoundException fnfex) {
-            s_logger.error("Unable to find properites file", fnfex);
+            s_logger.error("Unable to find properties file", fnfex);
         } catch (IOException ioex) {
             s_logger.error("Exception loading properties file", ioex);
         }
     }
-    
-    
+
 }
