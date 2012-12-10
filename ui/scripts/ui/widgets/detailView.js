@@ -942,6 +942,8 @@
       }).appendTo($tabContent);
     }
 
+    $detailView.find('.detail-group:hidden').html('');
+
     if (tabs.listView) {
       return $('<div>').listView({
         context: args.context,
