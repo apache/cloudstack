@@ -92,7 +92,6 @@ public class ResourceTagJoinDaoImpl extends GenericDaoBase<ResourceTagJoinVO, Lo
     @Override
     public ResourceTagJoinVO newResourceTagView(ResourceTag vr) {
 
-        List<ResourceTagJoinVO> uvList = new ArrayList<ResourceTagJoinVO>();
         SearchCriteria<ResourceTagJoinVO> sc = vrIdSearch.create();
         sc.setParameters("id", vr.getId());
         List<ResourceTagJoinVO> vms = searchIncludingRemoved(sc, null, null, false);

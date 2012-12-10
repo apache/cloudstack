@@ -52,6 +52,7 @@ import javax.servlet.http.HttpSession;
 import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
+import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.ConnectionClosedException;
 import org.apache.http.HttpException;
@@ -443,7 +444,8 @@ public class ApiServer implements HttpRequestHandler {
             if (cmdObj instanceof BaseListCmd && !(cmdObj instanceof ListVMsCmd) && !(cmdObj instanceof ListRoutersCmd)
                     && !(cmdObj instanceof ListSecurityGroupsCmd)
                     && !(cmdObj instanceof ListTagsCmd)
-                    && !(cmdObj instanceof ListEventsCmd)) {
+                    && !(cmdObj instanceof ListEventsCmd)
+                    && !(cmdObj instanceof ListVMGroupsCmd)) {
                 buildAsyncListResponse((BaseListCmd) cmdObj, caller);
             }
 

@@ -25,11 +25,13 @@ import java.util.Set;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
+import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.view.vo.DomainRouterJoinVO;
 import org.apache.cloudstack.api.view.vo.EventJoinVO;
+import org.apache.cloudstack.api.view.vo.InstanceGroupJoinVO;
 import org.apache.cloudstack.api.view.vo.ResourceTagJoinVO;
 import org.apache.cloudstack.api.view.vo.SecurityGroupJoinVO;
 import org.apache.cloudstack.api.view.vo.UserVmJoinVO;
@@ -166,6 +168,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.UserVmDetailVO;
@@ -177,6 +180,7 @@ import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.DomainRouterJoinDao;
+import com.cloud.vm.dao.InstanceGroupJoinDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.UserVmJoinDao;
@@ -251,6 +255,7 @@ public class ApiDBUtils {
     private static CounterDao _counterDao;
     private static ResourceTagJoinDao _tagJoinDao;
     private static EventJoinDao _eventJoinDao;
+    private static InstanceGroupJoinDao _vmGroupJoinDao;
 
     static {
         _ms = (ManagementServer) ComponentLocator.getComponent(ManagementServer.Name);
@@ -982,5 +987,13 @@ public class ApiDBUtils {
 
     public static EventJoinVO newEventView(Event e){
         return _eventJoinDao.newEventView(e);
+    }
+
+    public static InstanceGroupResponse newInstanceGroupResponse(InstanceGroupJoinVO ve) {
+        return _vmGroupJoinDao.newInstanceGroupResponse(ve);
+    }
+
+    public static InstanceGroupJoinVO newInstanceGroupView(InstanceGroup e){
+        return _vmGroupJoinDao.newInstanceGroupView(e);
     }
 }

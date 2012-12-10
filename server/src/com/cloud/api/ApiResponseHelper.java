@@ -115,6 +115,7 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.api.view.vo.DomainRouterJoinVO;
 import org.apache.cloudstack.api.view.vo.ControlledViewEntity;
 import org.apache.cloudstack.api.view.vo.EventJoinVO;
+import org.apache.cloudstack.api.view.vo.InstanceGroupJoinVO;
 import org.apache.cloudstack.api.view.vo.ResourceTagJoinVO;
 import org.apache.cloudstack.api.view.vo.SecurityGroupJoinVO;
 import org.apache.cloudstack.api.view.vo.UserVmJoinVO;
@@ -1188,15 +1189,20 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public InstanceGroupResponse createInstanceGroupResponse(InstanceGroup group) {
-        InstanceGroupResponse groupResponse = new InstanceGroupResponse();
-        groupResponse.setId(group.getId());
-        groupResponse.setName(group.getName());
-        groupResponse.setCreated(group.getCreated());
+        InstanceGroupJoinVO vgroup = ApiDBUtils.newInstanceGroupView(group);
+        return ApiDBUtils.newInstanceGroupResponse(vgroup);
 
-        populateOwner(groupResponse, group);
+    }
 
-        groupResponse.setObjectName("instancegroup");
-        return groupResponse;
+
+
+    @Override
+    public List<InstanceGroupResponse> createInstanceGroupResponse(InstanceGroupJoinVO... groups) {
+        List<InstanceGroupResponse> respList = new ArrayList<InstanceGroupResponse>();
+        for (InstanceGroupJoinVO vt : groups){
+            respList.add(ApiDBUtils.newInstanceGroupResponse(vt));
+        }
+        return respList;
     }
 
     @Override

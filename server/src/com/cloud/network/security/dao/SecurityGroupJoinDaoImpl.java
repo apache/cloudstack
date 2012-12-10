@@ -162,16 +162,10 @@ public class SecurityGroupJoinDaoImpl extends GenericDaoBase<SecurityGroupJoinVO
 
     @Override
     public List<SecurityGroupJoinVO> newSecurityGroupView(SecurityGroup sg) {
-        List<SecurityGroupJoinVO> uvList = new ArrayList<SecurityGroupJoinVO>();
+
         SearchCriteria<SecurityGroupJoinVO> sc = sgIdSearch.create();
         sc.setParameters("id", sg.getId());
-        List<SecurityGroupJoinVO> sgs = searchIncludingRemoved(sc, null, null, false);
-        if (sgs != null) {
-            for (SecurityGroupJoinVO uvm : sgs) {
-                uvList.add(uvm);
-            }
-        }
-        return uvList;
+        return searchIncludingRemoved(sc, null, null, false);
     }
 
     @Override

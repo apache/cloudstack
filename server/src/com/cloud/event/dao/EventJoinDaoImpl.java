@@ -112,7 +112,6 @@ public class EventJoinDaoImpl extends GenericDaoBase<EventJoinVO, Long> implemen
     @Override
     public EventJoinVO newEventView(Event vr) {
 
-        List<EventJoinVO> uvList = new ArrayList<EventJoinVO>();
         SearchCriteria<EventJoinVO> sc = vrIdSearch.create();
         sc.setParameters("id", vr.getId());
         List<EventJoinVO> vms = searchIncludingRemoved(sc, null, null, false);

@@ -100,6 +100,8 @@ import org.apache.cloudstack.api.command.admin.resource.UploadCustomCertificateC
 import org.apache.cloudstack.api.response.ExtractResponse;
 import org.apache.cloudstack.api.view.vo.DomainRouterJoinVO;
 import org.apache.cloudstack.api.view.vo.EventJoinVO;
+import org.apache.cloudstack.api.view.vo.InstanceGroupJoinVO;
+
 import com.cloud.async.AsyncJob;
 import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
@@ -262,6 +264,7 @@ import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.DomainRouterJoinDao;
 import com.cloud.vm.dao.InstanceGroupDao;
+import com.cloud.vm.dao.InstanceGroupJoinDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
@@ -317,6 +320,7 @@ public class ManagementServerImpl implements ManagementServer {
     private final AsyncJobManager _asyncMgr;
     private final int _purgeDelay;
     private final InstanceGroupDao _vmGroupDao;
+    private final InstanceGroupJoinDao _vmGroupJoinDao;
     private final UploadMonitor _uploadMonitor;
     private final UploadDao _uploadDao;
     private final SSHKeyPairDao _sshKeyPairDao;
@@ -393,6 +397,7 @@ public class ManagementServerImpl implements ManagementServer {
         _guestOSCategoryDao = locator.getDao(GuestOSCategoryDao.class);
         _poolDao = locator.getDao(StoragePoolDao.class);
         _vmGroupDao = locator.getDao(InstanceGroupDao.class);
+        _vmGroupJoinDao = locator.getDao(InstanceGroupJoinDao.class);
         _uploadDao = locator.getDao(UploadDao.class);
         _configs = _configDao.getConfiguration();
         _vmInstanceDao = locator.getDao(VMInstanceDao.class);
@@ -3205,7 +3210,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public Pair<List<? extends InstanceGroup>, Integer> searchForVmGroups(ListVMGroupsCmd cmd) {
+    public Pair<List<InstanceGroupJoinVO>, Integer> searchForVmGroups(ListVMGroupsCmd cmd) {
         Long id = cmd.getId();
         String name = cmd.getGroupName();
         String keyword = cmd.getKeyword();
@@ -3221,51 +3226,25 @@ public class ManagementServerImpl implements ManagementServer {
         Boolean isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
-        Filter searchFilter = new Filter(InstanceGroupVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        Filter searchFilter = new Filter(InstanceGroupJoinVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
 
-        SearchBuilder<InstanceGroupVO> sb = _vmGroupDao.createSearchBuilder();
+        SearchBuilder<InstanceGroupJoinVO> sb = _vmGroupJoinDao.createSearchBuilder();
+        _accountMgr.buildACLViewSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
-        sb.and("accountIdIN", sb.entity().getAccountId(), SearchCriteria.Op.IN);
-        sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
-        if (((permittedAccounts.isEmpty()) && (domainId != null) && isRecursive)) {
-            // if accountId isn't specified, we can do a domain match for the
-            // admin case if isRecursive is true
-            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
-            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
-            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-        }
-
-        if (listProjectResourcesCriteria != null) {
-            if (listProjectResourcesCriteria == Project.ListProjectResourcesCriteria.ListProjectResourcesOnly) {
-                sb.and("accountType", sb.entity().getAccountType(), SearchCriteria.Op.EQ);
-            } else if (listProjectResourcesCriteria == Project.ListProjectResourcesCriteria.SkipProjectResources) {
-                sb.and("accountType", sb.entity().getAccountType(), SearchCriteria.Op.NEQ);
-            }
-        }
 
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
 
-        SearchCriteria<InstanceGroupVO> sc = sb.create();
-        if (listProjectResourcesCriteria != null) {
-            sc.setParameters("accountType", Account.ACCOUNT_TYPE_PROJECT);
-        }
 
-        if (!permittedAccounts.isEmpty()) {
-            sc.setParameters("accountIdIN", permittedAccounts.toArray());
-        } else if (domainId != null) {
-            DomainVO domain = _domainDao.findById(domainId);
-            if (isRecursive) {
-                sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
-            } else {
-                sc.setParameters("domainId", domainId);
-            }
-        }
+        SearchCriteria<InstanceGroupJoinVO> sc = sb.create();
+        _accountMgr.buildACLViewSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         if (keyword != null) {
-            SearchCriteria<InstanceGroupVO> ssc = _vmGroupDao.createSearchCriteria();
+            SearchCriteria<InstanceGroupJoinVO> ssc = _vmGroupJoinDao.createSearchCriteria();
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
         }
+
 
         if (id != null) {
             sc.setParameters("id", id);
@@ -3275,8 +3254,7 @@ public class ManagementServerImpl implements ManagementServer {
             sc.setParameters("name", "%" + name + "%");
         }
 
-        Pair<List<InstanceGroupVO>, Integer> result = _vmGroupDao.searchAndCount(sc, searchFilter);
-        return new Pair<List<? extends InstanceGroup>, Integer>(result.first(), result.second());
+        return _vmGroupJoinDao.searchAndCount(sc, searchFilter);
     }
 
     @Override

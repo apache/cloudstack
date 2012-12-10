@@ -64,6 +64,8 @@ import org.apache.cloudstack.api.command.admin.systemvm.UpgradeSystemVMCmd;
 import org.apache.cloudstack.api.command.admin.resource.UploadCustomCertificateCmd;
 import org.apache.cloudstack.api.view.vo.DomainRouterJoinVO;
 import org.apache.cloudstack.api.view.vo.EventJoinVO;
+import org.apache.cloudstack.api.view.vo.InstanceGroupJoinVO;
+
 import com.cloud.async.AsyncJob;
 import com.cloud.capacity.Capacity;
 import com.cloud.configuration.Configuration;
@@ -307,7 +309,7 @@ public interface ManagementService {
 
     InstanceGroup updateVmGroup(UpdateVMGroupCmd cmd);
 
-    Pair<List<? extends InstanceGroup>, Integer> searchForVmGroups(ListVMGroupsCmd cmd);
+    Pair<List<InstanceGroupJoinVO>, Integer> searchForVmGroups(ListVMGroupsCmd cmd);
 
     Map<String, Object> listCapabilities(ListCapabilitiesCmd cmd);
 

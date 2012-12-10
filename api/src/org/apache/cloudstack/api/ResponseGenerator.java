@@ -152,6 +152,7 @@ import com.cloud.uservm.UserVm;
 import com.cloud.vm.InstanceGroup;
 import org.apache.cloudstack.api.view.vo.DomainRouterJoinVO;
 import org.apache.cloudstack.api.view.vo.EventJoinVO;
+import org.apache.cloudstack.api.view.vo.InstanceGroupJoinVO;
 import org.apache.cloudstack.api.view.vo.ResourceTagJoinVO;
 import org.apache.cloudstack.api.view.vo.SecurityGroupJoinVO;
 import org.apache.cloudstack.api.view.vo.UserVmJoinVO;
@@ -213,6 +214,8 @@ public interface ResponseGenerator {
     VolumeResponse createVolumeResponse(Volume volume);
 
     InstanceGroupResponse createInstanceGroupResponse(InstanceGroup group);
+
+    List<InstanceGroupResponse> createInstanceGroupResponse(InstanceGroupJoinVO... groups);
 
     StoragePoolResponse createStoragePoolResponse(StoragePool pool);
 

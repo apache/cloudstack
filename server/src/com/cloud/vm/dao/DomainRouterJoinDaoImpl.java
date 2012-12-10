@@ -194,17 +194,9 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
     @Override
     public List<DomainRouterJoinVO> newDomainRouterView(VirtualRouter vr) {
 
-        List<DomainRouterJoinVO> uvList = new ArrayList<DomainRouterJoinVO>();
         SearchCriteria<DomainRouterJoinVO> sc = vrIdSearch.create();
         sc.setParameters("id", vr.getId());
-        List<DomainRouterJoinVO> vms = searchIncludingRemoved(sc, null, null, false);
-        if (vms != null) {
-            for (DomainRouterJoinVO uvm : vms) {
-                uvList.add(uvm);
-            }
-        }
-        return uvList;
-
+        return searchIncludingRemoved(sc, null, null, false);
     }
 
 }
