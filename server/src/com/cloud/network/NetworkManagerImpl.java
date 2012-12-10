@@ -4540,18 +4540,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     public List<NetworkVO> listNetworksForAccount(long accountId, long zoneId, Network.GuestType type) {
-        List<NetworkVO> accountNetworks = new ArrayList<NetworkVO>();
-        List<NetworkVO> zoneNetworks = _networksDao.listByZone(zoneId);
-
-        for (NetworkVO network : zoneNetworks) {
-            if (!isNetworkSystem(network)) {
-                if (network.getGuestType() == Network.GuestType.Shared || !_networksDao.listBy(accountId, network.getId()).isEmpty()) {
-                    if (type == null || type == network.getGuestType()) {
-                        accountNetworks.add(network);
-                    }
-                }
-            }
-        }
+        List<NetworkVO> accountNetworks = _networksDao.listNetworksByAccount(accountId, zoneId, type, false);
         return accountNetworks;
     }
 

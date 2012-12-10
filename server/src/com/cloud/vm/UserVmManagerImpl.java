@@ -2262,7 +2262,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             if (requiredOfferings.get(0).getState() == NetworkOffering.State.Enabled) {
                 // get Virtual networks
                 List<NetworkVO> virtualNetworks = _networkMgr.listNetworksForAccount(owner.getId(), zone.getId(), Network.GuestType.Isolated);
-
                 if (virtualNetworks.isEmpty()) {
                     long physicalNetworkId = _networkMgr.findPhysicalNetworkId(zone.getId(), requiredOfferings.get(0).getTags(), requiredOfferings.get(0).getTrafficType());
                     // Validate physical network
@@ -2278,7 +2277,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 } else if (virtualNetworks.size() > 1) {
                     throw new InvalidParameterValueException("More than 1 default Isolated networks are found for account " + owner + "; please specify networkIds");
                 } else {
-                    defaultNetwork = virtualNetworks.get(0);
+                    defaultNetwork = _networkDao.findById(virtualNetworks.get(0).getId());
                 }
             } else {
                 throw new InvalidParameterValueException("Required network offering id=" + requiredOfferings.get(0).getId() + " is not in " + NetworkOffering.State.Enabled); 
@@ -3701,7 +3700,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                     if (requiredOfferings.get(0).getState() == NetworkOffering.State.Enabled) {
                         // get Virtual networks
                         List<NetworkVO> virtualNetworks = _networkMgr.listNetworksForAccount(newAccount.getId(), zone.getId(), Network.GuestType.Isolated);
-
                         if (virtualNetworks.isEmpty()) {
                             long physicalNetworkId = _networkMgr.findPhysicalNetworkId(zone.getId(), requiredOfferings.get(0).getTags(), requiredOfferings.get(0).getTrafficType());
                             // Validate physical network
@@ -3709,7 +3707,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                             if (physicalNetwork == null) {
                                 throw new InvalidParameterValueException("Unable to find physical network with id: "+physicalNetworkId   + " and tag: " +requiredOfferings.get(0).getTags());
                             }
-                            
                             s_logger.debug("Creating network for account " + newAccount + " from the network offering id=" + 
                         requiredOfferings.get(0).getId() + " as a part of deployVM process");
                             Network newNetwork = _networkMgr.createGuestNetwork(requiredOfferings.get(0).getId(), 
@@ -3720,7 +3717,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                             throw new InvalidParameterValueException("More than 1 default Isolated networks are found " +
                                     "for account " + newAccount + "; please specify networkIds");
                         } else {
-                            defaultNetwork = virtualNetworks.get(0);
+                            defaultNetwork = _networkDao.findById(virtualNetworks.get(0).getId());
                         }
                     } else {
                         throw new InvalidParameterValueException("Required network offering id=" + requiredOfferings.get(0).getId() + " is not in " + NetworkOffering.State.Enabled); 
