@@ -27,10 +27,7 @@ import com.cloud.server.ResourceTag.TaggedResourceType;
 
 @Entity
 @Table(name="security_group_view")
-public class SecurityGroupJoinVO implements ControlledViewEntity {
-
-    @Column(name="id", updatable=false, nullable = false)
-    private long id;
+public class SecurityGroupJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     @Column(name="name")
     private String name;
@@ -149,13 +146,6 @@ public class SecurityGroupJoinVO implements ControlledViewEntity {
         this.uuid = uuid;
     }
 
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
-    }
 
     public String getName() {
         return name;
@@ -443,25 +433,5 @@ public class SecurityGroupJoinVO implements ControlledViewEntity {
         this.tagCustomer = tagCustomer;
     }
 
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + (int) (id ^ (id >>> 32));
-        return result;
-    }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        SecurityGroupJoinVO other = (SecurityGroupJoinVO) obj;
-        if (id != other.id)
-            return false;
-        return true;
-    }
 }

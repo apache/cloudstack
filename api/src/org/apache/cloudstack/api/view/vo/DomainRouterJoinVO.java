@@ -33,10 +33,8 @@ import com.cloud.vm.VirtualMachine.State;
 
 @Entity
 @Table(name="domain_router_view")
-public class DomainRouterJoinVO implements ControlledViewEntity {
+public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEntity {
 
-    @Column(name="id", updatable=false, nullable = false)
- private long id;
 
     @Column(name="name", updatable=false, nullable=false, length=255)
  private String name = null;
@@ -238,15 +236,6 @@ public class DomainRouterJoinVO implements ControlledViewEntity {
         this.uuid = uuid;
     }
 
-
-     public long getId() {
-        return id;
-    }
-
-
-    public void setId(long id) {
-        this.id = id;
-    }
 
 
     public String getName() {
@@ -902,27 +891,4 @@ public class DomainRouterJoinVO implements ControlledViewEntity {
     }
 
 
-
-
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + (int) (id ^ (id >>> 32));
-        return result;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        DomainRouterJoinVO other = (DomainRouterJoinVO) obj;
-        if (id != other.id)
-            return false;
-        return true;
-    }
 }
