@@ -126,6 +126,7 @@ def get_template(apiclient, zoneid, ostype, services=None):
 
     list_templates = apiclient.listTemplates(cmd)
 
+    assert len(list_templates) > 0
     for template in list_templates:
         if template.ostypeid == ostypeid:
             return template
