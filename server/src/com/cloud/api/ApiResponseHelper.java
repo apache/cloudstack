@@ -118,6 +118,7 @@ import org.apache.cloudstack.api.view.vo.EventJoinVO;
 import org.apache.cloudstack.api.view.vo.InstanceGroupJoinVO;
 import org.apache.cloudstack.api.view.vo.ResourceTagJoinVO;
 import org.apache.cloudstack.api.view.vo.SecurityGroupJoinVO;
+import org.apache.cloudstack.api.view.vo.UserAccountJoinVO;
 import org.apache.cloudstack.api.view.vo.UserVmJoinVO;
 import com.cloud.async.AsyncJob;
 import com.cloud.capacity.Capacity;
@@ -238,26 +239,20 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public UserResponse createUserResponse(User user) {
-        UserResponse userResponse = new UserResponse();
-        Account account = ApiDBUtils.findAccountById(user.getAccountId());
-        userResponse.setAccountName(account.getAccountName());
-        userResponse.setAccountType(account.getType());
-        userResponse.setCreated(user.getCreated());
-        userResponse.setDomainId(account.getDomainId());
-        userResponse.setDomainName(ApiDBUtils.findDomainById(account.getDomainId()).getName());
-        userResponse.setEmail(user.getEmail());
-        userResponse.setFirstname(user.getFirstname());
-        userResponse.setId(user.getId());
-        userResponse.setLastname(user.getLastname());
-        userResponse.setState(user.getState().toString());
-        userResponse.setTimezone(user.getTimezone());
-        userResponse.setUsername(user.getUsername());
-        userResponse.setApiKey(user.getApiKey());
-        userResponse.setSecretKey(user.getSecretKey());
-        userResponse.setObjectName("user");
-
-        return userResponse;
+        UserAccountJoinVO vUser = ApiDBUtils.newUserView(user);
+        return ApiDBUtils.newUserResponse(vUser);
     }
+
+
+    @Override
+    public List<UserResponse> createUserResponse(UserAccountJoinVO... users) {
+        List<UserResponse> respList = new ArrayList<UserResponse>();
+        for (UserAccountJoinVO vt : users){
+            respList.add(ApiDBUtils.newUserResponse(vt));
+        }
+        return respList;
+    }
+
 
     // this method is used for response generation via createAccount (which creates an account + user)
     @Override
@@ -417,25 +412,8 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public UserResponse createUserResponse(UserAccount user) {
-        UserResponse userResponse = new UserResponse();
-        userResponse.setAccountName(user.getAccountName());
-        userResponse.setAccountType(user.getType());
-        userResponse.setCreated(user.getCreated());
-        userResponse.setDomainId(user.getDomainId());
-        userResponse.setDomainName(ApiDBUtils.findDomainById(user.getDomainId()).getName());
-        userResponse.setEmail(user.getEmail());
-        userResponse.setFirstname(user.getFirstname());
-        userResponse.setId(user.getId());
-        userResponse.setLastname(user.getLastname());
-        userResponse.setState(user.getState());
-        userResponse.setTimezone(user.getTimezone());
-        userResponse.setUsername(user.getUsername());
-        userResponse.setApiKey(user.getApiKey());
-        userResponse.setSecretKey(user.getSecretKey());
-        userResponse.setAccountId((user.getAccountId()));
-        userResponse.setObjectName("user");
-
-        return userResponse;
+        UserAccountJoinVO vUser = ApiDBUtils.newUserView(user);
+        return ApiDBUtils.newUserResponse(vUser);
     }
 
     @Override

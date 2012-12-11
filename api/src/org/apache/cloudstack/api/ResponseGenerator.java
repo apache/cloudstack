@@ -155,6 +155,7 @@ import org.apache.cloudstack.api.view.vo.EventJoinVO;
 import org.apache.cloudstack.api.view.vo.InstanceGroupJoinVO;
 import org.apache.cloudstack.api.view.vo.ResourceTagJoinVO;
 import org.apache.cloudstack.api.view.vo.SecurityGroupJoinVO;
+import org.apache.cloudstack.api.view.vo.UserAccountJoinVO;
 import org.apache.cloudstack.api.view.vo.UserVmJoinVO;
 import com.cloud.vm.VirtualMachine;
 
@@ -279,6 +280,8 @@ public interface ResponseGenerator {
     NetworkResponse createNetworkResponse(Network network);
 
     UserResponse createUserResponse(User user);
+
+    List<UserResponse> createUserResponse(UserAccountJoinVO... users);
 
     AccountResponse createUserAccountResponse(UserAccount user);
 

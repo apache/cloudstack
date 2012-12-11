@@ -2859,3 +2859,34 @@ from instance_group
 inner join account on instance_group.account_id=account.id
 inner join domain on account.domain_id=domain.id
 left join projects on projects.project_account_id = instance_group.account_id;
+
+DROP VIEW IF EXISTS `cloud`.`user_view`;
+CREATE VIEW user_view AS
+select
+user.id,
+user.uuid,
+user.username,
+user.password,
+user.firstname,
+user.lastname,
+user.email,
+user.state,
+user.api_key,
+user.secret_key,
+user.created,
+user.removed,
+user.timezone,
+user.registration_token,
+user.is_registered,
+user.incorrect_login_attempts,
+account.id account_id,
+account.uuid account_uuid,
+account.account_name account_name,
+account.type account_type,
+domain.id domain_id,
+domain.uuid domain_uuid,
+domain.name domain_name,
+domain.path domain_path
+from user
+inner join account on user.account_id = account.id
+inner join domain on account.domain_id=domain.id;

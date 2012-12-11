@@ -28,6 +28,8 @@ import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UserResponse;
+import org.apache.cloudstack.api.view.vo.UserAccountJoinVO;
+
 import com.cloud.user.UserAccount;
 import com.cloud.utils.Pair;
 
@@ -86,13 +88,9 @@ public class ListUsersCmd extends BaseListAccountResourcesCmd {
 
     @Override
     public void execute(){
-        Pair<List<? extends UserAccount>, Integer> result = _accountService.searchForUsers(this);
+        Pair<List<UserAccountJoinVO>, Integer> result = _accountService.searchForUsers(this);
         ListResponse<UserResponse> response = new ListResponse<UserResponse>();
-        List<UserResponse> userResponses = new ArrayList<UserResponse>();
-        for (UserAccount user : result.first()) {
-            UserResponse userResponse = _responseGenerator.createUserResponse(user);
-            userResponses.add(userResponse);
-        }
+        List<UserResponse> userResponses = _responseGenerator.createUserResponse(result.first().toArray(new UserAccountJoinVO[result.first().size()]));
         response.setResponses(userResponses, result.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);

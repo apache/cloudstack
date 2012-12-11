@@ -1,0 +1,122 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+package com.cloud.user.dao;
+
+import java.util.List;
+
+import javax.ejb.Local;
+
+import org.apache.log4j.Logger;
+
+import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiResponseHelper;
+import org.apache.cloudstack.api.response.InstanceGroupResponse;
+import org.apache.cloudstack.api.response.UserResponse;
+import org.apache.cloudstack.api.view.vo.InstanceGroupJoinVO;
+import org.apache.cloudstack.api.view.vo.UserAccountJoinVO;
+
+import com.cloud.user.Account;
+import com.cloud.user.User;
+import com.cloud.user.UserAccount;
+import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
+import com.cloud.vm.InstanceGroup;
+
+
+@Local(value={UserAccountJoinDao.class})
+public class UserAccountJoinDaoImpl extends GenericDaoBase<UserAccountJoinVO, Long> implements UserAccountJoinDao {
+    public static final Logger s_logger = Logger.getLogger(UserAccountJoinDaoImpl.class);
+
+    private SearchBuilder<UserAccountJoinVO> vrSearch;
+
+    private SearchBuilder<UserAccountJoinVO> vrIdSearch;
+
+
+    protected UserAccountJoinDaoImpl() {
+
+        vrSearch = createSearchBuilder();
+        vrSearch.and("idIN", vrSearch.entity().getId(), SearchCriteria.Op.IN);
+        vrSearch.done();
+
+        vrIdSearch = createSearchBuilder();
+        vrIdSearch.and("id", vrIdSearch.entity().getId(), SearchCriteria.Op.EQ);
+        vrIdSearch.done();
+
+        this._count = "select count(distinct id) from user_view WHERE ";
+    }
+
+
+
+    @Override
+    public UserResponse newUserResponse(UserAccountJoinVO usr) {
+        UserResponse userResponse = new UserResponse();
+        userResponse.setAccountId(usr.getAccountUuid());
+        userResponse.setAccountName(usr.getAccountName());
+        userResponse.setAccountType(usr.getAccountType());
+        userResponse.setCreated(usr.getCreated());
+        userResponse.setDomainId(usr.getDomainUuid());
+        userResponse.setDomainName(usr.getDomainName());
+        userResponse.setEmail(usr.getEmail());
+        userResponse.setFirstname(usr.getFirstname());
+        userResponse.setId(usr.getUuid());
+        userResponse.setLastname(usr.getLastname());
+        userResponse.setState(usr.getState().toString());
+        userResponse.setTimezone(usr.getTimezone());
+        userResponse.setUsername(usr.getUsername());
+        userResponse.setApiKey(usr.getApiKey());
+        userResponse.setSecretKey(usr.getSecretKey());
+        userResponse.setObjectName("user");
+
+        return userResponse;
+    }
+
+
+    @Override
+    public UserAccountJoinVO newUserView(User usr) {
+        SearchCriteria<UserAccountJoinVO> sc = vrIdSearch.create();
+        sc.setParameters("id", usr.getId());
+        List<UserAccountJoinVO> users = searchIncludingRemoved(sc, null, null, false);
+        assert users != null && users.size() == 1 : "No user found for user id " + usr.getId();
+        return users.get(0);
+    }
+
+
+
+
+    @Override
+    public UserAccountJoinVO newUserView(UserAccount usr) {
+        SearchCriteria<UserAccountJoinVO> sc = vrIdSearch.create();
+        sc.setParameters("id", usr.getId());
+        List<UserAccountJoinVO> users = searchIncludingRemoved(sc, null, null, false);
+        assert users != null && users.size() == 1 : "No user found for user id " + usr.getId();
+        return users.get(0);
+    }
+
+
+
+    @Override
+    public List<UserAccountJoinVO> searchByIds(Long... ids) {
+        SearchCriteria<UserAccountJoinVO> sc = vrSearch.create();
+        sc.setParameters("idIN", ids);
+        return searchIncludingRemoved(sc, null, null, false);
+    }
+
+
+
+
+}

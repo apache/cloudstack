@@ -31,6 +31,8 @@ import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import org.apache.cloudstack.api.view.vo.ControlledViewEntity;
+import org.apache.cloudstack.api.view.vo.UserAccountJoinVO;
+
 import com.cloud.domain.Domain;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.PermissionDeniedException;
@@ -305,7 +307,7 @@ public class MockAccountManagerImpl implements Manager, AccountManager, AccountS
     }
 
     @Override
-    public Pair<List<? extends UserAccount>, Integer> searchForUsers(ListUsersCmd cmd) throws PermissionDeniedException {
+    public Pair<List<UserAccountJoinVO>, Integer> searchForUsers(ListUsersCmd cmd) throws PermissionDeniedException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -320,14 +322,14 @@ public class MockAccountManagerImpl implements Manager, AccountManager, AccountS
     public void buildACLSearchBuilder(SearchBuilder<? extends ControlledEntity> sb, Long domainId, boolean isRecursive, List<Long> permittedAccounts,
             ListProjectResourcesCriteria listProjectResourcesCriteria) {
         // TODO Auto-generated method stub
-        
+
     }
 
     @Override
     public void buildACLSearchCriteria(SearchCriteria<? extends ControlledEntity> sc, Long domainId, boolean isRecursive, List<Long> permittedAccounts,
             ListProjectResourcesCriteria listProjectResourcesCriteria) {
         // TODO Auto-generated method stub
-        
+
     }
 
     @Override

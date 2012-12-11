@@ -18,14 +18,13 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 
-import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
 
 public class UserResponse extends BaseResponse {
     @SerializedName("id") @Param(description="the user ID")
-    private IdentityProxy id = new IdentityProxy("user");
+    private String id;
 
     @SerializedName("username") @Param(description="the user name")
     private String username;
@@ -52,7 +51,7 @@ public class UserResponse extends BaseResponse {
     private Short accountType;
 
     @SerializedName("domainid") @Param(description="the domain ID of the user")
-    private IdentityProxy domainId = new IdentityProxy("domain");
+    private String domainId;
 
     @SerializedName("domain") @Param(description="the domain name of the user")
     private String domainName;
@@ -67,15 +66,15 @@ public class UserResponse extends BaseResponse {
     private String secretKey;
 
     @SerializedName("accountid") @Param(description="the account ID of the user")
-    private IdentityProxy accountId = new IdentityProxy("account");
+    private String accountId;
 
 
-    public Long getId() {
-        return id.getValue();
+    public String getId() {
+        return id;
     }
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getUsername() {
@@ -142,12 +141,12 @@ public class UserResponse extends BaseResponse {
         this.accountType = accountType;
     }
 
-    public Long getDomainId() {
-        return domainId.getValue();
+    public String getDomainId() {
+        return domainId;
     }
 
-    public void setDomainId(Long domainId) {
-        this.domainId.setValue(domainId);
+    public void setDomainId(String domainId) {
+        this.domainId = domainId;
     }
 
     public String getDomainName() {
@@ -181,11 +180,11 @@ public class UserResponse extends BaseResponse {
     public void setSecretKey(String secretKey) {
         this.secretKey = secretKey;
     }
-    public Long getAccountId() {
-        return accountId.getValue();
+    public String getAccountId() {
+        return accountId;
     }
 
-    public void setAccountId(Long accountId) {
-        this.accountId.setValue(accountId);
+    public void setAccountId(String accountId) {
+        this.accountId = accountId;
     }
 }

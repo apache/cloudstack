@@ -28,12 +28,14 @@ import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
+import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.view.vo.DomainRouterJoinVO;
 import org.apache.cloudstack.api.view.vo.EventJoinVO;
 import org.apache.cloudstack.api.view.vo.InstanceGroupJoinVO;
 import org.apache.cloudstack.api.view.vo.ResourceTagJoinVO;
 import org.apache.cloudstack.api.view.vo.SecurityGroupJoinVO;
+import org.apache.cloudstack.api.view.vo.UserAccountJoinVO;
 import org.apache.cloudstack.api.view.vo.UserVmJoinVO;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
@@ -156,10 +158,12 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.SSHKeyPairVO;
 import com.cloud.user.User;
+import com.cloud.user.UserAccount;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.SSHKeyPairDao;
+import com.cloud.user.dao.UserAccountJoinDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
@@ -256,6 +260,7 @@ public class ApiDBUtils {
     private static ResourceTagJoinDao _tagJoinDao;
     private static EventJoinDao _eventJoinDao;
     private static InstanceGroupJoinDao _vmGroupJoinDao;
+    private static UserAccountJoinDao _userAccountJoinDao;
 
     static {
         _ms = (ManagementServer) ComponentLocator.getComponent(ManagementServer.Name);
@@ -995,5 +1000,17 @@ public class ApiDBUtils {
 
     public static InstanceGroupJoinVO newInstanceGroupView(InstanceGroup e){
         return _vmGroupJoinDao.newInstanceGroupView(e);
+    }
+
+    public static UserResponse newUserResponse(UserAccountJoinVO usr) {
+        return _userAccountJoinDao.newUserResponse(usr);
+    }
+
+    public static UserAccountJoinVO newUserView(User usr){
+        return _userAccountJoinDao.newUserView(usr);
+    }
+
+    public static UserAccountJoinVO newUserView(UserAccount usr){
+        return _userAccountJoinDao.newUserView(usr);
     }
 }

@@ -183,6 +183,7 @@ import com.cloud.user.DomainManagerImpl;
 import com.cloud.user.dao.AccountDaoImpl;
 import com.cloud.user.dao.SSHKeyPairDaoImpl;
 import com.cloud.user.dao.UserAccountDaoImpl;
+import com.cloud.user.dao.UserAccountJoinDaoImpl;
 import com.cloud.user.dao.UserDaoImpl;
 import com.cloud.user.dao.UserStatisticsDaoImpl;
 import com.cloud.user.dao.UserStatsLogDaoImpl;
@@ -227,6 +228,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("SecurityGroupJoinDao", SecurityGroupJoinDaoImpl.class);
         addDao("ResourceTagJoinDao", ResourceTagJoinDaoImpl.class);
         addDao("EventJoinDao", EventJoinDaoImpl.class);
+        addDao("UserAccountJoinDao", UserAccountJoinDaoImpl.class);
         ComponentInfo<? extends GenericDao<?, ? extends Serializable>> info = addDao("ServiceOfferingDao", ServiceOfferingDaoImpl.class);
         info.addParameter("cache.size", "50");
         info.addParameter("cache.time.to.live", "600");

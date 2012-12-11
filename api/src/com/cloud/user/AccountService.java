@@ -27,6 +27,8 @@ import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
+import org.apache.cloudstack.api.view.vo.UserAccountJoinVO;
+
 import com.cloud.domain.Domain;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.PermissionDeniedException;
@@ -193,7 +195,7 @@ public interface AccountService {
 
     Pair<List<? extends Account>, Integer> searchForAccounts(ListAccountsCmd cmd);
 
-    Pair<List<? extends UserAccount>, Integer> searchForUsers(ListUsersCmd cmd)
+    Pair<List<UserAccountJoinVO>, Integer> searchForUsers(ListUsersCmd cmd)
             throws PermissionDeniedException;
 
     UserAccount getUserByApiKey(String apiKey);
