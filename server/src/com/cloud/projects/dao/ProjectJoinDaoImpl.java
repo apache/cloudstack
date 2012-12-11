@@ -31,7 +31,6 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
-
 @Local(value={ProjectJoinDao.class})
 public class ProjectJoinDaoImpl extends GenericDaoBase<ProjectJoinVO, Long> implements ProjectJoinDao {
     public static final Logger s_logger = Logger.getLogger(ProjectJoinDaoImpl.class);
@@ -39,7 +38,6 @@ public class ProjectJoinDaoImpl extends GenericDaoBase<ProjectJoinVO, Long> impl
     private SearchBuilder<ProjectJoinVO> vrSearch;
 
     private SearchBuilder<ProjectJoinVO> vrIdSearch;
-
 
     protected ProjectJoinDaoImpl() {
 
@@ -53,11 +51,6 @@ public class ProjectJoinDaoImpl extends GenericDaoBase<ProjectJoinVO, Long> impl
 
         this._count = "select count(distinct id) from project_view WHERE ";
     }
-
-
-
-
-
 
     @Override
     public ProjectResponse newProjectResponse(ProjectJoinVO proj) {
@@ -85,8 +78,6 @@ public class ProjectJoinDaoImpl extends GenericDaoBase<ProjectJoinVO, Long> impl
         return response;
     }
 
-
-
     @Override
     public ProjectResponse setProjectResponse(ProjectResponse rsp, ProjectJoinVO proj) {
         // update tag information
@@ -100,11 +91,6 @@ public class ProjectJoinDaoImpl extends GenericDaoBase<ProjectJoinVO, Long> impl
         return rsp;
     }
 
-
-
-
-
-
     @Override
     public List<ProjectJoinVO> newProjectView(Project proj) {
         SearchCriteria<ProjectJoinVO> sc = vrIdSearch.create();
@@ -112,19 +98,11 @@ public class ProjectJoinDaoImpl extends GenericDaoBase<ProjectJoinVO, Long> impl
         return searchIncludingRemoved(sc, null, null, false);
     }
 
-
-
-
-
-
     @Override
     public List<ProjectJoinVO> searchByIds(Long... ids) {
         SearchCriteria<ProjectJoinVO> sc = vrSearch.create();
         sc.setParameters("idIN", ids);
         return searchIncludingRemoved(sc, null, null, false);
     }
-
-
-
 
 }
