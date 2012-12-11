@@ -18,26 +18,121 @@
  */
 package org.apache.cloudstack.framework.messaging.server;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
+
+import org.apache.cloudstack.framework.messaging.TransportAddress;
+import org.apache.cloudstack.framework.messaging.TransportDataPdu;
 import org.apache.cloudstack.framework.messaging.TransportEndpoint;
+import org.apache.cloudstack.framework.messaging.TransportEndpointSite;
+import org.apache.cloudstack.framework.messaging.TransportPdu;
 import org.apache.cloudstack.framework.messaging.TransportProvider;
 
 public class ServerTransportProvider implements TransportProvider {
+	private String _nodeId;
 
-	@Override
-	public void attach(TransportEndpoint endpoint, String predefinedAddress) {
-		// TODO Auto-generated method stub
-		
+	private Map<String, TransportEndpointSite> _endpointMap = new HashMap<String, TransportEndpointSite>();
+	
+	private int _nextEndpointId = new Random().nextInt();
+	
+	public ServerTransportProvider() {
 	}
-
-	@Override
-	public void detach(TransportEndpoint endpoint) {
-		// TODO Auto-generated method stub
-		
+	
+	public String getNodeId() { return _nodeId; }
+	public void setNodeId(String nodeId) {
+		_nodeId = nodeId;
 	}
 	
 	@Override
-	public void sendMessage(String soureEndpointAddress, String targetEndpointAddress, 
+	public boolean attach(TransportEndpoint endpoint, String predefinedAddress) {
+		
+		TransportAddress transportAddress;
+		String endpointId;
+		if(predefinedAddress != null && !predefinedAddress.isEmpty()) {
+			endpointId = predefinedAddress;
+			transportAddress = new TransportAddress(_nodeId, endpointId, 0);
+		} else {
+			endpointId = String.valueOf(getNextEndpointId());
+			transportAddress = new TransportAddress(_nodeId, endpointId);
+		}
+		
+		TransportEndpointSite endpointSite;
+		synchronized(this) {
+			endpointSite = _endpointMap.get(endpointId);
+			if(endpointSite != null) {
+				// already attached
+				return false;
+			}
+			endpointSite = new TransportEndpointSite(endpoint, transportAddress);
+			_endpointMap.put(endpointId, endpointSite);
+		}
+		
+		endpoint.onAttachConfirm(true, transportAddress.toString());
+		return true;
+	}
+
+	@Override
+	public boolean detach(TransportEndpoint endpoint) {
+		TransportAddress transportAddress = TransportAddress.fromAddressString(endpoint.getEndpointAddress());
+		if(transportAddress == null)
+			return false;
+		
+		boolean found = false;
+		synchronized(this) {
+			TransportEndpointSite endpointSite = _endpointMap.get(transportAddress.getEndpointId());
+			if(endpointSite.getAddress().equals(transportAddress)) {
+				found = true;
+				_endpointMap.remove(transportAddress.getEndpointId());
+			}
+		}
+		
+		if(found) {
+			endpoint.onDetachIndication(endpoint.getEndpointAddress());
+			return true;
+		}
+			
+		return false;
+	}
+	
+	@Override
+	public void sendMessage(String sourceEndpointAddress, String targetEndpointAddress, 
 		String multiplexier, String message) {
-		// TODO
+		
+		TransportDataPdu pdu = new TransportDataPdu();
+		pdu.setSourceAddress(sourceEndpointAddress);
+		pdu.setDestAddress(targetEndpointAddress);
+		pdu.setMultiplexier(multiplexier);
+		pdu.setContent(message);
+		
+		dispatchPdu(pdu);
+	}
+	
+	private void dispatchPdu(TransportPdu pdu) {
+		
+		TransportAddress transportAddress = TransportAddress.fromAddressString(pdu.getDestAddress());
+		
+		if(isLocalAddress(transportAddress)) {
+			TransportEndpointSite endpointSite = null;
+			synchronized(this) {
+				endpointSite = _endpointMap.get(transportAddress.getEndpointId());
+			}
+			
+			if(endpointSite != null)
+				endpointSite.addOutputPdu(pdu);
+		} else {
+			// do cross-node forwarding
+		}
+	}
+	
+	private boolean isLocalAddress(TransportAddress address) {
+		if(address.getNodeId().equals(_nodeId) || address.getNodeId().equals(TransportAddress.LOCAL_SERVICE_NODE))
+			return true;
+		
+		return false;
+	}
+	
+	private synchronized int getNextEndpointId() {
+		return _nextEndpointId++;
 	}
 }

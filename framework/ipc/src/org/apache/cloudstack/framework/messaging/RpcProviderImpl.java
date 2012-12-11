@@ -69,14 +69,14 @@ public class RpcProviderImpl implements RpcProvider {
 	}
 
 	@Override
-	public void registerRpcServiceEndpoint(String serviceAddress, RpcServiceEndpoint rpcEndpoint) {
+	public void registerRpcServiceEndpoint(RpcServiceEndpoint rpcEndpoint) {
 		synchronized(_serviceEndpoints) {
 			_serviceEndpoints.add(rpcEndpoint);
 		}
 	}
 
 	@Override
-	public void unregisteRpcServiceEndpoint(RpcAddressable serviceAddress, RpcServiceEndpoint rpcEndpoint) {
+	public void unregisteRpcServiceEndpoint(RpcServiceEndpoint rpcEndpoint) {
 		synchronized(_serviceEndpoints) {
 			_serviceEndpoints.remove(rpcEndpoint);
 		}
@@ -94,7 +94,7 @@ public class RpcProviderImpl implements RpcProvider {
 	}
 
 	@Override
-	public RpcClientCall newCall(TransportEndpoint sourceEndpoint, RpcAddressable targetAddress) {
+	public RpcClientCall newCall(TransportEndpoint sourceEndpoint, TransportAddressMapper targetAddress) {
 		long callTag = getNextCallTag();
 		RpcClientCallImpl call = new RpcClientCallImpl(this);
 		call.setSourceAddress(sourceEndpoint.getEndpointAddress());
@@ -112,7 +112,7 @@ public class RpcProviderImpl implements RpcProvider {
 	}
 	
 	@Override
-	public RpcClientCall newCall(RpcAddressable targetAddress) {
+	public RpcClientCall newCall(TransportAddressMapper targetAddress) {
 		return newCall(targetAddress.getAddress());
 	}
 	

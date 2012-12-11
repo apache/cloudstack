@@ -18,6 +18,6 @@
  */
 package org.apache.cloudstack.framework.messaging;
 
-public interface RpcAddressable {
+public interface TransportAddressMapper {
 	String getAddress();
 }

@@ -28,7 +28,7 @@ public class SampleComponent {
 	
 	public void init() {
 		
-		_rpcProvider.registerRpcServiceEndpoint("AgentManager", 
+		_rpcProvider.registerRpcServiceEndpoint(
 			RpcServiceDispatcher.getDispatcher(this));
 		
 		// subscribe to all network events (for example)

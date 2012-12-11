@@ -18,10 +18,23 @@
  */
 package org.apache.cloudstack.framework.messaging;
 
-public interface TransportProvider {
-	boolean attach(TransportEndpoint endpoint, String predefinedAddress);
-	boolean detach(TransportEndpoint endpoint);
+public class TransportPdu {
+	protected String _sourceAddress;
+	protected String _destAddress;
 	
-	void sendMessage(String soureEndpointAddress, String targetEndpointAddress, 
-		String multiplexier, String message);
+	public TransportPdu() {
+	}
+	
+	public String getSourceAddress() { return _sourceAddress; }
+	public void setSourceAddress(String sourceAddress) {
+		_sourceAddress = sourceAddress;
+	}
+	
+	public String getDestAddress() {
+		return _destAddress;
+	}
+	
+	public void setDestAddress(String destAddress) {
+		_destAddress = destAddress;
+	}
 }

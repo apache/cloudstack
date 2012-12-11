@@ -24,13 +24,16 @@ import org.apache.cloudstack.framework.messaging.TransportProvider;
 public class ClientTransportProvider implements TransportProvider {
 
 	@Override
-	public void attach(TransportEndpoint endpoint, String predefinedAddress) {
+	public boolean attach(TransportEndpoint endpoint, String predefinedAddress) {
 		// TODO Auto-generated method stub
+		return false;
 	}
 
 	@Override
-	public void detach(TransportEndpoint endpoint) {
+	public boolean detach(TransportEndpoint endpoint) {
 		// TODO Auto-generated method stub
+		
+		return false;
 	}
 	
 	@Override
@@ -38,5 +41,4 @@ public class ClientTransportProvider implements TransportProvider {
 		String multiplexier, String message) {
 		// TODO
 	}
-	
 }

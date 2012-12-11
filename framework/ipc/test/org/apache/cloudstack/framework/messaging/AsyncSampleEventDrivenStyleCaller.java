@@ -19,7 +19,7 @@
 package org.apache.cloudstack.framework.messaging;
 
 public class AsyncSampleEventDrivenStyleCaller {
-	AsyncSampleCallee _ds;
+	AsyncSampleCallee _ds = new AsyncSampleCallee();
 	AsyncCallbackDriver _callbackDriver;
 	
 	public void MethodThatWillCallAsyncMethod() {
@@ -28,7 +28,7 @@ public class AsyncSampleEventDrivenStyleCaller {
 			new AsyncCallbackDispatcher(this)
 				.setOperationName("volume.create")
 				.setContextParam("origVolume", vol)
-				.attachDriver(_callbackDriver));
+				);
 	}
 
 	@AsyncCallbackHandler(operationName="volume.create")
@@ -36,5 +36,10 @@ public class AsyncSampleEventDrivenStyleCaller {
 		TestVolume origVol = callback.getContextParam("origVolume");
 		
 		TestVolume resultVol = callback.getResult();
+	}
+	
+	public static void main(String[] args) {
+		AsyncSampleEventDrivenStyleCaller caller = new AsyncSampleEventDrivenStyleCaller();
+		caller.MethodThatWillCallAsyncMethod();
 	}
 }

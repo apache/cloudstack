@@ -18,10 +18,28 @@
  */
 package org.apache.cloudstack.framework.messaging;
 
-public interface TransportProvider {
-	boolean attach(TransportEndpoint endpoint, String predefinedAddress);
-	boolean detach(TransportEndpoint endpoint);
+@OnwireName(name="TransportDataPdu")
+public class TransportDataPdu extends TransportPdu {
+
+	private String _multiplexier;
+	private String _content;
 	
-	void sendMessage(String soureEndpointAddress, String targetEndpointAddress, 
-		String multiplexier, String message);
+	public TransportDataPdu() {
+	}
+	
+	public String getMultiplexier() {
+		return _multiplexier;
+	}
+	
+	public void setMultiplexier(String multiplexier) {
+		_multiplexier = multiplexier;
+	}
+	
+	public String getContent() {
+		return _content;
+	}
+	
+	public void setContent(String content) {
+		_content = content;
+	}
 }
