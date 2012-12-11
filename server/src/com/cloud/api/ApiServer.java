@@ -127,18 +127,19 @@ public class ApiServer implements HttpRequestHandler {
 
     public static boolean encodeApiResponse = false;
     public static String jsonContentType = "text/javascript";
-    private Properties _apiCommands = null;
     private ApiDispatcher _dispatcher;
-    private AccountManager _accountMgr = null;
-    private DomainManager _domainMgr = null;
-    private AsyncJobManager _asyncMgr = null;
+
+    @Inject private AccountManager _accountMgr = null;
+    @Inject private DomainManager _domainMgr = null;
+    @Inject private AsyncJobManager _asyncMgr = null;
+    @Inject(adapter = APIAccessChecker.class)
+    protected Adapters<APIAccessChecker> _apiAccessCheckers;
+
     private Account _systemAccount = null;
     private User _systemUser = null;
     private static int _workerCount = 0;
     private static ApiServer s_instance = null;
     private static final DateFormat _dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
-    @Inject(adapter = APIAccessChecker.class)
-    protected Adapters<APIAccessChecker> _apiAccessCheckers;
 
     private static ExecutorService _executor = new ThreadPoolExecutor(10, 150, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("ApiServer"));
 
@@ -169,15 +170,12 @@ public class ApiServer implements HttpRequestHandler {
         BaseCmd.setComponents(new ApiResponseHelper());
         BaseListCmd.configure();
 
-        ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
-        _accountMgr = locator.getManager(AccountManager.class);
-        _asyncMgr = locator.getManager(AsyncJobManager.class);
         _systemAccount = _accountMgr.getSystemAccount();
         _systemUser = _accountMgr.getSystemUser();
         _dispatcher = ApiDispatcher.getInstance();
-        _domainMgr = locator.getManager(DomainManager.class);
 
         Integer apiPort = null; // api port, null by default
+        ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
         ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
         SearchCriteria<ConfigurationVO> sc = configDao.createSearchCriteria();
         sc.addAnd("name", SearchCriteria.Op.EQ, "integration.api.port");
