@@ -153,6 +153,7 @@ import com.cloud.vm.InstanceGroup;
 import org.apache.cloudstack.api.view.vo.DomainRouterJoinVO;
 import org.apache.cloudstack.api.view.vo.EventJoinVO;
 import org.apache.cloudstack.api.view.vo.InstanceGroupJoinVO;
+import org.apache.cloudstack.api.view.vo.ProjectJoinVO;
 import org.apache.cloudstack.api.view.vo.ResourceTagJoinVO;
 import org.apache.cloudstack.api.view.vo.SecurityGroupJoinVO;
 import org.apache.cloudstack.api.view.vo.UserAccountJoinVO;
@@ -290,6 +291,8 @@ public interface ResponseGenerator {
     List<TemplateResponse> createIsoResponses(long isoId, Long zoneId, boolean readyOnly);
 
     ProjectResponse createProjectResponse(Project project);
+
+    List<ProjectResponse> createProjectResponse(ProjectJoinVO... projects);
 
     List<TemplateResponse> createIsoResponses(VirtualMachineTemplate iso, long zoneId, boolean readyOnly);
 

@@ -26,6 +26,7 @@ import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserResponse;
@@ -33,6 +34,7 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.view.vo.DomainRouterJoinVO;
 import org.apache.cloudstack.api.view.vo.EventJoinVO;
 import org.apache.cloudstack.api.view.vo.InstanceGroupJoinVO;
+import org.apache.cloudstack.api.view.vo.ProjectJoinVO;
 import org.apache.cloudstack.api.view.vo.ResourceTagJoinVO;
 import org.apache.cloudstack.api.view.vo.SecurityGroupJoinVO;
 import org.apache.cloudstack.api.view.vo.UserAccountJoinVO;
@@ -114,6 +116,7 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectService;
+import com.cloud.projects.dao.ProjectJoinDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.Criteria;
 import com.cloud.server.ManagementServer;
@@ -261,6 +264,7 @@ public class ApiDBUtils {
     private static EventJoinDao _eventJoinDao;
     private static InstanceGroupJoinDao _vmGroupJoinDao;
     private static UserAccountJoinDao _userAccountJoinDao;
+    private static ProjectJoinDao _projectJoinDao;
 
     static {
         _ms = (ManagementServer) ComponentLocator.getComponent(ManagementServer.Name);
@@ -332,6 +336,7 @@ public class ApiDBUtils {
         _counterDao = locator.getDao(CounterDao.class);
         _tagJoinDao = locator.getDao(ResourceTagJoinDao.class);
         _eventJoinDao = locator.getDao(EventJoinDao.class);
+        _projectJoinDao = locator.getDao(ProjectJoinDao.class);
 
         // Note: stats collector should already have been initialized by this time, otherwise a null instance is returned
         _statsCollector = StatsCollector.getInstance();
@@ -1012,5 +1017,17 @@ public class ApiDBUtils {
 
     public static UserAccountJoinVO newUserView(UserAccount usr){
         return _userAccountJoinDao.newUserView(usr);
+    }
+
+    public static ProjectResponse newProjectResponse(ProjectJoinVO proj) {
+        return _projectJoinDao.newProjectResponse(proj);
+    }
+
+    public static ProjectResponse fillProjectDetails(ProjectResponse rsp, ProjectJoinVO proj){
+         return _projectJoinDao.setProjectResponse(rsp,proj);
+    }
+
+    public static List<ProjectJoinVO> newProjectView(Project proj){
+        return _projectJoinDao.newProjectView(proj);
     }
 }

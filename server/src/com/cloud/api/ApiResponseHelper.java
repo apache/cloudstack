@@ -116,6 +116,7 @@ import org.apache.cloudstack.api.view.vo.DomainRouterJoinVO;
 import org.apache.cloudstack.api.view.vo.ControlledViewEntity;
 import org.apache.cloudstack.api.view.vo.EventJoinVO;
 import org.apache.cloudstack.api.view.vo.InstanceGroupJoinVO;
+import org.apache.cloudstack.api.view.vo.ProjectJoinVO;
 import org.apache.cloudstack.api.view.vo.ResourceTagJoinVO;
 import org.apache.cloudstack.api.view.vo.SecurityGroupJoinVO;
 import org.apache.cloudstack.api.view.vo.UserAccountJoinVO;
@@ -2671,30 +2672,32 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public ProjectResponse createProjectResponse(Project project) {
-        ProjectResponse response = new ProjectResponse();
-        response.setId(project.getId());
-        response.setName(project.getName());
-        response.setDisplaytext(project.getDisplayText());
-        response.setState(project.getState().toString());
-
-        Domain domain = ApiDBUtils.findDomainById(project.getDomainId());
-        response.setDomainId(domain.getId());
-        response.setDomain(domain.getName());
-
-        response.setOwner(ApiDBUtils.getProjectOwner(project.getId()).getAccountName());
-
-        //set tag information
-        List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.Project, project.getId());
-        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
-        for (ResourceTag tag : tags) {
-            ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
-            tagResponses.add(tagResponse);
-        }
-        response.setTags(tagResponses);
-
-        response.setObjectName("project");
-        return response;
+        List<ProjectJoinVO> viewPrjs = ApiDBUtils.newProjectView(project);
+        List<ProjectResponse> listPrjs = createProjectResponse(viewPrjs.toArray(new ProjectJoinVO[viewPrjs.size()]));
+        assert listPrjs != null && listPrjs.size() == 1 : "There should be one project  returned";
+        return listPrjs.get(0);
     }
+
+
+    @Override
+    public List<ProjectResponse> createProjectResponse(ProjectJoinVO... projects) {
+        Hashtable<Long, ProjectResponse> prjDataList = new Hashtable<Long, ProjectResponse>();
+        // Initialise the prjdatalist with the input data
+        for (ProjectJoinVO p : projects) {
+            ProjectResponse pData = prjDataList.get(p.getId());
+            if ( pData == null ){
+                // first time encountering this vm
+                pData = ApiDBUtils.newProjectResponse(p);
+            }
+            else{
+                // update those  1 to many mapping fields
+                pData = ApiDBUtils.fillProjectDetails(pData, p);
+            }
+            prjDataList.put(p.getId(), pData);
+        }
+        return new ArrayList<ProjectResponse>(prjDataList.values());
+    }
+
 
     @Override
     public FirewallResponse createFirewallResponse(FirewallRule fwRule) {

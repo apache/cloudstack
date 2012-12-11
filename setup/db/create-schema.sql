@@ -2890,3 +2890,36 @@ domain.path domain_path
 from user
 inner join account on user.account_id = account.id
 inner join domain on account.domain_id=domain.id;
+
+DROP VIEW IF EXISTS `cloud`.`project_view`;
+CREATE VIEW project_view AS
+select
+projects.id,
+projects.uuid,
+projects.name,
+projects.display_text,
+projects.state,
+projects.removed,
+projects.created,
+account.account_name owner,
+pacct.account_id,
+domain.id domain_id,
+domain.uuid domain_uuid,
+domain.name domain_name,
+domain.path domain_path,
+resource_tags.id tag_id,
+resource_tags.uuid tag_uuid,
+resource_tags.key tag_key,
+resource_tags.value tag_value,
+resource_tags.domain_id tag_domain_id,
+resource_tags.account_id tag_account_id,
+resource_tags.resource_id tag_resource_id,
+resource_tags.resource_uuid tag_resource_uuid,
+resource_tags.resource_type tag_resource_type,
+resource_tags.customer tag_customer
+from projects
+inner join domain on projects.domain_id=domain.id
+inner join project_account on projects.id = project_account.project_id and project_account.account_role = "Admin"
+inner join account on account.id = project_account.account_id
+left join resource_tags on resource_tags.resource_id = projects.id and resource_tags.resource_type = "Project"
+left join project_account pacct on projects.id = pacct.project_id;

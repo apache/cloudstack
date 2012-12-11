@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -28,7 +29,7 @@ import org.apache.cloudstack.api.BaseResponse;
 public class ProjectResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ID) @Param(description="the id of the project")
-    private IdentityProxy id = new IdentityProxy("projects");
+    private String id;
 
     @SerializedName(ApiConstants.NAME) @Param(description="the name of the project")
     private String name;
@@ -37,7 +38,7 @@ public class ProjectResponse extends BaseResponse {
     private String displaytext;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain id the project belongs to")
-    private IdentityProxy domainId = new IdentityProxy("domain");
+    private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name where the project belongs to")
     private String domain;
@@ -49,11 +50,11 @@ public class ProjectResponse extends BaseResponse {
     private String state;
 
     @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with vm", responseObject = ResourceTagResponse.class)
-    private List<ResourceTagResponse> tags;
+    private List<ResourceTagResponse> tags = new ArrayList<ResourceTagResponse>();
 
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
     public void setName(String name) {
@@ -64,8 +65,8 @@ public class ProjectResponse extends BaseResponse {
         this.displaytext = displaytext;
     }
 
-    public void setDomainId(Long domainId) {
-        this.domainId.setValue(domainId);
+    public void setDomainId(String domainId) {
+        this.domainId = domainId;
     }
 
     public void setDomain(String domain) {
@@ -82,5 +83,9 @@ public class ProjectResponse extends BaseResponse {
 
     public void setTags(List<ResourceTagResponse> tags) {
         this.tags = tags;
+    }
+
+    public void addTag(ResourceTagResponse tag){
+        this.tags.add(tag);
     }
 }

@@ -19,6 +19,8 @@ package com.cloud.projects;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.api.view.vo.ProjectJoinVO;
+
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -61,7 +63,7 @@ public interface ProjectService {
      */
     Project getProject(long id);
 
-    Pair<List<? extends Project>, Integer> listProjects(Long id, String name, String displayText, String state, String accountName,
+    Pair<List<ProjectJoinVO>, Integer> listProjects(Long id, String name, String displayText, String state, String accountName,
             Long domainId, String keyword, Long startIndex, Long pageSize, boolean listAll, boolean isRecursive, Map<String, String> tags);
 
     ProjectAccount assignAccountToProject(Project project, long accountId, Role accountRole);
