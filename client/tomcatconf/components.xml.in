@@ -184,6 +184,7 @@ under the License.
         <manager name="ElasticLoadBalancerManager" key="com.cloud.network.lb.ElasticLoadBalancerManager" class="com.cloud.network.lb.ElasticLoadBalancerManagerImpl"/>
         <pluggableservice name="VirtualRouterElementService" key="com.cloud.network.element.VirtualRouterElementService" class="com.cloud.network.element.VirtualRouterElement"/>
         <pluggableservice name="NiciraNvpElementService" key="com.cloud.network.element.NiciraNvpElementService" class="com.cloud.network.element.NiciraNvpElement"/>
+        <pluggableservice name="EventNotificationService" key="org.apache.cloudstack.Events.Notifications.EventNotificationService" class="org.apache.cloudstack.Events.Notifications.EventNotificationManagerImpl"/>
         <dao name="OvsTunnelInterfaceDao" class="com.cloud.network.ovs.dao.OvsTunnelInterfaceDaoImpl" singleton="false"/>
         <dao name="OvsTunnelAccountDao" class="com.cloud.network.ovs.dao.OvsTunnelNetworkDaoImpl" singleton="false"/>
         <dao name="NiciraNvpDao" class="com.cloud.network.dao.NiciraNvpDaoImpl" singleton="false"/>

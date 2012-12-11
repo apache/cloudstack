@@ -19,39 +19,17 @@
 
 package org.apache.cloudstack.Events.Notifications;
 
-import com.cloud.utils.component.Manager;
-import com.cloud.utils.component.PluggableService;
 import org.apache.cloudstack.framework.events.EventTopic;
 
-import javax.naming.ConfigurationException;
-import java.util.Map;
+import javax.ejb.Local;
 import java.util.List;
 
-public class EventNotificationManagerImpl implements EventNotificationManager, EventNotificationService, PluggableService, Manager {
-
-    @Override
-    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        return false;
-    }
-
-    @Override
-    public boolean start() {
-        return false;
-    }
-
-    @Override
-    public boolean stop() {
-        return false;
-    }
-
-    @Override
-    public String getName() {
-        return null;
-    }
+@Local(value = EventNotificationService.class)
+public class EventNotificationManagerImpl implements EventNotificationManager, EventNotificationService {
 
     @Override
     public String getPropertiesFile() {
-        return null;
+        return "event-notification-service.properties";
     }
 
     @Override
@@ -66,6 +44,6 @@ public class EventNotificationManagerImpl implements EventNotificationManager, E
 
     @Override
     public List<EventTopic> listSubscribedTopics() {
-
+        return null;
     }
 }

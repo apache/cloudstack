@@ -19,6 +19,6 @@
 
 package org.apache.cloudstack.Events.Notifications;
 
-public interface EventNotificationManager {
+public interface EventNotificationManager extends EventNotificationService {
 
 }

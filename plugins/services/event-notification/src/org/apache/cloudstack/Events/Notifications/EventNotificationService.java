@@ -19,11 +19,12 @@
 
 package org.apache.cloudstack.Events.Notifications;
 
+import com.cloud.utils.component.PluggableService;
 import org.apache.cloudstack.framework.events.EventTopic;
 
 import java.util.List;
 
-public interface EventNotificationService {
+public interface EventNotificationService extends PluggableService {
 
     void subscribe(EventTopic topic, Endpoint endpoint);
 
