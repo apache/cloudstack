@@ -142,12 +142,16 @@ public class ApiServer implements HttpRequestHandler {
 
     private static ExecutorService _executor = new ThreadPoolExecutor(10, 150, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("ApiServer"));
 
-    private ApiServer() {
+    protected ApiServer() {
+        super();
     }
 
     public static void initApiServer(String[] apiConfig) {
         if (s_instance == null) {
-            s_instance = new ApiServer();
+            //Injecting will create ApiServer object with all its
+            //vars injected as well, no need to do the following:
+            //s_instance = new ApiServer();
+            s_instance = ComponentLocator.inject(ApiServer.class);
             s_instance.init(apiConfig);
         }
     }
