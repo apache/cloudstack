@@ -61,6 +61,7 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
     private static List<String> s_resourceDomainAdminCommands = null;
     private static List<String> s_allCommands = null;
     private static List<String> s_pluggableServiceCommands = null;
+    private Properties _apiCommands = null;
 
     protected @Inject AccountManager _accountMgr;
 
@@ -88,6 +89,11 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
         }
 
         return commandExists;
+    }
+
+    @Override
+    public Properties getApiCommands() {
+        return _apiCommands;
     }
 
     private static boolean isCommandAvailableForAccount(short accountType, String commandName) {
@@ -140,6 +146,9 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
 
     private void processConfigFiles(String[] apiConfig, boolean pluggableServicesConfig) {
         try {
+            if (_apiCommands == null)
+                _apiCommands = new Properties();
+
             Properties preProcessedCommands = new Properties();
             if (apiConfig != null) {
                 for (String configFile : apiConfig) {
@@ -161,7 +170,7 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
                 for (Object key : preProcessedCommands.keySet()) {
                     String preProcessedCommand = preProcessedCommands.getProperty((String) key);
                     String[] commandParts = preProcessedCommand.split(";");
-
+                    _apiCommands.setProperty(key.toString(), commandParts[0]);
 
                     if (pluggableServicesConfig) {
                         s_pluggableServiceCommands.add(commandParts[0]);
@@ -196,8 +205,7 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
         } catch (FileNotFoundException fnfex) {
             s_logger.error("Unable to find properties file", fnfex);
         } catch (IOException ioex) {
-            s_logger.error("Exception loading properties file", ioex);
+            s_logger.error("IO Exception loading properties file", ioex);
         }
     }
-
 }
