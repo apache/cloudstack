@@ -64,7 +64,8 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
 
     protected @Inject AccountManager _accountMgr;
 
-    static {
+    protected StaticRoleBasedAPIAccessChecker() {
+        super();
         s_allCommands = new ArrayList<String>();
         s_userCommands = new ArrayList<String>();
         s_resellerCommands = new ArrayList<String>();
