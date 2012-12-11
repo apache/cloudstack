@@ -310,7 +310,8 @@ public class ApiServer implements HttpRequestHandler {
                     }
                     paramMap.put(key, decodedValue);
                 }
-                String cmdClassName = _apiCommands.getProperty(command[0]);
+
+                String cmdClassName = getCmdClassName(command[0]);
                 if (cmdClassName != null) {
                     Class<?> cmdClass = Class.forName(cmdClassName);
                     BaseCmd cmdObj = (BaseCmd) cmdClass.newInstance();
@@ -768,13 +769,22 @@ public class ApiServer implements HttpRequestHandler {
     }
 
     private boolean isCommandAvailable(User user, String commandName) {
-        boolean isCommandAvailable = false;
-
-        for(APIAccessChecker apichecker : _apiAccessCheckers){
-        	isCommandAvailable = apichecker.canAccessAPI(user, commandName);
+        for(APIAccessChecker apichecker : _apiAccessCheckers) {
+            if (apichecker.canAccessAPI(user, commandName))
+                return true;
         }
+        return false;
+    }
 
-        return isCommandAvailable;
+    private String getCmdClassName(String cmdName) {
+        String cmdClassName = null;
+        for(APIAccessChecker apiChecker : _apiAccessCheckers){
+            cmdClassName = apiChecker.getApiCommands().getProperty(cmdName);
+            // Break on the first non-null value
+            if (cmdClassName != null)
+                return cmdClassName;
+        }
+        return null;
     }
 
     // FIXME: rather than isError, we might was to pass in the status code to give more flexibility
@@ -921,7 +931,7 @@ public class ApiServer implements HttpRequestHandler {
                 // cmd name can be null when "command" parameter is missing in the request
                 if (cmdObj != null) {
                     String cmdName = ((String[]) cmdObj)[0];
-                    cmdClassName = _apiCommands.getProperty(cmdName);
+                    cmdClassName = getCmdClassName(cmdName);
                     if (cmdClassName != null) {
                         Class<?> claz = Class.forName(cmdClassName);
                         responseName = ((BaseCmd) claz.newInstance()).getCommandName();
