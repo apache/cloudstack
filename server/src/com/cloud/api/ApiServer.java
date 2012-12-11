@@ -121,7 +121,6 @@ import com.cloud.utils.exception.CSExceptionErrorCode;
 import com.cloud.uuididentity.dao.IdentityDao;
 import com.cloud.acl.APIAccessChecker;
 
-
 public class ApiServer implements HttpRequestHandler {
     private static final Logger s_logger = Logger.getLogger(ApiServer.class.getName());
     private static final Logger s_accessLogger = Logger.getLogger("apiserver." + ApiServer.class.getName());
@@ -143,7 +142,6 @@ public class ApiServer implements HttpRequestHandler {
 
     private static ExecutorService _executor = new ThreadPoolExecutor(10, 150, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("ApiServer"));
 
-
     private ApiServer() {
     }
 
@@ -155,10 +153,13 @@ public class ApiServer implements HttpRequestHandler {
     }
 
     public static ApiServer getInstance() {
-        // initApiServer();
+        // Assumption: CloudStartupServlet would initialize ApiServer
+        // initApiServer(null);
+        if (s_instance == null) {
+            s_logger.fatal("ApiServer instance failed to initialize");
+        }
         return s_instance;
     }
-
 
     public void init(String[] apiConfig) {
         BaseCmd.setComponents(new ApiResponseHelper());
@@ -908,7 +909,6 @@ public class ApiServer implements HttpRequestHandler {
     public String getSerializedApiError(int errorCode, String errorText, Map<String, Object[]> apiCommandParams, String responseType, Exception ex) {
         String responseName = null;
         String cmdClassName = null;
-
         String responseText = null;
 
         try {
