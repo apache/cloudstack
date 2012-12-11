@@ -53,6 +53,9 @@ under the License.
         <dao name="Configuration configuration server" class="com.cloud.configuration.dao.ConfigurationDaoImpl">
              <param name="premium">true</param>
         </dao>
+        <adapters key="com.cloud.acl.APIAccessChecker">
+            <adapter name="StaticRoleBasedAPIAccessChecker" class="com.cloud.acl.StaticRoleBasedAPIAccessChecker"/>
+        </adapters>
         <adapters key="com.cloud.agent.manager.allocator.HostAllocator">
             <adapter name="FirstFitRouting" class="com.cloud.agent.manager.allocator.impl.FirstFitRoutingAllocator"/>
             <!--adapter name="FirstFitRouting" class="com.cloud.agent.manager.allocator.impl.RecreateHostAllocator"/-->
