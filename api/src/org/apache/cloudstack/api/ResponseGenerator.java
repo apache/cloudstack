@@ -153,6 +153,7 @@ import com.cloud.vm.InstanceGroup;
 import org.apache.cloudstack.api.view.vo.DomainRouterJoinVO;
 import org.apache.cloudstack.api.view.vo.EventJoinVO;
 import org.apache.cloudstack.api.view.vo.InstanceGroupJoinVO;
+import org.apache.cloudstack.api.view.vo.ProjectAccountJoinVO;
 import org.apache.cloudstack.api.view.vo.ProjectJoinVO;
 import org.apache.cloudstack.api.view.vo.ResourceTagJoinVO;
 import org.apache.cloudstack.api.view.vo.SecurityGroupJoinVO;
@@ -303,6 +304,8 @@ public interface ResponseGenerator {
     HypervisorCapabilitiesResponse createHypervisorCapabilitiesResponse(HypervisorCapabilities hpvCapabilities);
 
     ProjectAccountResponse createProjectAccountResponse(ProjectAccount projectAccount);
+
+    List<ProjectAccountResponse> createProjectAccountResponse(ProjectAccountJoinVO... projectAccounts);
 
     ProjectInvitationResponse createProjectInvitationResponse(ProjectInvitation invite);
 

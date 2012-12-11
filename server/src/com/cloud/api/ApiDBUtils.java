@@ -26,6 +26,7 @@ import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
+import org.apache.cloudstack.api.response.ProjectAccountResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
@@ -34,6 +35,7 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.view.vo.DomainRouterJoinVO;
 import org.apache.cloudstack.api.view.vo.EventJoinVO;
 import org.apache.cloudstack.api.view.vo.InstanceGroupJoinVO;
+import org.apache.cloudstack.api.view.vo.ProjectAccountJoinVO;
 import org.apache.cloudstack.api.view.vo.ProjectJoinVO;
 import org.apache.cloudstack.api.view.vo.ResourceTagJoinVO;
 import org.apache.cloudstack.api.view.vo.SecurityGroupJoinVO;
@@ -115,7 +117,9 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.projects.Project;
+import com.cloud.projects.ProjectAccount;
 import com.cloud.projects.ProjectService;
+import com.cloud.projects.dao.ProjectAccountJoinDao;
 import com.cloud.projects.dao.ProjectJoinDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.Criteria;
@@ -265,6 +269,7 @@ public class ApiDBUtils {
     private static InstanceGroupJoinDao _vmGroupJoinDao;
     private static UserAccountJoinDao _userAccountJoinDao;
     private static ProjectJoinDao _projectJoinDao;
+    private static ProjectAccountJoinDao _projectAccountJoinDao;
 
     static {
         _ms = (ManagementServer) ComponentLocator.getComponent(ManagementServer.Name);
@@ -1030,4 +1035,17 @@ public class ApiDBUtils {
     public static List<ProjectJoinVO> newProjectView(Project proj){
         return _projectJoinDao.newProjectView(proj);
     }
+
+    public static List<UserAccountJoinVO> findUserViewByAccountId(Long accountId){
+        return _userAccountJoinDao.searchByAccountId(accountId);
+    }
+
+    public static ProjectAccountResponse newProjectAccountResponse(ProjectAccountJoinVO proj) {
+        return _projectAccountJoinDao.newProjectAccountResponse(proj);
+    }
+
+    public static ProjectAccountJoinVO newProjectAccountView(ProjectAccount proj) {
+        return _projectAccountJoinDao.newProjectAccountView(proj);
+    }
+
 }

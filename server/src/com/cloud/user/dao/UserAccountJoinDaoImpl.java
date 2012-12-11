@@ -46,6 +46,8 @@ public class UserAccountJoinDaoImpl extends GenericDaoBase<UserAccountJoinVO, Lo
 
     private SearchBuilder<UserAccountJoinVO> vrIdSearch;
 
+    private SearchBuilder<UserAccountJoinVO> vrAcctIdSearch;
+
 
     protected UserAccountJoinDaoImpl() {
 
@@ -56,6 +58,11 @@ public class UserAccountJoinDaoImpl extends GenericDaoBase<UserAccountJoinVO, Lo
         vrIdSearch = createSearchBuilder();
         vrIdSearch.and("id", vrIdSearch.entity().getId(), SearchCriteria.Op.EQ);
         vrIdSearch.done();
+
+        vrAcctIdSearch = createSearchBuilder();
+        vrAcctIdSearch.and("accountid", vrAcctIdSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        vrAcctIdSearch.done();
+
 
         this._count = "select count(distinct id) from user_view WHERE ";
     }
@@ -113,6 +120,15 @@ public class UserAccountJoinDaoImpl extends GenericDaoBase<UserAccountJoinVO, Lo
     public List<UserAccountJoinVO> searchByIds(Long... ids) {
         SearchCriteria<UserAccountJoinVO> sc = vrSearch.create();
         sc.setParameters("idIN", ids);
+        return searchIncludingRemoved(sc, null, null, false);
+    }
+
+
+
+    @Override
+    public List<UserAccountJoinVO> searchByAccountId(Long accountId) {
+        SearchCriteria<UserAccountJoinVO> sc = vrAcctIdSearch.create();
+        sc.setParameters("accountId", accountId);
         return searchIncludingRemoved(sc, null, null, false);
     }
 

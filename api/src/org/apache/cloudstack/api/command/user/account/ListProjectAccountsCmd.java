@@ -29,6 +29,8 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
+import org.apache.cloudstack.api.view.vo.ProjectAccountJoinVO;
+
 import com.cloud.projects.ProjectAccount;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
@@ -79,14 +81,10 @@ public class ListProjectAccountsCmd extends BaseListCmd {
 
     @Override
     public void execute(){
-        Pair<List<? extends ProjectAccount>, Integer> projectAccounts = _projectService.listProjectAccounts(projectId,
+        Pair<List<ProjectAccountJoinVO>, Integer> projectAccounts = _projectService.listProjectAccounts(projectId,
                 accountName, role, this.getStartIndex(), this.getPageSizeVal());
         ListResponse<ProjectAccountResponse> response = new ListResponse<ProjectAccountResponse>();
-        List<ProjectAccountResponse> projectResponses = new ArrayList<ProjectAccountResponse>();
-        for (ProjectAccount projectAccount : projectAccounts.first()) {
-            ProjectAccountResponse projectAccountResponse = _responseGenerator.createProjectAccountResponse(projectAccount);
-            projectResponses.add(projectAccountResponse);
-        }
+        List<ProjectAccountResponse> projectResponses = _responseGenerator.createProjectAccountResponse(projectAccounts.first().toArray(new ProjectAccountJoinVO[projectAccounts.first().size()]));
         response.setResponses(projectResponses, projectAccounts.second());
         response.setResponseName(getCommandName());
 

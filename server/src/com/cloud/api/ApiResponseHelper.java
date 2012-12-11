@@ -116,6 +116,7 @@ import org.apache.cloudstack.api.view.vo.DomainRouterJoinVO;
 import org.apache.cloudstack.api.view.vo.ControlledViewEntity;
 import org.apache.cloudstack.api.view.vo.EventJoinVO;
 import org.apache.cloudstack.api.view.vo.InstanceGroupJoinVO;
+import org.apache.cloudstack.api.view.vo.ProjectAccountJoinVO;
 import org.apache.cloudstack.api.view.vo.ProjectJoinVO;
 import org.apache.cloudstack.api.view.vo.ResourceTagJoinVO;
 import org.apache.cloudstack.api.view.vo.SecurityGroupJoinVO;
@@ -2850,31 +2851,24 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public ProjectAccountResponse createProjectAccountResponse(ProjectAccount projectAccount) {
-        Account account = ApiDBUtils.findAccountById(projectAccount.getAccountId());
-        ProjectAccountResponse projectAccountResponse = new ProjectAccountResponse();
+        ProjectAccountJoinVO vProj = ApiDBUtils.newProjectAccountView(projectAccount);
+        List<ProjectAccountResponse> listProjs = createProjectAccountResponse(vProj);
+        assert listProjs != null && listProjs.size() == 1 : "There should be one project account returned";
+        return listProjs.get(0);
+    }
 
-        long projectId = projectAccount.getProjectId();
-        projectAccountResponse.setProjectId(projectId);
-        projectAccountResponse.setProjectName(ApiDBUtils.findProjectById(projectId).getName());
 
-        projectAccountResponse.setId(account.getId());
-        projectAccountResponse.setAccountName(account.getAccountName());
-        projectAccountResponse.setAccountType(account.getType());
-        projectAccountResponse.setRole(projectAccount.getAccountRole().toString());
-        populateDomain(projectAccountResponse, account.getDomainId());
-
-        // add all the users for an account as part of the response obj
-        List<UserVO> usersForAccount = ApiDBUtils.listUsersByAccount(account.getAccountId());
-        List<UserResponse> userResponseList = new ArrayList<UserResponse>();
-        for (UserVO user : usersForAccount) {
-            UserResponse userResponse = createUserResponse(user);
-            userResponseList.add(userResponse);
+    @Override
+    public List<ProjectAccountResponse> createProjectAccountResponse(ProjectAccountJoinVO... projectAccounts) {
+        List<ProjectAccountResponse> responseList = new ArrayList<ProjectAccountResponse>();
+        for (ProjectAccountJoinVO proj : projectAccounts){
+            ProjectAccountResponse resp = ApiDBUtils.newProjectAccountResponse(proj);
+            // update user list
+            List<UserAccountJoinVO> users = ApiDBUtils.findUserViewByAccountId(proj.getAccountId());
+            resp.setUsers(createUserResponse(users.toArray(new UserAccountJoinVO[users.size()])));
+            responseList.add(resp);
         }
-
-        projectAccountResponse.setUsers(userResponseList);
-        projectAccountResponse.setObjectName("projectaccount");
-
-        return projectAccountResponse;
+        return responseList;
     }
 
     @Override

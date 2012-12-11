@@ -38,6 +38,7 @@ import javax.mail.URLName;
 import javax.mail.internet.InternetAddress;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.view.vo.ProjectAccountJoinVO;
 import org.apache.cloudstack.api.view.vo.ProjectJoinVO;
 import org.apache.cloudstack.api.view.vo.UserVmJoinVO;
 import org.apache.log4j.Logger;
@@ -60,6 +61,7 @@ import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.projects.Project.State;
 import com.cloud.projects.ProjectAccount.Role;
 import com.cloud.projects.dao.ProjectAccountDao;
+import com.cloud.projects.dao.ProjectAccountJoinDao;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.projects.dao.ProjectInvitationDao;
 import com.cloud.projects.dao.ProjectJoinDao;
@@ -116,6 +118,8 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
     ResourceLimitService _resourceLimitMgr;
     @Inject
     private ProjectAccountDao _projectAccountDao;
+    @Inject
+    private ProjectAccountJoinDao _projectAccountJoinDao;
     @Inject
     private AccountDao _accountDao;
     @Inject
@@ -762,7 +766,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
 
 
     @Override
-    public Pair<List<? extends ProjectAccount>, Integer> listProjectAccounts(long projectId, String accountName, String role, Long startIndex, Long pageSizeVal) {
+    public Pair<List<ProjectAccountJoinVO>, Integer> listProjectAccounts(long projectId, String accountName, String role, Long startIndex, Long pageSizeVal) {
         Account caller = UserContext.current().getCaller();
 
         //check that the project exists
@@ -777,19 +781,17 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
             throw new PermissionDeniedException("Account " + caller + " is not authorized to list users of the project id=" + projectId);
         }
 
-        Filter searchFilter = new Filter(ProjectAccountVO.class, "id", false, startIndex, pageSizeVal);
-        SearchBuilder<ProjectAccountVO> sb = _projectAccountDao.createSearchBuilder();
+        Filter searchFilter = new Filter(ProjectAccountJoinVO.class, "id", false, startIndex, pageSizeVal);
+        SearchBuilder<ProjectAccountJoinVO> sb = _projectAccountJoinDao.createSearchBuilder();
         sb.and("accountRole", sb.entity().getAccountRole(), Op.EQ);
         sb.and("projectId", sb.entity().getProjectId(), Op.EQ);
 
         SearchBuilder<AccountVO> accountSearch;
         if (accountName != null) {
-            accountSearch = _accountDao.createSearchBuilder();
-            accountSearch.and("accountName", accountSearch.entity().getAccountName(), SearchCriteria.Op.EQ);
-            sb.join("accountSearch", accountSearch, sb.entity().getAccountId(), accountSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+            sb.and("accountName", sb.entity().getAccountName(), Op.EQ);
         }
 
-        SearchCriteria<ProjectAccountVO> sc = sb.create();
+        SearchCriteria<ProjectAccountJoinVO> sc = sb.create();
 
         sc.setParameters("projectId", projectId);
 
@@ -798,11 +800,10 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         }
 
         if (accountName != null) {
-            sc.setJoinParameters("accountSearch", "accountName", accountName);
+            sc.setParameters("accountName", accountName);
         }
 
-        Pair<List<ProjectAccountVO>, Integer> result = _projectAccountDao.searchAndCount(sc, searchFilter);
-        return new Pair<List<? extends ProjectAccount>, Integer>(result.first(), result.second());
+        return  _projectAccountJoinDao.searchAndCount(sc, searchFilter);
     }
 
     public ProjectInvitation createAccountInvitation(Project project, Long accountId) {

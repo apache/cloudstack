@@ -213,6 +213,7 @@ import com.cloud.vm.dao.UserVmJoinDaoImpl;
 import com.cloud.vm.dao.UserVmDetailsDaoImpl;
 import com.cloud.vm.dao.VMInstanceDaoImpl;
 import com.cloud.event.dao.EventJoinDaoImpl;
+import com.cloud.projects.dao.ProjectAccountJoinDaoImpl;
 
 
 public class DefaultComponentLibrary extends ComponentLibraryBase implements ComponentLibrary {
@@ -231,6 +232,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("EventJoinDao", EventJoinDaoImpl.class);
         addDao("UserAccountJoinDao", UserAccountJoinDaoImpl.class);
         addDao("ProjectJoinDao", ProjectJoinDaoImpl.class);
+        addDao("ProjectAccountJoinDao", ProjectAccountJoinDaoImpl.class);
         ComponentInfo<? extends GenericDao<?, ? extends Serializable>> info = addDao("ServiceOfferingDao", ServiceOfferingDaoImpl.class);
         info.addParameter("cache.size", "50");
         info.addParameter("cache.time.to.live", "600");

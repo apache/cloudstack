@@ -19,6 +19,7 @@ package com.cloud.projects;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.api.view.vo.ProjectAccountJoinVO;
 import org.apache.cloudstack.api.view.vo.ProjectJoinVO;
 
 import com.cloud.exception.ConcurrentOperationException;
@@ -82,7 +83,7 @@ public interface ProjectService {
 
     boolean deleteAccountFromProject(long projectId, String accountName);
 
-    Pair<List<? extends ProjectAccount>, Integer> listProjectAccounts(long projectId, String accountName, String role, Long startIndex, Long pageSizeVal);
+    Pair<List<ProjectAccountJoinVO>, Integer> listProjectAccounts(long projectId, String accountName, String role, Long startIndex, Long pageSizeVal);
 
     Pair<List<? extends ProjectInvitation>, Integer> listProjectInvitations(Long id, Long projectId, String accountName, Long domainId, String state, boolean activeOnly, Long startIndex, Long pageSizeVal, boolean isRecursive,
             boolean listAll);

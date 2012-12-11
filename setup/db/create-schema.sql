@@ -2923,3 +2923,24 @@ inner join project_account on projects.id = project_account.project_id and proje
 inner join account on account.id = project_account.account_id
 left join resource_tags on resource_tags.resource_id = projects.id and resource_tags.resource_type = "Project"
 left join project_account pacct on projects.id = pacct.project_id;
+
+DROP VIEW IF EXISTS `cloud`.`project_account_view`;
+CREATE VIEW project_account_view AS
+select
+project_account.id,
+account.id account_id,
+account.uuid account_uuid,
+account.account_name,
+account.type account_type,
+project_account.account_role,
+projects.id project_id,
+projects.uuid project_uuid,
+projects.name project_name,
+domain.id domain_id,
+domain.uuid domain_uuid,
+domain.name domain_name,
+domain.path domain_path
+from project_account
+inner join account on project_account.account_id = account.id
+inner join domain on account.domain_id=domain.id
+inner join projects on projects.id = project_account.project_id;

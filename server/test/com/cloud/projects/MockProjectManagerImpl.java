@@ -22,6 +22,7 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.view.vo.ProjectAccountJoinVO;
 import org.apache.cloudstack.api.view.vo.ProjectJoinVO;
 
 import com.cloud.exception.ConcurrentOperationException;
@@ -108,7 +109,7 @@ public class MockProjectManagerImpl implements ProjectManager, Manager {
     }
 
     @Override
-    public Pair<List<? extends ProjectAccount>, Integer> listProjectAccounts(long projectId,
+    public Pair<List<ProjectAccountJoinVO>, Integer> listProjectAccounts(long projectId,
             String accountName, String role, Long startIndex, Long pageSizeVal) {
         // TODO Auto-generated method stub
         return null;

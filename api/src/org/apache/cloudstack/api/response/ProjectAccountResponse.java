@@ -25,10 +25,10 @@ import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
 
 @SuppressWarnings("unused")
-public class ProjectAccountResponse extends BaseResponse implements ControlledEntityResponse {
+public class ProjectAccountResponse extends BaseResponse implements ControlledViewEntityResponse {
     @SerializedName(ApiConstants.PROJECT_ID)
     @Param(description = "project id")
-    private IdentityProxy projectId = new IdentityProxy("projects");
+    private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
     @Param(description = "project name")
@@ -36,7 +36,7 @@ public class ProjectAccountResponse extends BaseResponse implements ControlledEn
 
     @SerializedName(ApiConstants.ACCOUNT_ID)
     @Param(description = "the id of the account")
-    private IdentityProxy id = new IdentityProxy("account");
+    private String accountId;
 
     @SerializedName(ApiConstants.ACCOUNT)
     @Param(description = "the name of the account")
@@ -52,7 +52,7 @@ public class ProjectAccountResponse extends BaseResponse implements ControlledEn
 
     @SerializedName(ApiConstants.DOMAIN_ID)
     @Param(description = "id of the Domain the account belongs too")
-    private IdentityProxy domainId = new IdentityProxy("domain");
+    private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
     @Param(description = "name of the Domain the account belongs too")
@@ -62,16 +62,16 @@ public class ProjectAccountResponse extends BaseResponse implements ControlledEn
     @Param(description = "the list of users associated with account", responseObject = UserResponse.class)
     private List<UserResponse> users;
 
-    public void setProjectId(Long projectId) {
-        this.projectId.setValue(projectId);
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
     }
 
     public void setProjectName(String projectName) {
         this.projectName = projectName;
     }
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setAccountId(String id) {
+        this.accountId = id;
     }
 
     public void setAccountName(String accountName) {
@@ -82,8 +82,8 @@ public class ProjectAccountResponse extends BaseResponse implements ControlledEn
         this.accountType = accountType;
     }
 
-    public void setDomainId(Long domainId) {
-        this.domainId.setValue(domainId);
+    public void setDomainId(String domainId) {
+        this.domainId = domainId;
     }
 
     public void setDomainName(String domainName) {
