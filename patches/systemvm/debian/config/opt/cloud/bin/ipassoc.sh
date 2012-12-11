@@ -137,7 +137,7 @@ copy_routes_from_main() {
 ip_addr_add() {
   local dev="$1"
   local ip="$2"
-  sudo ip addr add dev $dev $ip > /dev/null
+  sudo ip addr add dev $dev $ip brd + > /dev/null
 
 }
 
@@ -294,7 +294,7 @@ remove_an_ip () {
     then
       continue
     fi
-    sudo ip addr add dev $ethDev $ipMask
+    sudo ip addr add dev $ethDev $ipMask brd +
   done
 
   remove_routing $1
