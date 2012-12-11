@@ -16,23 +16,15 @@
 // under the License.
 package com.cloud.offerings;
 
-import java.util.Date;
-import java.util.UUID;
-
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Table;
-
 import com.cloud.api.Identity;
 import com.cloud.network.Network;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.db.GenericDao;
+
+import javax.persistence.*;
+import java.util.Date;
+import java.util.UUID;
 
 @Entity
 @Table(name = "network_offerings")
@@ -121,6 +113,9 @@ public class NetworkOfferingVO implements NetworkOffering, Identity {
 
     @Column(name = "elastic_lb_service")
     boolean elasticLb;
+
+    @Column(name = "eip_associate_public_ip")
+    boolean eipAssociatePublicIp;
 
     @Override
     public String getDisplayText() {
@@ -282,18 +277,20 @@ public class NetworkOfferingVO implements NetworkOffering, Identity {
         this.redundantRouter = false;
         this.elasticIp = false;
         this.elasticLb = false;
+        this.eipAssociatePublicIp = true;
         this.specifyIpRanges = specifyIpRanges;
     }
 
     public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, boolean isDefault,
             Availability availability, String tags, Network.GuestType guestType, boolean conserveMode, boolean dedicatedLb, boolean sharedSourceNat, boolean redundantRouter, boolean elasticIp, boolean elasticLb,
-            boolean specifyIpRanges) {
+            boolean associatePublicIP, boolean specifyIpRanges) {
         this(name, displayText, trafficType, systemOnly, specifyVlan, rateMbps, multicastRateMbps, isDefault, availability, tags, guestType, conserveMode, specifyIpRanges);
         this.dedicatedLB = dedicatedLb;
         this.sharedSourceNat = sharedSourceNat;
         this.redundantRouter = redundantRouter;
         this.elasticIp = elasticIp;
         this.elasticLb = elasticLb;
+        this.eipAssociatePublicIp = associatePublicIP;
     }
 
     public NetworkOfferingVO() {
@@ -353,6 +350,11 @@ public class NetworkOfferingVO implements NetworkOffering, Identity {
     @Override
     public boolean getElasticIp() {
         return elasticIp;
+    }
+
+    @Override
+    public boolean getAssociatePublicIP() {
+        return eipAssociatePublicIp;
     }
 
     @Override

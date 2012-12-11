@@ -16,17 +16,17 @@
 // under the License.
 package com.cloud.network;
 
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-
 import com.cloud.acl.ControlledEntity;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.utils.fsm.FiniteState;
 import com.cloud.utils.fsm.StateMachine;
+
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 /**
  * owned by an account.
@@ -168,6 +168,7 @@ public interface Network extends ControlledEntity {
         public static final Capability AllowDnsSuffixModification = new Capability("AllowDnsSuffixModification");
         public static final Capability RedundantRouter = new Capability("RedundantRouter");
         public static final Capability ElasticIp = new Capability("ElasticIp");
+        public static final Capability AssociatePublicIP = new Capability("AssociatePublicIP");
         public static final Capability ElasticLb = new Capability("ElasticLb");
         public static final Capability AutoScaleCounters = new Capability("AutoScaleCounters");
 

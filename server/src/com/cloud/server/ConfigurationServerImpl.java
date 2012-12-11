@@ -16,33 +16,6 @@
 // under the License.
 package com.cloud.server;
 
-import java.io.DataInputStream;
-import java.io.EOFException;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.security.NoSuchAlgorithmException;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.UUID;
-import java.util.regex.Pattern;
-
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
-
-import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
-
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.Resource;
@@ -72,11 +45,7 @@ import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.guru.ControlNetworkGuru;
-import com.cloud.network.guru.DirectPodBasedNetworkGuru;
-import com.cloud.network.guru.PodBasedNetworkGuru;
-import com.cloud.network.guru.PublicNetworkGuru;
-import com.cloud.network.guru.StorageNetworkGuru;
+import com.cloud.network.guru.*;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offerings.NetworkOfferingServiceMapVO;
@@ -102,6 +71,20 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
 import com.cloud.uuididentity.dao.IdentityDao;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
+
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+import java.io.*;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.security.NoSuchAlgorithmException;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.*;
+import java.util.regex.Pattern;
 
 public class ConfigurationServerImpl implements ConfigurationServer {
     public static final Logger s_logger = Logger.getLogger(ConfigurationServerImpl.class.getName());
@@ -988,7 +971,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 "Offering for Shared networks with Elastic IP and Elastic LB capabilities",
                 TrafficType.Guest,
                 false, true, null, null, true, Availability.Optional,
-                null, Network.GuestType.Shared, true, false, false, false, true, true, true);
+                null, Network.GuestType.Shared, true, false, false, false, true, true, true, true);
 
         defaultNetscalerNetworkOffering.setState(NetworkOffering.State.Enabled);
         defaultNetscalerNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultNetscalerNetworkOffering);
