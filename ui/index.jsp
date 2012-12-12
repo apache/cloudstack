@@ -31,6 +31,7 @@ under the License.
     <title></title>
     <link type="text/css" rel="stylesheet" href="lib/reset.css"/>
     <link type="text/css" rel="stylesheet" href="css/cloudstack3.css" />
+    <link type="text/css" rel="stylesheet" href="css/marketplace.css" />
     <c:if test="${!empty cookie.lang && cookie.lang.value != 'en'}">
       <link type="text/css" rel="stylesheet" href="css/cloudstack3.${cookie.lang.value}.css" />
     </c:if>
@@ -1673,6 +1674,9 @@ under the License.
     <script type="text/javascript" src="scripts/system.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/domains.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/docs.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/ui-custom/marketplace.js"></script>
+    <script type="text/javascript" src="marketplace/config.js" ></script>
+
   </body>
 </html>
 <jsp:include page="dictionary.jsp" />

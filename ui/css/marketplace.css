@@ -1,0 +1,260 @@
+.buttons
+{
+	width: 88px;
+	height: 16px;
+	padding: 11px 0 8px;
+	float: left;
+	padding-right: 3px;
+	padding-top: 10px;
+	margin-right: 80px;
+	text-align: center;
+	/*+box-shadow:0px 1px 1px #FFFFFF;*/
+	-moz-box-shadow: 0px 1px 1px #FFFFFF;
+	-webkit-box-shadow: 0px 1px 1px #FFFFFF;
+	-o-box-shadow: 0px 1px 1px #FFFFFF;
+	box-shadow: 0px 1px 1px #FFFFFF;
+	border: 1px solid #78818F;
+	cursor: pointer;
+	font-size: 12px;
+	/*+border-radius:4px;*/
+	-moz-border-radius: 4px;
+	-webkit-border-radius: 4px;
+	-khtml-border-radius: 4px;
+	border-radius: 4px;
+	border-radius: 4px 4px 4px 4px;
+}
+.button-application
+{
+	width: 819px;
+	height: 16px;
+	background-color: #808080;
+	color: #FFFFFF;
+	text-align: center;
+	margin-top: -37px;
+	margin-left: 203px;
+	padding: 11px 0 8px;
+	/*+box-shadow:0px 1px 1px #FFFFFF;*/
+	-moz-box-shadow: 0px 1px 1px #FFFFFF;
+	-webkit-box-shadow: 0px 1px 1px #FFFFFF;
+	-o-box-shadow: 0px 1px 1px #FFFFFF;
+	box-shadow: 0px 1px 1px #FFFFFF;
+	-moz-box-shadow: 0px 3px 3px #FFFFFF;
+	box-shadow: 0px 3px 3px #FFFFFF;
+	border: 1px solid #78818F;
+	cursor: pointer;
+	font-weight: bold;
+	font-size: 12px;
+	/*+border-radius:4px;*/
+	-moz-border-radius: 4px;
+	-webkit-border-radius: 4px;
+	-khtml-border-radius: 4px;
+	border-radius: 4px;
+	border-radius: 4px 4px 4px 4px;
+}
+.button-category
+{
+	width: 200px;
+	text-align: center;
+	background-color: #808080;
+	color: #FFFFFF;
+	height: 16px;
+	background-color: #808080;
+	color: #FFFFFF;
+	padding: 11px 0 8px;
+	/*+box-shadow:0px 1px 1px #FFFFFF;*/
+	-moz-box-shadow: 0px 1px 1px #FFFFFF;
+	-webkit-box-shadow: 0px 1px 1px #FFFFFF;
+	-o-box-shadow: 0px 1px 1px #FFFFFF;
+	box-shadow: 0px 1px 1px #FFFFFF;
+	-moz-box-shadow: 0px 3px 3px #FFFFFF;
+	box-shadow: 0px 3px 3px #FFFFFF;
+	border: 1px solid #78818F;
+	cursor: pointer;
+	font-weight: bold;
+	font-size: 12px;
+	/*+border-radius:4px;*/
+	-moz-border-radius: 4px;
+	-webkit-border-radius: 4px;
+	-khtml-border-radius: 4px;
+	border-radius: 4px;
+	border-radius: 4px 4px 4px 4px;
+}
+.list-panel
+{
+	width: 200px;
+	height: 160px;
+	background-color: #808080;
+	color: #0000FF;
+	text-align: center;
+	margin-top: 1px;
+	padding: 11px 0 8px;
+	/*+box-shadow:0px 1px 1px #FFFFFF;*/
+	-moz-box-shadow: 0px 1px 1px #FFFFFF;
+	-webkit-box-shadow: 0px 1px 1px #FFFFFF;
+	-o-box-shadow: 0px 1px 1px #FFFFFF;
+	box-shadow: 0px 1px 1px #FFFFFF;
+	-moz-box-shadow: 0px 3px 3px #FFFFFF;
+	box-shadow: 0px 3px 3px #FFFFFF;
+	border: 1px solid #78818F;
+	cursor: default;
+	font-weight: bold;
+	font-size: 12px;
+	/*+border-radius:4px;*/
+	-moz-border-radius: 4px;
+	-webkit-border-radius: 4px;
+	-khtml-border-radius: 4px;
+	border-radius: 4px;
+	border-radius: 4px 4px 4px 4px;
+}
+.contribute-list-panel
+{
+	width: 200px;
+	height: 160px;
+	background-color: #FFFFFF;
+	color: #000000;
+	text-align: center;
+	margin-top: 1px;
+	padding: 11px 0 8px;
+	/*+box-shadow:0px 1px 1px #FFFFFF;*/
+	-moz-box-shadow: 0px 1px 1px #FFFFFF;
+	-webkit-box-shadow: 0px 1px 1px #FFFFFF;
+	-o-box-shadow: 0px 1px 1px #FFFFFF;
+	box-shadow: 0px 1px 1px #FFFFFF;
+	-moz-box-shadow: 0px 3px 3px #FFFFFF;
+	box-shadow: 0px 3px 3px #FFFFFF;
+	border: 1px solid #78818F;
+	cursor: default;
+	font-weight: bold;
+	font-size: 12px;
+	/*+border-radius:4px;*/
+	-moz-border-radius: 4px;
+	-webkit-border-radius: 4px;
+	-khtml-border-radius: 4px;
+	border-radius: 4px;
+	border-radius: 4px 4px 4px 4px;
+}
+.main-panel
+{
+	width: 819px;
+	height: 670px;
+	background-color: #808080;
+	color: #0000FF;
+	float: right;
+	text-align: center;
+	margin-top: -180px;
+	padding: 11px 0 8px;
+	/*+box-shadow:0px 1px 1px #FFFFFF;*/
+	-moz-box-shadow: 0px 1px 1px #FFFFFF;
+	-webkit-box-shadow: 0px 1px 1px #FFFFFF;
+	-o-box-shadow: 0px 1px 1px #FFFFFF;
+	box-shadow: 0px 1px 1px #FFFFFF;
+	-moz-box-shadow: 0px 3px 3px #FFFFFF;
+	box-shadow: 0px 3px 3px #FFFFFF;
+	border: 1px solid #78818F;
+	cursor: default;
+	font-weight: bold;
+	font-size: 12px;
+	/*+border-radius:4px;*/
+	-moz-border-radius: 4px;
+	-webkit-border-radius: 4px;
+	-khtml-border-radius: 4px;
+	border-radius: 4px;
+	border-radius: 4px 4px 4px 4px;
+}
+
+.app-content-detail-view {
+        width: 1020px;
+        height: 670px;
+        background-color: #F2F2F2	;
+        color: #0000FF;
+        float: left;
+        margin-top:1px;
+        text-align: center;
+        padding: 11px 0 8px;
+        /*+box-shadow:0px 1px 1px #FFFFFF;*/
+        -moz-box-shadow: 0px 1px 1px #FFFFFF;
+        -webkit-box-shadow: 0px 1px 1px #FFFFFF;
+        -o-box-shadow: 0px 1px 1px #FFFFFF;
+        box-shadow: 0px 1px 1px #FFFFFF;
+        -moz-box-shadow: 0px 3px 3px #FFFFFF;
+        box-shadow: 0px 3px 3px #FFFFFF;
+        border: 1px solid #78818F;
+        cursor: default;
+        font-weight: bold;
+        font-size: 12px;
+        /*+border-radius:4px;*/
+        -moz-border-radius: 4px;
+        -webkit-border-radius: 4px;
+        -khtml-border-radius: 4px;
+        border-radius: 4px;
+        border-radius: 4px 4px 4px 4px;
+
+
+
+}
+
+.footer-panel
+{
+	width: 819px;
+	height: 15px;
+	background-color: #808080;
+	color: #FFFFFF;
+	float: right;
+	margin-top: -35px;
+	text-align: left;
+	padding: 11px 0 8px;
+	/*+box-shadow:0px 1px 1px #FFFFFF;*/
+	-moz-box-shadow: 0px 1px 1px #FFFFFF;
+	-webkit-box-shadow: 0px 1px 1px #FFFFFF;
+	-o-box-shadow: 0px 1px 1px #FFFFFF;
+	box-shadow: 0px 1px 1px #FFFFFF;
+	-moz-box-shadow: 0px 3px 3px #FFFFFF;
+	box-shadow: 0px 3px 3px #FFFFFF;
+	border: 1px solid #78818F;
+	cursor: default;
+	font-weight: bold;
+	font-size: 12px;
+	/*+border-radius:4px;*/
+	-moz-border-radius: 4px;
+	-webkit-border-radius: 4px;
+	-khtml-border-radius: 4px;
+	border-radius: 4px;
+	border-radius: 4px 4px 4px 4px;
+}
+.main-panel .login-panel
+{
+	width: 200px;
+	height: 150px;
+	margin-left: 50px;
+	margin-top: 20px;
+	margin-bottom: 20px;
+	float: left;
+	background-color: #FFFFFF;
+	color: #000000;
+	text-align: left;
+	padding: 11px 0 8px;
+	/*+box-shadow:0px 1px 1px #FFFFFF;*/
+	-moz-box-shadow: 0px 1px 1px #FFFFFF;
+	-webkit-box-shadow: 0px 1px 1px #FFFFFF;
+	-o-box-shadow: 0px 1px 1px #FFFFFF;
+	box-shadow: 0px 1px 1px #FFFFFF;
+	-moz-box-shadow: 0px 3px 3px #FFFFFF;
+	box-shadow: 0px 3px 3px #FFFFFF;
+	border: 1px solid #78818F;
+	cursor: default;
+	font-weight: bold;
+	font-size: 12px;
+	/*+border-radius:4px;*/
+	-moz-border-radius: 4px;
+	-webkit-border-radius: 4px;
+	-khtml-border-radius: 4px;
+	border-radius: 4px;
+	border-radius: 4px 4px 4px 4px;
+}
+.main-panel .login-panel .thumbnail
+{
+	width: 152px;
+	height: 113px;
+	margin: auto;
+	background: no-repeat 0 0;
+}
