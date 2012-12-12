@@ -23,18 +23,18 @@ import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
 
 @SuppressWarnings("unused")
-public class ProjectInvitationResponse extends BaseResponse implements ControlledEntityResponse{
+public class ProjectInvitationResponse extends BaseResponse implements ControlledViewEntityResponse{
     @SerializedName(ApiConstants.ID) @Param(description="the id of the invitation")
-    private IdentityProxy id = new IdentityProxy("project_invitations");
+    private String id;
 
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the id of the project")
-    private IdentityProxy projectId = new IdentityProxy("projects");
+    private String projectId;
 
     @SerializedName(ApiConstants.PROJECT) @Param(description="the name of the project")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain id the project belongs to")
-    private IdentityProxy domainId = new IdentityProxy("domain");
+    private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name where the project belongs to")
     private String domainName;
@@ -48,20 +48,20 @@ public class ProjectInvitationResponse extends BaseResponse implements Controlle
     @SerializedName(ApiConstants.STATE) @Param(description="the invitation state")
     private String invitationState;
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public void setProjectId(Long projectId) {
-        this.projectId.setValue(projectId);
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
     }
 
     public void setProjectName(String projectName) {
         this.projectName = projectName;
     }
 
-    public void setDomainId(Long domainId) {
-        this.domainId.setValue(domainId);
+    public void setDomainId(String domainId) {
+        this.domainId = domainId;
     }
 
     public void setDomainName(String domain) {

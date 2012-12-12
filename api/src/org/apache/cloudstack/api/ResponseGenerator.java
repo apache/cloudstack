@@ -154,6 +154,7 @@ import org.apache.cloudstack.api.view.vo.DomainRouterJoinVO;
 import org.apache.cloudstack.api.view.vo.EventJoinVO;
 import org.apache.cloudstack.api.view.vo.InstanceGroupJoinVO;
 import org.apache.cloudstack.api.view.vo.ProjectAccountJoinVO;
+import org.apache.cloudstack.api.view.vo.ProjectInvitationJoinVO;
 import org.apache.cloudstack.api.view.vo.ProjectJoinVO;
 import org.apache.cloudstack.api.view.vo.ResourceTagJoinVO;
 import org.apache.cloudstack.api.view.vo.SecurityGroupJoinVO;
@@ -308,6 +309,8 @@ public interface ResponseGenerator {
     List<ProjectAccountResponse> createProjectAccountResponse(ProjectAccountJoinVO... projectAccounts);
 
     ProjectInvitationResponse createProjectInvitationResponse(ProjectInvitation invite);
+
+    List<ProjectInvitationResponse> createProjectInvitationResponse(ProjectInvitationJoinVO... invites);
 
     SystemVmInstanceResponse createSystemVmInstanceResponse(VirtualMachine systemVM);
 

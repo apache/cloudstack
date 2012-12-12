@@ -27,6 +27,7 @@ import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
+import org.apache.cloudstack.api.response.ProjectInvitationResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
@@ -36,6 +37,7 @@ import org.apache.cloudstack.api.view.vo.DomainRouterJoinVO;
 import org.apache.cloudstack.api.view.vo.EventJoinVO;
 import org.apache.cloudstack.api.view.vo.InstanceGroupJoinVO;
 import org.apache.cloudstack.api.view.vo.ProjectAccountJoinVO;
+import org.apache.cloudstack.api.view.vo.ProjectInvitationJoinVO;
 import org.apache.cloudstack.api.view.vo.ProjectJoinVO;
 import org.apache.cloudstack.api.view.vo.ResourceTagJoinVO;
 import org.apache.cloudstack.api.view.vo.SecurityGroupJoinVO;
@@ -118,8 +120,10 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectAccount;
+import com.cloud.projects.ProjectInvitation;
 import com.cloud.projects.ProjectService;
 import com.cloud.projects.dao.ProjectAccountJoinDao;
+import com.cloud.projects.dao.ProjectInvitationJoinDao;
 import com.cloud.projects.dao.ProjectJoinDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.Criteria;
@@ -270,6 +274,7 @@ public class ApiDBUtils {
     private static UserAccountJoinDao _userAccountJoinDao;
     private static ProjectJoinDao _projectJoinDao;
     private static ProjectAccountJoinDao _projectAccountJoinDao;
+    private static ProjectInvitationJoinDao _projectInvitationJoinDao;
 
     static {
         _ms = (ManagementServer) ComponentLocator.getComponent(ManagementServer.Name);
@@ -345,6 +350,7 @@ public class ApiDBUtils {
         _userAccountJoinDao = locator.getDao(UserAccountJoinDao.class);
         _projectJoinDao = locator.getDao(ProjectJoinDao.class);
         _projectAccountJoinDao = locator.getDao(ProjectAccountJoinDao.class);
+        _projectInvitationJoinDao = locator.getDao(ProjectInvitationJoinDao.class);
 
 
         // Note: stats collector should already have been initialized by this time, otherwise a null instance is returned
@@ -1051,5 +1057,14 @@ public class ApiDBUtils {
     public static ProjectAccountJoinVO newProjectAccountView(ProjectAccount proj) {
         return _projectAccountJoinDao.newProjectAccountView(proj);
     }
+
+    public static ProjectInvitationResponse newProjectInvitationResponse(ProjectInvitationJoinVO proj) {
+        return _projectInvitationJoinDao.newProjectInvitationResponse(proj);
+    }
+
+    public static ProjectInvitationJoinVO newProjectInvitationView(ProjectInvitation proj) {
+        return _projectInvitationJoinDao.newProjectInvitationView(proj);
+    }
+
 
 }

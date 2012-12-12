@@ -117,6 +117,7 @@ import org.apache.cloudstack.api.view.vo.ControlledViewEntity;
 import org.apache.cloudstack.api.view.vo.EventJoinVO;
 import org.apache.cloudstack.api.view.vo.InstanceGroupJoinVO;
 import org.apache.cloudstack.api.view.vo.ProjectAccountJoinVO;
+import org.apache.cloudstack.api.view.vo.ProjectInvitationJoinVO;
 import org.apache.cloudstack.api.view.vo.ProjectJoinVO;
 import org.apache.cloudstack.api.view.vo.ResourceTagJoinVO;
 import org.apache.cloudstack.api.view.vo.SecurityGroupJoinVO;
@@ -2873,25 +2874,21 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public ProjectInvitationResponse createProjectInvitationResponse(ProjectInvitation invite) {
-        ProjectInvitationResponse response = new ProjectInvitationResponse();
-        response.setId(invite.getId());
-        response.setProjectId(invite.getProjectId());
-        response.setProjectName(ApiDBUtils.findProjectById(invite.getProjectId()).getName());
-        response.setInvitationState(invite.getState().toString());
-
-        if (invite.getForAccountId() != null) {
-            Account account = ApiDBUtils.findAccountById(invite.getForAccountId());
-            response.setAccountName(account.getAccountName());
-
-        } else {
-            response.setEmail(invite.getEmail());
-        }
-
-        populateDomain(response, invite.getInDomainId());
-
-        response.setObjectName("projectinvitation");
-        return response;
+        ProjectInvitationJoinVO vInvite = ApiDBUtils.newProjectInvitationView(invite);
+        return ApiDBUtils.newProjectInvitationResponse(vInvite);
     }
+
+
+
+    @Override
+    public List<ProjectInvitationResponse> createProjectInvitationResponse(ProjectInvitationJoinVO... invites) {
+        List<ProjectInvitationResponse> respList = new ArrayList<ProjectInvitationResponse>();
+        for (ProjectInvitationJoinVO v : invites){
+            respList.add(ApiDBUtils.newProjectInvitationResponse(v));
+        }
+        return respList;
+    }
+
 
     @Override
     public SystemVmInstanceResponse createSystemVmInstanceResponse(VirtualMachine vm) {

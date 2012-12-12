@@ -139,6 +139,7 @@ import com.cloud.projects.ProjectManagerImpl;
 import com.cloud.projects.dao.ProjectAccountDaoImpl;
 import com.cloud.projects.dao.ProjectDaoImpl;
 import com.cloud.projects.dao.ProjectInvitationDaoImpl;
+import com.cloud.projects.dao.ProjectInvitationJoinDaoImpl;
 import com.cloud.projects.dao.ProjectJoinDaoImpl;
 import com.cloud.resource.ResourceManagerImpl;
 import com.cloud.resourcelimit.ResourceLimitManagerImpl;
@@ -233,6 +234,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("UserAccountJoinDao", UserAccountJoinDaoImpl.class);
         addDao("ProjectJoinDao", ProjectJoinDaoImpl.class);
         addDao("ProjectAccountJoinDao", ProjectAccountJoinDaoImpl.class);
+        addDao("ProjectInvitationJoinDao", ProjectInvitationJoinDaoImpl.class);
         ComponentInfo<? extends GenericDao<?, ? extends Serializable>> info = addDao("ServiceOfferingDao", ServiceOfferingDaoImpl.class);
         info.addParameter("cache.size", "50");
         info.addParameter("cache.time.to.live", "600");

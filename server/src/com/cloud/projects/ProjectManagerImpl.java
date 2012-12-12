@@ -39,6 +39,7 @@ import javax.mail.internet.InternetAddress;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.view.vo.ProjectAccountJoinVO;
+import org.apache.cloudstack.api.view.vo.ProjectInvitationJoinVO;
 import org.apache.cloudstack.api.view.vo.ProjectJoinVO;
 import org.apache.cloudstack.api.view.vo.UserVmJoinVO;
 import org.apache.log4j.Logger;
@@ -64,6 +65,7 @@ import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectAccountJoinDao;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.projects.dao.ProjectInvitationDao;
+import com.cloud.projects.dao.ProjectInvitationJoinDao;
 import com.cloud.projects.dao.ProjectJoinDao;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.tags.ResourceTagVO;
@@ -126,6 +128,8 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
     private ConfigurationDao _configDao;
     @Inject
     private ProjectInvitationDao _projectInvitationDao;
+    @Inject
+    private ProjectInvitationJoinDao _projectInvitationJoinDao;
     @Inject
     protected ResourceTagDao _resourceTagDao;
 
@@ -875,7 +879,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
     }
 
     @Override
-    public Pair<List<? extends ProjectInvitation>, Integer> listProjectInvitations(Long id, Long projectId,
+    public Pair<List<ProjectInvitationJoinVO>, Integer> listProjectInvitations(Long id, Long projectId,
             String accountName, Long domainId, String state, boolean activeOnly, Long startIndex, Long pageSizeVal, boolean isRecursive, boolean listAll) {
         Account caller = UserContext.current().getCaller();
         List<Long> permittedAccounts = new ArrayList<Long>();
@@ -886,17 +890,17 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
-        Filter searchFilter = new Filter(ProjectInvitationVO.class, "id", true, startIndex, pageSizeVal);
-        SearchBuilder<ProjectInvitationVO> sb = _projectInvitationDao.createSearchBuilder();
-        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        Filter searchFilter = new Filter(ProjectInvitationJoinVO.class, "id", true, startIndex, pageSizeVal);
+        SearchBuilder<ProjectInvitationJoinVO> sb = _projectInvitationJoinDao.createSearchBuilder();
+        _accountMgr.buildACLViewSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         sb.and("projectId", sb.entity().getProjectId(), SearchCriteria.Op.EQ);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("created", sb.entity().getCreated(), SearchCriteria.Op.GT);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
 
-        SearchCriteria<ProjectInvitationVO> sc = sb.create();
-        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        SearchCriteria<ProjectInvitationJoinVO> sc = sb.create();
+        _accountMgr.buildACLViewSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
 
         if (projectId != null){
@@ -916,8 +920,8 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
             sc.setParameters("created", new Date((DateUtil.currentGMTTime().getTime()) - _invitationTimeOut));
         }
 
-        Pair<List<ProjectInvitationVO>, Integer> result = _projectInvitationDao.searchAndCount(sc, searchFilter);
-        return new Pair<List<? extends ProjectInvitation>, Integer>(result.first(), result.second());
+        return _projectInvitationJoinDao.searchAndCount(sc, searchFilter);
+
     }
 
     @Override @DB

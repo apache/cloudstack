@@ -23,6 +23,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.view.vo.ProjectAccountJoinVO;
+import org.apache.cloudstack.api.view.vo.ProjectInvitationJoinVO;
 import org.apache.cloudstack.api.view.vo.ProjectJoinVO;
 
 import com.cloud.exception.ConcurrentOperationException;
@@ -116,7 +117,7 @@ public class MockProjectManagerImpl implements ProjectManager, Manager {
     }
 
     @Override
-    public Pair<List<? extends ProjectInvitation>, Integer> listProjectInvitations(Long id,
+    public Pair<List<ProjectInvitationJoinVO>, Integer> listProjectInvitations(Long id,
             Long projectId, String accountName, Long domainId, String state,
             boolean activeOnly, Long startIndex, Long pageSizeVal,
             boolean isRecursive, boolean listAll) {

@@ -2944,3 +2944,27 @@ from project_account
 inner join account on project_account.account_id = account.id
 inner join domain on account.domain_id=domain.id
 inner join projects on projects.id = project_account.project_id;
+
+DROP VIEW IF EXISTS `cloud`.`project_invitation_view`;
+CREATE VIEW project_invitation_view AS
+select
+project_invitations.id,
+project_invitations.uuid,
+project_invitations.email,
+project_invitations.created,
+project_invitations.state,
+projects.id project_id,
+projects.uuid project_uuid,
+projects.name project_name,
+account.id account_id,
+account.uuid account_uuid,
+account.account_name,
+account.type account_type,
+domain.id domain_id,
+domain.uuid domain_uuid,
+domain.name domain_name,
+domain.path domain_path
+from project_invitations
+left join account on project_invitations.account_id = account.id
+left join domain on project_invitations.domain_id=domain.id
+left join projects on projects.id = project_invitations.project_id;

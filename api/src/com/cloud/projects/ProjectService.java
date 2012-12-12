@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.api.view.vo.ProjectAccountJoinVO;
+import org.apache.cloudstack.api.view.vo.ProjectInvitationJoinVO;
 import org.apache.cloudstack.api.view.vo.ProjectJoinVO;
 
 import com.cloud.exception.ConcurrentOperationException;
@@ -85,7 +86,7 @@ public interface ProjectService {
 
     Pair<List<ProjectAccountJoinVO>, Integer> listProjectAccounts(long projectId, String accountName, String role, Long startIndex, Long pageSizeVal);
 
-    Pair<List<? extends ProjectInvitation>, Integer> listProjectInvitations(Long id, Long projectId, String accountName, Long domainId, String state, boolean activeOnly, Long startIndex, Long pageSizeVal, boolean isRecursive,
+    Pair<List<ProjectInvitationJoinVO>, Integer> listProjectInvitations(Long id, Long projectId, String accountName, Long domainId, String state, boolean activeOnly, Long startIndex, Long pageSizeVal, boolean isRecursive,
             boolean listAll);
 
     boolean updateInvitation(long projectId, String accountName, String token, boolean accept);

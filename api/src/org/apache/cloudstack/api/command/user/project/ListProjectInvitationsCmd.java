@@ -28,6 +28,8 @@ import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ProjectInvitationResponse;
+import org.apache.cloudstack.api.view.vo.ProjectInvitationJoinVO;
+
 import com.cloud.projects.ProjectInvitation;
 import com.cloud.utils.Pair;
 
@@ -83,15 +85,13 @@ public class ListProjectInvitationsCmd extends BaseListAccountResourcesCmd {
 
     @Override
     public void execute() {
-        Pair<List<? extends ProjectInvitation>, Integer> invites = _projectService.listProjectInvitations(id, projectId,
+        Pair<List<ProjectInvitationJoinVO>, Integer> invites = _projectService.listProjectInvitations(id, projectId,
                 this.getAccountName(), this.getDomainId(), state, activeOnly, this.getStartIndex(), this.getPageSizeVal(),
                 this.isRecursive(), this.listAll());
         ListResponse<ProjectInvitationResponse> response = new ListResponse<ProjectInvitationResponse>();
-        List<ProjectInvitationResponse> projectInvitationResponses = new ArrayList<ProjectInvitationResponse>();
-        for (ProjectInvitation invite : invites.first()) {
-            ProjectInvitationResponse projectResponse = _responseGenerator.createProjectInvitationResponse(invite);
-            projectInvitationResponses.add(projectResponse);
-        }
+        List<ProjectInvitationResponse> projectInvitationResponses =
+                _responseGenerator.createProjectInvitationResponse(invites.first().toArray(new ProjectInvitationJoinVO[invites.first().size()]));
+
         response.setResponses(projectInvitationResponses, invites.second());
         response.setResponseName(getCommandName());
 
