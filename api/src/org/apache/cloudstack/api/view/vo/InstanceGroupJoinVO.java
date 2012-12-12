@@ -28,6 +28,9 @@ import com.cloud.utils.db.GenericDao;
 @Table(name="instance_group_view")
 public class InstanceGroupJoinVO extends BaseViewVO implements ControlledViewEntity {
 
+    @Column(name="id", updatable=false, nullable = false)
+    private long id;
+
     @Column(name="uuid")
     private String uuid;
 
@@ -78,6 +81,18 @@ public class InstanceGroupJoinVO extends BaseViewVO implements ControlledViewEnt
 
 
     public InstanceGroupJoinVO() {
+    }
+
+    @Override
+    public long getId() {
+        return id;
+    }
+
+
+    @Override
+    public void setId(long id) {
+        this.id = id;
+
     }
 
     public String getUuid() {

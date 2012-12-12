@@ -20,17 +20,17 @@ import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
 import javax.persistence.Table;
 
 import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
-import com.cloud.event.Event.State;
 
 @Entity
 @Table(name="user_view")
 public class UserAccountJoinVO extends BaseViewVO {
+
+    @Column(name="id", updatable=false, nullable = false)
+    private long id;
 
     @Column(name="uuid")
     private String uuid;
@@ -105,6 +105,16 @@ public class UserAccountJoinVO extends BaseViewVO {
 
 
     public UserAccountJoinVO() {
+    }
+
+    @Override
+    public long getId() {
+        return id;
+    }
+
+    @Override
+    public void setId(long id) {
+        this.id = id;
     }
 
     public String getUuid() {

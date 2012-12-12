@@ -32,6 +32,9 @@ import com.cloud.vm.VirtualMachine.State;
 @Table(name="project_view")
 public class ProjectJoinVO extends BaseViewVO {
 
+    @Column(name="id", updatable=false, nullable = false)
+    private long id;
+
     @Column(name="uuid")
     private String uuid;
 
@@ -102,6 +105,18 @@ public class ProjectJoinVO extends BaseViewVO {
     private String tagCustomer;
 
     public ProjectJoinVO() {
+    }
+
+    @Override
+    public long getId() {
+        return id;
+    }
+
+
+    @Override
+    public void setId(long id) {
+        this.id = id;
+
     }
 
     public String getUuid() {

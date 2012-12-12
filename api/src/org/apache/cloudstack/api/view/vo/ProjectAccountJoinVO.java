@@ -16,8 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.view.vo;
 
-import java.util.Date;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -25,13 +23,13 @@ import javax.persistence.Enumerated;
 import javax.persistence.Table;
 
 import com.cloud.projects.ProjectAccount.Role;
-import com.cloud.server.ResourceTag.TaggedResourceType;
-import com.cloud.utils.db.GenericDao;
-import com.cloud.vm.VirtualMachine.State;
 
 @Entity
 @Table(name="project_account_view")
 public class ProjectAccountJoinVO extends BaseViewVO {
+
+    @Column(name="id", updatable=false, nullable = false)
+    private long id;
 
     @Column(name="account_id")
     private long accountId;
@@ -74,7 +72,17 @@ public class ProjectAccountJoinVO extends BaseViewVO {
     public ProjectAccountJoinVO() {
     }
 
+    @Override
+    public long getId() {
+        return id;
+    }
 
+
+    @Override
+    public void setId(long id) {
+        this.id = id;
+
+    }
 
     public long getDomainId() {
         return domainId;

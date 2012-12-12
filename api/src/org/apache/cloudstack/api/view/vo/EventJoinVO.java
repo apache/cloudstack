@@ -31,6 +31,9 @@ import com.cloud.event.Event.State;
 @Table(name="event_view")
 public class EventJoinVO extends BaseViewVO implements ControlledViewEntity {
 
+    @Column(name="id", updatable=false, nullable = false)
+    private long id;
+
     @Column(name="uuid")
     private String uuid;
 
@@ -102,6 +105,17 @@ public class EventJoinVO extends BaseViewVO implements ControlledViewEntity {
 
 
     public EventJoinVO() {
+    }
+
+    @Override
+    public long getId() {
+        return id;
+    }
+
+    @Override
+    public void setId(long id) {
+        this.id = id;
+
     }
 
     public String getUuid() {

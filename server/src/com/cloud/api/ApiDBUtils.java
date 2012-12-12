@@ -340,8 +340,12 @@ public class ApiDBUtils {
         _asVmGroupPolicyMapDao = locator.getDao(AutoScaleVmGroupPolicyMapDao.class);
         _counterDao = locator.getDao(CounterDao.class);
         _tagJoinDao = locator.getDao(ResourceTagJoinDao.class);
+        _vmGroupJoinDao = locator.getDao(InstanceGroupJoinDao.class);
         _eventJoinDao = locator.getDao(EventJoinDao.class);
+        _userAccountJoinDao = locator.getDao(UserAccountJoinDao.class);
         _projectJoinDao = locator.getDao(ProjectJoinDao.class);
+        _projectAccountJoinDao = locator.getDao(ProjectAccountJoinDao.class);
+
 
         // Note: stats collector should already have been initialized by this time, otherwise a null instance is returned
         _statsCollector = StatsCollector.getInstance();

@@ -29,6 +29,9 @@ import com.cloud.server.ResourceTag.TaggedResourceType;
 @Table(name="security_group_view")
 public class SecurityGroupJoinVO extends BaseViewVO implements ControlledViewEntity {
 
+    @Column(name="id", updatable=false, nullable = false)
+    private long id;
+
     @Column(name="name")
     private String name;
 
@@ -136,6 +139,16 @@ public class SecurityGroupJoinVO extends BaseViewVO implements ControlledViewEnt
     private String tagCustomer;
 
     public SecurityGroupJoinVO() {
+    }
+
+    @Override
+    public long getId() {
+        return id;
+    }
+
+    @Override
+    public void setId(long id) {
+        this.id = id;
     }
 
     public String getUuid() {

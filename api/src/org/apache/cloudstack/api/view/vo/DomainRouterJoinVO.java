@@ -35,9 +35,11 @@ import com.cloud.vm.VirtualMachine.State;
 @Table(name="domain_router_view")
 public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEntity {
 
+    @Column(name="id", updatable=false, nullable = false)
+    private long id;
 
     @Column(name="name", updatable=false, nullable=false, length=255)
- private String name = null;
+    private String name = null;
 
 
     @Column(name="account_id")
@@ -225,7 +227,22 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
 
 
 
- public String getUuid() {
+    @Override
+    public long getId() {
+        return id;
+    }
+
+
+    @Override
+    public void setId(long id) {
+        this.id = id;
+
+    }
+
+
+
+
+    public String getUuid() {
         return uuid;
     }
 
@@ -250,6 +267,7 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
 
 
 
+    @Override
     public long getAccountId() {
         return accountId;
     }
@@ -260,6 +278,7 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
     }
 
 
+    @Override
     public String getAccountUuid() {
         return accountUuid;
     }
@@ -274,6 +293,7 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
 
 
 
+    @Override
     public String getAccountName() {
         return accountName;
     }
@@ -284,6 +304,7 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
     }
 
 
+    @Override
     public short getAccountType() {
         return accountType;
     }
@@ -294,6 +315,7 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
     }
 
 
+    @Override
     public long getDomainId() {
         return domainId;
     }
@@ -318,6 +340,7 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
 
 
 
+    @Override
     public String getDomainName() {
         return domainName;
     }
@@ -327,6 +350,7 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
         this.domainName = domainName;
     }
 
+    @Override
     public String getDomainPath() {
         return domainPath;
     }
@@ -656,6 +680,7 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
 
 
 
+    @Override
     public String getProjectUuid() {
         return projectUuid;
     }
@@ -670,6 +695,7 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
 
 
 
+    @Override
     public String getProjectName() {
         return projectName;
     }

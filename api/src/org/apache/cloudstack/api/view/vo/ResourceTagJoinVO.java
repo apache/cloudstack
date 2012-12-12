@@ -28,6 +28,8 @@ import com.cloud.server.ResourceTag.TaggedResourceType;
 @Table(name="resource_tag_view")
 public class ResourceTagJoinVO extends BaseViewVO implements ControlledViewEntity {
 
+    @Column(name="id", updatable=false, nullable = false)
+    private long id;
 
     @Column(name="uuid")
     private String uuid;
@@ -100,10 +102,12 @@ public class ResourceTagJoinVO extends BaseViewVO implements ControlledViewEntit
         this.uuid = uuid;
     }
 
+    @Override
     public long getId() {
         return id;
     }
 
+    @Override
     public void setId(long id) {
         this.id = id;
     }

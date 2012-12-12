@@ -42,6 +42,8 @@ import com.cloud.vm.VirtualMachine.State;
 @Table(name="user_vm_view")
 public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
 
+    @Column(name="id", updatable=false, nullable = false)
+    private long id;
 
     @Column(name="name", updatable=false, nullable=false, length=255)
     private String name = null;
@@ -364,6 +366,15 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
     }
 
 
+    @Override
+    public long getId() {
+        return id;
+    }
+
+    @Override
+    public void setId(long id) {
+        this.id = id;
+    }
 
 
     public String getUuid() {
@@ -407,6 +418,7 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
     }
 
 
+    @Override
     public long getAccountId() {
         return accountId;
     }
@@ -417,6 +429,7 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
     }
 
 
+    @Override
     public String getAccountUuid() {
         return accountUuid;
     }
@@ -431,6 +444,7 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
 
 
 
+    @Override
     public String getAccountName() {
         return accountName;
     }
@@ -441,6 +455,7 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
     }
 
 
+    @Override
     public short getAccountType() {
         return accountType;
     }
@@ -451,6 +466,7 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
     }
 
 
+    @Override
     public long getDomainId() {
         return domainId;
     }
@@ -461,6 +477,7 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
     }
 
 
+    @Override
     public String getDomainUuid() {
         return domainUuid;
     }
@@ -475,6 +492,7 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
 
 
 
+    @Override
     public String getDomainName() {
         return domainName;
     }
@@ -485,6 +503,7 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
     }
 
 
+    @Override
     public String getDomainPath() {
         return domainPath;
     }
@@ -1252,6 +1271,7 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
 
 
 
+    @Override
     public String getProjectUuid() {
         return projectUuid;
     }
@@ -1266,6 +1286,7 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
 
 
 
+    @Override
     public String getProjectName() {
         return projectName;
     }
