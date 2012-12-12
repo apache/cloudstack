@@ -23,6 +23,7 @@ public interface RpcProvider extends TransportMultiplexier {
 	
 	void setMessageSerializer(MessageSerializer messageSerializer);
 	MessageSerializer getMessageSerializer();
+	boolean initialize();
 	
 	void registerRpcServiceEndpoint(RpcServiceEndpoint rpcEndpoint);
 	void unregisteRpcServiceEndpoint(RpcServiceEndpoint rpcEndpoint);
@@ -33,9 +34,6 @@ public interface RpcProvider extends TransportMultiplexier {
 	//
 	// low-level public API
 	//
-	RpcClientCall newCall(TransportEndpoint sourceEndpoint, TransportAddressMapper targetAddress);
-	RpcClientCall newCall(TransportEndpoint sourceEndpoint, String targetAddress);
-
 	void registerCall(RpcClientCall call);
 	void cancelCall(RpcClientCall call);
 	

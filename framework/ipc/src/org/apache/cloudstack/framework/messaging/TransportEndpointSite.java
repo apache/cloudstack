@@ -19,13 +19,16 @@
 package org.apache.cloudstack.framework.messaging;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class TransportEndpointSite {
 	private TransportEndpoint _endpoint;
 	private TransportAddress _address;
 	
 	private List<TransportPdu> _outputQueue = new ArrayList<TransportPdu>();
+	private Map<String, TransportMultiplexier> _multiplexierMap = new HashMap<String, TransportMultiplexier>();  
 	
 	public TransportEndpointSite(TransportEndpoint endpoint, TransportAddress address) {
 		assert(endpoint != null);
@@ -47,6 +50,19 @@ public class TransportEndpointSite {
 		_address = address;
 	}
 	
+	public void registerMultiplexier(String name, TransportMultiplexier multiplexier) {
+		assert(name != null);
+		assert(multiplexier != null);
+		assert(_multiplexierMap.get(name) == null);
+		
+		_multiplexierMap.put(name, multiplexier);
+	}
+	
+	public void unregisterMultiplexier(String name) {
+		assert(name != null);
+		_multiplexierMap.remove(name);
+	}
+	
 	public void addOutputPdu(TransportPdu pdu) {
 		synchronized(this) {
 			_outputQueue.add(pdu);
@@ -66,8 +82,26 @@ public class TransportEndpointSite {
 	
 	private void processOutput() {
 		TransportPdu pdu;
-		while((pdu = getNextOutputPdu()) != null) {
-			// ???
+		TransportEndpoint endpoint = getEndpoint();
+
+		if(endpoint != null) {
+			while((pdu = getNextOutputPdu()) != null) {
+				if(pdu instanceof TransportDataPdu) {
+					String multiplexierName = ((TransportDataPdu) pdu).getMultiplexier();
+					TransportMultiplexier multiplexier = getRoutedMultiplexier(multiplexierName);
+					assert(multiplexier != null);
+					multiplexier.onTransportMessage(pdu.getSourceAddress(), pdu.getDestAddress(), 
+						multiplexierName, ((TransportDataPdu) pdu).getContent());
+				}
+			}
 		}
+	}
+	
+	private TransportMultiplexier getRoutedMultiplexier(String multiplexierName) {
+		TransportMultiplexier multiplexier = _multiplexierMap.get(multiplexierName);
+		if(multiplexier == null)
+			multiplexier = _endpoint;
+		
+		return multiplexier;
 	}
 }

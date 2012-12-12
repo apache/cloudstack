@@ -45,7 +45,7 @@ public class ServerTransportProvider implements TransportProvider {
 	}
 	
 	@Override
-	public boolean attach(TransportEndpoint endpoint, String predefinedAddress) {
+	public TransportEndpointSite attach(TransportEndpoint endpoint, String predefinedAddress) {
 		
 		TransportAddress transportAddress;
 		String endpointId;
@@ -62,34 +62,25 @@ public class ServerTransportProvider implements TransportProvider {
 			endpointSite = _endpointMap.get(endpointId);
 			if(endpointSite != null) {
 				// already attached
-				return false;
+				return endpointSite;
 			}
 			endpointSite = new TransportEndpointSite(endpoint, transportAddress);
 			_endpointMap.put(endpointId, endpointSite);
 		}
 		
 		endpoint.onAttachConfirm(true, transportAddress.toString());
-		return true;
+		return endpointSite;
 	}
 
 	@Override
 	public boolean detach(TransportEndpoint endpoint) {
-		TransportAddress transportAddress = TransportAddress.fromAddressString(endpoint.getEndpointAddress());
-		if(transportAddress == null)
-			return false;
-		
-		boolean found = false;
 		synchronized(this) {
-			TransportEndpointSite endpointSite = _endpointMap.get(transportAddress.getEndpointId());
-			if(endpointSite.getAddress().equals(transportAddress)) {
-				found = true;
-				_endpointMap.remove(transportAddress.getEndpointId());
+			for(Map.Entry<String, TransportEndpointSite> entry : _endpointMap.entrySet()) {
+				if(entry.getValue().getEndpoint() == endpoint) {
+					_endpointMap.remove(entry.getKey());
+					return true;
+				}
 			}
-		}
-		
-		if(found) {
-			endpoint.onDetachIndication(endpoint.getEndpointAddress());
-			return true;
 		}
 			
 		return false;
@@ -122,6 +113,7 @@ public class ServerTransportProvider implements TransportProvider {
 				endpointSite.addOutputPdu(pdu);
 		} else {
 			// do cross-node forwarding
+			// ???
 		}
 	}
 	

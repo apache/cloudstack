@@ -19,7 +19,7 @@
 package org.apache.cloudstack.framework.messaging;
 
 public interface TransportProvider {
-	boolean attach(TransportEndpoint endpoint, String predefinedAddress);
+	TransportEndpointSite attach(TransportEndpoint endpoint, String predefinedAddress);
 	boolean detach(TransportEndpoint endpoint);
 	
 	void sendMessage(String soureEndpointAddress, String targetEndpointAddress, 

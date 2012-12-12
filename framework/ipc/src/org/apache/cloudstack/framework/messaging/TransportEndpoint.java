@@ -18,15 +18,7 @@
  */
 package org.apache.cloudstack.framework.messaging;
 
-public interface TransportEndpoint {
-	String getEndpointAddress();
-	
+public interface TransportEndpoint extends TransportMultiplexier {
 	void onAttachConfirm(boolean bSuccess, String endpointAddress);
 	void onDetachIndication(String endpointAddress);
-	
-	void registerMultiplexier(String name, TransportMultiplexier multiplexier);
-	void unregisterMultiplexier(String name);
-	
-	void sendMessage(String soureEndpointAddress, String targetEndpointAddress, 
-		String multiplexier, String message);
 }

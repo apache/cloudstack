@@ -19,14 +19,15 @@
 package org.apache.cloudstack.framework.messaging.client;
 
 import org.apache.cloudstack.framework.messaging.TransportEndpoint;
+import org.apache.cloudstack.framework.messaging.TransportEndpointSite;
 import org.apache.cloudstack.framework.messaging.TransportProvider;
 
 public class ClientTransportProvider implements TransportProvider {
 
 	@Override
-	public boolean attach(TransportEndpoint endpoint, String predefinedAddress) {
+	public TransportEndpointSite attach(TransportEndpoint endpoint, String predefinedAddress) {
 		// TODO Auto-generated method stub
-		return false;
+		return null;
 	}
 
 	@Override

@@ -19,16 +19,9 @@
 package org.apache.cloudstack.framework.messaging.client;
 
 import org.apache.cloudstack.framework.messaging.TransportEndpoint;
-import org.apache.cloudstack.framework.messaging.TransportMultiplexier;
 
 public class ClientTransportEndpoint implements TransportEndpoint {
 
-	@Override
-	public String getEndpointAddress() {
-		// ???
-		return "";
-	}
-	
 	@Override
 	public void onAttachConfirm(boolean bSuccess, String endpointAddress) {
 		// TODO Auto-generated method stub
@@ -39,19 +32,9 @@ public class ClientTransportEndpoint implements TransportEndpoint {
 	}
 
 	@Override
-	public void registerMultiplexier(String name,
-			TransportMultiplexier multiplexier) {
+	public void onTransportMessage(String senderEndpointAddress,
+			String targetEndpointAddress, String multiplexer, String message) {
 		// TODO Auto-generated method stub
-	}
-
-	@Override
-	public void unregisterMultiplexier(String name) {
-		// TODO Auto-generated method stub
-	}
-
-	@Override
-	public void sendMessage(String sourceEndpointAddress,
-			String targetEndpointAddress, String multiplexier, String message) {
-		// TODO Auto-generated method stub
+		
 	}
 }

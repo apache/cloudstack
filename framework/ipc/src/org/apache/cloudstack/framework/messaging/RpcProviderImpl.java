@@ -24,9 +24,13 @@ import java.util.List;
 import java.util.Map;
 
 public class RpcProviderImpl implements RpcProvider {
+	public static final String RPC_MULTIPLEXIER = "rpc";
 	
 	private TransportProvider _transportProvider;
-	private MessageSerializer _messageSerializer;
+	private String _transportAddress;
+	private RpcTransportEndpoint _transportEndpoint = new RpcTransportEndpoint();	// transport attachment at RPC layer
+	
+	private MessageSerializer _messageSerializer = new JsonMessageSerializer();		// default message serializer
 	private List<RpcServiceEndpoint> _serviceEndpoints = new ArrayList<RpcServiceEndpoint>();
 	private Map<Long, RpcClientCall> _outstandingCalls = new HashMap<Long, RpcClientCall>();
 	
@@ -60,12 +64,24 @@ public class RpcProviderImpl implements RpcProvider {
 
 	@Override
 	public void setMessageSerializer(MessageSerializer messageSerializer) {
+		assert(messageSerializer != null);
 		_messageSerializer = messageSerializer;
 	}
 
 	@Override
 	public MessageSerializer getMessageSerializer() {
 		return _messageSerializer;
+	}
+	
+	@Override
+	public boolean initialize() {
+		assert(_transportProvider != null);
+		if(_transportProvider == null)
+			return false;
+		
+		TransportEndpointSite endpointSite = _transportProvider.attach(_transportEndpoint, "RpcProvider");
+		endpointSite.registerMultiplexier(RPC_MULTIPLEXIER, this);
+		return true;
 	}
 
 	@Override
@@ -83,39 +99,37 @@ public class RpcProviderImpl implements RpcProvider {
 	}
 	
 	@Override
-	public RpcClientCall newCall(TransportEndpoint sourceEndpoint, String targetAddress) {
+	public RpcClientCall newCall(String targetAddress) {
+
 		long callTag = getNextCallTag();
 		RpcClientCallImpl call = new RpcClientCallImpl(this);
-		call.setSourceAddress(sourceEndpoint.getEndpointAddress());
+		call.setSourceAddress(_transportAddress);
 		call.setTargetAddress(targetAddress);
 		call.setCallTag(callTag);
 		
-		return call;
-	}
-
-	@Override
-	public RpcClientCall newCall(TransportEndpoint sourceEndpoint, TransportAddressMapper targetAddress) {
-		long callTag = getNextCallTag();
-		RpcClientCallImpl call = new RpcClientCallImpl(this);
-		call.setSourceAddress(sourceEndpoint.getEndpointAddress());
-		call.setTargetAddress(targetAddress.getAddress());
-		call.setCallTag(callTag);
+		RpcCallRequestPdu pdu = new RpcCallRequestPdu();
+		pdu.setCommand(call.getCommand());
+		pdu.setRequestTag(callTag);
+		pdu.setRequestStartTick(System.currentTimeMillis());
+		
+		String serializedCmdArg;
+		if(call.getCommandArg() != null)
+			serializedCmdArg = _messageSerializer.serializeTo(call.getCommandArg().getClass(), call.getCommandArg());
+		else
+			serializedCmdArg = _messageSerializer.serializeTo(Object.class, null);
+		pdu.setSerializedCommandArg(serializedCmdArg);
+		
+		String serializedPdu = _messageSerializer.serializeTo(RpcCallRequestPdu.class, pdu);
+		_transportProvider.sendMessage(_transportAddress, targetAddress, RPC_MULTIPLEXIER, 
+			serializedPdu);
 		
 		return call;
-	}
-	
-	@Override
-	public RpcClientCall newCall(String targetAddress) {
-
-		// ???
-		return null;
 	}
 	
 	@Override
 	public RpcClientCall newCall(TransportAddressMapper targetAddress) {
 		return newCall(targetAddress.getAddress());
 	}
-	
 	
 	@Override
 	public void registerCall(RpcClientCall call) {
@@ -208,6 +222,29 @@ public class RpcProviderImpl implements RpcProvider {
 				assert(false);
 				break;
 			}
+		}
+	}
+	
+	private class RpcTransportEndpoint implements TransportEndpoint {
+
+		@Override
+		public void onTransportMessage(String senderEndpointAddress,
+			String targetEndpointAddress, String multiplexer, String message) {
+			
+			// we won't handle generic transport message toward RPC transport endpoint
+		}
+
+		@Override
+		public void onAttachConfirm(boolean bSuccess, String endpointAddress) {
+			if(bSuccess) 
+				_transportAddress = endpointAddress;
+				
+		}
+
+		@Override
+		public void onDetachIndication(String endpointAddress) {
+			if(_transportAddress != null && _transportAddress.equals(endpointAddress))
+				_transportAddress = null;
 		}
 	}
 }
