@@ -559,3 +559,10 @@ def list_resource_limits(apiclient, **kwargs):
     cmd = listResourceLimits.listResourceLimitsCmd()
     [setattr(cmd, k, v) for k, v in kwargs.items()]
     return(apiclient.listResourceLimits(cmd))
+
+def list_vpc_offerings(apiclient, **kwargs):
+    """ Lists VPC offerings """
+
+    cmd = listVPCOfferings.listVPCOfferingsCmd()
+    [setattr(cmd, k, v) for k, v in kwargs.items()]
+    return(apiclient.listVPCOfferings(cmd))
