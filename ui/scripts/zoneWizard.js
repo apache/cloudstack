@@ -370,11 +370,20 @@
 									var array1 = [];
 									
 									var firstOption = "XenServer";
-									if(args.context.zones[0]['network-model']	== "Advanced" && args.context.zones[0]['zone-advanced-sg-enabled'] ==	"on")
+									var nonSupportedHypervisors = {};									
+									if(args.context.zones[0]['network-model']	== "Advanced" && args.context.zones[0]['zone-advanced-sg-enabled'] ==	"on") {
 									  firstOption = "KVM";
+										nonSupportedHypervisors["XenServer"] = 1;  //to developers: comment this line if you need to test Advanced SG-enabled zone with XenServer hypervisor
+										nonSupportedHypervisors["VMware"] = 1;
+										nonSupportedHypervisors["BareMetal"] = 1;
+										nonSupportedHypervisors["Ovm"] = 1;
+									}
 									
 									if(items != null) {
 									  for(var i = 0; i < items.length; i++) {
+										  if(items[i].name in nonSupportedHypervisors)
+											  continue;
+										
 										  if(items[i].name == firstOption)
 											  array1.unshift({id: items[i].name, description: items[i].name});
 											else
