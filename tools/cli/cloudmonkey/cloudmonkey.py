@@ -65,7 +65,7 @@ logger = logging.getLogger(__name__)
 completions = cloudstackAPI.__all__
 
 
-class CloudStackShell(cmd.Cmd):
+class CloudStackShell(cmd.Cmd, object):
     intro = ("☁ Apache CloudStack 🐵 cloudmonkey " + __version__ +
              ". Type help or ? to list commands.\n")
     ruler = "="
@@ -132,6 +132,15 @@ class CloudStackShell(cmd.Cmd):
 
     def emptyline(self):
         pass
+
+    def cmdloop(self, intro=None):
+        print self.intro
+        while True:
+            try:
+                super(CloudStackShell, self).cmdloop(intro = "")
+                self.postloop()
+            except KeyboardInterrupt:
+                print("^C")
 
     def print_shell(self, *args):
         try:
@@ -273,7 +282,6 @@ class CloudStackShell(cmd.Cmd):
                                         x.partition("=")[2]],
                              args[1:])[x] for x in range(len(args) - 1))
 
-        # FIXME: With precaching, dynamic loading can be removed
         api_cmd_str = "%sCmd" % api_name
         api_mod = self.get_api_module(api_name, [api_cmd_str])
         if api_mod is None:
@@ -466,7 +474,7 @@ class CloudStackShell(cmd.Cmd):
         """
         Quit on Ctrl+d or EOF
         """
-        return True
+        sys.exit()
 
 
 def main():
