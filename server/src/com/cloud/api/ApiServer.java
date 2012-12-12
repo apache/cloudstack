@@ -770,6 +770,8 @@ public class ApiServer implements HttpRequestHandler {
 
     private boolean isCommandAvailable(User user, String commandName) {
         for(APIAccessChecker apichecker : _apiAccessCheckers) {
+            // Break on the first adapter that validates
+            // FIXME: In case of multiple adapters, this may not be the best way of validation. See CLOUDSTACK-618
             if (apichecker.canAccessAPI(user, commandName))
                 return true;
         }
