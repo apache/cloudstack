@@ -1,0 +1,73 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+<section id="elastic-ip">
+  <title>About Elastic IP</title>
+  <para>Elastic IP (EIP) addresses are the IP addresses that are associated with an account, and act
+    as static IP addresses. The account owner has the complete control over the Elastic IP addresses
+    that belong to the account. You can allocate an Elastic IP to a VM of your choice from the EIP
+    pool of your account. Later if required you can reassign the IP address to a different VM. This
+    feature is extremely helpful during VM failure. Instead of replacing the VM which is down, the
+    IP address can be reassigned to a new VM in your account. Similar to the public IP address, EIPs
+    are mapped to their associated private IP addresses by using StacticNAT.</para>
+  <para>The EIP work flow is as follows:</para>
+  <itemizedlist>
+    <listitem>
+      <para>When a user VM is deployed, a public IP is automatically acquired from the pool of
+        public IPs configured in the zone. This IP is owned by the VM's account.</para>
+    </listitem>
+    <listitem>
+      <para>Each VM will have its own private IP. When the user VM starts, the public IP is mapped
+        to the private IP of the VM by using StaticNAT.</para>
+    </listitem>
+    <listitem>
+      <para>This default public IP will be released in two cases:</para>
+      <itemizedlist>
+        <listitem>
+          <para>When the VM is stopped. When the VM starts, it again receives a new public IP, not
+            necessarily be the one allocated initially, from the pool of Public IPs.</para>
+        </listitem>
+        <listitem>
+          <para>The user acquires a public IP. This public IP associated with the account will not
+            be mapped to any private IP. However, the user can enable StaticNAT to associate this IP
+            to the private IP of a VM in the account. The StaticNAT rule for the public IP can be
+            disabled at any time. When StaticNAT is disabled, a new public IP is allocated from the
+            pool, which is not necessarily be the one allocated initially.</para>
+        </listitem>
+      </itemizedlist>
+    </listitem>
+  </itemizedlist>
+  <para>However, for the deployments where public IPs are limited resources, you have the
+    flexibility to choose not to allocate a public IP by default. From &PRODUCT; 3.0.6 onwards, you
+    can use the Associate public IP option to turn on or off the automatic public IP assignment in
+    the EIP-enabled Basic zones. If you turn off the automatic public IP assignment while creating a
+    network offering, only a private IP is assigned to a VM when it's deployed with the same network
+    offering. Later, the user can acquire an IP for the VM and enable staticNAT. The <xref
+      linkend="creating-network-offerings"/> section gives you more information on the Associate
+    public IP option.</para>
+  <note>
+    <para>The Associate public IP feature is designed only for the user VMs. The System VMs continue
+      to get both public IP and private by default irrespective of the network offering
+      configuration. </para>
+  </note>
+    <para>In the case of new deployments, which uses the default shared network offering with EIP
+    and ELB services to create shared network in the Basic zone, will continue allocating public IPs
+    to each user VMs.</para>
+</section>
