@@ -21,6 +21,8 @@ package org.apache.cloudstack.framework.messaging.server;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.apache.cloudstack.framework.messaging.TransportAddress;
 import org.apache.cloudstack.framework.messaging.TransportDataPdu;
@@ -28,20 +30,48 @@ import org.apache.cloudstack.framework.messaging.TransportEndpoint;
 import org.apache.cloudstack.framework.messaging.TransportEndpointSite;
 import org.apache.cloudstack.framework.messaging.TransportPdu;
 import org.apache.cloudstack.framework.messaging.TransportProvider;
+import org.apache.log4j.Logger;
+
+import com.cloud.utils.concurrency.NamedThreadFactory;
 
 public class ServerTransportProvider implements TransportProvider {
+    private static final Logger s_logger = Logger.getLogger(ServerTransportProvider.class);
+	
+	public static final int DEFAULT_WORKER_POOL_SIZE = 5;
+	
 	private String _nodeId;
 
 	private Map<String, TransportEndpointSite> _endpointMap = new HashMap<String, TransportEndpointSite>();
+	private int _poolSize = DEFAULT_WORKER_POOL_SIZE;
+	private ExecutorService _executor;
 	
 	private int _nextEndpointId = new Random().nextInt();
 	
 	public ServerTransportProvider() {
 	}
 	
-	public String getNodeId() { return _nodeId; }
-	public void setNodeId(String nodeId) {
+	public String getNodeId() { 
+		return _nodeId; 
+	}
+	
+	public ServerTransportProvider setNodeId(String nodeId) {
 		_nodeId = nodeId;
+		return this;
+	}
+	
+	public int getWorkerPoolSize() {
+		return _poolSize; 
+	}
+	
+	public ServerTransportProvider setWorkerPoolSize(int poolSize) {
+		assert(poolSize > 0);
+		
+		_poolSize = poolSize;
+		return this;
+	}
+	
+	public void initialize() {
+		_executor = Executors.newFixedThreadPool(_poolSize, new NamedThreadFactory("Transport-Worker"));
 	}
 	
 	@Override
@@ -64,7 +94,7 @@ public class ServerTransportProvider implements TransportProvider {
 				// already attached
 				return endpointSite;
 			}
-			endpointSite = new TransportEndpointSite(endpoint, transportAddress);
+			endpointSite = new TransportEndpointSite(this, endpoint, transportAddress);
 			_endpointMap.put(endpointId, endpointSite);
 		}
 		
@@ -84,6 +114,22 @@ public class ServerTransportProvider implements TransportProvider {
 		}
 			
 		return false;
+	}
+	
+	@Override
+	public void requestSiteOutput(final TransportEndpointSite site) {
+		_executor.execute(new Runnable() {
+
+			@Override
+			public void run() {
+				try {
+					site.processOutput();
+					site.ackOutputProcessSignal();
+				} catch(Throwable e) {
+					s_logger.error("Unhandled exception", e);
+				}
+			}
+		});
 	}
 	
 	@Override

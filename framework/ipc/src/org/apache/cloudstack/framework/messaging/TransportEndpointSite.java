@@ -24,18 +24,25 @@ import java.util.List;
 import java.util.Map;
 
 public class TransportEndpointSite {
+	private TransportProvider _provider;
 	private TransportEndpoint _endpoint;
 	private TransportAddress _address;
 	
 	private List<TransportPdu> _outputQueue = new ArrayList<TransportPdu>();
 	private Map<String, TransportMultiplexier> _multiplexierMap = new HashMap<String, TransportMultiplexier>();  
 	
-	public TransportEndpointSite(TransportEndpoint endpoint, TransportAddress address) {
+	private int _outstandingSignalRequests;
+	
+	public TransportEndpointSite(TransportProvider provider, TransportEndpoint endpoint, TransportAddress address) {
+		assert(provider != null);
 		assert(endpoint != null);
 		assert(address != null);
 		
+		_provider = provider;
 		_endpoint = endpoint;
 		_address = address;
+		
+		_outstandingSignalRequests = 0;
 	}
 	
 	public TransportEndpoint getEndpoint() {
@@ -68,7 +75,7 @@ public class TransportEndpointSite {
 			_outputQueue.add(pdu);
 		}
 		
-		processOutput();
+		signalOutputProcessRequest();
 	}
 	
 	public TransportPdu getNextOutputPdu() {
@@ -80,7 +87,7 @@ public class TransportEndpointSite {
 		return null;
 	}
 	
-	private void processOutput() {
+	public void processOutput() {
 		TransportPdu pdu;
 		TransportEndpoint endpoint = getEndpoint();
 
@@ -103,5 +110,25 @@ public class TransportEndpointSite {
 			multiplexier = _endpoint;
 		
 		return multiplexier;
+	}
+	
+	private void signalOutputProcessRequest() {
+		boolean proceed = false;
+		synchronized(this) {
+			if(_outstandingSignalRequests == 0) {
+				_outstandingSignalRequests++;
+				proceed = true;
+			}
+		}
+		
+		if(proceed)
+			_provider.requestSiteOutput(this);
+	}
+	
+	public void ackOutputProcessSignal() {
+		synchronized(this) {
+			assert(_outstandingSignalRequests == 1);
+			_outstandingSignalRequests--;
+		}
 	}
 }

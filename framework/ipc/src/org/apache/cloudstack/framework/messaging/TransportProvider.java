@@ -22,6 +22,8 @@ public interface TransportProvider {
 	TransportEndpointSite attach(TransportEndpoint endpoint, String predefinedAddress);
 	boolean detach(TransportEndpoint endpoint);
 	
+	void requestSiteOutput(TransportEndpointSite site);
+	
 	void sendMessage(String soureEndpointAddress, String targetEndpointAddress, 
 		String multiplexier, String message);
 }

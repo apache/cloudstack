@@ -38,6 +38,11 @@ public class ClientTransportProvider implements TransportProvider {
 	}
 	
 	@Override
+	public void requestSiteOutput(TransportEndpointSite site) {
+		// ???
+	}
+	
+	@Override
 	public void sendMessage(String soureEndpointAddress, String targetEndpointAddress, 
 		String multiplexier, String message) {
 		// TODO
