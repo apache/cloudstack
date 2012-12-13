@@ -421,12 +421,11 @@ def network_rules_for_rebooted_vm(vmName):
     
     delete_rules_for_vm_in_bridge_firewall_chain(vm_name)
 
-    brName = execute("iptables-save  |grep physdev-is-bridged |grep FORWARD |grep BF |grep '\-o' |awk '{print $9}'").split("\n")
-    if brName is None:
+    brName = execute("iptables-save |grep physdev-is-bridged |grep FORWARD |grep BF |grep '\-o' |awk '{print $9}' | head -1").strip()
+    if brName is None or brName is "":
         brName = "cloudbr0"
     else:
-        brName.pop()
-        brName = re.sub("^BF-", "", brName[0])
+        brName = re.sub("^BF-", "", brName)
 
     if 1 in [ vm_name.startswith(c) for c in ['r-', 's-', 'v-'] ]:
         
