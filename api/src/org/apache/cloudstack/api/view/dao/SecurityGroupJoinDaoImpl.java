@@ -14,19 +14,18 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network.security.dao;
+package org.apache.cloudstack.api.view.dao;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiDBUtils;
-import com.cloud.api.ApiResponseHelper;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.SecurityGroupRuleResponse;
+import org.apache.cloudstack.api.view.DBViewUtils;
+import org.apache.cloudstack.api.view.ViewResponseHelper;
 import org.apache.cloudstack.api.view.vo.ResourceTagJoinVO;
 import org.apache.cloudstack.api.view.vo.SecurityGroupJoinVO;
 import com.cloud.network.security.SecurityGroup;
@@ -64,7 +63,7 @@ public class SecurityGroupJoinDaoImpl extends GenericDaoBase<SecurityGroupJoinVO
         sgResponse.setName(vsg.getName());
         sgResponse.setDescription(vsg.getDescription());
 
-        ApiResponseHelper.populateOwner(sgResponse, vsg);
+        ViewResponseHelper.populateOwner(sgResponse, vsg);
 
         Long rule_id = vsg.getRuleId();
         if (rule_id != null && rule_id.longValue() > 0) {
@@ -103,9 +102,9 @@ public class SecurityGroupJoinDaoImpl extends GenericDaoBase<SecurityGroupJoinVO
         // update tag information
         Long tag_id = vsg.getTagId();
         if (tag_id != null && tag_id.longValue() > 0) {
-            ResourceTagJoinVO vtag = ApiDBUtils.findResourceTagViewById(tag_id);
+            ResourceTagJoinVO vtag = DBViewUtils.findResourceTagViewById(tag_id);
             if ( vtag != null ){
-                sgResponse.addTag(ApiDBUtils.newResourceTagResponse(vtag, false));
+                sgResponse.addTag(DBViewUtils.newResourceTagResponse(vtag, false));
             }
         }
         sgResponse.setObjectName("securitygroup");
@@ -152,9 +151,9 @@ public class SecurityGroupJoinDaoImpl extends GenericDaoBase<SecurityGroupJoinVO
         // update tag information
         Long tag_id = vsg.getTagId();
         if (tag_id != null && tag_id.longValue() > 0 ) {
-            ResourceTagJoinVO vtag = ApiDBUtils.findResourceTagViewById(tag_id);
+            ResourceTagJoinVO vtag = DBViewUtils.findResourceTagViewById(tag_id);
             if ( vtag != null ){
-                vsgData.addTag(ApiDBUtils.newResourceTagResponse(vtag, false));
+                vsgData.addTag(DBViewUtils.newResourceTagResponse(vtag, false));
             }
         }
         return vsgData;

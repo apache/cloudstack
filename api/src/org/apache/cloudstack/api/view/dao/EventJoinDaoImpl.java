@@ -14,17 +14,17 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.event.dao;
+package org.apache.cloudstack.api.view.dao;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiResponseHelper;
+
 import org.apache.cloudstack.api.response.EventResponse;
+import org.apache.cloudstack.api.view.ViewResponseHelper;
 import org.apache.cloudstack.api.view.vo.EventJoinVO;
 import com.cloud.event.Event;
 import com.cloud.event.Event.State;
@@ -94,7 +94,7 @@ public class EventJoinDaoImpl extends GenericDaoBase<EventJoinVO, Long> implemen
         responseEvent.setState(event.getState());
         responseEvent.setUsername(event.getUserName());
 
-        ApiResponseHelper.populateOwner(responseEvent, event);
+        ViewResponseHelper.populateOwner(responseEvent, event);
         responseEvent.setObjectName("event");
         return responseEvent;
     }

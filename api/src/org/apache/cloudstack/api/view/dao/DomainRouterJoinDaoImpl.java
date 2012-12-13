@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.vm.dao;
+package org.apache.cloudstack.api.view.dao;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,9 +23,10 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiResponseHelper;
+
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.NicResponse;
+import org.apache.cloudstack.api.view.ViewResponseHelper;
 import org.apache.cloudstack.api.view.vo.DomainRouterJoinVO;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.router.VirtualRouter;
@@ -132,7 +133,7 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
         routerResponse.setServiceOfferingName(router.getServiceOfferingName());
 
         // populate owner.
-        ApiResponseHelper.populateOwner(routerResponse, router);
+        ViewResponseHelper.populateOwner(routerResponse, router);
 
 
         routerResponse.setDomainId(router.getDomainUuid());

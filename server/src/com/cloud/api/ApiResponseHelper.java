@@ -112,6 +112,7 @@ import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.VpnUsersResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.api.view.DBViewUtils;
 import org.apache.cloudstack.api.view.vo.DomainRouterJoinVO;
 import org.apache.cloudstack.api.view.vo.ControlledViewEntity;
 import org.apache.cloudstack.api.view.vo.EventJoinVO;
@@ -242,8 +243,8 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public UserResponse createUserResponse(User user) {
-        UserAccountJoinVO vUser = ApiDBUtils.newUserView(user);
-        return ApiDBUtils.newUserResponse(vUser);
+        UserAccountJoinVO vUser = DBViewUtils.newUserView(user);
+        return DBViewUtils.newUserResponse(vUser);
     }
 
 
@@ -251,7 +252,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     public List<UserResponse> createUserResponse(UserAccountJoinVO... users) {
         List<UserResponse> respList = new ArrayList<UserResponse>();
         for (UserAccountJoinVO vt : users){
-            respList.add(ApiDBUtils.newUserResponse(vt));
+            respList.add(DBViewUtils.newUserResponse(vt));
         }
         return respList;
     }
@@ -415,8 +416,8 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public UserResponse createUserResponse(UserAccount user) {
-        UserAccountJoinVO vUser = ApiDBUtils.newUserView(user);
-        return ApiDBUtils.newUserResponse(vUser);
+        UserAccountJoinVO vUser = DBViewUtils.newUserView(user);
+        return DBViewUtils.newUserResponse(vUser);
     }
 
     @Override
@@ -1170,8 +1171,8 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public InstanceGroupResponse createInstanceGroupResponse(InstanceGroup group) {
-        InstanceGroupJoinVO vgroup = ApiDBUtils.newInstanceGroupView(group);
-        return ApiDBUtils.newInstanceGroupResponse(vgroup);
+        InstanceGroupJoinVO vgroup = DBViewUtils.newInstanceGroupView(group);
+        return DBViewUtils.newInstanceGroupResponse(vgroup);
 
     }
 
@@ -1181,7 +1182,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     public List<InstanceGroupResponse> createInstanceGroupResponse(InstanceGroupJoinVO... groups) {
         List<InstanceGroupResponse> respList = new ArrayList<InstanceGroupResponse>();
         for (InstanceGroupJoinVO vt : groups){
-            respList.add(ApiDBUtils.newInstanceGroupResponse(vt));
+            respList.add(DBViewUtils.newInstanceGroupResponse(vt));
         }
         return respList;
     }
@@ -1368,14 +1369,14 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public List<UserVmResponse> createUserVmResponse(String objectName, EnumSet<VMDetails> details, UserVm... userVms) {
-        List<UserVmJoinVO> viewVms = ApiDBUtils.newUserVmView(userVms);
+        List<UserVmJoinVO> viewVms = DBViewUtils.newUserVmView(userVms);
         return createUserVmResponse(objectName, details, viewVms.toArray(new UserVmJoinVO[viewVms.size()]));
 
     }
 
     @Override
     public List<UserVmResponse> createUserVmResponse(String objectName, UserVm... userVms) {
-        List<UserVmJoinVO> viewVms = ApiDBUtils.newUserVmView(userVms);
+        List<UserVmJoinVO> viewVms = DBViewUtils.newUserVmView(userVms);
         return createUserVmResponse(objectName, viewVms.toArray(new UserVmJoinVO[viewVms.size()]));
     }
 
@@ -1397,10 +1398,10 @@ public class ApiResponseHelper implements ResponseGenerator {
             UserVmResponse userVmData = vmDataList.get(userVm.getId());
             if ( userVmData == null ){
                 // first time encountering this vm
-                userVmData = ApiDBUtils.newUserVmResponse(objectName, userVm, details, caller);
+                userVmData = DBViewUtils.newUserVmResponse(objectName, userVm, details, caller);
             } else{
                 // update nics, securitygroups, tags for 1 to many mapping fields
-                userVmData = ApiDBUtils.fillVmDetails(userVmData, userVm);
+                userVmData = DBViewUtils.fillVmDetails(userVmData, userVm);
             }
             vmDataList.put(userVm.getId(), userVmData);
         }
@@ -1410,7 +1411,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public DomainRouterResponse createDomainRouterResponse(VirtualRouter router) {
-        List<DomainRouterJoinVO> viewVrs = ApiDBUtils.newDomainRouterView(router);
+        List<DomainRouterJoinVO> viewVrs = DBViewUtils.newDomainRouterView(router);
         List<DomainRouterResponse> listVrs = createDomainRouterResponse(viewVrs.toArray(new DomainRouterJoinVO[viewVrs.size()]));
         assert listVrs != null && listVrs.size() == 1 : "There should be one virtual router returned";
         return listVrs.get(0);
@@ -1425,11 +1426,11 @@ public class ApiResponseHelper implements ResponseGenerator {
             DomainRouterResponse vrData = vrDataList.get(vr.getId());
             if ( vrData == null ){
                 // first time encountering this vm
-                vrData = ApiDBUtils.newDomainRouterResponse(vr, caller);
+                vrData = DBViewUtils.newDomainRouterResponse(vr, caller);
             }
             else{
                 // update nics for 1 to many mapping fields
-                vrData = ApiDBUtils.fillRouterDetails(vrData, vr);
+                vrData = DBViewUtils.fillRouterDetails(vrData, vr);
             }
             vrDataList.put(vr.getId(), vrData);
         }
@@ -2015,11 +2016,11 @@ public class ApiResponseHelper implements ResponseGenerator {
             SecurityGroupResponse vrData = vrDataList.get(vr.getId());
             if ( vrData == null ) {
                 // first time encountering this sg
-                vrData = ApiDBUtils.newSecurityGroupResponse(vr, caller);
+                vrData = DBViewUtils.newSecurityGroupResponse(vr, caller);
 
             } else {
                 // update rules for 1 to many mapping fields
-                vrData = ApiDBUtils.fillSecurityGroupDetails(vrData, vr);
+                vrData = DBViewUtils.fillSecurityGroupDetails(vrData, vr);
             }
             vrDataList.put(vr.getId(), vrData);
         }
@@ -2028,7 +2029,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public SecurityGroupResponse createSecurityGroupResponse(SecurityGroup group) {
-        List<SecurityGroupJoinVO> viewSgs = ApiDBUtils.newSecurityGroupView(group);
+        List<SecurityGroupJoinVO> viewSgs = DBViewUtils.newSecurityGroupView(group);
         List<SecurityGroupResponse> listSgs = createSecurityGroupResponses(viewSgs);
         assert listSgs != null && listSgs.size() == 1 : "There should be one security group returned";
         return listSgs.get(0);
@@ -2121,15 +2122,15 @@ public class ApiResponseHelper implements ResponseGenerator {
     public List<EventResponse> createEventResponse(EventJoinVO... events) {
         List<EventResponse> respList = new ArrayList<EventResponse>();
         for (EventJoinVO vt : events){
-            respList.add(ApiDBUtils.newEventResponse(vt));
+            respList.add(DBViewUtils.newEventResponse(vt));
         }
         return respList;
     }
 
     @Override
     public EventResponse createEventResponse(Event event) {
-        EventJoinVO vEvent = ApiDBUtils.newEventView(event);
-        return ApiDBUtils.newEventResponse(vEvent);
+        EventJoinVO vEvent = DBViewUtils.newEventView(event);
+        return DBViewUtils.newEventResponse(vEvent);
     }
 
     private List<CapacityVO> sumCapacities(List<? extends Capacity> hostCapacities) {
@@ -2383,7 +2384,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         Map<Long, Account> allowedSecuriytGroupAccounts = new HashMap<Long, Account>();
 
         if ((securityRules != null) && !securityRules.isEmpty()) {
-            SecurityGroupJoinVO securityGroup = ApiDBUtils.findSecurityGroupViewById(securityRules.get(0).getSecurityGroupId()).get(0);
+            SecurityGroupJoinVO securityGroup = DBViewUtils.findSecurityGroupViewById(securityRules.get(0).getSecurityGroupId()).get(0);
             response.setId(securityGroup.getUuid());
             response.setName(securityGroup.getName());
             response.setDescription(securityGroup.getDescription());
@@ -2415,7 +2416,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
                 Long allowedSecurityGroupId = securityRule.getAllowedNetworkId();
                 if (allowedSecurityGroupId != null) {
-                    List<SecurityGroupJoinVO> sgs = ApiDBUtils.findSecurityGroupViewById(allowedSecurityGroupId);
+                    List<SecurityGroupJoinVO> sgs = DBViewUtils.findSecurityGroupViewById(allowedSecurityGroupId);
                     if (sgs != null && sgs.size() > 0) {
                         SecurityGroupJoinVO sg = sgs.get(0);
                         securityGroupData.setSecurityGroupName(sg.getName());
@@ -2674,7 +2675,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public ProjectResponse createProjectResponse(Project project) {
-        List<ProjectJoinVO> viewPrjs = ApiDBUtils.newProjectView(project);
+        List<ProjectJoinVO> viewPrjs = DBViewUtils.newProjectView(project);
         List<ProjectResponse> listPrjs = createProjectResponse(viewPrjs.toArray(new ProjectJoinVO[viewPrjs.size()]));
         assert listPrjs != null && listPrjs.size() == 1 : "There should be one project  returned";
         return listPrjs.get(0);
@@ -2689,11 +2690,11 @@ public class ApiResponseHelper implements ResponseGenerator {
             ProjectResponse pData = prjDataList.get(p.getId());
             if ( pData == null ){
                 // first time encountering this vm
-                pData = ApiDBUtils.newProjectResponse(p);
+                pData = DBViewUtils.newProjectResponse(p);
             }
             else{
                 // update those  1 to many mapping fields
-                pData = ApiDBUtils.fillProjectDetails(pData, p);
+                pData = DBViewUtils.fillProjectDetails(pData, p);
             }
             prjDataList.put(p.getId(), pData);
         }
@@ -2852,7 +2853,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public ProjectAccountResponse createProjectAccountResponse(ProjectAccount projectAccount) {
-        ProjectAccountJoinVO vProj = ApiDBUtils.newProjectAccountView(projectAccount);
+        ProjectAccountJoinVO vProj = DBViewUtils.newProjectAccountView(projectAccount);
         List<ProjectAccountResponse> listProjs = createProjectAccountResponse(vProj);
         assert listProjs != null && listProjs.size() == 1 : "There should be one project account returned";
         return listProjs.get(0);
@@ -2863,9 +2864,9 @@ public class ApiResponseHelper implements ResponseGenerator {
     public List<ProjectAccountResponse> createProjectAccountResponse(ProjectAccountJoinVO... projectAccounts) {
         List<ProjectAccountResponse> responseList = new ArrayList<ProjectAccountResponse>();
         for (ProjectAccountJoinVO proj : projectAccounts){
-            ProjectAccountResponse resp = ApiDBUtils.newProjectAccountResponse(proj);
+            ProjectAccountResponse resp = DBViewUtils.newProjectAccountResponse(proj);
             // update user list
-            List<UserAccountJoinVO> users = ApiDBUtils.findUserViewByAccountId(proj.getAccountId());
+            List<UserAccountJoinVO> users = DBViewUtils.findUserViewByAccountId(proj.getAccountId());
             resp.setUsers(createUserResponse(users.toArray(new UserAccountJoinVO[users.size()])));
             responseList.add(resp);
         }
@@ -2874,8 +2875,8 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public ProjectInvitationResponse createProjectInvitationResponse(ProjectInvitation invite) {
-        ProjectInvitationJoinVO vInvite = ApiDBUtils.newProjectInvitationView(invite);
-        return ApiDBUtils.newProjectInvitationResponse(vInvite);
+        ProjectInvitationJoinVO vInvite = DBViewUtils.newProjectInvitationView(invite);
+        return DBViewUtils.newProjectInvitationResponse(vInvite);
     }
 
 
@@ -2884,7 +2885,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     public List<ProjectInvitationResponse> createProjectInvitationResponse(ProjectInvitationJoinVO... invites) {
         List<ProjectInvitationResponse> respList = new ArrayList<ProjectInvitationResponse>();
         for (ProjectInvitationJoinVO v : invites){
-            respList.add(ApiDBUtils.newProjectInvitationResponse(v));
+            respList.add(DBViewUtils.newProjectInvitationResponse(v));
         }
         return respList;
     }
@@ -3121,8 +3122,8 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public ResourceTagResponse createResourceTagResponse(ResourceTag resourceTag, boolean keyValueOnly) {
-        ResourceTagJoinVO rto = ApiDBUtils.newResourceTagView(resourceTag);
-        return ApiDBUtils.newResourceTagResponse(rto, keyValueOnly);
+        ResourceTagJoinVO rto = DBViewUtils.newResourceTagView(resourceTag);
+        return DBViewUtils.newResourceTagResponse(rto, keyValueOnly);
     }
 
 
@@ -3130,7 +3131,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     public List<ResourceTagResponse> createResourceTagResponse(boolean keyValueOnly, ResourceTagJoinVO... tags) {
         List<ResourceTagResponse> respList = new ArrayList<ResourceTagResponse>();
         for (ResourceTagJoinVO vt : tags){
-            respList.add(ApiDBUtils.newResourceTagResponse(vt, keyValueOnly));
+            respList.add(DBViewUtils.newResourceTagResponse(vt, keyValueOnly));
         }
         return respList;
     }

@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.projects.dao;
+package org.apache.cloudstack.api.view.dao;
 
 import java.util.List;
 
@@ -25,9 +25,8 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.response.ProjectInvitationResponse;
 import org.apache.cloudstack.api.view.vo.ProjectInvitationJoinVO;
 
-import com.cloud.api.ApiDBUtils;
+
 import com.cloud.projects.ProjectInvitation;
-import com.cloud.user.Account;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;

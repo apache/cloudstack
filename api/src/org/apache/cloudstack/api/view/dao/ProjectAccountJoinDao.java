@@ -14,27 +14,20 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.user.dao;
+package org.apache.cloudstack.api.view.dao;
 
 import java.util.List;
 
-import org.apache.cloudstack.api.response.UserResponse;
-import org.apache.cloudstack.api.view.vo.UserAccountJoinVO;
-
-import com.cloud.user.User;
-import com.cloud.user.UserAccount;
+import org.apache.cloudstack.api.response.ProjectAccountResponse;
+import org.apache.cloudstack.api.view.vo.ProjectAccountJoinVO;
+import com.cloud.projects.ProjectAccount;
 import com.cloud.utils.db.GenericDao;
 
-public interface UserAccountJoinDao extends GenericDao<UserAccountJoinVO, Long> {
+public interface ProjectAccountJoinDao extends GenericDao<ProjectAccountJoinVO, Long> {
 
-    UserResponse newUserResponse(UserAccountJoinVO usr);
+    ProjectAccountResponse newProjectAccountResponse(ProjectAccountJoinVO proj);
 
-    UserAccountJoinVO newUserView(User usr);
+    ProjectAccountJoinVO newProjectAccountView(ProjectAccount proj);
 
-    UserAccountJoinVO newUserView(UserAccount usr);
-
-    List<UserAccountJoinVO> searchByIds(Long... ids);
-
-    List<UserAccountJoinVO> searchByAccountId(Long accountId);
 
 }

@@ -14,20 +14,23 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.tags.dao;
+package org.apache.cloudstack.api.view.dao;
 
 import java.util.List;
 
-import org.apache.cloudstack.api.response.ResourceTagResponse;
-import org.apache.cloudstack.api.view.vo.ResourceTagJoinVO;
-import com.cloud.server.ResourceTag;
+import org.apache.cloudstack.api.response.DomainRouterResponse;
+import org.apache.cloudstack.api.view.vo.DomainRouterJoinVO;
+import com.cloud.network.router.VirtualRouter;
+import com.cloud.user.Account;
 import com.cloud.utils.db.GenericDao;
 
-public interface ResourceTagJoinDao extends GenericDao<ResourceTagJoinVO, Long> {
+public interface DomainRouterJoinDao extends GenericDao<DomainRouterJoinVO, Long> {
 
-    ResourceTagResponse newResourceTagResponse(ResourceTagJoinVO uvo, boolean keyValueOnly );
+    DomainRouterResponse newDomainRouterResponse(DomainRouterJoinVO uvo, Account caller);
 
-    ResourceTagJoinVO newResourceTagView(ResourceTag vr);
+    DomainRouterResponse setDomainRouterResponse(DomainRouterResponse userVmData, DomainRouterJoinVO uvo);
 
-    List<ResourceTagJoinVO> searchByIds(Long... ids);
+    List<DomainRouterJoinVO> newDomainRouterView(VirtualRouter vr);
+
+    List<DomainRouterJoinVO> searchByIds(Long... ids);
 }

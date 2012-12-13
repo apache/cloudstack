@@ -14,20 +14,26 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.projects.dao;
+package org.apache.cloudstack.api.view.dao;
 
 import java.util.List;
 
-import org.apache.cloudstack.api.response.ProjectAccountResponse;
-import org.apache.cloudstack.api.view.vo.ProjectAccountJoinVO;
-import com.cloud.projects.ProjectAccount;
+import org.apache.cloudstack.api.response.EventResponse;
+import org.apache.cloudstack.api.view.vo.EventJoinVO;
+import com.cloud.event.Event;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.db.SearchCriteria;
 
-public interface ProjectAccountJoinDao extends GenericDao<ProjectAccountJoinVO, Long> {
+public interface EventJoinDao extends GenericDao<EventJoinVO, Long> {
 
-    ProjectAccountResponse newProjectAccountResponse(ProjectAccountJoinVO proj);
+    EventResponse newEventResponse(EventJoinVO uvo);
 
-    ProjectAccountJoinVO newProjectAccountView(ProjectAccount proj);
+    EventJoinVO newEventView(Event vr);
 
+    List<EventJoinVO> searchByIds(Long... ids);
 
+    List<EventJoinVO> searchAllEvents(SearchCriteria<EventJoinVO> sc, Filter filter);
+
+    EventJoinVO findCompletedEvent(long startId);
 }

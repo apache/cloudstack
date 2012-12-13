@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.vm.dao;
+package org.apache.cloudstack.api.view.dao;
 
 import java.util.List;
 
@@ -22,8 +22,8 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiResponseHelper;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
+import org.apache.cloudstack.api.view.ViewResponseHelper;
 import org.apache.cloudstack.api.view.vo.InstanceGroupJoinVO;
 
 import com.cloud.utils.db.GenericDaoBase;
@@ -63,7 +63,7 @@ public class InstanceGroupJoinDaoImpl extends GenericDaoBase<InstanceGroupJoinVO
         groupResponse.setName(group.getName());
         groupResponse.setCreated(group.getCreated());
 
-        ApiResponseHelper.populateOwner(groupResponse, group);
+        ViewResponseHelper.populateOwner(groupResponse, group);
 
         groupResponse.setObjectName("instancegroup");
         return groupResponse;

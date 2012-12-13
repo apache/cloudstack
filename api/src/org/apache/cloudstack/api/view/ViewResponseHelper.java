@@ -14,25 +14,30 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.vm.dao;
+package org.apache.cloudstack.api.view;
 
-import java.util.EnumSet;
-import java.util.List;
+import org.apache.cloudstack.api.response.ControlledViewEntityResponse;
+import org.apache.cloudstack.api.view.vo.ControlledViewEntity;
 
-import org.apache.cloudstack.api.ApiConstants.VMDetails;
-import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.api.view.vo.UserVmJoinVO;
 import com.cloud.user.Account;
-import com.cloud.uservm.UserVm;
-import com.cloud.utils.db.GenericDao;
 
-public interface UserVmJoinDao extends GenericDao<UserVmJoinVO, Long> {
+/**
+ * Some helper routine in generating response from db view.
+ * @author minc
+ *
+ */
+public class ViewResponseHelper {
 
-    UserVmResponse newUserVmResponse(String objectName, UserVmJoinVO userVm, EnumSet<VMDetails> details, Account caller);
+    public static void populateOwner(ControlledViewEntityResponse response, ControlledViewEntity object) {
 
-    UserVmResponse setUserVmResponse(UserVmResponse userVmData, UserVmJoinVO uvo);
+        if (object.getAccountType() == Account.ACCOUNT_TYPE_PROJECT) {
+            response.setProjectId(object.getProjectUuid());
+            response.setProjectName(object.getProjectName());
+        } else {
+            response.setAccountName(object.getAccountName());
+        }
 
-    List<UserVmJoinVO> newUserVmView(UserVm... userVms);
-
-    List<UserVmJoinVO> searchByIds(Long... ids);
+        response.setDomainId(object.getDomainUuid());
+        response.setDomainName(object.getDomainName());
+    }
 }

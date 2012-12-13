@@ -23,6 +23,7 @@ import javax.naming.ConfigurationException;
 
 import junit.framework.TestCase;
 
+import org.apache.cloudstack.api.view.dao.SecurityGroupJoinDaoImpl;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -34,7 +35,6 @@ import com.cloud.domain.dao.DomainDaoImpl;
 import com.cloud.event.dao.UsageEventDaoImpl;
 import com.cloud.network.MockNetworkManagerImpl;
 import com.cloud.network.security.dao.SecurityGroupDaoImpl;
-import com.cloud.network.security.dao.SecurityGroupJoinDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupRuleDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupRulesDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupVMMapDaoImpl;

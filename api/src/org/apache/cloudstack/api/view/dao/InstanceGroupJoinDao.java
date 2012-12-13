@@ -14,24 +14,22 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network.security.dao;
+package org.apache.cloudstack.api.view.dao;
 
 import java.util.List;
 
-import org.apache.cloudstack.api.response.SecurityGroupResponse;
-import org.apache.cloudstack.api.view.vo.SecurityGroupJoinVO;
-import com.cloud.network.security.SecurityGroup;
-import com.cloud.user.Account;
+import org.apache.cloudstack.api.response.InstanceGroupResponse;
+import org.apache.cloudstack.api.view.vo.InstanceGroupJoinVO;
+
 import com.cloud.utils.db.GenericDao;
+import com.cloud.vm.InstanceGroup;
 
-public interface SecurityGroupJoinDao extends GenericDao<SecurityGroupJoinVO, Long> {
+public interface InstanceGroupJoinDao extends GenericDao<InstanceGroupJoinVO, Long> {
 
-    SecurityGroupResponse newSecurityGroupResponse(SecurityGroupJoinVO vsg, Account caller);
+    InstanceGroupResponse newInstanceGroupResponse(InstanceGroupJoinVO group);
 
-    SecurityGroupResponse setSecurityGroupResponse(SecurityGroupResponse vsgData, SecurityGroupJoinVO vsg);
+    InstanceGroupJoinVO newInstanceGroupView(InstanceGroup group);
 
-    List<SecurityGroupJoinVO> newSecurityGroupView(SecurityGroup sg);
+    List<InstanceGroupJoinVO> searchByIds(Long... ids);
 
-    List<SecurityGroupJoinVO> searchByIds(Long... ids);
 }
-

@@ -14,26 +14,23 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.event.dao;
+package org.apache.cloudstack.api.view.dao;
 
 import java.util.List;
 
-import org.apache.cloudstack.api.response.EventResponse;
-import org.apache.cloudstack.api.view.vo.EventJoinVO;
-import com.cloud.event.Event;
-import com.cloud.utils.db.Filter;
+import org.apache.cloudstack.api.response.SecurityGroupResponse;
+import org.apache.cloudstack.api.view.vo.SecurityGroupJoinVO;
+import com.cloud.network.security.SecurityGroup;
+import com.cloud.user.Account;
 import com.cloud.utils.db.GenericDao;
-import com.cloud.utils.db.SearchCriteria;
 
-public interface EventJoinDao extends GenericDao<EventJoinVO, Long> {
+public interface SecurityGroupJoinDao extends GenericDao<SecurityGroupJoinVO, Long> {
 
-    EventResponse newEventResponse(EventJoinVO uvo);
+    SecurityGroupResponse newSecurityGroupResponse(SecurityGroupJoinVO vsg, Account caller);
 
-    EventJoinVO newEventView(Event vr);
+    SecurityGroupResponse setSecurityGroupResponse(SecurityGroupResponse vsgData, SecurityGroupJoinVO vsg);
 
-    List<EventJoinVO> searchByIds(Long... ids);
+    List<SecurityGroupJoinVO> newSecurityGroupView(SecurityGroup sg);
 
-    List<EventJoinVO> searchAllEvents(SearchCriteria<EventJoinVO> sc, Filter filter);
-
-    EventJoinVO findCompletedEvent(long startId);
+    List<SecurityGroupJoinVO> searchByIds(Long... ids);
 }
