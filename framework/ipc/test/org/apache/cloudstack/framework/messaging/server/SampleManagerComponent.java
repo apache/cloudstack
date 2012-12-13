@@ -18,26 +18,35 @@
  */
 package org.apache.cloudstack.framework.messaging.server;
 
+import java.util.Timer;
+import java.util.TimerTask;
+
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.framework.messaging.EventBus;
 import org.apache.cloudstack.framework.messaging.EventDispatcher;
 import org.apache.cloudstack.framework.messaging.EventHandler;
+import org.apache.cloudstack.framework.messaging.RpcCallbackListener;
+import org.apache.cloudstack.framework.messaging.RpcException;
 import org.apache.cloudstack.framework.messaging.RpcProvider;
 import org.apache.cloudstack.framework.messaging.RpcServerCall;
 import org.apache.cloudstack.framework.messaging.RpcServiceDispatcher;
 import org.apache.cloudstack.framework.messaging.RpcServiceHandler;
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 @Component
 public class SampleManagerComponent {
+    private static final Logger s_logger = Logger.getLogger(SampleManagerComponent.class);
 	
 	@Inject
 	private EventBus _eventBus;
  	
 	@Inject
 	private RpcProvider _rpcProvider;
+	
+	private Timer _timer = new Timer();
 	
 	public SampleManagerComponent() {
 	}
@@ -50,6 +59,12 @@ public class SampleManagerComponent {
 		// subscribe to all network events (for example)
 		_eventBus.subscribe("network", 
 			EventDispatcher.getDispatcher(this));
+		
+		_timer.schedule(new TimerTask() {
+				public void run() {
+					testRpc();
+				}
+			}, 3000);
 	}
 	
 	@RpcServiceHandler(command="NetworkPrepare")
@@ -59,5 +74,25 @@ public class SampleManagerComponent {
 	
 	@EventHandler(topic="network.prepare")
 	void onPrepareNetwork(String sender, String topic, Object args) {
+	}
+	
+	void testRpc() {
+		SampleStoragePrepareCommand cmd = new SampleStoragePrepareCommand();
+		cmd.setStoragePool("Pool1");
+		cmd.setVolumeId("vol1");
+		
+		_rpcProvider.newCall()
+			.setCommand("StoragePrepare").setCommandArg(cmd).setTimeout(10000)
+			.addCallbackListener(new RpcCallbackListener<SampleStoragePrepareAnswer>() {
+				@Override
+				public void onSuccess(SampleStoragePrepareAnswer result) {
+					s_logger.info("StoragePrepare return result: " + result.getResult());
+				}
+
+				@Override
+				public void onFailure(RpcException e) {
+					s_logger.info("StoragePrepare failed");
+				}
+			}).apply();
 	}
 }

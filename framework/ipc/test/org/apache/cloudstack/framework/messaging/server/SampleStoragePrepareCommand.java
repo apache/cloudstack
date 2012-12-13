@@ -18,17 +18,30 @@
  */
 package org.apache.cloudstack.framework.messaging.server;
 
-import org.springframework.stereotype.Component;
+import org.apache.cloudstack.framework.messaging.OnwireName;
 
-@Component
-public class SampleManagementServer {
+@OnwireName(name="SampleStoragePrepareCommand")
+public class SampleStoragePrepareCommand {
 
-	public void mainLoop() {
-		while(true) {
-			try {
-				Thread.sleep(1000);
-			} catch (InterruptedException e) {
-			}
-		}
+	String storagePool;
+	String volumeId;
+	
+	public SampleStoragePrepareCommand() {
+	}
+	
+	public String getStoragePool() {
+		return storagePool;
+	}
+
+	public void setStoragePool(String storagePool) {
+		this.storagePool = storagePool;
+	}
+
+	public String getVolumeId() {
+		return volumeId;
+	}
+
+	public void setVolumeId(String volumeId) {
+		this.volumeId = volumeId;
 	}
 }

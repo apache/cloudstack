@@ -28,10 +28,13 @@ import org.apache.cloudstack.framework.messaging.RpcProvider;
 import org.apache.cloudstack.framework.messaging.RpcServerCall;
 import org.apache.cloudstack.framework.messaging.RpcServiceDispatcher;
 import org.apache.cloudstack.framework.messaging.RpcServiceHandler;
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 @Component
 public class SampleManagerComponent2 {
+    private static final Logger s_logger = Logger.getLogger(SampleManagerComponent2.class);
+	
 	@Inject
 	private EventBus _eventBus;
 
@@ -53,7 +56,13 @@ public class SampleManagerComponent2 {
 	
 	@RpcServiceHandler(command="StoragePrepare")
 	void onStartCommand(RpcServerCall call) {
-		call.completeCall("StoragePrepare completed");
+		s_logger.info("Reevieved StoragePrpare call");
+		SampleStoragePrepareCommand cmd = call.getCommandArgument();
+		
+		s_logger.info("StoragePrepare command arg. pool: " + cmd.getStoragePool() + ", vol: " + cmd.getVolumeId());
+		SampleStoragePrepareAnswer answer = new SampleStoragePrepareAnswer();
+		
+		call.completeCall(answer);
 	}
 	
 	@EventHandler(topic="storage.prepare")

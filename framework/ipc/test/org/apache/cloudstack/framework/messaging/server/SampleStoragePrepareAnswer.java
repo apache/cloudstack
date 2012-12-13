@@ -18,17 +18,20 @@
  */
 package org.apache.cloudstack.framework.messaging.server;
 
-import org.springframework.stereotype.Component;
+import org.apache.cloudstack.framework.messaging.OnwireName;
 
-@Component
-public class SampleManagementServer {
+@OnwireName(name="SampleStoragePrepareAnswer")
+public class SampleStoragePrepareAnswer {
+	String result;
+	
+	public SampleStoragePrepareAnswer() {
+	}
 
-	public void mainLoop() {
-		while(true) {
-			try {
-				Thread.sleep(1000);
-			} catch (InterruptedException e) {
-			}
-		}
+	public String getResult() {
+		return result;
+	}
+
+	public void setResult(String result) {
+		this.result = result;
 	}
 }
