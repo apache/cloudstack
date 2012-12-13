@@ -205,10 +205,16 @@ class VirtualMachine:
         self.__dict__.update(items)
         if "username" in services:
             self.username = services["username"]
+        else:
+            self.username = 'root'
         if "password" in services:
             self.password = services["password"]
+        else:
+            self.password = 'password'
         if "ssh_port" in services:
             self.ssh_port = services["ssh_port"]
+        else:
+            self.ssh_port = 22
         self.ssh_client = None
         #extract out the ipaddress
         self.ipaddress = self.nic[0].ipaddress
