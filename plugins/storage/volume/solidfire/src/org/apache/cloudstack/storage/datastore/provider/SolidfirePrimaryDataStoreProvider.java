@@ -1,10 +1,14 @@
 package org.apache.cloudstack.storage.datastore.provider;
 
+import java.util.List;
+
 import org.apache.cloudstack.storage.datastore.DefaultPrimaryDataStore;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
+import org.apache.cloudstack.storage.datastore.configurator.PrimaryDataStoreConfigurator;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreVO;
 import org.apache.cloudstack.storage.datastore.driver.SolidfirePrimaryDataStoreDriver;
 import org.apache.cloudstack.storage.datastore.lifecycle.DefaultPrimaryDataStoreLifeCycleImpl;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -13,8 +17,8 @@ public class SolidfirePrimaryDataStoreProvider extends
 	private final String name = "Solidfre Primary Data Store Provider";
 
 
-	public SolidfirePrimaryDataStoreProvider() {
-	    super();
+	public SolidfirePrimaryDataStoreProvider(@Qualifier("solidfire") List<PrimaryDataStoreConfigurator> configurators) {
+	    super(configurators);
 		
 		// TODO Auto-generated constructor stub
 	}
@@ -35,7 +39,7 @@ public class SolidfirePrimaryDataStoreProvider extends
         SolidfirePrimaryDataStoreDriver driver = new SolidfirePrimaryDataStoreDriver();
         pds.setDriver(driver);
         
-        DefaultPrimaryDataStoreLifeCycleImpl lifeCycle = new DefaultPrimaryDataStoreLifeCycleImpl(super.dataStoreDao, pds);
+        DefaultPrimaryDataStoreLifeCycleImpl lifeCycle = new DefaultPrimaryDataStoreLifeCycleImpl(dataStoreDao);
         pds.setLifeCycle(lifeCycle);
         return pds;
 	}

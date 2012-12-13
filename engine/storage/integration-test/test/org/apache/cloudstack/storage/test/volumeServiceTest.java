@@ -231,13 +231,13 @@ public class volumeServiceTest {
 		try {
 			primaryDataStoreProviderMgr.configure("primary data store mgr", new HashMap<String, Object>());
 			PrimaryDataStoreProvider provider = primaryDataStoreProviderMgr.getDataStoreProvider("default primary data store provider");
-			PrimaryDataStoreLifeCycle lifeCycle = provider.getDataStoreLifeCycle();
+
 			Map<String, String> params = new HashMap<String, String>();
 			params.put("url", "nfs://test/test");
 			params.put("dcId", dcId.toString());
 			params.put("clusterId", clusterId.toString());
 			params.put("name", "my primary data store");
-			PrimaryDataStoreInfo primaryDataStoreInfo = lifeCycle.registerDataStore(params);
+			PrimaryDataStoreInfo primaryDataStoreInfo = provider.registerDataStore(params);
 			return primaryDataStoreInfo;
 		} catch (ConfigurationException e) {
 			return null;
@@ -293,7 +293,7 @@ public class volumeServiceTest {
 		DefaultPrimaryDatastoreProviderImpl provider = ComponentInject.inject(DefaultPrimaryDatastoreProviderImpl.class);
 		//assertNotNull(provider.dataStoreDao);
 
-		DefaultPrimaryDataStore dpdsi = DefaultPrimaryDataStore.createDataStore(null, null, null);
+		DefaultPrimaryDataStore dpdsi = DefaultPrimaryDataStore.createDataStore(null);
 		//assertNotNull(dpdsi.volumeDao);
 	}
 
