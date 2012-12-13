@@ -42,6 +42,7 @@ public class OnwireClassRegistry {
 	private Map<String, Class<?>> registry =  new HashMap<String, Class<?>>();
 
 	public OnwireClassRegistry() {
+		registry.put("Object", Object.class);
 	}
 	
 	public OnwireClassRegistry(String packageName) {

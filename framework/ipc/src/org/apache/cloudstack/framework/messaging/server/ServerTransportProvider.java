@@ -24,6 +24,7 @@ import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.apache.cloudstack.framework.messaging.MessageSerializer;
 import org.apache.cloudstack.framework.messaging.TransportAddress;
 import org.apache.cloudstack.framework.messaging.TransportDataPdu;
 import org.apache.cloudstack.framework.messaging.TransportEndpoint;
@@ -46,6 +47,8 @@ public class ServerTransportProvider implements TransportProvider {
 	private ExecutorService _executor;
 	
 	private int _nextEndpointId = new Random().nextInt();
+
+	private MessageSerializer _messageSerializer;
 	
 	public ServerTransportProvider() {
 	}
@@ -68,6 +71,17 @@ public class ServerTransportProvider implements TransportProvider {
 		
 		_poolSize = poolSize;
 		return this;
+	}
+	
+	@Override
+	public void setMessageSerializer(MessageSerializer messageSerializer) {
+		assert(messageSerializer != null);
+		_messageSerializer = messageSerializer;
+	}
+
+	@Override
+	public MessageSerializer getMessageSerializer() {
+		return _messageSerializer;
 	}
 	
 	public void initialize() {

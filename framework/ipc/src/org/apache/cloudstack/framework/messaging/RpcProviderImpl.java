@@ -30,7 +30,7 @@ public class RpcProviderImpl implements RpcProvider {
 	private String _transportAddress;
 	private RpcTransportEndpoint _transportEndpoint = new RpcTransportEndpoint();	// transport attachment at RPC layer
 	
-	private MessageSerializer _messageSerializer = new JsonMessageSerializer();		// default message serializer
+	private MessageSerializer _messageSerializer;
 	private List<RpcServiceEndpoint> _serviceEndpoints = new ArrayList<RpcServiceEndpoint>();
 	private Map<Long, RpcClientCall> _outstandingCalls = new HashMap<Long, RpcClientCall>();
 	
@@ -103,6 +103,11 @@ public class RpcProviderImpl implements RpcProvider {
 	}
 	
 	@Override
+	public RpcClientCall newCall() {
+		return newCall(TransportAddress.getLocalPredefinedTransportAddress("RpcProvider").toString());
+	}
+	
+	@Override
 	public RpcClientCall newCall(String targetAddress) {
 
 		long callTag = getNextCallTag();
@@ -110,22 +115,6 @@ public class RpcProviderImpl implements RpcProvider {
 		call.setSourceAddress(_transportAddress);
 		call.setTargetAddress(targetAddress);
 		call.setCallTag(callTag);
-		
-		RpcCallRequestPdu pdu = new RpcCallRequestPdu();
-		pdu.setCommand(call.getCommand());
-		pdu.setRequestTag(callTag);
-		pdu.setRequestStartTick(System.currentTimeMillis());
-		
-		String serializedCmdArg;
-		if(call.getCommandArg() != null)
-			serializedCmdArg = _messageSerializer.serializeTo(call.getCommandArg().getClass(), call.getCommandArg());
-		else
-			serializedCmdArg = _messageSerializer.serializeTo(Object.class, null);
-		pdu.setSerializedCommandArg(serializedCmdArg);
-		
-		String serializedPdu = _messageSerializer.serializeTo(RpcCallRequestPdu.class, pdu);
-		_transportProvider.sendMessage(_transportAddress, targetAddress, RPC_MULTIPLEXIER, 
-			serializedPdu);
 		
 		return call;
 	}

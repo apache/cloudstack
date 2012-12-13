@@ -16,15 +16,6 @@
   <context:annotation-config />
   <context:component-scan base-package="org.apache.cloudstack, com.cloud" />
 
-  <bean id="transportProvider" class="org.apache.cloudstack.framework.messaging.server.ServerTransportProvider"  init-method="initialize">
-    <property name="workerPoolSize" value="5" />
-    <property name="nodeId" value="Node1" />
-  </bean>
-  <bean id="rpcProvider" class="org.apache.cloudstack.framework.messaging.RpcProviderImpl" init-method="initialize">
-    <constructor-arg ref="transportProvider" />
-  </bean>
-
-  <bean id="eventBus" class = "org.apache.cloudstack.framework.messaging.EventBusBase" />
   <bean id="onwireRegistry" class="org.apache.cloudstack.framework.messaging.OnwireClassRegistry"
     init-method="scan" >
     <property name="packages">
@@ -33,5 +24,22 @@
       </list>
     </property>
   </bean>
+  
+  <bean id="messageSerializer" class="org.apache.cloudstack.framework.messaging.JsonMessageSerializer">
+    <property name="onwireClassRegistry" ref="onwireRegistry" />
+  </bean>
+
+  <bean id="transportProvider" class="org.apache.cloudstack.framework.messaging.server.ServerTransportProvider"  init-method="initialize">
+    <property name="workerPoolSize" value="5" />
+    <property name="nodeId" value="Node1" />
+    <property name="messageSerializer" ref="messageSerializer" />
+  </bean>
+  
+  <bean id="rpcProvider" class="org.apache.cloudstack.framework.messaging.RpcProviderImpl" init-method="initialize">
+    <constructor-arg ref="transportProvider" />
+    <property name="messageSerializer" ref="messageSerializer" />
+  </bean>
+
+  <bean id="eventBus" class = "org.apache.cloudstack.framework.messaging.EventBusBase" />
   
 </beans>

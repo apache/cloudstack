@@ -19,6 +19,9 @@
 package org.apache.cloudstack.framework.messaging;
 
 public interface TransportProvider {
+	void setMessageSerializer(MessageSerializer messageSerializer);
+	MessageSerializer getMessageSerializer();
+
 	TransportEndpointSite attach(TransportEndpoint endpoint, String predefinedAddress);
 	boolean detach(TransportEndpoint endpoint);
 	

@@ -19,16 +19,20 @@
 package org.apache.cloudstack.framework.messaging;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 public class JsonMessageSerializer implements MessageSerializer {
 
 	// this will be injected from external to allow installation of
-	// type adapters need by upper layer applications
+	// type adapters needed by upper layer applications
 	private Gson _gson;
 	
 	private OnwireClassRegistry _clzRegistry; 
 	
 	public JsonMessageSerializer() {
+        GsonBuilder gsonBuilder = new GsonBuilder();
+        gsonBuilder.setVersion(1.5);
+        _gson = gsonBuilder.create();
 	}
 	
 	public Gson getGson() {
