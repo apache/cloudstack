@@ -32,20 +32,32 @@ import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
-import org.springframework.stereotype.Component;
-
 //
 // Finding classes in a given package code is taken and modified from 
 // Credit: http://internna.blogspot.com/2007/11/java-5-retrieving-all-classes-from.html
 //
-
-@Component
 public class OnwireClassRegistry {
 	
 	private List<String> packages = new ArrayList<String>();
 	private Map<String, Class<?>> registry =  new HashMap<String, Class<?>>();
 
 	public OnwireClassRegistry() {
+	}
+	
+	public OnwireClassRegistry(String packageName) {
+		addPackage(packageName);
+	}
+	
+	public OnwireClassRegistry(List<String> packages) {
+		packages.addAll(packages);
+	}
+	
+	public List<String> getPackages() {
+		return packages;
+	}
+	
+	public void setPackages(List<String> packages) {
+		this.packages = packages;
 	}
 	
 	public void addPackage(String packageName) {
@@ -60,9 +72,11 @@ public class OnwireClassRegistry {
 		
 		for(Class<?> clz : classes) {
 			OnwireName onwire = clz.getAnnotation(OnwireName.class);
-			assert(onwire.name() != null);
-			
-			registry.put(onwire.name(), clz);
+			if(onwire != null) {
+				assert(onwire.name() != null);
+				
+				registry.put(onwire.name(), clz);
+			}
 		}
 	}
 	

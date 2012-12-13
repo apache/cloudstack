@@ -39,6 +39,10 @@ public class RpcProviderImpl implements RpcProvider {
 	public RpcProviderImpl() {
 	}
 	
+	public RpcProviderImpl(TransportProvider transportProvider) {
+		_transportProvider = transportProvider;
+	}
+	
 	public TransportProvider getTransportProvider() {
 		return _transportProvider;
 	}

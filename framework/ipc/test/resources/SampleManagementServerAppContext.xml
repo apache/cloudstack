@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+  xmlns:context="http://www.springframework.org/schema/context"
+  xmlns:tx="http://www.springframework.org/schema/tx" 
+  xmlns:aop="http://www.springframework.org/schema/aop"
+  xsi:schemaLocation="http://www.springframework.org/schema/beans
+                      http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+                      http://www.springframework.org/schema/tx 
+                      http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+                      http://www.springframework.org/schema/aop
+                      http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+                      http://www.springframework.org/schema/context
+                      http://www.springframework.org/schema/context/spring-context-3.0.xsd">                     
+  <context:annotation-config />
+  <context:component-scan base-package="org.apache.cloudstack, com.cloud" />
+
+  <bean id="transportProvider" class="org.apache.cloudstack.framework.messaging.server.ServerTransportProvider"  init-method="initialize">
+    <property name="workerPoolSize" value="5" />
+    <property name="nodeId" value="Node1" />
+  </bean>
+  <bean id="rpcProvider" class="org.apache.cloudstack.framework.messaging.RpcProviderImpl" init-method="initialize">
+    <constructor-arg ref="transportProvider" />
+  </bean>
+
+  <bean id="eventBus" class = "org.apache.cloudstack.framework.messaging.EventBusBase" />
+  <bean id="onwireRegistry" class="org.apache.cloudstack.framework.messaging.OnwireClassRegistry"
+    init-method="scan" >
+    <property name="packages">
+      <list>
+        <value>org.apache.cloudstack.framework.messaging</value>
+      </list>
+    </property>
+  </bean>
+  
+</beans>
