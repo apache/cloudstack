@@ -586,7 +586,7 @@ public class ApiServer implements HttpRequestHandler {
             return;
         }
         auditTrailSb.append(" " + HttpServletResponse.SC_OK + " ");
-        if (command.equals("createSSHKeyPair")){
+        if (command.equals("createSSHKeyPair") || command.equals("deployVirtualMachine") || command.equals("resetPasswordForVirtualMachine")){
             auditTrailSb.append("This result was not logged because it contains sensitive data.");
         } else {
             auditTrailSb.append(result);
