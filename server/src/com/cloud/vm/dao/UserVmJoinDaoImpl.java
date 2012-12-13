@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api.view.dao;
+package com.cloud.vm.dao;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -26,12 +26,11 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
-//import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiDBUtils;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.api.view.DBViewUtils;
 import org.apache.cloudstack.api.view.vo.ResourceTagJoinVO;
 import org.apache.cloudstack.api.view.vo.UserVmJoinVO;
 import com.cloud.user.Account;
@@ -132,8 +131,6 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
         userVmResponse.setPublicIp(userVm.getPublicIpAddress());
         userVmResponse.setKeyPairName(userVm.getKeypairName());
 
-        /*TODO: we need to invoke cloud-engine API to get Vm statistics or StatsConnector needs
-         * to put them into DB tables
         if (details.contains(VMDetails.all) || details.contains(VMDetails.stats)) {
             DecimalFormat decimalFormat = new DecimalFormat("#.##");
             // stats calculation
@@ -151,7 +148,6 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
                 userVmResponse.setNetworkKbsWrite(networkKbWrite.longValue());
             }
         }
-        */
 
         if (details.contains(VMDetails.all) || details.contains(VMDetails.secgrp)) {
             Long securityGroupId = userVm.getSecurityGroupId();
@@ -202,9 +198,9 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
         // update tag information
         long tag_id = userVm.getTagId();
         if (tag_id > 0) {
-            ResourceTagJoinVO vtag = DBViewUtils.findResourceTagViewById(tag_id);
+            ResourceTagJoinVO vtag = ApiDBUtils.findResourceTagViewById(tag_id);
             if ( vtag != null ){
-                userVmResponse.addTag(DBViewUtils.newResourceTagResponse(vtag, false));
+                userVmResponse.addTag(ApiDBUtils.newResourceTagResponse(vtag, false));
             }
         }
         userVmResponse.setObjectName(objectName);
@@ -257,9 +253,9 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
 
         long tag_id = uvo.getTagId();
         if (tag_id > 0) {
-            ResourceTagJoinVO vtag = DBViewUtils.findResourceTagViewById(tag_id);
+            ResourceTagJoinVO vtag = ApiDBUtils.findResourceTagViewById(tag_id);
             if ( vtag != null ){
-                userVmData.addTag(DBViewUtils.newResourceTagResponse(vtag, false));
+                userVmData.addTag(ApiDBUtils.newResourceTagResponse(vtag, false));
             }
         }
         return userVmData;

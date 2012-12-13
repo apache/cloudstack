@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api.view.dao;
+package com.cloud.projects.dao;
 
 import java.util.List;
 
@@ -22,9 +22,8 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
-
+import com.cloud.api.ApiDBUtils;
 import org.apache.cloudstack.api.response.ProjectResponse;
-import org.apache.cloudstack.api.view.DBViewUtils;
 import org.apache.cloudstack.api.view.vo.ProjectJoinVO;
 import org.apache.cloudstack.api.view.vo.ResourceTagJoinVO;
 import com.cloud.projects.Project;
@@ -69,9 +68,9 @@ public class ProjectJoinDaoImpl extends GenericDaoBase<ProjectJoinVO, Long> impl
         // update tag information
         Long tag_id = proj.getTagId();
         if (tag_id != null && tag_id.longValue() > 0) {
-            ResourceTagJoinVO vtag = DBViewUtils.findResourceTagViewById(tag_id);
+            ResourceTagJoinVO vtag = ApiDBUtils.findResourceTagViewById(tag_id);
             if ( vtag != null ){
-                response.addTag(DBViewUtils.newResourceTagResponse(vtag, false));
+                response.addTag(ApiDBUtils.newResourceTagResponse(vtag, false));
             }
         }
 
@@ -84,9 +83,9 @@ public class ProjectJoinDaoImpl extends GenericDaoBase<ProjectJoinVO, Long> impl
         // update tag information
         Long tag_id = proj.getTagId();
         if (tag_id != null && tag_id.longValue() > 0) {
-            ResourceTagJoinVO vtag = DBViewUtils.findResourceTagViewById(tag_id);
+            ResourceTagJoinVO vtag = ApiDBUtils.findResourceTagViewById(tag_id);
             if ( vtag != null ){
-                rsp.addTag(DBViewUtils.newResourceTagResponse(vtag, false));
+                rsp.addTag(ApiDBUtils.newResourceTagResponse(vtag, false));
             }
         }
         return rsp;

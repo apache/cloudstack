@@ -14,25 +14,23 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api.view.dao;
+package com.cloud.vm.dao;
 
-import java.util.EnumSet;
 import java.util.List;
 
-import org.apache.cloudstack.api.ApiConstants.VMDetails;
-import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.api.view.vo.UserVmJoinVO;
+import org.apache.cloudstack.api.response.DomainRouterResponse;
+import org.apache.cloudstack.api.view.vo.DomainRouterJoinVO;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.user.Account;
-import com.cloud.uservm.UserVm;
 import com.cloud.utils.db.GenericDao;
 
-public interface UserVmJoinDao extends GenericDao<UserVmJoinVO, Long> {
+public interface DomainRouterJoinDao extends GenericDao<DomainRouterJoinVO, Long> {
 
-    UserVmResponse newUserVmResponse(String objectName, UserVmJoinVO userVm, EnumSet<VMDetails> details, Account caller);
+    DomainRouterResponse newDomainRouterResponse(DomainRouterJoinVO uvo, Account caller);
 
-    UserVmResponse setUserVmResponse(UserVmResponse userVmData, UserVmJoinVO uvo);
+    DomainRouterResponse setDomainRouterResponse(DomainRouterResponse userVmData, DomainRouterJoinVO uvo);
 
-    List<UserVmJoinVO> newUserVmView(UserVm... userVms);
+    List<DomainRouterJoinVO> newDomainRouterView(VirtualRouter vr);
 
-    List<UserVmJoinVO> searchByIds(Long... ids);
+    List<DomainRouterJoinVO> searchByIds(Long... ids);
 }

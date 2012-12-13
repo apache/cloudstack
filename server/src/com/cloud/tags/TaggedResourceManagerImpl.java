@@ -27,7 +27,6 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.view.dao.ResourceTagJoinDao;
 import org.apache.cloudstack.api.view.vo.ResourceTagJoinVO;
 import com.cloud.domain.Domain;
 import com.cloud.event.ActionEvent;
@@ -52,6 +51,7 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.tags.dao.ResourceTagDao;
+import com.cloud.tags.dao.ResourceTagJoinDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;

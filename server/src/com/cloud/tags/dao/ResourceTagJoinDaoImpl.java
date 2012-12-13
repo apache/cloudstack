@@ -14,17 +14,17 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api.view.dao;
+package com.cloud.tags.dao;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
-
+import com.cloud.api.ApiResponseHelper;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
-import org.apache.cloudstack.api.view.ViewResponseHelper;
 import org.apache.cloudstack.api.view.vo.ResourceTagJoinVO;
 import com.cloud.server.ResourceTag;
 import com.cloud.utils.db.GenericDaoBase;
@@ -67,7 +67,7 @@ public class ResourceTagJoinDaoImpl extends GenericDaoBase<ResourceTagJoinVO, Lo
             response.setResourceType(resourceTag.getResourceType().toString());
             response.setResourceId(resourceTag.getResourceUuid());
 
-            ViewResponseHelper.populateOwner(response, resourceTag);
+            ApiResponseHelper.populateOwner(response, resourceTag);
 
             response.setDomainId(resourceTag.getDomainUuid());
             response.setDomainName(resourceTag.getDomainName());

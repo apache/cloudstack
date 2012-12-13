@@ -33,16 +33,6 @@ import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.api.view.dao.DomainRouterJoinDao;
-import org.apache.cloudstack.api.view.dao.EventJoinDao;
-import org.apache.cloudstack.api.view.dao.InstanceGroupJoinDao;
-import org.apache.cloudstack.api.view.dao.ProjectAccountJoinDao;
-import org.apache.cloudstack.api.view.dao.ProjectInvitationJoinDao;
-import org.apache.cloudstack.api.view.dao.ProjectJoinDao;
-import org.apache.cloudstack.api.view.dao.ResourceTagJoinDao;
-import org.apache.cloudstack.api.view.dao.SecurityGroupJoinDao;
-import org.apache.cloudstack.api.view.dao.UserAccountJoinDao;
-import org.apache.cloudstack.api.view.dao.UserVmJoinDao;
 import org.apache.cloudstack.api.view.vo.DomainRouterJoinVO;
 import org.apache.cloudstack.api.view.vo.EventJoinVO;
 import org.apache.cloudstack.api.view.vo.InstanceGroupJoinVO;
@@ -76,6 +66,7 @@ import com.cloud.dc.dao.VlanDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.Event;
+import com.cloud.event.dao.EventJoinDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.Host;
@@ -121,6 +112,7 @@ import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.security.dao.SecurityGroupDao;
+import com.cloud.network.security.dao.SecurityGroupJoinDao;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
@@ -130,6 +122,9 @@ import com.cloud.projects.Project;
 import com.cloud.projects.ProjectAccount;
 import com.cloud.projects.ProjectInvitation;
 import com.cloud.projects.ProjectService;
+import com.cloud.projects.dao.ProjectAccountJoinDao;
+import com.cloud.projects.dao.ProjectInvitationJoinDao;
+import com.cloud.projects.dao.ProjectJoinDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.Criteria;
 import com.cloud.server.ManagementServer;
@@ -167,6 +162,7 @@ import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplateSwiftDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeHostDao;
+import com.cloud.tags.dao.ResourceTagJoinDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountDetailsDao;
 import com.cloud.user.AccountVO;
@@ -178,6 +174,7 @@ import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.SSHKeyPairDao;
+import com.cloud.user.dao.UserAccountJoinDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
@@ -197,8 +194,11 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
+import com.cloud.vm.dao.DomainRouterJoinDao;
+import com.cloud.vm.dao.InstanceGroupJoinDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.UserVmJoinDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class ApiDBUtils {
@@ -944,6 +944,127 @@ public class ApiDBUtils {
         return _counterDao.findById(counterId);
     }
 
+    ///////////////////////////////////////////////////////////////////////
+    //  Newly Added Utility Methods for List API refactoring             //
+    ///////////////////////////////////////////////////////////////////////
+
+    public static DomainRouterResponse newDomainRouterResponse(DomainRouterJoinVO vr, Account caller) {
+        return _domainRouterJoinDao.newDomainRouterResponse(vr, caller);
+    }
+
+    public static DomainRouterResponse fillRouterDetails(DomainRouterResponse vrData, DomainRouterJoinVO vr){
+         return _domainRouterJoinDao.setDomainRouterResponse(vrData, vr);
+    }
+
+    public static List<DomainRouterJoinVO> newDomainRouterView(VirtualRouter vr){
+        return _domainRouterJoinDao.newDomainRouterView(vr);
+    }
+
+    public static UserVmResponse newUserVmResponse(String objectName, UserVmJoinVO userVm, EnumSet<VMDetails> details, Account caller) {
+        return _userVmJoinDao.newUserVmResponse(objectName, userVm, details, caller);
+    }
+
+    public static UserVmResponse fillVmDetails(UserVmResponse vmData, UserVmJoinVO vm){
+         return _userVmJoinDao.setUserVmResponse(vmData, vm);
+    }
+
+    public static List<UserVmJoinVO> newUserVmView(UserVm... userVms){
+        return _userVmJoinDao.newUserVmView(userVms);
+    }
+
+    public static SecurityGroupResponse newSecurityGroupResponse(SecurityGroupJoinVO vsg, Account caller) {
+        return _securityGroupJoinDao.newSecurityGroupResponse(vsg, caller);
+    }
+
+    public static SecurityGroupResponse fillSecurityGroupDetails(SecurityGroupResponse vsgData, SecurityGroupJoinVO sg){
+         return _securityGroupJoinDao.setSecurityGroupResponse(vsgData, sg);
+    }
+
+    public static List<SecurityGroupJoinVO> newSecurityGroupView(SecurityGroup sg){
+        return _securityGroupJoinDao.newSecurityGroupView(sg);
+    }
+
+    public static List<SecurityGroupJoinVO> findSecurityGroupViewById(Long sgId){
+        return _securityGroupJoinDao.searchByIds(sgId);
+    }
+
+    public static ResourceTagResponse newResourceTagResponse(ResourceTagJoinVO vsg, boolean keyValueOnly) {
+        return _tagJoinDao.newResourceTagResponse(vsg, keyValueOnly);
+    }
+
+    public static ResourceTagJoinVO newResourceTagView(ResourceTag sg){
+        return _tagJoinDao.newResourceTagView(sg);
+    }
+
+    public static ResourceTagJoinVO findResourceTagViewById(Long tagId){
+        List<ResourceTagJoinVO> tags = _tagJoinDao.searchByIds(tagId);
+        if ( tags != null && tags.size() > 0 ){
+            return tags.get(0);
+        }
+        else{
+            return null;
+        }
+    }
+
+    public static EventResponse newEventResponse(EventJoinVO ve) {
+        return _eventJoinDao.newEventResponse(ve);
+    }
+
+    public static EventJoinVO newEventView(Event e){
+        return _eventJoinDao.newEventView(e);
+    }
+
+    public static InstanceGroupResponse newInstanceGroupResponse(InstanceGroupJoinVO ve) {
+        return _vmGroupJoinDao.newInstanceGroupResponse(ve);
+    }
+
+    public static InstanceGroupJoinVO newInstanceGroupView(InstanceGroup e){
+        return _vmGroupJoinDao.newInstanceGroupView(e);
+    }
+
+    public static UserResponse newUserResponse(UserAccountJoinVO usr) {
+        return _userAccountJoinDao.newUserResponse(usr);
+    }
+
+    public static UserAccountJoinVO newUserView(User usr){
+        return _userAccountJoinDao.newUserView(usr);
+    }
+
+    public static UserAccountJoinVO newUserView(UserAccount usr){
+        return _userAccountJoinDao.newUserView(usr);
+    }
+
+    public static ProjectResponse newProjectResponse(ProjectJoinVO proj) {
+        return _projectJoinDao.newProjectResponse(proj);
+    }
+
+    public static ProjectResponse fillProjectDetails(ProjectResponse rsp, ProjectJoinVO proj){
+         return _projectJoinDao.setProjectResponse(rsp,proj);
+    }
+
+    public static List<ProjectJoinVO> newProjectView(Project proj){
+        return _projectJoinDao.newProjectView(proj);
+    }
+
+    public static List<UserAccountJoinVO> findUserViewByAccountId(Long accountId){
+        return _userAccountJoinDao.searchByAccountId(accountId);
+    }
+
+    public static ProjectAccountResponse newProjectAccountResponse(ProjectAccountJoinVO proj) {
+        return _projectAccountJoinDao.newProjectAccountResponse(proj);
+    }
+
+    public static ProjectAccountJoinVO newProjectAccountView(ProjectAccount proj) {
+        return _projectAccountJoinDao.newProjectAccountView(proj);
+    }
+
+    public static ProjectInvitationResponse newProjectInvitationResponse(ProjectInvitationJoinVO proj) {
+        return _projectInvitationJoinDao.newProjectInvitationResponse(proj);
+    }
+
+    public static ProjectInvitationJoinVO newProjectInvitationView(ProjectInvitation proj) {
+        return _projectInvitationJoinDao.newProjectInvitationView(proj);
+    }
 
 
 }
