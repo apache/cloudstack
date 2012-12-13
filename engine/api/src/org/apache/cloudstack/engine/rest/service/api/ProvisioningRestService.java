@@ -36,10 +36,8 @@ import org.apache.cloudstack.engine.rest.datacenter.entity.api.PodRestTO;
 import org.apache.cloudstack.engine.rest.datacenter.entity.api.ZoneRestTO;
 import org.apache.cloudstack.engine.service.api.ProvisioningService;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 
 
-@Service("provisioningService")
 @Path("/provisioning")
 @Produces({"application/xml", "application/json"})
 @Component

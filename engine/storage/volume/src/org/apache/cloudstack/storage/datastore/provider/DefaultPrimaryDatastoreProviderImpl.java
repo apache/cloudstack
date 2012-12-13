@@ -51,6 +51,11 @@ public class DefaultPrimaryDatastoreProviderImpl implements PrimaryDataStoreProv
             configuratorMaps.put(key, configurator);
         }
     }
+    
+    // TODO: Remove this.  I put this in to get over the compilation problem.  Edison needs to look at Solidfire's implementation which requires this.
+    public DefaultPrimaryDatastoreProviderImpl() {
+        
+    }
 
     protected String generateKey(HypervisorType hypervisor, String poolType) {
         return hypervisor.toString().toLowerCase() + "_" + poolType.toString().toLowerCase();

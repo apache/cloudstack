@@ -42,7 +42,6 @@
     <module>storage/imagemotion</module>
     <module>storage/backup</module>
     <module>storage/snapshot</module>
-    <module>storage/integration-test</module>
     <module>components-api</module>
     <module>schema</module>
     <module>network</module>

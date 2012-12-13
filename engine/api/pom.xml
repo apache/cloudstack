@@ -37,9 +37,9 @@
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>org.codehaus.jackson</groupId>
-      <artifactId>jackson-jaxrs</artifactId>
-      <version>1.9.9</version>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-framework-rest</artifactId>
+      <version>${project.version}</version>
     </dependency>
   </dependencies>
   <build>

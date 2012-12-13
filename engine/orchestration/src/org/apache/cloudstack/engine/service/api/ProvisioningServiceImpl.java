@@ -29,43 +29,15 @@ import org.apache.cloudstack.engine.datacenter.entity.api.StorageEntity;
 import org.apache.cloudstack.engine.datacenter.entity.api.ZoneEntity;
 import org.apache.cloudstack.engine.datacenter.entity.api.ZoneEntityImpl;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import com.cloud.host.Host;
 import com.cloud.host.Status;
 import com.cloud.storage.StoragePool;
 
 @Component
+@Service("provisioningService")
 public class ProvisioningServiceImpl implements ProvisioningService {
-
-    @Override
-    public StorageEntity registerStorage(String name, List<String> tags, Map<String, String> details) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public ZoneEntity registerZone(String name, List<String> tags, Map<String, String> details) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public PodEntity registerPod(String name, List<String> tags, Map<String, String> details) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public ClusterEntity registerCluster(String name, List<String> tags, Map<String, String> details) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public String registerHost(String name, List<String> tags, Map<String, String> details) {
-        // TODO Auto-generated method stub
-        return null;
-    }
 
     @Override
     public void deregisterStorage(String uuid) {
@@ -135,6 +107,36 @@ public class ProvisioningServiceImpl implements ProvisioningService {
     public ZoneEntity getZone(String uuid) {
         ZoneEntityImpl impl = new ZoneEntityImpl(uuid, "name");
         return impl;
+    }
+
+    @Override
+    public StorageEntity registerStorage(String name, List<String> tags, Map<String, String> details) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public ZoneEntity registerZone(String name, List<String> tags, Map<String, String> details) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public PodEntity registerPod(String name, List<String> tags, Map<String, String> details) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public ClusterEntity registerCluster(String name, List<String> tags, Map<String, String> details) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public String registerHost(String name, List<String> tags, Map<String, String> details) {
+        // TODO Auto-generated method stub
+        return null;
     }
 
 }
