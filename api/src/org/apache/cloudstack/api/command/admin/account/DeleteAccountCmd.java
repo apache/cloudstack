@@ -25,6 +25,7 @@ import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
@@ -43,7 +44,7 @@ public class DeleteAccountCmd extends BaseAsyncCmd {
 
 
     @IdentityMapper(entityTableName="account")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="Account id")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="Account id", entityType=AccountResponse.class)
     private Long id;
 
 

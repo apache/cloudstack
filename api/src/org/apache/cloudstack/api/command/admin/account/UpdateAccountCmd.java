@@ -28,6 +28,8 @@ import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AccountResponse;
+import org.apache.cloudstack.api.response.DomainResponse;
+
 import com.cloud.user.Account;
 
 @Implementation(description="Updates account information for the authenticated user", responseObject=AccountResponse.class)
@@ -39,15 +41,15 @@ public class UpdateAccountCmd extends BaseCmd{
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="account")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="Account id")
+    //@IdentityMapper(entityTableName="account")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="Account id", entityType=AccountResponse.class)
     private Long id;
 
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the current account name")
     private String accountName;
 
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the ID of the domain where the account exists")
+    //@IdentityMapper(entityTableName="domain")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the ID of the domain where the account exists", entityType=DomainResponse.class)
     private Long domainId;
 
     @Parameter(name=ApiConstants.NEW_NAME, type=CommandType.STRING, required=true, description="new name for the account")
