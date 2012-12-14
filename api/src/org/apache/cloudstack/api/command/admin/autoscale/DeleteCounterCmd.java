@@ -26,6 +26,7 @@ import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.CounterResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
@@ -42,7 +43,7 @@ public class DeleteCounterCmd extends BaseAsyncCmd {
     // ///////////////////////////////////////////////////
 
     @IdentityMapper(entityTableName = "counter")
-    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, required = true, description = "the ID of the counter")
+    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, required = true, description = "the ID of the counter", entityType=CounterResponse.class)
     private Long id;
 
     // ///////////////////////////////////////////////////
