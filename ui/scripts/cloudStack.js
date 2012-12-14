@@ -178,8 +178,22 @@
                 havingSwift = true;
             }
           });
+          if (havingSwift == false) {
+            $.ajax({
+              url: createURL("listS3s"),
+              dataType: "json",
+              async: false,
+              success: function(json) {
+                var items = json.lists3sresponse.s3;
+                if (items != null && items.length > 0) {
+                  havingS3 = true;
+                }
+              }
+            });
+          }
         } else {
           havingSwift = false;
+          havingS3 = false;
         }
 
         return userValid ? {
@@ -296,8 +310,22 @@
                     havingSwift = true;
                 }
               });
+              if (havingSwift = false) {
+                $.ajax({
+                  url: createURL("listS3s"),
+                  dataType: "json",
+                  async: false,
+                  success: function(json) {
+                    var items = json.lists3sresponse.s3;
+                    if (items != null && items.length > 0) {
+                      havingS3 = true;
+                    }
+                  }
+                });
+              }
             } else {
               havingSwift = false;
+              havingS3 = false;
             }
 
             // Get project configuration

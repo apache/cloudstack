@@ -4249,6 +4249,84 @@
                       }
                     });
                   }
+                },
+
+              enableS3: {
+                label: 'label.enable.s3',
+                isHeader: true,
+                addRow: false,
+
+                preFilter: function(args) {
+                  var s3Enabled = false;
+                  $.ajax({
+                    url: createURL('listConfigurations'),
+                    data: {
+                      name: 's3.enable'
+                    },
+                    async: false,
+                    success: function(json) {
+                      s3Enabled = json.listconfigurationsresponse.configuration[0].value == 'true' && !havingS3 ?
+                      true : false;
+                    },
+                    error: function(json) {
+                      cloudStack.dialog.notice({ message: parseXMLHttpResponse(json) });
+                    }
+                 });
+
+                 return s3Enabled;
+              },
+
+              messages: {
+                notification: function(args) {
+                  return 'label.enable.s3';
+                }
+              },
+
+              createForm: {
+                desc: 'confirm.enable.s3',
+                fields: {
+                  accesskey: { label: 'label.s3.access_key', validation: { required: true } },
+                  secretkey: { label: 'label.s3.secret_key', validation: { required: true} },
+                  bucket: { label: 'label.s3.bucket', validation: { required: true} },
+                  endpoint: { label: 'label.s3.endpoint' },
+                  usehttps: { 
+                    label: 'label.s3.use_https', 
+                    isEditable: true,
+                    isBoolean: true,
+                    isChecked: true,
+                    converter:cloudStack.converters.toBooleanText 
+                  },
+                  connectiontimeout: { label: 'label.s3.connection_timeout' },
+                  maxerrorretry: { label: 'label.s3.max_error_retry' },
+                  sockettimeout: { label: 'label.s3.socket_timeout' }
+                }
+              },
+              action: function(args) {
+                $.ajax({
+                  url: createURL('addS3'),
+                  data: {
+                        accesskey: args.data.accesskey,
+                        secretkey: args.data.secretkey,
+                        bucket: args.data.bucket,
+                        endpoint: args.data.endpoint,
+                        usehttps: (args.data.usehttps != null && args.data.usehttps == 'on' ? 'true' : 'false'),
+                        connectiontimeout: args.data.connectiontimeout,
+                        maxerrorretry: args.data.maxerrorretry,
+                        sockettimeout: args.data.sockettimeout
+                      },
+                      success: function(json) {
+                        havingS3 = true;
+                        args.response.success();
+
+                        cloudStack.dialog.notice({
+                          message: 'message.after.enable.s3'
+                        });
+                      },
+                      error: function(json) {
+                        args.response.error(parseXMLHttpResponse(json));
+                      }
+                    });
+                  }
                 }
               },
 

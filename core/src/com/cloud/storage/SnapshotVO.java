@@ -91,6 +91,9 @@ public class SnapshotVO implements Snapshot, Identity {
     @Column(name="swift_id")
     Long swiftId;
     
+    @Column(name="s3_id")
+    Long s3Id;
+
     @Column(name="sechost_id")
     Long secHostId;
 
@@ -289,4 +292,13 @@ public class SnapshotVO implements Snapshot, Identity {
     public void setUuid(String uuid) {
     	this.uuid = uuid;
     }
+
+    public Long getS3Id() {
+        return s3Id;
+    }
+
+    public void setS3Id(Long s3Id) {
+        this.s3Id = s3Id;
+    }
+
 }

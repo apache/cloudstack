@@ -16,8 +16,11 @@
 // under the License.
 package com.cloud.utils.db;
 
+import static java.lang.String.format;
+
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Callable;
 
 import org.apache.log4j.Logger;
 
@@ -201,4 +204,41 @@ public class GlobalLock {
 	public String getName() {
 		return name;
 	}
+
+    public static <T> T executeWithLock(final String operationId,
+            final int lockAcquisitionTimeout, final Callable<T> operation)
+            throws Exception {
+
+        final GlobalLock lock = GlobalLock.getInternLock(operationId);
+
+        try {
+
+            if (!lock.lock(lockAcquisitionTimeout)) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(format(
+                            "Failed to acquire lock for operation id %1$s",
+                            operationId));
+                }
+                return null;
+            }
+
+            return operation.call();
+
+        } finally {
+
+            if (lock != null) {
+                lock.unlock();
+            }
+
+        }
+
+    }
+
+    public static <T> T executeWithNoWaitLock(final String operationId,
+            final Callable<T> operation) throws Exception {
+
+        return executeWithLock(operationId, 0, operation);
+
+    }
+
 }

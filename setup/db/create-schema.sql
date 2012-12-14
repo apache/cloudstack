@@ -146,6 +146,8 @@ DROP TABLE IF EXISTS `cloud`.`s2s_vpn_gateway`;
 DROP TABLE IF EXISTS `cloud`.`s2s_vpn_connection`;
 DROP TABLE IF EXISTS `cloud`,`external_nicira_nvp_devices`;
 DROP TABLE IF EXISTS `cloud`,`nicira_nvp_nic_map`;
+DROP TABLE IF EXISTS `cloud`,`s3`;
+DROP TABLE IF EXISTS `cloud`,`template_s3_ref`;
 DROP TABLE IF EXISTS `cloud`,`nicira_nvp_router_map`;
 DROP TABLE IF EXISTS `cloud`.`autoscale_vmgroup_policy_map`;
 DROP TABLE IF EXISTS `cloud`.`autoscale_policy_condition_map`;
@@ -164,7 +166,7 @@ CREATE TABLE `cloud`.`version` (
   INDEX `i_version__version`(`version`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-INSERT INTO `version` (`version`, `updated`, `step`) VALUES('@VERSION@', now(), 'Complete');
+INSERT INTO `version` (`version`, `updated`, `step`) VALUES('4.0.0.2012-09-12T14:47:37Z', now(), 'Complete');
 
 CREATE TABLE `cloud`.`op_it_work` (
   `id` char(40) COMMENT 'reservation id',
@@ -480,12 +482,14 @@ CREATE TABLE `cloud`.`snapshots` (
   `removed` datetime COMMENT 'Date removed.  not null if removed',
   `backup_snap_id` varchar(255) COMMENT 'Back up uuid of the snapshot',
   `swift_id` bigint unsigned COMMENT 'which swift',
+  `s3_id` bigint unsigned COMMENT 'S3 to which this snapshot will be stored',
   `sechost_id` bigint unsigned COMMENT 'secondary storage host id',
   `prev_snap_id` bigint unsigned COMMENT 'Id of the most recent snapshot',
   `hypervisor_type` varchar(32) NOT NULL COMMENT 'hypervisor that the snapshot was taken under',
   `version` varchar(32) COMMENT 'snapshot version',
   PRIMARY KEY (`id`),
   CONSTRAINT `uc_snapshots__uuid` UNIQUE (`uuid`),
+  CONSTRAINT `fk_snapshots__s3_id` FOREIGN KEY `fk_snapshots__s3_id` (`s3_id`) REFERENCES `s3` (`id`),
   INDEX `i_snapshots__removed`(`removed`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -1850,6 +1854,36 @@ CREATE TABLE `cloud`.`swift` (
   CONSTRAINT `uc_swift__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `cloud`.`s3` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(40),
+  `access_key` varchar(20) NOT NULL COMMENT ' The S3 access key',
+  `secret_key` varchar(40) NOT NULL COMMENT ' The S3 secret key',
+  `end_point` varchar(1024) COMMENT ' The S3 host',
+  `bucket` varchar(63) NOT NULL COMMENT ' The S3 host',
+  `https` tinyint unsigned DEFAULT NULL COMMENT ' Flag indicating whether or not to connect over HTTPS',
+  `connection_timeout` integer COMMENT ' The amount of time to wait (in milliseconds) when initially establishing a connection before giving up and timing out.',
+  `max_error_retry` integer  COMMENT ' The maximum number of retry attempts for failed retryable requests (ex: 5xx error responses from services).',
+  `socket_timeout` integer COMMENT ' The amount of time to wait (in milliseconds) for data to be transfered over an established, open connection before the connection times out and is closed.',
+  `created` datetime COMMENT 'date the s3 first signed on',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `uc_s3__uuid` UNIQUE (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`template_s3_ref` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `s3_id` bigint unsigned NOT NULL COMMENT ' Associated S3 instance id',
+  `template_id` bigint unsigned NOT NULL COMMENT ' Associated template id',
+  `created` DATETIME NOT NULL COMMENT ' The creation timestamp',
+  `size` bigint unsigned COMMENT ' The size of the object',
+  `physical_size` bigint unsigned DEFAULT 0 COMMENT ' The physical size of the object',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `uc_template_s3_ref__template_id` UNIQUE (`template_id`),
+  CONSTRAINT `fk_template_s3_ref__s3_id` FOREIGN KEY `fk_template_s3_ref__s3_id` (`s3_id`) REFERENCES `s3` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_template_s3_ref__template_id` FOREIGN KEY `fk_template_s3_ref__template_id` (`template_id`) REFERENCES `vm_template` (`id`),
+  INDEX `i_template_s3_ref__s3_id`(`s3_id`),
+  INDEX `i_template_s3_ref__template_id`(`template_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`op_host_transfer` (
   `id` bigint unsigned UNIQUE NOT NULL COMMENT 'Id of the host',

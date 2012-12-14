@@ -25,6 +25,17 @@ under the License.
 <% long now = System.currentTimeMillis(); %>
 <script language="javascript">
 dictionary = {
+'label.enable.s3': '<fmt:message key="label.enable.s3"/>',
+'confirm.enable.s3': '<fmt:message key="confirm.enable.s3"/>',
+'message.after.enable.s3': '<fmt:message key="message.after.enable.s3"/>',
+'label.s3.access_key': '<fmt:message key="label.s3.access_key"/>',
+'label.s3.secret_key': '<fmt:message key="label.s3.secret_key"/>',
+'label.s3.bucket': '<fmt:message key="label.s3.bucket"/>',
+'label.s3.endpoint': '<fmt:message key="label.s3.endpoint"/>',
+'label.s3.use_https': '<fmt:message key="label.s3.use_https"/>',
+'label.s3.connection_timeout': '<fmt:message key="label.s3.connection_timeout"/>',
+'label.s3.max_error_retry': '<fmt:message key="label.s3.max_error_retry"/>',
+'label.s3.socket_timeout': '<fmt:message key="label.s3.socket_timeout"/>',
 'label.egress.rules': '<fmt:message key="label.egress.rules"/>',
 'message.acquire.new.ip.vpc': '<fmt:message key="message.acquire.new.ip.vpc"/>',
 'label.quickview': '<fmt:message key="label.quickview"/>',

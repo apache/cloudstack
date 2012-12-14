@@ -115,6 +115,7 @@ import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
 import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateHostVO;
+import com.cloud.storage.VMTemplateS3VO;
 import com.cloud.storage.VMTemplateSwiftVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume.Type;
@@ -129,6 +130,7 @@ import com.cloud.storage.dao.UploadDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
+import com.cloud.storage.dao.VMTemplateS3Dao;
 import com.cloud.storage.dao.VMTemplateSwiftDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeHostDao;
@@ -196,6 +198,7 @@ public class ApiDBUtils {
     private static VMTemplateDetailsDao _templateDetailsDao;
     private static VMTemplateHostDao _templateHostDao;
     private static VMTemplateSwiftDao _templateSwiftDao;
+    private static VMTemplateS3Dao _templateS3Dao;
     private static UploadDao _uploadDao;
     private static UserDao _userDao;
     private static UserStatisticsDao _userStatsDao;
@@ -260,6 +263,7 @@ public class ApiDBUtils {
         _templateDetailsDao = locator.getDao(VMTemplateDetailsDao.class);
         _templateHostDao = locator.getDao(VMTemplateHostDao.class);
         _templateSwiftDao = locator.getDao(VMTemplateSwiftDao.class);
+        _templateS3Dao = locator.getDao(VMTemplateS3Dao.class);
         _uploadDao = locator.getDao(UploadDao.class);
         _userDao = locator.getDao(UserDao.class);
         _userStatsDao = locator.getDao(UserStatisticsDao.class);
@@ -573,6 +577,10 @@ public class ApiDBUtils {
 
     public static VMTemplateSwiftVO findTemplateSwiftRef(long templateId) {
         return _templateSwiftDao.findOneByTemplateId(templateId);
+    }
+
+    public static VMTemplateS3VO findTemplateS3Ref(long templateId) {
+        return _templateS3Dao.findOneByTemplateId(templateId);
     }
 
     public static UploadVO findUploadById(Long id) {

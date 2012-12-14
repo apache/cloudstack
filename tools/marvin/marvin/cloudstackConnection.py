@@ -42,7 +42,7 @@ class cloudConnection(object):
         else:
             self.protocol=protocol
         self.path = path
-        if port == 8096:
+        if port == 8096 or (self.apiKey == None and self.securityKey == None):
             self.auth = False
         else:
             self.auth = True

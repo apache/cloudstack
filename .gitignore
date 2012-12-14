@@ -67,6 +67,7 @@ awsapi/modules/*
 .settings/
 db.properties.override
 awsapi/overlays/
+tools/marvin/marvin/cloudstackAPI/*
 *.egg-info/
 docs/tmp
 docs/publish

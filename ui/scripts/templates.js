@@ -1420,7 +1420,7 @@
     else {
       allowedActions.push("edit");
 
-      if(havingSwift == false)
+      if(havingSwift == false && havingS3 == false)
         allowedActions.push("copyTemplate");
 
       //allowedActions.push("createVm"); // For Beta2, this simply doesn't work without a network.

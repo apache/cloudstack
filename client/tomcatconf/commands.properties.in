@@ -227,6 +227,9 @@ listCapacity=com.cloud.api.commands.ListCapacityCmd;3
 addSwift=com.cloud.api.commands.AddSwiftCmd;1
 listSwifts=com.cloud.api.commands.ListSwiftsCmd;1
 
+#### s3 commands
+addS3=com.cloud.api.commands.AddS3Cmd;1
+listS3s=com.cloud.api.commands.ListS3sCmd;1
 
 #### host commands
 addHost=com.cloud.api.commands.AddHostCmd;3

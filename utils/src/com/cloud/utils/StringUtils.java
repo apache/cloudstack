@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.utils;
 
+import static java.util.Arrays.*;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -42,8 +44,12 @@ public class StringUtils {
         }
         return sb.toString();
     }
-    
-    
+
+    public static String join(final String delimiter,
+            final Object... components) {
+        return join(asList(components), delimiter);
+    }
+
 	/**
 	 * @param tags
 	 * @return List of tags
@@ -128,4 +134,5 @@ public class StringUtils {
     	
     	return sb.toString();
     }
+
 }

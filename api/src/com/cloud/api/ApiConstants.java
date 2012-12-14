@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.api;
 
+import org.omg.CORBA.PUBLIC_MEMBER;
+
 public class ApiConstants {
     public static final String ACCOUNT = "account";
     public static final String ACCOUNTS = "accounts";
@@ -383,6 +385,14 @@ public class ApiConstants {
     public static final String NICIRA_NVP_TRANSPORT_ZONE_UUID = "transportzoneuuid";
     public static final String NICIRA_NVP_DEVICE_NAME = "niciradevicename";
 	public static final String NICIRA_NVP_GATEWAYSERVICE_UUID = "l3gatewayserviceuuid";
+    public static final String S3_ACCESS_KEY = "accesskey";
+    public static final String S3_SECRET_KEY = "secretkey";
+    public static final String S3_END_POINT = "endpoint";
+    public static final String S3_BUCKET_NAME = "bucket";
+    public static final String S3_HTTPS_FLAG = "usehttps";
+    public static final String S3_CONNECTION_TIMEOUT = "connectiontimeout";
+    public static final String S3_MAX_ERROR_RETRY = "maxerrorretry";
+    public static final String S3_SOCKET_TIMEOUT = "sockettimeout";
     
     public static final String SOURCE = "source";
     public static final String COUNTER_ID = "counterid";
