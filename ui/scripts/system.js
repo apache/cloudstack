@@ -8235,19 +8235,24 @@
                           //$('li[input_group="nfs"]', $dialogAddPool).show();
                           $form.find('.form-item[rel=path]').css('display', 'inline-block');
                           //$dialogAddPool.find("#add_pool_path_container").find("label").text(g_dictionary["label.path"]+":");
-						              var $required = $form.find('.form-item[rel=path]').find(".name").find("label span");
+                          var $required = $form.find('.form-item[rel=path]').find(".name").find("label span");
                           $form.find('.form-item[rel=path]').find(".name").find("label").text("Path:").prepend($required);
 
                           //$('li[input_group="iscsi"]', $dialogAddPool).hide();
                           $form.find('.form-item[rel=iqn]').hide();
                           $form.find('.form-item[rel=lun]').hide();
 
-													//$('li[input_group="clvm"]', $dialogAddPool).hide();
-													$form.find('.form-item[rel=volumegroup]').hide();
+                          //$('li[input_group="clvm"]', $dialogAddPool).hide();
+                          $form.find('.form-item[rel=volumegroup]').hide();
 
                           //$('li[input_group="vmfs"]', $dialogAddPool).hide();
                           $form.find('.form-item[rel=vCenterDataCenter]').hide();
                           $form.find('.form-item[rel=vCenterDataStore]').hide();
+
+                          $form.find('.form-item[rel=rbdmonitor]').hide();
+                          $form.find('.form-item[rel=rbdpool]').hide();
+                          $form.find('.form-item[rel=rbdid]').hide();
+                          $form.find('.form-item[rel=rbdsecret]').hide();
                         }
                         else if(protocol == "ocfs2") {//ocfs2 is the same as nfs, except no server field.
                           //$dialogAddPool.find("#add_pool_server_container").hide();
@@ -8258,19 +8263,24 @@
                           //$('li[input_group="nfs"]', $dialogAddPool).show();
                           $form.find('.form-item[rel=path]').css('display', 'inline-block');
                           //$dialogAddPool.find("#add_pool_path_container").find("label").text(g_dictionary["label.path"]+":");
-						              var $required = $form.find('.form-item[rel=path]').find(".name").find("label span");
+                          var $required = $form.find('.form-item[rel=path]').find(".name").find("label span");
                           $form.find('.form-item[rel=path]').find(".name").find("label").text("Path:").prepend($required);
 
                           //$('li[input_group="iscsi"]', $dialogAddPool).hide();
                           $form.find('.form-item[rel=iqn]').hide();
                           $form.find('.form-item[rel=lun]').hide();
 
-													//$('li[input_group="clvm"]', $dialogAddPool).hide();
-													$form.find('.form-item[rel=volumegroup]').hide();
+                          //$('li[input_group="clvm"]', $dialogAddPool).hide();
+                          $form.find('.form-item[rel=volumegroup]').hide();
 
                           //$('li[input_group="vmfs"]', $dialogAddPool).hide();
                           $form.find('.form-item[rel=vCenterDataCenter]').hide();
                           $form.find('.form-item[rel=vCenterDataStore]').hide();
+
+                          $form.find('.form-item[rel=rbdmonitor]').hide();
+                          $form.find('.form-item[rel=rbdpool]').hide();
+                          $form.find('.form-item[rel=rbdid]').hide();
+                          $form.find('.form-item[rel=rbdsecret]').hide();
                         }
                         else if(protocol == "PreSetup") {
                           //$dialogAddPool.find("#add_pool_server_container").hide();
@@ -8281,19 +8291,24 @@
                           //$('li[input_group="nfs"]', $dialogAddPool).show();
                           $form.find('.form-item[rel=path]').css('display', 'inline-block');
                           //$dialogAddPool.find("#add_pool_path_container").find("label").text(g_dictionary["label.SR.name"]+":");                          
-						              var $required = $form.find('.form-item[rel=path]').find(".name").find("label span");
+                          var $required = $form.find('.form-item[rel=path]').find(".name").find("label span");
                           $form.find('.form-item[rel=path]').find(".name").find("label").text("SR Name-Label:").prepend($required);
 
                           //$('li[input_group="iscsi"]', $dialogAddPool).hide();
                           $form.find('.form-item[rel=iqn]').hide();
                           $form.find('.form-item[rel=lun]').hide();
 
-													//$('li[input_group="clvm"]', $dialogAddPool).hide();
-													$form.find('.form-item[rel=volumegroup]').hide();
+                          //$('li[input_group="clvm"]', $dialogAddPool).hide();
+                          $form.find('.form-item[rel=volumegroup]').hide();
 
                           //$('li[input_group="vmfs"]', $dialogAddPool).hide();
                           $form.find('.form-item[rel=vCenterDataCenter]').hide();
                           $form.find('.form-item[rel=vCenterDataStore]').hide();
+
+                          $form.find('.form-item[rel=rbdmonitor]').hide();
+                          $form.find('.form-item[rel=rbdpool]').hide();
+                          $form.find('.form-item[rel=rbdid]').hide();
+                          $form.find('.form-item[rel=rbdsecret]').hide();
                         }
                         else if(protocol == "iscsi") {
                           //$dialogAddPool.find("#add_pool_server_container").show();
@@ -8308,33 +8323,43 @@
                           $form.find('.form-item[rel=iqn]').css('display', 'inline-block');
                           $form.find('.form-item[rel=lun]').css('display', 'inline-block');
 
-													//$('li[input_group="clvm"]', $dialogAddPool).hide();
-													$form.find('.form-item[rel=volumegroup]').hide();
+                          //$('li[input_group="clvm"]', $dialogAddPool).hide();
+                          $form.find('.form-item[rel=volumegroup]').hide();
 
                           //$('li[input_group="vmfs"]', $dialogAddPool).hide();
                           $form.find('.form-item[rel=vCenterDataCenter]').hide();
                           $form.find('.form-item[rel=vCenterDataStore]').hide();
+
+                          $form.find('.form-item[rel=rbdmonitor]').hide();
+                          $form.find('.form-item[rel=rbdpool]').hide();
+                          $form.find('.form-item[rel=rbdid]').hide();
+                          $form.find('.form-item[rel=rbdsecret]').hide();
                         }
-												else if($(this).val() == "clvm") {
-													//$("#add_pool_server_container", $dialogAddPool).hide();
-													$form.find('.form-item[rel=server]').hide();
-													//$dialogAddPool.find("#add_pool_nfs_server").val("localhost");
-													$form.find('.form-item[rel=server]').find(".value").find("input").val("localhost");
+                        else if($(this).val() == "clvm") {
+                          //$("#add_pool_server_container", $dialogAddPool).hide();
+                          $form.find('.form-item[rel=server]').hide();
+                          //$dialogAddPool.find("#add_pool_nfs_server").val("localhost");
+                          $form.find('.form-item[rel=server]').find(".value").find("input").val("localhost");
 
-													//$('li[input_group="nfs"]', $dialogAddPool).hide();
-													$form.find('.form-item[rel=path]').hide();
+                          //$('li[input_group="nfs"]', $dialogAddPool).hide();
+                          $form.find('.form-item[rel=path]').hide();
 
-													//$('li[input_group="iscsi"]', $dialogAddPool).hide();
-													 $form.find('.form-item[rel=iqn]').hide();
+                          //$('li[input_group="iscsi"]', $dialogAddPool).hide();
+                          $form.find('.form-item[rel=iqn]').hide();
                           $form.find('.form-item[rel=lun]').hide();
 
-													//$('li[input_group="clvm"]', $dialogAddPool).show();
-													$form.find('.form-item[rel=volumegroup]').css('display', 'inline-block');
+                          //$('li[input_group="clvm"]', $dialogAddPool).show();
+                          $form.find('.form-item[rel=volumegroup]').css('display', 'inline-block');
 
-													//$('li[input_group="vmfs"]', $dialogAddPool).hide();
-													$form.find('.form-item[rel=vCenterDataCenter]').hide();
+                          //$('li[input_group="vmfs"]', $dialogAddPool).hide();
+                          $form.find('.form-item[rel=vCenterDataCenter]').hide();
                           $form.find('.form-item[rel=vCenterDataStore]').hide();
-												}
+
+                          $form.find('.form-item[rel=rbdmonitor]').hide();
+                          $form.find('.form-item[rel=rbdpool]').hide();
+                          $form.find('.form-item[rel=rbdid]').hide();
+                          $form.find('.form-item[rel=rbdsecret]').hide();
+                        }
                         else if(protocol == "vmfs") {
                           //$dialogAddPool.find("#add_pool_server_container").show();
                           $form.find('.form-item[rel=server]').css('display', 'inline-block');
@@ -8348,12 +8373,17 @@
                           $form.find('.form-item[rel=iqn]').hide();
                           $form.find('.form-item[rel=lun]').hide();
 
-													//$('li[input_group="clvm"]', $dialogAddPool).hide();
-													$form.find('.form-item[rel=volumegroup]').hide();
+                          //$('li[input_group="clvm"]', $dialogAddPool).hide();
+                          $form.find('.form-item[rel=volumegroup]').hide();
 
                           //$('li[input_group="vmfs"]', $dialogAddPool).show();
                           $form.find('.form-item[rel=vCenterDataCenter]').css('display', 'inline-block');
                           $form.find('.form-item[rel=vCenterDataStore]').css('display', 'inline-block');
+
+                          $form.find('.form-item[rel=rbdmonitor]').hide();
+                          $form.find('.form-item[rel=rbdpool]').hide();
+                          $form.find('.form-item[rel=rbdid]').hide();
+                          $form.find('.form-item[rel=rbdsecret]').hide();
                         }
                         else if(protocol == "SharedMountPoint") {  //"SharedMountPoint" show the same fields as "nfs" does.
                           //$dialogAddPool.find("#add_pool_server_container").hide();
@@ -8363,19 +8393,24 @@
 
                           //$('li[input_group="nfs"]', $dialogAddPool).show();
                           $form.find('.form-item[rel=path]').css('display', 'inline-block');
-						              var $required = $form.find('.form-item[rel=path]').find(".name").find("label span");
+                          var $required = $form.find('.form-item[rel=path]').find(".name").find("label span");
                           $form.find('.form-item[rel=path]').find(".name").find("label").text("Path:").prepend($required);
 
                           //$('li[input_group="iscsi"]', $dialogAddPool).hide();
                           $form.find('.form-item[rel=iqn]').hide();
                           $form.find('.form-item[rel=lun]').hide();
 
-													//$('li[input_group="clvm"]', $dialogAddPool).hide();
-													$form.find('.form-item[rel=volumegroup]').hide();
+                          //$('li[input_group="clvm"]', $dialogAddPool).hide();
+                          $form.find('.form-item[rel=volumegroup]').hide();
 
                           //$('li[input_group="vmfs"]', $dialogAddPool).hide();
                           $form.find('.form-item[rel=vCenterDataCenter]').hide();
                           $form.find('.form-item[rel=vCenterDataStore]').hide();
+
+                          $form.find('.form-item[rel=rbdmonitor]').hide();
+                          $form.find('.form-item[rel=rbdpool]').hide();
+                          $form.find('.form-item[rel=rbdid]').hide();
+                          $form.find('.form-item[rel=rbdsecret]').hide();
                         }
                         else if(protocol == "rbd") {
                           $form.find('.form-item[rel=rbdmonitor]').css('display', 'inline-block');
@@ -8408,12 +8443,17 @@
                           $form.find('.form-item[rel=iqn]').hide();
                           $form.find('.form-item[rel=lun]').hide();
 
-													//$('li[input_group="clvm"]', $dialogAddPool).hide();
-													$form.find('.form-item[rel=volumegroup]').hide();
+                          //$('li[input_group="clvm"]', $dialogAddPool).hide();
+                          $form.find('.form-item[rel=volumegroup]').hide();
 
                           //$('li[input_group="vmfs"]', $dialogAddPool).hide();
                           $form.find('.form-item[rel=vCenterDataCenter]').hide();
                           $form.find('.form-item[rel=vCenterDataStore]').hide();
+
+                          $form.find('.form-item[rel=rbdmonitor]').hide();
+                          $form.find('.form-item[rel=rbdpool]').hide();
+                          $form.find('.form-item[rel=rbdid]').hide();
+                          $form.find('.form-item[rel=rbdsecret]').hide();
                         }
                       });
 
