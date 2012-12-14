@@ -29,6 +29,7 @@ public class Event {
     String description;
     String publisher;
     String date;
+    String resourceType;
 
     public Event(String category, String type, String routingKey) {
         this.category = category;
@@ -58,7 +59,7 @@ public class Event {
 
     public void setDescription (Object message) {
         Gson gson = new Gson();
-        this.description = gson.toJson(description).toString();
+        this.description = gson.toJson(message).toString();
     }
 
     public String getEventPublisher() {

@@ -102,20 +102,21 @@ public class RabbitMQEventBus implements EventBus {
         }
     }
 
-    private void createExchange(String eventCategory) throws Exception {
-        String exchangeName = getExchangeName(eventCategory);
+    private void createExchange(String exchangeName) throws Exception {
         try {
             _channel.exchangeDeclare(exchangeName, "topic", true);
         } catch (java.io.IOException exception) {
-            s_logger.error("Failed to create exchange on RabbitMQ server for the event category " + eventCategory);
+            s_logger.error("Failed to create exchange" + exchangeName + " on RabbitMQ server");
             throw exception;
         }
     }
 
     private void publishEventToExchange(String exchangeName, String routingKey, String eventDescription) throws Exception {
         try {
+            _channel.txSelect();
             byte[] messageBodyBytes = eventDescription.getBytes();
             _channel.basicPublish(exchangeName, routingKey, MessageProperties.PERSISTENT_TEXT_PLAIN, messageBodyBytes);
+            _channel.txCommit();
         } catch (Exception e) {
             s_logger.error("Failed to publish event " + routingKey + " on exchange " + exchangeName +
                     "  of message broker due to " + e.getMessage());
