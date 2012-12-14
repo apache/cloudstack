@@ -19,11 +19,16 @@ package org.apache.cloudstack.api.response;
 import java.util.List;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.Entity;
+
 import com.cloud.utils.IdentityProxy;
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.Pod;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
 
+@Entity(value = Pod.class)
 public class PodResponse extends BaseResponse {
     @SerializedName("id") @Param(description="the ID of the Pod")
     private IdentityProxy id = new IdentityProxy("host_pod_ref");

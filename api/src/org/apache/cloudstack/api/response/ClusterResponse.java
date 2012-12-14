@@ -20,11 +20,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.Entity;
+
 import com.cloud.utils.IdentityProxy;
+import com.cloud.dc.DataCenter;
+import com.cloud.org.Cluster;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
 
+@Entity(value = Cluster.class)
 public class ClusterResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the cluster ID")
     private IdentityProxy id = new IdentityProxy("cluster");

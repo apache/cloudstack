@@ -29,6 +29,8 @@ import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
+
 import com.cloud.org.Cluster;
 import com.cloud.utils.Pair;
 
@@ -53,8 +55,8 @@ public class ListClustersCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, description="lists clusters by Pod ID")
     private Long podId;
 
-    @IdentityMapper(entityTableName="data_center")
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="lists clusters by Zone ID")
+    //@IdentityMapper(entityTableName="data_center")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="lists clusters by Zone ID", entityType=ZoneResponse.class)
     private Long zoneId;
 
     @Parameter(name=ApiConstants.HYPERVISOR, type=CommandType.STRING, description="lists clusters by hypervisor type")

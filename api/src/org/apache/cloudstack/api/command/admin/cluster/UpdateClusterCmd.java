@@ -35,8 +35,8 @@ public class UpdateClusterCmd extends BaseCmd {
 
     private static final String s_name = "updateclusterresponse";
 
-    @IdentityMapper(entityTableName="cluster")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the Cluster")
+    //@IdentityMapper(entityTableName="cluster")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the Cluster", entityType=ClusterResponse.class)
     private Long id;
 
     @Parameter(name=ApiConstants.CLUSTER_NAME, type=CommandType.STRING, description="the cluster name")

@@ -24,6 +24,7 @@ import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.user.Account;
 
@@ -38,8 +39,8 @@ public class DeleteClusterCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="cluster")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the cluster ID")
+    //@IdentityMapper(entityTableName="cluster")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the cluster ID", entityType=ClusterResponse.class)
     private Long id;
 
 
