@@ -25,10 +25,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.xml.bind.annotation.XmlRootElement;
 
-import org.apache.cloudstack.engine.service.api.ProvisioningService;
-import org.apache.cloudstack.framework.ws.jackson.Url;
-
-import com.cloud.dc.DataCenter;
 
 /**
  * Describes a zone and operations that can be done in a zone. 
@@ -36,7 +32,8 @@ import com.cloud.dc.DataCenter;
 @Path("/zone/{zoneid}")
 @Produces({"application/json"})
 @XmlRootElement(name="zone")
-public interface ZoneEntity extends DataCenterResourceEntity, DataCenter {
+@Path("zone/{zone-id}")
+public interface ZoneEntity extends DataCenterResourceEntity {
     @GET
     @Path("/pods")
     List<PodEntity> listPods();

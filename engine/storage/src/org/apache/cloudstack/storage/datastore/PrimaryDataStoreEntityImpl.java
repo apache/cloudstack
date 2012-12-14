@@ -100,31 +100,26 @@ public class PrimaryDataStoreEntityImpl implements StorageEntity {
     }
 
     @Override
-    public Map<String, String> getDetails(String source) {
+    public Map<String, String> getDetails() {
         // TODO Auto-generated method stub
         return null;
     }
 
-    @Override
-    public List<String> getDetailSources() {
-        // TODO Auto-generated method stub
-        return null;
-    }
 
     @Override
-    public void addDetail(String source, String name, String value) {
+    public void addDetail(String name, String value) {
         // TODO Auto-generated method stub
 
     }
 
     @Override
-    public void delDetail(String source, String name, String value) {
+    public void delDetail(String name, String value) {
         // TODO Auto-generated method stub
 
     }
 
     @Override
-    public void updateDetail(String source, String name, String value) {
+    public void updateDetail(String name, String value) {
         // TODO Auto-generated method stub
 
     }
@@ -245,5 +240,11 @@ public class PrimaryDataStoreEntityImpl implements StorageEntity {
         // TODO Auto-generated method stub
         return null;
     }
+
+	@Override
+	public void persist() {
+		// TODO Auto-generated method stub
+		
+	}
 
 }

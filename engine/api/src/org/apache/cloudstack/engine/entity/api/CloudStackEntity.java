@@ -80,19 +80,13 @@ public interface CloudStackEntity {
     /**
      * @return details stored for this entity when created.
      */
-    Map<String, String> getDetails(
-            @QueryParam("source") String source);
+    Map<String, String> getDetails();
 
-    /**
-     * @return a list of sources that have added to the details.
-     */
-    List<String> getDetailSources();
+    void addDetail(String name, String value);
 
-    void addDetail(String source, String name, String value);
+    void delDetail(String name, String value);
 
-    void delDetail(String source, String name, String value);
-
-    void updateDetail(String source, String name, String value);
+    void updateDetail(String name, String value);
 
     /**
      * @return list of actions that can be performed on the object in its current state

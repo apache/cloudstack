@@ -105,35 +105,6 @@ public class PodEntityImpl implements PodEntity {
         return null;
     }
 
-    @Override
-    public Map<String, String> getDetails(String source) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public List<String> getDetailSources() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public void addDetail(String source, String name, String value) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void delDetail(String source, String name, String value) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void updateDetail(String source, String name, String value) {
-        // TODO Auto-generated method stub
-
-    }
 
     @Override
     public List<Method> getApplicableActions() {
@@ -193,5 +164,35 @@ public class PodEntityImpl implements PodEntity {
         // TODO Auto-generated method stub
         return null;
     }
+
+	@Override
+	public void persist() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public Map<String, String> getDetails() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void addDetail(String name, String value) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void delDetail(String name, String value) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void updateDetail(String name, String value) {
+		// TODO Auto-generated method stub
+		
+	}
 
 }

@@ -19,6 +19,8 @@
 package org.apache.cloudstack.engine.datacenter.entity.api;
 
 import javax.ws.rs.GET;
+
+
 import javax.ws.rs.POST;
 import javax.ws.rs.Produces;
 
@@ -90,8 +92,11 @@ public interface DataCenterResourceEntity extends CloudStackEntity, StateObject<
     @POST
     boolean reactivate();
 
+
     @Override
     @GET
     State getState();
 
+    
+    public void persist();
 }

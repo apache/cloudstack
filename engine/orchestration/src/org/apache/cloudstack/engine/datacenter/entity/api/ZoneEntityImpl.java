@@ -24,53 +24,86 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import javax.inject.Inject;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
 
-public class ZoneEntityImpl implements ZoneEntity {
-    String _id;
-    String _name;
+import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State.Event;
+import org.apache.cloudstack.engine.datacenter.entity.api.db.DataCenterVO;
+import org.apache.cloudstack.engine.datacenter.entity.api.db.dao.DataCenterDao;
+import org.apache.cloudstack.engine.service.api.ProvisioningService;
 
-    // This is a test constructor
-    public ZoneEntityImpl(String id, String name) {
-        _id = id;
-        _name = name;
+import org.springframework.stereotype.Component;
+
+import com.cloud.utils.fsm.FiniteStateObject;
+import com.cloud.utils.fsm.NoTransitionException;
+
+
+@Component
+@Path("/zone/{id}")
+public class ZoneEntityImpl implements ZoneEntity, FiniteStateObject<DataCenterResourceEntity.State, DataCenterResourceEntity.State.Event> {
+	
+	@Inject
+	DataCenterResourceManager manager;
+
+	
+	private DataCenterVO dataCenterVO;
+	
+	
+	public ZoneEntityImpl(String dataCenterId) {
+    	this.dataCenterVO = manager.loadDataCenter(dataCenterId);
     }
 
-    public ZoneEntityImpl() {
-    }
-
-    @Override
-    public boolean enable() {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public boolean disable() {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public boolean deactivate() {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public boolean reactivate() {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
+	@Override
+    @GET
     public String getUuid() {
-        return _id;
+        return dataCenterVO.getUuid();
     }
 
     @Override
     public long getId() {
-        // TODO Auto-generated method stub
-        return 0;
+    	return dataCenterVO.getId();
+    }
+
+    @Override
+    public boolean enable() {
+    	try {
+			manager.changeState(this, Event.EnableRequest);
+		} catch (NoTransitionException e) {
+			return false;
+		}
+    	return true;
+    }
+
+    @Override
+    public boolean disable() {
+    	try {
+			manager.changeState(this, Event.DisableRequest);
+		} catch (NoTransitionException e) {
+			return false;
+		}
+    	return true;
+    }
+
+    @Override
+    public boolean deactivate() {
+    	try {
+			manager.changeState(this, Event.DeactivateRequest);
+		} catch (NoTransitionException e) {
+			return false;
+		}
+    	return true;
+    }
+
+    @Override
+    public boolean reactivate() {
+    	try {
+			manager.changeState(this, Event.ActivatedRequest);
+		} catch (NoTransitionException e) {
+			return false;
+		}
+    	return true;
     }
 
     @Override
@@ -87,48 +120,45 @@ public class ZoneEntityImpl implements ZoneEntity {
 
     @Override
     public Date getCreatedTime() {
-        // TODO Auto-generated method stub
-        return new Date();
+        return dataCenterVO.getCreated();
     }
 
     @Override
     public Date getLastUpdatedTime() {
-        // TODO Auto-generated method stub
-        return new Date();
+        return  dataCenterVO.getLastUpdated();
     }
 
     @Override
     public String getOwner() {
-        // TODO Auto-generated method stub
-        return "owner";
+        return dataCenterVO.getOwner();
+    }
+
+    public void setOwner(String owner) {
+    	dataCenterVO.setOwner(owner);
+    }
+    
+    @Override
+    public Map<String, String> getDetails() {
+    	return dataCenterVO.getDetails();
+	}
+
+    public void setDetails(Map<String,String> details) {
+    	dataCenterVO.setDetails(details);
+    }
+
+    
+    @Override
+    public void addDetail(String name, String value) {
+    	dataCenterVO.setDetail(name, value);
     }
 
     @Override
-    public Map<String, String> getDetails(String source) {
+    public void delDetail(String name, String value) {
         // TODO Auto-generated method stub
-        return null;
     }
 
     @Override
-    public List<String> getDetailSources() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public void addDetail(String source, String name, String value) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void delDetail(String source, String name, String value) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void updateDetail(String source, String name, String value) {
+    public void updateDetail(String name, String value) {
         // TODO Auto-generated method stub
 
     }
@@ -141,152 +171,26 @@ public class ZoneEntityImpl implements ZoneEntity {
 
     @Override
     public State getState() {
-        // TODO Auto-generated method stub
-        return null;
+        return dataCenterVO.getState();
     }
 
-    @Override
-    public String getDns1() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public String getDns2() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public String getGuestNetworkCidr() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
-    }
-
-    @Override
-    public Long getDomainId() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public String getDescription() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public String getDomain() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public NetworkType getNetworkType() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public String getInternalDns1() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public String getInternalDns2() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public String getDnsProvider() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public String getGatewayProvider() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public String getFirewallProvider() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public String getDhcpProvider() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public String getLoadBalancerProvider() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public String getUserDataProvider() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public String getVpnProvider() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public boolean isSecurityGroupEnabled() {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public Map<String, String> getDetails() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public void setDetails(Map<String, String> details) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public AllocationState getAllocationState() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public String getZoneToken() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public boolean isLocalStorageEnabled() {
-        // TODO Auto-generated method stub
-        return false;
-    }
 
     @Override
     public List<PodEntity> listPods() {
         // TODO Auto-generated method stub
         return null;
     }
+
+	@Override
+	public void setState(State state) {
+		//use FSM to set state.
+	}
+
+	@Override
+	public void persist() {
+		manager.saveDataCenter(dataCenterVO);
+	}
+
 
     @Override
     public List<String> listPodIds() {

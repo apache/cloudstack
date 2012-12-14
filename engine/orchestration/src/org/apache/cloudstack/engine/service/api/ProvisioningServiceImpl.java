@@ -22,20 +22,70 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+
+import javax.inject.Inject;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+
 import org.apache.cloudstack.engine.datacenter.entity.api.ClusterEntity;
+import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State;
+import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceManager;
 import org.apache.cloudstack.engine.datacenter.entity.api.PodEntity;
 import org.apache.cloudstack.engine.datacenter.entity.api.PodEntityImpl;
 import org.apache.cloudstack.engine.datacenter.entity.api.StorageEntity;
 import org.apache.cloudstack.engine.datacenter.entity.api.ZoneEntity;
 import org.apache.cloudstack.engine.datacenter.entity.api.ZoneEntityImpl;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
+import com.cloud.dc.Pod;
 import com.cloud.host.Host;
 import com.cloud.host.Status;
 import com.cloud.storage.StoragePool;
 
-@Component
+
+
+@Service("provisioningService")
+@Path("/provisioning")
 public class ProvisioningServiceImpl implements ProvisioningService {
+
+	
+	@Override
+    public StorageEntity registerStorage(String name, List<String> tags, Map<String, String> details) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public ZoneEntity registerZone(String zoneUuid, String owner, List<String> tags, Map<String, String> details) {
+
+    	ZoneEntityImpl zoneEntity = new ZoneEntityImpl(zoneUuid);
+    	zoneEntity.setOwner(owner);
+    	zoneEntity.setDetails(details);
+    	zoneEntity.setState(State.Disabled);
+    	zoneEntity.persist();
+    	
+    	return zoneEntity;
+    }
+
+  //  @Override
+   // public PodEntity registerPod(String name, List<String> tags, Map<String, String> details) {
+     //   // TODO Auto-generated method stub
+     //   return null;
+    //}
+
+    @Override
+    public ClusterEntity registerCluster(String name, List<String> tags, Map<String, String> details) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public String registerHost(String name, List<String> tags, Map<String, String> details) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
     @Override
     public void deregisterStorage(String uuid) {
@@ -90,8 +140,8 @@ public class ProvisioningServiceImpl implements ProvisioningService {
     @Override
     public List<ZoneEntity> listZones() {
         List<ZoneEntity> zones = new ArrayList<ZoneEntity>();
-        zones.add(new ZoneEntityImpl("zone-uuid-1", "name1"));
-        zones.add(new ZoneEntityImpl("zone-uuid-2", "name2"));
+        zones.add(new ZoneEntityImpl("zone-uuid-1"));
+        zones.add(new ZoneEntityImpl("zone-uuid-2"));
         return zones;
     }
 
@@ -103,38 +153,18 @@ public class ProvisioningServiceImpl implements ProvisioningService {
 
     @Override
     public ZoneEntity getZone(String uuid) {
-        ZoneEntityImpl impl = new ZoneEntityImpl(uuid, "name");
+        ZoneEntityImpl impl = new ZoneEntityImpl(uuid);
         return impl;
     }
 
     @Override
-    public StorageEntity registerStorage(String name, List<String> tags, Map<String, String> details) {
-        // TODO Auto-generated method stub
-        return null;
-    }
 
-    @Override
-    public ZoneEntity registerZone(String name, List<String> tags, Map<String, String> details) {
-        // TODO Auto-generated method stub
-        return null;
-    }
+	public PodEntity registerPod(String arg0, Long arg1, String arg2,
+			String arg3, String arg4, String arg5, List<String> arg6,
+			Map<String, String> arg7) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
-    @Override
-    public PodEntity registerPod(String name, List<String> tags, Map<String, String> details) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public ClusterEntity registerCluster(String name, List<String> tags, Map<String, String> details) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public String registerHost(String name, List<String> tags, Map<String, String> details) {
-        // TODO Auto-generated method stub
-        return null;
-    }
 
 }
