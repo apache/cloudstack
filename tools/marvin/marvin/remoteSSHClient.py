@@ -30,12 +30,16 @@ class remoteSSHClient(object):
         self.passwd = passwd
         self.ssh = paramiko.SSHClient()
         self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        self.logger = logging.getLogger('sshClient')
+        ch = logging.StreamHandler()
+        ch.setLevel(logging.DEBUG)
+        self.logger.addHandler(ch)
 
         retry_count = retries
         while True:
             try:
                 self.ssh.connect(str(host),int(port), user, passwd)
-                logging.debug("[SSHClient] connecting to server %s @ port % with user:passwd %s:%s"%(str(host), port, user, passwd))
+                self.logger.debug("connecting to server %s with user %s passwd %s"%(str(host), user, passwd))
             except paramiko.SSHException, sshex:
                 if retry_count == 0:
                     raise cloudstackException.InvalidParameterException(repr(sshex))
@@ -48,7 +52,7 @@ class remoteSSHClient(object):
         
     def execute(self, command):
         stdin, stdout, stderr = self.ssh.exec_command(command)
-        logging.debug("[SSHClient] sending command %s to host"%(command, str(self.host)))
+        self.logger.debug("sending command %s to host %s"%(command, str(self.host)))
         output = stdout.readlines()
         errors = stderr.readlines()
         results = []
@@ -60,7 +64,7 @@ class remoteSSHClient(object):
         else:
             for strOut in output:
                 results.append(strOut.rstrip())
-        logging.debug("[SSHClient] command %s returned %s"%(command, results))
+        self.logger.debug("command %s returned %s"%(command, results))
         return results
     
     def scp(self, srcFile, destPath):
