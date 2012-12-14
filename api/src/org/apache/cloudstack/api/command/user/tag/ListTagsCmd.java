@@ -17,16 +17,12 @@
 
 package org.apache.cloudstack.api.command.user.tag;
 
-import java.util.List;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
-import org.apache.cloudstack.api.view.vo.ResourceTagJoinVO;
-import com.cloud.utils.Pair;
 
 @Implementation(description = "List resource tag(s)", responseObject = ResourceTagResponse.class, since = "Burbank")
 public class ListTagsCmd extends BaseListProjectAndAccountResourcesCmd{
@@ -55,10 +51,7 @@ public class ListTagsCmd extends BaseListProjectAndAccountResourcesCmd{
     @Override
     public void execute() {
 
-      Pair<List<ResourceTagJoinVO>, Integer> tags = _taggedResourceService.listTags(this);
-      ListResponse<ResourceTagResponse> response = new ListResponse<ResourceTagResponse>();
-      List<ResourceTagResponse> tagResponses = _responseGenerator.createResourceTagResponse(false, tags.first().toArray(new ResourceTagJoinVO[tags.first().size()]));
-      response.setResponses(tagResponses, tags.second());
+      ListResponse<ResourceTagResponse> response = _queryService.listTags(this);
       response.setResponseName(getCommandName());
       this.setResponseObject(response);
     }

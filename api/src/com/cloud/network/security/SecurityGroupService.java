@@ -19,12 +19,10 @@ package com.cloud.network.security;
 import java.util.List;
 
 import org.apache.cloudstack.api.command.user.securitygroup.*;
-import org.apache.cloudstack.api.command.user.securitygroup.AuthorizeSecurityGroupIngressCmd;
+
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceInUseException;
-import org.apache.cloudstack.api.view.vo.SecurityGroupJoinVO;
-import com.cloud.utils.Pair;
 
 public interface SecurityGroupService {
     /**
@@ -38,12 +36,6 @@ public interface SecurityGroupService {
 
     boolean deleteSecurityGroup(DeleteSecurityGroupCmd cmd) throws ResourceInUseException;
 
-    /**
-     * Search for security groups and associated ingress rules for the given account, domain, group name, and/or keyword.
-     * The search terms are specified in the search criteria.
-     * @return the list of security groups and associated ingress rules
-     */
-    public Pair<List<SecurityGroupJoinVO>, Integer> searchForSecurityGroupRules(ListSecurityGroupsCmd cmd) throws PermissionDeniedException, InvalidParameterValueException;
 
     public List<? extends SecurityRule> authorizeSecurityGroupIngress(AuthorizeSecurityGroupIngressCmd cmd);
 

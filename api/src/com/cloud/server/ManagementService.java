@@ -62,9 +62,6 @@ import org.apache.cloudstack.api.command.user.iso.UpdateIsoCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.UpdateVMGroupCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.UpgradeSystemVMCmd;
 import org.apache.cloudstack.api.command.admin.resource.UploadCustomCertificateCmd;
-import org.apache.cloudstack.api.view.vo.DomainRouterJoinVO;
-import org.apache.cloudstack.api.view.vo.EventJoinVO;
-import org.apache.cloudstack.api.view.vo.InstanceGroupJoinVO;
 
 import com.cloud.async.AsyncJob;
 import com.cloud.capacity.Capacity;
@@ -168,25 +165,7 @@ public interface ManagementService {
 
     VirtualMachineTemplate updateTemplate(UpdateTemplateCmd cmd);
 
-    /**
-     * Obtains a list of events by the specified search criteria. Can search by: "username", "type", "level",
-     * "startDate",
-     * "endDate"
-     *
-     * @param c
-     * @return List of Events.
-     */
-    Pair<List<EventJoinVO>, Integer> searchForEvents(ListEventsCmd c);
 
-    /**
-     * Obtains a list of routers by the specified search criteria. Can search by: "userId", "name", "state",
-     * "dataCenterId",
-     * "podId", "hostId"
-     *
-     * @param cmd
-     * @return List of DomainRouters.
-     */
-    Pair<List<DomainRouterJoinVO>, Integer> searchForRouters(ListRoutersCmd cmd);
 
     /**
      * Obtains a list of IP Addresses by the specified search criteria. Can search by: "userId", "dataCenterId",
@@ -309,7 +288,6 @@ public interface ManagementService {
 
     InstanceGroup updateVmGroup(UpdateVMGroupCmd cmd);
 
-    Pair<List<InstanceGroupJoinVO>, Integer> searchForVmGroups(ListVMGroupsCmd cmd);
 
     Map<String, Object> listCapabilities(ListCapabilitiesCmd cmd);
 

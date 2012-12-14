@@ -27,7 +27,9 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.view.vo.ResourceTagJoinVO;
+
+import com.cloud.api.query.dao.ResourceTagJoinDao;
+import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.domain.Domain;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
@@ -51,7 +53,6 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.tags.dao.ResourceTagDao;
-import com.cloud.tags.dao.ResourceTagJoinDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
@@ -323,71 +324,6 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
        }
 
        return identiyUUId;
-    }
-
-    @Override
-    public Pair<List<ResourceTagJoinVO>, Integer> listTags(ListTagsCmd cmd) {
-        Account caller = UserContext.current().getCaller();
-        List<Long> permittedAccounts = new ArrayList<Long>();
-        String key = cmd.getKey();
-        String value = cmd.getValue();
-        String resourceId = cmd.getResourceId();
-        String resourceType = cmd.getResourceType();
-        String customerName = cmd.getCustomer();
-        boolean listAll = cmd.listAll();
-
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject =
-                new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
-
-        _accountMgr.buildACLSearchParameters(caller, null, cmd.getAccountName(),
-                cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, listAll, false);
-        Long domainId = domainIdRecursiveListProject.first();
-        Boolean isRecursive = domainIdRecursiveListProject.second();
-        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
-        Filter searchFilter = new Filter(ResourceTagJoinVO.class, "resourceType", false, cmd.getStartIndex(), cmd.getPageSizeVal());
-
-        SearchBuilder<ResourceTagJoinVO> sb = _resourceTagJoinDao.createSearchBuilder();
-        _accountMgr.buildACLViewSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
-
-        sb.and("key", sb.entity().getKey(), SearchCriteria.Op.EQ);
-        sb.and("value", sb.entity().getValue(), SearchCriteria.Op.EQ);
-
-        if (resourceId != null) {
-            sb.and().op("resourceId", sb.entity().getResourceId(), SearchCriteria.Op.EQ);
-            sb.or("resourceUuid", sb.entity().getResourceUuid(), SearchCriteria.Op.EQ);
-            sb.cp();
-        }
-
-        sb.and("resourceType", sb.entity().getResourceType(), SearchCriteria.Op.EQ);
-        sb.and("customer", sb.entity().getCustomer(), SearchCriteria.Op.EQ);
-
-        // now set the SC criteria...
-        SearchCriteria<ResourceTagJoinVO> sc = sb.create();
-        _accountMgr.buildACLViewSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
-
-        if (key != null) {
-            sc.setParameters("key", key);
-        }
-
-        if (value != null) {
-            sc.setParameters("value", value);
-        }
-
-        if (resourceId != null) {
-            sc.setParameters("resourceId", resourceId);
-            sc.setParameters("resourceUuid", resourceId);
-        }
-
-        if (resourceType != null) {
-            sc.setParameters("resourceType", resourceType);
-        }
-
-        if (customerName != null) {
-            sc.setParameters("customer", customerName);
-        }
-
-        Pair<List<ResourceTagJoinVO>, Integer> result = _resourceTagJoinDao.searchAndCount(sc, searchFilter);
-        return result;
     }
 
     @Override

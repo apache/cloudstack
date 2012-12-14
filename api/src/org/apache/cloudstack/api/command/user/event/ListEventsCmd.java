@@ -17,8 +17,6 @@
 package org.apache.cloudstack.api.command.user.event;
 
 import java.util.Date;
-import java.util.List;
-
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -28,8 +26,6 @@ import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.view.vo.EventJoinVO;
-import com.cloud.utils.Pair;
 
 @Implementation(description="A command to list events.", responseObject=EventResponse.class)
 public class ListEventsCmd extends BaseListProjectAndAccountResourcesCmd {
@@ -106,10 +102,8 @@ public class ListEventsCmd extends BaseListProjectAndAccountResourcesCmd {
 
     @Override
     public void execute(){
-        Pair<List<EventJoinVO>, Integer> result = _mgr.searchForEvents(this);
-        ListResponse<EventResponse> response = new ListResponse<EventResponse>();
-        List<EventResponse> eventResponses = _responseGenerator.createEventResponse(result.first().toArray(new EventJoinVO[result.first().size()]));
-        response.setResponses(eventResponses, result.second());
+
+        ListResponse<EventResponse> response = _queryService.searchForEvents(this);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

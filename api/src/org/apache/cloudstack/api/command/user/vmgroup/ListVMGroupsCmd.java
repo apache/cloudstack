@@ -16,9 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vmgroup;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -26,14 +23,8 @@ import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.view.vo.EventJoinVO;
-import org.apache.cloudstack.api.view.vo.InstanceGroupJoinVO;
-
-import com.cloud.utils.Pair;
-import com.cloud.vm.InstanceGroup;
 
 @Implementation(description="Lists vm groups", responseObject=InstanceGroupResponse.class)
 public class ListVMGroupsCmd extends BaseListProjectAndAccountResourcesCmd {
@@ -75,10 +66,7 @@ public class ListVMGroupsCmd extends BaseListProjectAndAccountResourcesCmd {
 
     @Override
     public void execute(){
-        Pair<List<InstanceGroupJoinVO>, Integer> groups = _mgr.searchForVmGroups(this);
-        ListResponse<InstanceGroupResponse> response = new ListResponse<InstanceGroupResponse>();
-        List<InstanceGroupResponse> grpResponses = _responseGenerator.createInstanceGroupResponse(groups.first().toArray(new InstanceGroupJoinVO[groups.first().size()]));
-        response.setResponses(grpResponses, groups.second());
+        ListResponse<InstanceGroupResponse> response = _queryService.searchForVmGroups(this);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

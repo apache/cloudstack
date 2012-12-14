@@ -95,12 +95,15 @@ import org.apache.cloudstack.api.command.admin.systemvm.StopSystemVmCmd;
 import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
 import com.cloud.api.commands.UpdateTemplateOrIsoCmd;
+import com.cloud.api.query.dao.DomainRouterJoinDao;
+import com.cloud.api.query.dao.InstanceGroupJoinDao;
+import com.cloud.api.query.vo.DomainRouterJoinVO;
+import com.cloud.api.query.vo.EventJoinVO;
+import com.cloud.api.query.vo.InstanceGroupJoinVO;
+
 import org.apache.cloudstack.api.command.user.vmgroup.UpdateVMGroupCmd;
 import org.apache.cloudstack.api.command.admin.resource.UploadCustomCertificateCmd;
 import org.apache.cloudstack.api.response.ExtractResponse;
-import org.apache.cloudstack.api.view.vo.DomainRouterJoinVO;
-import org.apache.cloudstack.api.view.vo.EventJoinVO;
-import org.apache.cloudstack.api.view.vo.InstanceGroupJoinVO;
 
 import com.cloud.async.AsyncJob;
 import com.cloud.async.AsyncJobExecutor;
@@ -262,9 +265,7 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
-import com.cloud.vm.dao.DomainRouterJoinDao;
 import com.cloud.vm.dao.InstanceGroupDao;
-import com.cloud.vm.dao.InstanceGroupJoinDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
@@ -1548,221 +1549,8 @@ public class ManagementServerImpl implements ManagementServer {
         return _templateDao.findById(id);
     }
 
-    @Override
-    public Pair<List<EventJoinVO>, Integer> searchForEvents(ListEventsCmd cmd) {
-        Account caller = UserContext.current().getCaller();
-        List<Long> permittedAccounts = new ArrayList<Long>();
 
-        Long id = cmd.getId();
-        String type = cmd.getType();
-        String level = cmd.getLevel();
-        Date startDate = cmd.getStartDate();
-        Date endDate = cmd.getEndDate();
-        String keyword = cmd.getKeyword();
-        Integer entryTime = cmd.getEntryTime();
-        Integer duration = cmd.getDuration();
 
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
-                cmd.getDomainId(), cmd.isRecursive(), null);
-        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject,
-                cmd.listAll(), false);
-        Long domainId = domainIdRecursiveListProject.first();
-        Boolean isRecursive = domainIdRecursiveListProject.second();
-        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
-
-        Filter searchFilter = new Filter(EventJoinVO.class, "createDate", false, cmd.getStartIndex(), cmd.getPageSizeVal());
-        SearchBuilder<EventJoinVO> sb = _eventJoinDao.createSearchBuilder();
-        _accountMgr.buildACLViewSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
-
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("levelL", sb.entity().getLevel(), SearchCriteria.Op.LIKE);
-        sb.and("levelEQ", sb.entity().getLevel(), SearchCriteria.Op.EQ);
-        sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
-        sb.and("createDateB", sb.entity().getCreateDate(), SearchCriteria.Op.BETWEEN);
-        sb.and("createDateG", sb.entity().getCreateDate(), SearchCriteria.Op.GTEQ);
-        sb.and("createDateL", sb.entity().getCreateDate(), SearchCriteria.Op.LTEQ);
-        sb.and("state", sb.entity().getState(), SearchCriteria.Op.NEQ);
-        sb.and("startId", sb.entity().getStartId(), SearchCriteria.Op.EQ);
-        sb.and("createDate", sb.entity().getCreateDate(), SearchCriteria.Op.BETWEEN);
-
-        SearchCriteria<EventJoinVO> sc = sb.create();
-        // building ACL condition
-        _accountMgr.buildACLViewSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
-
-        if (id != null) {
-            sc.setParameters("id", id);
-        }
-
-        if (keyword != null) {
-            SearchCriteria<EventJoinVO> ssc = _eventJoinDao.createSearchCriteria();
-            ssc.addOr("type", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("description", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("level", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            sc.addAnd("level", SearchCriteria.Op.SC, ssc);
-        }
-
-        if (level != null) {
-            sc.setParameters("levelEQ", level);
-        }
-
-        if (type != null) {
-            sc.setParameters("type", type);
-        }
-
-        if (startDate != null && endDate != null) {
-            sc.setParameters("createDateB", startDate, endDate);
-        } else if (startDate != null) {
-            sc.setParameters("createDateG", startDate);
-        } else if (endDate != null) {
-            sc.setParameters("createDateL", endDate);
-        }
-
-        Pair<List<EventJoinVO>, Integer> eventPair = null;
-        // event_view will not have duplicate rows for each event, so searchAndCount should be good enough.
-        if ((entryTime != null) && (duration != null)) {
-            // TODO: waiting for response from dev list, logic is mystery to
-            // me!!
-            /*
-             * if (entryTime <= duration) { throw new
-             * InvalidParameterValueException
-             * ("Entry time must be greater than duration"); } Calendar calMin =
-             * Calendar.getInstance(); Calendar calMax = Calendar.getInstance();
-             * calMin.add(Calendar.SECOND, -entryTime);
-             * calMax.add(Calendar.SECOND, -duration); Date minTime =
-             * calMin.getTime(); Date maxTime = calMax.getTime();
-             *
-             * sc.setParameters("state", com.cloud.event.Event.State.Completed);
-             * sc.setParameters("startId", 0); sc.setParameters("createDate",
-             * minTime, maxTime); List<EventJoinVO> startedEvents =
-             * _eventJoinDao.searchAllEvents(sc, searchFilter);
-             * List<EventJoinVO> pendingEvents = new ArrayList<EventJoinVO>();
-             * for (EventVO event : startedEvents) { EventVO completedEvent =
-             * _eventDao.findCompletedEvent(event.getId()); if (completedEvent
-             * == null) { pendingEvents.add(event); } } return pendingEvents;
-             */
-        } else {
-            eventPair = _eventJoinDao.searchAndCount(sc, searchFilter);
-        }
-        return eventPair;
-
-    }
-
-    @Override
-    public Pair<List<DomainRouterJoinVO>, Integer> searchForRouters(ListRoutersCmd cmd) {
-        Long id = cmd.getId();
-        String name = cmd.getRouterName();
-        String state = cmd.getState();
-        Long zone = cmd.getZoneId();
-        Long pod = cmd.getPodId();
-        Long hostId = cmd.getHostId();
-        String keyword = cmd.getKeyword();
-        Long networkId = cmd.getNetworkId();
-        Long vpcId = cmd.getVpcId();
-        Boolean forVpc = cmd.getForVpc();
-
-        Account caller = UserContext.current().getCaller();
-        List<Long> permittedAccounts = new ArrayList<Long>();
-
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
-                cmd.getDomainId(), cmd.isRecursive(), null);
-        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject,
-                cmd.listAll(), false);
-        Long domainId = domainIdRecursiveListProject.first();
-        Boolean isRecursive = domainIdRecursiveListProject.second();
-        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
-        // no default orderBy
-        // Filter searchFilter = new Filter(DomainRouterJoinVO.class, "id",
-        // true, cmd.getStartIndex(), cmd.getPageSizeVal());
-        Filter searchFilter = new Filter(DomainRouterJoinVO.class, null, true, cmd.getStartIndex(), cmd.getPageSizeVal());
-        SearchBuilder<DomainRouterJoinVO> sb = _routerJoinDao.createSearchBuilder();
-        sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct
-                                                             // ids to get
-                                                             // number of
-                                                             // records with
-                                                             // pagination
-        _accountMgr.buildACLViewSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
-
-        sb.and("name", sb.entity().getHostName(), SearchCriteria.Op.LIKE);
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.IN);
-        sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
-        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-        sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
-        sb.and("hostId", sb.entity().getHostId(), SearchCriteria.Op.EQ);
-        sb.and("vpcId", sb.entity().getVpcId(), SearchCriteria.Op.EQ);
-
-        if (forVpc != null) {
-            if (forVpc) {
-                sb.and("forVpc", sb.entity().getVpcId(), SearchCriteria.Op.NNULL);
-            } else {
-                sb.and("forVpc", sb.entity().getVpcId(), SearchCriteria.Op.NULL);
-            }
-        }
-
-        if (networkId != null) {
-            sb.and("networkId", sb.entity().getNetworkId(), SearchCriteria.Op.EQ);
-        }
-
-        SearchCriteria<DomainRouterJoinVO> sc = sb.create();
-        _accountMgr.buildACLViewSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
-
-        if (keyword != null) {
-            SearchCriteria<DomainRouterJoinVO> ssc = _routerJoinDao.createSearchCriteria();
-            ssc.addOr("hostName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("instanceName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("state", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-
-            sc.addAnd("hostName", SearchCriteria.Op.SC, ssc);
-        }
-
-        if (name != null) {
-            sc.setParameters("name", "%" + name + "%");
-        }
-
-        if (id != null) {
-            sc.setParameters("id", id);
-        }
-
-        if (state != null) {
-            sc.setParameters("state", state);
-        }
-
-        if (zone != null) {
-            sc.setParameters("dataCenterId", zone);
-        }
-
-        if (pod != null) {
-            sc.setParameters("podId", pod);
-        }
-
-        if (hostId != null) {
-            sc.setParameters("hostId", hostId);
-        }
-
-        if (networkId != null) {
-            sc.setJoinParameters("nicSearch", "networkId", networkId);
-        }
-
-        if (vpcId != null) {
-            sc.setParameters("vpcId", vpcId);
-        }
-
-        // search VR details by ids
-        Pair<List<DomainRouterJoinVO>, Integer> uniqueVrPair = _routerJoinDao.searchAndCount(sc, searchFilter);
-        Integer count = uniqueVrPair.second();
-        if (count.intValue() == 0) {
-            // empty result
-            return uniqueVrPair;
-        }
-        List<DomainRouterJoinVO> uniqueVrs = uniqueVrPair.first();
-        Long[] vrIds = new Long[uniqueVrs.size()];
-        int i = 0;
-        for (DomainRouterJoinVO v : uniqueVrs) {
-            vrIds[i++] = v.getId();
-        }
-        List<DomainRouterJoinVO> vrs = _routerJoinDao.searchByIds(vrIds);
-        return new Pair<List<DomainRouterJoinVO>, Integer>(vrs, count);
-    }
 
     @Override
     public Pair<List<? extends IpAddress>, Integer> searchForIPAddresses(ListPublicIpAddressesCmd cmd) {
@@ -3209,53 +2997,7 @@ public class ManagementServerImpl implements ManagementServer {
         return _vmGroupDao.findById(groupId);
     }
 
-    @Override
-    public Pair<List<InstanceGroupJoinVO>, Integer> searchForVmGroups(ListVMGroupsCmd cmd) {
-        Long id = cmd.getId();
-        String name = cmd.getGroupName();
-        String keyword = cmd.getKeyword();
 
-        Account caller = UserContext.current().getCaller();
-        List<Long> permittedAccounts = new ArrayList<Long>();
-
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
-                cmd.getDomainId(), cmd.isRecursive(), null);
-        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject,
-                cmd.listAll(), false);
-        Long domainId = domainIdRecursiveListProject.first();
-        Boolean isRecursive = domainIdRecursiveListProject.second();
-        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
-
-        Filter searchFilter = new Filter(InstanceGroupJoinVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-
-        SearchBuilder<InstanceGroupJoinVO> sb = _vmGroupJoinDao.createSearchBuilder();
-        _accountMgr.buildACLViewSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
-
-
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
-
-
-        SearchCriteria<InstanceGroupJoinVO> sc = sb.create();
-        _accountMgr.buildACLViewSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
-
-        if (keyword != null) {
-            SearchCriteria<InstanceGroupJoinVO> ssc = _vmGroupJoinDao.createSearchCriteria();
-            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
-        }
-
-
-        if (id != null) {
-            sc.setParameters("id", id);
-        }
-
-        if (name != null) {
-            sc.setParameters("name", "%" + name + "%");
-        }
-
-        return _vmGroupJoinDao.searchAndCount(sc, searchFilter);
-    }
 
     @Override
     public String getVersion() {

@@ -16,8 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.securitygroup;
 
-import java.util.List;
-
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -27,9 +25,8 @@ import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
-import org.apache.cloudstack.api.view.vo.SecurityGroupJoinVO;
+
 import com.cloud.async.AsyncJob;
-import com.cloud.utils.Pair;
 
 @Implementation(description="Lists security groups", responseObject=SecurityGroupResponse.class)
 public class ListSecurityGroupsCmd extends BaseListTaggedResourcesCmd {
@@ -78,11 +75,7 @@ public class ListSecurityGroupsCmd extends BaseListTaggedResourcesCmd {
 
     @Override
     public void execute(){
-        Pair<List<SecurityGroupJoinVO>, Integer> result = _securityGroupService.searchForSecurityGroupRules(this);
-        ListResponse<SecurityGroupResponse> response = new ListResponse<SecurityGroupResponse>();
-        List<SecurityGroupResponse> routerResponses = _responseGenerator.createSecurityGroupResponses(result.first());
-        response.setResponses(routerResponses, result.second());
-
+        ListResponse<SecurityGroupResponse> response = _queryService.searchForSecurityGroups(this);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

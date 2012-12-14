@@ -24,14 +24,15 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.acl.ControlledEntity;
 import com.cloud.acl.SecurityChecker.AccessType;
+import com.cloud.api.query.vo.ControlledViewEntity;
+import com.cloud.api.query.vo.UserAccountJoinVO;
+
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
 import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
-import org.apache.cloudstack.api.view.vo.ControlledViewEntity;
-import org.apache.cloudstack.api.view.vo.UserAccountJoinVO;
 
 import com.cloud.domain.Domain;
 import com.cloud.exception.ConcurrentOperationException;
@@ -306,11 +307,6 @@ public class MockAccountManagerImpl implements Manager, AccountManager, AccountS
         return null;
     }
 
-    @Override
-    public Pair<List<UserAccountJoinVO>, Integer> searchForUsers(ListUsersCmd cmd) throws PermissionDeniedException {
-        // TODO Auto-generated method stub
-        return null;
-    }
 
 	@Override
 	public boolean enableAccount(long accountId) {

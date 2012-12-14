@@ -19,8 +19,8 @@ package com.cloud.user.dao;
 import java.util.List;
 
 import org.apache.cloudstack.api.response.UserResponse;
-import org.apache.cloudstack.api.view.vo.UserAccountJoinVO;
 
+import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.utils.db.GenericDao;

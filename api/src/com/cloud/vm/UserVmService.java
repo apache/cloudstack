@@ -30,13 +30,12 @@ import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
 import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
 import org.apache.cloudstack.api.command.user.vm.DestroyVMCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
-import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.command.user.vm.RebootVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;
 import org.apache.cloudstack.api.command.user.vm.ResetVMPasswordCmd;
 import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
 import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
-import org.apache.cloudstack.api.view.vo.UserVmJoinVO;
+
 import com.cloud.dc.DataCenter;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -53,7 +52,6 @@ import com.cloud.storage.Volume;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.Pair;
 import com.cloud.utils.exception.ExecutionException;
 
 public interface UserVmService {
@@ -371,15 +369,6 @@ public interface UserVmService {
 
     void deletePrivateTemplateRecord(Long templateId);
 
-    /**
-     * Obtains a list of virtual machines by the specified search criteria. Can search by: "userId", "name", "state",
-     * "dataCenterId", "podId", "hostId"
-     *
-     * @param cmd
-     *            the API command that wraps the search criteria
-     * @return List of UserVMs.
-     */
-    Pair<List<UserVmJoinVO>, Integer> searchForUserVMs(ListVMsCmd cmd);
 
     HypervisorType getHypervisorTypeOfUserVM(long vmid);
 

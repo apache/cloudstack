@@ -45,8 +45,10 @@ import com.cloud.agent.api.NetworkRulesSystemVmCommand;
 import com.cloud.agent.api.SecurityGroupRulesCmd;
 import com.cloud.agent.api.SecurityGroupRulesCmd.IpPortAndProto;
 import com.cloud.agent.manager.Commands;
+import com.cloud.api.query.dao.SecurityGroupJoinDao;
+import com.cloud.api.query.vo.SecurityGroupJoinVO;
+
 import org.apache.cloudstack.api.command.user.securitygroup.RevokeSecurityGroupEgressCmd;
-import org.apache.cloudstack.api.view.vo.SecurityGroupJoinVO;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.domain.dao.DomainDao;
@@ -65,7 +67,6 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.security.SecurityGroupWork.Step;
 import com.cloud.network.security.SecurityRule.SecurityRuleType;
 import com.cloud.network.security.dao.SecurityGroupDao;
-import com.cloud.network.security.dao.SecurityGroupJoinDao;
 import com.cloud.network.security.dao.SecurityGroupRuleDao;
 import com.cloud.network.security.dao.SecurityGroupRulesDao;
 import com.cloud.network.security.dao.SecurityGroupVMMapDao;
@@ -158,7 +159,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
     UsageEventDao _usageEventDao;
     @Inject
     ResourceTagDao _resourceTagDao;
-    
+
     ScheduledExecutorService _executorPool;
     ScheduledExecutorService _cleanupExecutor;
 
@@ -396,7 +397,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("Security Group Mgr: scheduling ruleset updates for " + affectedVms.size() + " vms");
         }
-        boolean locked = _workLock.lock(_globalWorkLockTimeout); 
+        boolean locked = _workLock.lock(_globalWorkLockTimeout);
         if (!locked) {
             s_logger.warn("Security Group Mgr: failed to acquire global work lock");
             return;
@@ -575,11 +576,11 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         Map groupList = cmd.getUserSecurityGroupList();
         return authorizeSecurityGroupRule(securityGroupId,protocol,startPort,endPort,icmpType,icmpCode,cidrList,groupList,SecurityRuleType.IngressRule);
     }
-    
+
     private List<SecurityGroupRuleVO> authorizeSecurityGroupRule(Long securityGroupId,String protocol,Integer startPort,Integer endPort,Integer icmpType,Integer icmpCode,List<String>  cidrList,Map groupList,SecurityRuleType ruleType) {
         Integer startPortOrType = null;
         Integer endPortOrCode = null;
-        
+
         // Validate parameters
         SecurityGroup securityGroup = _securityGroupDao.findById(securityGroupId);
         if (securityGroup == null) {
@@ -747,7 +748,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
             }
         }
     }
-    
+
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_SECURITY_GROUP_REVOKE_EGRESS, eventDescription = "Revoking Egress Rule ", async = true)
@@ -755,7 +756,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         Long id = cmd.getId();
         return revokeSecurityGroupRule(id, SecurityRuleType.EgressRule);
     }
-    
+
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_SECURITY_GROUP_REVOKE_INGRESS, eventDescription = "Revoking Ingress Rule ", async = true)
@@ -764,11 +765,11 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         Long id = cmd.getId();
         return revokeSecurityGroupRule(id, SecurityRuleType.IngressRule);
     }
-    
+
     private boolean revokeSecurityGroupRule(Long id, SecurityRuleType type) {
         // input validation
         Account caller = UserContext.current().getCaller();
-        
+
         SecurityGroupRuleVO rule = _securityGroupRuleDao.findById(id);
         if (rule == null) {
             s_logger.debug("Unable to find security rule with id " + id);
@@ -780,7 +781,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
             s_logger.debug("Mismatch in rule type for security rule with id " + id );
             throw new InvalidParameterValueException("Mismatch in rule type for security rule with id " + id);
         }
-        	
+
         // Check permissions
         SecurityGroup securityGroup = _securityGroupDao.findById(rule.getSecurityGroupId());
         _accountMgr.checkAccess(caller, null, true, securityGroup);
@@ -861,13 +862,13 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 
         _serverId = ((ManagementServer) ComponentLocator.getComponent(ManagementServer.Name)).getId();
 
-        s_logger.info("SecurityGroupManager: num worker threads=" + _numWorkerThreads + 
+        s_logger.info("SecurityGroupManager: num worker threads=" + _numWorkerThreads +
                        ", time between cleanups=" + _timeBetweenCleanups + " global lock timeout=" + _globalWorkLockTimeout);
         createThreadPools();
 
         return true;
     }
-    
+
     protected void createThreadPools() {
         _executorPool = Executors.newScheduledThreadPool(_numWorkerThreads, new NamedThreadFactory("NWGRP"));
         _cleanupExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("NWGRP-Cleanup"));
@@ -964,7 +965,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
                         s_logger.debug("Unable to send ingress rules updates for vm: " + userVmId + "(agentid=" + agentId + ")");
                         _workDao.updateStep(work.getInstanceId(), seqnum, Step.Done);
                     }
-                    
+
                 }
             }
         } finally {
@@ -1088,91 +1089,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         return true;
     }
 
-    @Override
-    public Pair<List<SecurityGroupJoinVO>, Integer> searchForSecurityGroupRules(ListSecurityGroupsCmd cmd) throws PermissionDeniedException, InvalidParameterValueException {
-        Account caller = UserContext.current().getCaller();
-        Long instanceId = cmd.getVirtualMachineId();
-        String securityGroup = cmd.getSecurityGroupName();
-        Long id = cmd.getId();
-        Object keyword = cmd.getKeyword();
-        List<Long> permittedAccounts = new ArrayList<Long>();
-        Map<String, String> tags = cmd.getTags();
 
-        if (instanceId != null) {
-            UserVmVO userVM = _userVMDao.findById(instanceId);
-            if (userVM == null) {
-                throw new InvalidParameterValueException("Unable to list network groups for virtual machine instance " + instanceId + "; instance not found.");
-            }
-            _accountMgr.checkAccess(caller, null, true, userVM);
-            return listSecurityGroupRulesByVM(instanceId.longValue(), cmd.getStartIndex(), cmd.getPageSizeVal());
-        }
-
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
-        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
-        Long domainId = domainIdRecursiveListProject.first();
-        Boolean isRecursive = domainIdRecursiveListProject.second();
-        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
-
-        Filter searchFilter = new Filter(SecurityGroupJoinVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-        SearchBuilder<SecurityGroupJoinVO> sb = _securityGroupJoinDao.createSearchBuilder();
-        sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct ids
-        _accountMgr.buildACLViewSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
-
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
-        
-        if (tags != null && !tags.isEmpty()) {
-            for (int count=0; count < tags.size(); count++) {
-                sb.or().op("key" + String.valueOf(count), sb.entity().getTagKey(), SearchCriteria.Op.EQ);
-                sb.and("value" + String.valueOf(count), sb.entity().getTagValue(), SearchCriteria.Op.EQ);
-                sb.cp();
-            }
-        }
-
-        SearchCriteria<SecurityGroupJoinVO> sc = sb.create();
-        _accountMgr.buildACLViewSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
-
-        if (id != null) {
-            sc.setParameters("id", id);
-        }
-        
-        if (tags != null && !tags.isEmpty()) {
-            int count = 0;
-            for (String key : tags.keySet()) {
-               sc.setParameters("key" + String.valueOf(count), key);
-               sc.setParameters("value" + String.valueOf(count), tags.get(key));
-               count++;
-           }
-        }
-
-        if (securityGroup != null) {
-            sc.setParameters("name", securityGroup);
-        }
-
-        if (keyword != null) {
-            SearchCriteria<SecurityGroupJoinVO> ssc = _securityGroupJoinDao.createSearchCriteria();
-            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("description", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
-        }
-
-        // search security group together with rules
-        Pair<List<SecurityGroupJoinVO>, Integer> uniqueSgPair =  _securityGroupJoinDao.searchAndCount(sc, searchFilter);
-        Integer count = uniqueSgPair.second();
-        if ( count.intValue() == 0 ){
-            // handle empty result cases
-            return uniqueSgPair;
-        }
-
-        List<SecurityGroupJoinVO> uniqueSgs = uniqueSgPair.first();
-        Long[] sgIds = new Long[uniqueSgs.size()];
-        int i = 0;
-        for (SecurityGroupJoinVO v : uniqueSgs ){
-            sgIds[i++] = v.getId();
-        }
-        List<SecurityGroupJoinVO> sgs = _securityGroupJoinDao.searchByIds(sgIds);
-        return new Pair<List<SecurityGroupJoinVO>, Integer>(sgs, count);
-    }
 
     private Pair<List<SecurityGroupJoinVO>, Integer> listSecurityGroupRulesByVM(long vmId, long pageInd, long pageSize) {
         Filter sf = new Filter(SecurityGroupVMMapVO.class, null, true, pageInd, pageSize);

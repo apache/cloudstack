@@ -24,6 +24,15 @@ import java.util.Map;
 import com.cloud.agent.manager.ClusteredAgentManagerImpl;
 import com.cloud.alert.AlertManagerImpl;
 import com.cloud.alert.dao.AlertDaoImpl;
+import com.cloud.api.query.QueryManagerImpl;
+import com.cloud.api.query.dao.DomainRouterJoinDaoImpl;
+import com.cloud.api.query.dao.InstanceGroupJoinDaoImpl;
+import com.cloud.api.query.dao.ProjectAccountJoinDaoImpl;
+import com.cloud.api.query.dao.ProjectInvitationJoinDaoImpl;
+import com.cloud.api.query.dao.ProjectJoinDaoImpl;
+import com.cloud.api.query.dao.ResourceTagJoinDaoImpl;
+import com.cloud.api.query.dao.SecurityGroupJoinDaoImpl;
+import com.cloud.api.query.dao.UserVmJoinDaoImpl;
 import com.cloud.async.AsyncJobExecutorContextImpl;
 import com.cloud.async.AsyncJobManagerImpl;
 import com.cloud.async.SyncQueueManagerImpl;
@@ -117,7 +126,6 @@ import com.cloud.network.rules.RulesManagerImpl;
 import com.cloud.network.rules.dao.PortForwardingRulesDaoImpl;
 import com.cloud.network.security.SecurityGroupManagerImpl2;
 import com.cloud.network.security.dao.SecurityGroupDaoImpl;
-import com.cloud.network.security.dao.SecurityGroupJoinDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupRuleDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupRulesDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupVMMapDaoImpl;
@@ -139,8 +147,6 @@ import com.cloud.projects.ProjectManagerImpl;
 import com.cloud.projects.dao.ProjectAccountDaoImpl;
 import com.cloud.projects.dao.ProjectDaoImpl;
 import com.cloud.projects.dao.ProjectInvitationDaoImpl;
-import com.cloud.projects.dao.ProjectInvitationJoinDaoImpl;
-import com.cloud.projects.dao.ProjectJoinDaoImpl;
 import com.cloud.resource.ResourceManagerImpl;
 import com.cloud.resourcelimit.ResourceLimitManagerImpl;
 import com.cloud.service.dao.ServiceOfferingDaoImpl;
@@ -173,7 +179,6 @@ import com.cloud.storage.snapshot.SnapshotSchedulerImpl;
 import com.cloud.storage.swift.SwiftManagerImpl;
 import com.cloud.storage.upload.UploadMonitorImpl;
 import com.cloud.tags.TaggedResourceManagerImpl;
-import com.cloud.tags.dao.ResourceTagJoinDaoImpl;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.template.HyervisorTemplateAdapter;
 import com.cloud.template.TemplateAdapter;
@@ -203,18 +208,14 @@ import com.cloud.vm.ItWorkDaoImpl;
 import com.cloud.vm.UserVmManagerImpl;
 import com.cloud.vm.dao.ConsoleProxyDaoImpl;
 import com.cloud.vm.dao.DomainRouterDaoImpl;
-import com.cloud.vm.dao.DomainRouterJoinDaoImpl;
 import com.cloud.vm.dao.InstanceGroupDaoImpl;
-import com.cloud.vm.dao.InstanceGroupJoinDaoImpl;
 import com.cloud.vm.dao.InstanceGroupVMMapDaoImpl;
 import com.cloud.vm.dao.NicDaoImpl;
 import com.cloud.vm.dao.SecondaryStorageVmDaoImpl;
 import com.cloud.vm.dao.UserVmDaoImpl;
-import com.cloud.vm.dao.UserVmJoinDaoImpl;
 import com.cloud.vm.dao.UserVmDetailsDaoImpl;
 import com.cloud.vm.dao.VMInstanceDaoImpl;
 import com.cloud.event.dao.EventJoinDaoImpl;
-import com.cloud.projects.dao.ProjectAccountJoinDaoImpl;
 
 
 public class DefaultComponentLibrary extends ComponentLibraryBase implements ComponentLibrary {
@@ -432,6 +433,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addManager("NetworkACLManager", NetworkACLManagerImpl.class);
         addManager("TaggedResourcesManager", TaggedResourceManagerImpl.class);
         addManager("Site2SiteVpnManager", Site2SiteVpnManagerImpl.class);
+        addManager("QueryManager", QueryManagerImpl.class);
     }
 
     @Override

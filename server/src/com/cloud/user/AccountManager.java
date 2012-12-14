@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.acl.ControlledEntity;
-import org.apache.cloudstack.api.view.vo.ControlledViewEntity;
+import com.cloud.api.query.vo.ControlledViewEntity;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;

@@ -16,9 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.account;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -29,11 +26,8 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
-import org.apache.cloudstack.api.view.vo.ProjectAccountJoinVO;
 
-import com.cloud.projects.ProjectAccount;
 import com.cloud.user.Account;
-import com.cloud.utils.Pair;
 
 @Implementation(description="Lists project's accounts", responseObject=ProjectResponse.class, since="3.0.0")
 public class ListProjectAccountsCmd extends BaseListCmd {
@@ -62,6 +56,17 @@ public class ListProjectAccountsCmd extends BaseListCmd {
         return accountName;
     }
 
+
+    public Long getProjectId() {
+        return projectId;
+    }
+
+
+    public String getRole() {
+        return role;
+    }
+
+
     @Override
     public String getCommandName() {
         return s_name;
@@ -81,11 +86,7 @@ public class ListProjectAccountsCmd extends BaseListCmd {
 
     @Override
     public void execute(){
-        Pair<List<ProjectAccountJoinVO>, Integer> projectAccounts = _projectService.listProjectAccounts(projectId,
-                accountName, role, this.getStartIndex(), this.getPageSizeVal());
-        ListResponse<ProjectAccountResponse> response = new ListResponse<ProjectAccountResponse>();
-        List<ProjectAccountResponse> projectResponses = _responseGenerator.createProjectAccountResponse(projectAccounts.first().toArray(new ProjectAccountJoinVO[projectAccounts.first().size()]));
-        response.setResponses(projectResponses, projectAccounts.second());
+        ListResponse<ProjectAccountResponse> response = _queryService.listProjectAccounts(this);
         response.setResponseName(getCommandName());
 
         this.setResponseObject(response);

@@ -16,9 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.project;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -28,10 +25,6 @@ import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ProjectInvitationResponse;
-import org.apache.cloudstack.api.view.vo.ProjectInvitationJoinVO;
-
-import com.cloud.projects.ProjectInvitation;
-import com.cloud.utils.Pair;
 
 @Implementation(description = "Lists projects and provides detailed information for listed projects", responseObject = ProjectInvitationResponse.class, since = "3.0.0")
 public class ListProjectInvitationsCmd extends BaseListAccountResourcesCmd {
@@ -85,16 +78,8 @@ public class ListProjectInvitationsCmd extends BaseListAccountResourcesCmd {
 
     @Override
     public void execute() {
-        Pair<List<ProjectInvitationJoinVO>, Integer> invites = _projectService.listProjectInvitations(id, projectId,
-                this.getAccountName(), this.getDomainId(), state, activeOnly, this.getStartIndex(), this.getPageSizeVal(),
-                this.isRecursive(), this.listAll());
-        ListResponse<ProjectInvitationResponse> response = new ListResponse<ProjectInvitationResponse>();
-        List<ProjectInvitationResponse> projectInvitationResponses =
-                _responseGenerator.createProjectInvitationResponse(invites.first().toArray(new ProjectInvitationJoinVO[invites.first().size()]));
-
-        response.setResponses(projectInvitationResponses, invites.second());
+        ListResponse<ProjectInvitationResponse> response = _queryService.listProjectInvitations(this);
         response.setResponseName(getCommandName());
-
         this.setResponseObject(response);
     }
 

@@ -22,7 +22,6 @@ import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +40,19 @@ import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
+
+import com.cloud.api.query.ViewResponseHelper;
+import com.cloud.api.query.vo.ControlledViewEntity;
+import com.cloud.api.query.vo.DomainRouterJoinVO;
+import com.cloud.api.query.vo.EventJoinVO;
+import com.cloud.api.query.vo.InstanceGroupJoinVO;
+import com.cloud.api.query.vo.ProjectAccountJoinVO;
+import com.cloud.api.query.vo.ProjectInvitationJoinVO;
+import com.cloud.api.query.vo.ProjectJoinVO;
+import com.cloud.api.query.vo.ResourceTagJoinVO;
+import com.cloud.api.query.vo.SecurityGroupJoinVO;
+import com.cloud.api.query.vo.UserAccountJoinVO;
+import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.response.ApiResponseSerializer;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
@@ -112,17 +124,6 @@ import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.VpnUsersResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.cloudstack.api.view.vo.DomainRouterJoinVO;
-import org.apache.cloudstack.api.view.vo.ControlledViewEntity;
-import org.apache.cloudstack.api.view.vo.EventJoinVO;
-import org.apache.cloudstack.api.view.vo.InstanceGroupJoinVO;
-import org.apache.cloudstack.api.view.vo.ProjectAccountJoinVO;
-import org.apache.cloudstack.api.view.vo.ProjectInvitationJoinVO;
-import org.apache.cloudstack.api.view.vo.ProjectJoinVO;
-import org.apache.cloudstack.api.view.vo.ResourceTagJoinVO;
-import org.apache.cloudstack.api.view.vo.SecurityGroupJoinVO;
-import org.apache.cloudstack.api.view.vo.UserAccountJoinVO;
-import org.apache.cloudstack.api.view.vo.UserVmJoinVO;
 import com.cloud.async.AsyncJob;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
@@ -246,15 +247,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         return ApiDBUtils.newUserResponse(vUser);
     }
 
-
-    @Override
-    public List<UserResponse> createUserResponse(UserAccountJoinVO... users) {
-        List<UserResponse> respList = new ArrayList<UserResponse>();
-        for (UserAccountJoinVO vt : users){
-            respList.add(ApiDBUtils.newUserResponse(vt));
-        }
-        return respList;
-    }
 
 
     // this method is used for response generation via createAccount (which creates an account + user)
@@ -1178,15 +1170,6 @@ public class ApiResponseHelper implements ResponseGenerator {
 
 
     @Override
-    public List<InstanceGroupResponse> createInstanceGroupResponse(InstanceGroupJoinVO... groups) {
-        List<InstanceGroupResponse> respList = new ArrayList<InstanceGroupResponse>();
-        for (InstanceGroupJoinVO vt : groups){
-            respList.add(ApiDBUtils.newInstanceGroupResponse(vt));
-        }
-        return respList;
-    }
-
-    @Override
     public StoragePoolResponse createStoragePoolResponse(StoragePool pool) {
         StoragePoolResponse poolResponse = new StoragePoolResponse();
         poolResponse.setId(pool.getId());
@@ -1369,72 +1352,26 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public List<UserVmResponse> createUserVmResponse(String objectName, EnumSet<VMDetails> details, UserVm... userVms) {
         List<UserVmJoinVO> viewVms = ApiDBUtils.newUserVmView(userVms);
-        return createUserVmResponse(objectName, details, viewVms.toArray(new UserVmJoinVO[viewVms.size()]));
+        return ViewResponseHelper.createUserVmResponse(objectName, details, viewVms.toArray(new UserVmJoinVO[viewVms.size()]));
 
     }
 
     @Override
     public List<UserVmResponse> createUserVmResponse(String objectName, UserVm... userVms) {
         List<UserVmJoinVO> viewVms = ApiDBUtils.newUserVmView(userVms);
-        return createUserVmResponse(objectName, viewVms.toArray(new UserVmJoinVO[viewVms.size()]));
+        return ViewResponseHelper.createUserVmResponse(objectName, viewVms.toArray(new UserVmJoinVO[viewVms.size()]));
     }
 
-    @Override
-    public List<UserVmResponse> createUserVmResponse(String objectName, UserVmJoinVO... userVms) {
-        return createUserVmResponse(objectName, EnumSet.of(VMDetails.all), userVms);
-    }
 
-    @Override
-    public List<UserVmResponse> createUserVmResponse(String objectName, EnumSet<VMDetails> details, UserVmJoinVO... userVms) {
-        Account caller = UserContext.current().getCaller();
-
-        s_logger.debug(">>>Converting UserVm VO to UserVmResponse");
-        Hashtable<Long, UserVmResponse> vmDataList = new Hashtable<Long, UserVmResponse>();
-        // Initialise the vmdatalist with the input data
-
-
-        for (UserVmJoinVO userVm : userVms) {
-            UserVmResponse userVmData = vmDataList.get(userVm.getId());
-            if ( userVmData == null ){
-                // first time encountering this vm
-                userVmData = ApiDBUtils.newUserVmResponse(objectName, userVm, details, caller);
-            } else{
-                // update nics, securitygroups, tags for 1 to many mapping fields
-                userVmData = ApiDBUtils.fillVmDetails(userVmData, userVm);
-            }
-            vmDataList.put(userVm.getId(), userVmData);
-        }
-        s_logger.debug(">>>Done with creating vm response");
-        return new ArrayList<UserVmResponse>(vmDataList.values());
-    }
 
     @Override
     public DomainRouterResponse createDomainRouterResponse(VirtualRouter router) {
         List<DomainRouterJoinVO> viewVrs = ApiDBUtils.newDomainRouterView(router);
-        List<DomainRouterResponse> listVrs = createDomainRouterResponse(viewVrs.toArray(new DomainRouterJoinVO[viewVrs.size()]));
+        List<DomainRouterResponse> listVrs = ViewResponseHelper.createDomainRouterResponse(viewVrs.toArray(new DomainRouterJoinVO[viewVrs.size()]));
         assert listVrs != null && listVrs.size() == 1 : "There should be one virtual router returned";
         return listVrs.get(0);
     }
 
-    @Override
-    public List<DomainRouterResponse> createDomainRouterResponse(DomainRouterJoinVO... routers) {
-        Account caller = UserContext.current().getCaller();
-        Hashtable<Long, DomainRouterResponse> vrDataList = new Hashtable<Long, DomainRouterResponse>();
-        // Initialise the vrdatalist with the input data
-        for (DomainRouterJoinVO vr : routers) {
-            DomainRouterResponse vrData = vrDataList.get(vr.getId());
-            if ( vrData == null ){
-                // first time encountering this vm
-                vrData = ApiDBUtils.newDomainRouterResponse(vr, caller);
-            }
-            else{
-                // update nics for 1 to many mapping fields
-                vrData = ApiDBUtils.fillRouterDetails(vrData, vr);
-            }
-            vrDataList.put(vr.getId(), vrData);
-        }
-        return new ArrayList<DomainRouterResponse>(vrDataList.values());
-    }
 
     @Override
     public SystemVmResponse createSystemVmResponse(VirtualMachine vm) {
@@ -2006,30 +1943,12 @@ public class ApiResponseHelper implements ResponseGenerator {
         return isoResponses;
     }
 
-    @Override
-    public List<SecurityGroupResponse> createSecurityGroupResponses(List<SecurityGroupJoinVO> securityGroups) {
-        Account caller = UserContext.current().getCaller();
-        Hashtable<Long, SecurityGroupResponse> vrDataList = new Hashtable<Long, SecurityGroupResponse>();
-        // Initialise the vrdatalist with the input data
-        for (SecurityGroupJoinVO vr : securityGroups) {
-            SecurityGroupResponse vrData = vrDataList.get(vr.getId());
-            if ( vrData == null ) {
-                // first time encountering this sg
-                vrData = ApiDBUtils.newSecurityGroupResponse(vr, caller);
 
-            } else {
-                // update rules for 1 to many mapping fields
-                vrData = ApiDBUtils.fillSecurityGroupDetails(vrData, vr);
-            }
-            vrDataList.put(vr.getId(), vrData);
-        }
-        return new ArrayList<SecurityGroupResponse>(vrDataList.values());
-    }
 
     @Override
     public SecurityGroupResponse createSecurityGroupResponse(SecurityGroup group) {
         List<SecurityGroupJoinVO> viewSgs = ApiDBUtils.newSecurityGroupView(group);
-        List<SecurityGroupResponse> listSgs = createSecurityGroupResponses(viewSgs);
+        List<SecurityGroupResponse> listSgs = ViewResponseHelper.createSecurityGroupResponses(viewSgs);
         assert listSgs != null && listSgs.size() == 1 : "There should be one security group returned";
         return listSgs.get(0);
     }
@@ -2117,14 +2036,6 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
 
-    @Override
-    public List<EventResponse> createEventResponse(EventJoinVO... events) {
-        List<EventResponse> respList = new ArrayList<EventResponse>();
-        for (EventJoinVO vt : events){
-            respList.add(ApiDBUtils.newEventResponse(vt));
-        }
-        return respList;
-    }
 
     @Override
     public EventResponse createEventResponse(Event event) {
@@ -2675,30 +2586,12 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public ProjectResponse createProjectResponse(Project project) {
         List<ProjectJoinVO> viewPrjs = ApiDBUtils.newProjectView(project);
-        List<ProjectResponse> listPrjs = createProjectResponse(viewPrjs.toArray(new ProjectJoinVO[viewPrjs.size()]));
+        List<ProjectResponse> listPrjs = ViewResponseHelper.createProjectResponse(viewPrjs.toArray(new ProjectJoinVO[viewPrjs.size()]));
         assert listPrjs != null && listPrjs.size() == 1 : "There should be one project  returned";
         return listPrjs.get(0);
     }
 
 
-    @Override
-    public List<ProjectResponse> createProjectResponse(ProjectJoinVO... projects) {
-        Hashtable<Long, ProjectResponse> prjDataList = new Hashtable<Long, ProjectResponse>();
-        // Initialise the prjdatalist with the input data
-        for (ProjectJoinVO p : projects) {
-            ProjectResponse pData = prjDataList.get(p.getId());
-            if ( pData == null ){
-                // first time encountering this vm
-                pData = ApiDBUtils.newProjectResponse(p);
-            }
-            else{
-                // update those  1 to many mapping fields
-                pData = ApiDBUtils.fillProjectDetails(pData, p);
-            }
-            prjDataList.put(p.getId(), pData);
-        }
-        return new ArrayList<ProjectResponse>(prjDataList.values());
-    }
 
 
     @Override
@@ -2853,40 +2746,18 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public ProjectAccountResponse createProjectAccountResponse(ProjectAccount projectAccount) {
         ProjectAccountJoinVO vProj = ApiDBUtils.newProjectAccountView(projectAccount);
-        List<ProjectAccountResponse> listProjs = createProjectAccountResponse(vProj);
+        List<ProjectAccountResponse> listProjs = ViewResponseHelper.createProjectAccountResponse(vProj);
         assert listProjs != null && listProjs.size() == 1 : "There should be one project account returned";
         return listProjs.get(0);
     }
 
 
-    @Override
-    public List<ProjectAccountResponse> createProjectAccountResponse(ProjectAccountJoinVO... projectAccounts) {
-        List<ProjectAccountResponse> responseList = new ArrayList<ProjectAccountResponse>();
-        for (ProjectAccountJoinVO proj : projectAccounts){
-            ProjectAccountResponse resp = ApiDBUtils.newProjectAccountResponse(proj);
-            // update user list
-            List<UserAccountJoinVO> users = ApiDBUtils.findUserViewByAccountId(proj.getAccountId());
-            resp.setUsers(createUserResponse(users.toArray(new UserAccountJoinVO[users.size()])));
-            responseList.add(resp);
-        }
-        return responseList;
-    }
+
 
     @Override
     public ProjectInvitationResponse createProjectInvitationResponse(ProjectInvitation invite) {
         ProjectInvitationJoinVO vInvite = ApiDBUtils.newProjectInvitationView(invite);
         return ApiDBUtils.newProjectInvitationResponse(vInvite);
-    }
-
-
-
-    @Override
-    public List<ProjectInvitationResponse> createProjectInvitationResponse(ProjectInvitationJoinVO... invites) {
-        List<ProjectInvitationResponse> respList = new ArrayList<ProjectInvitationResponse>();
-        for (ProjectInvitationJoinVO v : invites){
-            respList.add(ApiDBUtils.newProjectInvitationResponse(v));
-        }
-        return respList;
     }
 
 
@@ -3126,14 +2997,6 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
 
-    @Override
-    public List<ResourceTagResponse> createResourceTagResponse(boolean keyValueOnly, ResourceTagJoinVO... tags) {
-        List<ResourceTagResponse> respList = new ArrayList<ResourceTagResponse>();
-        for (ResourceTagJoinVO vt : tags){
-            respList.add(ApiDBUtils.newResourceTagResponse(vt, keyValueOnly));
-        }
-        return respList;
-    }
 
     @Override
     public VpcOfferingResponse createVpcOfferingResponse(VpcOffering offering) {

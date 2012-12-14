@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.apache.cloudstack.query.QueryService;
 import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ConfigurationService;
@@ -141,6 +142,8 @@ public abstract class BaseCmd {
     public static NetworkACLService _networkACLService;
     public static Site2SiteVpnService _s2sVpnService;
 
+    public static QueryService _queryService;
+
     public static void setComponents(ResponseGenerator generator) {
         ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
         _mgr = (ManagementService) ComponentLocator.getComponent(ManagementService.Name);
@@ -172,6 +175,7 @@ public abstract class BaseCmd {
         _vpcService = locator.getManager(VpcService.class);
         _networkACLService = locator.getManager(NetworkACLService.class);
         _s2sVpnService = locator.getManager(Site2SiteVpnService.class);
+        _queryService = locator.getManager(QueryService.class);
     }
 
     public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException;

@@ -28,13 +28,13 @@ import org.junit.Before;
 import org.junit.Ignore;
 
 import com.cloud.agent.MockAgentManagerImpl;
+import com.cloud.api.query.dao.SecurityGroupJoinDaoImpl;
 import com.cloud.configuration.DefaultInterceptorLibrary;
 import com.cloud.configuration.dao.ConfigurationDaoImpl;
 import com.cloud.domain.dao.DomainDaoImpl;
 import com.cloud.event.dao.UsageEventDaoImpl;
 import com.cloud.network.MockNetworkManagerImpl;
 import com.cloud.network.security.dao.SecurityGroupDaoImpl;
-import com.cloud.network.security.dao.SecurityGroupJoinDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupRuleDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupRulesDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupVMMapDaoImpl;

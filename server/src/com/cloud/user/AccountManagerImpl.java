@@ -36,19 +36,19 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.api.command.admin.user.*;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
 import com.cloud.acl.ControlledEntity;
-import org.apache.cloudstack.api.view.vo.ControlledViewEntity;
-import org.apache.cloudstack.api.view.vo.UserAccountJoinVO;
 
 import com.cloud.acl.SecurityChecker;
 import com.cloud.acl.SecurityChecker.AccessType;
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.query.vo.ControlledViewEntity;
+
+
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
@@ -762,6 +762,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     // ///////////////////////////////////////////////////
     // ////////////// API commands /////////////////////
     // ///////////////////////////////////////////////////
+
 
     @Override
     @DB
@@ -2140,101 +2141,6 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         return new Pair<List<? extends Account>, Integer>(result.first(), result.second());
     }
 
-    @Override
-    public Pair<List<UserAccountJoinVO>, Integer> searchForUsers(ListUsersCmd cmd) throws PermissionDeniedException {
-        Account caller = UserContext.current().getCaller();
-
-        //TODO: Integrate with ACL checkAccess refactoring
-        Long domainId = cmd.getDomainId();
-        if (domainId != null) {
-            Domain domain = _domainDao.findById(domainId);
-            if (domain == null) {
-                throw new InvalidParameterValueException("Unable to find domain by id=" + domainId);
-            }
-
-            checkAccess(caller, domain);
-        } else {
-            // default domainId to the caller's domain
-            domainId = caller.getDomainId();
-        }
-
-        Filter searchFilter = new Filter(UserAccountJoinVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-
-        Long id = cmd.getId();
-        Object username = cmd.getUsername();
-        Object type = cmd.getAccountType();
-        Object accountName = cmd.getAccountName();
-        Object state = cmd.getState();
-        Object keyword = cmd.getKeyword();
-
-        SearchBuilder<UserAccountJoinVO> sb = _userAccountJoinDao.createSearchBuilder();
-        sb.and("username", sb.entity().getUsername(), SearchCriteria.Op.LIKE);
-        if (id != null && id == 1) {
-            // system user should NOT be searchable
-            List<UserAccountJoinVO> emptyList = new ArrayList<UserAccountJoinVO>();
-            return new Pair<List<UserAccountJoinVO>, Integer>(emptyList, 0);
-        } else if (id != null) {
-            sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        } else {
-            // this condition is used to exclude system user from the search results
-            sb.and("id", sb.entity().getId(), SearchCriteria.Op.NEQ);
-        }
-
-        sb.and("type", sb.entity().getAccountType(), SearchCriteria.Op.EQ);
-        sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
-        sb.and("accountName", sb.entity().getAccountName(), SearchCriteria.Op.EQ);
-        sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
-
-        if ((accountName == null) && (domainId != null)) {
-            sb.and("domainPath", sb.entity().getDomainPath(), SearchCriteria.Op.LIKE);
-        }
-
-        SearchCriteria<UserAccountJoinVO> sc = sb.create();
-        if (keyword != null) {
-            SearchCriteria<UserAccountJoinVO> ssc = _userAccountJoinDao.createSearchCriteria();
-            ssc.addOr("username", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("firstname", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("lastname", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("email", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("state", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("accountName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("type", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("accountState", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-
-            sc.addAnd("username", SearchCriteria.Op.SC, ssc);
-        }
-
-        if (username != null) {
-            sc.setParameters("username", username);
-        }
-
-        if (id != null) {
-            sc.setParameters("id", id);
-        } else {
-            // Don't return system user, search builder with NEQ
-            sc.setParameters("id", 1);
-        }
-
-        if (type != null) {
-            sc.setParameters("type", type);
-        }
-
-        if (accountName != null) {
-            sc.setParameters("accountName", accountName);
-            if (domainId != null) {
-                sc.setParameters("domainId", domainId);
-            }
-        } else if (domainId != null) {
-            DomainVO domainVO = _domainDao.findById(domainId);
-            sc.setParameters("domainPath", domainVO.getPath() + "%");
-        }
-
-        if (state != null) {
-            sc.setParameters("state", state);
-        }
-
-        return _userAccountJoinDao.searchAndCount(sc, searchFilter);
-    }
 
     @Override
     public void buildACLSearchBuilder(SearchBuilder<? extends ControlledEntity> sb,

@@ -39,10 +39,10 @@ import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+
 import com.cloud.async.AsyncJob;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.Pair;
-import org.apache.cloudstack.api.view.vo.UserVmJoinVO;
 
 
 @Implementation(description="List the virtual machines owned by the account.", responseObject=UserVmResponse.class)
@@ -202,17 +202,14 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
         return s_name;
     }
 
+    @Override
     public AsyncJob.Type getInstanceType() {
         return AsyncJob.Type.VirtualMachine;
     }
 
     @Override
     public void execute(){
-        Pair<List<UserVmJoinVO>, Integer> result = _userVmService.searchForUserVMs(this);
-        ListResponse<UserVmResponse> response = new ListResponse<UserVmResponse>();
-        EnumSet<VMDetails> details = getDetails();
-        List<UserVmResponse> vmResponses = _responseGenerator.createUserVmResponse("virtualmachine", getDetails(), result.first().toArray(new UserVmJoinVO[result.first().size()]));
-        response.setResponses(vmResponses, result.second());
+        ListResponse<UserVmResponse> response = _queryService.searchForUserVMs(this);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

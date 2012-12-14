@@ -16,8 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.router;
 
-import java.util.List;
-
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -26,12 +24,11 @@ import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 
-import org.apache.cloudstack.api.view.vo.DomainRouterJoinVO;
 
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+
 import com.cloud.async.AsyncJob;
-import com.cloud.utils.Pair;
 
 @Implementation(description="List routers.", responseObject=DomainRouterResponse.class)
 public class ListRoutersCmd extends BaseListProjectAndAccountResourcesCmd {
@@ -125,17 +122,14 @@ public class ListRoutersCmd extends BaseListProjectAndAccountResourcesCmd {
         return s_name;
     }
 
+    @Override
     public AsyncJob.Type getInstanceType() {
         return AsyncJob.Type.DomainRouter;
     }
 
     @Override
     public void execute(){
-        Pair<List<DomainRouterJoinVO>, Integer> result = _mgr.searchForRouters(this);
-        ListResponse<DomainRouterResponse> response = new ListResponse<DomainRouterResponse>();
-
-        List<DomainRouterResponse> routerResponses = _responseGenerator.createDomainRouterResponse(result.first().toArray(new DomainRouterJoinVO[result.first().size()]));
-        response.setResponses(routerResponses, result.second());
+        ListResponse<DomainRouterResponse> response = _queryService.searchForRouters(this);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

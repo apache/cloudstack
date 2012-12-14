@@ -16,11 +16,9 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.project;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -32,11 +30,8 @@ import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
-import org.apache.cloudstack.api.view.vo.ProjectJoinVO;
 
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.projects.Project;
-import com.cloud.utils.Pair;
 
 @Implementation(description="Lists projects and provides detailed information for listed projects", responseObject=ProjectResponse.class, since="3.0.0")
 public class ListProjectsCmd extends BaseListAccountResourcesCmd {
@@ -79,6 +74,11 @@ public class ListProjectsCmd extends BaseListAccountResourcesCmd {
         return displayText;
     }
 
+
+    public String getState() {
+        return state;
+    }
+
     @Override
     public String getCommandName() {
         return s_name;
@@ -109,14 +109,8 @@ public class ListProjectsCmd extends BaseListAccountResourcesCmd {
 
     @Override
     public void execute(){
-        Pair<List<ProjectJoinVO>, Integer> projects = _projectService.listProjects(id, name, displayText, state,
-                this.getAccountName(), this.getDomainId(), this.getKeyword(), this.getStartIndex(), this.getPageSizeVal(),
-                this.listAll(), this.isRecursive(), getTags());
-        ListResponse<ProjectResponse> response = new ListResponse<ProjectResponse>();
-        List<ProjectResponse> projectResponses = _responseGenerator.createProjectResponse(projects.first().toArray(new ProjectJoinVO[projects.first().size()]));
-        response.setResponses(projectResponses, projects.second());
+        ListResponse<ProjectResponse> response = _queryService.listProjects(this);
         response.setResponseName(getCommandName());
-
         this.setResponseObject(response);
     }
 }

@@ -28,6 +28,8 @@ import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
+import com.cloud.api.query.vo.UserVmJoinVO;
+
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;
 import org.apache.cloudstack.api.command.user.vm.*;
@@ -44,7 +46,6 @@ import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
 import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
 import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
 import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
-import org.apache.cloudstack.api.view.vo.UserVmJoinVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
@@ -401,11 +402,7 @@ public class MockUserVmManagerImpl implements UserVmManager, UserVmService, Mana
 		return null;
 	}
 
-    @Override
-    public Pair<List<UserVmJoinVO>, Integer> searchForUserVMs(ListVMsCmd cmd) {
-        // TODO Auto-generated method stub
-        return null;
-    }
+
 
     @Override
     public Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long hostId, Map<VirtualMachineProfile.Param, Object> additionalParams) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
@@ -416,7 +413,7 @@ public class MockUserVmManagerImpl implements UserVmManager, UserVmService, Mana
 	@Override
 	public void prepareStop(VirtualMachineProfile<UserVmVO> profile) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
     /* (non-Javadoc)

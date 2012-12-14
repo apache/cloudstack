@@ -89,6 +89,8 @@ import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.VpnUsersResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+
+
 import com.cloud.async.AsyncJob;
 import com.cloud.capacity.Capacity;
 import com.cloud.configuration.Configuration;
@@ -150,16 +152,6 @@ import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.InstanceGroup;
-import org.apache.cloudstack.api.view.vo.DomainRouterJoinVO;
-import org.apache.cloudstack.api.view.vo.EventJoinVO;
-import org.apache.cloudstack.api.view.vo.InstanceGroupJoinVO;
-import org.apache.cloudstack.api.view.vo.ProjectAccountJoinVO;
-import org.apache.cloudstack.api.view.vo.ProjectInvitationJoinVO;
-import org.apache.cloudstack.api.view.vo.ProjectJoinVO;
-import org.apache.cloudstack.api.view.vo.ResourceTagJoinVO;
-import org.apache.cloudstack.api.view.vo.SecurityGroupJoinVO;
-import org.apache.cloudstack.api.view.vo.UserAccountJoinVO;
-import org.apache.cloudstack.api.view.vo.UserVmJoinVO;
 import com.cloud.vm.VirtualMachine;
 
 public interface ResponseGenerator {
@@ -183,10 +175,6 @@ public interface ResponseGenerator {
 
     SnapshotPolicyResponse createSnapshotPolicyResponse(SnapshotPolicy policy);
 
-    List<UserVmResponse> createUserVmResponse(String objectName, UserVmJoinVO... userVms);
-
-    List<UserVmResponse> createUserVmResponse(String objectName, EnumSet<VMDetails> details, UserVmJoinVO... userVms);
-
     List<UserVmResponse> createUserVmResponse(String objectName, UserVm... userVms);
 
     List<UserVmResponse> createUserVmResponse(String objectName, EnumSet<VMDetails> details, UserVm... userVms);
@@ -194,8 +182,6 @@ public interface ResponseGenerator {
     SystemVmResponse createSystemVmResponse(VirtualMachine systemVM);
 
     DomainRouterResponse createDomainRouterResponse(VirtualRouter router);
-
-    List<DomainRouterResponse> createDomainRouterResponse(DomainRouterJoinVO... router);
 
     HostResponse createHostResponse(Host host, EnumSet<HostDetails> details);
 
@@ -218,8 +204,6 @@ public interface ResponseGenerator {
     VolumeResponse createVolumeResponse(Volume volume);
 
     InstanceGroupResponse createInstanceGroupResponse(InstanceGroup group);
-
-    List<InstanceGroupResponse> createInstanceGroupResponse(InstanceGroupJoinVO... groups);
 
     StoragePoolResponse createStoragePoolResponse(StoragePool pool);
 
@@ -253,9 +237,6 @@ public interface ResponseGenerator {
 
     //ListResponse<SecurityGroupResponse> createSecurityGroupResponses(List<? extends SecurityGroupRules> networkGroups);
 
-    List<SecurityGroupResponse> createSecurityGroupResponses(List<SecurityGroupJoinVO> securityGroups);
-
-
     SecurityGroupResponse createSecurityGroupResponseFromSecurityGroupRule(List<? extends SecurityRule> SecurityRules);
 
     SecurityGroupResponse createSecurityGroupResponse(SecurityGroup group);
@@ -268,7 +249,7 @@ public interface ResponseGenerator {
 
     EventResponse createEventResponse(Event event);
 
-    List<EventResponse> createEventResponse(EventJoinVO... events);
+    //List<EventResponse> createEventResponse(EventJoinVO... events);
 
     TemplateResponse createIsoResponse(VirtualMachineTemplate result);
 
@@ -284,7 +265,7 @@ public interface ResponseGenerator {
 
     UserResponse createUserResponse(User user);
 
-    List<UserResponse> createUserResponse(UserAccountJoinVO... users);
+    //List<UserResponse> createUserResponse(UserAccountJoinVO... users);
 
     AccountResponse createUserAccountResponse(UserAccount user);
 
@@ -294,7 +275,6 @@ public interface ResponseGenerator {
 
     ProjectResponse createProjectResponse(Project project);
 
-    List<ProjectResponse> createProjectResponse(ProjectJoinVO... projects);
 
     List<TemplateResponse> createIsoResponses(VirtualMachineTemplate iso, long zoneId, boolean readyOnly);
 
@@ -306,11 +286,7 @@ public interface ResponseGenerator {
 
     ProjectAccountResponse createProjectAccountResponse(ProjectAccount projectAccount);
 
-    List<ProjectAccountResponse> createProjectAccountResponse(ProjectAccountJoinVO... projectAccounts);
-
     ProjectInvitationResponse createProjectInvitationResponse(ProjectInvitation invite);
-
-    List<ProjectInvitationResponse> createProjectInvitationResponse(ProjectInvitationJoinVO... invites);
 
     SystemVmInstanceResponse createSystemVmInstanceResponse(VirtualMachine systemVM);
 
@@ -343,8 +319,6 @@ public interface ResponseGenerator {
      * @return
      */
     ResourceTagResponse createResourceTagResponse(ResourceTag resourceTag, boolean keyValueOnly);
-
-    List<ResourceTagResponse> createResourceTagResponse(boolean keyValueOnly, ResourceTagJoinVO... resourceTag);
 
 
     Site2SiteVpnGatewayResponse createSite2SiteVpnGatewayResponse(Site2SiteVpnGateway result);

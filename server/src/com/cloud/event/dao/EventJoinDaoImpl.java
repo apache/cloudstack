@@ -24,8 +24,9 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiResponseHelper;
+import com.cloud.api.query.vo.EventJoinVO;
+
 import org.apache.cloudstack.api.response.EventResponse;
-import org.apache.cloudstack.api.view.vo.EventJoinVO;
 import com.cloud.event.Event;
 import com.cloud.event.Event.State;
 import com.cloud.utils.db.Filter;

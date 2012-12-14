@@ -16,19 +16,11 @@
 // under the License.
 package com.cloud.projects;
 
-import java.util.List;
-import java.util.Map;
-
-import org.apache.cloudstack.api.view.vo.ProjectAccountJoinVO;
-import org.apache.cloudstack.api.view.vo.ProjectInvitationJoinVO;
-import org.apache.cloudstack.api.view.vo.ProjectJoinVO;
-
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.projects.ProjectAccount.Role;
 import com.cloud.user.Account;
-import com.cloud.utils.Pair;
 
 public interface ProjectService {
     /**
@@ -65,9 +57,6 @@ public interface ProjectService {
      */
     Project getProject(long id);
 
-    Pair<List<ProjectJoinVO>, Integer> listProjects(Long id, String name, String displayText, String state, String accountName,
-            Long domainId, String keyword, Long startIndex, Long pageSize, boolean listAll, boolean isRecursive, Map<String, String> tags);
-
     ProjectAccount assignAccountToProject(Project project, long accountId, Role accountRole);
 
     Account getProjectOwner(long projectId);
@@ -84,10 +73,7 @@ public interface ProjectService {
 
     boolean deleteAccountFromProject(long projectId, String accountName);
 
-    Pair<List<ProjectAccountJoinVO>, Integer> listProjectAccounts(long projectId, String accountName, String role, Long startIndex, Long pageSizeVal);
 
-    Pair<List<ProjectInvitationJoinVO>, Integer> listProjectInvitations(Long id, Long projectId, String accountName, Long domainId, String state, boolean activeOnly, Long startIndex, Long pageSizeVal, boolean isRecursive,
-            boolean listAll);
 
     boolean updateInvitation(long projectId, String accountName, String token, boolean accept);
 

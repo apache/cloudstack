@@ -24,10 +24,11 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
+import com.cloud.api.query.vo.InstanceGroupJoinVO;
+import com.cloud.api.query.vo.UserAccountJoinVO;
+
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.UserResponse;
-import org.apache.cloudstack.api.view.vo.InstanceGroupJoinVO;
-import org.apache.cloudstack.api.view.vo.UserAccountJoinVO;
 
 import com.cloud.user.Account;
 import com.cloud.user.User;
