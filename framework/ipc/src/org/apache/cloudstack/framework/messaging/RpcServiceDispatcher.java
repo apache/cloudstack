@@ -25,7 +25,7 @@ import java.util.Map;
 
 public class RpcServiceDispatcher implements RpcServiceEndpoint {
 
-	private static Map<Class<?>, Method> s_handlerCache = new HashMap<Class<?>, Method>();
+	private static Map<Class<?>, Map<String, Method>> s_handlerCache = new HashMap<Class<?>, Map<String, Method>>();
 
 	private static Map<Object, RpcServiceDispatcher> s_targetMap = new HashMap<Object, RpcServiceDispatcher>();
 	private Object _targetObject;
@@ -75,15 +75,18 @@ public class RpcServiceDispatcher implements RpcServiceEndpoint {
 	
 	public static Method resolveHandler(Class<?> handlerClz, String command) {
 		synchronized(s_handlerCache) {
-			Method handler = s_handlerCache.get(handlerClz);
+			Map<String, Method> handlerMap = getAndSetHandlerMap(handlerClz);
+				
+			Method handler = handlerMap.get(command);
 			if(handler != null)
 				return handler;
 			
-			for(Method method : handlerClz.getMethods()) {
+			for(Method method : handlerClz.getDeclaredMethods()) {
 				RpcServiceHandler annotation = method.getAnnotation(RpcServiceHandler.class);
 				if(annotation != null) {
 					if(annotation.command().equals(command)) {
-						s_handlerCache.put(handlerClz, method);
+						method.setAccessible(true);
+						handlerMap.put(command, method);
 						return method;
 					}
 				}
@@ -92,7 +95,21 @@ public class RpcServiceDispatcher implements RpcServiceEndpoint {
 		
 		return null;
 	}
-
+	
+	private static Map<String, Method> getAndSetHandlerMap(Class<?> handlerClz) {
+		Map<String, Method> handlerMap;
+		synchronized(s_handlerCache) {
+			handlerMap = s_handlerCache.get(handlerClz);
+			
+			if(handlerMap == null) {
+				handlerMap = new HashMap<String, Method>();
+				s_handlerCache.put(handlerClz, handlerMap);
+			}
+		}
+		
+		return handlerMap;
+	}
+	
 	@Override
 	public boolean onCallReceive(RpcServerCall call) {
 		return dispatch(_targetObject, call);

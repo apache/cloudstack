@@ -167,7 +167,7 @@ public class RpcProviderImpl implements RpcProvider {
 			}
 			
 			for(RpcServiceEndpoint endpoint : endpoints) {
-				if(RpcServiceDispatcher.dispatch(endpoint, call))
+				if(endpoint.onCallReceive(call))
 					return;
 			}
 			

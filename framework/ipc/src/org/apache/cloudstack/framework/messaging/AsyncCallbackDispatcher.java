@@ -26,7 +26,7 @@ import java.util.Map;
 
 @SuppressWarnings("rawtypes")
 public class AsyncCallbackDispatcher implements AsyncCompletionCallback {
-	private static Map<Class<?>, Method> s_handlerCache = new HashMap<Class<?>, Method>();
+	private static Map<Class<?>, Map<String, Method>> s_handlerCache = new HashMap<Class<?>, Map<String, Method>>();
 	
 	private Map<String, Object> _contextMap = new HashMap<String, Object>();
 	private String _operationName;
@@ -100,17 +100,20 @@ public class AsyncCallbackDispatcher implements AsyncCompletionCallback {
 		return true;
 	}
 	
-	public static Method resolveHandler(Class<?> handlerClz, String operationName) {
+	public static Method resolveHandler(Class<?> handlerClz, String command) {
 		synchronized(s_handlerCache) {
-			Method handler = s_handlerCache.get(handlerClz);
+			Map<String, Method> handlerMap = getAndSetHandlerMap(handlerClz);
+				
+			Method handler = handlerMap.get(command);
 			if(handler != null)
 				return handler;
 			
-			for(Method method : handlerClz.getMethods()) {
+			for(Method method : handlerClz.getDeclaredMethods()) {
 				AsyncCallbackHandler annotation = method.getAnnotation(AsyncCallbackHandler.class);
 				if(annotation != null) {
-					if(annotation.operationName().equals(operationName)) {
-						s_handlerCache.put(handlerClz, method);
+					if(annotation.operationName().equals(command)) {
+						handlerMap.put(command, method);
+						method.setAccessible(true);
 						return method;
 					}
 				}
@@ -118,5 +121,19 @@ public class AsyncCallbackDispatcher implements AsyncCompletionCallback {
 		}
 		
 		return null;
+	}
+	
+	private static Map<String, Method> getAndSetHandlerMap(Class<?> handlerClz) {
+		Map<String, Method> handlerMap;
+		synchronized(s_handlerCache) {
+			handlerMap = s_handlerCache.get(handlerClz);
+			
+			if(handlerMap == null) {
+				handlerMap = new HashMap<String, Method>();
+				s_handlerCache.put(handlerClz, handlerMap);
+			}
+		}
+		
+		return handlerMap;
 	}
 }

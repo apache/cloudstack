@@ -61,6 +61,7 @@ public class SampleManagerComponent2 {
 		
 		s_logger.info("StoragePrepare command arg. pool: " + cmd.getStoragePool() + ", vol: " + cmd.getVolumeId());
 		SampleStoragePrepareAnswer answer = new SampleStoragePrepareAnswer();
+		answer.setResult("Successfully executed StoragePrepare command");
 		
 		call.completeCall(answer);
 	}
