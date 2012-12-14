@@ -8250,54 +8250,69 @@
               },
 
               action: function(args) {
-                var array1 = [];
-                array1.push("&zoneid=" + args.data.zoneid);
-                array1.push("&podid=" + args.data.podId);
-                array1.push("&clusterid=" + args.data.clusterId);
-                array1.push("&hypervisor=" + todb(selectedClusterObj.hypervisortype));
-                var clustertype = selectedClusterObj.clustertype;
-                array1.push("&clustertype=" + todb(clustertype));
-                array1.push("&hosttags=" + todb(args.data.hosttags));
+                var data = {
+								  zoneid: args.data.zoneid,
+									podid: args.data.podId,
+									clusterid: args.data.clusterId,
+									hypervisor: selectedClusterObj.hypervisortype,
+									clustertype: selectedClusterObj.clustertype,
+									hosttags: args.data.hosttags
+								};								               
 
                 if(selectedClusterObj.hypervisortype == "VMware") {
-                  array1.push("&username=");
-                  array1.push("&password=");
+								  $.extend(data,{
+									  username: '',
+										password: ''										
+									});
+								                  
                   var hostname = args.data.vcenterHost;
                   var url;
                   if(hostname.indexOf("http://")==-1)
                     url = "http://" + hostname;
                   else
                     url = hostname;
-                  array1.push("&url=" + todb(url));
+										
+									$.extend(data, {
+									  url: url
+									});	                  
                 }
                 else {
-                  array1.push("&username=" + todb(args.data.username));
-                  array1.push("&password=" + todb(args.data.password));
-
+								  $.extend(data, {
+									  username: args.data.username,
+										password: args.data.password
+									});
+								
                   var hostname = args.data.hostname;
-
                   var url;
                   if(hostname.indexOf("http://")==-1)
                     url = "http://" + hostname;
                   else
                     url = hostname;
-                  array1.push("&url="+todb(url));
-
+										
+									$.extend(data, {
+                    url: url
+                  });									
+                 
                   if (selectedClusterObj.hypervisortype == "BareMetal") {
-                    array1.push("&cpunumber=" + todb(args.data.baremetalCpuCores));
-                    array1.push("&cpuspeed=" + todb(args.data.baremetalCpu));
-                    array1.push("&memory=" + todb(args.data.baremetalMemory));
-                    array1.push("&hostmac=" + todb(args.data.baremetalMAC));
+									  $.extend(data, {
+										  cpunumber: args.data.baremetalCpuCores,
+											cpuspeed: args.data.baremetalCpu,
+											memory: args.data.baremetalMemory,
+											hostmac: args.data.baremetalMAC
+										});									
                   }
                   else if(selectedClusterObj.hypervisortype == "Ovm") {
-                    array1.push("&agentusername=" + todb(args.data.agentUsername));
-                    array1.push("&agentpassword=" + todb(args.data.agentPassword));
+									  $.extend(data, {
+										  agentusername: args.data.agentUsername,
+											agentpassword: args.data.agentPassword
+										});									
                   }
                 }
 
                 $.ajax({
-                  url: createURL("addHost" + array1.join("")),
-                  dataType: "json",
+                  url: createURL("addHost"),
+                  type: "POST",
+									data: data,
                   success: function(json) {
                     var item = json.addhostresponse.host[0];
                     args.response.success({
