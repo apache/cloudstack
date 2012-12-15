@@ -15,7 +15,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-
 Veewee::Session.declare({
   :cpu_count => '1',
   :memory_size=> '2048',

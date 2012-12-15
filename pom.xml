@@ -208,8 +208,12 @@
             <excludes>
               <exclude>CHANGES</exclude>
               <exclude>INSTALL.md</exclude>
+              <exclude>.idea/</exclude>
+              <exclude>*.log</exclude>
+              <exclude>**/*.patch</exclude>
               <exclude>**/.classpath</exclude>
               <exclude>**/.project</exclude>
+              <exclude>**/*.iml</exclude>
               <exclude>**/.settings/**</exclude>
               <exclude>.metadata/**</exclude>
               <exclude>.git/**</exclude>
