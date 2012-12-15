@@ -73,3 +73,4 @@ docs/tmp
 docs/publish
 docs/runbook/tmp
 docs/runbook/publish
+Gemfile.lock

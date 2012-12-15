@@ -10,9 +10,6 @@
 #
 class devcloud::params {
 
-
-
-
       $cs_dir         = '/opt/cloudstack'
       $storage_dir    = '/opt/storage'
       $tomcat_version = '6.0.32'
