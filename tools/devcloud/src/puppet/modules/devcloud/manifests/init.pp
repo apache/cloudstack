@@ -16,7 +16,6 @@
 # under the License.
 
 
-
 class devcloud (
 
   $cs_dir            = $devcloud::params::cs_dir ,
@@ -38,8 +37,9 @@ class devcloud (
 
 ) inherits devcloud::params {
 
-
   Exec { path => [ '/bin/', '/sbin/' , '/usr/bin/', '/usr/sbin/' ] }
+
+  Exec["apt-update"] -> Package <| |>
 
   service {
     'ebtables':
@@ -66,6 +66,9 @@ class devcloud (
   }
 
   exec {
+
+    'apt-update':
+      command => '/usr/bin/apt-get update';
 
     'get_md5sums':
       command => "/usr/bin/wget -N ${md5sum_remote} -O ${md5sum_local}",

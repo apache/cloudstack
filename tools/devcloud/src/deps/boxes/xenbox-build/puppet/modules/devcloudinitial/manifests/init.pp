@@ -15,14 +15,22 @@
 # specific language governing permissions and limitations
 # under the License.
 
+
 class devcloudinitial {
 
-if $::architecture == 'x86_64'{
-  $debarch='amd64'
-}
-else {
-  $debarch='i386'
-}
+  if $::architecture == 'x86_64'{
+    $debarch='amd64'
+  }
+  else {
+    $debarch='i386'
+  }
+
+  exec { "apt-update":
+    command => "/usr/bin/apt-get update"
+  }
+
+  Exec["apt-update"] -> Package <| |>
+
   package {
     "linux-headers-${::kernelrelease}":
       ensure => latest;
