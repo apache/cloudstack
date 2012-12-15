@@ -24,14 +24,14 @@
 
 <book>
     <bookinfo id="cloudstack_developers">
-        <title>&PRODUCT; API Developer's Guide</title>
+        <title>&PRODUCT; Developer's Guide</title>
         <productname>Apache CloudStack</productname>
         <productnumber>4.0.0-incubating</productnumber>
         <edition></edition>
         <pubsnumber></pubsnumber>
         <abstract>
             <para>
-                How to integrate with &PRODUCT; using the &PRODUCT; API.
+                This guide shows how to develop &PRODUCT;, use the API for operation and integration, access the usage data and use &PRODUCT; specific tools to ease development, testing and integration.
             </para>
         </abstract>
         <corpauthor>
@@ -45,10 +45,12 @@
         <xi:include href="Author_Group.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     </bookinfo>
     <xi:include href="concepts.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="building-with-maven.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="developer-introduction.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="whats-new.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="api-calls.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="working-with-usage-data.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="tools.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="event-types.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="alerts.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="time-zones.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
