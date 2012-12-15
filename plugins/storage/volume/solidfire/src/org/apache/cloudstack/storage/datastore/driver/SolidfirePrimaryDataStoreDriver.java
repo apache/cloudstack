@@ -2,7 +2,7 @@ package org.apache.cloudstack.storage.datastore.driver;
 
 import java.util.Map;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.storage.EndPoint;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
 import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreInfo;
 import org.apache.cloudstack.storage.volume.VolumeObject;

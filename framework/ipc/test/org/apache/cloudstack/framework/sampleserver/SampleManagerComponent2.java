@@ -69,4 +69,8 @@ public class SampleManagerComponent2 {
 	@EventHandler(topic="storage.prepare")
 	void onPrepareNetwork(String sender, String topic, Object args) {
 	}
+	
+	void test() {
+	        
+	}
 }

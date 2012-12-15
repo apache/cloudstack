@@ -6,12 +6,12 @@ import java.util.List;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
+import org.apache.cloudstack.storage.EndPoint;
 import org.apache.cloudstack.storage.HypervisorHostEndPoint;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreVO;
 import org.apache.cloudstack.storage.datastore.driver.DefaultPrimaryDataStoreDriverImpl;
@@ -101,7 +101,7 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
         List<EndPoint> endpoints = new ArrayList<EndPoint>();
         List<HostVO> hosts = hostDao.findHypervisorHostInCluster(clusterId);
         for (HostVO host : hosts) {
-            HypervisorHostEndPoint ep = new HypervisorHostEndPoint(host.getId());
+            HypervisorHostEndPoint ep = new HypervisorHostEndPoint(host.getId(), host.getPrivateIpAddress());
             ComponentInject.inject(ep);
             endpoints.add(ep);
         }

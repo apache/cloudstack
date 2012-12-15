@@ -16,15 +16,24 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.image.motion;
+package org.apache.cloudstack.storage.volume.test;
 
-import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
-import org.apache.cloudstack.storage.command.CommandResult;
-import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreInfo;
+import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
+import org.apache.cloudstack.framework.async.AsyncCallbackHandler;
 
-public interface ImageMotionService {
-    boolean copyTemplate(TemplateOnPrimaryDataStoreInfo templateStore);
-
-    void copyTemplateAsync(TemplateOnPrimaryDataStoreInfo templateStore, AsyncCompletionCallback<CommandResult> callback);
-    boolean copyIso(String isoUri, String destIsoUri);
+public class Server {
+    Server1 svr;
+    public Server() {
+        svr = new Server1();
+    }
+    void foo() {
+        svr.foo1("foo", new AsyncCallbackDispatcher(this).setOperationName("callback").setContextParam("name", "foo"));
+    }
+    @AsyncCallbackHandler(operationName="callback")
+    void foocallback(AsyncCallbackDispatcher callback) {
+        System.out.println(callback.getContextParam("name"));
+        String result = callback.getResult();
+        System.out.println(result);
+    }
+    
 }

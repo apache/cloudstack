@@ -19,7 +19,7 @@
 package org.apache.cloudstack.storage.image;
 
 import org.apache.cloudstack.engine.cloud.entity.api.TemplateEntity;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.storage.EndPoint;
 
 public interface ImageService {
     TemplateEntity registerTemplate(long templateId, long imageStoreId);

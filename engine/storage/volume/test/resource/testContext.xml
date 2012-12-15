@@ -18,8 +18,9 @@
   <context:component-scan base-package="com.cloud.utils.component" />
   <context:component-scan base-package="com.cloud.host.dao" />
   <context:component-scan base-package="com.cloud.dc.dao" />
-
-  <context:component-scan base-package=" com.cloud.upgrade.dao" />
+  <context:component-scan base-package="com.cloud.dc.dao" />
+  <context:component-scan base-package="org.apache.cloudstack.framework" />
+  
   <tx:annotation-driven transaction-manager="transactionManager" />
   <bean class="org.apache.cloudstack.storage.volume.test.TestConfiguration" />
   <aop:config proxy-target-class="true">
@@ -30,5 +31,31 @@
   </aop:config>
 
   <bean id="transactionContextBuilder" class="com.cloud.utils.db.TransactionContextBuilder" />
+  
+  <bean id="onwireRegistry" class="org.apache.cloudstack.framework.serializer.OnwireClassRegistry"
+    init-method="scan" >
+    <property name="packages">
+      <list>
+        <value>org.apache.cloudstack.framework</value>
+      </list>
+    </property>
+  </bean>
+  
+  <bean id="messageSerializer" class="org.apache.cloudstack.framework.serializer.JsonMessageSerializer">
+    <property name="onwireClassRegistry" ref="onwireRegistry" />
+  </bean>
+
+  <bean id="transportProvider" class="org.apache.cloudstack.framework.server.ServerTransportProvider"  init-method="initialize">
+    <property name="workerPoolSize" value="5" />
+    <property name="nodeId" value="Node1" />
+    <property name="messageSerializer" ref="messageSerializer" />
+  </bean>
+  
+  <bean id="rpcProvider" class="org.apache.cloudstack.framework.rpc.RpcProviderImpl" init-method="initialize">
+    <constructor-arg ref="transportProvider" />
+    <property name="messageSerializer" ref="messageSerializer" />
+  </bean>
+
+  <bean id="eventBus" class = "org.apache.cloudstack.framework.eventbus.EventBusBase" />
   
 </beans>

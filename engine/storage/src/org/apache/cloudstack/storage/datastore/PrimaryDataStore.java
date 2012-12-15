@@ -20,10 +20,12 @@ package org.apache.cloudstack.storage.datastore;
 
 import java.util.List;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
+import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+import org.apache.cloudstack.storage.EndPoint;
+import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.image.TemplateInfo;
 import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreInfo;
 
@@ -37,7 +39,9 @@ public interface PrimaryDataStore extends PrimaryDataStoreInfo {
     VolumeInfo createVolume(VolumeInfo vo, VolumeDiskType diskType);
 
     VolumeInfo createVoluemFromBaseImage(VolumeInfo volume, TemplateOnPrimaryDataStoreInfo templateStore);
-
+    
+    void createVoluemFromBaseImageAsync(VolumeInfo volume, TemplateOnPrimaryDataStoreInfo templateStore, AsyncCompletionCallback<CommandResult> callback);
+    
     List<EndPoint> getEndPoints();
 
     boolean exists(VolumeInfo vi);

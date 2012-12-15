@@ -28,7 +28,7 @@ import java.util.Map;
 @SuppressWarnings("rawtypes")
 public class AsyncCallbackDispatcher implements AsyncCompletionCallback {
 	private static Map<Class<?>, Map<String, Method>> s_handlerCache = new HashMap<Class<?>, Map<String, Method>>();
-	
+	private final String parentCallbackKey = "parentCallback";
 	private Map<String, Object> _contextMap = new HashMap<String, Object>();
 	private String _operationName;
 	private Object _targetObject;
@@ -43,6 +43,15 @@ public class AsyncCallbackDispatcher implements AsyncCompletionCallback {
 	public AsyncCallbackDispatcher setContextParam(String key, Object param) {
 		_contextMap.put(key, param);
 		return this;
+	}
+	
+	public <T> AsyncCallbackDispatcher setParentCallback(AsyncCompletionCallback<T> parentCallback) {
+	    _contextMap.put(parentCallbackKey, parentCallback);
+	    return this;
+	}
+	
+	public AsyncCallbackDispatcher getParentCallback() {
+	   return (AsyncCallbackDispatcher)_contextMap.get(parentCallbackKey);
 	}
 	
 	public AsyncCallbackDispatcher attachDriver(AsyncCallbackDriver driver) {

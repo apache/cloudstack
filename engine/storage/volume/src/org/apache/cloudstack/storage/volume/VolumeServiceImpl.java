@@ -22,11 +22,15 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.cloud.entity.api.TemplateEntity;
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
 import org.apache.cloudstack.engine.subsystem.api.storage.type.BaseImage;
 import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeType;
+import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
+import org.apache.cloudstack.framework.async.AsyncCallbackHandler;
+import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+import org.apache.cloudstack.storage.EndPoint;
+import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
 import org.apache.cloudstack.storage.datastore.manager.PrimaryDataStoreManager;
 import org.apache.cloudstack.storage.image.TemplateEntityImpl;
@@ -132,7 +136,7 @@ public class VolumeServiceImpl implements VolumeService {
         return null;
     }
 
-    protected TemplateOnPrimaryDataStoreObject createBaseImage(PrimaryDataStore dataStore, TemplateInfo template) {
+    protected void createBaseImageAsync(PrimaryDataStore dataStore, TemplateInfo template, AsyncCompletionCallback<TemplateOnPrimaryDataStoreObject> callback) {
         TemplateOnPrimaryDataStoreObject templateOnPrimaryStoreObj = (TemplateOnPrimaryDataStoreObject) templatePrimaryStoreMgr.createTemplateOnPrimaryDataStore(template, dataStore);
         templateOnPrimaryStoreObj.stateTransit(TemplateOnPrimaryDataStoreStateMachine.Event.CreateRequested);
         templateOnPrimaryStoreObj.updateStatus(Status.CREATING);
@@ -146,27 +150,38 @@ public class VolumeServiceImpl implements VolumeService {
         }
 
         templateOnPrimaryStoreObj.updateStatus(Status.DOWNLOAD_IN_PROGRESS);
-        try {
-            imageMotion.copyTemplate(templateOnPrimaryStoreObj);
-            templateOnPrimaryStoreObj.updateStatus(Status.DOWNLOADED);
-            templateOnPrimaryStoreObj.stateTransit(TemplateOnPrimaryDataStoreStateMachine.Event.OperationSuccessed);
-        } catch (Exception e) {
-            templateOnPrimaryStoreObj.updateStatus(Status.ABANDONED);
-            templateOnPrimaryStoreObj.stateTransit(TemplateOnPrimaryDataStoreStateMachine.Event.OperationFailed);
-            throw new CloudRuntimeException(e.toString());
-        }
 
-        return templateOnPrimaryStoreObj;
+        AsyncCallbackDispatcher caller = new AsyncCallbackDispatcher(this)
+            .setParentCallback(callback)
+            .setOperationName("volumeservice.createbaseimage.callback")
+            .setContextParam("templateOnPrimary", templateOnPrimaryStoreObj);
+
+        imageMotion.copyTemplateAsync(templateOnPrimaryStoreObj, caller);
     }
 
-    @Override
-    public VolumeInfo createVolumeFromTemplate(VolumeInfo volume, long dataStoreId, VolumeDiskType diskType, TemplateInfo template) {
-        PrimaryDataStore pd = dataStoreMgr.getPrimaryDataStore(dataStoreId);
-        TemplateOnPrimaryDataStoreInfo templateOnPrimaryStore = pd.getTemplate(template);
-        if (templateOnPrimaryStore == null) {
-            templateOnPrimaryStore = createBaseImage(pd, template);
+    @AsyncCallbackHandler(operationName="volumeservice.createbaseimage.callback")
+    public void createBaseImageCallback(AsyncCallbackDispatcher callback) {
+        CommandResult result = callback.getResult();
+        TemplateOnPrimaryDataStoreObject templateOnPrimaryStoreObj = callback.getContextParam("templateOnPrimary");
+        if (result.isSuccess()) {
+            templateOnPrimaryStoreObj.updateStatus(Status.DOWNLOADED);
+            templateOnPrimaryStoreObj.stateTransit(TemplateOnPrimaryDataStoreStateMachine.Event.OperationSuccessed);
+        } else {
+            templateOnPrimaryStoreObj.updateStatus(Status.ABANDONED);
+            templateOnPrimaryStoreObj.stateTransit(TemplateOnPrimaryDataStoreStateMachine.Event.OperationFailed);
         }
-
+        
+        AsyncCallbackDispatcher parentCaller = callback.getParentCallback();
+        VolumeInfo volume = parentCaller.getContextParam("volume");
+        PrimaryDataStore pd = parentCaller.getContextParam("primary");
+        AsyncCallbackDispatcher caller = new AsyncCallbackDispatcher(this)
+              .setParentCallback(parentCaller)
+              .setOperationName("volumeservice.createvolumefrombaseimage.callback");
+        
+        createVolumeFromBaseImageAsync(volume, templateOnPrimaryStoreObj, pd, caller);
+    }
+    
+    protected void createVolumeFromBaseImageAsync(VolumeInfo volume, TemplateOnPrimaryDataStoreInfo templateOnPrimaryStore, PrimaryDataStore pd, AsyncCompletionCallback<VolumeObject> callback) {
         VolumeObject vo = (VolumeObject) volume;
         try {
             vo.stateTransit(Volume.Event.CreateRequested);
@@ -174,14 +189,54 @@ public class VolumeServiceImpl implements VolumeService {
             throw new CloudRuntimeException(e.toString());
         }
 
-        try {
-            volume = pd.createVoluemFromBaseImage(volume, templateOnPrimaryStore);
-            vo.stateTransit(Volume.Event.OperationSucceeded);
-        } catch (Exception e) {
+
+        AsyncCallbackDispatcher caller = new AsyncCallbackDispatcher(this)
+        .setParentCallback(callback)
+        .setOperationName("volumeservice.createVolumeFromBaseImageCallback")
+        .setContextParam("volume", vo);
+
+        pd.createVoluemFromBaseImageAsync(volume, templateOnPrimaryStore, caller);
+    }
+    
+    @AsyncCallbackHandler(operationName="volumeservice.createVolumeFromBaseImageCallback")
+    public void createVolumeFromBaseImageCallback(AsyncCallbackDispatcher callback) {
+        VolumeObject vo = callback.getContextParam("volume");
+        CommandResult result = callback.getResult();
+        if (result.isSuccess()) {
+            vo.stateTransit(Volume.Event.OperationSucceeded); 
+        } else {
             vo.stateTransit(Volume.Event.OperationFailed);
-            throw new CloudRuntimeException(e.toString());
         }
-        return volume;
+        
+        AsyncCallbackDispatcher parentCall = callback.getParentCallback();
+        parentCall.complete(vo);
+    }
+    
+    @AsyncCallbackHandler(operationName="volumeservice.createvolumefrombaseimage.callback")
+    public void createVolumeFromBaseImageAsyncCallback(AsyncCallbackDispatcher callback) {
+        AsyncCallbackDispatcher parentCall = callback.getParentCallback();
+        VolumeObject vo = callback.getResult();
+        parentCall.complete(vo);
+    }
+
+    @Override
+    public void createVolumeFromTemplateAsync(VolumeInfo volume, long dataStoreId, VolumeDiskType diskType, TemplateInfo template, AsyncCompletionCallback<VolumeInfo> callback) {
+        PrimaryDataStore pd = dataStoreMgr.getPrimaryDataStore(dataStoreId);
+        TemplateOnPrimaryDataStoreInfo templateOnPrimaryStore = pd.getTemplate(template);
+        if (templateOnPrimaryStore == null) {
+            AsyncCallbackDispatcher caller = new AsyncCallbackDispatcher(this).setParentCallback(callback)
+                    .setOperationName("volumeservice.createbaseimage.callback")
+                    .setContextParam("volume", volume)
+                    .setContextParam("primary", pd);
+             createBaseImageAsync(pd, template, caller);
+            return;
+        }
+
+        AsyncCallbackDispatcher caller = new AsyncCallbackDispatcher(this)
+            .setParentCallback(callback)
+            .setOperationName("volumeservice.createvolumefrombaseimage.callback");
+            
+        createVolumeFromBaseImageAsync(volume, templateOnPrimaryStore, pd, caller);
     }
 
     @Override

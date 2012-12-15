@@ -3,8 +3,8 @@ package org.apache.cloudstack.storage.datastore.driver;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.storage.EndPoint;
 import org.apache.cloudstack.storage.command.CreateVolumeAnswer;
 import org.apache.cloudstack.storage.command.CreateVolumeCommand;
 import org.apache.cloudstack.storage.command.CreateVolumeFromBaseImageCommand;

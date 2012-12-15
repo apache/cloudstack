@@ -18,12 +18,19 @@
  */
 package org.apache.cloudstack.storage.image.motion;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
+import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
+import org.apache.cloudstack.framework.async.AsyncCallbackHandler;
+import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+import org.apache.cloudstack.storage.EndPoint;
+import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.CopyTemplateToPrimaryStorage;
+import org.apache.cloudstack.storage.command.CopyTemplateToPrimaryStorageAnswer;
 import org.apache.cloudstack.storage.to.ImageOnPrimayDataStoreTO;
 import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreInfo;
 import org.springframework.stereotype.Component;
+
+import com.cloud.agent.api.Answer;
 
 @Component
 public class DefaultImageMotionStrategy implements ImageMotionStrategy {
@@ -46,6 +53,32 @@ public class DefaultImageMotionStrategy implements ImageMotionStrategy {
         CopyTemplateToPrimaryStorage copyCommand = new CopyTemplateToPrimaryStorage(imageTo);
         ep.sendMessage(copyCommand);
         return true;
+    }
+
+    @Override
+    public void copyTemplateAsync(TemplateOnPrimaryDataStoreInfo templateStore, EndPoint ep, AsyncCompletionCallback<CommandResult> callback) {
+        ImageOnPrimayDataStoreTO imageTo = new ImageOnPrimayDataStoreTO(templateStore);
+        CopyTemplateToPrimaryStorage copyCommand = new CopyTemplateToPrimaryStorage(imageTo);
+        AsyncCallbackDispatcher<Answer> caller = new AsyncCallbackDispatcher<Answer>(this).setParentCallback(callback)
+                .setOperationName("defaultImageStrategy.copytemplate.callback")
+                .setContextParam("templateStore", templateStore);
+        ep.sendMessageAsync(copyCommand, caller);
+    }
+    
+    @AsyncCallbackHandler(operationName="defaultImageStrategy.copytemplate.callback")
+    public void copyTemplateCallBack(AsyncCallbackDispatcher callback) {
+        AsyncCallbackDispatcher parentCall = callback.getParentCallback();
+        CopyTemplateToPrimaryStorageAnswer answer = callback.getResult();
+        CommandResult result = new CommandResult();
+       
+        result.setSucess(answer.getResult());
+        result.setResult(answer.getDetails());
+        if (answer.getResult()) {
+            TemplateOnPrimaryDataStoreInfo templateStore = callback.getContextParam("templateStore");
+            templateStore.setPath(answer.getPath());
+        }
+        
+        parentCall.complete(result);
     }
 
 }

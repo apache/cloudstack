@@ -20,7 +20,9 @@ package org.apache.cloudstack.storage;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
+import org.apache.cloudstack.framework.async.AsyncCallbackHandler;
+import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -31,12 +33,16 @@ import com.cloud.exception.OperationTimedoutException;
 
 public class HypervisorHostEndPoint implements EndPoint {
     private static final Logger s_logger = Logger.getLogger(HypervisorHostEndPoint.class);
-    private long hostId;
+    private final long hostId;
+    private final String hostAddress;
     @Inject
     AgentManager agentMgr;
+    @Inject
+    HypervsiorHostEndPointRpcServer rpcServer;
 
-    public HypervisorHostEndPoint(long hostId) {
+    public HypervisorHostEndPoint(long hostId, String hostAddress) {
         this.hostId = hostId;
+        this.hostAddress = hostAddress;
     }
 
     @Override
@@ -53,5 +59,18 @@ public class HypervisorHostEndPoint implements EndPoint {
         }
         return answer;
     }
+    
+    @Override
+    public void sendMessageAsync(Command cmd, AsyncCompletionCallback<Answer> callback) {
+        AsyncCallbackDispatcher dispatcher = new AsyncCallbackDispatcher(this).setContextParam("parentCallback", callback).
+                setOperationName("hypervisorEndpoint.sendMessage.callback");
 
+        rpcServer.sendCommandAsync(this.hostAddress, cmd, dispatcher);
+    }
+    
+    @AsyncCallbackHandler(operationName="hypervisorEndpoint.sendMessage.callback")
+    public void sendMessageCallback(AsyncCallbackDispatcher callback) {
+        AsyncCallbackDispatcher parentDispatcher = callback.getContextParam("parentCallback");
+        parentDispatcher.complete(callback.getResult());
+    }
 }

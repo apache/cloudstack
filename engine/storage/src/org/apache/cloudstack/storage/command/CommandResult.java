@@ -16,15 +16,31 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.image.motion;
+package org.apache.cloudstack.storage.command;
 
-import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
-import org.apache.cloudstack.storage.command.CommandResult;
-import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreInfo;
-
-public interface ImageMotionService {
-    boolean copyTemplate(TemplateOnPrimaryDataStoreInfo templateStore);
-
-    void copyTemplateAsync(TemplateOnPrimaryDataStoreInfo templateStore, AsyncCompletionCallback<CommandResult> callback);
-    boolean copyIso(String isoUri, String destIsoUri);
+public class CommandResult {
+    private boolean success;
+    private String result;
+    
+    public CommandResult() {
+        this.success = false;
+        this.result = "";
+    }
+    
+    public boolean isSuccess() {
+        return this.success;
+    }
+    
+    public void setSucess(boolean success) {
+        this.success = success;
+    }
+    
+    public String getResult() {
+        return this.result;
+    }
+    
+    public void setResult(String result) {
+        this.result = result;
+    }
 }
+ 

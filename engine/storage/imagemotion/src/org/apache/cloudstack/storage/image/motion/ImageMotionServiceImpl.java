@@ -22,7 +22,11 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
+import org.apache.cloudstack.framework.async.AsyncCallbackHandler;
+import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+import org.apache.cloudstack.storage.EndPoint;
+import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.image.ImageService;
 import org.apache.cloudstack.storage.image.TemplateInfo;
 import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreInfo;
@@ -66,5 +70,37 @@ public class ImageMotionServiceImpl implements ImageMotionService {
         TemplateInfo template = templateStore.getTemplate();
         imageService.grantTemplateAccess(template, ep);
         return ims.copyTemplate(templateStore, ep);
+    }
+
+    @Override
+    public void copyTemplateAsync(TemplateOnPrimaryDataStoreInfo templateStore, AsyncCompletionCallback<CommandResult> callback) {
+        ImageMotionStrategy ims = null;
+        for (ImageMotionStrategy strategy : motionStrategies) {
+            if (strategy.canHandle(templateStore)) {
+                ims = strategy;
+                break;
+            }
+        }
+
+        if (ims == null) {
+            throw new CloudRuntimeException("Can't find proper image motion strategy");
+        }
+
+        EndPoint ep = ims.getEndPoint(templateStore);
+        volumeService.grantAccess(templateStore, ep);
+        TemplateInfo template = templateStore.getTemplate();
+        imageService.grantTemplateAccess(template, ep);
+        
+        AsyncCallbackDispatcher caller = new AsyncCallbackDispatcher(this)
+            .setParentCallback(callback)
+            .setOperationName("imagemotionService.copytemplate.callback");
+        
+        ims.copyTemplateAsync(templateStore, ep, caller);
+    }
+    
+    @AsyncCallbackHandler(operationName="imagemotionService.copytemplate.callback")
+    public void copyTemplateAsyncCallback(AsyncCallbackDispatcher callback) {
+        AsyncCallbackDispatcher parentCaller = callback.getParentCallback();
+        parentCaller.complete(callback.getResult());
     }
 }

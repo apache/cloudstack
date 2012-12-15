@@ -19,10 +19,11 @@
 package org.apache.cloudstack.storage.volume;
 
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
 import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeType;
+import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+import org.apache.cloudstack.storage.EndPoint;
 import org.apache.cloudstack.storage.image.TemplateInfo;
 
 public interface VolumeService {
@@ -73,5 +74,6 @@ public interface VolumeService {
 
     VolumeEntity getVolumeEntity(long volumeId);
 
-    VolumeInfo createVolumeFromTemplate(VolumeInfo volume, long dataStoreId, VolumeDiskType diskType, TemplateInfo template);
+    void createVolumeFromTemplateAsync(VolumeInfo volume, long dataStoreId, VolumeDiskType diskType, TemplateInfo template, 
+            AsyncCompletionCallback<VolumeInfo> callback);
 }

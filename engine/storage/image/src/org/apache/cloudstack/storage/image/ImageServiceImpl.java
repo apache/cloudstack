@@ -21,7 +21,7 @@ package org.apache.cloudstack.storage.image;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.cloud.entity.api.TemplateEntity;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.storage.EndPoint;
 import org.apache.cloudstack.storage.image.downloader.ImageDownloader;
 import org.apache.cloudstack.storage.image.manager.ImageDataStoreManager;
 import org.apache.cloudstack.storage.image.provider.ImageDataStoreProviderManager;

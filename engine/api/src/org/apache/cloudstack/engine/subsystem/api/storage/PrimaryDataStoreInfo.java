@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
+import org.apache.cloudstack.storage.EndPoint;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 

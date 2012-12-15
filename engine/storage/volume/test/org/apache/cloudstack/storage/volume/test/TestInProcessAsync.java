@@ -16,15 +16,25 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.image.motion;
+package org.apache.cloudstack.storage.volume.test;
 
-import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
-import org.apache.cloudstack.storage.command.CommandResult;
-import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreInfo;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-public interface ImageMotionService {
-    boolean copyTemplate(TemplateOnPrimaryDataStoreInfo templateStore);
-
-    void copyTemplateAsync(TemplateOnPrimaryDataStoreInfo templateStore, AsyncCompletionCallback<CommandResult> callback);
-    boolean copyIso(String isoUri, String destIsoUri);
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(locations="classpath:/resource/testContext.xml")
+public class TestInProcessAsync {
+    Server svr;
+    @Before 
+    public void setup() {
+        svr = new Server();
+    }
+    
+    @Test
+    public void testRpc() {
+        svr.foo();
+    }
 }
