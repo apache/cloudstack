@@ -80,7 +80,7 @@ public abstract class BaseCmd {
     public static final String RESPONSE_TYPE_JSON = "json";
 
     public enum CommandType {
-        BOOLEAN, DATE, FLOAT, INTEGER, SHORT, LIST, LONG, OBJECT, MAP, STRING, TZDATE
+        BOOLEAN, DATE, FLOAT, INTEGER, SHORT, LIST, LONG, OBJECT, MAP, STRING, TZDATE, UUID
     }
 
     // FIXME: Extract these out into a separate file
