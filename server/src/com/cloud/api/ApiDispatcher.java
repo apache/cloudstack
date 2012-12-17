@@ -55,6 +55,7 @@ import com.cloud.user.UserContext;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.exception.CSExceptionErrorCode;
@@ -68,25 +69,25 @@ public class ApiDispatcher {
     private static final Logger s_logger = Logger.getLogger(ApiDispatcher.class.getName());
 
     ComponentLocator _locator;
-    AsyncJobManager _asyncMgr;
-    IdentityDao _identityDao;
     Long _createSnapshotQueueSizeLimit;
-    AccountManager _accountMgr;
-
+    @Inject AsyncJobManager _asyncMgr = null;
+    @Inject IdentityDao _identityDao = null;
+    @Inject AccountManager _accountMgr = null;
 
     Map<String, Class<? extends GenericDao>> _daoNameMap = new HashMap<String, Class<? extends GenericDao>>();
     // singleton class
-    private static ApiDispatcher s_instance = new ApiDispatcher();
+    private static ApiDispatcher s_instance = ApiDispatcher.getInstance();
 
     public static ApiDispatcher getInstance() {
+        if (s_instance == null) {
+            s_instance = ComponentLocator.inject(ApiDispatcher.class);
+        }
         return s_instance;
     }
 
-    private ApiDispatcher() {
+    protected ApiDispatcher() {
+        super();
         _locator = ComponentLocator.getLocator(ManagementServer.Name);
-        _asyncMgr = _locator.getManager(AsyncJobManager.class);
-        _identityDao = _locator.getDao(IdentityDao.class);
-
         ConfigurationDao configDao = _locator.getDao(ConfigurationDao.class);
         Map<String, String> configs = configDao.getConfiguration();
         String strSnapshotLimit = configs.get(Config.ConcurrentSnapshotsThresholdPerHost.key());
@@ -99,12 +100,8 @@ public class ApiDispatcher {
                 _createSnapshotQueueSizeLimit = snapshotLimit;
             }
         }
-        _accountMgr = _locator.getManager(AccountManager.class);
-        
         _daoNameMap.put("com.cloud.network.Network", NetworkDao.class);
         _daoNameMap.put("com.cloud.template.VirtualMachineTemplate", VMTemplateDao.class);
-        
-        
     }
 
     public void dispatchCreateCmd(BaseAsyncCreateCmd cmd, Map<String, String> params) {
@@ -376,7 +373,6 @@ public class ApiDispatcher {
     @SuppressWarnings({ "unchecked", "rawtypes" })
 	public static void setupParameters(BaseCmd cmd, Map<String, String> params, List<ControlledEntity> entitiesToAccess) {
         Map<String, Object> unpackedParams = cmd.unpackParams(params);
-        
 
         if (cmd instanceof BaseListCmd) {
             Object pageSizeObj = unpackedParams.get(ApiConstants.PAGE_SIZE);
@@ -456,25 +452,24 @@ public class ApiDispatcher {
                 // and IllegalAccessException setting one of the parameters.
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Internal error executing API command " + cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8));
             }
-            
-            
+
             //check access on the resource this field points to
 	        try {
-	            ACL checkAccess = field.getAnnotation(ACL.class);
-	            CommandType fieldType = parameterAnnotation.type();
-	            
-	            
-	            if(checkAccess != null){
-	            	// Verify that caller can perform actions in behalf of vm owner
-	            	//acumulate all Controlled Entities together.
-	            	
-	            	//parse the array of resource types and in case of map check access on key or value or both as specified in @acl
-	            	//implement external dao for classes that need findByName
-	            	//for maps, specify access to be checkd on key or value.
-	            	
-	            	if(parameterAnnotation.resourceType() != null){
-				 Class<?>[] entityList = parameterAnnotation.resourceType();
-				 for (Class entity : entityList){
+                ACL checkAccess = field.getAnnotation(ACL.class);
+                CommandType fieldType = parameterAnnotation.type();
+
+                if (checkAccess != null) {
+                    // Verify that caller can perform actions in behalf of vm owner
+                    //acumulate all Controlled Entities together.
+
+                    //parse the array of resource types and in case of map check access on key or value or both as specified in @acl
+                    //implement external dao for classes that need findByName
+                    //for maps, specify access to be checkd on key or value.
+
+                    // find the controlled entity DBid by uuid
+                    if (parameterAnnotation.entityType() != null) {
+                        Class<?>[] entityList = parameterAnnotation.entityType();
+                        for (Class entity : entityList){
                             if (ControlledEntity.class.isAssignableFrom(entity)) {
                                 if (s_logger.isDebugEnabled()) {
                                     s_logger.debug("entity name is:" + entity.getName());
@@ -515,6 +510,7 @@ public class ApiDispatcher {
                                         }
                                         break;
                                     case LONG:
+                                    case UUID:
                                         Long entityId = (Long) field.get(cmd);
                                         ControlledEntity entityObj = (ControlledEntity) daoClassInstance.findById(entityId);
                                         entitiesToAccess.add(entityObj);
@@ -621,6 +617,7 @@ public class ApiDispatcher {
                 field.set(cmdObj, listParam);
                 break;
             case LONG:
+            case UUID:
                 if (identityMapper != null)
                     field.set(cmdObj, s_instance._identityDao.getIdentityId(identityMapper, paramObj.toString()));
                 else
@@ -688,8 +685,7 @@ public class ApiDispatcher {
             throw new CloudRuntimeException("Internal error at plugService for command " + cmd.getCommandName() + " [field " + field.getName() + " is not accessible]");
         }
     }
-    
-    
+
     public static Long getIdentiyId(String tableName, String token) {
         return s_instance._identityDao.getIdentityId(tableName, token);
     }
