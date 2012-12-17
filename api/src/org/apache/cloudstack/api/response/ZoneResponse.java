@@ -22,7 +22,6 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.Entity;
 import com.cloud.dc.DataCenter;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
@@ -30,7 +29,7 @@ import com.google.gson.annotations.SerializedName;
 @Entity(value = DataCenter.class)
 public class ZoneResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="Zone id")
-    private IdentityProxy id = new IdentityProxy("data_center");
+    private String id;
 
     @SerializedName(ApiConstants.NAME) @Param(description="Zone name")
     private String name;
@@ -93,8 +92,8 @@ public class ZoneResponse extends BaseResponse {
     @SerializedName(ApiConstants.LOCAL_STORAGE_ENABLED) @Param(description="true if local storage offering enabled, false otherwise")
     private boolean localStorageEnabled;
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
     public void setName(String name) {

@@ -25,7 +25,6 @@ import org.apache.cloudstack.api.Entity;
 import com.cloud.domain.Domain;
 import com.cloud.serializer.Param;
 import com.cloud.user.Account;
-import com.cloud.utils.IdentityProxy;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
 
@@ -33,7 +32,7 @@ import org.apache.cloudstack.api.BaseResponse;
 @Entity(value = Account.class)
 public class AccountResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the id of the account")
-    private IdentityProxy id = new IdentityProxy("account");
+    private String id;
 
     @SerializedName(ApiConstants.NAME) @Param(description="the name of the account")
     private String name;
@@ -42,13 +41,13 @@ public class AccountResponse extends BaseResponse {
     private Short accountType;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="id of the Domain the account belongs too")
-    private IdentityProxy domainId = new IdentityProxy("domain");
+    private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN) @Param(description="name of the Domain the account belongs too")
     private String domainName;
 
     @SerializedName(ApiConstants.DEFAULT_ZONE_ID) @Param(description="the default zone of the account")
-    private IdentityProxy defaultZoneId = new IdentityProxy("data_center");
+    private String defaultZoneId;
 
     @SerializedName(ApiConstants.RECEIVED_BYTES) @Param(description="the total number of network traffic bytes received")
     private Long bytesReceived;
@@ -150,8 +149,8 @@ public class AccountResponse extends BaseResponse {
     @SerializedName(ApiConstants.ACCOUNT_DETAILS) @Param(description="details for the account")
     private Map<String, String> details;
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
     public void setName(String name) {
@@ -162,8 +161,8 @@ public class AccountResponse extends BaseResponse {
         this.accountType = accountType;
     }
 
-    public void setDomainId(Long domainId) {
-        this.domainId.setValue(domainId);
+    public void setDomainId(String domainId) {
+        this.domainId = domainId;
     }
 
     public void setDomainName(String domainName) {
@@ -290,7 +289,7 @@ public class AccountResponse extends BaseResponse {
         this.networkAvailable = networkAvailable;
     }
 
-    public void setDefaultZone(Long defaultZoneId) {
-        this.defaultZoneId.setValue(defaultZoneId);
+    public void setDefaultZone(String defaultZoneId) {
+        this.defaultZoneId = defaultZoneId;
     }
 }

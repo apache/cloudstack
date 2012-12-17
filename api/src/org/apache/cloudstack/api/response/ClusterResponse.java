@@ -32,19 +32,19 @@ import org.apache.cloudstack.api.BaseResponse;
 @Entity(value = Cluster.class)
 public class ClusterResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the cluster ID")
-    private IdentityProxy id = new IdentityProxy("cluster");
+    private String id;
 
     @SerializedName(ApiConstants.NAME) @Param(description="the cluster name")
     private String name;
 
     @SerializedName(ApiConstants.POD_ID) @Param(description="the Pod ID of the cluster")
-    private IdentityProxy podId = new IdentityProxy("host_pod_ref");
+    private String podId;
 
     @SerializedName("podname") @Param(description="the Pod name of the cluster")
     private String podName;
 
     @SerializedName(ApiConstants.ZONE_ID) @Param(description="the Zone ID of the cluster")
-    private IdentityProxy zoneId = new IdentityProxy("data_center");
+    private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the Zone name of the cluster")
     private String zoneName;
@@ -64,12 +64,12 @@ public class ClusterResponse extends BaseResponse {
     @SerializedName("capacity")  @Param(description="the capacity of the Cluster", responseObject = CapacityResponse.class)
     private List<CapacityResponse> capacitites;
 
-    public Long getId() {
-        return id.getValue();
+    public String getId() {
+        return id;
     }
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getName() {
@@ -80,12 +80,12 @@ public class ClusterResponse extends BaseResponse {
         this.name = name;
     }
 
-    public Long getPodId() {
-        return podId.getValue();
+    public String getPodId() {
+        return podId;
     }
 
-    public void setPodId(Long podId) {
-        this.podId.setValue(podId);
+    public void setPodId(String podId) {
+        this.podId = podId;
     }
 
     public String getPodName() {
@@ -96,12 +96,12 @@ public class ClusterResponse extends BaseResponse {
         this.podName = podName;
     }
 
-    public Long getZoneId() {
-        return zoneId.getValue();
+    public String getZoneId() {
+        return zoneId;
     }
 
-    public void setZoneId(Long zoneId) {
-        this.zoneId.setValue(zoneId);
+    public void setZoneId(String zoneId) {
+        this.zoneId = zoneId;
     }
 
     public String getZoneName() {

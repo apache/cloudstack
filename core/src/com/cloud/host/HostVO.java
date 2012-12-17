@@ -48,7 +48,7 @@ import com.cloud.utils.db.GenericDao;
 @Table(name="host")
 @Inheritance(strategy=InheritanceType.TABLE_PER_CLASS)
 @DiscriminatorColumn(name="type", discriminatorType=DiscriminatorType.STRING, length=32)
-public class HostVO implements Host, Identity {
+public class HostVO implements Host {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
@@ -128,20 +128,20 @@ public class HostVO implements Host, Identity {
 
     @Column(name="setup")
     private boolean setup = false;
-    
+
     @Column(name="resource_state", nullable=false)
     @Enumerated(value=EnumType.STRING)
     private ResourceState resourceState;
 
     @Column(name="hypervisor_version")
     private String hypervisorVersion;
-    
+
     @Column(name="update_count", updatable = true, nullable=false)
     protected long updated;	// This field should be updated everytime the state is updated.  There's no set method in the vo object because it is done with in the dao code.
 
     @Column(name="uuid")
     private String uuid;
-    
+
     // This is a delayed load value.  If the value is null,
     // then this field has not been loaded yet.
     // Call host dao to load it.
@@ -695,36 +695,36 @@ public class HostVO implements Host, Identity {
 	public Status getState() {
 		return status;
 	}
-	
+
     @Override
     public ResourceState getResourceState() {
         return resourceState;
     }
-    
+
     public void setResourceState(ResourceState state) {
     	resourceState = state;
     }
-    
+
     @Override
     public boolean isInMaintenanceStates() {
         return (getResourceState() == ResourceState.Maintenance || getResourceState() == ResourceState.ErrorInMaintenance
                 || getResourceState() == ResourceState.PrepareForMaintenance);
     }
-    
+
     public long getUpdated() {
     	return updated;
     }
-    
+
 	public long incrUpdated() {
 		updated++;
 		return updated;
 	}
-	
+
 	@Override
 	public String getUuid() {
 		return this.uuid;
 	}
-	
+
 	public void setUuid(String uuid) {
 		this.uuid = uuid;
 	}

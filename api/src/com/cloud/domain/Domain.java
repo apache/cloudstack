@@ -33,6 +33,8 @@ public interface Domain extends OwnedBy {
 
     long getId();
 
+    String getUuid();
+
     Long getParent();
 
     void setParent(Long parent);

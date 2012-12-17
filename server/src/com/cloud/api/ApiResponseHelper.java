@@ -259,14 +259,20 @@ public class ApiResponseHelper implements ResponseGenerator {
     public AccountResponse createAccountResponse(Account account) {
         boolean accountIsAdmin = (account.getType() == Account.ACCOUNT_TYPE_ADMIN);
         AccountResponse accountResponse = new AccountResponse();
-        accountResponse.setId(account.getId());
+        accountResponse.setId(account.getUuid());
         accountResponse.setName(account.getAccountName());
         accountResponse.setAccountType(account.getType());
-        accountResponse.setDomainId(account.getDomainId());
-        accountResponse.setDomainName(ApiDBUtils.findDomainById(account.getDomainId()).getName());
+        Domain domain = ApiDBUtils.findDomainById(account.getDomainId());
+        if (domain != null) {
+            accountResponse.setDomainId(domain.getUuid());
+            accountResponse.setDomainName(domain.getName());
+        }
         accountResponse.setState(account.getState().toString());
         accountResponse.setNetworkDomain(account.getNetworkDomain());
-        accountResponse.setDefaultZone(account.getDefaultZoneId());
+        DataCenterVO dc = ApiDBUtils.findZoneById(account.getDefaultZoneId());
+        if (dc != null) {
+            accountResponse.setDefaultZone(dc.getUuid());
+        }
 
         // get network stat
         List<UserStatisticsVO> stats = ApiDBUtils.listUserStatsBy(account.getId());
@@ -415,10 +421,10 @@ public class ApiResponseHelper implements ResponseGenerator {
     public DomainResponse createDomainResponse(Domain domain) {
         DomainResponse domainResponse = new DomainResponse();
         domainResponse.setDomainName(domain.getName());
-        domainResponse.setId(domain.getId());
+        domainResponse.setId(domain.getUuid());
         domainResponse.setLevel(domain.getLevel());
         domainResponse.setNetworkDomain(domain.getNetworkDomain());
-        domainResponse.setParentDomainId(domain.getParent());
+        domainResponse.setParentDomainId(ApiDBUtils.findDomainById(domain.getParent()).getUuid());
         StringBuilder domainPath = new StringBuilder("ROOT");
         (domainPath.append(domain.getPath())).deleteCharAt(domainPath.length() - 1);
         domainResponse.setPath(domainPath.toString());
@@ -583,18 +589,30 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public HostResponse createHostResponse(Host host, EnumSet<HostDetails> details) {
         HostResponse hostResponse = new HostResponse();
-        hostResponse.setId(host.getId());
+        hostResponse.setId(host.getUuid());
         hostResponse.setCapabilities(host.getCapabilities());
-        hostResponse.setClusterId(host.getClusterId());
+        ClusterVO cluster = null;
+        if (host.getClusterId() != null) {
+            cluster = ApiDBUtils.findClusterById(host.getClusterId());
+            if (cluster != null) {
+                hostResponse.setClusterId(cluster.getUuid());
+            }
+        }
         hostResponse.setCpuNumber(host.getCpus());
-        hostResponse.setZoneId(host.getDataCenterId());
+        DataCenterVO zone = ApiDBUtils.findZoneById(host.getDataCenterId());
+        if (zone != null) {
+            hostResponse.setZoneId(zone.getUuid());
+        }
         hostResponse.setDisconnectedOn(host.getDisconnectedOn());
         hostResponse.setHypervisor(host.getHypervisorType());
         hostResponse.setHostType(host.getType());
         hostResponse.setLastPinged(new Date(host.getLastPinged()));
         hostResponse.setManagementServerId(host.getManagementServerId());
         hostResponse.setName(host.getName());
-        hostResponse.setPodId(host.getPodId());
+        HostPodVO pod = ApiDBUtils.findPodById(host.getPodId());
+        if (pod != null) {
+            hostResponse.setPodId(pod.getUuid());
+        }
         hostResponse.setRemoved(host.getRemoved());
         hostResponse.setCpuSpeed(host.getSpeed());
         hostResponse.setState(host.getStatus());
@@ -607,20 +625,18 @@ public class ApiResponseHelper implements ResponseGenerator {
 
             GuestOSCategoryVO guestOSCategory = ApiDBUtils.getHostGuestOSCategory(host.getId());
             if (guestOSCategory != null) {
-                hostResponse.setOsCategoryId(guestOSCategory.getId());
+                hostResponse.setOsCategoryId(guestOSCategory.getUuid());
                 hostResponse.setOsCategoryName(guestOSCategory.getName());
             }
-            hostResponse.setZoneName(ApiDBUtils.findZoneById(host.getDataCenterId()).getName());
-
-            if (host.getPodId() != null) {
-                HostPodVO pod = ApiDBUtils.findPodById(host.getPodId());
-                if (pod != null) {
-                    hostResponse.setPodName(pod.getName());
-                }
+            if (zone != null) {
+                hostResponse.setZoneName(zone.getName());
             }
 
-            if (host.getClusterId() != null) {
-                ClusterVO cluster = ApiDBUtils.findClusterById(host.getClusterId());
+            if (pod != null) {
+                hostResponse.setPodName(pod.getName());
+            }
+
+            if (cluster != null) {
                 hostResponse.setClusterName(cluster.getName());
                 hostResponse.setClusterType(cluster.getClusterType().toString());
             }
@@ -935,7 +951,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     public ZoneResponse createZoneResponse(DataCenter dataCenter, Boolean showCapacities) {
         Account account = UserContext.current().getCaller();
         ZoneResponse zoneResponse = new ZoneResponse();
-        zoneResponse.setId(dataCenter.getId());
+        zoneResponse.setId(dataCenter.getUuid());
         zoneResponse.setName(dataCenter.getName());
         zoneResponse.setSecurityGroupsEnabled(ApiDBUtils.isSecurityGroupEnabledInZone(dataCenter.getId()));
         zoneResponse.setLocalStorageEnabled(dataCenter.isLocalStorageEnabled());
@@ -1216,20 +1232,24 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public ClusterResponse createClusterResponse(Cluster cluster, Boolean showCapacities) {
         ClusterResponse clusterResponse = new ClusterResponse();
-        clusterResponse.setId(cluster.getId());
+        clusterResponse.setId(cluster.getUuid());
         clusterResponse.setName(cluster.getName());
-        clusterResponse.setPodId(cluster.getPodId());
-        clusterResponse.setZoneId(cluster.getDataCenterId());
+        HostPodVO pod = ApiDBUtils.findPodById(cluster.getPodId());
+        if (pod != null) {
+            clusterResponse.setPodId(pod.getUuid());
+            clusterResponse.setPodName(pod.getName());
+        }
+        DataCenterVO dc = ApiDBUtils.findZoneById(cluster.getDataCenterId());
+        if (dc != null) {
+            clusterResponse.setZoneId(dc.getUuid());
+            clusterResponse.setZoneName(dc.getName());
+        }
         clusterResponse.setHypervisorType(cluster.getHypervisorType().toString());
         clusterResponse.setClusterType(cluster.getClusterType().toString());
         clusterResponse.setAllocationState(cluster.getAllocationState().toString());
         clusterResponse.setManagedState(cluster.getManagedState().toString());
-        HostPodVO pod = ApiDBUtils.findPodById(cluster.getPodId());
-        if (pod != null) {
-            clusterResponse.setPodName(pod.getName());
-        }
-        DataCenterVO zone = ApiDBUtils.findZoneById(cluster.getDataCenterId());
-        clusterResponse.setZoneName(zone.getName());
+
+
         if (showCapacities != null && showCapacities) {
             List<SummedCapacity> capacities = ApiDBUtils.getCapacityByClusterPodZone(null, null, cluster.getId());
             Set<CapacityResponse> capacityResponses = new HashSet<CapacityResponse>();
@@ -2196,26 +2216,30 @@ public class ApiResponseHelper implements ResponseGenerator {
             capacityResponse.setCapacityType(summedCapacity.getCapacityType());
             capacityResponse.setCapacityUsed(summedCapacity.getUsedCapacity());
             if (summedCapacity.getPodId() != null) {
-                capacityResponse.setPodId(summedCapacity.getPodId());
+                capacityResponse.setPodId(ApiDBUtils.findPodById(summedCapacity.getPodId()).getUuid());
                 HostPodVO pod = ApiDBUtils.findPodById(summedCapacity.getPodId());
                 if (pod != null) {
+                    capacityResponse.setPodId(pod.getUuid());
                     capacityResponse.setPodName(pod.getName());
                 }
             }
             if (summedCapacity.getClusterId() != null) {
-                capacityResponse.setClusterId(summedCapacity.getClusterId());
                 ClusterVO cluster = ApiDBUtils.findClusterById(summedCapacity.getClusterId());
                 if (cluster != null) {
+                    capacityResponse.setClusterId(cluster.getUuid());
                     capacityResponse.setClusterName(cluster.getName());
                     if (summedCapacity.getPodId() == null) {
-                        long podId = cluster.getPodId();
-                        capacityResponse.setPodId(podId);
-                        capacityResponse.setPodName(ApiDBUtils.findPodById(podId).getName());
+                        HostPodVO pod = ApiDBUtils.findPodById(cluster.getPodId());
+                        capacityResponse.setPodId(pod.getUuid());
+                        capacityResponse.setPodName(pod.getName());
                     }
                 }
             }
-            capacityResponse.setZoneId(summedCapacity.getDataCenterId());
-            capacityResponse.setZoneName(ApiDBUtils.findZoneById(summedCapacity.getDataCenterId()).getName());
+            DataCenterVO zone = ApiDBUtils.findZoneById(summedCapacity.getDataCenterId());
+            if (zone != null) {
+                capacityResponse.setZoneId(zone.getUuid());
+                capacityResponse.setZoneName(zone.getName());
+            }
             if (summedCapacity.getUsedPercentage() != null){
                 capacityResponse.setPercentUsed(format.format(summedCapacity.getUsedPercentage() * 100f));
             } else if (summedCapacity.getTotalCapacity() != 0) {

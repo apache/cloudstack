@@ -29,7 +29,7 @@ import org.apache.cloudstack.api.BaseResponse;
 
 public class HostResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the host")
-    private IdentityProxy id = new IdentityProxy("host");
+    private String id;
 
     @SerializedName(ApiConstants.NAME) @Param(description="the name of the host")
     private String name;
@@ -44,7 +44,7 @@ public class HostResponse extends BaseResponse {
     private Host.Type hostType;
 
     @SerializedName("oscategoryid") @Param(description="the OS category ID of the host")
-    private IdentityProxy osCategoryId = new IdentityProxy("guest_os_category");
+    private String osCategoryId;
 
     @SerializedName("oscategoryname") @Param(description="the OS category name of the host")
     private String osCategoryName;
@@ -53,13 +53,13 @@ public class HostResponse extends BaseResponse {
     private String ipAddress;
 
     @SerializedName(ApiConstants.ZONE_ID) @Param(description="the Zone ID of the host")
-    private IdentityProxy zoneId = new IdentityProxy("data_center");
+    private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the Zone name of the host")
     private String zoneName;
 
     @SerializedName(ApiConstants.POD_ID) @Param(description="the Pod ID of the host")
-    private IdentityProxy podId = new IdentityProxy("host_pod_ref");
+    private String podId;
 
     @SerializedName("podname") @Param(description="the Pod name of the host")
     private String podName;
@@ -119,7 +119,7 @@ public class HostResponse extends BaseResponse {
     private Long managementServerId;
 
     @SerializedName("clusterid") @Param(description="the cluster ID of the host")
-    private IdentityProxy clusterId = new IdentityProxy("cluster");
+    private String clusterId;
 
     @SerializedName("clustername") @Param(description="the cluster name of the host")
     private String clusterName;
@@ -158,17 +158,12 @@ public class HostResponse extends BaseResponse {
     private Boolean haHost;
 
 
-    @Override
-    public Long getObjectId() {
-        return getId();
+    public String getId() {
+        return id;
     }
 
-    public Long getId() {
-        return id.getValue();
-    }
-
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
     public void setName(String name) {
@@ -187,8 +182,8 @@ public class HostResponse extends BaseResponse {
         this.hostType = hostType;
     }
 
-    public void setOsCategoryId(Long osCategoryId) {
-        this.osCategoryId.setValue(osCategoryId);
+    public void setOsCategoryId(String osCategoryId) {
+        this.osCategoryId = osCategoryId;
     }
 
     public void setOsCategoryName(String osCategoryName) {
@@ -199,16 +194,16 @@ public class HostResponse extends BaseResponse {
         this.ipAddress = ipAddress;
     }
 
-    public void setZoneId(Long zoneId) {
-        this.zoneId.setValue(zoneId);
+    public void setZoneId(String zoneId) {
+        this.zoneId = zoneId;
     }
 
     public void setZoneName(String zoneName) {
         this.zoneName = zoneName;
     }
 
-    public void setPodId(Long podId) {
-        this.podId.setValue(podId);
+    public void setPodId(String podId) {
+        this.podId = podId;
     }
 
     public void setPodName(String podName) {
@@ -287,8 +282,8 @@ public class HostResponse extends BaseResponse {
         this.managementServerId = managementServerId;
     }
 
-    public void setClusterId(Long clusterId) {
-        this.clusterId.setValue(clusterId);
+    public void setClusterId(String clusterId) {
+        this.clusterId = clusterId;
     }
 
     public void setClusterName(String clusterName) {
@@ -346,22 +341,6 @@ public class HostResponse extends BaseResponse {
 
     public void setHypervisorVersion(String hypervisorVersion) {
         this.hypervisorVersion = hypervisorVersion;
-    }
-
-    public void setOsCategoryId(IdentityProxy osCategoryId) {
-        this.osCategoryId = osCategoryId;
-    }
-
-    public void setZoneId(IdentityProxy zoneId) {
-        this.zoneId = zoneId;
-    }
-
-    public void setPodId(IdentityProxy podId) {
-        this.podId = podId;
-    }
-
-    public void setClusterId(IdentityProxy clusterId) {
-        this.clusterId = clusterId;
     }
 
     public void setHaHost(Boolean haHost) {

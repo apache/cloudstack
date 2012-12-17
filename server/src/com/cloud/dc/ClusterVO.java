@@ -38,53 +38,53 @@ import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="cluster")
-public class ClusterVO implements Cluster, Identity {
+public class ClusterVO implements Cluster {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name="id")
     long id;
-    
+
     @Column(name="name")
     String name;
-    
+
     @Column(name="guid")
     String guid;
-    
+
     @Column(name="data_center_id")
     long dataCenterId;
-    
+
     @Column(name="pod_id")
     long podId;
-    
+
     @Column(name="hypervisor_type")
     String hypervisorType;
 
     @Column(name="cluster_type")
     @Enumerated(value=EnumType.STRING)
     Cluster.ClusterType clusterType;
-    
+
     @Column(name="allocation_state")
     @Enumerated(value=EnumType.STRING)
     AllocationState allocationState;
-    
+
     @Column(name="managed_state")
     @Enumerated(value=EnumType.STRING)
     ManagedState managedState;
-    
+
     @Column(name=GenericDao.REMOVED_COLUMN)
     private Date removed;
 
     @Column(name="uuid")
     String uuid;
-    
+
     public ClusterVO() {
     	clusterType = Cluster.ClusterType.CloudManaged;
     	allocationState = Grouping.AllocationState.Enabled;
-    	
+
     	this.uuid = UUID.randomUUID().toString();
     }
-    
+
     public ClusterVO(long dataCenterId, long podId, String name) {
         this.dataCenterId = dataCenterId;
         this.podId = podId;
@@ -110,23 +110,23 @@ public class ClusterVO implements Cluster, Identity {
     public long getPodId() {
         return podId;
     }
-    
+
     public Cluster.ClusterType getClusterType() {
     	return clusterType;
     }
-    
+
     public void setClusterType(Cluster.ClusterType clusterType) {
     	this.clusterType = clusterType;
     }
-    
+
     public AllocationState getAllocationState() {
     	return allocationState;
     }
-    
+
     public void setAllocationState(AllocationState allocationState) {
 		this.allocationState = allocationState;
     }
-    
+
     public ManagedState getManagedState() {
         return managedState;
     }
@@ -143,7 +143,7 @@ public class ClusterVO implements Cluster, Identity {
     public int hashCode() {
         return NumbersUtil.hash(id);
     }
-    
+
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof ClusterVO)) {
@@ -152,7 +152,7 @@ public class ClusterVO implements Cluster, Identity {
         ClusterVO that = (ClusterVO)obj;
         return this.id == that.id;
     }
-    
+
     public HypervisorType getHypervisorType() {
     	return HypervisorType.getType(hypervisorType);
     }
@@ -160,11 +160,11 @@ public class ClusterVO implements Cluster, Identity {
 	public void setHypervisorType(String hy) {
     	hypervisorType = hy;
     }
-	
+
     public String getGuid() {
         return guid;
     }
-	
+
     public void setGuid(String guid) {
         this.guid = guid;
     }
@@ -176,12 +176,12 @@ public class ClusterVO implements Cluster, Identity {
     public void setName(String name) {
         this.name = name;
     }
-    
+
     @Override
     public String getUuid() {
     	return this.uuid;
     }
-    
+
     public void setUuid(String uuid) {
     	this.uuid = uuid;
     }

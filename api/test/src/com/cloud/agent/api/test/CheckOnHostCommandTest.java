@@ -43,6 +43,12 @@ public class CheckOnHostCommandTest {
             return 101L;
         };
 
+
+        @Override
+        public String getUuid() {
+            return "101";
+        }
+
         public String getName() {
             return "hostName";
         };

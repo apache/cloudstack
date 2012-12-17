@@ -27,6 +27,8 @@ public interface Cluster extends Grouping {
 
     long getId();
 
+    String getUuid();
+
     String getName();
 
     long getDataCenterId();

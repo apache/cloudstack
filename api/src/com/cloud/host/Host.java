@@ -66,6 +66,8 @@ public interface Host extends StateObject<Status> {
      */
     long getId();
 
+    String getUuid();
+
     /**
      * @return name of the machine.
      */

@@ -27,7 +27,7 @@ import com.google.gson.annotations.SerializedName;
 @Entity(value = Domain.class)
 public class DomainResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the domain")
-    private IdentityProxy id = new IdentityProxy("domain");
+    private String id;
 
     @SerializedName(ApiConstants.NAME) @Param(description="the name of the domain")
     private String domainName;
@@ -36,7 +36,7 @@ public class DomainResponse extends BaseResponse {
     private Integer level;
 
     @SerializedName("parentdomainid") @Param(description="the domain ID of the parent domain")
-    private IdentityProxy parentDomainId = new IdentityProxy("domain");
+    private String parentDomainId;
 
     @SerializedName("parentdomainname") @Param(description="the domain name of the parent domain")
     private String parentDomainName;
@@ -50,12 +50,12 @@ public class DomainResponse extends BaseResponse {
     @SerializedName(ApiConstants.PATH) @Param(description="the path of the domain")
     private String path;
 
-    public Long getId() {
-        return id.getValue();
+    public String getId() {
+        return this.id;
     }
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getDomainName() {
@@ -74,12 +74,12 @@ public class DomainResponse extends BaseResponse {
         this.level = level;
     }
 
-    public Long getParentDomainId() {
-        return parentDomainId.getValue();
+    public String getParentDomainId() {
+        return parentDomainId;
     }
 
-    public void setParentDomainId(Long parentDomainId) {
-        this.parentDomainId.setValue(parentDomainId);
+    public void setParentDomainId(String parentDomainId) {
+        this.parentDomainId = parentDomainId;
     }
 
     public String getParentDomainName() {

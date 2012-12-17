@@ -27,19 +27,19 @@ public class CapacityResponse extends BaseResponse {
     private Short capacityType;
 
     @SerializedName(ApiConstants.ZONE_ID) @Param(description="the Zone ID")
-    private IdentityProxy zoneId = new IdentityProxy("data_center");
+    private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the Zone name")
     private String zoneName;
 
     @SerializedName(ApiConstants.POD_ID) @Param(description="the Pod ID")
-    private IdentityProxy podId = new IdentityProxy("host_pod_ref");
+    private String podId;
 
     @SerializedName("podname") @Param(description="the Pod name")
     private String podName;
 
     @SerializedName(ApiConstants.CLUSTER_ID) @Param(description="the Cluster ID")
-    private IdentityProxy clusterId = new IdentityProxy("cluster");
+    private String clusterId;
 
     @SerializedName("clustername") @Param(description="the Cluster name")
     private String clusterName;
@@ -61,12 +61,12 @@ public class CapacityResponse extends BaseResponse {
         this.capacityType = capacityType;
     }
 
-    public Long getZoneId() {
-        return zoneId.getValue();
+    public String getZoneId() {
+        return zoneId;
     }
 
-    public void setZoneId(Long zoneId) {
-        this.zoneId.setValue(zoneId);
+    public void setZoneId(String zoneId) {
+        this.zoneId = zoneId;
     }
 
     public String getZoneName() {
@@ -77,12 +77,12 @@ public class CapacityResponse extends BaseResponse {
         this.zoneName = zoneName;
     }
 
-    public Long getPodId() {
-        return podId.getValue();
+    public String getPodId() {
+        return podId;
     }
 
-    public void setPodId(Long podId) {
-        this.podId.setValue(podId);
+    public void setPodId(String podId) {
+        this.podId = podId;
     }
 
     public String getPodName() {
@@ -93,12 +93,12 @@ public class CapacityResponse extends BaseResponse {
         this.podName = podName;
     }
 
-    public Long getClusterId() {
-        return clusterId.getValue();
+    public String getClusterId() {
+        return clusterId;
     }
 
-    public void setClusterId(Long clusterId) {
-        this.clusterId.setValue(clusterId);
+    public void setClusterId(String clusterId) {
+        this.clusterId = clusterId;
     }
 
     public String getClusterName() {

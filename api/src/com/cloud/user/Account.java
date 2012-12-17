@@ -51,6 +51,8 @@ public interface Account extends ControlledEntity {
 
     public long getId();
 
+    public String getUuid();
+
     public String getAccountName();
 
     public short getType();
