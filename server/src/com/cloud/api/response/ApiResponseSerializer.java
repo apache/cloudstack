@@ -122,7 +122,9 @@ public class ApiResponseSerializer {
                     sb.append("{ }");
                 }
             }
-            sb.append(" }");            
+            sb.append(", \"cloudstack-version\": \"");
+            sb.append(ApiDBUtils.getVersion());
+            sb.append("\" }");
             return sb.toString();
         }
         return null;
@@ -131,7 +133,7 @@ public class ApiResponseSerializer {
     private static String toXMLSerializedString(ResponseObject result) {
         StringBuilder sb = new StringBuilder();
         sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
-        sb.append("<").append(result.getResponseName()).append(" cloud-stack-version=\"").append(ApiDBUtils.getVersion()).append("\">");
+        sb.append("<").append(result.getResponseName()).append(" cloudstack-version=\"").append(ApiDBUtils.getVersion()).append("\">");
 
         if (result instanceof ListResponse) {
             Integer count = ((ListResponse) result).getCount();
