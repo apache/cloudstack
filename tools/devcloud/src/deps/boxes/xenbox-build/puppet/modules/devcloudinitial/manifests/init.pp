@@ -57,7 +57,7 @@ class devcloudinitial {
   '/etc/xcp/network.conf':
       ensure  => 'file',
       require => Package['xcp-xapi'],
-      source  => 'puppet:///modules/devcloudinitial/network.conf',
+      content => "bridge",
       group   => '0',
       mode    => '0644',
       owner   => '0';
