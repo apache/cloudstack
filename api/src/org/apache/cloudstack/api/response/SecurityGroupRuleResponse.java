@@ -17,10 +17,13 @@
 package org.apache.cloudstack.api.response;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.Entity;
+import com.cloud.network.security.SecurityGroupRules;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
 
+@Entity(value = SecurityGroupRules.class)
 public class SecurityGroupRuleResponse extends BaseResponse {
     @SerializedName("ruleid") @Param(description="the id of the security group rule")
     private String ruleId;

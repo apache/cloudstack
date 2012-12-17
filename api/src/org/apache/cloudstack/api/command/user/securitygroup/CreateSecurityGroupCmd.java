@@ -20,10 +20,11 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.ProjectAccountResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.user.Account;
@@ -42,8 +43,7 @@ public class CreateSecurityGroupCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional account for the security group. Must be used with domainId.")
     private String accountName;
 
-    @IdentityMapper(entityTableName = "domain")
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.LONG, description = "an optional domainId for the security group. If the account parameter is used, domainId must also be used.")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, description = "an optional domainId for the security group. If the account parameter is used, domainId must also be used.", entityType = DomainResponse.class)
     private Long domainId;
 
     @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "the description of the security group")
@@ -52,8 +52,7 @@ public class CreateSecurityGroupCmd extends BaseCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "name of the security group")
     private String securityGroupName;
 
-    @IdentityMapper(entityTableName = "projects")
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.LONG, description = "Deploy vm for the project")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, description = "Deploy vm for the project", entityType=ProjectAccountResponse.class)
     private Long projectId;
 
     // ///////////////////////////////////////////////////
