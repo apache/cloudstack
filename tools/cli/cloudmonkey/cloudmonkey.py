@@ -312,7 +312,8 @@ class CloudStackShell(cmd.Cmd, object):
         if result is None:
             return
         try:
-            self.print_result(result.values())
+            # Response is in the key "apiname+response" (lowercase)
+            self.print_result(result[api_name.lower()+'response'])
             print
         except Exception as e:
             self.print_shell("🙈  Error on parsing and printing", e)
