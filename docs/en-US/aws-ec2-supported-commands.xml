@@ -24,7 +24,7 @@
 
 <section id="aws-ec2-supported-commands">
   <title>Supported AWS API Calls</title>
-    <para>The following Amazon EC2 commands are supported by &PRODUCT; when the AWS API compatibility feature is enabled.
+    <para>The following Amazon EC2 commands are supported by &PRODUCT; when the AWS API compatible interface is enabled.
         For a few commands, there are differences between the &PRODUCT; and Amazon EC2 versions, and these differences are noted. The underlying SOAP call for each command is also given, for those who have built tools using those calls.
     </para>
     <table frame='all'>
