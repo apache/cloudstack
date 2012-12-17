@@ -134,5 +134,16 @@ public class StringUtils {
     	
     	return sb.toString();
     }
+    
+    // Responsible for stripping sensitive content from request and response strings
+    public static String cleanString(String stringToClean){
+        String cleanResult = "";
+        // removes a password request param and it's value
+        cleanResult = stringToClean.replaceAll("password=.*?&", "");
+        // removes a password property from a response json object
+        cleanResult = cleanResult.replaceAll("\"password\":\".*?\",", "");
+        return cleanResult;
+    }
+
 
 }
