@@ -47,7 +47,5 @@ public @interface Parameter {
 
     String since() default "";
 
-    Class<?>[] resourceType() default Object.class;
-
     String retrieveMethod() default "getById";
 }
