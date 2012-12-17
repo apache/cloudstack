@@ -667,7 +667,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             }
             String url = origUrl + "/" + templateHostRef.getInstallPath();
             PrimaryStorageDownloadCommand dcmd = new PrimaryStorageDownloadCommand(template.getUniqueName(), url, template.getFormat(), 
-                   template.getAccountId(), pool.getId(), pool.getUuid(), _primaryStorageDownloadWait);
+                   template.getAccountId(), pool, _primaryStorageDownloadWait);
             HostVO secondaryStorageHost = _hostDao.findById(templateHostRef.getHostId());
             assert(secondaryStorageHost != null);
             dcmd.setSecondaryStorageUrl(secondaryStorageHost.getStorageUrl());

@@ -1448,7 +1448,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 if( snapshot.getSwiftId() != null && snapshot.getSwiftId() != 0 ) {
                     _snapshotMgr.downloadSnapshotsFromSwift(snapshot);
                 }
-                cmd = new CreatePrivateTemplateFromSnapshotCommand(pool.getUuid(), secondaryStorageURL, dcId, accountId, snapshot.getVolumeId(), backupSnapshotUUID, snapshot.getName(),
+                cmd = new CreatePrivateTemplateFromSnapshotCommand(pool, secondaryStorageURL, dcId, accountId, snapshot.getVolumeId(), backupSnapshotUUID, snapshot.getName(),
                         origTemplateInstallPath, templateId, name, _createprivatetemplatefromsnapshotwait);
             } else if (volumeId != null) {
                 VolumeVO volume = _volsDao.findById(volumeId);
@@ -1470,7 +1470,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 secondaryStorageURL = secondaryStorageHost.getStorageUrl();
 
                 pool = _storagePoolDao.findById(volume.getPoolId());
-                cmd = new CreatePrivateTemplateFromVolumeCommand(pool.getUuid(), secondaryStorageURL, templateId, accountId, command.getTemplateName(), uniqueName, volume.getPath(), vmName, _createprivatetemplatefromvolumewait);
+                cmd = new CreatePrivateTemplateFromVolumeCommand(pool, secondaryStorageURL, templateId, accountId, command.getTemplateName(), uniqueName, volume.getPath(), vmName, _createprivatetemplatefromvolumewait);
 
             } else {
                 throw new CloudRuntimeException("Creating private Template need to specify snapshotId or volumeId");

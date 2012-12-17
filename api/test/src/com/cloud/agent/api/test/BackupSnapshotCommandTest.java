@@ -116,14 +116,14 @@ public class BackupSnapshotCommandTest {
     };
 
     BackupSnapshotCommand bsc = new BackupSnapshotCommand(
-            "primaryStoragePoolNameLabel", "http://secondary.Storage.Url",
+            "http://secondary.Storage.Url",
             101L, 102L, 103L, 104L, "vPath", pool,
             "420fa39c-4ef1-a83c-fd93-46dc1ff515ae", "sName",
             "9012793e-0657-11e2-bebc-0050568b0057",
             "7167e0b2-f5b0-11e1-8414-0050568b0057", false, "vmName", 5);
 
     BackupSnapshotCommand bsc1 = new BackupSnapshotCommand(
-            "primaryStoragePoolNameLabel", "http://secondary.Storage.Url",
+            "http://secondary.Storage.Url",
             101L, 102L, 103L, 104L, "vPath", pool,
             "420fa39c-4ef1-a83c-fd93-46dc1ff515ae", "sName",
             "9012793e-0657-11e2-bebc-0050568b0057",
@@ -132,7 +132,7 @@ public class BackupSnapshotCommandTest {
     @Test
     public void testGetPrimaryStoragePoolNameLabel() {
         String label = bsc.getPrimaryStoragePoolNameLabel();
-        assertTrue(label.equals("primaryStoragePoolNameLabel"));
+        assertTrue(label.equals("bed9f83e-cac3-11e1-ac8a-0050568b007e"));
     }
 
     @Test

@@ -628,7 +628,6 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             long volumeId = snapshot.getVolumeId();
             VolumeVO volume = _volsDao.lockRow(volumeId, true);
 
-            String primaryStoragePoolNameLabel = _storageMgr.getPrimaryStorageNameLabel(volume);
             Long dcId = volume.getDataCenterId();
             Long accountId = volume.getAccountId();
             
@@ -666,7 +665,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             boolean isVolumeInactive = _storageMgr.volumeInactive(volume);
             String vmName = _storageMgr.getVmNameOnVolume(volume);
             StoragePoolVO srcPool = _storagePoolDao.findById(volume.getPoolId());
-            BackupSnapshotCommand backupSnapshotCommand = new BackupSnapshotCommand(primaryStoragePoolNameLabel, secondaryStoragePoolUrl, dcId, accountId, volumeId, snapshot.getId(), volume.getPath(), srcPool, snapshotUuid,
+            BackupSnapshotCommand backupSnapshotCommand = new BackupSnapshotCommand(secondaryStoragePoolUrl, dcId, accountId, volumeId, snapshot.getId(), volume.getPath(), srcPool, snapshotUuid,
                     snapshot.getName(), prevSnapshotUuid, prevBackupUuid, isVolumeInactive, vmName, _backupsnapshotwait);
 
             if ( swift != null ) {

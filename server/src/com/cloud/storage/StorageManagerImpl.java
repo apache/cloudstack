@@ -669,7 +669,6 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         String vdiUUID = null;
         Long snapshotId = snapshot.getId();
         Long volumeId = snapshot.getVolumeId();
-        String primaryStoragePoolNameLabel = pool.getUuid(); // pool's uuid is actually the namelabel.
         Long dcId = snapshot.getDataCenterId();
         String secondaryStoragePoolUrl = _snapMgr.getSecondaryStorageURL(snapshot);
         long accountId = snapshot.getAccountId();
@@ -716,7 +715,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
             } else if (snapshot.getS3Id() != null && snapshot.getS3Id() != 0) {
                 _snapshotMgr.downloadSnapshotsFromS3(snapshot);
             }
-            CreateVolumeFromSnapshotCommand createVolumeFromSnapshotCommand = new CreateVolumeFromSnapshotCommand(primaryStoragePoolNameLabel, secondaryStoragePoolUrl, dcId, accountId, volumeId,
+            CreateVolumeFromSnapshotCommand createVolumeFromSnapshotCommand = new CreateVolumeFromSnapshotCommand(pool, secondaryStoragePoolUrl, dcId, accountId, volumeId,
                     backedUpSnapshotUuid, snapshot.getName(), _createVolumeFromSnapshotWait);
             CreateVolumeFromSnapshotAnswer answer;
             if (!_snapshotDao.lockInLockTable(snapshotId.toString(), 10)) {

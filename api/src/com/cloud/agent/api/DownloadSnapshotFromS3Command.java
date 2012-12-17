@@ -33,7 +33,7 @@ public class DownloadSnapshotFromS3Command extends SnapshotCommand {
             String secondaryStorageUrl, Long dcId, Long accountId,
             Long volumeId, String backupUuid, int wait) {
 
-        super("", secondaryStorageUrl, backupUuid, "", dcId, accountId,
+        super(null, secondaryStorageUrl, backupUuid, "", dcId, accountId,
                 volumeId);
 
         this.s3 = s3;
