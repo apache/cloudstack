@@ -36,7 +36,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.ExecutorService;
@@ -243,6 +242,11 @@ public class ApiServer implements HttpRequestHandler {
                     parameterMap.put(/* name */paramValue[0], /* value */new String[] { paramValue[1] });
                 }
             }
+
+            // Check responseType, if not among valid types, fallback to XML
+            if (!(responseType.equals(BaseCmd.RESPONSE_TYPE_JSON) || responseType.equals(BaseCmd.RESPONSE_TYPE_XML)))
+                responseType = BaseCmd.RESPONSE_TYPE_XML;
+
             try {
                 // always trust commands from API port, user context will always be UID_SYSTEM/ACCOUNT_ID_SYSTEM
                 UserContext.registerContext(_systemUser.getId(), _systemAccount, null, true);
@@ -769,18 +773,17 @@ public class ApiServer implements HttpRequestHandler {
     }
 
     private boolean isCommandAvailable(User user, String commandName) {
-        for(APIAccessChecker apichecker : _apiAccessCheckers) {
-            // Break on the first adapter that validates
-            // FIXME: In case of multiple adapters, this may not be the best way of validation. See CLOUDSTACK-618
-            if (apichecker.canAccessAPI(user, commandName))
-                return true;
+        for (APIAccessChecker apiChecker : _apiAccessCheckers) {
+            // Fail the checking if any checker fails to verify
+            if (!apiChecker.canAccessAPI(user, commandName))
+                return false;
         }
-        return false;
+        return true;
     }
 
     private String getCmdClassName(String cmdName) {
         String cmdClassName = null;
-        for(APIAccessChecker apiChecker : _apiAccessCheckers){
+        for (APIAccessChecker apiChecker : _apiAccessCheckers){
             cmdClassName = apiChecker.getApiCommands().getProperty(cmdName);
             // Break on the first non-null value
             if (cmdClassName != null)
