@@ -81,7 +81,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
 
     @ACL
     //@IdentityMapper(entityTableName="disk_offering")
-    @Parameter(name=ApiConstants.SERVICE_OFFERING_ID, type=CommandType.LONG, required=true, description="the ID of the service offering for the virtual machine", resourceType=ServiceOffering.class, entityType=ServiceOfferingResponse.class)
+    @Parameter(name=ApiConstants.SERVICE_OFFERING_ID, type=CommandType.LONG, required=true, description="the ID of the service offering for the virtual machine", entityType=ServiceOfferingResponse.class)
     private Long serviceOfferingId;
 
     @ACL
@@ -137,15 +137,15 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
 
     @ACL
     //@IdentityMapper(entityTableName="security_group")
-    @Parameter(name=ApiConstants.SECURITY_GROUP_IDS, type=CommandType.LIST, collectionType=CommandType.LONG, description="comma separated list of security groups id that going to be applied to the virtual machine. Should be passed only when vm is created from a zone with Basic Network support. Mutually exclusive with securitygroupnames parameter", resourceType=SecurityGroup.class, entityType=SecurityGroupResponse.class)
+    @Parameter(name=ApiConstants.SECURITY_GROUP_IDS, type=CommandType.LIST, collectionType=CommandType.LONG, description="comma separated list of security groups id that going to be applied to the virtual machine. Should be passed only when vm is created from a zone with Basic Network support. Mutually exclusive with securitygroupnames parameter", entityType=SecurityGroupResponse.class)
     private List<Long> securityGroupIdList;
 
     @ACL
-    @Parameter(name=ApiConstants.SECURITY_GROUP_NAMES, type=CommandType.LIST, collectionType=CommandType.STRING, description="comma separated list of security groups names that going to be applied to the virtual machine. Should be passed only when vm is created from a zone with Basic Network support. Mutually exclusive with securitygroupids parameter", resourceType=SecurityGroup.class)
+    @Parameter(name=ApiConstants.SECURITY_GROUP_NAMES, type=CommandType.LIST, collectionType=CommandType.STRING, description="comma separated list of security groups names that going to be applied to the virtual machine. Should be passed only when vm is created from a zone with Basic Network support. Mutually exclusive with securitygroupids parameter", entityType=SecurityGroupResponse.class)
     private List<String> securityGroupNameList;
 
     @ACL(checkKeyAccess=true)
-    @Parameter(name = ApiConstants.IP_NETWORK_LIST, type = CommandType.MAP, description = "ip to network mapping. Can't be specified with networkIds parameter. Example: iptonetworklist[0].ip=10.10.10.11&iptonetworklist[0].networkid=204 - requests to use ip 10.10.10.11 in network id=204",resourceType={Network.class,IpAddress.class})
+    @Parameter(name = ApiConstants.IP_NETWORK_LIST, type = CommandType.MAP, description = "ip to network mapping. Can't be specified with networkIds parameter. Example: iptonetworklist[0].ip=10.10.10.11&iptonetworklist[0].networkid=204 - requests to use ip 10.10.10.11 in network id=204",entityType={Network.class,IpAddress.class})
     private Map ipToNetworkList;
 
     @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, description="the ip address for default vm's network")
