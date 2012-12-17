@@ -912,19 +912,13 @@
                     hiddenFields.push("networkofferingid");
                     hiddenFields.push("networkdomain");
                   }
+									
+									if(!isAdmin()) {
+									  hiddenFields.push("vlan");
+									}
+									
                   return hiddenFields;
-                },								
-								
-								preFilter: function(args) {
-                  var hiddenFields;
-                  if(isAdmin()) {
-                    hiddenFields = [];
-                  }
-                  else {
-                    hiddenFields = ["vlan"];
-                  }
-                  return hiddenFields;
-                },
+                },						
 																
                 fields: [
                   {
