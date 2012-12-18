@@ -20,11 +20,11 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager;
+import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -44,10 +44,9 @@ public class DeleteNetworkDeviceCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="host")
-    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, required=true, description = "Id of network device to delete")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = HostResponse.class,
+            required=true, description = "Id of network device to delete")
     private Long id;
-
 
     public Long getId() {
         return id;

@@ -19,12 +19,15 @@ package org.apache.cloudstack.api.response;
 import java.util.Date;
 import java.util.List;
 
+import com.cloud.offering.NetworkOffering;
 import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.Entity;
 
+@Entity(value=NetworkOffering.class)
 @SuppressWarnings("unused")
 public class NetworkOfferingResponse extends BaseResponse {
     @SerializedName("id") @Param(description="the id of the network offering")
