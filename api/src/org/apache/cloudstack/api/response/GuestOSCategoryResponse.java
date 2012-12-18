@@ -16,12 +16,14 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import com.cloud.storage.GuestOsCategory;
 import org.apache.cloudstack.api.ApiConstants;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.Entity;
 
+@Entity(value=GuestOsCategory.class)
 public class GuestOSCategoryResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the OS category")
     private String id;

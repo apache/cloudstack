@@ -26,7 +26,9 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.Entity;
 
+@Entity(value=Host.class)
 public class HostResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the host")
     private String id;
