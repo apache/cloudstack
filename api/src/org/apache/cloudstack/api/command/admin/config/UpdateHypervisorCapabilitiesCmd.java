@@ -20,7 +20,6 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -28,7 +27,6 @@ import org.apache.cloudstack.api.response.HypervisorCapabilitiesResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import com.cloud.hypervisor.HypervisorCapabilities;
 import com.cloud.user.Account;
-
 
 @Implementation(description="Updates a hypervisor capabilities.", responseObject=ServiceOfferingResponse.class, since="3.0.0")
 public class UpdateHypervisorCapabilitiesCmd extends BaseCmd {
@@ -39,8 +37,8 @@ public class UpdateHypervisorCapabilitiesCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="hypervisor_capabilities")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="ID of the hypervisor capability")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=HypervisorCapabilitiesResponse.class,
+            description="ID of the hypervisor capability")
     private Long id;
 
     @Parameter(name=ApiConstants.SECURITY_GROUP_EANBLED, type=CommandType.BOOLEAN, description="set true to enable security group for this hypervisor.")
@@ -64,8 +62,6 @@ public class UpdateHypervisorCapabilitiesCmd extends BaseCmd {
     public Long getMaxGuestsLimit() {
         return maxGuestsLimit;
     }
-
-
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
