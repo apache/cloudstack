@@ -18,11 +18,14 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 
+import com.cloud.offering.DiskOffering;
 import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.Entity;
 
+@Entity(value=DiskOffering.class)
 public class DiskOfferingResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="unique ID of the disk offering")
     private String id;
