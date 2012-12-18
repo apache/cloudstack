@@ -24,34 +24,21 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
+import net.sf.cglib.proxy.Enhancer;
+import net.sf.cglib.proxy.MethodInterceptor;
+import net.sf.cglib.proxy.MethodProxy;
 
 @SuppressWarnings("rawtypes")
-public class AsyncCallbackDispatcher implements AsyncCompletionCallback {
-	private static Map<Class<?>, Map<String, Method>> s_handlerCache = new HashMap<Class<?>, Map<String, Method>>();
-	private final String parentCallbackKey = "parentCallback";
-	private Map<String, Object> _contextMap = new HashMap<String, Object>();
-	private String _operationName;
-	private Object _targetObject;
+public class AsyncCallbackDispatcher<T> implements AsyncCompletionCallback {
+	private Method _callbackMethod;
+	private T _targetObject;
+	private Object _contextObject;
 	private Object _resultObject;
 	private AsyncCallbackDriver _driver = new InplaceAsyncCallbackDriver(); 
 	
-	public AsyncCallbackDispatcher(Object target) {
+	public AsyncCallbackDispatcher(T target) {
 		assert(target != null);
 		_targetObject = target;
-	}
-	
-	public AsyncCallbackDispatcher setContextParam(String key, Object param) {
-		_contextMap.put(key, param);
-		return this;
-	}
-	
-	public <T> AsyncCallbackDispatcher setParentCallback(AsyncCompletionCallback<T> parentCallback) {
-	    _contextMap.put(parentCallbackKey, parentCallback);
-	    return this;
-	}
-	
-	public AsyncCallbackDispatcher getParentCallback() {
-	   return (AsyncCallbackDispatcher)_contextMap.get(parentCallbackKey);
 	}
 	
 	public AsyncCallbackDispatcher attachDriver(AsyncCallbackDriver driver) {
@@ -61,22 +48,34 @@ public class AsyncCallbackDispatcher implements AsyncCompletionCallback {
 		return this;
 	}
 	
-	public AsyncCallbackDispatcher setOperationName(String name) {
-		_operationName = name;
-		return this;
-	}
-	
-	public String getOperationName() {
-		return _operationName;
-	}
-	
-	public Object getTargetObject() {
-		return _targetObject;
+	public Method getCallbackMethod() {
+		return _callbackMethod;
 	}
 	
 	@SuppressWarnings("unchecked")
-	public <T> T getContextParam(String key) {
-		return (T)_contextMap.get(key);
+	public T getTarget() {
+		return (T)Enhancer.create(_targetObject.getClass(), new MethodInterceptor() {
+			@Override
+			public Object intercept(Object arg0, Method arg1, Object[] arg2,
+				MethodProxy arg3) throws Throwable {
+				_callbackMethod = arg1;
+				return null;
+			}
+		});
+	}
+
+	public AsyncCallbackDispatcher setCallback(Object useless) {
+		return this;
+	}
+	
+	public AsyncCallbackDispatcher setContext(Object context) {
+		_contextObject = context;
+		return this;
+	}
+	
+	@SuppressWarnings("unchecked")
+	public <P> P getContext() {
+		return (P)_contextObject;
 	}
 	
 	public void complete(Object resultObject) {
@@ -85,65 +84,28 @@ public class AsyncCallbackDispatcher implements AsyncCompletionCallback {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public <T> T getResult() {
-		return (T)_resultObject;
+	public <R> R getResult() {
+		return (R)_resultObject;
+	}
+	
+	public Object getTargetObject() {
+		return _targetObject;
 	}
 	
 	public static boolean dispatch(Object target, AsyncCallbackDispatcher callback) {
 		assert(callback != null);
 		assert(target != null);
 		
-		Method handler = resolveHandler(target.getClass(), callback.getOperationName());
-		if(handler == null)
-			return false;
-		
 		try {
-			handler.invoke(target, callback);
+			callback.getCallbackMethod().invoke(target, callback, callback.getContext());
 		} catch (IllegalArgumentException e) {
-			throw new RuntimeException("IllegalArgumentException when invoking RPC callback for command: " + callback.getOperationName());
+			throw new RuntimeException("IllegalArgumentException when invoking RPC callback for command: " + callback.getCallbackMethod().getName());
 		} catch (IllegalAccessException e) {
-			throw new RuntimeException("IllegalAccessException when invoking RPC callback for command: " + callback.getOperationName());
+			throw new RuntimeException("IllegalAccessException when invoking RPC callback for command: " + callback.getCallbackMethod().getName());
 		} catch (InvocationTargetException e) {
-			throw new RuntimeException("InvocationTargetException when invoking RPC callback for command: " + callback.getOperationName(), e);
+			throw new RuntimeException("InvocationTargetException when invoking RPC callback for command: " + callback.getCallbackMethod().getName());
 		}
 		
 		return true;
-	}
-	
-	public static Method resolveHandler(Class<?> handlerClz, String command) {
-		synchronized(s_handlerCache) {
-			Map<String, Method> handlerMap = getAndSetHandlerMap(handlerClz);
-				
-			Method handler = handlerMap.get(command);
-			if(handler != null)
-				return handler;
-			
-			for(Method method : handlerClz.getDeclaredMethods()) {
-				AsyncCallbackHandler annotation = method.getAnnotation(AsyncCallbackHandler.class);
-				if(annotation != null) {
-					if(annotation.operationName().equals(command)) {
-						handlerMap.put(command, method);
-						method.setAccessible(true);
-						return method;
-					}
-				}
-			}
-		}
-		
-		return null;
-	}
-	
-	private static Map<String, Method> getAndSetHandlerMap(Class<?> handlerClz) {
-		Map<String, Method> handlerMap;
-		synchronized(s_handlerCache) {
-			handlerMap = s_handlerCache.get(handlerClz);
-			
-			if(handlerMap == null) {
-				handlerMap = new HashMap<String, Method>();
-				s_handlerCache.put(handlerClz, handlerMap);
-			}
-		}
-		
-		return handlerMap;
 	}
 }

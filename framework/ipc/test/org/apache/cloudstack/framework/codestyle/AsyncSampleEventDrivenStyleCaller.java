@@ -20,26 +20,25 @@ package org.apache.cloudstack.framework.codestyle;
 
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCallbackDriver;
-import org.apache.cloudstack.framework.async.AsyncCallbackHandler;
 
 public class AsyncSampleEventDrivenStyleCaller {
 	AsyncSampleCallee _ds = new AsyncSampleCallee();
 	AsyncCallbackDriver _callbackDriver;
 	
+	@SuppressWarnings("unchecked")
 	public void MethodThatWillCallAsyncMethod() {
-		Object vol = new Object();
-		_ds.createVolume(vol,
-			new AsyncCallbackDispatcher(this)
-				.setOperationName("volume.create")
-				.setContextParam("origVolume", vol)
-				);
+		String vol = new String("Hello");
+		AsyncCallbackDispatcher<AsyncSampleEventDrivenStyleCaller> caller = new AsyncCallbackDispatcher<AsyncSampleEventDrivenStyleCaller>(this);
+		_ds.createVolume(vol, caller
+			.setCallback(caller.getTarget().HandleVolumeCreateAsyncCallback(null, null))
+			.setContext(vol)
+		);
 	}
 
-	@AsyncCallbackHandler(operationName="volume.create")
-	public void HandleVolumeCreateAsyncCallback(AsyncCallbackDispatcher callback) {
-		Object origVol = callback.getContextParam("origVolume");
-		
+	public Void HandleVolumeCreateAsyncCallback(AsyncCallbackDispatcher<AsyncSampleEventDrivenStyleCaller> callback, String context) {
 		Object resultVol = callback.getResult();
+		
+		return null;
 	}
 	
 	public static void main(String[] args) {
