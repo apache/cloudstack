@@ -184,6 +184,13 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd implements FirewallR
         return null;
     }
 
+
+    @Override
+    public String getUuid() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
     @Override
     public Long getSourceIpAddressId() {
         return null;

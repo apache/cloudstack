@@ -17,7 +17,6 @@
 package org.apache.cloudstack.api.response;
 
 import org.apache.cloudstack.api.ApiConstants;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
@@ -25,7 +24,7 @@ import org.apache.cloudstack.api.BaseResponse;
 
 public class HypervisorCapabilitiesResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the hypervisor capabilities row")
-    private IdentityProxy id = new IdentityProxy("hypervisor_capabilities");
+    private String id;
 
     @SerializedName(ApiConstants.HYPERVISOR_VERSION) @Param(description="the hypervisor version")
     private String hypervisorVersion;
@@ -39,17 +38,13 @@ public class HypervisorCapabilitiesResponse extends BaseResponse {
     @SerializedName(ApiConstants.SECURITY_GROUP_EANBLED) @Param(description="true if security group is supported")
     private boolean isSecurityGroupEnabled;
 
-    @Override
-    public Long getObjectId() {
-        return getId();
+
+    public String getId() {
+        return id;
     }
 
-    public Long getId() {
-        return id.getValue();
-    }
-
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
 

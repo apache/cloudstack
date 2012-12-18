@@ -19,17 +19,16 @@ package org.apache.cloudstack.api.response;
 import java.util.Date;
 
 import org.apache.cloudstack.api.ApiConstants;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
 
 public class DiskOfferingResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="unique ID of the disk offering")
-    private IdentityProxy id = new IdentityProxy("disk_offering");
+    private String id;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain ID this disk offering belongs to. Ignore this information as it is not currently applicable.")
-    private IdentityProxy domainId = new IdentityProxy("domain");
+    private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name this disk offering belongs to. Ignore this information as it is not currently applicable.")
     private String domain;
@@ -55,20 +54,20 @@ public class DiskOfferingResponse extends BaseResponse {
     @SerializedName("storagetype") @Param(description="the storage type for this disk offering")
     private String storageType;
 
-    public Long getId() {
-        return id.getValue();
+    public String getId() {
+        return id;
     }
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public Long getDomainId() {
-        return domainId.getValue();
+    public String getDomainId() {
+        return domainId;
     }
 
-    public void setDomainId(Long domainId) {
-        this.domainId.setValue(domainId);
+    public void setDomainId(String domainId) {
+        this.domainId = domainId;
     }
 
     public String getDomain() {

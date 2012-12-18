@@ -72,6 +72,8 @@ public interface IpAddress extends ControlledEntity {
      */
     long getId();
 
+    String getUuid();
+
     void setState(IpAddress.State state);
 
     Long getAllocatedToAccountId();

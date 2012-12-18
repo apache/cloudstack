@@ -255,6 +255,8 @@ public interface Network extends ControlledEntity {
      */
     long getId();
 
+    String getUuid();
+
     String getName();
 
     Mode getMode();

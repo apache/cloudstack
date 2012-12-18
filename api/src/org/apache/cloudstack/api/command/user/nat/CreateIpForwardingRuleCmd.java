@@ -255,6 +255,13 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
         return null;
     }
 
+
+    @Override
+    public String getUuid() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
     @Override
     public String getSyncObjType() {
         return BaseAsyncCmd.networkSyncObject;

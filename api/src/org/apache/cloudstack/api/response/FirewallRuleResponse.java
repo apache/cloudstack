@@ -20,14 +20,13 @@ import java.util.List;
 
 import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.serializer.Param;
-import com.cloud.utils.IdentityProxy;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
 
 @SuppressWarnings("unused")
 public class FirewallRuleResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the port forwarding rule")
-    private IdentityProxy id = new IdentityProxy("firewall_rules");
+    private String id;
 
     @SerializedName(ApiConstants.PRIVATE_START_PORT) @Param(description = "the starting port of port forwarding rule's private port range")
     private String privateStartPort;
@@ -45,7 +44,7 @@ public class FirewallRuleResponse extends BaseResponse {
     private String publicEndPort;
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID) @Param(description="the VM ID for the port forwarding rule")
-    private IdentityProxy virtualMachineId = new IdentityProxy("vm_instance");
+    private String virtualMachineId;
 
     @SerializedName("virtualmachinename") @Param(description="the VM name for the port forwarding rule")
     private String virtualMachineName;
@@ -54,7 +53,7 @@ public class FirewallRuleResponse extends BaseResponse {
     private String virtualMachineDisplayName;
 
     @SerializedName(ApiConstants.IP_ADDRESS_ID) @Param(description="the public ip address id for the port forwarding rule")
-    private IdentityProxy publicIpAddressId = new IdentityProxy("user_ip_address");
+    private String publicIpAddressId;
 
     @SerializedName(ApiConstants.IP_ADDRESS) @Param(description="the public ip address for the port forwarding rule")
     private String publicIpAddress;
@@ -68,12 +67,12 @@ public class FirewallRuleResponse extends BaseResponse {
     @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with the rule", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
 
-    public Long getId() {
-        return id.getValue();
+    public String getId() {
+        return id;
     }
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getPrivateStartPort() {
@@ -116,12 +115,12 @@ public class FirewallRuleResponse extends BaseResponse {
         this.publicEndPort = publicPort;
     }
 
-    public Long getVirtualMachineId() {
-        return virtualMachineId.getValue();
+    public String getVirtualMachineId() {
+        return virtualMachineId;
     }
 
-    public void setVirtualMachineId(Long virtualMachineId) {
-        this.virtualMachineId.setValue(virtualMachineId);
+    public void setVirtualMachineId(String virtualMachineId) {
+        this.virtualMachineId = virtualMachineId;
     }
 
     public String getVirtualMachineName() {
@@ -156,12 +155,12 @@ public class FirewallRuleResponse extends BaseResponse {
         this.state = state;
     }
 
-    public Long getPublicIpAddressId() {
-        return publicIpAddressId.getValue();
+    public String getPublicIpAddressId() {
+        return publicIpAddressId;
     }
 
-    public void setPublicIpAddressId(Long publicIpAddressId) {
-        this.publicIpAddressId.setValue(publicIpAddressId);
+    public void setPublicIpAddressId(String publicIpAddressId) {
+        this.publicIpAddressId = publicIpAddressId;
     }
 
     public String getCidrList() {

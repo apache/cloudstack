@@ -21,14 +21,13 @@ import java.util.List;
 
 import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.serializer.Param;
-import com.cloud.utils.IdentityProxy;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
 
 @SuppressWarnings("unused")
 public class IPAddressResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID) @Param(description="public IP address id")
-    private IdentityProxy id = new IdentityProxy("user_ip_address");
+    private String id;
 
     @SerializedName(ApiConstants.IP_ADDRESS) @Param(description="public IP address")
     private String ipAddress;
@@ -37,7 +36,7 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
     private Date allocated;
 
     @SerializedName(ApiConstants.ZONE_ID) @Param(description="the ID of the zone the public IP address belongs to")
-    private IdentityProxy zoneId = new IdentityProxy("data_center");
+    private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the name of the zone the public IP address belongs to")
     private String zoneName;
@@ -65,7 +64,7 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
 
     @SerializedName(ApiConstants.VLAN_ID) @Param(description="the ID of the VLAN associated with the IP address." +
             " This parameter is visible to ROOT admins only")
-    private IdentityProxy vlanId = new IdentityProxy("vlan");
+    private String vlanId;
 
     @SerializedName("vlanname") @Param(description="the VLAN associated with the IP address")
     private String vlanName;
@@ -77,7 +76,7 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
     private Boolean isSystem;
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID) @Param(description="virutal machine id the ip address is assigned to (not null only for static nat Ip)")
-    private IdentityProxy virtualMachineId = new IdentityProxy("vm_instance");
+    private String virtualMachineId;
 
     @SerializedName("virtualmachinename") @Param(description="virutal machine name the ip address is assigned to (not null only for static nat Ip)")
     private String virtualMachineName;
@@ -86,25 +85,25 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
     private String virtualMachineDisplayName;
 
     @SerializedName(ApiConstants.ASSOCIATED_NETWORK_ID) @Param(description="the ID of the Network associated with the IP address")
-    private IdentityProxy associatedNetworkId = new IdentityProxy("networks");
+    private String associatedNetworkId;
 
     @SerializedName(ApiConstants.ASSOCIATED_NETWORK_NAME) @Param(description="the name of the Network associated with the IP address")
     private String associatedNetworkName;
 
     @SerializedName(ApiConstants.NETWORK_ID) @Param(description="the ID of the Network where ip belongs to")
-    private IdentityProxy networkId = new IdentityProxy("networks");
+    private String networkId;
 
     @SerializedName(ApiConstants.STATE) @Param(description="State of the ip address. Can be: Allocatin, Allocated and Releasing")
     private String state;
 
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) @Param(description="the physical network this belongs to")
-    private IdentityProxy physicalNetworkId = new IdentityProxy("physical_network");
+    private String physicalNetworkId;
 
     @SerializedName(ApiConstants.PURPOSE) @Param(description="purpose of the IP address. In Acton this value is not null for Ips with isSystem=true, and can have either StaticNat or LB value")
     private String purpose;
 
     @SerializedName(ApiConstants.VPC_ID) @Param(description="VPC the ip belongs to")
-    private IdentityProxy vpcId = new IdentityProxy("vpc");
+    private String vpcId;
     @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with ip address", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
 
@@ -122,8 +121,8 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
         this.allocated = allocated;
     }
 
-    public void setZoneId(Long zoneId) {
-        this.zoneId.setValue(zoneId);
+    public void setZoneId(String zoneId) {
+        this.zoneId = zoneId;
     }
 
     public void setZoneName(String zoneName) {
@@ -153,8 +152,8 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
         this.forVirtualNetwork = forVirtualNetwork;
     }
 
-    public void setVlanId(Long vlanId) {
-        this.vlanId.setValue(vlanId);
+    public void setVlanId(String vlanId) {
+        this.vlanId = vlanId;
     }
 
     public void setVlanName(String vlanName) {
@@ -165,16 +164,16 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
         this.staticNat = staticNat;
     }
 
-    public void setAssociatedNetworkId(Long networkId) {
-        this.associatedNetworkId.setValue(networkId);
+    public void setAssociatedNetworkId(String networkId) {
+        this.associatedNetworkId = networkId;
     }
 
-    public void setNetworkId(Long networkId) {
-        this.networkId.setValue(networkId);
+    public void setNetworkId(String networkId) {
+        this.networkId = networkId;
     }
 
-    public void setVirtualMachineId(Long virtualMachineId) {
-        this.virtualMachineId.setValue(virtualMachineId);
+    public void setVirtualMachineId(String virtualMachineId) {
+        this.virtualMachineId = virtualMachineId;
     }
 
     public void setVirtualMachineName(String virtualMachineName) {
@@ -185,22 +184,18 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
         this.virtualMachineDisplayName = virtualMachineDisplayName;
     }
 
-    public Long getId() {
-        return id.getValue();
+    public String getId() {
+        return id;
     }
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
     public void setState(String state) {
         this.state = state;
     }
 
-    @Override
-    public Long getObjectId() {
-        return getId();
-    }
 
     @Override
     public void setProjectId(String projectId) {
@@ -212,8 +207,8 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
         this.projectName = projectName;
     }
 
-    public void setPhysicalNetworkId(long physicalNetworkId) {
-        this.physicalNetworkId.setValue(physicalNetworkId);
+    public void setPhysicalNetworkId(String physicalNetworkId) {
+        this.physicalNetworkId = physicalNetworkId;
     }
 
     public void setIsSystem(Boolean isSystem) {
@@ -224,8 +219,8 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
         this.purpose = purpose;
     }
 
-    public void setVpcId(Long vpcId) {
-        this.vpcId.setValue(vpcId);
+    public void setVpcId(String vpcId) {
+        this.vpcId = vpcId;
     }
 
     public void setTags(List<ResourceTagResponse> tags) {

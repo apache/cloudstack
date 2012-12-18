@@ -19,14 +19,13 @@ package org.apache.cloudstack.api.response;
 import java.util.Date;
 
 import org.apache.cloudstack.api.ApiConstants;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
 
 public class ServiceOfferingResponse extends BaseResponse {
     @SerializedName("id") @Param(description="the id of the service offering")
-    private IdentityProxy id = new IdentityProxy("disk_offering");
+    private String id;
 
     @SerializedName("name") @Param(description="the name of the service offering")
     private String name;
@@ -59,7 +58,7 @@ public class ServiceOfferingResponse extends BaseResponse {
     private String tags;
 
     @SerializedName("domainid") @Param(description="the domain id of the service offering")
-    private IdentityProxy domainId = new IdentityProxy("domain");
+    private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN) @Param(description="Domain name for the offering")
     private String domain;
@@ -80,12 +79,12 @@ public class ServiceOfferingResponse extends BaseResponse {
     private Integer networkRate;
 
 
-    public Long getId() {
-        return id.getValue();
+    public String getId() {
+        return id;
     }
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getName() {
@@ -195,12 +194,12 @@ public class ServiceOfferingResponse extends BaseResponse {
         this.tags = tags;
     }
 
-    public Long getDomainId() {
-        return domainId.getValue();
+    public String getDomainId() {
+        return domainId;
     }
 
-    public void setDomainId(Long domainId) {
-        this.domainId.setValue(domainId);
+    public void setDomainId(String domainId) {
+        this.domainId = domainId;
     }
 
     public String getDomain() {

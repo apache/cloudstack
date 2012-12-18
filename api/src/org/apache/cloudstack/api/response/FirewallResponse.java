@@ -20,14 +20,13 @@ import java.util.List;
 
 import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.serializer.Param;
-import com.cloud.utils.IdentityProxy;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
 
 @SuppressWarnings("unused")
 public class FirewallResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the firewall rule")
-    private IdentityProxy id = new IdentityProxy("firewall_rules");
+    private String id;
 
     @SerializedName(ApiConstants.PROTOCOL) @Param(description="the protocol of the firewall rule")
     private String protocol;
@@ -59,8 +58,8 @@ public class FirewallResponse extends BaseResponse {
     @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with the rule", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
     public void setProtocol(String protocol) {

@@ -28,6 +28,8 @@ public interface HypervisorCapabilities {
      */
     long getId();
 
+    String getUuid();
+
     /**
      * @return type of hypervisor
      */

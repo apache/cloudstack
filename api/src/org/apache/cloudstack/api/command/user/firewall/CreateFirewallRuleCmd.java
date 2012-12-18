@@ -153,6 +153,13 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
         return null;
     }
 
+
+    @Override
+    public String getUuid() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
     @Override
     public Long getSourceIpAddressId() {
         return ipAddressId;

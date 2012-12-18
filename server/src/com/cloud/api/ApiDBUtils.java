@@ -137,6 +137,7 @@ import com.cloud.network.security.dao.SecurityGroupDao;
 import com.cloud.network.vpc.StaticRouteVO;
 import com.cloud.network.vpc.VpcGatewayVO;
 import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.StaticRouteDao;
 import com.cloud.network.vpc.dao.VpcGatewayDao;
 import com.cloud.offering.NetworkOffering;
@@ -218,6 +219,7 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.network.vpc.dao.VpcDao;
 
 public class ApiDBUtils {
     private static ManagementServer _ms;
@@ -302,6 +304,7 @@ public class ApiDBUtils {
     private static FirewallRulesDao _firewallRuleDao;
     private static StaticRouteDao _staticRouteDao;
     private static VpcGatewayDao _vpcGatewayDao;
+    private static VpcDao _vpcDao;
 
     static {
         _ms = (ManagementServer) ComponentLocator.getComponent(ManagementServer.Name);
@@ -385,6 +388,7 @@ public class ApiDBUtils {
         _vpcGatewayDao = locator.getDao(VpcGatewayDao.class);
         _asVmProfileDao = locator.getDao(AutoScaleVmProfileDao.class);
         _asVmGroupDao = locator.getDao(AutoScaleVmGroupDao.class);
+        _vpcDao = locator.getDao(VpcDao.class);
 
         // Note: stats collector should already have been initialized by this time, otherwise a null instance is returned
         _statsCollector = StatsCollector.getInstance();
@@ -1019,6 +1023,10 @@ public class ApiDBUtils {
 
     public static GuestOSCategoryVO findGuestOsCategoryById(long catId){
         return _guestOSCategoryDao.findById(catId);
+    }
+
+    public static VpcVO findVpcById(long vpcId){
+        return _vpcDao.findById(vpcId);
     }
     ///////////////////////////////////////////////////////////////////////
     //  Newly Added Utility Methods for List API refactoring             //

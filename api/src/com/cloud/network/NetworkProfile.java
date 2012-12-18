@@ -24,6 +24,7 @@ import com.cloud.network.Networks.TrafficType;
 
 public class NetworkProfile implements Network {
     private long id;
+    private String uuid;
     private long dataCenterId;
     private long ownerId;
     private long domainId;
@@ -51,6 +52,7 @@ public class NetworkProfile implements Network {
 
     public NetworkProfile(Network network) {
         this.id = network.getId();
+        this.uuid = network.getUuid();
         this.broadcastUri = network.getBroadcastUri();
         this.dataCenterId = network.getDataCenterId();
         this.ownerId = network.getAccountId();
@@ -103,6 +105,12 @@ public class NetworkProfile implements Network {
     @Override
     public long getId() {
         return id;
+    }
+
+
+    @Override
+    public String getUuid() {
+        return uuid;
     }
 
     @Override

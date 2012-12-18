@@ -208,6 +208,13 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
         return null;
     }
 
+
+    @Override
+    public String getUuid() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
     @Override
     public Long getSourceIpAddressId() {
         return ipAddressId;

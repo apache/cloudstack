@@ -53,6 +53,12 @@ public interface FirewallRule extends ControlledEntity {
     long getId();
 
     /**
+     *
+     * @return uuid
+     */
+    String getUuid();
+
+    /**
      * @return external id.
      */
     String getXid();
