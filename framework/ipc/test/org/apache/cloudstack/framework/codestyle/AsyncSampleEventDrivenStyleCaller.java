@@ -28,7 +28,7 @@ public class AsyncSampleEventDrivenStyleCaller {
 	@SuppressWarnings("unchecked")
 	public void MethodThatWillCallAsyncMethod() {
 		String vol = new String("Hello");
-		AsyncCallbackDispatcher<AsyncSampleEventDrivenStyleCaller> caller = new AsyncCallbackDispatcher<AsyncSampleEventDrivenStyleCaller>(this);
+		AsyncCallbackDispatcher<AsyncSampleEventDrivenStyleCaller> caller = AsyncCallbackDispatcher.create(this);
 		_ds.createVolume(vol, caller
 			.setCallback(caller.getTarget().HandleVolumeCreateAsyncCallback(null, null))
 			.setContext(vol)

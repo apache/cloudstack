@@ -21,8 +21,6 @@ package org.apache.cloudstack.framework.async;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.Map;
 
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.MethodInterceptor;
@@ -30,18 +28,26 @@ import net.sf.cglib.proxy.MethodProxy;
 
 @SuppressWarnings("rawtypes")
 public class AsyncCallbackDispatcher<T> implements AsyncCompletionCallback {
+	private AsyncCallbackDispatcher _parent;
+	
 	private Method _callbackMethod;
 	private T _targetObject;
 	private Object _contextObject;
 	private Object _resultObject;
 	private AsyncCallbackDriver _driver = new InplaceAsyncCallbackDriver(); 
 	
-	public AsyncCallbackDispatcher(T target) {
+	private AsyncCallbackDispatcher(T target) {
 		assert(target != null);
 		_targetObject = target;
 	}
 	
-	public AsyncCallbackDispatcher attachDriver(AsyncCallbackDriver driver) {
+	private AsyncCallbackDispatcher(T target, AsyncCallbackDispatcher parent) {
+		assert(target != null);
+		_targetObject = target;
+		_parent = parent;
+	}
+	
+	public AsyncCallbackDispatcher<T> attachDriver(AsyncCallbackDriver driver) {
 		assert(driver != null);
 		_driver = driver;
 		
@@ -64,11 +70,11 @@ public class AsyncCallbackDispatcher<T> implements AsyncCompletionCallback {
 		});
 	}
 
-	public AsyncCallbackDispatcher setCallback(Object useless) {
+	public AsyncCallbackDispatcher<T> setCallback(Object useless) {
 		return this;
 	}
 	
-	public AsyncCallbackDispatcher setContext(Object context) {
+	public AsyncCallbackDispatcher<T> setContext(Object context) {
 		_contextObject = context;
 		return this;
 	}
@@ -82,14 +88,34 @@ public class AsyncCallbackDispatcher<T> implements AsyncCompletionCallback {
 		_resultObject = resultObject;
 		_driver.performCompletionCallback(this);
 	}
+
+	public void deepComplete(Object resultObject) {
+		complete(resultObject);
+		if(_parent != null)
+			_parent.deepComplete(resultObject);
+	}
 	
 	@SuppressWarnings("unchecked")
 	public <R> R getResult() {
 		return (R)_resultObject;
 	}
-	
-	public Object getTargetObject() {
+
+	// for internal use
+	Object getTargetObject() {
 		return _targetObject;
+	}
+	
+	public static <P> AsyncCallbackDispatcher<P> create(P target)  {
+		return new AsyncCallbackDispatcher<P>(target);
+	}
+	
+	public <P> AsyncCallbackDispatcher<P> chainToCreate(P target) {
+		return new AsyncCallbackDispatcher<P>(target, this);
+	}
+	
+	@SuppressWarnings("unchecked")
+	public <P> AsyncCallbackDispatcher<P> getParent() {
+		return (AsyncCallbackDispatcher<P>)_parent;
 	}
 	
 	public static boolean dispatch(Object target, AsyncCallbackDispatcher callback) {
