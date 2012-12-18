@@ -45,8 +45,9 @@ public class EntityManagerImpl implements EntityManager, Manager {
     }
 
     @Override
-    public <T> T findByXid(Class<T> entityType, String xid) {
-        return null;
+    public <T> T findByXId(Class<T> entityType, String xid) {
+        GenericDao<? extends T, String> dao = (GenericDao<? extends T, String>)GenericDaoBase.getDao(entityType);
+        return dao.findByXId(xid);
     }
 
     @Override

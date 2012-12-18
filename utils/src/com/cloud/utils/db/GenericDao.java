@@ -54,6 +54,9 @@ public interface GenericDao<T, ID extends Serializable> {
     T findByIdIncludingRemoved(ID id);
     
     T findById(ID id, boolean fresh);
+
+    // Finds a VO object using uuid
+    T findByXId(ID uuid);
     
     /**
      * @return VO object ready to be used for update.  It won't have any fields filled in.
