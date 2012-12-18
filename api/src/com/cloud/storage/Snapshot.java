@@ -69,6 +69,8 @@ public interface Snapshot extends ControlledEntity {
 
     Long getId();
 
+    String getUuid();
+
     long getAccountId();
 
     long getVolumeId();

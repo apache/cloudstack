@@ -95,33 +95,50 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.NetworkRuleConfigVO;
 import com.cloud.network.NetworkVO;
+import com.cloud.network.PhysicalNetworkVO;
 import com.cloud.network.Site2SiteVpnGatewayVO;
 import com.cloud.network.Site2SiteCustomerGatewayVO;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.as.AutoScalePolicy;
 import com.cloud.network.as.AutoScalePolicyConditionMapVO;
+import com.cloud.network.as.AutoScalePolicyVO;
 import com.cloud.network.as.AutoScaleVmGroupPolicyMapVO;
+import com.cloud.network.as.AutoScaleVmGroupVO;
+import com.cloud.network.as.AutoScaleVmProfileVO;
 import com.cloud.network.as.ConditionVO;
 import com.cloud.network.as.CounterVO;
 import com.cloud.network.as.dao.AutoScalePolicyConditionMapDao;
 import com.cloud.network.as.dao.AutoScalePolicyDao;
+import com.cloud.network.as.dao.AutoScaleVmGroupDao;
 import com.cloud.network.as.dao.AutoScaleVmGroupPolicyMapDao;
+import com.cloud.network.as.dao.AutoScaleVmProfileDao;
 import com.cloud.network.as.dao.ConditionDao;
 import com.cloud.network.as.dao.CounterDao;
 import com.cloud.network.dao.FirewallRulesCidrsDao;
+import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.NetworkDomainDao;
 import com.cloud.network.dao.NetworkRuleConfigDao;
+import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
+import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
+import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
+import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
 import com.cloud.network.router.VirtualRouter;
+import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.security.dao.SecurityGroupDao;
+import com.cloud.network.vpc.StaticRouteVO;
+import com.cloud.network.vpc.VpcGatewayVO;
 import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpc.dao.StaticRouteDao;
+import com.cloud.network.vpc.dao.VpcGatewayDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
@@ -248,6 +265,7 @@ public class ApiDBUtils {
     private static DataCenterDao _zoneDao;
     private static NetworkOfferingDao _networkOfferingDao;
     private static NetworkDao _networkDao;
+    private static PhysicalNetworkDao _physicalNetworkDao;
     private static ConfigurationService _configMgr;
     private static ConfigurationDao _configDao;
     private static ConsoleProxyDao _consoleProxyDao;
@@ -268,6 +286,8 @@ public class ApiDBUtils {
     private static AutoScalePolicyConditionMapDao _asPolicyConditionMapDao;
     private static AutoScaleVmGroupPolicyMapDao _asVmGroupPolicyMapDao;
     private static AutoScalePolicyDao _asPolicyDao;
+    private static AutoScaleVmProfileDao _asVmProfileDao;
+    private static AutoScaleVmGroupDao _asVmGroupDao;
     private static CounterDao _counterDao;
     private static ResourceTagJoinDao _tagJoinDao;
     private static EventJoinDao _eventJoinDao;
@@ -276,6 +296,12 @@ public class ApiDBUtils {
     private static ProjectJoinDao _projectJoinDao;
     private static ProjectAccountJoinDao _projectAccountJoinDao;
     private static ProjectInvitationJoinDao _projectInvitationJoinDao;
+
+    private static PhysicalNetworkTrafficTypeDao _physicalNetworkTrafficTypeDao;
+    private static PhysicalNetworkServiceProviderDao _physicalNetworkServiceProviderDao;
+    private static FirewallRulesDao _firewallRuleDao;
+    private static StaticRouteDao _staticRouteDao;
+    private static VpcGatewayDao _vpcGatewayDao;
 
     static {
         _ms = (ManagementServer) ComponentLocator.getComponent(ManagementServer.Name);
@@ -324,6 +350,7 @@ public class ApiDBUtils {
         _securityGroupJoinDao = locator.getDao(SecurityGroupJoinDao.class);
         _networkOfferingDao = locator.getDao(NetworkOfferingDao.class);
         _networkDao = locator.getDao(NetworkDao.class);
+        _physicalNetworkDao = locator.getDao(PhysicalNetworkDao.class);
         _configDao = locator.getDao(ConfigurationDao.class);
         _consoleProxyDao = locator.getDao(ConsoleProxyDao.class);
         _firewallCidrsDao = locator.getDao(FirewallRulesCidrsDao.class);
@@ -343,8 +370,6 @@ public class ApiDBUtils {
         _asPolicyConditionMapDao = locator.getDao(AutoScalePolicyConditionMapDao.class);
         _counterDao = locator.getDao(CounterDao.class);
         _asVmGroupPolicyMapDao = locator.getDao(AutoScaleVmGroupPolicyMapDao.class);
-        _asVmGroupPolicyMapDao = locator.getDao(AutoScaleVmGroupPolicyMapDao.class);
-        _counterDao = locator.getDao(CounterDao.class);
         _tagJoinDao = locator.getDao(ResourceTagJoinDao.class);
         _vmGroupJoinDao = locator.getDao(InstanceGroupJoinDao.class);
         _eventJoinDao = locator.getDao(EventJoinDao.class);
@@ -353,6 +378,13 @@ public class ApiDBUtils {
         _projectAccountJoinDao = locator.getDao(ProjectAccountJoinDao.class);
         _projectInvitationJoinDao = locator.getDao(ProjectInvitationJoinDao.class);
 
+        _physicalNetworkTrafficTypeDao = locator.getDao(PhysicalNetworkTrafficTypeDao.class);
+        _physicalNetworkServiceProviderDao = locator.getDao(PhysicalNetworkServiceProviderDao.class);
+        _firewallRuleDao = locator.getDao(FirewallRulesDao.class);
+        _staticRouteDao = locator.getDao(StaticRouteDao.class);
+        _vpcGatewayDao = locator.getDao(VpcGatewayDao.class);
+        _asVmProfileDao = locator.getDao(AutoScaleVmProfileDao.class);
+        _asVmGroupDao = locator.getDao(AutoScaleVmGroupDao.class);
 
         // Note: stats collector should already have been initialized by this time, otherwise a null instance is returned
         _statsCollector = StatsCollector.getInstance();
@@ -738,6 +770,14 @@ public class ApiDBUtils {
         return _vlanDao.listVlansByNetworkId(networkId);
     }
 
+    public static PhysicalNetworkVO findPhysicalNetworkById(long id) {
+        return _physicalNetworkDao.findById(id);
+    }
+
+    public static PhysicalNetworkTrafficTypeVO findPhysicalNetworkTrafficTypeById(long id) {
+        return _physicalNetworkTrafficTypeDao.findById(id);
+    }
+
     public static NetworkVO findNetworkById(long id) {
         return _networkDao.findById(id);
     }
@@ -943,6 +983,38 @@ public class ApiDBUtils {
 
     public static CounterVO getCounter(long counterId) {
         return _counterDao.findById(counterId);
+    }
+
+    public static ConditionVO findConditionById(long conditionId){
+        return _asConditionDao.findById(conditionId);
+    }
+
+    public static PhysicalNetworkServiceProviderVO findPhysicalNetworkServiceProviderById(long providerId){
+        return _physicalNetworkServiceProviderDao.findById(providerId);
+    }
+
+    public static FirewallRuleVO findFirewallRuleById(long ruleId){
+        return _firewallRuleDao.findById(ruleId);
+    }
+
+    public static StaticRouteVO findStaticRouteById(long routeId){
+        return _staticRouteDao.findById(routeId);
+    }
+
+    public static VpcGatewayVO findVpcGatewayById(long gatewayId){
+        return _vpcGatewayDao.findById(gatewayId);
+    }
+
+    public static AutoScalePolicyVO findAutoScalePolicyById(long policyId){
+        return _asPolicyDao.findById(policyId);
+    }
+
+    public static AutoScaleVmProfileVO findAutoScaleVmProfileById(long profileId){
+        return _asVmProfileDao.findById(profileId);
+    }
+
+    public static AutoScaleVmGroupVO findAutoScaleVmGroupById(long groupId){
+        return _asVmGroupDao.findById(groupId);
     }
 
     ///////////////////////////////////////////////////////////////////////

@@ -22,6 +22,8 @@ import com.cloud.acl.ControlledEntity;
 public interface SecurityGroup extends ControlledEntity {
     long getId();
 
+    String getUuid();
+
     String getName();
 
     String getDescription();

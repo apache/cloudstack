@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.response;
 import java.util.Date;
 
 import org.apache.cloudstack.api.ApiConstants;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
@@ -27,7 +26,7 @@ import org.apache.cloudstack.api.BaseResponse;
 @SuppressWarnings("unused")
 public class AlertResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the id of the alert")
-    private IdentityProxy id = new IdentityProxy("alert");
+    private String id;
 
     @SerializedName(ApiConstants.TYPE) @Param(description="One of the following alert types: " +
       "MEMORY = 0, CPU = 1, STORAGE = 2, STORAGE_ALLOCATED = 3, PUBLIC_IP = 4, PRIVATE_IP = 5, HOST = 6, USERVM = 7, " +
@@ -45,8 +44,8 @@ public class AlertResponse extends BaseResponse {
     @SerializedName(ApiConstants.SENT) @Param(description="the date and time the alert was sent")
     private Date lastSent;
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
     public void setAlertType(Short alertType) {

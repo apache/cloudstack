@@ -23,6 +23,8 @@ public interface User extends OwnedBy {
 
     public long getId();
 
+    public String getUuid();
+
     public Date getCreated();
 
     public Date getRemoved();

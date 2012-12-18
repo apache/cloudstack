@@ -77,7 +77,7 @@ public class ListAlertsCmd extends BaseListCmd {
         List<AlertResponse> alertResponseList = new ArrayList<AlertResponse>();
         for (Alert alert : result.first()) {
             AlertResponse alertResponse = new AlertResponse();
-            alertResponse.setId(alert.getId());
+            alertResponse.setId(alert.getUuid());
             alertResponse.setAlertType(alert.getType());
             alertResponse.setDescription(alert.getSubject());
             alertResponse.setLastSent(alert.getLastSent());

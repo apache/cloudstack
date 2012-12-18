@@ -20,6 +20,7 @@ import java.util.Date;
 
 public interface Alert {
     long getId();
+    String getUuid();
     short getType();
     String getSubject();
     Long getPodId();
