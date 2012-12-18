@@ -1053,7 +1053,7 @@
                     noSelect: true,
                     noHeaderActionsColumn: true,
                     fields: {
-                      'cidrlist': { edit: true, label: 'label.cidr', isOptional: true },
+                      'cidrlist': { edit: true, label: 'label.cidr.list', isOptional: true },
                       'protocol': {
                         label: 'label.protocol',
                         select: function(args) {
