@@ -16,10 +16,12 @@
 // under the License.
 package org.apache.cloudstack.api;
 
+import org.apache.cloudstack.api.response.ProjectResponse;
+
 public abstract class BaseListProjectAndAccountResourcesCmd extends BaseListAccountResourcesCmd {
 
-    @IdentityMapper(entityTableName = "projects")
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.LONG, description = "list objects by project")
+    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.UUID, entityType=ProjectResponse.class,
+            description="list objects by project")
     private Long projectId;
 
     public Long getProjectId() {
