@@ -27,7 +27,7 @@ import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.Entity;
 
-@Entity(value={PhysicalNetwork.class, PhysicalNetworkServiceProvider.class})
+@Entity(value=PhysicalNetwork.class)
 @SuppressWarnings("unused")
 public class PhysicalNetworkResponse extends BaseResponse {
 

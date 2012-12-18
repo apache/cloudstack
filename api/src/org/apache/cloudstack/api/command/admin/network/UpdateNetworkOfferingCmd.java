@@ -20,7 +20,6 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -37,8 +36,8 @@ public class UpdateNetworkOfferingCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="network_offerings")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the id of the network offering")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=NetworkOfferingResponse.class,
+            description="the id of the network offering")
     private Long id;
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the network offering")

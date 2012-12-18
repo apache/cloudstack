@@ -24,7 +24,7 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
+import org.apache.cloudstack.api.response.ProviderResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
@@ -42,7 +42,7 @@ public class DeleteNetworkServiceProviderCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=PhysicalNetworkResponse.class,
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=ProviderResponse.class,
             required=true, description="the ID of the network service provider")
     private Long id;
 

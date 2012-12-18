@@ -21,10 +21,10 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
@@ -40,10 +40,9 @@ public class DeletePhysicalNetworkCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @IdentityMapper(entityTableName="physical_network")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the Physical network")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=PhysicalNetworkResponse.class,
+            required=true, description="the ID of the Physical network")
     private Long id;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -52,7 +51,6 @@ public class DeletePhysicalNetworkCmd extends BaseAsyncCmd {
     public Long getId() {
         return id;
     }
-
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

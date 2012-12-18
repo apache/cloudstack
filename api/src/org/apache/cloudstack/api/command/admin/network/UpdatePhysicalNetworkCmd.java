@@ -22,7 +22,6 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
@@ -40,8 +39,8 @@ public class UpdatePhysicalNetworkCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @IdentityMapper(entityTableName="physical_network")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="physical network id")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=PhysicalNetworkResponse.class,
+            required=true, description="physical network id")
     private Long id;
 
     @Parameter(name=ApiConstants.NETWORK_SPEED, type=CommandType.STRING, description="the speed for the physical network[1G/10G]")

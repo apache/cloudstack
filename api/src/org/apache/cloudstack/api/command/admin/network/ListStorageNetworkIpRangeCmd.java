@@ -24,10 +24,11 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseListCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.PodResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.StorageNetworkIpRangeResponse;
 import com.cloud.dc.StorageNetworkIpRange;
@@ -47,16 +48,16 @@ public class ListStorageNetworkIpRangeCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="dc_storage_network_ip_range")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="optional parameter. Storaget network IP range uuid, if specicied, using it to search the range.")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=StorageNetworkIpRangeResponse.class,
+            description="optional parameter. Storaget network IP range uuid, if specicied, using it to search the range.")
     private Long rangeId;
 
-    @IdentityMapper(entityTableName="host_pod_ref")
-    @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, description="optional parameter. Pod uuid, if specicied and range uuid is absent, using it to search the range.")
+    @Parameter(name=ApiConstants.POD_ID, type=CommandType.UUID, entityType=PodResponse.class,
+            description="optional parameter. Pod uuid, if specicied and range uuid is absent, using it to search the range.")
     private Long podId;
 
-    @IdentityMapper(entityTableName="data_center")
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="optional parameter. Zone uuid, if specicied and both pod uuid and range uuid are absent, using it to search the range.")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType=ZoneResponse.class,
+            description="optional parameter. Zone uuid, if specicied and both pod uuid and range uuid are absent, using it to search the range.")
     private Long zoneId;
 
     /////////////////////////////////////////////////////

@@ -23,15 +23,14 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.cloudstack.api.response.ProviderResponse;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
-
 
 @Implementation(description="Lists network serviceproviders for a given physical network.", responseObject=ProviderResponse.class, since="3.0.0")
 public class ListNetworkServiceProvidersCmd extends BaseListCmd {
@@ -42,8 +41,8 @@ public class ListNetworkServiceProvidersCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="physical_network")
-    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, description="the Physical Network ID")
+    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.UUID, entityType=PhysicalNetworkResponse.class,
+            description="the Physical Network ID")
     private Long physicalNetworkId;
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="list providers by name")

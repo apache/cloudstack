@@ -21,10 +21,10 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.StorageNetworkIpRangeResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -43,8 +43,8 @@ public class DeleteStorageNetworkIpRangeCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="dc_storage_network_ip_range")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the uuid of the storage network ip range")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=StorageNetworkIpRangeResponse.class,
+            required=true, description="the uuid of the storage network ip range")
     private Long id;
 
     /////////////////////////////////////////////////////

@@ -21,7 +21,6 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -42,8 +41,8 @@ public class UpdateStorageNetworkIpRangeCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @IdentityMapper(entityTableName="dc_storage_network_ip_range")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="UUID of storage network ip range")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=StorageNetworkIpRangeResponse.class,
+            required=true, description="UUID of storage network ip range")
     private Long id;
 
     @Parameter(name=ApiConstants.START_IP, type=CommandType.STRING, description="the beginning IP address")

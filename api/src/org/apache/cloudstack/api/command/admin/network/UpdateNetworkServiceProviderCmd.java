@@ -23,7 +23,6 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -45,8 +44,8 @@ public class UpdateNetworkServiceProviderCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="Enabled/Disabled/Shutdown the physical network service provider")
     private String state;
 
-    @IdentityMapper(entityTableName="physical_network_service_providers")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="network service provider id")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=ProviderResponse.class,
+            required=true, description="network service provider id")
     private Long id;
 
     @Parameter(name=ApiConstants.SERVICE_LIST, type=CommandType.LIST, collectionType = CommandType.STRING, description="the list of services to be enabled for this physical network service provider")
