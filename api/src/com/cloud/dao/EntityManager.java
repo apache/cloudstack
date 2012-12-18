@@ -45,7 +45,7 @@ public interface EntityManager {
      * @param xid external id
      * @return T if found, null if not.
      */
-    public <T> T findByXid(Class<T> entityType, String xid);
+    public <T> T findByXId(Class<T> entityType, String xid);
 
     /**
      * Lists all entities.  Use this method at your own risk.

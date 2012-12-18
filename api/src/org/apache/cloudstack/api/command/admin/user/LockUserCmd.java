@@ -20,7 +20,6 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -39,8 +38,8 @@ public class LockUserCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="user")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="Locks user by user ID.")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=UserResponse.class,
+            required=true, description="Locks user by user ID.")
     private Long id;
 
     /////////////////////////////////////////////////////
