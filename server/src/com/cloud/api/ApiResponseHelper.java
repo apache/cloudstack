@@ -3282,7 +3282,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public CounterResponse createCounterResponse(Counter counter) {
         CounterResponse response = new CounterResponse();
-        response.setId(counter.getId());
+        response.setId(counter.getUuid());
         response.setSource(counter.getSource().toString());
         response.setName(counter.getName());
         response.setValue(counter.getValue());
@@ -3293,7 +3293,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public ConditionResponse createConditionResponse(Condition condition) {
         ConditionResponse response = new ConditionResponse();
-        response.setId(condition.getId());
+        response.setId(condition.getUuid());
         List<CounterResponse> counterResponseList = new ArrayList<CounterResponse>();
         counterResponseList.add(createCounterResponse(ApiDBUtils.getCounter(condition.getCounterid())));
         response.setCounterResponse(counterResponseList);
@@ -3307,14 +3307,32 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public AutoScaleVmProfileResponse createAutoScaleVmProfileResponse(AutoScaleVmProfile profile) {
         AutoScaleVmProfileResponse response = new AutoScaleVmProfileResponse();
-        response.setId(profile.getId());
-        response.setZoneId(profile.getZoneId());
-        response.setServiceOfferingId(profile.getServiceOfferingId());
-        response.setTemplateId(profile.getTemplateId());
+        response.setId(profile.getUuid());
+        if (profile.getZoneId() != null) {
+            DataCenterVO zone = ApiDBUtils.findZoneById(profile.getZoneId());
+            if (zone != null) {
+                response.setZoneId(zone.getUuid());
+            }
+        }
+        if (profile.getServiceOfferingId() != null) {
+            ServiceOffering so = ApiDBUtils.findServiceOfferingById(profile.getServiceOfferingId());
+            if (so != null) {
+                response.setServiceOfferingId(so.getUuid());
+            }
+        }
+        if (profile.getTemplateId() != null) {
+            VMTemplateVO template = ApiDBUtils.findTemplateById(profile.getTemplateId());
+            if (template != null) {
+                response.setTemplateId(template.getUuid());
+            }
+        }
         response.setOtherDeployParams(profile.getOtherDeployParams());
         response.setCounterParams(profile.getCounterParams());
         response.setDestroyVmGraceperiod(profile.getDestroyVmGraceperiod());
-        response.setAutoscaleUserId(profile.getAutoScaleUserId());
+        User user = ApiDBUtils.findUserById(profile.getAutoScaleUserId());
+        if (user != null) {
+            response.setAutoscaleUserId(user.getUuid());
+        }
         response.setObjectName("autoscalevmprofile");
 
         // Populates the account information in the response
@@ -3346,13 +3364,19 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public AutoScaleVmGroupResponse createAutoScaleVmGroupResponse(AutoScaleVmGroup vmGroup) {
         AutoScaleVmGroupResponse response = new AutoScaleVmGroupResponse();
-        response.setId(vmGroup.getId());
+        response.setId(vmGroup.getUuid());
         response.setMinMembers(vmGroup.getMinMembers());
         response.setMaxMembers(vmGroup.getMaxMembers());
         response.setState(vmGroup.getState());
         response.setInterval(vmGroup.getInterval());
-        response.setProfileId(vmGroup.getProfileId());
-        response.setLoadBalancerId(vmGroup.getProfileId());
+        AutoScaleVmProfileVO profile = ApiDBUtils.findAutoScaleVmProfileById(vmGroup.getProfileId());
+        if (profile != null) {
+            response.setProfileId(profile.getUuid());
+        }
+        FirewallRuleVO fw = ApiDBUtils.findFirewallRuleById(vmGroup.getProfileId());
+        if (fw != null) {
+            response.setLoadBalancerId(fw.getUuid());
+        }
 
         List<AutoScalePolicyResponse> scaleUpPoliciesResponse = new ArrayList<AutoScalePolicyResponse>();
         List<AutoScalePolicyResponse> scaleDownPoliciesResponse = new ArrayList<AutoScalePolicyResponse>();

@@ -25,7 +25,6 @@ import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.Parameter;
 import com.cloud.serializer.Param;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.utils.Pair;
 import com.google.gson.annotations.SerializedName;
 
@@ -33,20 +32,20 @@ public class AutoScaleVmProfileResponse extends BaseResponse implements Controll
 
     @SerializedName(ApiConstants.ID)
     @Param(description = "the autoscale vm profile ID")
-    private IdentityProxy id = new IdentityProxy("autoscale_vmprofiles");
+    private String id;
 
     /* Parameters related to deploy virtual machine */
     @SerializedName(ApiConstants.ZONE_ID)
     @Param(description = "the availability zone to be used while deploying a virtual machine")
-    private IdentityProxy zoneId = new IdentityProxy("data_center");
+    private String zoneId;
 
     @SerializedName(ApiConstants.SERVICE_OFFERING_ID)
     @Param(description = "the service offering to be used while deploying a virtual machine")
-    private IdentityProxy serviceOfferingId = new IdentityProxy("disk_offering");
+    private String serviceOfferingId;
 
     @SerializedName(ApiConstants.TEMPLATE_ID)
     @Param(description = "the template to be used while deploying a virtual machine")
-    private IdentityProxy templateId = new IdentityProxy("vm_template");
+    private String templateId;
 
     @SerializedName(ApiConstants.OTHER_DEPLOY_PARAMS)
     @Param(description = "parameters other than zoneId/serviceOfferringId/templateId to be used while deploying a virtual machine")
@@ -64,7 +63,7 @@ public class AutoScaleVmProfileResponse extends BaseResponse implements Controll
 
     @SerializedName(ApiConstants.AUTOSCALE_USER_ID)
     @Param(description = "the ID of the user used to launch and destroy the VMs")
-    private IdentityProxy autoscaleUserId = new IdentityProxy("user");
+    private String autoscaleUserId;
 
     @Parameter(name = ApiConstants.CS_URL, type = CommandType.STRING, description = "the API URL including port of the CloudStack Management Server example: http://server.cloud.com:8080/client/api?")
     private String csUrl;
@@ -93,20 +92,20 @@ public class AutoScaleVmProfileResponse extends BaseResponse implements Controll
 
     }
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public void setZoneId(Long zoneId) {
-        this.zoneId.setValue(zoneId);
+    public void setZoneId(String zoneId) {
+        this.zoneId = zoneId;
     }
 
-    public void setServiceOfferingId(Long serviceOfferingId) {
-        this.serviceOfferingId.setValue(serviceOfferingId);
+    public void setServiceOfferingId(String serviceOfferingId) {
+        this.serviceOfferingId = serviceOfferingId;
     }
 
-    public void setTemplateId(Long templateId) {
-        this.templateId.setValue(templateId);
+    public void setTemplateId(String templateId) {
+        this.templateId = templateId;
     }
 
     public void setOtherDeployParams(String otherDeployParams) {
@@ -147,8 +146,8 @@ public class AutoScaleVmProfileResponse extends BaseResponse implements Controll
         this.projectName = projectName;
     }
 
-    public void setAutoscaleUserId(Long autoscaleUserId) {
-        this.autoscaleUserId.setValue(autoscaleUserId);
+    public void setAutoscaleUserId(String autoscaleUserId) {
+        this.autoscaleUserId = autoscaleUserId;
     }
 
     public void setDestroyVmGraceperiod(Integer destroyVmGraceperiod) {

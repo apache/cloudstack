@@ -22,7 +22,6 @@ import org.apache.cloudstack.api.Entity;
 
 import com.cloud.network.as.Counter;
 import com.cloud.serializer.Param;
-import com.cloud.utils.IdentityProxy;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
 
@@ -31,7 +30,7 @@ import org.apache.cloudstack.api.BaseResponse;
 public class CounterResponse extends BaseResponse {
     @SerializedName("id")
     @Param(description = "the id of the Counter")
-    private final IdentityProxy id = new IdentityProxy("counter");
+    private String id;
 
     @SerializedName(value = ApiConstants.NAME)
     @Param(description = "Name of the counter.")
@@ -47,10 +46,10 @@ public class CounterResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ZONE_ID)
     @Param(description = "zone id of counter")
-    private final IdentityProxy zoneId = new IdentityProxy("data_center");
+    private String zoneId;
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
     public void setName(String name) {

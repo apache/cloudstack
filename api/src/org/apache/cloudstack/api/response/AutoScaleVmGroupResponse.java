@@ -28,15 +28,15 @@ public class AutoScaleVmGroupResponse extends BaseResponse implements Controlled
 
     @SerializedName(ApiConstants.ID)
     @Param(description = "the autoscale vm group ID")
-    private IdentityProxy id = new IdentityProxy("autoscale_vmgroups");
+    private String id;
 
     @SerializedName(ApiConstants.LBID)
     @Param(description = "the load balancer rule ID")
-    private IdentityProxy loadBalancerId = new IdentityProxy("firewall_rules");
+    private String loadBalancerId;
 
     @SerializedName(ApiConstants.VMPROFILE_ID)
     @Param(description = "the autoscale profile that contains information about the vms in the vm group.")
-    private IdentityProxy profileId = new IdentityProxy("autoscale_vmprofiles");
+    private String profileId;
 
     @SerializedName(ApiConstants.MIN_MEMBERS)
     @Param(description = "the minimum number of members in the vmgroup, the number of instances in the vm group will be equal to or more than this number.")
@@ -81,16 +81,16 @@ public class AutoScaleVmGroupResponse extends BaseResponse implements Controlled
 
     }
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public void setLoadBalancerId(Long loadBalancerId) {
-        this.loadBalancerId.setValue(loadBalancerId);
+    public void setLoadBalancerId(String loadBalancerId) {
+        this.loadBalancerId = loadBalancerId;
     }
 
-    public void setProfileId(Long profileId) {
-        this.profileId.setValue(profileId);
+    public void setProfileId(String profileId) {
+        this.profileId = profileId;
     }
 
     public void setMinMembers(int minMembers) {

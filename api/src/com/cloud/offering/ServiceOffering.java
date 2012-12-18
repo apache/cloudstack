@@ -34,6 +34,8 @@ public interface ServiceOffering {
 
     long getId();
 
+    String getUuid();
+
     String getDisplayText();
 
     Date getCreated();

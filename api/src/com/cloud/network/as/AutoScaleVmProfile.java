@@ -29,6 +29,8 @@ public interface AutoScaleVmProfile extends ControlledEntity {
 
     public long getId();
 
+    public String getUuid();
+
     public Long getZoneId();
 
     public Long getServiceOfferingId();

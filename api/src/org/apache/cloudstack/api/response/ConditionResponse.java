@@ -21,7 +21,6 @@ import java.util.List;
 
 import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.serializer.Param;
-import com.cloud.utils.IdentityProxy;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
 
@@ -29,7 +28,7 @@ import org.apache.cloudstack.api.BaseResponse;
 public class ConditionResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName("id")
     @Param(description = "the id of the Condition")
-    private final IdentityProxy id = new IdentityProxy("conditions");
+    private String id;
 
     @SerializedName(value = ApiConstants.THRESHOLD)
     @Param(description = "Threshold Value for the counter.")
@@ -53,7 +52,7 @@ public class ConditionResponse extends BaseResponse implements ControlledEntityR
 
     @SerializedName(ApiConstants.ZONE_ID)
     @Param(description = "zone id of counter")
-    private final IdentityProxy zoneId = new IdentityProxy("data_center");
+    private String zoneId;
 
     @SerializedName(ApiConstants.PROJECT_ID)
     @Param(description = "the project id of the Condition.")
@@ -71,8 +70,8 @@ public class ConditionResponse extends BaseResponse implements ControlledEntityR
     // ///////////////// Setters ///////////////////////
     // ///////////////////////////////////////////////////
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
     public void setThreshold(long threshold) {
@@ -97,8 +96,8 @@ public class ConditionResponse extends BaseResponse implements ControlledEntityR
         this.projectId = projectId;
     }
 
-    public void setZoneId(Long zoneId) {
-        this.zoneId.setValue(zoneId);
+    public void setZoneId(String zoneId) {
+        this.zoneId = zoneId;
     }
 
     @Override

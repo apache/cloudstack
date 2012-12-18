@@ -17,7 +17,6 @@
 package org.apache.cloudstack.api.response;
 
 import org.apache.cloudstack.api.ApiConstants;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
@@ -25,7 +24,7 @@ import org.apache.cloudstack.api.BaseResponse;
 public class CloudIdentifierResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.USER_ID) @Param(description="the user ID for the cloud identifier")
-    private IdentityProxy userId = new IdentityProxy("user");
+    private String userId;
 
     @SerializedName("cloudidentifier") @Param(description="the cloud identifier")
     private String cloudIdentifier;
@@ -33,12 +32,12 @@ public class CloudIdentifierResponse extends BaseResponse {
     @SerializedName("signature") @Param(description="the signed response for the cloud identifier")
     private String signature;
 
-    public Long getUserId() {
-        return userId.getValue();
+    public String getUserId() {
+        return userId;
     }
 
-    public void setUserId(Long userId) {
-        this.userId.setValue(userId);
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 
     public String getCloudIdentifier() {

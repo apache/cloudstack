@@ -26,6 +26,8 @@ import java.util.Date;
 public interface DiskOffering {
     long getId();
 
+    String getUuid();
+
     String getUniqueName();
 
     boolean getUseLocalStorage();
