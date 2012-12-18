@@ -23,6 +23,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.security.SecureRandom;
@@ -53,12 +55,14 @@ import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.ConnectionClosedException;
 import org.apache.http.HttpException;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpServerConnection;
 import org.apache.http.HttpStatus;
+import org.apache.http.NameValuePair;
 import org.apache.http.entity.BasicHttpEntity;
 import org.apache.http.impl.DefaultHttpResponseFactory;
 import org.apache.http.impl.DefaultHttpServerConnection;
@@ -187,7 +191,6 @@ public class ApiServer implements HttpRequestHandler {
         }
 
         encodeApiResponse = Boolean.valueOf(configDao.getValue(Config.EncodeApiResponse.key()));
-
         String jsonType = configDao.getValue(Config.JavaScriptDefaultContentType.key());
         if (jsonType != null) {
             jsonContentType = jsonType;
@@ -199,10 +202,14 @@ public class ApiServer implements HttpRequestHandler {
         }
     }
 
+    // NOTE: handle() only handles over the wire (OTW) requests from integration.api.port 8096
+    // If integration api port is not configured, actual OTW requests will be received by ApiServlet
     @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
-    public void handle(HttpRequest request, HttpResponse response, HttpContext context) throws HttpException, IOException {
-        // get some information for the access log...
+    public void handle(HttpRequest request, HttpResponse response, HttpContext context)
+            throws HttpException, IOException {
+
+        // Create StringBuffer to log information in access log
         StringBuffer sb = new StringBuffer();
         HttpServerConnection connObj = (HttpServerConnection) context.getAttribute("http.connection");
         if (connObj instanceof SocketHttpServerConnection) {
@@ -212,40 +219,31 @@ public class ApiServer implements HttpRequestHandler {
         sb.append(request.getRequestLine());
 
         try {
-            String uri = request.getRequestLine().getUri();
-            int requestParamsStartIndex = uri.indexOf('?');
-            if (requestParamsStartIndex >= 0) {
-                uri = uri.substring(requestParamsStartIndex + 1);
+            List<NameValuePair> paramList = null;
+            try {
+                paramList = URLEncodedUtils.parse(new URI(request.getRequestLine().getUri()), "UTF-8");
+            } catch (URISyntaxException e) {
+                s_logger.error("Error parsing url request", e);
             }
 
-            String[] paramArray = uri.split("&");
-            if (paramArray.length < 1) {
-                s_logger.info("no parameters received for request: " + uri + ", aborting...");
-                return;
-            }
-
+            // Use Multimap as the parameter map should be in the form (name=String, value=String[])
+            // So parameter values are stored in a list for the same name key
+            // APITODO: Use Guava's (import com.google.common.collect.Multimap;)
+            // (Immutable)Multimap<String, String> paramMultiMap = HashMultimap.create();
+            // Map<String, Collection<String>> parameterMap = paramMultiMap.asMap();
             Map parameterMap = new HashMap<String, String[]>();
-
-            String responseType = BaseCmd.RESPONSE_TYPE_XML;
-            for (String paramEntry : paramArray) {
-                String[] paramValue = paramEntry.split("=");
-                if (paramValue.length != 2) {
-                    s_logger.info("malformed parameter: " + paramEntry + ", skipping");
+            String responseType = BaseCmd.RESPONSE_TYPE_JSON;
+            for (NameValuePair param : paramList) {
+                if (param.getName().equalsIgnoreCase("response")) {
+                    responseType = param.getValue();
                     continue;
                 }
-                if ("response".equalsIgnoreCase(paramValue[0])) {
-                    responseType = paramValue[1];
-                } else {
-                    // according to the servlet spec, the parameter map should be in the form (name=String,
-                    // value=String[]), so
-                    // parameter values will be stored in an array
-                    parameterMap.put(/* name */paramValue[0], /* value */new String[] { paramValue[1] });
-                }
+                parameterMap.put(param.getName(), new String[] { param.getValue() });
             }
 
-            // Check responseType, if not among valid types, fallback to XML
+            // Check responseType, if not among valid types, fallback to JSON
             if (!(responseType.equals(BaseCmd.RESPONSE_TYPE_JSON) || responseType.equals(BaseCmd.RESPONSE_TYPE_XML)))
-                responseType = BaseCmd.RESPONSE_TYPE_XML;
+                responseType = BaseCmd.RESPONSE_TYPE_JSON;
 
             try {
                 // always trust commands from API port, user context will always be UID_SYSTEM/ACCOUNT_ID_SYSTEM
@@ -379,6 +377,11 @@ public class ApiServer implements HttpRequestHandler {
         UserContext ctx = UserContext.current();
         Long callerUserId = ctx.getCallerUserId();
         Account caller = ctx.getCaller();
+
+        // Queue command based on Cmd super class:
+        // BaseCmd: cmd is dispatched to ApiDispatcher, executed, serialized and returned.
+        // BaseAsyncCreateCmd: cmd params are processed and create() is called, then same workflow as BaseAsyncCmd.
+        // BaseAsyncCmd: cmd is processed and submitted as an AsyncJob, job related info is serialized and returned.
         if (cmdObj instanceof BaseAsyncCmd) {
             Long objectId = null;
             String objectEntityTable = null;
