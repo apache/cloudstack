@@ -20,10 +20,10 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import com.cloud.user.Account;
 import com.cloud.user.User;
@@ -42,8 +42,8 @@ public class CreateUserCmd extends BaseCmd {
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, required=true, description="Creates the user under the specified account. If no account is specified, the username will be used as the account name.")
     private String accountName;
 
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="Creates the user under the specified domain. Has to be accompanied with the account parameter")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType=DomainResponse.class,
+            description="Creates the user under the specified domain. Has to be accompanied with the account parameter")
     private Long domainId;
 
     @Parameter(name=ApiConstants.EMAIL, type=CommandType.STRING, required=true, description="email")

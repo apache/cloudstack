@@ -23,7 +23,6 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -40,8 +39,8 @@ public class ListVpnUsersCmd extends BaseListProjectAndAccountResourcesCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @IdentityMapper(entityTableName="vpn_users")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the ID of the vpn user")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=VpnUsersResponse.class,
+            description="The uuid of the Vpn user")
     private Long id;
 
     @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, description="the username of the vpn user.")
