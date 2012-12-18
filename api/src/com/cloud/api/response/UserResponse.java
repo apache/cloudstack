@@ -69,6 +69,8 @@ public class UserResponse extends BaseResponse {
     @SerializedName("accountid") @Param(description="the account ID of the user")
     private IdentityProxy accountId = new IdentityProxy("account");
 
+    @SerializedName("iscallerchilddomain") @Param(description="the boolean value representing if the updating target is in caller's child domain")
+    private boolean isCallerChildDomain;
     
     public Long getId() {
         return id.getValue();
@@ -187,5 +189,13 @@ public class UserResponse extends BaseResponse {
 
     public void setAccountId(Long accountId) {
         this.accountId.setValue(accountId);
+    }
+    
+    public boolean getIsCallerSubdomain() {
+    	return this.isCallerChildDomain;
+    }
+    
+    public void setIsCallerChildDomain(boolean isCallerChildDomain) {
+    	this.isCallerChildDomain = isCallerChildDomain;
     }
 }

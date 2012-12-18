@@ -423,6 +423,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     
     @Override
     public UserResponse createUserResponse(UserAccount user) {
+    	Account account = UserContext.current().getCaller();
         UserResponse userResponse = new UserResponse();
         userResponse.setAccountName(user.getAccountName());
         userResponse.setAccountType(user.getType());
@@ -439,8 +440,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         userResponse.setApiKey(user.getApiKey());
         userResponse.setSecretKey(user.getSecretKey());
         userResponse.setAccountId((user.getAccountId()));
+        userResponse.setIsCallerChildDomain(ApiDBUtils.isChildDomain(account.getDomainId(), user.getDomainId()));
         userResponse.setObjectName("user");
-
         return userResponse;
     }
 
