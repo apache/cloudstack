@@ -18,10 +18,14 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 
-import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
-import org.apache.cloudstack.api.BaseResponse;
+import com.cloud.serializer.Param;
+import com.cloud.user.User;
 
+import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.Entity;
+
+@Entity(value = User.class)
 public class UserResponse extends BaseResponse {
     @SerializedName("id") @Param(description="the user ID")
     private String id;
@@ -67,7 +71,6 @@ public class UserResponse extends BaseResponse {
 
     @SerializedName("accountid") @Param(description="the account ID of the user")
     private String accountId;
-
 
     public String getId() {
         return id;
