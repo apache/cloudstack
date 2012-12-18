@@ -21,7 +21,6 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -42,11 +41,9 @@ public class DeleteAccountCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-
-    @IdentityMapper(entityTableName="account")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="Account id", entityType=AccountResponse.class)
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=AccountResponse.class,
+            required=true, description="Account id")
     private Long id;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -55,7 +52,6 @@ public class DeleteAccountCmd extends BaseAsyncCmd {
     public Long getId() {
         return id;
     }
-
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

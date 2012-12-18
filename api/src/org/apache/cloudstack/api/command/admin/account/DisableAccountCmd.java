@@ -21,7 +21,6 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -43,15 +42,15 @@ public class DisableAccountCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    //@IdentityMapper(entityTableName="account")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="Account id", entityType=AccountResponse.class)
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=AccountResponse.class,
+            description="Account id")
     private Long id;
 
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="Disables specified account.")
     private String accountName;
 
-    //@IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="Disables specified account in this domain.", entityType=DomainResponse.class)
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType=DomainResponse.class,
+            description="Disables specified account in this domain.")
     private Long domainId;
 
     @Parameter(name=ApiConstants.LOCK, type=CommandType.BOOLEAN, required=true, description="If true, only lock the account; else disable the account")

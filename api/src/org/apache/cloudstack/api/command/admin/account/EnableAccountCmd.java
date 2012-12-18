@@ -20,7 +20,6 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -37,15 +36,15 @@ public class EnableAccountCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    //@IdentityMapper(entityTableName="account")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="Account id", entityType=AccountResponse.class)
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=AccountResponse.class,
+            description="Account id")
     private Long id;
 
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="Enables specified account.")
     private String accountName;
 
-    //@IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="Enables specified account in this domain.", entityType=DomainResponse.class)
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType=DomainResponse.class,
+            description="Enables specified account in this domain.")
     private Long domainId;
 
     /////////////////////////////////////////////////////

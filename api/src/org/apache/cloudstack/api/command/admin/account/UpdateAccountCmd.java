@@ -23,7 +23,6 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -41,15 +40,15 @@ public class UpdateAccountCmd extends BaseCmd{
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    //@IdentityMapper(entityTableName="account")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="Account id", entityType=AccountResponse.class)
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=AccountResponse.class,
+            description="Account id")
     private Long id;
 
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the current account name")
     private String accountName;
 
-    //@IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the ID of the domain where the account exists", entityType=DomainResponse.class)
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType=DomainResponse.class,
+            description="the ID of the domain where the account exists")
     private Long domainId;
 
     @Parameter(name=ApiConstants.NEW_NAME, type=CommandType.STRING, required=true, description="new name for the account")
