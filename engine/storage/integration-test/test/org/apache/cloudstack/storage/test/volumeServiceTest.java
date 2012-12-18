@@ -34,9 +34,11 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.engine.cloud.entity.api.TemplateEntity;
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
+import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
+import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.QCOW2;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VHD;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VMDK;
@@ -131,6 +133,7 @@ public class volumeServiceTest {
 	AgentManager agentMgr;
 	Long dcId;
 	Long clusterId;
+	Long podId;
 	@Before
 	public void setUp() {
 		//create data center
@@ -142,6 +145,7 @@ public class volumeServiceTest {
 
 		HostPodVO pod = new HostPodVO(UUID.randomUUID().toString(), dc.getId(), "192.168.56.1", "192.168.56.0/24", 8, "test");
 		pod = podDao.persist(pod);
+		podId = pod.getId();
 		//create xen cluster
 		ClusterVO cluster = new ClusterVO(dc.getId(), pod.getId(), "devcloud cluster");
 		cluster.setHypervisorType(HypervisorType.XenServer.toString());
@@ -168,9 +172,9 @@ public class volumeServiceTest {
 		results.add(host);
 		Mockito.when(hostDao.listAll()).thenReturn(results);
 		Mockito.when(hostDao.findHypervisorHostInCluster(Mockito.anyLong())).thenReturn(results);
-		CreateVolumeAnswer createVolumeFromImageAnswer = new CreateVolumeAnswer(UUID.randomUUID().toString());
+		//CreateVolumeAnswer createVolumeFromImageAnswer = new CreateVolumeAnswer(UUID.randomUUID().toString());
 
-		try {
+		/*try {
 			Mockito.when(agentMgr.send(Mockito.anyLong(), Mockito.any(CreateVolumeFromBaseImageCommand.class))).thenReturn(createVolumeFromImageAnswer);
 		} catch (AgentUnavailableException e) {
 			// TODO Auto-generated catch block
@@ -178,7 +182,7 @@ public class volumeServiceTest {
 		} catch (OperationTimedoutException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
+		}*/
 
 
 		//Mockito.when(primaryStoreDao.findById(Mockito.anyLong())).thenReturn(primaryStore);
@@ -238,6 +242,9 @@ public class volumeServiceTest {
 			params.put("clusterId", clusterId.toString());
 			params.put("name", "my primary data store");
 			PrimaryDataStoreInfo primaryDataStoreInfo = provider.registerDataStore(params);
+			PrimaryDataStoreLifeCycle lc = primaryDataStoreInfo.getLifeCycle();
+			ClusterScope scope = new ClusterScope(clusterId, podId, dcId);
+			lc.attachCluster(scope);
 			return primaryDataStoreInfo;
 		} catch (ConfigurationException e) {
 			return null;

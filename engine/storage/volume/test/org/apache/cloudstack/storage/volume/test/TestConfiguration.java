@@ -18,7 +18,9 @@
  */
 package org.apache.cloudstack.storage.volume.test;
 
+import org.apache.cloudstack.storage.HostEndpointRpcServer;
 import org.apache.cloudstack.storage.image.motion.ImageMotionService;
+import org.apache.cloudstack.storage.test.MockHypervsiorHostEndPointRpcServer;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -37,5 +39,10 @@ public class TestConfiguration {
     @Bean
     public ClusterDao clusterDao() {
         return Mockito.mock(ClusterDaoImpl.class);
+    }
+    
+    @Bean
+    public HostEndpointRpcServer rpcServer() {
+        return new MockHypervsiorHostEndPointRpcServer();
     }
 }

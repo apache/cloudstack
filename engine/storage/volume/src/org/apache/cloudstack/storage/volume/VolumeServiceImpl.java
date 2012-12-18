@@ -20,11 +20,9 @@ package org.apache.cloudstack.storage.volume;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.engine.cloud.entity.api.TemplateEntity;
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
-import org.apache.cloudstack.engine.subsystem.api.storage.type.BaseImage;
 import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeType;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCallbackHandler;
@@ -33,15 +31,12 @@ import org.apache.cloudstack.storage.EndPoint;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
 import org.apache.cloudstack.storage.datastore.manager.PrimaryDataStoreManager;
-import org.apache.cloudstack.storage.image.TemplateEntityImpl;
 import org.apache.cloudstack.storage.image.TemplateInfo;
 import org.apache.cloudstack.storage.image.motion.ImageMotionService;
 import org.apache.cloudstack.storage.volume.db.VolumeDao;
 import org.apache.cloudstack.storage.volume.db.VolumeVO;
 
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
-
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.Volume;
 import com.cloud.utils.db.DB;
@@ -136,7 +131,8 @@ public class VolumeServiceImpl implements VolumeService {
         return null;
     }
 
-    protected void createBaseImageAsync(PrimaryDataStore dataStore, TemplateInfo template, AsyncCompletionCallback<TemplateOnPrimaryDataStoreObject> callback) {
+    @DB
+    protected void createBaseImageAsync(VolumeInfo volume, PrimaryDataStore dataStore, TemplateInfo template, AsyncCompletionCallback<VolumeInfo> callback) {
         TemplateOnPrimaryDataStoreObject templateOnPrimaryStoreObj = (TemplateOnPrimaryDataStoreObject) templatePrimaryStoreMgr.createTemplateOnPrimaryDataStore(template, dataStore);
         templateOnPrimaryStoreObj.stateTransit(TemplateOnPrimaryDataStoreStateMachine.Event.CreateRequested);
         templateOnPrimaryStoreObj.updateStatus(Status.CREATING);
@@ -154,11 +150,14 @@ public class VolumeServiceImpl implements VolumeService {
         AsyncCallbackDispatcher caller = new AsyncCallbackDispatcher(this)
             .setParentCallback(callback)
             .setOperationName("volumeservice.createbaseimage.callback")
+            .setContextParam("volume", volume)
+            .setContextParam("primary", dataStore)
             .setContextParam("templateOnPrimary", templateOnPrimaryStoreObj);
 
         imageMotion.copyTemplateAsync(templateOnPrimaryStoreObj, caller);
     }
 
+    @DB
     @AsyncCallbackHandler(operationName="volumeservice.createbaseimage.callback")
     public void createBaseImageCallback(AsyncCallbackDispatcher callback) {
         CommandResult result = callback.getResult();
@@ -172,8 +171,8 @@ public class VolumeServiceImpl implements VolumeService {
         }
         
         AsyncCallbackDispatcher parentCaller = callback.getParentCallback();
-        VolumeInfo volume = parentCaller.getContextParam("volume");
-        PrimaryDataStore pd = parentCaller.getContextParam("primary");
+        VolumeInfo volume = callback.getContextParam("volume");
+        PrimaryDataStore pd = callback.getContextParam("primary");
         AsyncCallbackDispatcher caller = new AsyncCallbackDispatcher(this)
               .setParentCallback(parentCaller)
               .setOperationName("volumeservice.createvolumefrombaseimage.callback");
@@ -181,6 +180,7 @@ public class VolumeServiceImpl implements VolumeService {
         createVolumeFromBaseImageAsync(volume, templateOnPrimaryStoreObj, pd, caller);
     }
     
+    @DB
     protected void createVolumeFromBaseImageAsync(VolumeInfo volume, TemplateOnPrimaryDataStoreInfo templateOnPrimaryStore, PrimaryDataStore pd, AsyncCompletionCallback<VolumeObject> callback) {
         VolumeObject vo = (VolumeObject) volume;
         try {
@@ -198,6 +198,7 @@ public class VolumeServiceImpl implements VolumeService {
         pd.createVoluemFromBaseImageAsync(volume, templateOnPrimaryStore, caller);
     }
     
+    @DB
     @AsyncCallbackHandler(operationName="volumeservice.createVolumeFromBaseImageCallback")
     public void createVolumeFromBaseImageCallback(AsyncCallbackDispatcher callback) {
         VolumeObject vo = callback.getContextParam("volume");
@@ -212,6 +213,7 @@ public class VolumeServiceImpl implements VolumeService {
         parentCall.complete(vo);
     }
     
+    @DB
     @AsyncCallbackHandler(operationName="volumeservice.createvolumefrombaseimage.callback")
     public void createVolumeFromBaseImageAsyncCallback(AsyncCallbackDispatcher callback) {
         AsyncCallbackDispatcher parentCall = callback.getParentCallback();
@@ -219,16 +221,13 @@ public class VolumeServiceImpl implements VolumeService {
         parentCall.complete(vo);
     }
 
+    @DB
     @Override
     public void createVolumeFromTemplateAsync(VolumeInfo volume, long dataStoreId, VolumeDiskType diskType, TemplateInfo template, AsyncCompletionCallback<VolumeInfo> callback) {
         PrimaryDataStore pd = dataStoreMgr.getPrimaryDataStore(dataStoreId);
         TemplateOnPrimaryDataStoreInfo templateOnPrimaryStore = pd.getTemplate(template);
         if (templateOnPrimaryStore == null) {
-            AsyncCallbackDispatcher caller = new AsyncCallbackDispatcher(this).setParentCallback(callback)
-                    .setOperationName("volumeservice.createbaseimage.callback")
-                    .setContextParam("volume", volume)
-                    .setContextParam("primary", pd);
-             createBaseImageAsync(pd, template, caller);
+            createBaseImageAsync(volume, pd, template, callback);
             return;
         }
 

@@ -18,23 +18,14 @@
  */
 package org.apache.cloudstack.storage.datastore.lifecycle;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.Map;
 
-import javax.inject.Inject;
-
+import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
-import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
-import org.apache.cloudstack.engine.subsystem.api.storage.ScopeType;
 import org.apache.cloudstack.storage.datastore.DataStoreStatus;
-import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreProviderDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreVO;
-import org.springframework.stereotype.Component;
 
 public class DefaultPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
     protected PrimaryDataStoreInfo dataStore;
@@ -58,8 +49,12 @@ public class DefaultPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLif
     }
 
     @Override
-    public boolean attach(Scope scope) {
-        //if (scope.getScopeType() == ScopeType.CLUSTER) 
+    public boolean attachCluster(ClusterScope scope) {
+        PrimaryDataStoreVO dataStore = dataStoreDao.findById(this.dataStore.getId());
+        dataStore.setDataCenterId(scope.getZoneId());
+        dataStore.setPodId(scope.getPodId());
+        dataStore.setClusterId(scope.getScopeId());
+        dataStoreDao.update(this.dataStore.getId(), dataStore);
         return false;
     }
 

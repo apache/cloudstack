@@ -1,5 +1,6 @@
 package org.apache.cloudstack.storage.test;
 
+import org.apache.cloudstack.storage.HostEndpointRpcServer;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 
@@ -20,6 +21,11 @@ public class ChildTestConfiguration extends TestConfiguration {
 	public AgentManager agentMgr() {
 		return new DirectAgentManagerSimpleImpl();
 	}
+	
+    @Bean
+    public HostEndpointRpcServer rpcServer() {
+        return new MockHypervsiorHostEndPointRpcServer();
+    }
 /*	@Override
 	@Bean
 	public PrimaryDataStoreDao primaryDataStoreDao() {

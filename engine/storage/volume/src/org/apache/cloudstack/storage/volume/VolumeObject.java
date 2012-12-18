@@ -19,6 +19,7 @@ import org.apache.log4j.Logger;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.State;
 import com.cloud.utils.component.ComponentInject;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;

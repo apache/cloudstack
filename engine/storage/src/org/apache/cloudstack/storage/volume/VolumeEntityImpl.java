@@ -30,9 +30,13 @@ import org.apache.cloudstack.engine.datacenter.entity.api.StorageEntity;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
 import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeType;
+import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
+import org.apache.cloudstack.framework.async.AsyncCallbackHandler;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStoreEntityImpl;
 import org.apache.cloudstack.storage.image.TemplateEntityImpl;
 import org.apache.cloudstack.storage.image.TemplateInfo;
+
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class VolumeEntityImpl implements VolumeEntity {
     private VolumeInfo volumeInfo;
@@ -192,8 +196,25 @@ public class VolumeEntityImpl implements VolumeEntity {
     @Override
     public boolean createVolumeFromTemplate(long dataStoreId, VolumeDiskType diskType, TemplateEntity template) {
         TemplateInfo ti = ((TemplateEntityImpl)template).getTemplateInfo();
-        volumeInfo = vs.createVolumeFromTemplate(volumeInfo, dataStoreId, diskType, ti);
+        
+        AsyncCallbackDispatcher caller = new AsyncCallbackDispatcher(this)
+            .setOperationName("volumeEntity.createVolumeFromTemplateAsyncCallback");
+        vs.createVolumeFromTemplateAsync(volumeInfo, dataStoreId, diskType, ti, caller);
+        try {
+            synchronized (volumeInfo) {
+                volumeInfo.wait();
+            }
+        } catch (InterruptedException e) {
+           throw new CloudRuntimeException("wait volume info failed", e);
+        }
         return true;
+    }
+    
+    @AsyncCallbackHandler(operationName="volumeEntity.createVolumeFromTemplateAsyncCallback")
+    public void createVolumeFromTemplateAsyncCallback(AsyncCallbackDispatcher callback) {
+        synchronized (volumeInfo) {
+            volumeInfo.notify();
+        }
     }
 
 }

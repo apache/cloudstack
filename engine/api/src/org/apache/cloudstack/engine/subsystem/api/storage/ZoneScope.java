@@ -16,17 +16,15 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.scope;
+package org.apache.cloudstack.engine.subsystem.api.storage;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
-import org.apache.cloudstack.engine.subsystem.api.storage.ScopeType;
 
-public class ClusterScope implements Scope {
-    private ScopeType type = ScopeType.CLUSTER;
-    private long clusterId;
+public class ZoneScope implements Scope {
+    private ScopeType type = ScopeType.ZONE;
+    private long zoneId;
     
-    public ClusterScope(long clusterId) {
-        this.clusterId = clusterId;
+    public ZoneScope(long zoneId) {
+        this.zoneId = zoneId;
     }
     
     @Override
@@ -36,7 +34,7 @@ public class ClusterScope implements Scope {
 
     @Override
     public long getScopeId() {
-        return this.clusterId;
+        return this.zoneId;
     }
 
 }

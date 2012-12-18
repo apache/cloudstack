@@ -18,7 +18,7 @@
  */
 package org.apache.cloudstack.storage.volume;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
+import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
 import org.apache.cloudstack.storage.image.TemplateInfo;
 import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreStateMachine.Event;
 import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreStateMachine.State;
@@ -31,14 +31,14 @@ import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
 
 public class TemplateOnPrimaryDataStoreObject implements TemplateOnPrimaryDataStoreInfo {
-    protected PrimaryDataStoreInfo dataStore;
+    protected PrimaryDataStore dataStore;
     protected TemplateInfo template;
     protected TemplatePrimaryDataStoreVO vo;
     protected TemplatePrimaryDataStoreDao templateStoreDao;
     protected TemplatePrimaryDataStoreManager mgr;
     protected StateMachine2<State, Event, TemplatePrimaryDataStoreVO> stateMachine;
 
-    public TemplateOnPrimaryDataStoreObject(PrimaryDataStoreInfo primaryDataStore, TemplateInfo template, TemplatePrimaryDataStoreVO vo,
+    public TemplateOnPrimaryDataStoreObject(PrimaryDataStore primaryDataStore, TemplateInfo template, TemplatePrimaryDataStoreVO vo,
     		TemplatePrimaryDataStoreDao templateStoreDao, TemplatePrimaryDataStoreManager mgr) {
         this.dataStore = primaryDataStore;
         this.template = template;
@@ -59,7 +59,7 @@ public class TemplateOnPrimaryDataStoreObject implements TemplateOnPrimaryDataSt
     }
 
     @Override
-    public PrimaryDataStoreInfo getPrimaryDataStore() {
+    public PrimaryDataStore getPrimaryDataStore() {
         return this.dataStore;
     }
 
@@ -77,7 +77,7 @@ public class TemplateOnPrimaryDataStoreObject implements TemplateOnPrimaryDataSt
         try {
             this.stateMachine.transitTo(vo, event, null, templateStoreDao);
         } catch (NoTransitionException e) {
-           throw new CloudRuntimeException(e.toString());
+           throw new CloudRuntimeException("Failed change state", e);
         }
     }
 }

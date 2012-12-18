@@ -5,16 +5,18 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
+import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
+import org.apache.cloudstack.framework.async.AsyncCallbackHandler;
+import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.EndPoint;
 import org.apache.cloudstack.storage.HypervisorHostEndPoint;
+import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreVO;
-import org.apache.cloudstack.storage.datastore.driver.DefaultPrimaryDataStoreDriverImpl;
 import org.apache.cloudstack.storage.datastore.driver.PrimaryDataStoreDriver;
 import org.apache.cloudstack.storage.image.TemplateInfo;
 import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreInfo;
@@ -28,6 +30,7 @@ import org.apache.log4j.Logger;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.Volume;
 import com.cloud.utils.component.ComponentInject;
 import edu.emory.mathcs.backport.java.util.Collections;
 
@@ -185,8 +188,25 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
     public VolumeInfo createVoluemFromBaseImage(VolumeInfo volume, TemplateOnPrimaryDataStoreInfo template) {
         VolumeObject vo = (VolumeObject) volume;
         vo.setVolumeDiskType(template.getTemplate().getDiskType());
-        this.driver.createVolumeFromBaseImage(vo, template);
+        //this.driver.createVolumeFromBaseImage(vo, template);
         return volume;
+    }
+    
+    @Override
+    public void createVoluemFromBaseImageAsync(VolumeInfo volume, TemplateOnPrimaryDataStoreInfo templateStore, AsyncCompletionCallback<CommandResult> callback) {
+        VolumeObject vo = (VolumeObject) volume;
+        vo.setVolumeDiskType(templateStore.getTemplate().getDiskType());
+        AsyncCallbackDispatcher caller = new AsyncCallbackDispatcher(this)
+        .setParentCallback(callback)
+        .setOperationName("primarydatastore.createvolumefrombaseImage");
+        this.driver.createVolumeFromBaseImageAsync(vo, templateStore, caller);
+    }
+    
+    @AsyncCallbackHandler(operationName="primarydatastore.createvolumefrombaseImage")
+    public void createVoluemFromBaseImageAsyncCallback(AsyncCallbackDispatcher callback) {
+        AsyncCallbackDispatcher parent = callback.getParentCallback();
+        CommandResult result = callback.getResult();
+        parent.complete(result);
     }
 
     @Override
@@ -202,7 +222,7 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
     }
 
     @Override
-    public State getManagedState() {
+    public Volume.State getManagedState() {
         // TODO Auto-generated method stub
         return null;
     }
@@ -228,4 +248,6 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
     public PrimaryDataStoreProvider getProvider() {
         return this.provider;
     }
+
+    
 }

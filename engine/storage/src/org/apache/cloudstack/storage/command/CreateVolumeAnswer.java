@@ -19,6 +19,7 @@
 package org.apache.cloudstack.storage.command;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
 
 public class CreateVolumeAnswer extends Answer {
     private String volumeUuid;
@@ -27,7 +28,8 @@ public class CreateVolumeAnswer extends Answer {
         super();
     }
 
-    public CreateVolumeAnswer(String volumeUuid) {
+    public CreateVolumeAnswer(Command cmd, String volumeUuid) {
+        super(cmd);
         this.volumeUuid = volumeUuid;
     }
 

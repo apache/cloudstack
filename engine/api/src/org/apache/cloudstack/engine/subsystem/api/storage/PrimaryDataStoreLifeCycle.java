@@ -23,7 +23,7 @@ import java.util.Map;
 public interface PrimaryDataStoreLifeCycle {
     public boolean initialize(Map<String, String> dsInfos);
 
-    public boolean attach(Scope scope);
+    public boolean attachCluster(ClusterScope scope);
 
     public boolean dettach();
 

@@ -16,27 +16,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.scope;
+package org.apache.cloudstack.storage;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
-import org.apache.cloudstack.engine.subsystem.api.storage.ScopeType;
+import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 
-public class ZoneScope implements Scope {
-    private ScopeType type = ScopeType.ZONE;
-    private long zoneId;
-    
-    public ZoneScope(long zoneId) {
-        this.zoneId = zoneId;
-    }
-    
-    @Override
-    public ScopeType getScopeType() {
-        return this.type;
-    }
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
 
-    @Override
-    public long getScopeId() {
-        return this.zoneId;
-    }
-
+public interface HostEndpointRpcServer {
+    void sendCommandAsync(String host, final Command command, final AsyncCompletionCallback<Answer> callback);
 }

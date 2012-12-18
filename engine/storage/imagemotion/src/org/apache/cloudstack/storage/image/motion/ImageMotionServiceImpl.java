@@ -99,7 +99,7 @@ public class ImageMotionServiceImpl implements ImageMotionService {
     }
     
     @AsyncCallbackHandler(operationName="imagemotionService.copytemplate.callback")
-    public void copyTemplateAsyncCallback(AsyncCallbackDispatcher callback) {
+    public void copyTemplateAsyncCallback( AsyncCallbackDispatcher callback) {
         AsyncCallbackDispatcher parentCaller = callback.getParentCallback();
         parentCaller.complete(callback.getResult());
     }

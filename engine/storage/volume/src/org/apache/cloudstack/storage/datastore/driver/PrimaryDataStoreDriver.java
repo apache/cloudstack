@@ -2,7 +2,9 @@ package org.apache.cloudstack.storage.datastore.driver;
 
 import java.util.Map;
 
+import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.EndPoint;
+import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
 import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreInfo;
 import org.apache.cloudstack.storage.volume.VolumeObject;
@@ -10,7 +12,7 @@ import org.apache.cloudstack.storage.volume.VolumeObject;
 public interface PrimaryDataStoreDriver {
     boolean createVolume(VolumeObject vol);
 
-    boolean createVolumeFromBaseImage(VolumeObject volume, TemplateOnPrimaryDataStoreInfo template);
+    void createVolumeFromBaseImageAsync(VolumeObject volume, TemplateOnPrimaryDataStoreInfo template, AsyncCompletionCallback<CommandResult> callback);
 
     boolean deleteVolume(VolumeObject vo);
 

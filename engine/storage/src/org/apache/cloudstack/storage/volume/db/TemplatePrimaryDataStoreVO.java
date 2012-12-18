@@ -165,6 +165,7 @@ public class TemplatePrimaryDataStoreVO implements StateObject<TemplateOnPrimary
         this.poolId = poolId;
         this.templateId = templateId;
         this.downloadState = Status.NOT_DOWNLOADED;
+        this.state = TemplateOnPrimaryDataStoreStateMachine.State.Allocated;
         this.markedForGC = false;
     }
 

@@ -19,13 +19,12 @@
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
 
-import java.util.List;
-
-import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
-import org.apache.cloudstack.storage.EndPoint;
+
+
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.Volume;
 
 public interface PrimaryDataStoreInfo {
 	public boolean isHypervisorSupported(HypervisorType hypervisor);
@@ -33,10 +32,10 @@ public interface PrimaryDataStoreInfo {
 	public boolean isVolumeDiskTypeSupported(VolumeDiskType diskType);
 	public long getCapacity();
 	public long getAvailableCapacity();
-	public List<EndPoint> getEndPoints();
+
 	public long getId();
 	public String getUuid();
-	public State getManagedState();
+	public Volume.State getManagedState();
 	public String getName();
 	public String getType();
 	public PrimaryDataStoreLifeCycle getLifeCycle();

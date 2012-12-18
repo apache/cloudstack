@@ -21,6 +21,7 @@ package org.apache.cloudstack.storage.volume;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
+import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
 import org.apache.cloudstack.storage.image.TemplateInfo;
 import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreStateMachine.Event;
 import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreStateMachine.State;
@@ -79,7 +80,7 @@ public class TemplatePrimaryDataStoreManagerImpl implements TemplatePrimaryDataS
         return templateStoreVO;
     }
     @Override
-    public TemplateOnPrimaryDataStoreObject createTemplateOnPrimaryDataStore(TemplateInfo template, PrimaryDataStoreInfo dataStore) {
+    public TemplateOnPrimaryDataStoreObject createTemplateOnPrimaryDataStore(TemplateInfo template, PrimaryDataStore dataStore) {
         TemplatePrimaryDataStoreVO templateStoreVO = null;
         boolean freshNewTemplate = false;
         templateStoreVO = templateStoreDao.findByTemplateIdAndPoolId(template.getId(), dataStore.getId());
@@ -106,7 +107,7 @@ public class TemplatePrimaryDataStoreManagerImpl implements TemplatePrimaryDataS
     }
 
     @Override
-    public TemplateOnPrimaryDataStoreObject findTemplateOnPrimaryDataStore(TemplateInfo template, PrimaryDataStoreInfo dataStore) {
+    public TemplateOnPrimaryDataStoreObject findTemplateOnPrimaryDataStore(TemplateInfo template, PrimaryDataStore dataStore) {
         SearchCriteriaService<TemplatePrimaryDataStoreVO, TemplatePrimaryDataStoreVO> sc = SearchCriteria2.create(TemplatePrimaryDataStoreVO.class);
         sc.addAnd(sc.getEntity().getTemplateId(), Op.EQ, template.getId());
         sc.addAnd(sc.getEntity().getPoolId(), Op.EQ, dataStore.getId());

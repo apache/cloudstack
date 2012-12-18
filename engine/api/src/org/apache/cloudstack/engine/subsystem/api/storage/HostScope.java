@@ -16,17 +16,22 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.volume;
+package org.apache.cloudstack.engine.subsystem.api.storage;
 
-import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
-import org.apache.cloudstack.storage.image.TemplateInfo;
 
-public interface TemplateOnPrimaryDataStoreInfo {
-    public String getPath();
+public class HostScope implements Scope {
+    private ScopeType type = ScopeType.HOST;
+    private long hostId;
+    public HostScope(long hostId) {
+        this.hostId = hostId;
+    }
+    @Override
+    public ScopeType getScopeType() {
+        return this.type;
+    }
 
-    public void setPath(String path);
-
-    public PrimaryDataStore getPrimaryDataStore();
-
-    public TemplateInfo getTemplate();
+    @Override
+    public long getScopeId() {
+        return this.hostId;
+    }
 }

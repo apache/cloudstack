@@ -18,7 +18,7 @@
  */
 package org.apache.cloudstack.storage.volume;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
+import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
 import org.apache.cloudstack.storage.image.TemplateInfo;
 import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreStateMachine.Event;
 import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreStateMachine.State;
@@ -27,9 +27,9 @@ import org.apache.cloudstack.storage.volume.db.TemplatePrimaryDataStoreVO;
 import com.cloud.utils.fsm.StateMachine2;
 
 public interface TemplatePrimaryDataStoreManager {
-    public TemplateOnPrimaryDataStoreInfo createTemplateOnPrimaryDataStore(TemplateInfo template, PrimaryDataStoreInfo dataStore);
+    public TemplateOnPrimaryDataStoreInfo createTemplateOnPrimaryDataStore(TemplateInfo template, PrimaryDataStore dataStore);
 
-    public TemplateOnPrimaryDataStoreInfo findTemplateOnPrimaryDataStore(TemplateInfo template, PrimaryDataStoreInfo dataStore);
+    public TemplateOnPrimaryDataStoreInfo findTemplateOnPrimaryDataStore(TemplateInfo template, PrimaryDataStore dataStore);
     
     public StateMachine2<State, Event, TemplatePrimaryDataStoreVO> getStateMachine();
 }

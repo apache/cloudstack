@@ -38,7 +38,7 @@ public class HypervisorHostEndPoint implements EndPoint {
     @Inject
     AgentManager agentMgr;
     @Inject
-    HypervsiorHostEndPointRpcServer rpcServer;
+    HostEndpointRpcServer rpcServer;
 
     public HypervisorHostEndPoint(long hostId, String hostAddress) {
         this.hostId = hostId;

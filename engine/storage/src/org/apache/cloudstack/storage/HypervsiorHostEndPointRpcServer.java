@@ -31,13 +31,16 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 
 @Component
-public class HypervsiorHostEndPointRpcServer {
-    @Inject
+public class HypervsiorHostEndPointRpcServer implements HostEndpointRpcServer {
+    
     private RpcProvider _rpcProvider;
-    public HypervsiorHostEndPointRpcServer() {
+    @Inject
+    public HypervsiorHostEndPointRpcServer(RpcProvider rpcProvider) {
+        _rpcProvider = rpcProvider;
         _rpcProvider.registerRpcServiceEndpoint(RpcServiceDispatcher.getDispatcher(this));
     }
     
+    @Override
     public void sendCommandAsync(String host, final Command command, final AsyncCompletionCallback<Answer> callback) {
         _rpcProvider.newCall(host).addCallbackListener(new RpcCallbackListener<Answer>() {
             @Override
