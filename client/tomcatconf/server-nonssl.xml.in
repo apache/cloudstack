@@ -68,7 +68,7 @@
                redirectPort="8443" />
     -->
     <!-- A "Connector" using the shared thread pool-->
-    <Connector executor="tomcatThreadPool"
+    <Connector executor="tomcatThreadPool" URIEncoding="UTF-8"
                port="8080" protocol="org.apache.coyote.http11.Http11NioProtocol" 
                connectionTimeout="20000" disableUploadTimeout="true"
                acceptCount="150" enableLookups="false" maxThreads="150"
@@ -154,7 +154,7 @@
 	<Executor name="tomcatThreadPool-internal" namePrefix="catalina-exec-int-" 
         maxThreads="150" minSpareThreads="25"/>
     
-	<Connector executor="tomcatThreadPool-internal"
+	<Connector executor="tomcatThreadPool-internal" URIEncoding="UTF-8"
                port="7080" protocol="org.apache.coyote.http11.Http11NioProtocol" 
                connectionTimeout="20000" disableUploadTimeout="true"
                acceptCount="150" enableLookups="false" maxThreads="150"
