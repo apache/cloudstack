@@ -17,6 +17,8 @@
 package com.cloud.api;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -28,6 +30,7 @@ import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 
+import com.cloud.dao.EntityManager;
 import org.apache.cloudstack.api.*;
 import org.apache.log4j.Logger;
 
@@ -62,17 +65,16 @@ import com.cloud.utils.exception.CSExceptionErrorCode;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.uuididentity.dao.IdentityDao;
 
-/**
- * A class that dispatches API commands to the appropriate manager for execution.
- */
+// ApiDispatcher: A class that dispatches API commands to the appropriate manager for execution.
 public class ApiDispatcher {
     private static final Logger s_logger = Logger.getLogger(ApiDispatcher.class.getName());
 
     ComponentLocator _locator;
     Long _createSnapshotQueueSizeLimit;
-    @Inject AsyncJobManager _asyncMgr = null;
+    @Inject private AsyncJobManager _asyncMgr = null;
+    @Inject private AccountManager _accountMgr = null;
+    @Inject EntityManager _entityMgr = null;
     @Inject IdentityDao _identityDao = null;
-    @Inject AccountManager _accountMgr = null;
 
     Map<String, Class<? extends GenericDao>> _daoNameMap = new HashMap<String, Class<? extends GenericDao>>();
     // singleton class
@@ -105,7 +107,6 @@ public class ApiDispatcher {
     }
 
     public void dispatchCreateCmd(BaseAsyncCreateCmd cmd, Map<String, String> params) {
-
     	List<ControlledEntity> entitiesToAccess = new ArrayList<ControlledEntity>();
     	setupParameters(cmd, params, entitiesToAccess);
 
@@ -150,15 +151,12 @@ public class ApiDispatcher {
         }
     }
 
-    private void doAccessChecks(BaseAsyncCreateCmd cmd,
-			List<ControlledEntity> entitiesToAccess) {
-
+    private void doAccessChecks(BaseAsyncCreateCmd cmd, List<ControlledEntity> entitiesToAccess) {
 		//owner
 		Account caller = UserContext.current().getCaller();
-		Account owner = s_instance._accountMgr.getActiveAccountById(cmd.getEntityOwnerId());
+		Account owner = _accountMgr.getActiveAccountById(cmd.getEntityOwnerId());
 
 		List<Role> callerRoles = determineRole(caller);
-		
 		List<Role> ownerRoles = determineRole(owner);
 		
 		//check permission to call this command for the caller
@@ -166,10 +164,9 @@ public class ApiDispatcher {
 		checkACLOnCommand(cmd);
 		
 		//check that caller can access the owner account.
-		s_instance._accountMgr.checkAccess(caller, null, true, owner);
+		_accountMgr.checkAccess(caller, null, true, owner);
 		
 		checkACLOnEntities(caller, entitiesToAccess);
-
 	}
     
     
@@ -190,15 +187,14 @@ public class ApiDispatcher {
 		//checkACLOnEntities
     	if(!entitiesToAccess.isEmpty()){
 			for(ControlledEntity entity : entitiesToAccess)
-			s_instance._accountMgr.checkAccess(caller, null, true, entity);
+			    _accountMgr.checkAccess(caller, null, true, entity);
        }
-
     }
 
 	public void dispatch(BaseCmd cmd, Map<String, String> params) {
     	List<ControlledEntity> entitiesToAccess = new ArrayList<ControlledEntity>();
     	setupParameters(cmd, params, entitiesToAccess);
-        
+
         if(!entitiesToAccess.isEmpty()){
 			 //owner
 			Account caller = UserContext.current().getCaller();
@@ -390,6 +386,7 @@ public class ApiDispatcher {
             }
         }
 
+        // Process all the fields of the cmd object using reflection to recursively process super class
         Field[] fields = cmd.getClass().getDeclaredFields();
         Class<?> superClass = cmd.getClass().getSuperclass();
         while (BaseCmd.class.isAssignableFrom(superClass)) {
@@ -404,20 +401,22 @@ public class ApiDispatcher {
         }
 
         for (Field field : fields) {
-        	
-        	//plug Services
-        	PlugService plugServiceAnnotation = field.getAnnotation(PlugService.class);
-        	if(plugServiceAnnotation != null){
-        		plugService(field, cmd);
-        	}
-        	
+            //plug Services
+            PlugService plugServiceAnnotation = field.getAnnotation(PlugService.class);
+            if(plugServiceAnnotation != null){
+                plugService(field, cmd);
+            }
+            //APITODO: change the checking here
             Parameter parameterAnnotation = field.getAnnotation(Parameter.class);
             if ((parameterAnnotation == null) || !parameterAnnotation.expose()) {
                 continue;
             }
-
+            // APITODO Will remove this
             IdentityMapper identityMapper = field.getAnnotation(IdentityMapper.class);
 
+            //ACL checkAccess = field.getAnnotation(ACL.class);
+
+            Validator validators = field.getAnnotation(Validator.class);
             Object paramObj = unpackedParams.get(parameterAnnotation.name());
             if (paramObj == null) {
                 if (parameterAnnotation.required()) {
@@ -587,37 +586,80 @@ public class ApiDispatcher {
             case INTEGER:
                 field.set(cmdObj, Integer.valueOf(paramObj.toString()));
                 break;
-            case LIST:
-                List listParam = new ArrayList();
-                StringTokenizer st = new StringTokenizer(paramObj.toString(), ",");
-                while (st.hasMoreTokens()) {
-                    String token = st.nextToken();
-                    CommandType listType = annotation.collectionType();
-                    switch (listType) {
-                    case INTEGER:
-                        listParam.add(Integer.valueOf(token));
-                        break;
-                    case LONG: {
-                        Long val = null;
-                        if (identityMapper != null)
-                            val = s_instance._identityDao.getIdentityId(identityMapper, token);
-                        else
-                            val = Long.valueOf(token);
+                case LIST:
+                    List listParam = new ArrayList();
+                    StringTokenizer st = new StringTokenizer(paramObj.toString(), ",");
+                    while (st.hasMoreTokens()) {
+                        String token = st.nextToken();
+                        CommandType listType = annotation.collectionType();
+                        switch (listType) {
+                            case INTEGER:
+                                listParam.add(Integer.valueOf(token));
+                                break;
+                            case UUID:
+                                //APITODO: FIXME if there is any APICmd that has List<UUID>
+                                break;
+                            case LONG: {
+                                Long val = null;
+                                if (identityMapper != null)
+                                    val = s_instance._identityDao.getIdentityId(identityMapper, token);
+                                else
+                                    val = Long.valueOf(token);
 
-                        listParam.add(val);
+                                listParam.add(val);
+                            }
+                            break;
+                            case SHORT:
+                                listParam.add(Short.valueOf(token));
+                            case STRING:
+                                listParam.add(token);
+                                break;
+                        }
                     }
-                        break;
-                    case SHORT:
-                        listParam.add(Short.valueOf(token));
-                    case STRING:
-                        listParam.add(token);
-                        break;
+                    field.set(cmdObj, listParam);
+                    break;
+            case UUID:
+                // There may be multiple entities defined on the @Entity of a Response.class
+                // UUID CommandType would expect only one entityType, so use the first entityType
+                Class<?>[] entities = annotation.entityType()[0].getAnnotation(Entity.class).value();
+                Long id = null;
+                // Go through each entity which is an interface to a VO class and get a VO object
+                // Try to getId() for the object using reflection, break on first non-null value
+                for (Class<?> entity: entities) {
+                    // findByXId returns a VO object using uuid, use reflect to get the Id
+                    Object objVO = s_instance._entityMgr.findByXId(entity, paramObj.toString());
+                    if (objVO == null) {
+                        continue;
                     }
+                    Method method = null;
+                    try {
+                        method = objVO.getClass().getMethod("getId", null);
+                    } catch (NoSuchMethodException e) {
+                        continue;
+                    } catch (SecurityException e) {
+                        continue;
+                    }
+                    // Invoke the getId method, get the internal long ID
+                    // If that fails hide exceptions as the uuid may not exist
+                    try {
+                        id = (Long) method.invoke(objVO);
+                    } catch (InvocationTargetException e) {
+                    } catch (IllegalArgumentException e) {
+                    } catch (IllegalAccessException e) {
+                    }
+                    // Return on first non-null Id for the uuid entity
+                    if (id != null)
+                        break;
                 }
-                field.set(cmdObj, listParam);
+                // If id is null, entity with the uuid was not found, throw exception
+                if (id == null) {
+                    throw new InvalidParameterValueException("No entity with " + field.getName() + "(uuid)="
+                            + paramObj.toString() + " was found in the database.");
+                }
+                field.set(cmdObj, id);
                 break;
             case LONG:
-            case UUID:
+                // APITODO: Remove identityMapper, simply convert the over the wire param to Long
                 if (identityMapper != null)
                     field.set(cmdObj, s_instance._identityDao.getIdentityId(identityMapper, paramObj.toString()));
                 else
