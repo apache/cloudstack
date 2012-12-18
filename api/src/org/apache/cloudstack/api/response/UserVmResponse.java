@@ -200,6 +200,7 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
         this.accountName = accountName;
     }
 
+    @Override
     public void setDomainId(String domainId) {
         this.domainId = domainId;
     }
@@ -340,6 +341,7 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
         this.securityGroupList.add(securityGroup);
     }
 
+    @Override
     public void setProjectId(String projectId) {
         this.projectId = projectId;
     }
@@ -373,21 +375,4 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
         this.keyPairName = keyPairName;
     }
 
-    @Override
-    public void setProjectId(Long projectId) {
-        // TODO: remove this later
-    }
-
-    @Override
-    public void setDomainId(Long domainId) {
-        // TODO: remove this later
-    }
-
-    public void setProjectUuid(String projectUuid){
-        this.projectId = projectUuid;
-    }
-
-    public void setDomainUuid(String domainUuid){
-        this.domainId = domainUuid;
-    }
 }

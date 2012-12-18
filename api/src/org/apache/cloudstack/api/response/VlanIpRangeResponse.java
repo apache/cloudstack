@@ -40,7 +40,7 @@ public class VlanIpRangeResponse extends BaseResponse implements ControlledEntit
     private String accountName;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain ID of the VLAN IP range")
-    private IdentityProxy domainId = new IdentityProxy("domain");
+    private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the VLAN IP range")
     private String domainName;
@@ -70,7 +70,7 @@ public class VlanIpRangeResponse extends BaseResponse implements ControlledEntit
     private IdentityProxy networkId = new IdentityProxy("networks");
 
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the vlan range")
-    private IdentityProxy projectId = new IdentityProxy("projects");
+    private String projectId;
 
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the vlan range")
     private String projectName;
@@ -98,8 +98,8 @@ public class VlanIpRangeResponse extends BaseResponse implements ControlledEntit
         this.accountName = accountName;
     }
 
-    public void setDomainId(Long domainId) {
-        this.domainId.setValue(domainId);
+    public void setDomainId(String domainId) {
+        this.domainId = domainId;
     }
 
     public void setDomainName(String domainName) {
@@ -139,8 +139,8 @@ public class VlanIpRangeResponse extends BaseResponse implements ControlledEntit
     }
 
     @Override
-    public void setProjectId(Long projectId) {
-        this.projectId.setValue(projectId);
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
     }
 
     @Override

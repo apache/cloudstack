@@ -66,14 +66,14 @@ public class LoadBalancerResponse extends BaseResponse implements ControlledEnti
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the load balancer")
-    private IdentityProxy projectId = new IdentityProxy("projects");
+    private String projectId;
 
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the load balancer")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
     @Param(description = "the domain ID of the load balancer rule")
-    private IdentityProxy domainId = new IdentityProxy("domain");
+    private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
     @Param(description = "the domain of the load balancer rule")
@@ -126,8 +126,9 @@ public class LoadBalancerResponse extends BaseResponse implements ControlledEnti
         this.accountName = accountName;
     }
 
-    public void setDomainId(Long domainId) {
-        this.domainId.setValue(domainId);
+    @Override
+    public void setDomainId(String domainId) {
+        this.domainId = domainId;
     }
 
     public void setDomainName(String domainName) {
@@ -147,8 +148,8 @@ public class LoadBalancerResponse extends BaseResponse implements ControlledEnti
     }
 
     @Override
-    public void setProjectId(Long projectId) {
-        this.projectId.setValue(projectId);
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
     }
 
     @Override

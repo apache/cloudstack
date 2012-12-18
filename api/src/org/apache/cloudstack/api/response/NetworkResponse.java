@@ -106,13 +106,13 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the ipaddress")
-    private IdentityProxy projectId = new IdentityProxy("projects");
+    private String projectId;
 
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the address")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain id of the network owner")
-    private IdentityProxy domainId = new IdentityProxy("domain");
+    private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the network owner")
     private String domain;
@@ -204,8 +204,9 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
         this.accountName = accountName;
     }
 
-    public void setDomainId(Long domainId) {
-        this.domainId.setValue(domainId);
+    @Override
+    public void setDomainId(String domainId) {
+        this.domainId = domainId;
     }
 
     public void setNetworkOfferingName(String networkOfferingName) {
@@ -249,8 +250,8 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     }
 
     @Override
-    public void setProjectId(Long projectId) {
-        this.projectId.setValue(projectId);
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
     }
 
     @Override

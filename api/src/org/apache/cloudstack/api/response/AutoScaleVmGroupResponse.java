@@ -66,13 +66,13 @@ public class AutoScaleVmGroupResponse extends BaseResponse implements Controlled
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id vm profile")
-    private IdentityProxy projectId = new IdentityProxy("projects");
+    private String projectId;
 
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the vm profile")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain ID of the vm profile")
-    private IdentityProxy domainId = new IdentityProxy("domain");
+    private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the vm profile")
     private String domainName;
@@ -122,9 +122,10 @@ public class AutoScaleVmGroupResponse extends BaseResponse implements Controlled
         this.accountName = accountName;
     }
 
+
     @Override
-    public void setDomainId(Long domainId) {
-        this.domainId.setValue(domainId);
+    public void setDomainId(String domainId) {
+        this.domainId = domainId;
     }
 
     @Override
@@ -133,8 +134,8 @@ public class AutoScaleVmGroupResponse extends BaseResponse implements Controlled
     }
 
     @Override
-    public void setProjectId(Long projectId) {
-        this.projectId.setValue(projectId);
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
     }
 
     @Override

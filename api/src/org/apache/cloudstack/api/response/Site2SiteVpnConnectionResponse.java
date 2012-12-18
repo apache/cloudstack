@@ -69,13 +69,13 @@ public class Site2SiteVpnConnectionResponse extends BaseResponse implements Cont
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id")
-    private IdentityProxy projectId = new IdentityProxy("projects");
+    private String projectId;
 
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain id of the owner")
-    private IdentityProxy domainId = new IdentityProxy("domain");
+    private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the owner")
     private String domain;
@@ -152,8 +152,8 @@ public class Site2SiteVpnConnectionResponse extends BaseResponse implements Cont
     }
 
     @Override
-    public void setProjectId(Long projectId) {
-        this.projectId.setValue(projectId);
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
     }
 
     @Override
@@ -162,8 +162,8 @@ public class Site2SiteVpnConnectionResponse extends BaseResponse implements Cont
     }
 
     @Override
-    public void setDomainId(Long domainId) {
-        this.domainId.setValue(domainId);
+    public void setDomainId(String domainId) {
+        this.domainId = domainId;
     }
 
     @Override

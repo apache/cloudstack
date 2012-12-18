@@ -23,6 +23,8 @@ public interface AutoScalePolicy extends ControlledEntity {
 
     long getId();
 
+    String getUuid();
+
     public int getDuration();
 
     public int getQuietTime();

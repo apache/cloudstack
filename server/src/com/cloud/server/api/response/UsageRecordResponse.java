@@ -27,19 +27,19 @@ import com.google.gson.annotations.SerializedName;
 public class UsageRecordResponse extends BaseResponse implements ControlledEntityResponse{
     @SerializedName(ApiConstants.ACCOUNT) @Param(description="the user account name")
     private String accountName;
-    
+
     @SerializedName(ApiConstants.ACCOUNT_ID) @Param(description="the user account Id")
     private IdentityProxy accountId = new IdentityProxy("account");
-    
+
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the resource")
-    private IdentityProxy projectId = new IdentityProxy("projects");
-    
+    private String projectId;
+
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the resource")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain ID")
-    private IdentityProxy domainId = new IdentityProxy("domain");
-    
+    private String domainId;
+
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain the resource is associated with")
     private String domainName;
 
@@ -72,7 +72,7 @@ public class UsageRecordResponse extends BaseResponse implements ControlledEntit
 
     @SerializedName("usageid") @Param(description="id of the resource")
     private String usageId;
-    
+
     @SerializedName(ApiConstants.TYPE) @Param(description="resource type")
     private String type;
 
@@ -90,13 +90,13 @@ public class UsageRecordResponse extends BaseResponse implements ControlledEntit
 
     @SerializedName(ApiConstants.IS_SYSTEM) @Param(description="True if the IPAddress is system IP - allocated during vm deploy or lb rule create")
     private Boolean isSystem;
-    
+
     @SerializedName("networkid") @Param(description="id of the network")
     private String networkId;
-    
+
     @SerializedName("isdefault") @Param(description="True if the resource is default")
     private Boolean isDefault;
-    
+
     @Override
     public void setAccountName(String accountName) {
         this.accountName = accountName;
@@ -105,10 +105,10 @@ public class UsageRecordResponse extends BaseResponse implements ControlledEntit
     public void setAccountId(Long accountId) {
         this.accountId.setValue(accountId);
     }
-    
+
     @Override
-    public void setDomainId(Long domainId) {
-        this.domainId.setValue(domainId);
+    public void setDomainId(String domainId) {
+        this.domainId = domainId;
     }
 
     public void setZoneId(Long zoneId) {
@@ -174,17 +174,17 @@ public class UsageRecordResponse extends BaseResponse implements ControlledEntit
     public void setSystem(Boolean isSystem) {
         this.isSystem = isSystem;
     }
-    
+
     @Override
-    public void setProjectId(Long projectId) {
-        this.projectId.setValue(projectId);
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
     }
 
     @Override
     public void setProjectName(String projectName) {
         this.projectName = projectName;
     }
-    
+
     @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
@@ -193,7 +193,7 @@ public class UsageRecordResponse extends BaseResponse implements ControlledEntit
     public void setNetworkId(String networkId) {
         this.networkId =  networkId;
     }
-    
+
     public void setDefault(Boolean isDefault) {
         this.isDefault = isDefault;
     }

@@ -56,14 +56,14 @@ public class PrivateGatewayResponse extends BaseResponse implements ControlledEn
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the private gateway")
-    private IdentityProxy projectId = new IdentityProxy("projects");
+    private String projectId;
 
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the private gateway")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
     @Param(description = "the ID of the domain associated with the private gateway")
-    private IdentityProxy domainId = new IdentityProxy("domain");
+    private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
     @Param(description = "the domain associated with the private gateway")
@@ -115,8 +115,8 @@ public class PrivateGatewayResponse extends BaseResponse implements ControlledEn
     }
 
     @Override
-    public void setDomainId(Long domainId) {
-        this.domainId.setValue(domainId);
+    public void setDomainId(String domainId) {
+        this.domainId = domainId;
     }
 
     @Override
@@ -125,8 +125,8 @@ public class PrivateGatewayResponse extends BaseResponse implements ControlledEn
     }
 
     @Override
-    public void setProjectId(Long projectId) {
-        this.projectId.setValue(projectId);
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
     }
 
     @Override

@@ -41,13 +41,13 @@ public class RemoteAccessVpnResponse extends BaseResponse implements ControlledE
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the vpn")
-    private IdentityProxy projectId = new IdentityProxy("projects");
+    private String projectId;
 
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the vpn")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain id of the account of the remote access vpn")
-    private IdentityProxy domainId = new IdentityProxy("domain");
+    private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the account of the remote access vpn")
     private String domainName;
@@ -71,8 +71,9 @@ public class RemoteAccessVpnResponse extends BaseResponse implements ControlledE
         this.accountName = accountName;
     }
 
-    public void setDomainId(Long domainId) {
-        this.domainId.setValue(domainId);
+    @Override
+    public void setDomainId(String domainId) {
+        this.domainId = domainId;
     }
 
     public void setDomainName(String name) {
@@ -88,8 +89,8 @@ public class RemoteAccessVpnResponse extends BaseResponse implements ControlledE
     }
 
     @Override
-    public void setProjectId(Long projectId) {
-        this.projectId.setValue(projectId);
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
     }
 
     @Override

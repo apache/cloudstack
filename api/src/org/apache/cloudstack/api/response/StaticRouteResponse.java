@@ -46,14 +46,14 @@ public class StaticRouteResponse extends BaseResponse implements ControlledEntit
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the static route")
-    private IdentityProxy projectId = new IdentityProxy("projects");
+    private String projectId;
 
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the static route")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
     @Param(description = "the ID of the domain associated with the static route")
-    private IdentityProxy domainId = new IdentityProxy("domain");
+    private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
     @Param(description = "the domain associated with the static route")
@@ -89,8 +89,8 @@ public class StaticRouteResponse extends BaseResponse implements ControlledEntit
     }
 
     @Override
-    public void setDomainId(Long domainId) {
-        this.domainId.setValue(domainId);
+    public void setDomainId(String domainId) {
+        this.domainId = domainId;
     }
 
     @Override
@@ -99,8 +99,8 @@ public class StaticRouteResponse extends BaseResponse implements ControlledEntit
     }
 
     @Override
-    public void setProjectId(Long projectId) {
-        this.projectId.setValue(projectId);
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
     }
 
     @Override

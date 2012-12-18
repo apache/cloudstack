@@ -75,7 +75,7 @@ public class AutoScaleVmProfileResponse extends BaseResponse implements Controll
 
     @SerializedName(ApiConstants.PROJECT_ID)
     @Param(description = "the project id vm profile")
-    private IdentityProxy projectId = new IdentityProxy("projects");
+    private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
     @Param(description = "the project name of the vm profile")
@@ -83,7 +83,7 @@ public class AutoScaleVmProfileResponse extends BaseResponse implements Controll
 
     @SerializedName(ApiConstants.DOMAIN_ID)
     @Param(description = "the domain ID of the vm profile")
-    private IdentityProxy domainId = new IdentityProxy("domain");
+    private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
     @Param(description = "the domain name of the vm profile")
@@ -128,8 +128,8 @@ public class AutoScaleVmProfileResponse extends BaseResponse implements Controll
     }
 
     @Override
-    public void setDomainId(Long domainId) {
-        this.domainId.setValue(domainId);
+    public void setDomainId(String domainId) {
+        this.domainId = domainId;
     }
 
     @Override
@@ -138,8 +138,8 @@ public class AutoScaleVmProfileResponse extends BaseResponse implements Controll
     }
 
     @Override
-    public void setProjectId(Long projectId) {
-        this.projectId.setValue(projectId);
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
     }
 
     @Override

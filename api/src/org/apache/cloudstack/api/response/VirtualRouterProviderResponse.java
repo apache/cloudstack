@@ -36,13 +36,13 @@ public class VirtualRouterProviderResponse extends BaseResponse implements Contr
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the ipaddress")
-    private Long projectId;
+    private String projectId;
 
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the address")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain ID associated with the provider")
-    private Long domainId;
+    private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain associated with the provider")
     private String domainName;
@@ -57,7 +57,7 @@ public class VirtualRouterProviderResponse extends BaseResponse implements Contr
     }
 
     @Override
-    public void setDomainId(Long domainId) {
+    public void setDomainId(String domainId) {
         this.domainId = domainId;
     }
 
@@ -67,7 +67,7 @@ public class VirtualRouterProviderResponse extends BaseResponse implements Contr
     }
 
     @Override
-    public void setProjectId(Long projectId) {
+    public void setProjectId(String projectId) {
         this.projectId = projectId;
     }
 

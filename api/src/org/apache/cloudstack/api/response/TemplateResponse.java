@@ -101,7 +101,7 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the ID of the domain to which the template belongs")
-    private IdentityProxy domainId = new IdentityProxy("domain");
+    private String domainId;
 
     @SerializedName(ApiConstants.IS_EXTRACTABLE) @Param(description="true if the template is extractable, false otherwise")
     private Boolean extractable;
@@ -122,7 +122,7 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
     private String templateTag;
 
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the template")
-    private IdentityProxy projectId = new IdentityProxy("projects");
+    private String projectId;
 
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the template")
     private String projectName;
@@ -237,8 +237,8 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
     }
 
     @Override
-    public void setDomainId(Long domainId) {
-        this.domainId.setValue(domainId);
+    public void setDomainId(String domainId) {
+        this.domainId = domainId;
     }
 
     public void setExtractable(Boolean extractable) {
@@ -266,8 +266,8 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
     }
 
     @Override
-    public void setProjectId(Long projectId) {
-        this.projectId.setValue(projectId);
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
     }
 
     @Override

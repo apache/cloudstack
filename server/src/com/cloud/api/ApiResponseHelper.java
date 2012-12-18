@@ -1519,7 +1519,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         vpnResponse.setPublicIp(ApiDBUtils.findIpAddressById(vpn.getServerAddressId()).getAddress().addr());
         vpnResponse.setIpRange(vpn.getIpRange());
         vpnResponse.setPresharedKey(vpn.getIpsecPresharedKey());
-        vpnResponse.setDomainId(vpn.getDomainId());
 
         populateOwner(vpnResponse, vpn);
 
@@ -2699,14 +2698,21 @@ public class ApiResponseHelper implements ResponseGenerator {
         } else {
             // get domain from network_domain table
             Pair<Long, Boolean> domainNetworkDetails = ApiDBUtils.getDomainNetworkDetails(network.getId());
-            response.setDomainId(domainNetworkDetails.first());
+            if (domainNetworkDetails.first() != null) {
+                Domain domain = ApiDBUtils.findDomainById(domainNetworkDetails.first());
+                if (domain != null) {
+                    response.setDomainId(domain.getUuid());
+                }
+            }
             response.setSubdomainAccess(domainNetworkDetails.second());
         }
 
         Long dedicatedDomainId = ApiDBUtils.getDedicatedNetworkDomain(network.getId());
         if (dedicatedDomainId != null) {
             Domain domain = ApiDBUtils.findDomainById(dedicatedDomainId);
-            response.setDomainId(dedicatedDomainId);
+            if (domain != null) {
+                response.setDomainId(domain.getUuid());
+            }
             response.setDomainName(domain.getName());
         }
 
@@ -2854,14 +2860,14 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
             // find the project
             Project project = ApiDBUtils.findProjectByProjectAccountIdIncludingRemoved(account.getId());
-            response.setProjectId(project.getId());
+            response.setProjectId(project.getUuid());
             response.setProjectName(project.getName());
         } else {
             response.setAccountName(account.getAccountName());
         }
 
         Domain domain = ApiDBUtils.findDomainById(object.getDomainId());
-        response.setDomainId(domain.getId());
+        response.setDomainId(domain.getUuid());
         response.setDomainName(domain.getName());
     }
 
@@ -2883,7 +2889,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
             // find the project
             Project project = ApiDBUtils.findProjectByProjectAccountIdIncludingRemoved(account.getId());
-            response.setProjectId(project.getId());
+            response.setProjectId(project.getUuid());
             response.setProjectName(project.getName());
         } else {
             response.setAccountName(account.getAccountName());
@@ -2893,7 +2899,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     private void populateDomain(ControlledEntityResponse response, long domainId) {
         Domain domain = ApiDBUtils.findDomainById(domainId);
 
-        response.setDomainId(domain.getId());
+        response.setDomainId(domain.getUuid());
         response.setDomainName(domain.getName());
     }
 
@@ -3319,7 +3325,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public AutoScalePolicyResponse createAutoScalePolicyResponse(AutoScalePolicy policy) {
         AutoScalePolicyResponse response = new AutoScalePolicyResponse();
-        response.setId(policy.getId());
+        response.setId(policy.getUuid());
         response.setDuration(policy.getDuration());
         response.setQuietTime(policy.getQuietTime());
         response.setAction(policy.getAction());

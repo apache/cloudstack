@@ -84,14 +84,14 @@ public class VolumeResponse extends BaseResponse implements ControlledEntityResp
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the vpn")
-    private IdentityProxy projectId = new IdentityProxy("projects");
+    private String projectId;
 
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the vpn")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
     @Param(description = "the ID of the domain associated with the disk volume")
-    private IdentityProxy domainId = new IdentityProxy("domain");
+    private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
     @Param(description = "the domain associated with the disk volume")
@@ -225,8 +225,9 @@ public class VolumeResponse extends BaseResponse implements ControlledEntityResp
         this.accountName = accountName;
     }
 
-    public void setDomainId(Long domainId) {
-        this.domainId.setValue(domainId);
+    @Override
+    public void setDomainId(String domainId) {
+        this.domainId = domainId;
     }
 
     public void setDomainName(String domainName) {
@@ -290,8 +291,8 @@ public class VolumeResponse extends BaseResponse implements ControlledEntityResp
     }
 
     @Override
-    public void setProjectId(Long projectId) {
-        this.projectId.setValue(projectId);
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
     }
 
     @Override

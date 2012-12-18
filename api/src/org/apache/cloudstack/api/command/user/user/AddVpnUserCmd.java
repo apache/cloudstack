@@ -118,23 +118,26 @@ public class AddVpnUserCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void execute(){
-            VpnUser vpnUser = _entityMgr.findById(VpnUser.class, getEntityId());
-            Account account = _entityMgr.findById(Account.class, vpnUser.getAccountId());
-            if (!_ravService.applyVpnUsers(vpnUser.getAccountId(), userName)) {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add vpn user");
-            }
+        VpnUser vpnUser = _entityMgr.findById(VpnUser.class, getEntityId());
+        Account account = _entityMgr.findById(Account.class, vpnUser.getAccountId());
+        if (!_ravService.applyVpnUsers(vpnUser.getAccountId(), userName)) {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add vpn user");
+        }
 
-            VpnUsersResponse vpnResponse = new VpnUsersResponse();
-            vpnResponse.setId(vpnUser.getId());
-            vpnResponse.setUserName(vpnUser.getUsername());
-            vpnResponse.setAccountName(account.getAccountName());
+        VpnUsersResponse vpnResponse = new VpnUsersResponse();
+        vpnResponse.setId(vpnUser.getId());
+        vpnResponse.setUserName(vpnUser.getUsername());
+        vpnResponse.setAccountName(account.getAccountName());
 
-            vpnResponse.setDomainId(account.getDomainId());
-            vpnResponse.setDomainName(_entityMgr.findById(Domain.class, account.getDomainId()).getName());
+        Domain domain = _entityMgr.findById(Domain.class, account.getDomainId());
+        if (domain != null) {
+            vpnResponse.setDomainId(domain.getUuid());
+            vpnResponse.setDomainName(domain.getName());
+        }
 
-            vpnResponse.setResponseName(getCommandName());
-            vpnResponse.setObjectName("vpnuser");
-            this.setResponseObject(vpnResponse);
+        vpnResponse.setResponseName(getCommandName());
+        vpnResponse.setObjectName("vpnuser");
+        this.setResponseObject(vpnResponse);
     }
 
     @Override

@@ -38,14 +38,14 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
 
     @SerializedName(ApiConstants.DOMAIN_ID)
     @Param(description = "the domain ID of the snapshot's account")
-    private IdentityProxy domainId = new IdentityProxy("domain");
+    private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
     @Param(description = "the domain name of the snapshot's account")
     private String domainName;
 
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the snapshot")
-    private IdentityProxy projectId = new IdentityProxy("projects");
+    private String projectId;
 
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the snapshot")
     private String projectName;
@@ -106,12 +106,13 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
         this.accountName = accountName;
     }
 
-    public Long getDomainId() {
-        return domainId.getValue();
+    public String getDomainId() {
+        return domainId;
     }
 
-    public void setDomainId(Long domainId) {
-        this.domainId.setValue(domainId);
+    @Override
+    public void setDomainId(String domainId) {
+        this.domainId = domainId;
     }
 
     public void setDomainName(String domainName) {
@@ -151,8 +152,8 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
     }
 
     @Override
-    public void setProjectId(Long projectId) {
-        this.projectId.setValue(projectId);
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
     }
 
     @Override

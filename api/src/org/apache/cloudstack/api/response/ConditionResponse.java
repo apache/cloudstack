@@ -45,7 +45,7 @@ public class ConditionResponse extends BaseResponse implements ControlledEntityR
 
     @SerializedName(ApiConstants.DOMAIN_ID)
     @Param(description = "the domain id of the Condition owner")
-    private final IdentityProxy domainId = new IdentityProxy("domain");
+    private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
     @Param(description = "the domain name of the owner.")
@@ -57,7 +57,7 @@ public class ConditionResponse extends BaseResponse implements ControlledEntityR
 
     @SerializedName(ApiConstants.PROJECT_ID)
     @Param(description = "the project id of the Condition.")
-    private final IdentityProxy projectId = new IdentityProxy("projects");
+    private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
     @Param(description = "the project name of the Condition")
@@ -93,8 +93,8 @@ public class ConditionResponse extends BaseResponse implements ControlledEntityR
     }
 
     @Override
-    public void setProjectId(Long projectId) {
-        this.projectId.setValue(projectId);
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
     }
 
     public void setZoneId(Long zoneId) {
@@ -107,8 +107,8 @@ public class ConditionResponse extends BaseResponse implements ControlledEntityR
     }
 
     @Override
-    public void setDomainId(Long domainId) {
-        this.domainId.setValue(domainId);
+    public void setDomainId(String domainId) {
+        this.domainId = domainId;
     }
 
     @Override

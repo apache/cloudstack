@@ -28,14 +28,14 @@ public class ResourceCountResponse extends BaseResponse implements ControlledEnt
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id for which resource count's are updated")
-    private IdentityProxy projectId = new IdentityProxy("projects");
+    private String projectId;
 
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name for which resource count's are updated")
     private String projectName;
 
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain ID for which resource count's are updated")
-    private IdentityProxy domainId = new IdentityProxy("domain");
+    private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name for which resource count's are updated")
     private String domainName;
@@ -52,8 +52,8 @@ public class ResourceCountResponse extends BaseResponse implements ControlledEnt
     }
 
     @Override
-    public void setDomainId(Long domainId) {
-        this.domainId.setValue(domainId);
+    public void setDomainId(String domainId) {
+        this.domainId = domainId;
     }
 
     @Override
@@ -70,8 +70,8 @@ public class ResourceCountResponse extends BaseResponse implements ControlledEnt
     }
 
     @Override
-    public void setProjectId(Long projectId) {
-        this.projectId.setValue(projectId);
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
     }
 
     @Override

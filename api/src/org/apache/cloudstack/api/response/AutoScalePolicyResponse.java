@@ -17,7 +17,6 @@
 package org.apache.cloudstack.api.response;
 
 import org.apache.cloudstack.api.ApiConstants;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
@@ -28,7 +27,7 @@ public class AutoScalePolicyResponse extends BaseResponse implements ControlledE
 
     @SerializedName(ApiConstants.ID)
     @Param(description = "the autoscale policy ID")
-    private IdentityProxy id = new IdentityProxy("autoscale_policies");
+    private String id;
 
     @SerializedName(ApiConstants.ACTION)
     @Param(description = "the action to be executed if all the conditions evaluate to true for the specified duration.")
@@ -50,19 +49,19 @@ public class AutoScalePolicyResponse extends BaseResponse implements ControlledE
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id autoscale policy")
-    private IdentityProxy projectId = new IdentityProxy("projects");
+    private String projectId;
 
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the autoscale policy")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain ID of the autoscale policy")
-    private IdentityProxy domainId = new IdentityProxy("domain");
+    private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the autoscale policy")
     private String domainName;
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
     public void setDuration(Integer duration) {
@@ -86,9 +85,11 @@ public class AutoScalePolicyResponse extends BaseResponse implements ControlledE
         this.accountName = accountName;
     }
 
+
+
     @Override
-    public void setDomainId(Long domainId) {
-        this.domainId.setValue(domainId);
+    public void setDomainId(String domainId) {
+        this.domainId = domainId;
     }
 
     @Override
@@ -97,8 +98,8 @@ public class AutoScalePolicyResponse extends BaseResponse implements ControlledE
     }
 
     @Override
-    public void setProjectId(Long projectId) {
-        this.projectId.setValue(projectId);
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
     }
 
     @Override
