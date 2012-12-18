@@ -38,8 +38,8 @@ public class UpdateDomainCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="ID of domain to update")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=DomainResponse.class,
+            required=true, description="ID of domain to update")
     private Long id;
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="updates domain with this name")

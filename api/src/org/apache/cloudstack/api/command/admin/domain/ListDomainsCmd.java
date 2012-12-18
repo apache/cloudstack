@@ -42,7 +42,8 @@ public class ListDomainsCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
 
     @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="List domain by domain ID.")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=DomainResponse.class,
+            description="List domain by domain ID.")
     private Long id;
 
     @Parameter(name=ApiConstants.LEVEL, type=CommandType.INTEGER, description="List domains by domain level.")

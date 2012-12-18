@@ -43,7 +43,8 @@ public class CreateDomainCmd extends BaseCmd {
     private String domainName;
 
     @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.PARENT_DOMAIN_ID, type=CommandType.LONG, description="assigns new domain a parent domain by domain ID of the parent.  If no parent domain is specied, the ROOT domain is assumed.")
+    @Parameter(name=ApiConstants.PARENT_DOMAIN_ID, type=CommandType.UUID, entityType=DomainResponse.class,
+            description="assigns new domain a parent domain by domain ID of the parent.  If no parent domain is specied, the ROOT domain is assumed.")
     private Long parentDomainId;
 
     @Parameter(name=ApiConstants.NETWORK_DOMAIN, type=CommandType.STRING, description="Network domain for networks in the domain")

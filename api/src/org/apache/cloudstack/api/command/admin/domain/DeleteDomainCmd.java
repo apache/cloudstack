@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.domain;
 
+import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -40,8 +41,8 @@ public class DeleteDomainCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="ID of domain to delete")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=DomainResponse.class,
+            required=true, description="ID of domain to delete")
     private Long id;
 
     @Parameter(name=ApiConstants.CLEANUP, type=CommandType.BOOLEAN, description="true if all domain resources (child domains, accounts) have to be cleaned up, false otherwise")

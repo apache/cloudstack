@@ -41,8 +41,8 @@ public class ListDomainChildrenCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list children domain by parent domain ID.")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=DomainResponse.class,
+            description="list children domain by parent domain ID.")
     private Long id;
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="list children domains by name")
