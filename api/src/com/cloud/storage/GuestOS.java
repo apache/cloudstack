@@ -20,6 +20,8 @@ public interface GuestOS {
 
     long getId();
 
+    String getUuid();
+
     String getName();
 
     String getDisplayName();

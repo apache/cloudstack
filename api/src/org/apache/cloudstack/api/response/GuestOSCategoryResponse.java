@@ -24,17 +24,17 @@ import org.apache.cloudstack.api.BaseResponse;
 
 public class GuestOSCategoryResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the OS category")
-    private IdentityProxy id = new IdentityProxy("guest_os_category");
+    private String id;
 
     @SerializedName(ApiConstants.NAME) @Param(description="the name of the OS category")
     private String name;
 
-    public Long getId() {
-        return id.getValue();
+    public String getId() {
+        return id;
     }
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getName() {

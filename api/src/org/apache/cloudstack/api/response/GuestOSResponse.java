@@ -24,28 +24,28 @@ import org.apache.cloudstack.api.BaseResponse;
 
 public class GuestOSResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the OS type")
-    private IdentityProxy id = new IdentityProxy("guest_os");
+    private String id;
 
     @SerializedName(ApiConstants.OS_CATEGORY_ID) @Param(description="the ID of the OS category")
-    private IdentityProxy osCategoryId = new IdentityProxy("guest_os_category");
+    private String osCategoryId;
 
     @SerializedName(ApiConstants.DESCRIPTION) @Param(description="the name/description of the OS type")
     private String description;
 
-    public Long getId() {
-        return id.getValue();
+    public String getId() {
+        return id;
     }
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public Long getOsCategoryId() {
-        return osCategoryId.getValue();
+    public String getOsCategoryId() {
+        return osCategoryId;
     }
 
-    public void setOsCategoryId(Long osCategoryId) {
-        this.osCategoryId.setValue(osCategoryId);
+    public void setOsCategoryId(String osCategoryId) {
+        this.osCategoryId = osCategoryId;
     }
 
     public String getDescription() {

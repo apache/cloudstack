@@ -21,6 +21,8 @@ public interface GuestOsCategory {
     public static final String CATEGORY_NONE ="None";
     long getId();
 
+    String getUuid();
+
     String getName();
 
     void setName(String name);

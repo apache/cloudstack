@@ -41,6 +41,7 @@ import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.ExtractResponse;
 import org.apache.cloudstack.api.response.FirewallResponse;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
+import org.apache.cloudstack.api.response.GuestOSResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.HypervisorCapabilitiesResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
@@ -141,6 +142,7 @@ import com.cloud.projects.Project;
 import com.cloud.projects.ProjectAccount;
 import com.cloud.projects.ProjectInvitation;
 import com.cloud.server.ResourceTag;
+import com.cloud.storage.GuestOS;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Swift;
@@ -367,4 +369,6 @@ public interface ResponseGenerator {
     AutoScaleVmProfileResponse createAutoScaleVmProfileResponse(AutoScaleVmProfile profile);
 
     AutoScaleVmGroupResponse createAutoScaleVmGroupResponse(AutoScaleVmGroup vmGroup);
+
+    GuestOSResponse createGuestOSResponse(GuestOS os);
 }

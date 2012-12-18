@@ -79,7 +79,7 @@ public class ListGuestOsCategoriesCmd extends BaseListCmd {
         List<GuestOSCategoryResponse> osCatResponses = new ArrayList<GuestOSCategoryResponse>();
         for (GuestOsCategory osCategory : result.first()) {
             GuestOSCategoryResponse categoryResponse = new GuestOSCategoryResponse();
-            categoryResponse.setId(osCategory.getId());
+            categoryResponse.setId(osCategory.getUuid());
             categoryResponse.setName(osCategory.getName());
 
             categoryResponse.setObjectName("oscategory");

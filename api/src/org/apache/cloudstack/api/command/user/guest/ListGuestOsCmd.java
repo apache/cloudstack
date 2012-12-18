@@ -85,12 +85,7 @@ public class ListGuestOsCmd extends BaseListCmd {
         ListResponse<GuestOSResponse> response = new ListResponse<GuestOSResponse>();
         List<GuestOSResponse> osResponses = new ArrayList<GuestOSResponse>();
         for (GuestOS guestOS : result.first()) {
-            GuestOSResponse guestOSResponse = new GuestOSResponse();
-            guestOSResponse.setDescription(guestOS.getDisplayName());
-            guestOSResponse.setId(guestOS.getId());
-            guestOSResponse.setOsCategoryId(guestOS.getCategoryId());
-
-            guestOSResponse.setObjectName("ostype");
+            GuestOSResponse guestOSResponse = _responseGenerator.createGuestOSResponse(guestOS);
             osResponses.add(guestOSResponse);
         }
 

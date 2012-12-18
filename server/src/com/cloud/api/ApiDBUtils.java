@@ -1017,6 +1017,9 @@ public class ApiDBUtils {
         return _asVmGroupDao.findById(groupId);
     }
 
+    public static GuestOSCategoryVO findGuestOsCategoryById(long catId){
+        return _guestOSCategoryDao.findById(catId);
+    }
     ///////////////////////////////////////////////////////////////////////
     //  Newly Added Utility Methods for List API refactoring             //
     ///////////////////////////////////////////////////////////////////////
