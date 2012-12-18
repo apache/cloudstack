@@ -24,7 +24,6 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -51,8 +50,8 @@ public class AddClusterCmd extends BaseCmd {
     @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, required=false, description="the password for the host")
     private String password;
 
-    //@IdentityMapper(entityTableName="host_pod_ref")
-    @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, required=true, description="the Pod ID for the host", entityType=PodResponse.class)
+    @Parameter(name=ApiConstants.POD_ID, type=CommandType.UUID, entityType=PodResponse.class,
+            required=true, description="the Pod ID for the host")
     private Long podId;
 
     @Parameter(name=ApiConstants.URL, type=CommandType.STRING, required=false, description="the URL")
@@ -61,8 +60,8 @@ public class AddClusterCmd extends BaseCmd {
     @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required=false, description="the username for the cluster")
     private String username;
 
-    //@IdentityMapper(entityTableName="data_center")
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="the Zone ID for the cluster", entityType=ZoneResponse.class)
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType=ZoneResponse.class,
+            required=true, description="the Zone ID for the cluster")
     private Long zoneId;
 
     @Parameter(name=ApiConstants.HYPERVISOR, type=CommandType.STRING, required=true, description="hypervisor type of the cluster: XenServer,KVM,VMware,Hyperv,BareMetal,Simulator")

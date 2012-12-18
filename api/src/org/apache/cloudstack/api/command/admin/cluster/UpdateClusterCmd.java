@@ -20,7 +20,6 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -35,8 +34,8 @@ public class UpdateClusterCmd extends BaseCmd {
 
     private static final String s_name = "updateclusterresponse";
 
-    //@IdentityMapper(entityTableName="cluster")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the Cluster", entityType=ClusterResponse.class)
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=ClusterResponse.class,
+            required=true, description="the ID of the Cluster")
     private Long id;
 
     @Parameter(name=ApiConstants.CLUSTER_NAME, type=CommandType.STRING, description="the cluster name")

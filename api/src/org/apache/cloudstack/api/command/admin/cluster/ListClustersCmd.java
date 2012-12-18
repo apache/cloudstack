@@ -20,11 +20,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.cloudstack.api.command.user.offering.ListServiceOfferingsCmd;
+import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ClusterResponse;
@@ -44,19 +44,19 @@ public class ListClustersCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="cluster")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="lists clusters by the cluster ID")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=ClusterResponse.class,
+            description="lists clusters by the cluster ID")
     private Long id;
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="lists clusters by the cluster name")
     private String clusterName;
 
-    @IdentityMapper(entityTableName="host_pod_ref")
-    @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, description="lists clusters by Pod ID")
+    @Parameter(name=ApiConstants.POD_ID, type=CommandType.UUID, entityType=PodResponse.class,
+            description="lists clusters by Pod ID")
     private Long podId;
 
-    //@IdentityMapper(entityTableName="data_center")
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="lists clusters by Zone ID", entityType=ZoneResponse.class)
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType=ZoneResponse.class,
+            description="lists clusters by Zone ID")
     private Long zoneId;
 
     @Parameter(name=ApiConstants.HYPERVISOR, type=CommandType.STRING, description="lists clusters by hypervisor type")
