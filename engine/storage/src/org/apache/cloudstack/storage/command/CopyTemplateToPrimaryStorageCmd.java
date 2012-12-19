@@ -1,22 +1,24 @@
 package org.apache.cloudstack.storage.command;
 
 import org.apache.cloudstack.storage.to.ImageOnPrimayDataStoreTO;
-import org.apache.cloudstack.storage.to.TemplateTO;
-import org.apache.cloudstack.storage.to.VolumeTO;
 
 import com.cloud.agent.api.Command;
 
-public class CopyTemplateToPrimaryStorage extends Command {
+public class CopyTemplateToPrimaryStorageCmd extends Command implements StorageSubSystemCommand {
 
     private ImageOnPrimayDataStoreTO imageTO;
 
-    protected CopyTemplateToPrimaryStorage() {
+    protected CopyTemplateToPrimaryStorageCmd() {
         super();
     }
 
-    public CopyTemplateToPrimaryStorage(ImageOnPrimayDataStoreTO image) {
+    public CopyTemplateToPrimaryStorageCmd(ImageOnPrimayDataStoreTO image) {
         super();
         this.imageTO = image;
+    }
+    
+    public ImageOnPrimayDataStoreTO getImage() {
+        return this.imageTO;
     }
 
     @Override

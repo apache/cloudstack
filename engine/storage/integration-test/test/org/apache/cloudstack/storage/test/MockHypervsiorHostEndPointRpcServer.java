@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.HostEndpointRpcServer;
-import org.apache.cloudstack.storage.command.CopyTemplateToPrimaryStorage;
+import org.apache.cloudstack.storage.command.CopyTemplateToPrimaryStorageCmd;
 import org.apache.cloudstack.storage.command.CopyTemplateToPrimaryStorageAnswer;
 import org.apache.cloudstack.storage.command.CreateVolumeAnswer;
 import org.apache.cloudstack.storage.command.CreateVolumeFromBaseImageCommand;
@@ -50,7 +50,7 @@ public class MockHypervsiorHostEndPointRpcServer implements HostEndpointRpcServe
         public void run() {
             try {
             Answer answer = new Answer(cmd, false, "unknown command");
-            if (cmd instanceof CopyTemplateToPrimaryStorage) {
+            if (cmd instanceof CopyTemplateToPrimaryStorageCmd) {
                 answer = new CopyTemplateToPrimaryStorageAnswer(cmd, UUID.randomUUID().toString());
             } else if (cmd instanceof CreateVolumeFromBaseImageCommand) {
                 answer = new CreateVolumeAnswer(cmd, UUID.randomUUID().toString());

@@ -32,7 +32,7 @@ public interface VolumeInfo {
 	public String getPath();
 	public PrimaryDataStoreInfo getDataStore() ;
 	public String getTemplateUuid();
-	public String getTemplatePath() ;
+	public String getTemplatePath();
 	public VolumeType getType();
 	public VolumeDiskType getDiskType();
 	public long getId();

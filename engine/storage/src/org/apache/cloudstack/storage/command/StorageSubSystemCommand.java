@@ -16,10 +16,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.image.store;
+package org.apache.cloudstack.storage.command;
 
-public interface ImageDataStoreInfo {
-    public long getImageDataStoreId();
-    public String getType();
-    public String getUri();
+public interface StorageSubSystemCommand {
+
 }

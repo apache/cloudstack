@@ -23,7 +23,7 @@ import org.apache.cloudstack.framework.async.AsyncCallbackHandler;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.EndPoint;
 import org.apache.cloudstack.storage.command.CommandResult;
-import org.apache.cloudstack.storage.command.CopyTemplateToPrimaryStorage;
+import org.apache.cloudstack.storage.command.CopyTemplateToPrimaryStorageCmd;
 import org.apache.cloudstack.storage.command.CopyTemplateToPrimaryStorageAnswer;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
 import org.apache.cloudstack.storage.to.ImageOnPrimayDataStoreTO;
@@ -48,7 +48,7 @@ public class DefaultImageMotionStrategy implements ImageMotionStrategy {
     @Override
     public boolean copyTemplate(TemplateOnPrimaryDataStoreInfo templateStore, EndPoint ep) {
         ImageOnPrimayDataStoreTO imageTo = new ImageOnPrimayDataStoreTO(templateStore);
-        CopyTemplateToPrimaryStorage copyCommand = new CopyTemplateToPrimaryStorage(imageTo);
+        CopyTemplateToPrimaryStorageCmd copyCommand = new CopyTemplateToPrimaryStorageCmd(imageTo);
         ep.sendMessage(copyCommand);
         return true;
     }
@@ -56,7 +56,7 @@ public class DefaultImageMotionStrategy implements ImageMotionStrategy {
     @Override
     public void copyTemplateAsync(TemplateOnPrimaryDataStoreInfo templateStore, EndPoint ep, AsyncCompletionCallback<CommandResult> callback) {
         ImageOnPrimayDataStoreTO imageTo = new ImageOnPrimayDataStoreTO(templateStore);
-        CopyTemplateToPrimaryStorage copyCommand = new CopyTemplateToPrimaryStorage(imageTo);
+        CopyTemplateToPrimaryStorageCmd copyCommand = new CopyTemplateToPrimaryStorageCmd(imageTo);
         AsyncCallbackDispatcher caller = new AsyncCallbackDispatcher(this).setParentCallback(callback)
                 .setOperationName("defaultImageStrategy.copytemplate.callback")
                 .setContextParam("templateStore", templateStore);

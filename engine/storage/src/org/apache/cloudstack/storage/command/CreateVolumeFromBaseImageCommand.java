@@ -23,13 +23,21 @@ import org.apache.cloudstack.storage.to.VolumeTO;
 
 import com.cloud.agent.api.Command;
 
-public class CreateVolumeFromBaseImageCommand extends Command {
-    private VolumeTO volume;
-    private ImageOnPrimayDataStoreTO image;
+public class CreateVolumeFromBaseImageCommand extends Command implements StorageSubSystemCommand {
+    private final VolumeTO volume;
+    private final ImageOnPrimayDataStoreTO image;
 
     public CreateVolumeFromBaseImageCommand(VolumeTO volume, ImageOnPrimayDataStoreTO image) {
         this.volume = volume;
         this.image = image;
+    }
+    
+    public VolumeTO getVolume() {
+        return this.volume;
+    }
+    
+    public ImageOnPrimayDataStoreTO getImage() {
+        return this.image;
     }
 
     @Override

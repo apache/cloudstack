@@ -5,6 +5,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
@@ -196,14 +197,14 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
     public void createVoluemFromBaseImageAsync(VolumeInfo volume, TemplateOnPrimaryDataStoreInfo templateStore, AsyncCompletionCallback<CommandResult> callback) {
         VolumeObject vo = (VolumeObject) volume;
         vo.setVolumeDiskType(templateStore.getTemplate().getDiskType());
-        AsyncCallbackDispatcher caller = new AsyncCallbackDispatcher(this)
-        .setParentCallback(callback)
+        AsyncCallbackDispatcher<DefaultPrimaryDataStore> caller = new AsyncCallbackDispatcher<DefaultPrimaryDataStore>(this);
+        caller.setCallback(caller.getTarget().createVoluemFromBaseImageAsyncCallback(null, null))
         .setOperationName("primarydatastore.createvolumefrombaseImage");
         this.driver.createVolumeFromBaseImageAsync(vo, templateStore, caller);
     }
     
     @AsyncCallbackHandler(operationName="primarydatastore.createvolumefrombaseImage")
-    public void createVoluemFromBaseImageAsyncCallback(AsyncCallbackDispatcher callback) {
+    public Object createVoluemFromBaseImageAsyncCallback(AsyncCallbackDispatcher callback, Object parames) {
         AsyncCallbackDispatcher parent = callback.getParentCallback();
         CommandResult result = callback.getResult();
         parent.complete(result);
@@ -222,7 +223,7 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
     }
 
     @Override
-    public Volume.State getManagedState() {
+    public DataCenterResourceEntity.State getManagedState() {
         // TODO Auto-generated method stub
         return null;
     }

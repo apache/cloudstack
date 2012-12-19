@@ -19,6 +19,7 @@
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
 
+import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
 
 
@@ -35,7 +36,7 @@ public interface PrimaryDataStoreInfo {
 
 	public long getId();
 	public String getUuid();
-	public Volume.State getManagedState();
+	public DataCenterResourceEntity.State getManagedState();
 	public String getName();
 	public String getType();
 	public PrimaryDataStoreLifeCycle getLifeCycle();

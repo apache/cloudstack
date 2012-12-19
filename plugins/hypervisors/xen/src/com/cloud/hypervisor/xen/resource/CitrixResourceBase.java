@@ -176,6 +176,7 @@ import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
+import com.cloud.agent.api.storage.StorageCommand;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
@@ -305,6 +306,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     protected boolean _canBridgeFirewall = false;
     protected boolean _isOvs = false;
     protected List<VIF> _tmpDom0Vif = new ArrayList<VIF>();
+    protected XenServerStorageResource storageResource;
 
     public enum SRType {
         NFS, LVM, ISCSI, ISO, LVMOISCSI, LVMOHBA, EXT, FILE;
@@ -557,6 +559,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return execute((Site2SiteVpnCfgCommand) cmd);
         } else if (clazz == CheckS2SVpnConnectionsCommand.class) {
             return execute((CheckS2SVpnConnectionsCommand) cmd);
+        } else if (clazz == StorageCommand.class) {
+            return this.storageResource.handleStorageCommands((StorageCommand)cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -5528,8 +5532,14 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
 
         CheckXenHostInfo();
+        
+        this.storageResource = getStorageResource();
         return true;
 
+    }
+    
+    protected XenServerStorageResource getStorageResource() {
+        return new XenServerStorageResource(this);
     }
 
     private void CheckXenHostInfo() throws ConfigurationException {
