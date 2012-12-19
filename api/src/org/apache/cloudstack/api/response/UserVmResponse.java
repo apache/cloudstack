@@ -20,6 +20,8 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.cloud.network.router.VirtualRouter;
+import com.cloud.uservm.UserVm;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.Entity;
@@ -28,7 +30,7 @@ import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
-@Entity(value = VirtualMachine.class)
+@Entity(value={VirtualMachine.class, UserVm.class, VirtualRouter.class})
 public class UserVmResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the virtual machine")
     private String id;

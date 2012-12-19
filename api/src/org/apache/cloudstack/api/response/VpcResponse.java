@@ -19,12 +19,15 @@ package org.apache.cloudstack.api.response;
 import java.util.Date;
 import java.util.List;
 
+import com.cloud.network.vpc.Vpc;
 import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.cloud.utils.IdentityProxy;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.Entity;
 
+@Entity(value=Vpc.class)
 @SuppressWarnings("unused")
 public class VpcResponse extends BaseResponse implements ControlledEntityResponse{
     @SerializedName("id") @Param(description="the id of the VPC")

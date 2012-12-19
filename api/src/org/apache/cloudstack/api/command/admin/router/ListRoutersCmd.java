@@ -20,13 +20,16 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
-
-
 import org.apache.cloudstack.api.response.DomainRouterResponse;
+import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.PodResponse;
+import org.apache.cloudstack.api.response.NetworkResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.VpcResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 
 import com.cloud.async.AsyncJob;
 
@@ -40,34 +43,34 @@ public class ListRoutersCmd extends BaseListProjectAndAccountResourcesCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="host")
-    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.LONG, description="the host ID of the router")
+    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.UUID, entityType=HostResponse.class,
+            description="the host ID of the router")
     private Long hostId;
 
-    @IdentityMapper(entityTableName="vm_instance")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the ID of the disk router")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=UserVmResponse.class,
+            description="the ID of the disk router")
     private Long id;
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the router")
     private String routerName;
 
-    @IdentityMapper(entityTableName="host_pod_ref")
-    @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, description="the Pod ID of the router")
+    @Parameter(name=ApiConstants.POD_ID, type=CommandType.UUID, entityType=PodResponse.class,
+            description="the Pod ID of the router")
     private Long podId;
 
     @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="the state of the router")
     private String state;
 
-    @IdentityMapper(entityTableName="data_center")
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the Zone ID of the router")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType=ZoneResponse.class,
+            description="the Zone ID of the router")
     private Long zoneId;
 
-    @IdentityMapper(entityTableName="networks")
-    @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, description="list by network id")
+    @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.UUID, entityType=NetworkResponse.class,
+            description="list by network id")
     private Long networkId;
 
-    @IdentityMapper(entityTableName="vpc")
-    @Parameter(name=ApiConstants.VPC_ID, type=CommandType.LONG, description="List networks by VPC")
+    @Parameter(name=ApiConstants.VPC_ID, type=CommandType.UUID, entityType=VpcResponse.class,
+            description="List networks by VPC")
     private Long vpcId;
 
     @Parameter(name=ApiConstants.FOR_VPC, type=CommandType.BOOLEAN, description="if true is passed for this parameter, list only VPC routers")
