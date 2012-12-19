@@ -2395,6 +2395,10 @@ div.detail-group.actions td {
   background-position: -519px -24px;
 }
 
+#navigation ul li.plugins span.icon {
+  background: url(../images/sprites.png) no-repeat -140px -291px;
+}
+
 /*Browser*/
 #browser {
   width: 794px;
@@ -10912,6 +10916,60 @@ div.ui-dialog div.autoscaler div.scale-down-policy div.expand {
 
 div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-item div.name label {
   font-size: 11px;
+}
+
+/*Plugins listing*/
+.plugins-listing {
+}
+
+.plugins-listing ul {
+  width: 100%;
+}
+
+.plugins-listing ul li {
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px;
+  /*+box-shadow:0px 2px 6px #D3D3D3;*/
+  -moz-box-shadow: 0px 2px 6px #D3D3D3;
+  -webkit-box-shadow: 0px 2px 6px #D3D3D3;
+  -o-box-shadow: 0px 2px 6px #D3D3D3;
+  box-shadow: 0px 2px 6px #D3D3D3;
+  border: 1px solid #A8A3A3;
+  background: url(../images/bg-gradients.png) 0px -29px;
+  width: 98%;
+  height: 66px;
+  margin: 9px auto 12px;
+}
+
+.plugins-listing ul li .title {
+  display: block;
+  float: left;
+  width: 90%;
+  font-weight: bold;
+  /*+text-shadow:0px 1px 1px #FFFFFF;*/
+  -moz-text-shadow: 0px 1px 1px #FFFFFF;
+  -webkit-text-shadow: 0px 1px 1px #FFFFFF;
+  -o-text-shadow: 0px 1px 1px #FFFFFF;
+  text-shadow: 0px 1px 1px #FFFFFF;
+  color: #4A5A6A;
+  margin: 13px 0 7px;
+}
+
+.plugins-listing ul li .desc {
+  color: #524E4E;
+  font-size: 13px;
+}
+
+.plugins-listing ul li .icon {
+  background: #BDBDBD;
+  display: block;
+  width: 40px;
+  height: 40px;
+  float: left;
+  margin: 13px 13px 13px 11px;
 }
 
 /*Action icons*/

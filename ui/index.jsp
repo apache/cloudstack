@@ -1673,7 +1673,11 @@ under the License.
     <script type="text/javascript" src="scripts/system.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/domains.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/docs.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/ui-custom/plugins.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/plugins.js?t=<%=now%>"></script>
+
+    <!-- Plugin listing -->
+    <script type="text/javascript" src="plugins/plugins.js?t=<%=now%>"></script>
   </body>
 </html>
 <jsp:include page="dictionary.jsp" />

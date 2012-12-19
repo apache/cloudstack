@@ -1,8 +1,6 @@
 (function($, cloudStack) {
   cloudStack.sections.plugins = {
     title: 'Plugins',
-    show: function(args) {
-      return $('<div>').html('Plugins');
-    }
+    show: cloudStack.uiCustom.plugins
   }
 }(jQuery, cloudStack));
