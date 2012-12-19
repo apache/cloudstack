@@ -1951,8 +1951,8 @@
                           });
                         }
                       },
-                      'startport': { edit: true, label: 'label.start.port' },
-                      'endport': { edit: true, label: 'label.end.port' },
+                      'startport': { edit: true, label: 'label.start.port',isOptional: true },
+                      'endport': { edit: true, label: 'label.end.port',isOptional: true },
                       'icmptype': { edit: true, label: 'ICMP.type', isDisabled: true },
                       'icmpcode': { edit: true, label: 'ICMP.code', isDisabled: true },
                       'add-rule': {
