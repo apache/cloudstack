@@ -27,6 +27,8 @@ public interface VirtualRouterProvider {
 
     public long getId();
 
+    public String getUuid();
+
     public boolean isEnabled();
 
     public long getNspId();

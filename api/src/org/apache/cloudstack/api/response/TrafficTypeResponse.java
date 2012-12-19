@@ -17,7 +17,6 @@
 package org.apache.cloudstack.api.response;
 
 import org.apache.cloudstack.api.ApiConstants;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
@@ -31,7 +30,7 @@ public class TrafficTypeResponse extends BaseResponse {
     private String trafficType;
 
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) @Param(description="the physical network this belongs to")
-    private IdentityProxy physicalNetworkId = new IdentityProxy("physical_network");
+    private String physicalNetworkId;
 
     @SerializedName(ApiConstants.XEN_NETWORK_LABEL) @Param(description="The network name label of the physical device dedicated to this traffic on a XenServer host")
     private String xenNetworkLabel;
@@ -42,12 +41,12 @@ public class TrafficTypeResponse extends BaseResponse {
     @SerializedName(ApiConstants.VMWARE_NETWORK_LABEL) @Param(description="The network name label of the physical device dedicated to this traffic on a VMware host")
     private String vmwareNetworkLabel;
 
-    public void setPhysicalNetworkId(long physicalNetworkId) {
-        this.physicalNetworkId.setValue(physicalNetworkId);
+    public void setPhysicalNetworkId(String physicalNetworkId) {
+        this.physicalNetworkId = physicalNetworkId;
     }
 
-    public long getphysicalNetworkId() {
-        return physicalNetworkId.getValue();
+    public String getphysicalNetworkId() {
+        return physicalNetworkId;
     }
 
     public void setId(String uuid) {

@@ -21,7 +21,6 @@ import java.util.List;
 
 import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.serializer.Param;
-import com.cloud.utils.IdentityProxy;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
 
@@ -29,7 +28,7 @@ import org.apache.cloudstack.api.BaseResponse;
 public class VolumeResponse extends BaseResponse implements ControlledEntityResponse{
     @SerializedName(ApiConstants.ID)
     @Param(description = "ID of the disk volume")
-    private IdentityProxy id = new IdentityProxy("volumes");
+    private String id;
 
     @SerializedName(ApiConstants.NAME)
     @Param(description = "name of the disk volume")
@@ -37,7 +36,7 @@ public class VolumeResponse extends BaseResponse implements ControlledEntityResp
 
     @SerializedName(ApiConstants.ZONE_ID)
     @Param(description = "ID of the availability zone")
-    private IdentityProxy zoneId = new IdentityProxy("data_center");
+    private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME)
     @Param(description = "name of the availability zone")
@@ -53,7 +52,7 @@ public class VolumeResponse extends BaseResponse implements ControlledEntityResp
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
     @Param(description = "id of the virtual machine")
-    private IdentityProxy virtualMachineId = new IdentityProxy("vm_instance");
+    private String virtualMachineId;
 
     @SerializedName("vmname")
     @Param(description = "name of the virtual machine")
@@ -107,7 +106,7 @@ public class VolumeResponse extends BaseResponse implements ControlledEntityResp
 
     @SerializedName(ApiConstants.DISK_OFFERING_ID)
     @Param(description = "ID of the disk offering")
-    private IdentityProxy diskOfferingId = new IdentityProxy("disk_offering");
+    private String diskOfferingId;
 
     @SerializedName("diskofferingname")
     @Param(description = "name of the disk offering")
@@ -123,7 +122,7 @@ public class VolumeResponse extends BaseResponse implements ControlledEntityResp
 
     @SerializedName(ApiConstants.SNAPSHOT_ID)
     @Param(description = "ID of the snapshot from which this volume was created")
-    private IdentityProxy snapshotId = new IdentityProxy("snapshots");
+    private String snapshotId;
 
     @SerializedName("attached")
     @Param(description = "the date the volume was attached to a VM instance")
@@ -135,7 +134,7 @@ public class VolumeResponse extends BaseResponse implements ControlledEntityResp
 
     @SerializedName(ApiConstants.SERVICE_OFFERING_ID)
     @Param(description = "ID of the service offering for root disk")
-    private IdentityProxy serviceOfferingId = new IdentityProxy("disk_offering");
+    private String serviceOfferingId;
 
     @SerializedName("serviceofferingname")
     @Param(description = "name of the service offering for root disk")
@@ -156,10 +155,7 @@ public class VolumeResponse extends BaseResponse implements ControlledEntityResp
     @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with volume", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
 
-    @Override
-    public Long getObjectId() {
-        return getId();
-    }
+
 
     public Boolean getDestroyed() {
         return destroyed;
@@ -169,20 +165,20 @@ public class VolumeResponse extends BaseResponse implements ControlledEntityResp
         this.destroyed = destroyed;
     }
 
-    public Long getId() {
-        return id.getValue();
+    public String getId() {
+        return id;
     }
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
     public void setName(String name) {
         this.name = name;
     }
 
-    public void setZoneId(Long zoneId) {
-        this.zoneId.setValue(zoneId);
+    public void setZoneId(String zoneId) {
+        this.zoneId = zoneId;
     }
 
     public void setZoneName(String zoneName) {
@@ -197,8 +193,8 @@ public class VolumeResponse extends BaseResponse implements ControlledEntityResp
         this.deviceId = deviceId;
     }
 
-    public void setVirtualMachineId(Long virtualMachineId) {
-        this.virtualMachineId.setValue(virtualMachineId);
+    public void setVirtualMachineId(String virtualMachineId) {
+        this.virtualMachineId = virtualMachineId;
     }
 
     public void setVirtualMachineName(String virtualMachineName) {
@@ -242,8 +238,8 @@ public class VolumeResponse extends BaseResponse implements ControlledEntityResp
         this.hypervisor = hypervisor;
     }
 
-    public void setDiskOfferingId(Long diskOfferingId) {
-        this.diskOfferingId.setValue(diskOfferingId);
+    public void setDiskOfferingId(String diskOfferingId) {
+        this.diskOfferingId = diskOfferingId;
     }
 
     public void setDiskOfferingName(String diskOfferingName) {
@@ -258,16 +254,16 @@ public class VolumeResponse extends BaseResponse implements ControlledEntityResp
         this.storagePoolName = storagePoolName;
     }
 
-    public void setSnapshotId(Long snapshotId) {
-        this.snapshotId.setValue(snapshotId);
+    public void setSnapshotId(String snapshotId) {
+        this.snapshotId = snapshotId;
     }
 
     public void setAttached(Date attached) {
         this.attached = attached;
     }
 
-    public void setServiceOfferingId(Long serviceOfferingId) {
-        this.serviceOfferingId.setValue(serviceOfferingId);
+    public void setServiceOfferingId(String serviceOfferingId) {
+        this.serviceOfferingId = serviceOfferingId;
     }
 
     public void setServiceOfferingName(String serviceOfferingName) {

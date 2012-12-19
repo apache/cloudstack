@@ -17,17 +17,16 @@
 package org.apache.cloudstack.api.response;
 
 import org.apache.cloudstack.api.ApiConstants;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
 
 public class VirtualRouterProviderResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the id of the router")
-    private IdentityProxy id = new IdentityProxy("virtual_router_providers");
+    private String id;
 
     @SerializedName(ApiConstants.NSP_ID) @Param(description="the physical network service provider id of the provider")
-    private IdentityProxy nspId = new IdentityProxy("physical_network_service_providers");
+    private String nspId;
 
     @SerializedName(ApiConstants.ENABLED) @Param(description="Enabled/Disabled the service provider")
     private Boolean enabled;
@@ -52,8 +51,8 @@ public class VirtualRouterProviderResponse extends BaseResponse implements Contr
         this.accountName = accountName;
     }
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
     @Override
@@ -76,8 +75,8 @@ public class VirtualRouterProviderResponse extends BaseResponse implements Contr
         this.projectName = projectName;
     }
 
-    public void setNspId(Long nspId) {
-        this.nspId.setValue(nspId);
+    public void setNspId(String nspId) {
+        this.nspId = nspId;
     }
 
     public void setEnabled(Boolean enabled) {

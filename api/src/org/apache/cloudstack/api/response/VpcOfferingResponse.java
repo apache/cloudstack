@@ -21,14 +21,13 @@ import java.util.List;
 
 import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.serializer.Param;
-import com.cloud.utils.IdentityProxy;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
 
 @SuppressWarnings("unused")
 public class VpcOfferingResponse extends BaseResponse {
     @SerializedName("id") @Param(description="the id of the vpc offering")
-    private final IdentityProxy id = new IdentityProxy("vpc_offerings");
+    private String id;
 
     @SerializedName(ApiConstants.NAME) @Param(description="the name of the vpc offering")
     private String name;
@@ -49,8 +48,8 @@ public class VpcOfferingResponse extends BaseResponse {
     private List<ServiceResponse> services;
 
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
     public void setName(String name) {

@@ -26,6 +26,8 @@ public interface Vlan {
 
     public long getId();
 
+    public String getUuid();
+
     public String getVlanTag();
 
     public String getVlanGateway();

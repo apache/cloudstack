@@ -17,7 +17,6 @@
 package org.apache.cloudstack.api.response;
 
 import org.apache.cloudstack.api.ApiConstants;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
@@ -25,13 +24,13 @@ import org.apache.cloudstack.api.BaseResponse;
 @SuppressWarnings("unused")
 public class VlanIpRangeResponse extends BaseResponse implements ControlledEntityResponse{
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the VLAN IP range")
-    private IdentityProxy id = new IdentityProxy("vlan");
+    private String id;
 
     @SerializedName("forvirtualnetwork") @Param(description="the virtual network for the VLAN IP range")
     private Boolean forVirtualNetwork;
 
     @SerializedName(ApiConstants.ZONE_ID) @Param(description="the Zone ID of the VLAN IP range")
-    private IdentityProxy zoneId = new IdentityProxy("data_center");
+    private String zoneId;
 
     @SerializedName(ApiConstants.VLAN) @Param(description="the ID or VID of the VLAN.")
     private String vlan;
@@ -46,7 +45,7 @@ public class VlanIpRangeResponse extends BaseResponse implements ControlledEntit
     private String domainName;
 
     @SerializedName(ApiConstants.POD_ID) @Param(description="the Pod ID for the VLAN IP range")
-    private IdentityProxy podId = new IdentityProxy("host_pod_ref");
+    private String podId;
 
     @SerializedName("podname") @Param(description="the Pod name for the VLAN IP range")
     private String podName;
@@ -67,7 +66,7 @@ public class VlanIpRangeResponse extends BaseResponse implements ControlledEntit
     private String endIp;
 
     @SerializedName(ApiConstants.NETWORK_ID) @Param(description="the network id of vlan range")
-    private IdentityProxy networkId = new IdentityProxy("networks");
+    private String networkId;
 
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the vlan range")
     private String projectId;
@@ -76,18 +75,18 @@ public class VlanIpRangeResponse extends BaseResponse implements ControlledEntit
     private String projectName;
 
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) @Param(description="the physical network this belongs to")
-    private IdentityProxy physicalNetworkId = new IdentityProxy("physical_network");
+    private String physicalNetworkId;
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
     public void setForVirtualNetwork(Boolean forVirtualNetwork) {
         this.forVirtualNetwork = forVirtualNetwork;
     }
 
-    public void setZoneId(Long zoneId) {
-        this.zoneId.setValue(zoneId);
+    public void setZoneId(String zoneId) {
+        this.zoneId = zoneId;
     }
 
     public void setVlan(String vlan) {
@@ -106,8 +105,8 @@ public class VlanIpRangeResponse extends BaseResponse implements ControlledEntit
         this.domainName = domainName;
     }
 
-    public void setPodId(Long podId) {
-        this.podId.setValue(podId);
+    public void setPodId(String podId) {
+        this.podId = podId;
     }
 
     public void setPodName(String podName) {
@@ -134,8 +133,8 @@ public class VlanIpRangeResponse extends BaseResponse implements ControlledEntit
         this.endIp = endIp;
     }
 
-    public void setNetworkId(Long networkId) {
-        this.networkId.setValue(networkId);
+    public void setNetworkId(String networkId) {
+        this.networkId = networkId;
     }
 
     @Override
@@ -148,11 +147,11 @@ public class VlanIpRangeResponse extends BaseResponse implements ControlledEntit
         this.projectName = projectName;
     }
 
-    public void setPhysicalNetworkId(long physicalNetworkId) {
-        this.physicalNetworkId.setValue(physicalNetworkId);
+    public void setPhysicalNetworkId(String physicalNetworkId) {
+        this.physicalNetworkId = physicalNetworkId;
     }
 
-    public long getphysicalNetworkId() {
-        return physicalNetworkId.getValue();
+    public String getphysicalNetworkId() {
+        return physicalNetworkId;
     }
 }

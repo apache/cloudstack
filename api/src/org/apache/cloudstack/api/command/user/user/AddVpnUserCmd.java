@@ -126,7 +126,7 @@ public class AddVpnUserCmd extends BaseAsyncCreateCmd {
         }
 
         VpnUsersResponse vpnResponse = new VpnUsersResponse();
-        vpnResponse.setId(vpnUser.getId());
+        vpnResponse.setId(vpnUser.getUuid());
         vpnResponse.setUserName(vpnUser.getUsername());
         vpnResponse.setAccountName(account.getAccountName());
 

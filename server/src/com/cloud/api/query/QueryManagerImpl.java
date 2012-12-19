@@ -51,6 +51,7 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.dao.DomainRouterJoinDao;
 import com.cloud.api.query.dao.InstanceGroupJoinDao;
@@ -87,6 +88,7 @@ import com.cloud.projects.ProjectService;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.server.Criteria;
+import com.cloud.storage.Snapshot;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountManagerImpl;
@@ -1305,5 +1307,11 @@ public class QueryManagerImpl implements QueryService, Manager {
 
         return  _projectAccountJoinDao.searchAndCount(sc, searchFilter);
     }
+
+    @Override
+    public Snapshot findSnapshotById(long snapshotId) {
+        return ApiDBUtils.findSnapshotById(snapshotId);
+    }
+
 
 }

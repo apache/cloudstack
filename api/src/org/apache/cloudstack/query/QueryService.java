@@ -40,6 +40,7 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 
 
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.storage.Snapshot;
 
 /**
  * Service used for list api query.
@@ -67,5 +68,7 @@ public interface QueryService {
     public ListResponse<ProjectResponse> listProjects(ListProjectsCmd cmd);
 
     public ListResponse<ProjectAccountResponse> listProjectAccounts(ListProjectAccountsCmd cmd);
+
+    public Snapshot findSnapshotById(long snapshotId);
 
 }

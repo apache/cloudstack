@@ -137,9 +137,11 @@ import com.cloud.network.security.dao.SecurityGroupDao;
 import com.cloud.network.vpc.StaticRouteVO;
 import com.cloud.network.vpc.VpcGatewayVO;
 import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpc.VpcOffering;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.StaticRouteDao;
 import com.cloud.network.vpc.dao.VpcGatewayDao;
+import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
@@ -307,6 +309,7 @@ public class ApiDBUtils {
     private static StaticRouteDao _staticRouteDao;
     private static VpcGatewayDao _vpcGatewayDao;
     private static VpcDao _vpcDao;
+    private static VpcOfferingDao _vpcOfferingDao;
     private static SnapshotPolicyDao _snapshotPolicyDao;
 
     static {
@@ -392,6 +395,7 @@ public class ApiDBUtils {
         _asVmProfileDao = locator.getDao(AutoScaleVmProfileDao.class);
         _asVmGroupDao = locator.getDao(AutoScaleVmGroupDao.class);
         _vpcDao = locator.getDao(VpcDao.class);
+        _vpcOfferingDao = locator.getDao(VpcOfferingDao.class);
         _snapshotPolicyDao = locator.getDao(SnapshotPolicyDao.class);
 
         // Note: stats collector should already have been initialized by this time, otherwise a null instance is returned
@@ -1037,6 +1041,9 @@ public class ApiDBUtils {
         return _snapshotPolicyDao.findById(policyId);
     }
 
+    public static VpcOffering findVpcOfferingById(long offeringId){
+        return _vpcOfferingDao.findById(offeringId);
+    }
     ///////////////////////////////////////////////////////////////////////
     //  Newly Added Utility Methods for List API refactoring             //
     ///////////////////////////////////////////////////////////////////////

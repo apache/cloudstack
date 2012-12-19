@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.response.VolumeResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.storage.Snapshot;
 import com.cloud.storage.Volume;
 import com.cloud.user.UserContext;
 
@@ -165,7 +166,18 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
         if (volume != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(volume);
             //FIXME - have to be moved to ApiResponseHelper
-            response.setSnapshotId(getSnapshotId());  // if the volume was created from a snapshot, snapshotId will be set so we pass it back in the response
+            if (getSnapshotId() != null) {
+                Snapshot snap = _queryService.findSnapshotById(getSnapshotId());
+                if (snap != null) {
+                    response.setSnapshotId(snap.getUuid()); // if the volume was
+                                                            // created from a
+                                                            // snapshot,
+                                                            // snapshotId will
+                                                            // be set so we pass
+                                                            // it back in the
+                                                            // response
+                }
+            }
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {

@@ -27,6 +27,8 @@ public interface VpnUser extends ControlledEntity {
 
     long getId();
 
+    String getUuid();
+
     String getUsername();
 
     String getPassword();

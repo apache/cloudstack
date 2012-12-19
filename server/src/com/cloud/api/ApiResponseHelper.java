@@ -776,15 +776,20 @@ public class ApiResponseHelper implements ResponseGenerator {
         Long podId = ApiDBUtils.getPodIdForVlan(vlan.getId());
 
         VlanIpRangeResponse vlanResponse = new VlanIpRangeResponse();
-        vlanResponse.setId(vlan.getId());
-        vlanResponse.setForVirtualNetwork(vlan.getVlanType().equals(VlanType.VirtualNetwork));
+        vlanResponse.setId(vlan.getUuid());
+        if (vlan.getVlanType() != null) {
+            vlanResponse.setForVirtualNetwork(vlan.getVlanType().equals(VlanType.VirtualNetwork));
+        }
         vlanResponse.setVlan(vlan.getVlanTag());
-        vlanResponse.setZoneId(vlan.getDataCenterId());
+        DataCenter zone = ApiDBUtils.findZoneById(vlan.getDataCenterId());
+        if (zone != null) {
+            vlanResponse.setZoneId(zone.getUuid());
+        }
 
         if (podId != null) {
             HostPodVO pod = ApiDBUtils.findPodById(podId);
-            vlanResponse.setPodId(podId);
             if (pod != null) {
+                vlanResponse.setPodId(pod.getUuid());
                 vlanResponse.setPodName(pod.getName());
             }
         }
@@ -798,15 +803,24 @@ public class ApiResponseHelper implements ResponseGenerator {
         vlanResponse.setStartIp(range[0]);
         vlanResponse.setEndIp(range[1]);
 
-        vlanResponse.setNetworkId(vlan.getNetworkId());
+        if (vlan.getNetworkId() != null) {
+            Network nw = ApiDBUtils.findNetworkById(vlan.getNetworkId());
+            if (nw != null) {
+                vlanResponse.setNetworkId(nw.getUuid());
+            }
+        }
         Account owner = ApiDBUtils.getVlanAccount(vlan.getId());
         if (owner != null) {
             populateAccount(vlanResponse, owner.getId());
             populateDomain(vlanResponse, owner.getDomainId());
         }
 
-        vlanResponse.setPhysicalNetworkId(vlan.getPhysicalNetworkId());
-
+        if (vlan.getPhysicalNetworkId() != null) {
+            PhysicalNetwork pnw = ApiDBUtils.findPhysicalNetworkById(vlan.getPhysicalNetworkId());
+            if (pnw != null) {
+                vlanResponse.setPhysicalNetworkId(pnw.getUuid());
+            }
+        }
         vlanResponse.setObjectName("vlan");
         return vlanResponse;
     }
@@ -1131,7 +1145,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public VolumeResponse createVolumeResponse(Volume volume) {
         VolumeResponse volResponse = new VolumeResponse();
-        volResponse.setId(volume.getId());
+        volResponse.setId(volume.getUuid());
 
         if (volume.getName() != null) {
             volResponse.setName(volume.getName());
@@ -1139,8 +1153,11 @@ public class ApiResponseHelper implements ResponseGenerator {
             volResponse.setName("");
         }
 
-        volResponse.setZoneId(volume.getDataCenterId());
-        volResponse.setZoneName(ApiDBUtils.findZoneById(volume.getDataCenterId()).getName());
+        DataCenter zone = ApiDBUtils.findZoneById(volume.getDataCenterId());
+        if (zone != null) {
+            volResponse.setZoneId(zone.getUuid());
+            volResponse.setZoneName(zone.getName());
+        }
 
         if (volume.getVolumeType() != null) {
             volResponse.setVolumeType(volume.getVolumeType().toString());
@@ -1151,7 +1168,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (instanceId != null && volume.getState() != Volume.State.Destroy) {
             VMInstanceVO vm = ApiDBUtils.findVMInstanceById(instanceId);
             if (vm != null) {
-                volResponse.setVirtualMachineId(vm.getId());
+                volResponse.setVirtualMachineId(vm.getUuid());
                 volResponse.setVirtualMachineName(vm.getHostName());
                 if (vm.getState() != null) {
                     volResponse.setVirtualMachineState(vm.getState().toString());
@@ -1214,22 +1231,24 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         populateOwner(volResponse, volume);
 
-        if (volume.getVolumeType().equals(Volume.Type.ROOT)) {
-            volResponse.setServiceOfferingId(volume.getDiskOfferingId());
-        } else {
-            volResponse.setDiskOfferingId(volume.getDiskOfferingId());
-        }
-
         DiskOfferingVO diskOffering = ApiDBUtils.findDiskOfferingById(volume.getDiskOfferingId());
-        if (volume.getVolumeType().equals(Volume.Type.ROOT)) {
-            volResponse.setServiceOfferingName(diskOffering.getName());
-            volResponse.setServiceOfferingDisplayText(diskOffering.getDisplayText());
-        } else {
-            volResponse.setDiskOfferingName(diskOffering.getName());
-            volResponse.setDiskOfferingDisplayText(diskOffering.getDisplayText());
-        }
-        volResponse.setStorageType(diskOffering.getUseLocalStorage() ? ServiceOffering.StorageType.local.toString() : ServiceOffering.StorageType.shared.toString());
+        if (diskOffering != null) {
+            if (volume.getVolumeType().equals(Volume.Type.ROOT)) {
+                volResponse.setServiceOfferingId(diskOffering.getUuid());
+            } else {
+                volResponse.setDiskOfferingId(diskOffering.getUuid());
+            }
 
+            if (volume.getVolumeType().equals(Volume.Type.ROOT)) {
+                volResponse.setServiceOfferingName(diskOffering.getName());
+                volResponse.setServiceOfferingDisplayText(diskOffering.getDisplayText());
+            } else {
+                volResponse.setDiskOfferingName(diskOffering.getName());
+                volResponse.setDiskOfferingDisplayText(diskOffering.getDisplayText());
+            }
+            volResponse.setStorageType(diskOffering.getUseLocalStorage() ? ServiceOffering.StorageType.local.toString()
+                    : ServiceOffering.StorageType.shared.toString());
+        }
         Long poolId = volume.getPoolId();
         String poolName = (poolId == null) ? "none" : ApiDBUtils.findStoragePoolById(poolId).getName();
         volResponse.setStoragePoolName(poolName);
@@ -1615,7 +1634,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public VpnUsersResponse createVpnUserResponse(VpnUser vpnUser) {
         VpnUsersResponse vpnResponse = new VpnUsersResponse();
-        vpnResponse.setId(vpnUser.getId());
+        vpnResponse.setId(vpnUser.getUuid());
         vpnResponse.setUserName(vpnUser.getUsername());
 
         populateOwner(vpnResponse, vpnUser);
@@ -3247,7 +3266,10 @@ public class ApiResponseHelper implements ResponseGenerator {
     public TrafficTypeResponse createTrafficTypeResponse(PhysicalNetworkTrafficType result) {
         TrafficTypeResponse response = new TrafficTypeResponse();
         response.setId(result.getUuid());
-        response.setPhysicalNetworkId(result.getPhysicalNetworkId());
+        PhysicalNetwork pnet = ApiDBUtils.findPhysicalNetworkById(result.getPhysicalNetworkId());
+        if (pnet != null) {
+            response.setPhysicalNetworkId(pnet.getUuid());
+        }
         if (result.getTrafficType() != null) {
             response.setTrafficType(result.getTrafficType().toString());
         }
@@ -3262,8 +3284,11 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public VirtualRouterProviderResponse createVirtualRouterProviderResponse(VirtualRouterProvider result) {
         VirtualRouterProviderResponse response = new VirtualRouterProviderResponse();
-        response.setId(result.getId());
-        response.setNspId(result.getNspId());
+        response.setId(result.getUuid());
+        PhysicalNetworkServiceProvider nsp = ApiDBUtils.findPhysicalNetworkServiceProviderById(result.getNspId());
+        if (nsp != null) {
+            response.setNspId(nsp.getUuid());
+        }
         response.setEnabled(result.isEnabled());
 
         response.setObjectName("virtualrouterelement");
@@ -3373,7 +3398,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public VpcOfferingResponse createVpcOfferingResponse(VpcOffering offering) {
         VpcOfferingResponse response = new VpcOfferingResponse();
-        response.setId(offering.getId());
+        response.setId(offering.getUuid());
         response.setName(offering.getName());
         response.setDisplayText(offering.getDisplayText());
         response.setIsDefault(offering.isDefault());
@@ -3409,11 +3434,14 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public VpcResponse createVpcResponse(Vpc vpc) {
         VpcResponse response = new VpcResponse();
-        response.setId(vpc.getId());
+        response.setId(vpc.getUuid());
         response.setName(vpc.getName());
         response.setDisplayText(vpc.getDisplayText());
         response.setState(vpc.getState().name());
-        response.setVpcOfferingId(vpc.getVpcOfferingId());
+        VpcOffering voff = ApiDBUtils.findVpcOfferingById(vpc.getVpcOfferingId());
+        if (voff != null) {
+            response.setVpcOfferingId(voff.getUuid());
+        }
         response.setCidr(vpc.getCidr());
         response.setRestartRequired(vpc.isRestartRequired());
         response.setNetworkDomain(vpc.getNetworkDomain());
@@ -3448,8 +3476,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         DataCenter zone = ApiDBUtils.findZoneById(vpc.getZoneId());
-        response.setZoneId(vpc.getZoneId());
-        response.setZoneName(zone.getName());
+        if (zone != null) {
+            response.setZoneId(zone.getUuid());
+            response.setZoneName(zone.getName());
+        }
 
         response.setNetworks(networkResponses);
         response.setServices(serviceResponses);

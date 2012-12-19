@@ -22,7 +22,6 @@ import java.util.List;
 import com.cloud.network.vpc.Vpc;
 import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.serializer.Param;
-import com.cloud.utils.IdentityProxy;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.Entity;
@@ -31,7 +30,7 @@ import org.apache.cloudstack.api.Entity;
 @SuppressWarnings("unused")
 public class VpcResponse extends BaseResponse implements ControlledEntityResponse{
     @SerializedName("id") @Param(description="the id of the VPC")
-    private final IdentityProxy id = new IdentityProxy("vpc");
+    private String id;
 
     @SerializedName(ApiConstants.NAME) @Param(description="the name of the VPC")
     private String name;
@@ -43,7 +42,7 @@ public class VpcResponse extends BaseResponse implements ControlledEntityRespons
     private String state;
 
     @SerializedName(ApiConstants.ZONE_ID) @Param(description="zone id of the vpc")
-    private IdentityProxy zoneId = new IdentityProxy("data_center");
+    private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the name of the zone the VPC belongs to")
     private String zoneName;
@@ -55,7 +54,7 @@ public class VpcResponse extends BaseResponse implements ControlledEntityRespons
     private String cidr;
 
     @SerializedName(ApiConstants.VPC_OFF_ID) @Param(description="vpc offering id the VPC is created from")
-    private IdentityProxy vpcOfferingId = new IdentityProxy("vpc_offerings");
+    private String vpcOfferingId;
 
     @SerializedName(ApiConstants.CREATED) @Param(description="the date this VPC was created")
     private Date created;
@@ -87,8 +86,8 @@ public class VpcResponse extends BaseResponse implements ControlledEntityRespons
     @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with the project", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
     public void setName(String name) {
@@ -136,16 +135,16 @@ public class VpcResponse extends BaseResponse implements ControlledEntityRespons
         this.domain = domainName;
     }
 
-    public void setZoneId(Long zoneId) {
-        this.zoneId.setValue(zoneId);
+    public void setZoneId(String zoneId) {
+        this.zoneId = zoneId;
     }
 
     public void setCidr(String cidr) {
         this.cidr = cidr;
     }
 
-    public void setVpcOfferingId(Long vpcOfferingId) {
-        this.vpcOfferingId.setValue(vpcOfferingId);
+    public void setVpcOfferingId(String vpcOfferingId) {
+        this.vpcOfferingId = vpcOfferingId;
     }
 
     public List<NetworkResponse> getNetworks() {

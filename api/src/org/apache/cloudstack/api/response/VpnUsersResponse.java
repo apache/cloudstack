@@ -18,7 +18,6 @@ package org.apache.cloudstack.api.response;
 
 import com.cloud.network.VpnUser;
 import org.apache.cloudstack.api.ApiConstants;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
@@ -28,7 +27,7 @@ import org.apache.cloudstack.api.Entity;
 @SuppressWarnings("unused")
 public class VpnUsersResponse extends BaseResponse implements ControlledEntityResponse{
     @SerializedName(ApiConstants.ID) @Param(description="the vpn userID")
-    private IdentityProxy id = new IdentityProxy("vpn_users");
+    private String id;
 
     @SerializedName(ApiConstants.USERNAME) @Param(description="the username of the vpn user")
     private String userName;
@@ -49,8 +48,8 @@ public class VpnUsersResponse extends BaseResponse implements ControlledEntityRe
     private String projectName;
 
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
     public void setUserName(String name) {
