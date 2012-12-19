@@ -21,12 +21,15 @@ import java.util.HashSet;
 import java.util.Set;
 
 
+import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.cloud.vm.VirtualMachine.State;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.Entity;
 
+@Entity(value=VirtualMachine.class)
 @SuppressWarnings("unused")
 public class DomainRouterResponse extends BaseResponse implements ControlledViewEntityResponse{
     @SerializedName(ApiConstants.ID) @Param(description="the id of the router")
