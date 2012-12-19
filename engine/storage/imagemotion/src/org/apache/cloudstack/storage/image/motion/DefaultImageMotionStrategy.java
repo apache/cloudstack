@@ -19,8 +19,8 @@
 package org.apache.cloudstack.storage.image.motion;
 
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
-import org.apache.cloudstack.framework.async.AsyncCallbackHandler;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+import org.apache.cloudstack.framework.async.AsyncRpcConext;
 import org.apache.cloudstack.storage.EndPoint;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.CopyTemplateToPrimaryStorageCmd;
@@ -52,20 +52,34 @@ public class DefaultImageMotionStrategy implements ImageMotionStrategy {
         ep.sendMessage(copyCommand);
         return true;
     }
+    
+    private class CreateTemplateContext<T> extends AsyncRpcConext<T> {
+        private final TemplateOnPrimaryDataStoreInfo template;
+        public CreateTemplateContext(AsyncCompletionCallback<T> callback, TemplateOnPrimaryDataStoreInfo template) {
+            super(callback);
+            this.template = template;
+        }
+        
+        public TemplateOnPrimaryDataStoreInfo getTemplate() {
+            return this.template;
+        }
+        
+    }
 
     @Override
     public void copyTemplateAsync(TemplateOnPrimaryDataStoreInfo templateStore, EndPoint ep, AsyncCompletionCallback<CommandResult> callback) {
         ImageOnPrimayDataStoreTO imageTo = new ImageOnPrimayDataStoreTO(templateStore);
         CopyTemplateToPrimaryStorageCmd copyCommand = new CopyTemplateToPrimaryStorageCmd(imageTo);
-        AsyncCallbackDispatcher caller = new AsyncCallbackDispatcher(this).setParentCallback(callback)
-                .setOperationName("defaultImageStrategy.copytemplate.callback")
-                .setContextParam("templateStore", templateStore);
+        CreateTemplateContext<CommandResult> context = new CreateTemplateContext<CommandResult>(callback, templateStore);
+        AsyncCallbackDispatcher<DefaultImageMotionStrategy> caller = AsyncCallbackDispatcher.create(this);
+        caller.setCallback(caller.getTarget().copyTemplateCallBack(null, null))
+            .setContext(context);
+             
         ep.sendMessageAsync(copyCommand, caller);
     }
     
-    @AsyncCallbackHandler(operationName="defaultImageStrategy.copytemplate.callback")
-    public void copyTemplateCallBack(AsyncCallbackDispatcher callback) {
-        AsyncCallbackDispatcher parentCall = callback.getParentCallback();
+    public Object copyTemplateCallBack(AsyncCallbackDispatcher<DefaultImageMotionStrategy> callback, CreateTemplateContext<CommandResult> context) {
+        AsyncCompletionCallback<CommandResult> parentCall = context.getParentCallback();
         CopyTemplateToPrimaryStorageAnswer answer = callback.getResult();
         CommandResult result = new CommandResult();
        
@@ -73,12 +87,13 @@ public class DefaultImageMotionStrategy implements ImageMotionStrategy {
             result.setSucess(answer.getResult());
             result.setResult(answer.getDetails());
         } else {
-            TemplateOnPrimaryDataStoreInfo templateStore = callback.getContextParam("templateStore");
+            TemplateOnPrimaryDataStoreInfo templateStore = context.getTemplate();
             templateStore.setPath(answer.getPath());
             result.setSucess(true);
         }
 
         parentCall.complete(result);
+        return null;
     }
 
 }

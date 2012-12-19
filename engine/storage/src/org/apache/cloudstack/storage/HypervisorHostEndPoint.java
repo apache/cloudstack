@@ -20,8 +20,6 @@ package org.apache.cloudstack.storage;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
-import org.apache.cloudstack.framework.async.AsyncCallbackHandler;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.log4j.Logger;
 
@@ -62,15 +60,6 @@ public class HypervisorHostEndPoint implements EndPoint {
     
     @Override
     public void sendMessageAsync(Command cmd, AsyncCompletionCallback<Answer> callback) {
-        AsyncCallbackDispatcher dispatcher = new AsyncCallbackDispatcher(this).setContextParam("parentCallback", callback).
-                setOperationName("hypervisorEndpoint.sendMessage.callback");
-
-        rpcServer.sendCommandAsync(this.hostAddress, cmd, dispatcher);
-    }
-    
-    @AsyncCallbackHandler(operationName="hypervisorEndpoint.sendMessage.callback")
-    public void sendMessageCallback(AsyncCallbackDispatcher callback) {
-        AsyncCallbackDispatcher parentDispatcher = callback.getContextParam("parentCallback");
-        parentDispatcher.complete(callback.getResult());
+        rpcServer.sendCommandAsync(this.hostAddress, cmd, callback);
     }
 }

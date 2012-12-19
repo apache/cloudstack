@@ -5,8 +5,8 @@ import java.util.Map;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
-import org.apache.cloudstack.framework.async.AsyncCallbackHandler;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+import org.apache.cloudstack.framework.async.AsyncRpcConext;
 import org.apache.cloudstack.storage.EndPoint;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.CreateVolumeAnswer;
@@ -103,6 +103,19 @@ public class DefaultPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         return answer;
     }
     
+    private class CreateVolumeFromBaseImageContext<T> extends AsyncRpcConext<T> {
+        private final VolumeObject volume;
+      
+        public CreateVolumeFromBaseImageContext(AsyncCompletionCallback<T> callback, VolumeObject volume) {
+            super(callback);
+            this.volume = volume;
+        }
+        
+        public VolumeObject getVolume() {
+            return this.volume;
+        }
+        
+    }
     @Override
     public void createVolumeFromBaseImageAsync(VolumeObject volume, TemplateOnPrimaryDataStoreInfo template, AsyncCompletionCallback<CommandResult> callback) {
         VolumeTO vol = new VolumeTO(volume);
@@ -111,17 +124,17 @@ public class DefaultPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         List<EndPoint> endPoints = template.getPrimaryDataStore().getEndPoints();
         EndPoint ep = endPoints.get(0);
         
-        AsyncCallbackDispatcher caller = new AsyncCallbackDispatcher(this)
-        .setParentCallback(callback)
-        .setOperationName("primarydatastoredriver.createvolumefrombaseImage")
-        .setContextParam("volume", volume);
+        CreateVolumeFromBaseImageContext<CommandResult> context = new CreateVolumeFromBaseImageContext<CommandResult>(callback, volume);
+        AsyncCallbackDispatcher<DefaultPrimaryDataStoreDriverImpl> caller = AsyncCallbackDispatcher.create(this);
+        caller.setContext(context)
+            .setCallback(caller.getTarget().createVolumeFromBaseImageAsyncCallback(null, null));
+
         ep.sendMessageAsync(cmd, caller);
         
        
     }
     
-    @AsyncCallbackHandler(operationName="primarydatastoredriver.createvolumefrombaseImage")
-    public void createVolumeFromBaseImageAsyncCallback(AsyncCallbackDispatcher callback) {
+    public Object createVolumeFromBaseImageAsyncCallback(AsyncCallbackDispatcher<DefaultPrimaryDataStoreDriverImpl> callback, CreateVolumeFromBaseImageContext<CommandResult> context) {
         CreateVolumeAnswer answer = (CreateVolumeAnswer)callback.getResult();
         CommandResult result = new CommandResult();
         if (answer == null || answer.getDetails() != null) {
@@ -131,11 +144,12 @@ public class DefaultPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
             }
         } else {
             result.setSucess(true);
-            VolumeObject volume = callback.getContextParam("volume");
+            VolumeObject volume = context.getVolume();
             volume.setPath(answer.getVolumeUuid());
         }
-        AsyncCallbackDispatcher parentCall = callback.getParentCallback();
+        AsyncCompletionCallback<CommandResult> parentCall = context.getParentCallback();
         parentCall.complete(result);
+        return null;
     }
 
     @Override

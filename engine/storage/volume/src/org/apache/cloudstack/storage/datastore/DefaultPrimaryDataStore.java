@@ -11,8 +11,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCy
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
-import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
-import org.apache.cloudstack.framework.async.AsyncCallbackHandler;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.EndPoint;
 import org.apache.cloudstack.storage.HypervisorHostEndPoint;
@@ -31,7 +29,6 @@ import org.apache.log4j.Logger;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.storage.Volume;
 import com.cloud.utils.component.ComponentInject;
 import edu.emory.mathcs.backport.java.util.Collections;
 
@@ -197,19 +194,10 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
     public void createVoluemFromBaseImageAsync(VolumeInfo volume, TemplateOnPrimaryDataStoreInfo templateStore, AsyncCompletionCallback<CommandResult> callback) {
         VolumeObject vo = (VolumeObject) volume;
         vo.setVolumeDiskType(templateStore.getTemplate().getDiskType());
-        AsyncCallbackDispatcher<DefaultPrimaryDataStore> caller = new AsyncCallbackDispatcher<DefaultPrimaryDataStore>(this);
-        caller.setCallback(caller.getTarget().createVoluemFromBaseImageAsyncCallback(null, null))
-        .setOperationName("primarydatastore.createvolumefrombaseImage");
-        this.driver.createVolumeFromBaseImageAsync(vo, templateStore, caller);
+
+        this.driver.createVolumeFromBaseImageAsync(vo, templateStore, callback);
     }
     
-    @AsyncCallbackHandler(operationName="primarydatastore.createvolumefrombaseImage")
-    public Object createVoluemFromBaseImageAsyncCallback(AsyncCallbackDispatcher callback, Object parames) {
-        AsyncCallbackDispatcher parent = callback.getParentCallback();
-        CommandResult result = callback.getResult();
-        parent.complete(result);
-    }
-
     @Override
     public boolean installTemplate(TemplateOnPrimaryDataStoreInfo template) {
         // TODO Auto-generated method stub

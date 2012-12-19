@@ -31,7 +31,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
 import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeType;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
-import org.apache.cloudstack.framework.async.AsyncCallbackHandler;
+import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStoreEntityImpl;
 import org.apache.cloudstack.storage.image.TemplateEntityImpl;
 import org.apache.cloudstack.storage.image.TemplateInfo;
@@ -197,8 +197,9 @@ public class VolumeEntityImpl implements VolumeEntity {
     public boolean createVolumeFromTemplate(long dataStoreId, VolumeDiskType diskType, TemplateEntity template) {
         TemplateInfo ti = ((TemplateEntityImpl)template).getTemplateInfo();
         
-        AsyncCallbackDispatcher caller = new AsyncCallbackDispatcher(this)
-            .setOperationName("volumeEntity.createVolumeFromTemplateAsyncCallback");
+        AsyncCallbackDispatcher<VolumeEntityImpl> caller = AsyncCallbackDispatcher.create(this);
+        caller.setCallback(caller.getTarget().createVolumeFromTemplateAsyncCallback(null, null));
+          
         vs.createVolumeFromTemplateAsync(volumeInfo, dataStoreId, diskType, ti, caller);
         try {
             synchronized (volumeInfo) {
@@ -210,11 +211,12 @@ public class VolumeEntityImpl implements VolumeEntity {
         return true;
     }
     
-    @AsyncCallbackHandler(operationName="volumeEntity.createVolumeFromTemplateAsyncCallback")
-    public void createVolumeFromTemplateAsyncCallback(AsyncCallbackDispatcher callback) {
+   
+    public Object createVolumeFromTemplateAsyncCallback(AsyncCompletionCallback<VolumeInfo> callback, Object context) {
         synchronized (volumeInfo) {
             volumeInfo.notify();
         }
+        return null;
     }
 
 }

@@ -67,6 +67,7 @@ public class XenServerStorageResource {
     }
     
     private long getTemplateSize(String url) {
+        /*
         HttpGet method = new HttpGet(url);
         HttpClient client = new HttpClient();
         try {
@@ -82,6 +83,8 @@ public class XenServerStorageResource {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
+        */
+        return 0;
     }
     
     protected Answer directDownloadHttpTemplate(TemplateTO template, PrimaryDataStoreTO primarDataStore) {
@@ -131,6 +134,7 @@ public class XenServerStorageResource {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
+        return null;
     }
     
     protected Answer execute(CopyTemplateToPrimaryStorageCmd cmd) {

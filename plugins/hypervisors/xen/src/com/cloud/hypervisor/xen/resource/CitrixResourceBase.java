@@ -47,6 +47,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 import org.w3c.dom.Document;
@@ -559,8 +560,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return execute((Site2SiteVpnCfgCommand) cmd);
         } else if (clazz == CheckS2SVpnConnectionsCommand.class) {
             return execute((CheckS2SVpnConnectionsCommand) cmd);
-        } else if (clazz == StorageCommand.class) {
-            return this.storageResource.handleStorageCommands((StorageCommand)cmd);
+        } else if (cmd instanceof StorageSubSystemCommand) {
+            return this.storageResource.handleStorageCommands((StorageSubSystemCommand)cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
