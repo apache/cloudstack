@@ -37,16 +37,16 @@
   };
 
   cloudStack.uiCustom.plugins = function() {
-    var plugins = cloudStack.plugins;
+    var plugins = cloudStack.plugins.loaded;
 
     return elems.pluginListing({
-      plugins: $(plugins).map(function(index, plugin) {
-        plugin = plugin.toString();
+      plugins: $(plugins).map(function(index, pluginID) {
+        var plugin = cloudStack.plugins.registry[pluginID];
 
         return {
-          id: plugin,
-          title: plugin,
-          desc: plugin + 'Description'
+          id: plugin.id,
+          title: plugin.title,
+          desc: plugin.desc
         };
       })
     });

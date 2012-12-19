@@ -1606,8 +1606,9 @@ under the License.
     <script src="lib/date.js" type="text/javascript"></script>
     <script src="lib/jquery.cookies.js" type="text/javascript"></script>
     <script src="lib/jquery.md5.js" type="text/javascript" ></script>
-		
-    <script src="lib/excanvas.js"></script>
+    <script src="lib/require.js" type="text/javascript"></script>
+
+    <script src="lib/excanvas.js" type="text/javascript"></script>
     <script src="lib/flot/jquery.flot.js" type="text/javascript"></script>
     <script src="lib/flot/jquery.colorhelpers.js" type="text/javascript"></script>
     <script src="lib/flot/jquery.flot.crosshair.js" type="text/javascript"></script>
