@@ -414,10 +414,29 @@ class deployDataCenters():
             updateCfg.value = config.value
             self.apiClient.updateConfiguration(updateCfg)
 
+    def copyAttributesToCommand(self, source, command):
+
+        map(lambda attr : setattr(command, attr, getattr(source, attr, None)),
+                filter(lambda attr : not attr.startswith("__") and
+                    attr not in [ "required", "isAsync" ], dir(command)))
+
+
+    def configureS3(self, s3):
+
+        if s3 is None:
+            return
+
+        command = addS3.addS3Cmd()
+
+        self.copyAttributesToCommand(s3, command)
+
+        self.apiClient.addS3(command)
+
     def deploy(self):
         self.loadCfg()
-        self.createZones(self.config.zones)
         self.updateConfiguration(self.config.globalConfig)
+        self.createZones(self.config.zones)
+        self.configureS3(self.config.s3)
 
 if __name__ == "__main__":
 
