@@ -32,6 +32,8 @@ import org.apache.cloudstack.network.ExternalNetworkDeviceManager;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.api.ApiDBUtils;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.IdentityService;
 import org.apache.cloudstack.api.command.admin.network.DeleteNetworkDeviceCmd;
@@ -40,6 +42,8 @@ import com.cloud.baremetal.PxeServerManager;
 import com.cloud.baremetal.PxeServerProfile;
 import com.cloud.baremetal.PxeServerManager.PxeServerType;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.Pod;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.host.Host;
@@ -187,8 +191,16 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
             String pxeType = host.getDetail("type");
             if (pxeType.equalsIgnoreCase(PxeServerType.PING.getName())) {
                 PxePingResponse r = new PxePingResponse();
-                r.setZoneId(host.getDataCenterId());
-                r.setPodId(host.getPodId());
+                DataCenter zone = ApiDBUtils.findZoneById(host.getDataCenterId());
+                if (zone != null) {
+                    r.setZoneId(zone.getUuid());
+                }
+                if (host.getPodId() != null) {
+                    Pod pod = ApiDBUtils.findPodById(host.getPodId());
+                    if (pod != null) {
+                        r.setPodId(pod.getUuid());
+                    }
+                }
                 r.setUrl(host.getPrivateIpAddress());
                 r.setType(pxeType);
                 r.setStorageServerIp(host.getDetail("storageServer"));

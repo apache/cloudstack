@@ -17,7 +17,6 @@
 package com.cloud.api.response;
 
 import org.apache.cloudstack.api.ApiConstants;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
@@ -26,17 +25,17 @@ import org.apache.cloudstack.api.BaseResponse;
 public class SrxFirewallResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.FIREWALL_DEVICE_ID) @Param(description="device id of the SRX firewall")
-    private IdentityProxy id = new IdentityProxy("external_firewall_devices");
+    private String id;
 
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) @Param(description="the physical network to which this SRX firewall belongs to")
-    private IdentityProxy physicalNetworkId = new IdentityProxy("physical_network");
+    private String physicalNetworkId;
 
     @SerializedName(ApiConstants.PROVIDER) @Param(description="name of the provider")
     private String providerName;
-    
+
     @SerializedName(ApiConstants.FIREWALL_DEVICE_NAME) @Param(description="device name")
-    private String deviceName; 
-    
+    private String deviceName;
+
     @SerializedName(ApiConstants.FIREWALL_DEVICE_STATE) @Param(description="device state")
     private String deviceState;
 
@@ -44,7 +43,7 @@ public class SrxFirewallResponse extends BaseResponse {
     private Long deviceCapacity;
 
     @SerializedName(ApiConstants.ZONE_ID) @Param(description="the zone ID of the external firewall")
-    private IdentityProxy zoneId = new IdentityProxy("data_center");
+    private String zoneId;
 
     @SerializedName(ApiConstants.IP_ADDRESS) @Param(description="the management IP address of the external firewall")
     private String ipAddress;
@@ -73,12 +72,12 @@ public class SrxFirewallResponse extends BaseResponse {
     @SerializedName(ApiConstants.TIMEOUT) @Param(description="the timeout (in seconds) for requests to the external firewall")
     private String timeout;
 
-    public void setId(long lbDeviceId) {
-        this.id.setValue(lbDeviceId);
+    public void setId(String lbDeviceId) {
+        this.id = lbDeviceId;
     }
 
-    public void setPhysicalNetworkId(long physicalNetworkId) {
-        this.physicalNetworkId.setValue(physicalNetworkId);
+    public void setPhysicalNetworkId(String physicalNetworkId) {
+        this.physicalNetworkId = physicalNetworkId;
     }
 
     public void setProvider(String provider) {

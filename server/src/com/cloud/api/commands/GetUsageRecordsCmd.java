@@ -27,6 +27,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
+import com.cloud.dc.DataCenter;
 import com.cloud.domain.Domain;
 
 import org.apache.cloudstack.api.BaseListCmd;
@@ -37,11 +38,13 @@ import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.projects.Project;
 import com.cloud.server.ManagementServerExt;
 import com.cloud.server.api.response.UsageRecordResponse;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.usage.UsageTypes;
 import com.cloud.usage.UsageVO;
 import com.cloud.user.Account;
 import com.cloud.uuididentity.dao.IdentityDao;
 import com.cloud.uuididentity.dao.IdentityDaoImpl;
+import com.cloud.vm.VMInstanceVO;
 
 @Implementation(description="Lists usage records for accounts", responseObject=UsageRecordResponse.class)
 public class GetUsageRecordsCmd extends BaseListCmd {
@@ -235,7 +238,7 @@ public class GetUsageRecordsCmd extends BaseListCmd {
                     usageRecResponse.setProjectId(project.getUuid());
                     usageRecResponse.setProjectName(project.getName());
                 } else {
-                    usageRecResponse.setAccountId(account.getId());
+                    usageRecResponse.setAccountId(account.getUuid());
                     usageRecResponse.setAccountName(account.getAccountName());
                 }
 
@@ -244,13 +247,28 @@ public class GetUsageRecordsCmd extends BaseListCmd {
                     usageRecResponse.setDomainId(domain.getUuid());
                 }
 
-                usageRecResponse.setZoneId(usageRecord.getZoneId());
+                if (usageRecord.getZoneId() != null) {
+                    DataCenter zone = ApiDBUtils.findZoneById(usageRecord.getZoneId());
+                    if (zone != null) {
+                        usageRecResponse.setZoneId(zone.getUuid());
+                    }
+                }
                 usageRecResponse.setDescription(usageRecord.getDescription());
                 usageRecResponse.setUsage(usageRecord.getUsageDisplay());
                 usageRecResponse.setUsageType(usageRecord.getUsageType());
-                usageRecResponse.setVirtualMachineId(usageRecord.getVmInstanceId());
+                if (usageRecord.getVmInstanceId() != null) {
+                    VMInstanceVO vm = ApiDBUtils.findVMInstanceById(usageRecord.getVmInstanceId());
+                    if (vm != null) {
+                        usageRecResponse.setVirtualMachineId(vm.getUuid());
+                    }
+                }
                 usageRecResponse.setVmName(usageRecord.getVmName());
-                usageRecResponse.setTemplateId(usageRecord.getTemplateId());
+                if (usageRecord.getTemplateId() != null) {
+                    VMTemplateVO template = ApiDBUtils.findTemplateById(usageRecord.getTemplateId());
+                    if (template != null) {
+                        usageRecResponse.setTemplateId(template.getUuid());
+                    }
+                }
 
                 if(usageRecord.getUsageType() == UsageTypes.RUNNING_VM || usageRecord.getUsageType() == UsageTypes.ALLOCATED_VM){
                 	//Service Offering Id

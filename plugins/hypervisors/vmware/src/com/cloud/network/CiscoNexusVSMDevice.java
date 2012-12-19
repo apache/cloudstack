@@ -17,22 +17,22 @@
 package com.cloud.network;
 
 public interface CiscoNexusVSMDevice {
-	
+
     // This tells us whether the VSM is currently enabled or disabled. We may
     // need this if we would like to carry out any sort of maintenance on the
     // VSM or CS.
     public enum VSMDeviceState {
     	Enabled,
     	Disabled
-    }    
-    
+    }
+
     // This tells us whether the VSM is currently configured with a standby (HA)
     // or does not have any standby (Standalone).
     public enum VSMConfigMode {
         Standalone,
         HA
     }
-    
+
     // This tells us whether the VSM is currently a primary or a standby VSM.
     public enum VSMConfigState {
         Primary,
@@ -40,33 +40,35 @@ public interface CiscoNexusVSMDevice {
     }
 
     long getId();
-    
+
+    String getUuid();
+
     public String getvsmName();
-    
+
     public long getHostId();
-    
+
     public String getUserName();
-    
+
     public String getPassword();
 
     public String getipaddr();
-    
+
     public int getManagementVlan();
-    
+
     public int getControlVlan();
-    
+
     public int getPacketVlan();
 
     public int getStorageVlan();
-    
+
     public long getvsmDomainId();
-    
+
     public VSMConfigMode getvsmConfigMode();
-    
+
     public VSMConfigState getvsmConfigState();
-    
+
     public VSMDeviceState getvsmDeviceState();
-    
+
     public String getUuid();
-    
+
 }

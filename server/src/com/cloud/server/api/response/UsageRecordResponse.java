@@ -17,7 +17,6 @@
 package com.cloud.server.api.response;
 
 import org.apache.cloudstack.api.ApiConstants;
-import com.cloud.utils.IdentityProxy;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.response.ControlledEntityResponse;
 import com.cloud.serializer.Param;
@@ -29,7 +28,7 @@ public class UsageRecordResponse extends BaseResponse implements ControlledEntit
     private String accountName;
 
     @SerializedName(ApiConstants.ACCOUNT_ID) @Param(description="the user account Id")
-    private IdentityProxy accountId = new IdentityProxy("account");
+    private String accountId;
 
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the resource")
     private String projectId;
@@ -44,7 +43,7 @@ public class UsageRecordResponse extends BaseResponse implements ControlledEntit
     private String domainName;
 
     @SerializedName(ApiConstants.ZONE_ID) @Param(description="the zone ID")
-    private IdentityProxy zoneId = new IdentityProxy("data_center");
+    private String zoneId;
 
     @SerializedName(ApiConstants.DESCRIPTION) @Param(description="description of the usage record")
     private String description;
@@ -59,7 +58,7 @@ public class UsageRecordResponse extends BaseResponse implements ControlledEntit
     private String rawUsage;
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID) @Param(description="virtual machine ID")
-    private IdentityProxy virtualMachineId = new IdentityProxy("vm_instance");
+    private String virtualMachineId;
 
     @SerializedName(ApiConstants.NAME) @Param(description="virtual machine name")
     private String vmName;
@@ -68,7 +67,7 @@ public class UsageRecordResponse extends BaseResponse implements ControlledEntit
     private String  offeringId;
 
     @SerializedName(ApiConstants.TEMPLATE_ID) @Param(description="template ID")
-    private IdentityProxy templateId = new IdentityProxy("vm_template");
+    private String templateId;
 
     @SerializedName("usageid") @Param(description="id of the resource")
     private String usageId;
@@ -102,8 +101,8 @@ public class UsageRecordResponse extends BaseResponse implements ControlledEntit
         this.accountName = accountName;
     }
 
-    public void setAccountId(Long accountId) {
-        this.accountId.setValue(accountId);
+    public void setAccountId(String accountId) {
+        this.accountId = accountId;
     }
 
     @Override
@@ -111,8 +110,8 @@ public class UsageRecordResponse extends BaseResponse implements ControlledEntit
         this.domainId = domainId;
     }
 
-    public void setZoneId(Long zoneId) {
-        this.zoneId.setValue(zoneId);
+    public void setZoneId(String zoneId) {
+        this.zoneId = zoneId;
     }
 
     public void setDescription(String description) {
@@ -131,8 +130,8 @@ public class UsageRecordResponse extends BaseResponse implements ControlledEntit
         this.rawUsage = rawUsage;
     }
 
-    public void setVirtualMachineId(Long virtualMachineId) {
-        this.virtualMachineId.setValue(virtualMachineId);
+    public void setVirtualMachineId(String virtualMachineId) {
+        this.virtualMachineId = virtualMachineId;
     }
 
     public void setVmName(String vmName) {
@@ -143,8 +142,8 @@ public class UsageRecordResponse extends BaseResponse implements ControlledEntit
         this.offeringId =  offeringId;
     }
 
-    public void setTemplateId(Long templateId) {
-        this.templateId.setValue(templateId);
+    public void setTemplateId(String templateId) {
+        this.templateId = templateId;
     }
 
     public void setUsageId(String usageId) {

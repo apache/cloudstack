@@ -37,7 +37,7 @@ import com.cloud.utils.db.Encrypt;
 
 @Entity
 @Table(name="virtual_supervisor_module")
-public class CiscoNexusVSMDeviceVO implements CiscoNexusVSMDevice, Identity{
+public class CiscoNexusVSMDeviceVO implements CiscoNexusVSMDevice{
 
     // We need to know what properties a VSM has. Put them here.
 
@@ -133,7 +133,7 @@ public class CiscoNexusVSMDeviceVO implements CiscoNexusVSMDevice, Identity{
     @Override
     public int getPacketVlan() {
         return packetVlan;
-    }  
+    }
 
     @Override
     public int getStorageVlan() {
@@ -197,7 +197,7 @@ public class CiscoNexusVSMDeviceVO implements CiscoNexusVSMDevice, Identity{
 
     public void setPacketVlan(int vlan) {
         this.packetVlan = vlan;
-    }  
+    }
 
     public void setStorageVlan(int vlan) {
         this.storageVlan = vlan;
@@ -222,7 +222,7 @@ public class CiscoNexusVSMDeviceVO implements CiscoNexusVSMDevice, Identity{
 
     // Constructors.
 
-    public CiscoNexusVSMDeviceVO(String vsmIpAddr, String username, String password) {    	
+    public CiscoNexusVSMDeviceVO(String vsmIpAddr, String username, String password) {
         // Set all the VSM's properties here.
         this.uuid = UUID.randomUUID().toString();
         this.setMgmtIpAddr(vsmIpAddr);
@@ -234,5 +234,5 @@ public class CiscoNexusVSMDeviceVO implements CiscoNexusVSMDevice, Identity{
 
     public CiscoNexusVSMDeviceVO() {
         this.uuid = UUID.randomUUID().toString();
-    }    
+    }
 }
