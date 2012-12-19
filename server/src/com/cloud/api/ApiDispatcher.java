@@ -626,8 +626,8 @@ public class ApiDispatcher {
                 // Go through each entity which is an interface to a VO class and get a VO object
                 // Try to getId() for the object using reflection, break on first non-null value
                 for (Class<?> entity: entities) {
-                    // findByXId returns a VO object using uuid, use reflect to get the Id
-                    Object objVO = s_instance._entityMgr.findByXId(entity, paramObj.toString());
+                    // findByUuid returns one VO object using uuid, use reflect to get the Id
+                    Object objVO = s_instance._entityMgr.findByUuid(entity, paramObj.toString());
                     if (objVO == null) {
                         continue;
                     }
