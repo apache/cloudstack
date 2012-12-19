@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.project;
 
+import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -41,8 +42,8 @@ public class DeleteProjectCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="projects")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="id of the project to be deleted")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=ProjectResponse.class,
+            required=true, description="id of the project to be deleted")
     private Long id;
 
     /////////////////////////////////////////////////////

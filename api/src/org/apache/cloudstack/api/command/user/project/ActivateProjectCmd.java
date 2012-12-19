@@ -41,8 +41,8 @@ public class ActivateProjectCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="projects")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="id of the project to be modified")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=ProjectResponse.class,
+            required=true, description="id of the project to be modified")
     private Long id;
 
     /////////////////////////////////////////////////////

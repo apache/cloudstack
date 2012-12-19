@@ -21,10 +21,10 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -46,8 +46,8 @@ public class CreateProjectCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "account who will be Admin for the project")
     private String accountName;
 
-    @IdentityMapper(entityTableName = "domain")
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.LONG, description = "domain ID of the account owning a project")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class,
+            description = "domain ID of the account owning a project")
     private Long domainId;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "name of the project")

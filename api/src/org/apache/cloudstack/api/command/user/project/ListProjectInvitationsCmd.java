@@ -16,11 +16,11 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.project;
 
+import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListAccountResourcesCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -34,8 +34,8 @@ public class ListProjectInvitationsCmd extends BaseListAccountResourcesCmd {
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
-    @IdentityMapper(entityTableName = "projects")
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.LONG, description = "list by project id")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class,
+            description = "list by project id")
     private Long projectId;
 
     @Parameter(name = ApiConstants.ACTIVE_ONLY, type = CommandType.BOOLEAN, description = "if true, list only active invitations - having Pending state and ones that are not timed out yet")
@@ -44,8 +44,8 @@ public class ListProjectInvitationsCmd extends BaseListAccountResourcesCmd {
     @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "list invitations by state")
     private String state;
 
-    @IdentityMapper(entityTableName = "project_invitations")
-    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, description = "list invitations by id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType=ProjectInvitationResponse.class,
+            description = "list invitations by id")
     private Long id;
 
     // ///////////////////////////////////////////////////

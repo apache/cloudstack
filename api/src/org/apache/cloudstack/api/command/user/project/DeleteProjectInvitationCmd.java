@@ -16,12 +16,12 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.project;
 
+import org.apache.cloudstack.api.response.ProjectInvitationResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -38,8 +38,8 @@ public class DeleteProjectInvitationCmd extends BaseAsyncCmd {
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
-    @IdentityMapper(entityTableName = "project_invitations")
-    @Parameter(name = ApiConstants.ID, required = true, type = CommandType.LONG, description = "id of the invitation")
+    @Parameter(name = ApiConstants.ID, type=CommandType.UUID, entityType=ProjectInvitationResponse.class,
+            required = true, description = "id of the invitation")
     private Long id;
 
     // ///////////////////////////////////////////////////

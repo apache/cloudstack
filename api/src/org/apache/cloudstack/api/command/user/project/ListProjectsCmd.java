@@ -25,7 +25,6 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListAccountResourcesCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -42,8 +41,8 @@ public class ListProjectsCmd extends BaseListAccountResourcesCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="projects")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list projects by project ID")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=ProjectResponse.class,
+            description="list projects by project ID")
     private Long id;
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="list projects by name")
