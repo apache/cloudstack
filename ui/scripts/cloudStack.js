@@ -20,7 +20,7 @@
 
     sectionPreFilter: function(args) {
       if(isAdmin()) {
-        return ["dashboard", "instances", "storage", "network", "templates", "accounts", "domains", "events", "system", "global-settings", "configuration", "projects"];
+        return ["dashboard", "instances", "storage", "network", "templates", "accounts", "domains", "events", "system", "global-settings", "configuration", "projects", "plugins"];
       }
       else if(isDomainAdmin()) {
         return ["dashboard", "instances", "storage", "network", "templates", "accounts", "domains", "events", "projects"];
@@ -49,7 +49,8 @@
 			
       system: {},  //root-admin only     
       'global-settings': {}, //root-admin only     
-      configuration: {} //root-admin only    
+      configuration: {}, //root-admin only
+      plugins: {}
     }
   });
 
