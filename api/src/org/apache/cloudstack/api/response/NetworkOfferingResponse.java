@@ -21,7 +21,6 @@ import java.util.List;
 
 import com.cloud.offering.NetworkOffering;
 import org.apache.cloudstack.api.ApiConstants;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
@@ -31,7 +30,7 @@ import org.apache.cloudstack.api.Entity;
 @SuppressWarnings("unused")
 public class NetworkOfferingResponse extends BaseResponse {
     @SerializedName("id") @Param(description="the id of the network offering")
-    private final IdentityProxy id = new IdentityProxy("network_offerings");
+    private String id;
 
     @SerializedName(ApiConstants.NAME) @Param(description="the name of the network offering")
     private String name;
@@ -73,7 +72,7 @@ public class NetworkOfferingResponse extends BaseResponse {
     private String guestIpType;
 
     @SerializedName(ApiConstants.SERVICE_OFFERING_ID) @Param(description="the ID of the service offering used by virtual router provider")
-    private IdentityProxy serviceOfferingId = new IdentityProxy("disk_offering");
+    private String serviceOfferingId;
 
     @SerializedName(ApiConstants.SERVICE) @Param(description="the list of supported services", responseObject = ServiceResponse.class)
     private List<ServiceResponse> services;
@@ -82,8 +81,8 @@ public class NetworkOfferingResponse extends BaseResponse {
     private Boolean forVpc;
 
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
     public void setName(String name) {
@@ -138,11 +137,8 @@ public class NetworkOfferingResponse extends BaseResponse {
         this.guestIpType = type;
     }
 
-    public void setServiceOfferingId(Long serviceOfferingId) {
-        this.serviceOfferingId.setValue(serviceOfferingId);
-    }
 
-    public void setServiceOfferingId(IdentityProxy serviceOfferingId) {
+    public void setServiceOfferingId(String serviceOfferingId) {
         this.serviceOfferingId = serviceOfferingId;
     }
 

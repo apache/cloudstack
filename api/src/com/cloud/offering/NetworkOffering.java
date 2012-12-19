@@ -53,6 +53,8 @@ public interface NetworkOffering {
 
     long getId();
 
+    String getUuid();
+
     /**
      * @return name for the network offering.
      */

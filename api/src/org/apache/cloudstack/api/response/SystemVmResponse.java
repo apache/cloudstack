@@ -19,26 +19,25 @@ package org.apache.cloudstack.api.response;
 import java.util.Date;
 
 import org.apache.cloudstack.api.ApiConstants;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
 
 public class SystemVmResponse extends BaseResponse {
     @SerializedName("id") @Param(description="the ID of the system VM")
-    private IdentityProxy id = new IdentityProxy("vm_instance");
+    private String id;
 
     @SerializedName("systemvmtype") @Param(description="the system VM type")
     private String systemVmType;
 
     @SerializedName("jobid") @Param(description="the job ID associated with the system VM. This is only displayed if the router listed is part of a currently running asynchronous job.")
-    private IdentityProxy jobId = new IdentityProxy("async_job");
+    private String jobId;
 
     @SerializedName("jobstatus") @Param(description="the job status associated with the system VM.  This is only displayed if the router listed is part of a currently running asynchronous job.")
     private Integer jobStatus;
 
     @SerializedName("zoneid") @Param(description="the Zone ID for the system VM")
-    private IdentityProxy zoneId = new IdentityProxy("data_center");
+    private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the Zone name for the system VM")
     private String zoneName;
@@ -59,10 +58,10 @@ public class SystemVmResponse extends BaseResponse {
     private String name;
 
     @SerializedName("podid") @Param(description="the Pod ID for the system VM")
-    private IdentityProxy podId = new IdentityProxy("host_pod_ref");
+    private String podId;
 
     @SerializedName("hostid") @Param(description="the host ID for the system VM")
-    private IdentityProxy hostId = new IdentityProxy("host");
+    private String hostId;
 
     @SerializedName("hostname") @Param(description="the hostname for the system VM")
     private String hostName;
@@ -95,7 +94,7 @@ public class SystemVmResponse extends BaseResponse {
     private String publicNetmask;
 
     @SerializedName("templateid") @Param(description="the template ID for the system VM")
-    private IdentityProxy templateId = new IdentityProxy("vm_template");
+    private String templateId;
 
     @SerializedName("created") @Param(description="the date and time the system VM was created")
     private Date created;
@@ -116,12 +115,12 @@ public class SystemVmResponse extends BaseResponse {
         this.objectId = objectId;
     }
 
-    public Long getId() {
-        return id.getValue();
+    public String getId() {
+        return id;
     }
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getSystemVmType() {
@@ -132,12 +131,12 @@ public class SystemVmResponse extends BaseResponse {
         this.systemVmType = systemVmType;
     }
 
-    public Long getZoneId() {
-        return zoneId.getValue();
+    public String getZoneId() {
+        return zoneId;
     }
 
-    public void setZoneId(Long zoneId) {
-        this.zoneId.setValue(zoneId);
+    public void setZoneId(String zoneId) {
+        this.zoneId = zoneId;
     }
 
     public String getZoneName() {
@@ -188,20 +187,20 @@ public class SystemVmResponse extends BaseResponse {
         this.name = name;
     }
 
-    public Long getPodId() {
-        return podId.getValue();
+    public String getPodId() {
+        return podId;
     }
 
-    public void setPodId(Long podId) {
-        this.podId.setValue(podId);
+    public void setPodId(String podId) {
+        this.podId = podId;
     }
 
-    public Long getHostId() {
-        return hostId.getValue();
+    public String getHostId() {
+        return hostId;
     }
 
-    public void setHostId(Long hostId) {
-        this.hostId.setValue(hostId);
+    public void setHostId(String hostId) {
+        this.hostId = hostId;
     }
 
     public String getHostName() {
@@ -260,12 +259,12 @@ public class SystemVmResponse extends BaseResponse {
         this.publicNetmask = publicNetmask;
     }
 
-    public Long getTemplateId() {
-        return templateId.getValue();
+    public String getTemplateId() {
+        return templateId;
     }
 
-    public void setTemplateId(Long templateId) {
-        this.templateId.setValue(templateId);
+    public void setTemplateId(String templateId) {
+        this.templateId = templateId;
     }
 
     public Date getCreated() {

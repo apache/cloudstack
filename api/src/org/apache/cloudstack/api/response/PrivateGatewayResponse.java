@@ -17,7 +17,6 @@
 package org.apache.cloudstack.api.response;
 import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.serializer.Param;
-import com.cloud.utils.IdentityProxy;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
 
@@ -25,7 +24,7 @@ import org.apache.cloudstack.api.BaseResponse;
 public class PrivateGatewayResponse extends BaseResponse implements ControlledEntityResponse{
 
     @SerializedName(ApiConstants.ID) @Param(description="the id of the private gateway")
-    private IdentityProxy id = new IdentityProxy("vpc_gateways");
+    private String id;
 
     @SerializedName(ApiConstants.GATEWAY) @Param(description="the gateway")
     private String gateway;
@@ -37,7 +36,7 @@ public class PrivateGatewayResponse extends BaseResponse implements ControlledEn
     private String address;
 
     @SerializedName(ApiConstants.ZONE_ID) @Param(description="zone id of the private gateway")
-    private IdentityProxy zoneId = new IdentityProxy("data_center");
+    private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the name of the zone the private gateway belongs to")
     private String zoneName;
@@ -46,10 +45,10 @@ public class PrivateGatewayResponse extends BaseResponse implements ControlledEn
     private String vlan;
 
     @SerializedName(ApiConstants.VPC_ID) @Param(description="VPC the private gateaway belongs to")
-    private IdentityProxy vpcId = new IdentityProxy("vpc");
+    private String vpcId;
 
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) @Param(description="the physical network id")
-    private IdentityProxy physicalNetworkId = new IdentityProxy("physical_network");
+    private String physicalNetworkId;
 
     @SerializedName(ApiConstants.ACCOUNT)
     @Param(description = "the account associated with the private gateway")
@@ -73,8 +72,8 @@ public class PrivateGatewayResponse extends BaseResponse implements ControlledEn
     private String state;
 
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
     public void setGateway(String gateway) {
@@ -85,8 +84,8 @@ public class PrivateGatewayResponse extends BaseResponse implements ControlledEn
         this.netmask = netmask;
     }
 
-    public void setZoneId(Long zoneId) {
-        this.zoneId.setValue(zoneId);
+    public void setZoneId(String zoneId) {
+        this.zoneId = zoneId;
     }
 
     public void setVlan(String vlan) {
@@ -97,16 +96,16 @@ public class PrivateGatewayResponse extends BaseResponse implements ControlledEn
         this.zoneName = zoneName;
     }
 
-    public void setVpcId(Long vpcId) {
-        this.vpcId.setValue(vpcId);
+    public void setVpcId(String vpcId) {
+        this.vpcId = vpcId;
     }
 
     public void setAddress(String address) {
         this.address = address;
     }
 
-    public void setPhysicalNetworkId(Long physicalNetworkId) {
-        this.physicalNetworkId.setValue(physicalNetworkId);
+    public void setPhysicalNetworkId(String physicalNetworkId) {
+        this.physicalNetworkId = physicalNetworkId;
     }
 
     @Override

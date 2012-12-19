@@ -22,7 +22,6 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.Entity;
 import com.cloud.projects.ProjectAccount;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
@@ -31,7 +30,7 @@ import com.google.gson.annotations.SerializedName;
 public class NetworkResponse extends BaseResponse implements ControlledEntityResponse{
 
     @SerializedName(ApiConstants.ID) @Param(description="the id of the network")
-    private IdentityProxy id = new IdentityProxy("networks");
+    private String id;
 
     @SerializedName(ApiConstants.NAME) @Param(description="the name of the network")
     private String name;
@@ -55,13 +54,13 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     private String cidr;
 
     @SerializedName(ApiConstants.ZONE_ID) @Param(description="zone id of the network")
-    private IdentityProxy zoneId = new IdentityProxy("data_center");
+    private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the name of the zone the network belongs to")
     private String zoneName;
 
     @SerializedName("networkofferingid") @Param(description="network offering id the network is created from")
-    private IdentityProxy networkOfferingId = new IdentityProxy("network_offerings");
+    private String networkOfferingId;
 
     @SerializedName("networkofferingname") @Param(description="name of the network offering the network is created from")
     private String networkOfferingName;
@@ -79,7 +78,7 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     private String state;
 
     @SerializedName("related") @Param(description="related to what other network configuration")
-    private IdentityProxy related = new IdentityProxy("networks");
+    private String related;
 
     @SerializedName("broadcasturi") @Param(description="broadcast uri of the network. This parameter is visible to ROOT admins only")
     private String broadcastUri;
@@ -127,7 +126,7 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     private String networkDomain;
 
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) @Param(description="the physical network id")
-    private IdentityProxy physicalNetworkId = new IdentityProxy("physical_network");
+    private String physicalNetworkId;
 
     @SerializedName(ApiConstants.RESTART_REQUIRED) @Param(description="true network requires restart")
     private Boolean restartRequired;
@@ -136,7 +135,7 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     private Boolean specifyIpRanges;
 
     @SerializedName(ApiConstants.VPC_ID) @Param(description="VPC the network belongs to")
-    private IdentityProxy vpcId = new IdentityProxy("vpc");
+    private String vpcId;
 
     @SerializedName(ApiConstants.CAN_USE_FOR_DEPLOY) @Param(description="list networks available for vm deployment")
     private Boolean canUseForDeploy;
@@ -144,8 +143,8 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with network", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
     public void setName(String name) {
@@ -168,20 +167,20 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
         this.netmask = netmask;
     }
 
-    public void setZoneId(Long zoneId) {
-        this.zoneId.setValue(zoneId);
+    public void setZoneId(String zoneId) {
+        this.zoneId = zoneId;
     }
 
-    public void setNetworkOfferingId(Long networkOfferingId) {
-        this.networkOfferingId.setValue(networkOfferingId);
+    public void setNetworkOfferingId(String networkOfferingId) {
+        this.networkOfferingId = networkOfferingId;
     }
 
     public void setState(String state) {
         this.state = state;
     }
 
-    public void setRelated(Long related) {
-        this.related.setValue(related);
+    public void setRelated(String related) {
+        this.related = related;
     }
 
     public void setBroadcastUri(String broadcastUri) {
@@ -259,8 +258,8 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
         this.projectName = projectName;
     }
 
-    public void setPhysicalNetworkId(Long physicalNetworkId) {
-        this.physicalNetworkId.setValue(physicalNetworkId);
+    public void setPhysicalNetworkId(String physicalNetworkId) {
+        this.physicalNetworkId = physicalNetworkId;
     }
 
     public void setAclType(String aclType) {
@@ -287,8 +286,8 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
         this.specifyIpRanges = specifyIpRanges;
     }
 
-    public void setVpcId(Long vpcId) {
-        this.vpcId.setValue(vpcId);
+    public void setVpcId(String vpcId) {
+        this.vpcId = vpcId;
     }
 
     public void setCanUseForDeploy(Boolean canUseForDeploy) {

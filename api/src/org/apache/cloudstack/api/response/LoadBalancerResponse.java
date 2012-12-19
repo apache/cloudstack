@@ -20,7 +20,6 @@ import java.util.List;
 
 import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.serializer.Param;
-import com.cloud.utils.IdentityProxy;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
 
@@ -28,7 +27,7 @@ import org.apache.cloudstack.api.BaseResponse;
 public class LoadBalancerResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID)
     @Param(description = "the load balancer rule ID")
-    private IdentityProxy id = new IdentityProxy("firewall_rules");
+    private String id;
 
     @SerializedName(ApiConstants.NAME)
     @Param(description = "the name of the load balancer")
@@ -40,7 +39,7 @@ public class LoadBalancerResponse extends BaseResponse implements ControlledEnti
 
     @SerializedName(ApiConstants.PUBLIC_IP_ID)
     @Param(description = "the public ip address id")
-    private IdentityProxy publicIpId = new IdentityProxy("user_ip_address");
+    private String publicIpId;
 
     @SerializedName(ApiConstants.PUBLIC_IP)
     @Param(description = "the public ip address")
@@ -85,13 +84,13 @@ public class LoadBalancerResponse extends BaseResponse implements ControlledEnti
 
     @SerializedName(ApiConstants.ZONE_ID)
     @Param(description = "the id of the zone the rule belongs to")
-    private IdentityProxy zoneId = new IdentityProxy("data_center");
+    private String zoneId;
 
     @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with load balancer", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
     public void setName(String name) {
@@ -139,12 +138,12 @@ public class LoadBalancerResponse extends BaseResponse implements ControlledEnti
         this.state = state;
     }
 
-    public void setPublicIpId(Long publicIpId) {
-        this.publicIpId.setValue(publicIpId);
+    public void setPublicIpId(String publicIpId) {
+        this.publicIpId = publicIpId;
     }
 
-    public void setZoneId(Long zoneId) {
-        this.zoneId.setValue(zoneId);
+    public void setZoneId(String zoneId) {
+        this.zoneId = zoneId;
     }
 
     @Override

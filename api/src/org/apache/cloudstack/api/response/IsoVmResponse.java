@@ -16,14 +16,13 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
 
 public class IsoVmResponse extends BaseResponse {
     @SerializedName("id") @Param(description="the ISO ID")
-    private IdentityProxy id = new IdentityProxy("vm_template");
+    private String id;
 
     @SerializedName("name") @Param(description="the ISO name")
     private String name;
@@ -38,13 +37,13 @@ public class IsoVmResponse extends BaseResponse {
     private Boolean featured;
 
     @SerializedName("ostypeid") @Param(description="the ID of the OS type for this template.")
-    private IdentityProxy osTypeId = new IdentityProxy("guest_os");
+    private String osTypeId;
 
     @SerializedName("ostypename") @Param(description="the name of the OS type for this template.")
     private String osTypeName;
 
     @SerializedName("virtualmachineid") @Param(description="id of the virtual machine")
-    private IdentityProxy virtualMachineId = new IdentityProxy("vm_instance");
+    private String virtualMachineId;
 
     @SerializedName("vmname") @Param(description="name of the virtual machine")
     private String virtualMachineName;
@@ -56,12 +55,12 @@ public class IsoVmResponse extends BaseResponse {
     private String virtualMachineState;
 
 
-    public Long getOsTypeId() {
-        return osTypeId.getValue();
+    public String getOsTypeId() {
+        return osTypeId;
     }
 
-    public void setOsTypeId(Long osTypeId) {
-        this.osTypeId.setValue(osTypeId);
+    public void setOsTypeId(String osTypeId) {
+        this.osTypeId = osTypeId;
     }
 
     public String getOsTypeName() {
@@ -72,12 +71,12 @@ public class IsoVmResponse extends BaseResponse {
         this.osTypeName = osTypeName;
     }
 
-    public Long getId() {
-        return id.getValue();
+    public String getId() {
+        return id;
     }
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getName() {
@@ -112,12 +111,12 @@ public class IsoVmResponse extends BaseResponse {
         this.featured = featured;
     }
 
-    public Long getVirtualMachineId() {
-        return virtualMachineId.getValue();
+    public String getVirtualMachineId() {
+        return virtualMachineId;
     }
 
-    public void setVirtualMachineId(Long virtualMachineId) {
-        this.virtualMachineId.setValue(virtualMachineId);
+    public void setVirtualMachineId(String virtualMachineId) {
+        this.virtualMachineId = virtualMachineId;
     }
 
     public String getVirtualMachineName() {

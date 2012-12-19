@@ -22,6 +22,7 @@ import com.cloud.acl.ControlledEntity;
 
 public interface Site2SiteCustomerGateway extends ControlledEntity {
     public long getId();
+    public String getUuid();
     public String getGatewayIp();
     public String getGuestCidrList();
     public String getIpsecPsk();

@@ -32,19 +32,19 @@ import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="swift")
-public class SwiftVO implements Swift, Identity {
-	
+public class SwiftVO implements Swift {
+
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
     private long id;
-    
+
     @Column(name="url")
     String url;
 
     @Column(name="account")
     String account;
-    
+
     @Column(name="username")
     String userName;
 
@@ -53,10 +53,10 @@ public class SwiftVO implements Swift, Identity {
 
     @Column(name="uuid")
     String uuid = UUID.randomUUID().toString();
-    
+
     @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
-        
+
     public SwiftVO() { }
 
     public SwiftVO(String url, String account, String userName, String key) {
@@ -95,12 +95,12 @@ public class SwiftVO implements Swift, Identity {
     public SwiftTO toSwiftTO() {
         return new SwiftTO(getId(), getUrl(), getAccount(), getUserName(), getKey());
     }
-    
+
     @Override
     public String getUuid() {
     	return this.uuid;
     }
-    
+
     public void setUuid(String uuid) {
     	this.uuid = uuid;
     }

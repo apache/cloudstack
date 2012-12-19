@@ -103,17 +103,17 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
 
     ScheduledExecutorService _executor;
     int _externalNetworkStatsInterval;
-    private final static IdentityService _identityService = (IdentityService)ComponentLocator.getLocator(ManagementServer.Name).getManager(IdentityService.class); 
-    
+    private final static IdentityService _identityService = (IdentityService)ComponentLocator.getLocator(ManagementServer.Name).getManager(IdentityService.class);
+
     private static final org.apache.log4j.Logger s_logger = Logger.getLogger(ExternalNetworkDeviceManagerImpl.class);
     protected String _name;
-    
+
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _name = name;
         return true;
     }
-    
+
     @Override
     public boolean start() {
         return true;
@@ -128,14 +128,14 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
     public String getName() {
         return _name;
     }
-    
+
     @Override
     public Host addNetworkDevice(AddNetworkDeviceCmd cmd) {
         Map paramList = cmd.getParamList();
         if (paramList == null) {
             throw new CloudRuntimeException("Parameter list is null");
         }
-    
+
         Collection paramsCollection = paramList.values();
         HashMap params = (HashMap) (paramsCollection.toArray())[0];
         if (cmd.getDeviceType().equalsIgnoreCase(NetworkDevice.ExternalDhcp.getName())) {
@@ -201,8 +201,8 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
         } else {
             throw new CloudRuntimeException("Unsupported network device type:" + host.getType());
         }
-        
-        response.setId(device.getId());
+
+        response.setId(device.getUuid());
         return response;
     }
 
@@ -219,18 +219,18 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
 //            List<HostVO> devs = _hostDao.listBy(type, zoneId);
 //            res.addAll(devs);
  //       }
-        
+
  //       return res;
         return null;
     }
-    
+
     @Override
     public List<Host> listNetworkDevice(ListNetworkDeviceCmd cmd) {
         Map paramList = cmd.getParamList();
         if (paramList == null) {
             throw new CloudRuntimeException("Parameter list is null");
         }
-        
+
         List<Host> res;
         Collection paramsCollection = paramList.values();
         HashMap params = (HashMap) (paramsCollection.toArray())[0];
@@ -245,7 +245,7 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
         } else if (cmd.getDeviceType() == null){
             Long zoneId = Long.parseLong((String) params.get(ApiConstants.ZONE_ID));
             Long podId = Long.parseLong((String)params.get(ApiConstants.POD_ID));
-            Long physicalNetworkId = (params.get(ApiConstants.PHYSICAL_NETWORK_ID)==null)?Long.parseLong((String)params.get(ApiConstants.PHYSICAL_NETWORK_ID)):null;            
+            Long physicalNetworkId = (params.get(ApiConstants.PHYSICAL_NETWORK_ID)==null)?Long.parseLong((String)params.get(ApiConstants.PHYSICAL_NETWORK_ID)):null;
             List<Host> res1 = listNetworkDevice(zoneId, physicalNetworkId, podId, Host.Type.PxeServer);
             List<Host> res2 = listNetworkDevice(zoneId, physicalNetworkId, podId, Host.Type.ExternalDhcp);
             List<Host> res3 = listNetworkDevice(zoneId, physicalNetworkId, podId, Host.Type.ExternalLoadBalancer);
@@ -259,7 +259,7 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
         } else {
             throw new CloudRuntimeException("Unknown network device type:" + cmd.getDeviceType());
         }
-        
+
         return res;
     }
 

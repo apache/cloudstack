@@ -20,9 +20,11 @@ import java.util.Date;
 
 public interface SnapshotSchedule {
     long getId();
-    
+
+    String getUuid();
+
     Long getVolumeId();
-    
+
     Long getPolicyId();
 
     void setPolicyId(long policyId);
@@ -31,14 +33,14 @@ public interface SnapshotSchedule {
      * @return the scheduledTimestamp
      */
     Date getScheduledTimestamp();
-    
+
     void setScheduledTimestamp(Date scheduledTimestamp);
 
     Long getAsyncJobId();
-    
+
     void setAsyncJobId(Long asyncJobId);
-    
+
     Long getSnapshotId();
-    
+
     void setSnapshotId(Long snapshotId);
 }

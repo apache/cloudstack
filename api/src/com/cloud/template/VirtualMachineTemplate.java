@@ -45,6 +45,8 @@ public interface VirtualMachineTemplate extends ControlledEntity {
      */
     long getId();
 
+    String getUuid();
+
     boolean isFeatured();
 
     /**

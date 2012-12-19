@@ -23,14 +23,13 @@ import java.util.Map;
 import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.utils.IdentityProxy;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
 
 @SuppressWarnings("unused")
 public class TemplateResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the template ID")
-    private IdentityProxy id = new IdentityProxy("vm_template");
+    private String id;
 
     @SerializedName(ApiConstants.NAME) @Param(description="the template name")
     private String name;
@@ -68,19 +67,19 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
     private boolean crossZones;
 
     @SerializedName(ApiConstants.OS_TYPE_ID) @Param(description="the ID of the OS type for this template.")
-    private IdentityProxy osTypeId = new IdentityProxy("guest_os");
+    private String osTypeId;
 
     @SerializedName("ostypename") @Param(description="the name of the OS type for this template.")
     private String osTypeName;
 
     @SerializedName(ApiConstants.ACCOUNT_ID) @Param(description="the account id to which the template belongs")
-    private IdentityProxy accountId = new IdentityProxy("account");
+    private String accountId;
 
     @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account name to which the template belongs")
     private String account;
 
     @SerializedName(ApiConstants.ZONE_ID) @Param(description="the ID of the zone for this template")
-    private IdentityProxy zoneId = new IdentityProxy("data_center");
+    private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the name of the zone for this template")
     private String zoneName;
@@ -110,10 +109,10 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
     private String checksum;
 
     @SerializedName("sourcetemplateid") @Param(description="the template ID of the parent template if present")
-    private IdentityProxy sourcetemplateId = new IdentityProxy("vm_template");
+    private String sourcetemplateId;
 
     @SerializedName(ApiConstants.HOST_ID) @Param(description="the ID of the secondary storage host for the template")
-    private IdentityProxy hostId = new IdentityProxy("host");
+    private String hostId;
 
     @SerializedName("hostname") @Param(description="the name of the secondary storage host for the template")
     private String hostName;
@@ -134,41 +133,38 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
     private List<ResourceTagResponse> tags;
 
 
-    @Override
-    public Long getObjectId() {
-        return getId();
+
+
+    public String getId() {
+        return id;
     }
 
-    public Long getId() {
-        return id.getValue();
-    }
-
-    public void setZoneId(Long zoneId) {
-        this.zoneId.setValue(zoneId);
+    public void setZoneId(String zoneId) {
+        this.zoneId = zoneId;
     }
 
     public void setZoneName(String zoneName) {
         this.zoneName = zoneName;
     }
 
-    public void setAccountId(Long accountId) {
-        this.accountId.setValue(accountId);
+    public void setAccountId(String accountId) {
+        this.accountId = accountId;
     }
 
     public void setAccountName(String account) {
         this.account = account;
     }
 
-    public void setOsTypeId(Long osTypeId) {
-        this.osTypeId.setValue(osTypeId);
+    public void setOsTypeId(String osTypeId) {
+        this.osTypeId = osTypeId;
     }
 
     public void setOsTypeName(String osTypeName) {
         this.osTypeName = osTypeName;
     }
 
-    public void setId(long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
     public void setName(String name) {
@@ -249,12 +245,12 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
         this.checksum = checksum;
     }
 
-    public void setSourceTemplateId(Long sourcetemplateId) {
-        this.sourcetemplateId.setValue(sourcetemplateId);
+    public void setSourceTemplateId(String sourcetemplateId) {
+        this.sourcetemplateId = sourcetemplateId;
     }
 
-    public void setHostId(Long hostId) {
-        this.hostId.setValue(hostId);
+    public void setHostId(String hostId) {
+        this.hostId = hostId;
     }
 
     public void setHostName(String hostName) {

@@ -20,14 +20,13 @@ import java.util.List;
 
 import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.serializer.Param;
-import com.cloud.utils.IdentityProxy;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
 
 @SuppressWarnings("unused")
 public class NetworkACLResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the ACL")
-    private IdentityProxy id = new IdentityProxy("firewall_rules");
+    private String id;
 
     @SerializedName(ApiConstants.PROTOCOL) @Param(description="the protocol of the ACL")
     private String protocol;
@@ -57,8 +56,8 @@ public class NetworkACLResponse extends BaseResponse {
             responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
     public void setProtocol(String protocol) {

@@ -21,7 +21,6 @@ import java.util.List;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import org.apache.cloudstack.api.ApiConstants;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
@@ -41,7 +40,7 @@ public class PhysicalNetworkResponse extends BaseResponse {
     private String broadcastDomainRange;
 
     @SerializedName(ApiConstants.ZONE_ID) @Param(description="zone id of the physical network")
-    private IdentityProxy zoneId = new IdentityProxy("data_center");
+    private String zoneId;
 
     @SerializedName(ApiConstants.STATE) @Param(description="state of the physical network")
     private String state;
@@ -50,7 +49,7 @@ public class PhysicalNetworkResponse extends BaseResponse {
     private String vlan;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain id of the physical network owner")
-    private IdentityProxy domainId = new IdentityProxy("domain");
+    private String domainId;
 
     @SerializedName(ApiConstants.TAGS) @Param(description="comma separated tag")
     private String tags;
@@ -65,8 +64,8 @@ public class PhysicalNetworkResponse extends BaseResponse {
         this.id = uuid;
     }
 
-    public void setZoneId(Long zoneId) {
-        this.zoneId.setValue(zoneId);
+    public void setZoneId(String zoneId) {
+        this.zoneId = zoneId;
     }
 
     public void setState(String state) {
@@ -74,8 +73,8 @@ public class PhysicalNetworkResponse extends BaseResponse {
     }
 
 
-    public void setDomainId(Long domainId) {
-        this.domainId.setValue(domainId);
+    public void setDomainId(String domainId) {
+        this.domainId = domainId;
     }
 
     public void setVlan(String vlan) {

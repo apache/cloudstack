@@ -28,6 +28,7 @@ public interface Site2SiteVpnConnection extends ControlledEntity {
         Error,
     }
     public long getId();
+    public String getUuid();
     public long getVpnGatewayId();
     public long getCustomerGatewayId();
     public State getState();

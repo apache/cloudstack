@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.response;
 import java.util.Date;
 
 import org.apache.cloudstack.api.ApiConstants;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
@@ -27,7 +26,7 @@ import org.apache.cloudstack.api.BaseResponse;
 public class SwiftResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
     @Param(description = "the ID of swift")
-    private IdentityProxy id = new IdentityProxy("swift");
+    private String id;
 
     @SerializedName(ApiConstants.URL)
     @Param(description = "url for swift")
@@ -46,13 +45,9 @@ public class SwiftResponse extends BaseResponse {
     private String username;
 
 
-    @Override
-    public Long getObjectId() {
-        return id.getValue();
-    }
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getUrl() {

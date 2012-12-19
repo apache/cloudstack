@@ -28,6 +28,8 @@ public interface Pod extends Grouping {
      */
     long getId();
 
+    String getUuid();
+
     String getCidrAddress();
 
     int getCidrSize();

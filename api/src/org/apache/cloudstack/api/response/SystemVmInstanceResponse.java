@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
@@ -26,7 +25,7 @@ import org.apache.cloudstack.api.BaseResponse;
  */
 public class SystemVmInstanceResponse extends BaseResponse {
     @SerializedName("id") @Param(description="the ID of the system VM")
-    private IdentityProxy id = new IdentityProxy("vm_instance");
+    private String id;
 
     @SerializedName("systemvmtype") @Param(description="the system VM type")
     private String systemVmType;
@@ -35,7 +34,7 @@ public class SystemVmInstanceResponse extends BaseResponse {
     private String name;
 
     @SerializedName("hostid") @Param(description="the host ID for the system VM")
-    private IdentityProxy hostId = new IdentityProxy("host");
+    private String hostId;
 
     @SerializedName("state") @Param(description="the state of the system VM")
     private String state;
@@ -44,16 +43,13 @@ public class SystemVmInstanceResponse extends BaseResponse {
     private String role;
 
 
-    public Long getObjectId() {
-        return getId();
+
+    public String getId() {
+        return id;
     }
 
-    public Long getId() {
-        return id.getValue();
-    }
-
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getSystemVmType() {
@@ -72,12 +68,12 @@ public class SystemVmInstanceResponse extends BaseResponse {
         this.name = name;
     }
 
-    public Long getHostId() {
-        return hostId.getValue();
+    public String getHostId() {
+        return hostId;
     }
 
-    public void setHostId(Long hostId) {
-        this.hostId.setValue(hostId);
+    public void setHostId(String hostId) {
+        this.hostId = hostId;
     }
 
     public String getState() {

@@ -20,23 +20,22 @@ import java.util.List;
 
 import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.serializer.Param;
-import com.cloud.utils.IdentityProxy;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
 
 @SuppressWarnings("unused")
 public class StaticRouteResponse extends BaseResponse implements ControlledEntityResponse{
     @SerializedName(ApiConstants.ID) @Param(description="the ID of static route")
-    private IdentityProxy id = new IdentityProxy("static_routes");
+    private String id;
 
     @SerializedName(ApiConstants.STATE) @Param(description="the state of the static route")
     private String state;
 
     @SerializedName(ApiConstants.VPC_ID) @Param(description="VPC the static route belongs to")
-    private IdentityProxy vpcId = new IdentityProxy("vpc");
+    private String vpcId;
 
     @SerializedName(ApiConstants.GATEWAY_ID) @Param(description="VPC gateway the route is created for")
-    private IdentityProxy gatewayId = new IdentityProxy("vpc_gateways");
+    private String gatewayId;
 
     @SerializedName(ApiConstants.CIDR) @Param(description="static route CIDR")
     private String cidr;
@@ -63,20 +62,20 @@ public class StaticRouteResponse extends BaseResponse implements ControlledEntit
             responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
     public void setState(String state) {
         this.state = state;
     }
 
-    public void setVpcId(Long vpcId) {
-        this.vpcId.setValue(vpcId);
+    public void setVpcId(String vpcId) {
+        this.vpcId = vpcId;
     }
 
-    public void setGatewayId(Long gatewayId) {
-        this.gatewayId.setValue(gatewayId);
+    public void setGatewayId(String gatewayId) {
+        this.gatewayId = gatewayId;
     }
 
     public void setCidr(String cidr) {

@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import com.cloud.utils.IdentityProxy;
 import com.cloud.network.rules.StickinessPolicy;
 import com.cloud.serializer.Param;
 import com.cloud.utils.Pair;
@@ -30,7 +29,7 @@ import java.util.HashMap;
 public class LBStickinessPolicyResponse extends BaseResponse {
     @SerializedName("id")
     @Param(description = "the LB Stickiness policy ID")
-    private IdentityProxy id = new IdentityProxy("load_balancer_stickiness_policies");
+    private String id;
 
     @SerializedName("name")
     @Param(description = "the name of the Stickiness policy")
@@ -60,8 +59,8 @@ public class LBStickinessPolicyResponse extends BaseResponse {
         return params;
     }
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getName() {
@@ -100,8 +99,8 @@ public class LBStickinessPolicyResponse extends BaseResponse {
         if (stickinesspolicy.isRevoke()) {
             this.setState("Revoked");
         }
-        if (stickinesspolicy.getId() != 0)
-            setId(stickinesspolicy.getId());
+        if (stickinesspolicy.getUuid() != null )
+            setId(stickinesspolicy.getUuid());
 
         /* Get the param and values from the database and fill the response object
          *  The following loop is to

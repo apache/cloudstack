@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.response;
 import java.util.Date;
 
 import org.apache.cloudstack.api.ApiConstants;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
@@ -27,7 +26,7 @@ import org.apache.cloudstack.api.BaseResponse;
 @SuppressWarnings("unused")
 public class Site2SiteCustomerGatewayResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the vpn gateway ID")
-    private IdentityProxy id = new IdentityProxy("s2s_customer_gateway");
+    private String id;
 
     @SerializedName(ApiConstants.NAME) @Param(description="name of the customer gateway")
     private String name;
@@ -77,8 +76,8 @@ public class Site2SiteCustomerGatewayResponse extends BaseResponse implements Co
     @SerializedName(ApiConstants.REMOVED) @Param(description="the date and time the host was removed")
     private Date removed;
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
     public void setName(String name) {

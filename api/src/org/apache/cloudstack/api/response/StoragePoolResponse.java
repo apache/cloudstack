@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.response;
 import java.util.Date;
 
 import org.apache.cloudstack.api.ApiConstants;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.cloud.storage.StoragePoolStatus;
 import com.google.gson.annotations.SerializedName;
@@ -27,16 +26,16 @@ import org.apache.cloudstack.api.BaseResponse;
 
 public class StoragePoolResponse extends BaseResponse {
     @SerializedName("id") @Param(description="the ID of the storage pool")
-    private IdentityProxy id = new IdentityProxy("storage_pool");
+    private String id;
 
     @SerializedName("zoneid") @Param(description="the Zone ID of the storage pool")
-    private IdentityProxy zoneId = new IdentityProxy("data_center");
+    private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the Zone name of the storage pool")
     private String zoneName;
 
     @SerializedName("podid") @Param(description="the Pod ID of the storage pool")
-    private IdentityProxy podId = new IdentityProxy("host_pod_ref");
+    private String podId;
 
     @SerializedName("podname") @Param(description="the Pod name of the storage pool")
     private String podName;
@@ -57,7 +56,7 @@ public class StoragePoolResponse extends BaseResponse {
     private String type;
 
     @SerializedName("clusterid") @Param(description="the ID of the cluster for the storage pool")
-    private IdentityProxy clusterId = new IdentityProxy("cluster");
+    private String clusterId;
 
     @SerializedName("clustername") @Param(description="the name of the cluster for the storage pool")
     private String clusterName;
@@ -77,25 +76,21 @@ public class StoragePoolResponse extends BaseResponse {
     @SerializedName(ApiConstants.STATE) @Param(description="the state of the storage pool")
     private StoragePoolStatus state;
 
-    @Override
-    public Long getObjectId() {
-        return getId();
+
+    public String getId() {
+        return id;
     }
 
-    public Long getId() {
-        return id.getValue();
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public String getZoneId() {
+        return zoneId;
     }
 
-    public Long getZoneId() {
-        return zoneId.getValue();
-    }
-
-    public void setZoneId(Long zoneId) {
-        this.zoneId.setValue(zoneId);
+    public void setZoneId(String zoneId) {
+        this.zoneId = zoneId;
     }
 
     public String getZoneName() {
@@ -106,12 +101,12 @@ public class StoragePoolResponse extends BaseResponse {
         this.zoneName = zoneName;
     }
 
-    public Long getPodId() {
-        return podId.getValue();
+    public String getPodId() {
+        return podId;
     }
 
-    public void setPodId(Long podId) {
-        this.podId.setValue(podId);
+    public void setPodId(String podId) {
+        this.podId = podId;
     }
 
     public String getPodName() {
@@ -162,12 +157,12 @@ public class StoragePoolResponse extends BaseResponse {
         this.type = type;
     }
 
-    public Long getClusterId() {
-        return clusterId.getValue();
+    public String getClusterId() {
+        return clusterId;
     }
 
-    public void setClusterId(Long clusterId) {
-        this.clusterId.setValue(clusterId);
+    public void setClusterId(String clusterId) {
+        this.clusterId = clusterId;
     }
 
     public String getClusterName() {

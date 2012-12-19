@@ -19,6 +19,8 @@ package com.cloud.storage.snapshot;
 public interface SnapshotPolicy {
     long getId();
 
+    String getUuid();
+
     long getVolumeId();
 
     void setSchedule(String schedule);

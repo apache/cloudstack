@@ -17,7 +17,6 @@
 package org.apache.cloudstack.api.response;
 
 import org.apache.cloudstack.api.ApiConstants;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
@@ -27,7 +26,7 @@ import java.util.List;
 public class LBStickinessResponse extends BaseResponse {
     @SerializedName("lbruleid")
     @Param(description = "the LB rule ID")
-    private IdentityProxy lbRuleId = new IdentityProxy("firewall_rules");
+    private String lbRuleId;
 
     @SerializedName("name")
     @Param(description = "the name of the Stickiness policy")
@@ -43,7 +42,7 @@ public class LBStickinessResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.DOMAIN_ID)
     @Param(description = "the domain ID of the Stickiness policy")
-    private IdentityProxy domainId = new IdentityProxy("domain");
+    private String domainId;
 
     @SerializedName("domain")
     @Param(description = "the domain of the Stickiness policy")
@@ -55,14 +54,14 @@ public class LBStickinessResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ZONE_ID)
     @Param(description = "the id of the zone the Stickiness policy belongs to")
-    private IdentityProxy zoneId = new IdentityProxy("data_center");
+    private String zoneId;
 
     @SerializedName("stickinesspolicy")
     @Param(description = "the list of stickinesspolicies", responseObject = LBStickinessPolicyResponse.class)
     private List<LBStickinessPolicyResponse> stickinessPolicies;
 
-    public void setlbRuleId(Long lbRuleId) {
-        this.lbRuleId.setValue(lbRuleId);
+    public void setlbRuleId(String lbRuleId) {
+        this.lbRuleId = lbRuleId;
     }
 
     public void setRules(List<LBStickinessPolicyResponse> policies) {
@@ -97,12 +96,12 @@ public class LBStickinessResponse extends BaseResponse {
         this.accountName = accountName;
     }
 
-    public void setDomainId(Long domainId) {
-        this.domainId.setValue(domainId);
+    public void setDomainId(String domainId) {
+        this.domainId = domainId;
     }
 
-    public void setZoneId(Long zoneId) {
-        this.zoneId.setValue(zoneId);
+    public void setZoneId(String zoneId) {
+        this.zoneId = zoneId;
     }
 
     public String getDomainName() {

@@ -17,7 +17,6 @@
 package org.apache.cloudstack.api.response;
 
 import org.apache.cloudstack.api.ApiConstants;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
@@ -26,7 +25,7 @@ import org.apache.cloudstack.api.BaseResponse;
 public class RemoteAccessVpnResponse extends BaseResponse implements ControlledEntityResponse{
 
     @SerializedName(ApiConstants.PUBLIC_IP_ID) @Param(description="the public ip address of the vpn server")
-    private IdentityProxy publicIpId = new IdentityProxy("user_ip_address");
+    private String publicIpId;
 
     @SerializedName(ApiConstants.PUBLIC_IP) @Param(description="the public ip address of the vpn server")
     private String publicIp;
@@ -84,8 +83,8 @@ public class RemoteAccessVpnResponse extends BaseResponse implements ControlledE
         this.state = state;
     }
 
-    public void setPublicIpId(Long publicIpId) {
-        this.publicIpId.setValue(publicIpId);
+    public void setPublicIpId(String publicIpId) {
+        this.publicIpId = publicIpId;
     }
 
     @Override

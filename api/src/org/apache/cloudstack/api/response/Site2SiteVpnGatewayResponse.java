@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.response;
 import java.util.Date;
 
 import org.apache.cloudstack.api.ApiConstants;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
@@ -27,13 +26,13 @@ import org.apache.cloudstack.api.BaseResponse;
 @SuppressWarnings("unused")
 public class Site2SiteVpnGatewayResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the vpn gateway ID")
-    private IdentityProxy id = new IdentityProxy("s2s_vpn_gateway");
+    private String id;
 
     @SerializedName(ApiConstants.PUBLIC_IP) @Param(description="the public IP address")
     private String ip;
 
     @SerializedName(ApiConstants.VPC_ID) @Param(description="the vpc id of this gateway")
-    private IdentityProxy vpcId = new IdentityProxy("vpc");
+    private String vpcId;
 
     @SerializedName(ApiConstants.ACCOUNT) @Param(description="the owner")
     private String accountName;
@@ -53,16 +52,16 @@ public class Site2SiteVpnGatewayResponse extends BaseResponse implements Control
     @SerializedName(ApiConstants.REMOVED) @Param(description="the date and time the host was removed")
     private Date removed;
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
     public void setIp(String ip) {
         this.ip = ip;
     }
 
-    public void setVpcId(Long vpcId) {
-        this.vpcId.setValue(vpcId);
+    public void setVpcId(String vpcId) {
+        this.vpcId = vpcId;
     }
 
     public void setRemoved(Date removed) {

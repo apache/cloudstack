@@ -20,7 +20,6 @@ import java.util.List;
 
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import org.apache.cloudstack.api.ApiConstants;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
@@ -34,10 +33,10 @@ public class ProviderResponse extends BaseResponse {
     private String name;
 
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) @Param(description="the physical network this belongs to")
-    private IdentityProxy physicalNetworkId = new IdentityProxy("physical_network");
+    private String physicalNetworkId;
 
     @SerializedName(ApiConstants.DEST_PHYSICAL_NETWORK_ID) @Param(description="the destination physical network")
-    private IdentityProxy destinationPhysicalNetworkId = new IdentityProxy("physical_network");
+    private String destinationPhysicalNetworkId;
 
     @SerializedName(ApiConstants.STATE) @Param(description="state of the network provider")
     private String state;
@@ -59,20 +58,20 @@ public class ProviderResponse extends BaseResponse {
         return name;
     }
 
-    public void setPhysicalNetworkId(long physicalNetworkId) {
-        this.physicalNetworkId.setValue(physicalNetworkId);
+    public void setPhysicalNetworkId(String physicalNetworkId) {
+        this.physicalNetworkId = physicalNetworkId;
     }
 
-    public long getphysicalNetworkId() {
-        return physicalNetworkId.getValue();
+    public String getphysicalNetworkId() {
+        return physicalNetworkId;
     }
 
-    public void setDestinationPhysicalNetworkId(long destPhysicalNetworkId) {
-        this.destinationPhysicalNetworkId.setValue(destPhysicalNetworkId);
+    public void setDestinationPhysicalNetworkId(String destPhysicalNetworkId) {
+        this.destinationPhysicalNetworkId = destPhysicalNetworkId;
     }
 
-    public long getDestinationPhysicalNetworkId() {
-        return destinationPhysicalNetworkId.getValue();
+    public String getDestinationPhysicalNetworkId() {
+        return destinationPhysicalNetworkId;
     }
 
     public void setState(String state) {

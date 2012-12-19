@@ -72,6 +72,7 @@ import org.apache.cloudstack.api.response.Site2SiteVpnConnectionResponse;
 import org.apache.cloudstack.api.response.Site2SiteVpnGatewayResponse;
 import org.apache.cloudstack.api.response.SnapshotPolicyResponse;
 import org.apache.cloudstack.api.response.SnapshotResponse;
+import org.apache.cloudstack.api.response.SnapshotScheduleResponse;
 import org.apache.cloudstack.api.response.StaticRouteResponse;
 import org.apache.cloudstack.api.response.StorageNetworkIpRangeResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
@@ -148,6 +149,7 @@ import com.cloud.storage.StoragePool;
 import com.cloud.storage.Swift;
 import com.cloud.storage.Volume;
 import com.cloud.storage.snapshot.SnapshotPolicy;
+import com.cloud.storage.snapshot.SnapshotSchedule;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.User;
@@ -371,4 +373,7 @@ public interface ResponseGenerator {
     AutoScaleVmGroupResponse createAutoScaleVmGroupResponse(AutoScaleVmGroup vmGroup);
 
     GuestOSResponse createGuestOSResponse(GuestOS os);
+
+    SnapshotScheduleResponse createSnapshotScheduleResponse(SnapshotSchedule sched);
+
 }

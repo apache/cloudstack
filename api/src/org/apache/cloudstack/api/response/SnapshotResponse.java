@@ -22,7 +22,6 @@ import java.util.List;
 import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.cloud.storage.Snapshot;
-import com.cloud.utils.IdentityProxy;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
 
@@ -30,7 +29,7 @@ import org.apache.cloudstack.api.BaseResponse;
 public class SnapshotResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID)
     @Param(description = "ID of the snapshot")
-    private IdentityProxy id = new IdentityProxy("snapshots");
+    private String id;
 
     @SerializedName(ApiConstants.ACCOUNT)
     @Param(description = "the account associated with the snapshot")
@@ -56,7 +55,7 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
 
     @SerializedName(ApiConstants.VOLUME_ID)
     @Param(description = "ID of the disk volume")
-    private IdentityProxy volumeId = new IdentityProxy("volumes");
+    private String volumeId;
 
     @SerializedName(ApiConstants.VOLUME_NAME)
     @Param(description = "name of the disk volume")
@@ -85,17 +84,13 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
     @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with snapshot", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
 
-    @Override
-    public Long getObjectId() {
-        return getId();
+
+    private String getId() {
+        return id;
     }
 
-    private Long getId() {
-        return id.getValue();
-    }
-
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getAccountName() {
@@ -123,8 +118,8 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
         this.snapshotType = snapshotType;
     }
 
-    public void setVolumeId(Long volumeId) {
-        this.volumeId.setValue(volumeId);
+    public void setVolumeId(String volumeId) {
+        this.volumeId = volumeId;
     }
 
     public void setVolumeName(String volumeName) {

@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.response;
 import java.util.List;
 
 import org.apache.cloudstack.api.ApiConstants;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
@@ -27,13 +26,13 @@ import org.apache.cloudstack.api.BaseResponse;
 @SuppressWarnings("unused")
 public class TemplatePermissionsResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the template ID")
-    private IdentityProxy id = new IdentityProxy("vm_template");
+    private String id;
 
     @SerializedName(ApiConstants.IS_PUBLIC) @Param(description="true if this template is a public template, false otherwise")
     private Boolean publicTemplate;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the ID of the domain to which the template belongs")
-    private IdentityProxy domainId = new IdentityProxy("domain");
+    private String domainId;
 
     @SerializedName(ApiConstants.ACCOUNT) @Param(description="the list of accounts the template is available for")
     private List<String> accountNames;
@@ -42,16 +41,16 @@ public class TemplatePermissionsResponse extends BaseResponse {
     private List<String> projectIds;
 
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
     public void setPublicTemplate(Boolean publicTemplate) {
         this.publicTemplate = publicTemplate;
     }
 
-    public void setDomainId(Long domainId) {
-        this.domainId.setValue(domainId);
+    public void setDomainId(String domainId) {
+        this.domainId = domainId;
     }
 
     public void setAccountNames(List<String> accountNames) {

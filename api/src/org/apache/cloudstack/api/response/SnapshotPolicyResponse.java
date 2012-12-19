@@ -16,17 +16,16 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
 
 public class SnapshotPolicyResponse extends BaseResponse {
     @SerializedName("id") @Param(description="the ID of the snapshot policy")
-    private IdentityProxy id = new IdentityProxy("snapshot_policy");
+    private String id;
 
     @SerializedName("volumeid") @Param(description="the ID of the disk volume")
-    private IdentityProxy volumeId = new IdentityProxy("volumes");
+    private String volumeId;
 
     @SerializedName("schedule") @Param(description="time the snapshot is scheduled to be taken.")
     private String schedule;
@@ -40,20 +39,20 @@ public class SnapshotPolicyResponse extends BaseResponse {
     @SerializedName("timezone") @Param(description="the time zone of the snapshot policy")
     private String timezone;
 
-    public Long getId() {
-        return id.getValue();
+    public String getId() {
+        return id;
     }
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public Long getVolumeId() {
-        return volumeId.getValue();
+    public String getVolumeId() {
+        return volumeId;
     }
 
-    public void setVolumeId(Long volumeId) {
-        this.volumeId.setValue(volumeId);
+    public void setVolumeId(String volumeId) {
+        this.volumeId = volumeId;
     }
 
     public String getSchedule() {

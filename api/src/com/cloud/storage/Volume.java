@@ -95,6 +95,8 @@ public interface Volume extends ControlledEntity, BasedOn, StateObject<Volume.St
 
     long getId();
 
+    String getUuid();
+
     /**
      * @return the volume name
      */

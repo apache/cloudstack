@@ -17,20 +17,19 @@
 package org.apache.cloudstack.api.response;
 
 import org.apache.cloudstack.api.ApiConstants;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
 
 public class IpForwardingRuleResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the port forwarding rule")
-    private IdentityProxy id = new IdentityProxy("firewall_rules");
+    private String id;
 
     @SerializedName(ApiConstants.PROTOCOL) @Param(description="the protocol of the port forwarding rule")
     private String protocol;
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID) @Param(description="the VM ID for the port forwarding rule")
-    private IdentityProxy virtualMachineId = new IdentityProxy("vm_instance");
+    private String virtualMachineId;
 
     @SerializedName("virtualmachinename") @Param(description="the VM name for the port forwarding rule")
     private String virtualMachineName;
@@ -53,12 +52,12 @@ public class IpForwardingRuleResponse extends BaseResponse {
     @SerializedName(ApiConstants.STATE) @Param(description="state of the ip forwarding rule")
     private String state;
 
-    public Long getId() {
-        return id.getValue();
+    public String getId() {
+        return id;
     }
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getProtocol() {
@@ -69,12 +68,12 @@ public class IpForwardingRuleResponse extends BaseResponse {
         this.protocol = protocol;
     }
 
-    public Long getVirtualMachineId() {
-        return virtualMachineId.getValue();
+    public String getVirtualMachineId() {
+        return virtualMachineId;
     }
 
-    public void setVirtualMachineId(Long virtualMachineId) {
-        this.virtualMachineId.setValue(virtualMachineId);
+    public void setVirtualMachineId(String virtualMachineId) {
+        this.virtualMachineId = virtualMachineId;
     }
 
     public String getVirtualMachineName() {

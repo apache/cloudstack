@@ -21,8 +21,6 @@ import java.util.List;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.Entity;
 
-import com.cloud.utils.IdentityProxy;
-import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
@@ -31,13 +29,13 @@ import org.apache.cloudstack.api.BaseResponse;
 @Entity(value = Pod.class)
 public class PodResponse extends BaseResponse {
     @SerializedName("id") @Param(description="the ID of the Pod")
-    private IdentityProxy id = new IdentityProxy("host_pod_ref");
+    private String id;
 
     @SerializedName("name") @Param(description="the name of the Pod")
     private String name;
 
     @SerializedName("zoneid") @Param(description="the Zone ID of the Pod")
-    private IdentityProxy zoneId = new IdentityProxy("data_center");
+    private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the Zone name of the Pod")
     private String zoneName;
@@ -60,12 +58,12 @@ public class PodResponse extends BaseResponse {
     @SerializedName("capacity")  @Param(description="the capacity of the Pod", responseObject = CapacityResponse.class)
     private List<CapacityResponse> capacitites;
 
-    public Long getId() {
-        return id.getValue();
+    public String getId() {
+        return id;
     }
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getName() {
@@ -76,12 +74,12 @@ public class PodResponse extends BaseResponse {
         this.name = name;
     }
 
-    public Long getZoneId() {
-        return zoneId.getValue();
+    public String getZoneId() {
+        return zoneId;
     }
 
-    public void setZoneId(Long zoneId) {
-        this.zoneId.setValue(zoneId);
+    public void setZoneId(String zoneId) {
+        this.zoneId = zoneId;
     }
 
     public String getZoneName() {

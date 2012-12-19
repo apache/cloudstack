@@ -40,7 +40,7 @@ import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="vm_template")
-public class VMTemplateVO implements VirtualMachineTemplate, Identity {
+public class VMTemplateVO implements VirtualMachineTemplate {
     @Id
     @TableGenerator(name="vm_template_sq", table="sequence", pkColumnName="name", valueColumnName="value", pkColumnValue="vm_template_seq", allocationSize=1)
     @Column(name="id", nullable = false)
@@ -85,7 +85,7 @@ public class VMTemplateVO implements VirtualMachineTemplate, Identity {
     private long accountId;
 
     @Column(name="checksum")
-    private String checksum;    
+    private String checksum;
 
     @Column(name="display_text", length=4096)
     private String displayText;
@@ -117,16 +117,16 @@ public class VMTemplateVO implements VirtualMachineTemplate, Identity {
 
     @Column(name="template_tag")
     private String templateTag;
-    
+
     @Column(name="uuid")
     private String uuid;
-    
+
     @Column(name="sort_key")
     private int sortKey;
-    
+
     @Column(name="enable_sshkey")
     private boolean enableSshKey;
-    
+
     @Transient
     Map details;
 
@@ -156,7 +156,7 @@ public class VMTemplateVO implements VirtualMachineTemplate, Identity {
         this.templateTag = templateTag;
     	this.uuid = UUID.randomUUID().toString();
     	this.enableSshKey = sshKeyEnabled;
-    }    
+    }
 
     public VMTemplateVO(Long id, String uniqueName, String name, ImageFormat format, boolean isPublic, boolean featured, TemplateType type, String url, Date created, boolean requiresHvm, int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hyperType) {
         this.id = id;
@@ -391,30 +391,30 @@ public class VMTemplateVO implements VirtualMachineTemplate, Identity {
     @Override
     public String getTemplateTag() {
         return templateTag;
-    }    
+    }
 
     public void setTemplateTag(String templateTag) {
         this.templateTag = templateTag;
-    }   
+    }
 
     @Override
     public long getDomainId() {
         return -1;
     }
-    
+
     @Override
     public String getUuid() {
     	return this.uuid;
     }
-    
+
     public void setUuid(String uuid) {
     	this.uuid = uuid;
     }
-    
+
     public Map getDetails() {
     	return this.details;
     }
-    
+
     public void setDetails(Map details) {
     	this.details = details;
     }
@@ -429,7 +429,7 @@ public class VMTemplateVO implements VirtualMachineTemplate, Identity {
         }
         VMTemplateVO other = (VMTemplateVO)that;
 
-        return ((this.getUniqueName().equals(other.getUniqueName())));		
+        return ((this.getUniqueName().equals(other.getUniqueName())));
     }
 
     @Override
@@ -450,11 +450,11 @@ public class VMTemplateVO implements VirtualMachineTemplate, Identity {
     public void setRemoved(Date removed) {
         this.removed = removed;
     }
-    
+
     public void setSortKey(int key) {
     	sortKey = key;
     }
-    
+
     public int getSortKey() {
     	return sortKey;
     }
@@ -463,7 +463,7 @@ public class VMTemplateVO implements VirtualMachineTemplate, Identity {
 	public boolean getEnableSshKey() {
 		return enableSshKey;
 	}
-	
+
 	public void setEnableSshKey(boolean enable) {
 		enableSshKey = enable;
 	}

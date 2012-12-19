@@ -68,13 +68,7 @@ public class ListRecurringSnapshotScheduleCmd extends BaseListCmd {
         ListResponse<SnapshotScheduleResponse> response = new ListResponse<SnapshotScheduleResponse>();
         List<SnapshotScheduleResponse> snapshotScheduleResponses = new ArrayList<SnapshotScheduleResponse>();
         for (SnapshotSchedule snapshotSchedule : snapshotSchedules) {
-            SnapshotScheduleResponse snapSchedResponse = new SnapshotScheduleResponse();
-            snapSchedResponse.setId(snapshotSchedule.getId());
-            snapSchedResponse.setVolumeId(snapshotSchedule.getVolumeId());
-            snapSchedResponse.setSnapshotPolicyId(snapshotSchedule.getPolicyId());
-            snapSchedResponse.setScheduled(snapshotSchedule.getScheduledTimestamp());
-
-            snapSchedResponse.setObjectName("snapshot");
+            SnapshotScheduleResponse snapSchedResponse = _responseGenerator.createSnapshotScheduleResponse(snapshotSchedule);
             snapshotScheduleResponses.add(snapSchedResponse);
         }
 

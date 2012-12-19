@@ -21,6 +21,8 @@ import com.cloud.agent.api.to.SwiftTO;
 public interface Swift {
     public long getId();
 
+    public String getUuid();
+
     public String getUrl();
 
     public String getAccount();

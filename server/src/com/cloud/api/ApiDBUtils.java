@@ -177,6 +177,7 @@ import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.UploadDao;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -185,6 +186,7 @@ import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplateSwiftDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeHostDao;
+import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.cloud.user.Account;
 import com.cloud.user.AccountDetailsDao;
 import com.cloud.user.AccountVO;
@@ -305,6 +307,7 @@ public class ApiDBUtils {
     private static StaticRouteDao _staticRouteDao;
     private static VpcGatewayDao _vpcGatewayDao;
     private static VpcDao _vpcDao;
+    private static SnapshotPolicyDao _snapshotPolicyDao;
 
     static {
         _ms = (ManagementServer) ComponentLocator.getComponent(ManagementServer.Name);
@@ -389,6 +392,7 @@ public class ApiDBUtils {
         _asVmProfileDao = locator.getDao(AutoScaleVmProfileDao.class);
         _asVmGroupDao = locator.getDao(AutoScaleVmGroupDao.class);
         _vpcDao = locator.getDao(VpcDao.class);
+        _snapshotPolicyDao = locator.getDao(SnapshotPolicyDao.class);
 
         // Note: stats collector should already have been initialized by this time, otherwise a null instance is returned
         _statsCollector = StatsCollector.getInstance();
@@ -1028,6 +1032,11 @@ public class ApiDBUtils {
     public static VpcVO findVpcById(long vpcId){
         return _vpcDao.findById(vpcId);
     }
+
+    public static SnapshotPolicy findSnapshotPolicyById(long policyId){
+        return _snapshotPolicyDao.findById(policyId);
+    }
+
     ///////////////////////////////////////////////////////////////////////
     //  Newly Added Utility Methods for List API refactoring             //
     ///////////////////////////////////////////////////////////////////////

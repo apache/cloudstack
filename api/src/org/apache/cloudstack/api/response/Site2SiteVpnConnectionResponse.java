@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.response;
 import java.util.Date;
 
 import org.apache.cloudstack.api.ApiConstants;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
@@ -27,16 +26,16 @@ import org.apache.cloudstack.api.BaseResponse;
 @SuppressWarnings("unused")
 public class Site2SiteVpnConnectionResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the vpn gateway ID")
-    private IdentityProxy id = new IdentityProxy("s2s_vpn_connection");
+    private String id;
 
     @SerializedName(ApiConstants.S2S_VPN_GATEWAY_ID) @Param(description="the vpn gateway ID")
-    private IdentityProxy vpnGatewayId= new IdentityProxy("s2s_vpn_gateway");
+    private String vpnGatewayId;
 
     @SerializedName(ApiConstants.PUBLIC_IP) @Param(description="the public IP address") //from VpnGateway
     private String ip;
 
     @SerializedName(ApiConstants.S2S_CUSTOMER_GATEWAY_ID) @Param(description="the customer gateway ID")
-    private IdentityProxy customerGatewayId = new IdentityProxy("s2s_customer_gateway");
+    private String customerGatewayId;
 
     @SerializedName(ApiConstants.GATEWAY) @Param(description="public ip address id of the customer gateway") //from CustomerGateway
     private String gatewayIp;
@@ -86,20 +85,20 @@ public class Site2SiteVpnConnectionResponse extends BaseResponse implements Cont
     @SerializedName(ApiConstants.REMOVED) @Param(description="the date and time the host was removed")
     private Date removed;
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public void setVpnGatewayId(Long vpnGatewayId) {
-        this.vpnGatewayId.setValue(vpnGatewayId);
+    public void setVpnGatewayId(String vpnGatewayId) {
+        this.vpnGatewayId = vpnGatewayId;
     }
 
     public void setIp(String ip) {
         this.ip = ip;
     }
 
-    public void setCustomerGatewayId(Long customerGatewayId) {
-        this.customerGatewayId.setValue(customerGatewayId);
+    public void setCustomerGatewayId(String customerGatewayId) {
+        this.customerGatewayId = customerGatewayId;
     }
 
     public void setGatewayIp(String gatewayIp) {
