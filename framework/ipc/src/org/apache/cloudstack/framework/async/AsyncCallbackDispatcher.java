@@ -28,8 +28,6 @@ import net.sf.cglib.proxy.MethodProxy;
 
 @SuppressWarnings("rawtypes")
 public class AsyncCallbackDispatcher<T> implements AsyncCompletionCallback {
-	private AsyncCallbackDispatcher _parent;
-	
 	private Method _callbackMethod;
 	private T _targetObject;
 	private Object _contextObject;
@@ -39,12 +37,6 @@ public class AsyncCallbackDispatcher<T> implements AsyncCompletionCallback {
 	private AsyncCallbackDispatcher(T target) {
 		assert(target != null);
 		_targetObject = target;
-	}
-	
-	private AsyncCallbackDispatcher(T target, AsyncCallbackDispatcher parent) {
-		assert(target != null);
-		_targetObject = target;
-		_parent = parent;
 	}
 	
 	public AsyncCallbackDispatcher<T> attachDriver(AsyncCallbackDriver driver) {
@@ -89,12 +81,6 @@ public class AsyncCallbackDispatcher<T> implements AsyncCompletionCallback {
 		_driver.performCompletionCallback(this);
 	}
 
-	public void deepComplete(Object resultObject) {
-		complete(resultObject);
-		if(_parent != null)
-			_parent.deepComplete(resultObject);
-	}
-	
 	@SuppressWarnings("unchecked")
 	public <R> R getResult() {
 		return (R)_resultObject;
@@ -107,15 +93,6 @@ public class AsyncCallbackDispatcher<T> implements AsyncCompletionCallback {
 	
 	public static <P> AsyncCallbackDispatcher<P> create(P target)  {
 		return new AsyncCallbackDispatcher<P>(target);
-	}
-	
-	public <P> AsyncCallbackDispatcher<P> chainToCreate(P target) {
-		return new AsyncCallbackDispatcher<P>(target, this);
-	}
-	
-	@SuppressWarnings("unchecked")
-	public <P> AsyncCallbackDispatcher<P> getParent() {
-		return (AsyncCallbackDispatcher<P>)_parent;
 	}
 	
 	public static boolean dispatch(Object target, AsyncCallbackDispatcher callback) {
