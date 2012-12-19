@@ -20,24 +20,47 @@ package org.apache.cloudstack.framework.rpc;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.Map;
 
+import net.sf.cglib.proxy.Enhancer;
+import net.sf.cglib.proxy.MethodInterceptor;
+import net.sf.cglib.proxy.MethodProxy;
 
-public class RpcCallbackDispatcher {
-
-	private static Map<Class<?>, Map<String, Method>> s_handlerCache = new HashMap<Class<?>, Map<String, Method>>();
+public class RpcCallbackDispatcher<T> {
+	private Method _callbackMethod;
+	private T _targetObject;
 	
-	public static boolean dispatch(Object target, RpcClientCall clientCall) {
+	private RpcCallbackDispatcher(T target) {
+		_targetObject = target;
+	}
+	
+	@SuppressWarnings("unchecked")
+	public T getTarget() {
+		return (T)Enhancer.create(_targetObject.getClass(), new MethodInterceptor() {
+			@Override
+			public Object intercept(Object arg0, Method arg1, Object[] arg2,
+				MethodProxy arg3) throws Throwable {
+				_callbackMethod = arg1;
+				return null;
+			}
+		});
+	}
+	
+	public RpcCallbackDispatcher<T> setCallback(Object useless) {
+		return this;
+	}
+	
+	public static <P> RpcCallbackDispatcher<P> create(P target)  {
+		return new RpcCallbackDispatcher<P>(target);
+	}
+	
+	public boolean dispatch(RpcClientCall clientCall) {
 		assert(clientCall != null);
-		assert(target != null);
-		
-		Method handler = resolveHandler(target.getClass(), clientCall.getCommand());
-		if(handler == null)
+
+		if(_callbackMethod == null)
 			return false;
 		
 		try {
-			handler.invoke(target, clientCall);
+			_callbackMethod.invoke(_targetObject, clientCall, clientCall.getContext());
 		} catch (IllegalArgumentException e) {
 			throw new RpcException("IllegalArgumentException when invoking RPC callback for command: " + clientCall.getCommand());
 		} catch (IllegalAccessException e) {
@@ -47,42 +70,5 @@ public class RpcCallbackDispatcher {
 		}
 		
 		return true;
-	}
-	
-	public static Method resolveHandler(Class<?> handlerClz, String command) {
-		synchronized(s_handlerCache) {
-			Map<String, Method> handlerMap = getAndSetHandlerMap(handlerClz);
-				
-			Method handler = handlerMap.get(command);
-			if(handler != null)
-				return handler;
-			
-			for(Method method : handlerClz.getDeclaredMethods()) {
-				RpcCallbackHandler annotation = method.getAnnotation(RpcCallbackHandler.class);
-				if(annotation != null) {
-					if(annotation.command().equals(command)) {
-						method.setAccessible(true);
-						handlerMap.put(command, method);
-						return method;
-					}
-				}
-			}
-		}
-		
-		return null;
-	}
-	
-	private static Map<String, Method> getAndSetHandlerMap(Class<?> handlerClz) {
-		Map<String, Method> handlerMap;
-		synchronized(s_handlerCache) {
-			handlerMap = s_handlerCache.get(handlerClz);
-			
-			if(handlerMap == null) {
-				handlerMap = new HashMap<String, Method>();
-				s_handlerCache.put(handlerClz, handlerMap);
-			}
-		}
-		
-		return handlerMap;
 	}
 }

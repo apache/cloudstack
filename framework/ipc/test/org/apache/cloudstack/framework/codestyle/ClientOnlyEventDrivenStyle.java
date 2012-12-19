@@ -18,7 +18,7 @@
  */
 package org.apache.cloudstack.framework.codestyle;
 
-import org.apache.cloudstack.framework.rpc.RpcCallbackHandler;
+import org.apache.cloudstack.framework.rpc.RpcCallbackDispatcher;
 import org.apache.cloudstack.framework.rpc.RpcClientCall;
 import org.apache.cloudstack.framework.rpc.RpcException;
 import org.apache.cloudstack.framework.rpc.RpcIOException;
@@ -30,17 +30,16 @@ public class ClientOnlyEventDrivenStyle {
 	
 	public void AsyncCallRpcService() {
 		String cmd = new String();
+		RpcCallbackDispatcher<ClientOnlyEventDrivenStyle> callbackDispatcher = RpcCallbackDispatcher.create(this);
+		callbackDispatcher.setCallback(callbackDispatcher.getTarget().OnAsyncCallRpcServiceCallback(null, null));
 		_rpcProvider.newCall("host-2").setCommand("TestCommand").setCommandArg(cmd).setTimeout(10000)
-			.setCallbackDispatcherTarget(this)
-			.setContextParam("origCmd", cmd)		// save context object for callback handler
+			.setCallbackDispatcher(callbackDispatcher)
+			.setContext("Context Object")		// save context object for callback handler
 			.apply();
 	}
 	
-	@RpcCallbackHandler(command="TestCommand")
-	public void OnAsyncCallRpcServiceCallback(RpcClientCall call) {
+	public Void OnAsyncCallRpcServiceCallback(RpcClientCall call, String context) {
 		try {
-			String origCmd = call.getContextParam("origCmd");	// restore calling context at callback handler	
-
 			String answer = call.get();
 			
 		} catch(RpcTimeoutException e) {
@@ -49,5 +48,7 @@ public class ClientOnlyEventDrivenStyle {
 			
 		} catch(RpcException e) {
 		}
+		
+		return null;
 	}
 }

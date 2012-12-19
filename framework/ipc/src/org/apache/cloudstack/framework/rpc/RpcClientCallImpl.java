@@ -23,19 +23,20 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
 public class RpcClientCallImpl implements RpcClientCall {
 
 	private String _command;
 	private Object _commandArg;
 	
 	private int _timeoutMilliseconds = DEFAULT_RPC_TIMEOUT;
-	private Map<String, Object> _contextParams = new HashMap<String, Object>();
+	private Object _contextObject;
 	private boolean _oneway = false;
 	
 	@SuppressWarnings("rawtypes")
 	private List<RpcCallbackListener> _callbackListeners = new ArrayList<RpcCallbackListener>();
-	private Object _callbackDispatcherTarget;
+
+	@SuppressWarnings("rawtypes")
+	private RpcCallbackDispatcher _callbackDispatcher;
 	
 	private RpcProvider _rpcProvider;
 	private long _startTickInMs;
@@ -81,16 +82,15 @@ public class RpcClientCallImpl implements RpcClientCall {
 	}
 
 	@Override
-	public RpcClientCall setContextParam(String key, Object param) {
-		assert(key != null);
-		_contextParams.put(key, param);
+	public RpcClientCall setContext(Object param) {
+		_contextObject = param;
 		return this;
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <T> T getContextParam(String key) {
-		return (T)_contextParams.get(key);
+	public <T> T getContext() {
+		return (T)_contextObject;
 	}
 
 	@Override
@@ -101,11 +101,10 @@ public class RpcClientCallImpl implements RpcClientCall {
 	}
 	
 	@Override
-	public RpcClientCall setCallbackDispatcherTarget(Object target) {
-		_callbackDispatcherTarget = target;
+	public RpcClientCall setCallbackDispatcher(RpcCallbackDispatcher dispatcher) {
+		_callbackDispatcher = dispatcher;
 		return this;
 	}
-	
 
 	@Override
 	public RpcClientCall setOneway() {
@@ -210,8 +209,8 @@ public class RpcClientCallImpl implements RpcClientCall {
 			for(@SuppressWarnings("rawtypes") RpcCallbackListener listener: _callbackListeners)
 				listener.onSuccess(resultObject);
 		} else {
-			if(_callbackDispatcherTarget != null)
-				RpcCallbackDispatcher.dispatch(_callbackDispatcherTarget, this);
+			if(_callbackDispatcher != null)
+				_callbackDispatcher.dispatch(this);
 		}
 	}
 	
@@ -228,8 +227,8 @@ public class RpcClientCallImpl implements RpcClientCall {
 			for(@SuppressWarnings("rawtypes") RpcCallbackListener listener: _callbackListeners)
 				listener.onFailure(e);
 		} else {
-			if(_callbackDispatcherTarget != null)
-				RpcCallbackDispatcher.dispatch(_callbackDispatcherTarget, this);
+			if(_callbackDispatcher != null)
+				_callbackDispatcher.dispatch(this);
 		}
 	}
 }

@@ -29,11 +29,11 @@ public interface RpcClientCall {
 	RpcClientCall setCommandArg(Object arg);
 	Object getCommandArg();
 	
-	RpcClientCall setContextParam(String key, Object param);
-	<T> T getContextParam(String key);
+	RpcClientCall setContext(Object param);
+	<T> T getContext();
 	
 	<T> RpcClientCall addCallbackListener(RpcCallbackListener<T> listener);
-	RpcClientCall setCallbackDispatcherTarget(Object target);
+	RpcClientCall setCallbackDispatcher(RpcCallbackDispatcher dispatcher);
 	
 	RpcClientCall setOneway();
 	
