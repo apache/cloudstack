@@ -7212,19 +7212,18 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
   min-width: 100px;
 }
 
-div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody tr.even td
- {
-   border-right: 1px solid #BFBFBF;
-    clear: none;
-    color: #495A76;
-    font-size: 10px;
-    margin-right: 25px;
-    min-width: -moz-available;
-    max-width:90px;
-    overflow: hidden;
-    padding: 9px 5px 8px 0;
-    position: relative;
-    vertical-align: middle;
+div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody tr.even td {
+  border-right: 1px solid #BFBFBF;
+  clear: none;
+  color: #495A76;
+  font-size: 10px;
+  margin-right: 25px;
+  min-width: -moz-available;
+  max-width: 90px;
+  overflow: hidden;
+  padding: 9px 5px 8px 0;
+  position: relative;
+  vertical-align: middle;
 }
 
 .multi-edit {
@@ -10680,10 +10679,9 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 }
 
 div.container div.panel div#details-tab-network.detail-group div div.multi-edit table.multi-edit tbody tr td,
- div.container div.panel div#details-tab-network.detail-group div div.multi-edit table.multi-edit thead tr th
-  {
- min-width:72px;
- font-size:10px;
+div.container div.panel div#details-tab-network.detail-group div div.multi-edit table.multi-edit thead tr th {
+  min-width: 72px;
+  font-size: 10px;
 }
 
 .ui-dialog div.autoscaler .detail-actions {
@@ -11169,15 +11167,14 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: -168px -31px;
 }
 
-.reset .icon{
-background-position: -168px -31px;
+.reset .icon {
+  background-position: -168px -31px;
 }
 
 .restoreVM:hover .icon,
 .restore:hover .icon {
   background-position: -168px -613px;
 }
-
 
 .reset:hover .icon {
   background-position: -168px -613px;
@@ -11307,3 +11304,4 @@ background-position: -168px -31px;
   cursor: pointer;
   color: #0000FF !important;
 }
+
