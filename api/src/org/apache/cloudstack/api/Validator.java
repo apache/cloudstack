@@ -25,6 +25,6 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ FIELD })
 public @interface Validator {
-    String DBEntityValidator();
-    String RangeValidator();
+    Class<?>[] validators() default Object.class;
+    String description() default "";
 }
