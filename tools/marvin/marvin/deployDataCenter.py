@@ -258,9 +258,9 @@ class deployDataCenters():
         traffic_type = addTrafficType.addTrafficTypeCmd()
         traffic_type.physicalnetworkid = physical_network_id
         traffic_type.traffictype = traffictype.typ
-        if traffictype.labeldict:
-            traffic_type.kvmnetworklabel = traffictype.labeldict.xen
-            traffic_type.xennetworklabel = traffictype.labeldict.kvm
+        if traffictype.labeldict is not None:
+            traffic_type.kvmnetworklabel = traffictype.labeldict.kvm
+            traffic_type.xennetworklabel = traffictype.labeldict.xen
             traffic_type.vmwarenetworklabel = traffictype.labeldict.vmware
         return self.apiClient.addTrafficType(traffic_type)
 
@@ -399,9 +399,9 @@ class deployDataCenters():
                                              logging=self.testClientLogger)
 
         """config database"""
-        dbSvr = self.config.dbSvr
-        self.testClient.dbConfigure(dbSvr.dbSvr, dbSvr.port, dbSvr.user, \
-                                    dbSvr.passwd, dbSvr.db)
+        #dbSvr = self.config.dbSvr
+        #self.testClient.dbConfigure(dbSvr.dbSvr, dbSvr.port, dbSvr.user, \
+        #                            dbSvr.passwd, dbSvr.db)
         self.apiClient = self.testClient.getApiClient()
 
     def updateConfiguration(self, globalCfg):
@@ -418,7 +418,6 @@ class deployDataCenters():
         self.loadCfg()
         self.createZones(self.config.zones)
         self.updateConfiguration(self.config.globalConfig)
-
 
 if __name__ == "__main__":
 

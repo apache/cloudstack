@@ -81,7 +81,7 @@ def get_zone(apiclient, services=None):
     zones = apiclient.listZones(cmd)
 
     if isinstance(zones, list):
-        assert len(zones) > 0
+        assert len(zones) > 0, "There are no available zones in the deployment"
         return zones[0]
     else:
         raise Exception("Failed to find specified zone.")
@@ -100,7 +100,7 @@ def get_pod(apiclient, zoneid, services=None):
     pods = apiclient.listPods(cmd)
 
     if isinstance(pods, list):
-        assert len(pods) > 0
+        assert len(pods) > 0, "No pods found for zone %s"%zoneid
         return pods[0]
     else:
         raise Exception("Exception: Failed to find specified pod.")
@@ -129,10 +129,11 @@ def get_template(apiclient, zoneid, ostype, services=None):
 
     list_templates = apiclient.listTemplates(cmd)
 
-    assert len(list_templates) > 0
-    for template in list_templates:
-        if template.ostypeid == ostypeid:
-            return template
+    if isinstance(list_templates, list):
+        assert len(list_templates) > 0, "received empty response on template of type %s"%ostype
+        for template in list_templates:
+            if template.ostypeid == ostypeid:
+                return template
 
     raise Exception("Exception: Failed to find template with OSTypeID: %s" %
                                                                     ostypeid)

@@ -45,6 +45,7 @@ var pageSize = 20;
 
 var rootAccountId = 1;
 var havingSwift = false;
+var havingS3 = false;
 
 //async action
 var pollAsyncJobResult = function(args) {

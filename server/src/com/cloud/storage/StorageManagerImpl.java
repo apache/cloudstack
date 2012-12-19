@@ -151,11 +151,13 @@ import com.cloud.storage.dao.StoragePoolWorkDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
+import com.cloud.storage.dao.VMTemplateS3Dao;
 import com.cloud.storage.dao.VMTemplateSwiftDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeHostDao;
 import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.storage.listener.StoragePoolMonitor;
+import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.storage.snapshot.SnapshotScheduler;
@@ -261,6 +263,10 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
     protected VMTemplatePoolDao _vmTemplatePoolDao = null;
     @Inject
     protected VMTemplateSwiftDao _vmTemplateSwiftDao = null;
+    @Inject
+    protected VMTemplateS3Dao _vmTemplateS3Dao;
+    @Inject
+    protected S3Manager _s3Mgr;
     @Inject
     protected VMTemplateDao _vmTemplateDao = null;
     @Inject
@@ -663,7 +669,6 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         String vdiUUID = null;
         Long snapshotId = snapshot.getId();
         Long volumeId = snapshot.getVolumeId();
-        String primaryStoragePoolNameLabel = pool.getUuid(); // pool's uuid is actually the namelabel.
         Long dcId = snapshot.getDataCenterId();
         String secondaryStoragePoolUrl = _snapMgr.getSecondaryStorageURL(snapshot);
         long accountId = snapshot.getAccountId();
@@ -707,8 +712,10 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         try {
             if (snapshot.getSwiftId() != null && snapshot.getSwiftId() != 0) {
                 _snapshotMgr.downloadSnapshotsFromSwift(snapshot);
+            } else if (snapshot.getS3Id() != null && snapshot.getS3Id() != 0) {
+                _snapshotMgr.downloadSnapshotsFromS3(snapshot);
             }
-            CreateVolumeFromSnapshotCommand createVolumeFromSnapshotCommand = new CreateVolumeFromSnapshotCommand(primaryStoragePoolNameLabel, secondaryStoragePoolUrl, dcId, accountId, volumeId,
+            CreateVolumeFromSnapshotCommand createVolumeFromSnapshotCommand = new CreateVolumeFromSnapshotCommand(pool, secondaryStoragePoolUrl, dcId, accountId, volumeId,
                     backedUpSnapshotUuid, snapshot.getName(), _createVolumeFromSnapshotWait);
             CreateVolumeFromSnapshotAnswer answer;
             if (!_snapshotDao.lockInLockTable(snapshotId.toString(), 10)) {
@@ -1281,7 +1288,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         }
         URI uri = null;
         try {
-            uri = new URI(cmd.getUrl());
+            uri = new URI(UriUtils.encodeURIComponent(cmd.getUrl()));
             if (uri.getScheme() == null) {
                 throw new InvalidParameterValueException("scheme is null " + cmd.getUrl() + ", add nfs:// as a prefix");
             } else if (uri.getScheme().equalsIgnoreCase("nfs")) {
@@ -2983,6 +2990,14 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         if (tsvs != null && tsvs.size() > 0) {
             size = tsvs.get(0).getSize();
         }
+
+        if (size == null && _s3Mgr.isS3Enabled()) {
+            VMTemplateS3VO vmTemplateS3VO = _vmTemplateS3Dao.findOneByTemplateId(template.getId());
+            if (vmTemplateS3VO != null) {
+                size = vmTemplateS3VO.getSize();
+            }
+        }
+
         if (size == null) {
             List<VMTemplateHostVO> sss = _vmTemplateHostDao.search(sc, null);
             if (sss == null || sss.size() == 0) {

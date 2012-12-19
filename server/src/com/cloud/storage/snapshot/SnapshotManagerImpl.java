@@ -17,6 +17,7 @@
 package com.cloud.storage.snapshot;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -34,9 +35,11 @@ import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.DeleteSnapshotBackupCommand;
 import com.cloud.agent.api.DeleteSnapshotsDirCommand;
+import com.cloud.agent.api.DownloadSnapshotFromS3Command;
 import com.cloud.agent.api.ManageSnapshotAnswer;
 import com.cloud.agent.api.ManageSnapshotCommand;
 import com.cloud.agent.api.downloadSnapshotFromSwiftCommand;
+import com.cloud.agent.api.to.S3TO;
 import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.commands.CreateSnapshotPolicyCmd;
@@ -91,6 +94,7 @@ import com.cloud.storage.dao.SnapshotScheduleDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.swift.SwiftManager;
 import com.cloud.tags.ResourceTagVO;
@@ -171,6 +175,8 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     private ResourceLimitService _resourceLimitMgr;
     @Inject
     private SwiftManager _swiftMgr;
+    @Inject
+    private S3Manager _s3Mgr;
     @Inject 
     private SecondaryStorageVmManager _ssvmMgr;
     @Inject
@@ -477,11 +483,25 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         return createdSnapshot;
     }
 
+    private static void checkObjectStorageConfiguration(SwiftTO swift, S3TO s3) {
+
+        if (swift != null && s3 != null) {
+            throw new CloudRuntimeException(
+                    "Swift and S3 are not simultaneously supported for snapshot backup.");
+        }
+
+    }
 
     @Override
     public void deleteSnapshotsForVolume (String secondaryStoragePoolUrl, Long dcId, Long accountId, Long volumeId ){
         SwiftTO swift = _swiftMgr.getSwiftTO();
-        DeleteSnapshotBackupCommand cmd = new DeleteSnapshotBackupCommand(swift, secondaryStoragePoolUrl, dcId, accountId, volumeId, null, true);
+        S3TO s3 = _s3Mgr.getS3TO();
+
+        checkObjectStorageConfiguration(swift, s3);
+
+        DeleteSnapshotBackupCommand cmd = new DeleteSnapshotBackupCommand(
+                swift, s3, secondaryStoragePoolUrl, dcId, accountId, volumeId,
+                null, true);
         try {
             Answer ans = _agentMgr.sendToSSVM(dcId, cmd);
             if ( ans == null || !ans.getResult() ) {
@@ -543,6 +563,54 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         
     }
 
+    private List<String> determineBackupUuids(final SnapshotVO snapshot) {
+
+        final List<String> backupUuids = new ArrayList<String>();
+        backupUuids.add(0, snapshot.getBackupSnapshotId());
+
+        SnapshotVO tempSnapshot = snapshot;
+        while (tempSnapshot.getPrevSnapshotId() != 0) {
+            tempSnapshot = _snapshotDao.findById(tempSnapshot
+                    .getPrevSnapshotId());
+            backupUuids.add(0, tempSnapshot.getBackupSnapshotId());
+        }
+
+        return Collections.unmodifiableList(backupUuids);
+    }
+
+    @Override
+    public void downloadSnapshotsFromS3(final SnapshotVO snapshot) {
+
+        final VolumeVO volume = _volsDao.findById(snapshot.getVolumeId());
+        final Long zoneId = volume.getDataCenterId();
+        final HostVO secHost = _storageMgr.getSecondaryStorageHost(zoneId);
+
+        final S3TO s3 = _s3Mgr.getS3TO(snapshot.getS3Id());
+        final List<String> backupUuids = determineBackupUuids(snapshot);
+
+        try {
+            String parent = null;
+            for (final String backupUuid : backupUuids) {
+                final DownloadSnapshotFromS3Command cmd = new DownloadSnapshotFromS3Command(
+                        s3, parent, secHost.getStorageUrl(), zoneId,
+                        volume.getAccountId(), volume.getId(), backupUuid,
+                        _backupsnapshotwait);
+                final Answer answer = _agentMgr.sendToSSVM(zoneId, cmd);
+                if ((answer == null) || !answer.getResult()) {
+                    throw new CloudRuntimeException(String.format(
+                            "S3 snapshot download failed due to %1$s.",
+                            answer != null ? answer.getDetails()
+                                    : "unspecified error"));
+                }
+                parent = backupUuid;
+            }
+        } catch (Exception e) {
+            throw new CloudRuntimeException(
+                    "Snapshot download from S3 failed due to " + e.toString(),
+                    e);
+        }
+
+    }
 
     @Override
     @DB
@@ -560,7 +628,6 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             long volumeId = snapshot.getVolumeId();
             VolumeVO volume = _volsDao.lockRow(volumeId, true);
 
-            String primaryStoragePoolNameLabel = _storageMgr.getPrimaryStorageNameLabel(volume);
             Long dcId = volume.getDataCenterId();
             Long accountId = volume.getAccountId();
             
@@ -577,6 +644,9 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
 
 
             SwiftTO swift = _swiftMgr.getSwiftTO();
+            S3TO s3 = _s3Mgr.getS3TO();
+
+            checkObjectStorageConfiguration(swift, s3);
             
             long prevSnapshotId = snapshot.getPrevSnapshotId();
             if (prevSnapshotId > 0) {
@@ -586,7 +656,8 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                         prevBackupUuid = prevSnapshot.getBackupSnapshotId();
                         prevSnapshotUuid = prevSnapshot.getPath();
                     }
-                } else if ( prevSnapshot.getSwiftId() != null && swift != null ) {
+                } else if ((prevSnapshot.getSwiftId() != null && swift != null)
+                        || (prevSnapshot.getS3Id() != null && s3 != null)) {
                     prevBackupUuid = prevSnapshot.getBackupSnapshotId();
                     prevSnapshotUuid = prevSnapshot.getPath();
                 }
@@ -594,13 +665,15 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             boolean isVolumeInactive = _storageMgr.volumeInactive(volume);
             String vmName = _storageMgr.getVmNameOnVolume(volume);
             StoragePoolVO srcPool = _storagePoolDao.findById(volume.getPoolId());
-            BackupSnapshotCommand backupSnapshotCommand = new BackupSnapshotCommand(primaryStoragePoolNameLabel, secondaryStoragePoolUrl, dcId, accountId, volumeId, snapshot.getId(), volume.getPath(), srcPool, snapshotUuid,
+            BackupSnapshotCommand backupSnapshotCommand = new BackupSnapshotCommand(secondaryStoragePoolUrl, dcId, accountId, volumeId, snapshot.getId(), volume.getPath(), srcPool, snapshotUuid,
                     snapshot.getName(), prevSnapshotUuid, prevBackupUuid, isVolumeInactive, vmName, _backupsnapshotwait);
 
             if ( swift != null ) {
                 backupSnapshotCommand.setSwift(swift);
+            } else if (s3 != null) {
+                backupSnapshotCommand.setS3(s3);
             }
-            
+
             String backedUpSnapshotUuid = null;
             // By default, assume failed.
             boolean backedUp = false;
@@ -620,6 +693,9 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             if (backedUp) {
                 if (backupSnapshotCommand.getSwift() != null ) {
                     snapshot.setSwiftId(swift.getId());
+                    snapshot.setBackupSnapshotId(backedUpSnapshotUuid);
+                } else if (backupSnapshotCommand.getS3() != null) {
+                    snapshot.setS3Id(s3.getId());
                     snapshot.setBackupSnapshotId(backedUpSnapshotUuid);
                 } else {
                     snapshot.setSecHostId(secHost.getId());
@@ -832,7 +908,13 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             return true;
         }
         SwiftTO swift = _swiftMgr.getSwiftTO(snapshot.getSwiftId());
-        DeleteSnapshotBackupCommand cmd = new DeleteSnapshotBackupCommand(swift, secondaryStoragePoolUrl, dcId, accountId, volumeId, backupOfSnapshot, false);
+        S3TO s3 = _s3Mgr.getS3TO();
+
+        checkObjectStorageConfiguration(swift, s3);
+
+        DeleteSnapshotBackupCommand cmd = new DeleteSnapshotBackupCommand(
+                swift, s3, secondaryStoragePoolUrl, dcId, accountId, volumeId,
+                backupOfSnapshot, false);
         Answer answer = _agentMgr.sendToSSVM(dcId, cmd);
 
         if ((answer != null) && answer.getResult()) {
@@ -979,9 +1061,15 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             }
             List<HostVO> ssHosts = _ssvmMgr.listSecondaryStorageHostsInOneZone(dcId);
             SwiftTO swift = _swiftMgr.getSwiftTO();
-            if (swift == null) {
+            S3TO s3 = _s3Mgr.getS3TO();
+
+            checkObjectStorageConfiguration(swift, s3);
+
+            if (swift == null && s3 == null) {
                 for (HostVO ssHost : ssHosts) {
-                    DeleteSnapshotBackupCommand cmd = new DeleteSnapshotBackupCommand(null, ssHost.getStorageUrl(), dcId, accountId, volumeId, "", true);
+                    DeleteSnapshotBackupCommand cmd = new DeleteSnapshotBackupCommand(
+                            null, null, ssHost.getStorageUrl(), dcId,
+                            accountId, volumeId, "", true);
                     Answer answer = null;
                     try {
                         answer = _agentMgr.sendToSSVM(dcId, cmd);
@@ -998,12 +1086,14 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                     }
                 }
             } else {
-                DeleteSnapshotBackupCommand cmd = new DeleteSnapshotBackupCommand(swift, "", dcId, accountId, volumeId, "", true);
+                DeleteSnapshotBackupCommand cmd = new DeleteSnapshotBackupCommand(
+                        swift, s3, "", dcId, accountId, volumeId, "", true);
                 Answer answer = null;
                 try {
                     answer = _agentMgr.sendToSSVM(dcId, cmd);
                 } catch (Exception e) {
-                    s_logger.warn("Failed to delete all snapshot for volume " + volumeId + " on swift");
+                    final String storeType = s3 != null ? "S3" : "swift";
+                    s_logger.warn("Failed to delete all snapshot for volume " + volumeId + " on " + storeType);
                 }
                 if ((answer != null) && answer.getResult()) {
                     s_logger.debug("Deleted all snapshots for volume: " + volumeId + " under account: " + accountId);

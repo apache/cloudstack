@@ -201,7 +201,7 @@ TAGS FOR A SECTION
 <section id="INSERT A UNIQUE SECTION ID HERE, PROBABLY MATCHING THE TITLE BELOW. KEEP THE QUOTE MARKS.">
     <title>Text of the section title</title>
     <para>Here's the text of a paragraph in this section.</para>
-    <para>Always use &PRODUCT; rather than typing CloudStack or CloudPlatform.</para>
+    <para>Always use &PRODUCT; rather than typing CloudStack.</para>
     <para>Indent with 4 spaces, not with tab characters.</para>
     <para>To hyperlink to a URL outside this document: <ulink url="http://external URL here">Display text of the link here</ulink></para>
     <para>To hyperlink to another section in this document: <xref linkend="SECTION ID OF THE OTHER SECTION GOES HERE." />

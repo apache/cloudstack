@@ -179,8 +179,22 @@
                 havingSwift = true;
             }
           });
+          if (havingSwift == false) {
+            $.ajax({
+              url: createURL("listS3s"),
+              dataType: "json",
+              async: false,
+              success: function(json) {
+                var items = json.lists3sresponse.s3;
+                if (items != null && items.length > 0) {
+                  havingS3 = true;
+                }
+              }
+            });
+          }
         } else {
           havingSwift = false;
+          havingS3 = false;
         }
 
         return userValid ? {
@@ -297,8 +311,22 @@
                     havingSwift = true;
                 }
               });
+              if (havingSwift = false) {
+                $.ajax({
+                  url: createURL("listS3s"),
+                  dataType: "json",
+                  async: false,
+                  success: function(json) {
+                    var items = json.lists3sresponse.s3;
+                    if (items != null && items.length > 0) {
+                      havingS3 = true;
+                    }
+                  }
+                });
+              }
             } else {
               havingSwift = false;
+              havingS3 = false;
             }
 
             // Get project configuration
@@ -374,22 +402,21 @@
           response: {
             success: function(args) {
               if (args.doInstall && isAdmin()) {
-                var initInstallWizard = function(eulaHTML) {
+                var initInstallWizard = function() {
                   cloudStack.uiCustom.installWizard({
                     $container: $container,
                     context: context,
-                    eula: eulaHTML,
                     complete: function() {
                       // Show cloudStack main UI
-                      $container.cloudStack($.extend(cloudStackArgs, { hasLogo: loginArgs.eula }));
+                      $container.cloudStack($.extend(cloudStackArgs, { hasLogo: false }));
                     }
                   });
                 };
 
-                initInstallWizard(loginArgs.eula);
+                initInstallWizard();
               } else {
                 // Show cloudStack main UI
-                $container.cloudStack($.extend(cloudStackArgs, { hasLogo: loginArgs.eula }));
+                $container.cloudStack($.extend(cloudStackArgs, { hasLogo: false }));
               }
             }
           }
@@ -404,22 +431,8 @@
       }
     };
 		
-    // EULA check
-    $.ajax({
-      url: 'eula.' + g_lang + '.html',
-      dataType: 'html',
-      success: function(html) {
-        document.title = 'CloudPlatform';
-        cloudStack.uiCustom.login($.extend(loginArgs, { eula: html, hasLogo: true }));
-      },
-      error: function() {
-        document.title = 'CloudStack';
-        cloudStack.uiCustom.login(loginArgs);
-      },	
-			beforeSend : function(XMLHttpResponse) {
-				return true;
-			}		
-    });
+    document.title = 'CloudStack';
+    cloudStack.uiCustom.login(loginArgs);
 
     // Localization
     cloudStack.localizationFn = function(str) {

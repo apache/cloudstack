@@ -912,19 +912,13 @@
                     hiddenFields.push("networkofferingid");
                     hiddenFields.push("networkdomain");
                   }
+									
+									if(!isAdmin()) {
+									  hiddenFields.push("vlan");
+									}
+									
                   return hiddenFields;
-                },								
-								
-								preFilter: function(args) {
-                  var hiddenFields;
-                  if(isAdmin()) {
-                    hiddenFields = [];
-                  }
-                  else {
-                    hiddenFields = ["vlan"];
-                  }
-                  return hiddenFields;
-                },
+                },						
 																
                 fields: [
                   {
@@ -1059,7 +1053,7 @@
                     noSelect: true,
                     noHeaderActionsColumn: true,
                     fields: {
-                      'cidrlist': { edit: true, label: 'label.cidr', isOptional: true },
+                      'cidrlist': { edit: true, label: 'label.cidr.list', isOptional: true },
                       'protocol': {
                         label: 'label.protocol',
                         select: function(args) {

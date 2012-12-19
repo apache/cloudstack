@@ -113,10 +113,12 @@ import com.cloud.storage.dao.UploadDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
+import com.cloud.storage.dao.VMTemplateS3Dao;
 import com.cloud.storage.dao.VMTemplateSwiftDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.download.DownloadMonitor;
+import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.swift.SwiftManager;
 import com.cloud.storage.upload.UploadMonitor;
@@ -179,7 +181,11 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     @Inject
     SwiftManager _swiftMgr;
     @Inject
+    S3Manager _s3Mgr;
+    @Inject
     VMTemplateSwiftDao _tmpltSwiftDao;
+    @Inject
+    VMTemplateS3Dao _vmS3TemplateDao;
     @Inject
     ConfigurationDao _configDao;
     @Inject
@@ -207,6 +213,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     ExecutorService _preloadExecutor;
     ScheduledExecutorService _swiftTemplateSyncExecutor;
     
+    private ScheduledExecutorService _s3TemplateSyncExecutor = null;
 
     @Inject (adapter=TemplateAdapter.class)
     protected Adapters<TemplateAdapter> _adapters;
@@ -344,8 +351,12 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             }
         }
         
-        if (zoneId == null) {
+		if (zoneId == null && _swiftMgr.isSwiftEnabled()) {
             zoneId = _swiftMgr.chooseZoneForTmpltExtract(templateId);
+        }
+
+        if (zoneId == null && _s3Mgr.isS3Enabled()) {
+            zoneId = _s3Mgr.chooseZoneForTemplateExtract(template);
         }
 
         if (_dcDao.findById(zoneId) == null) {
@@ -380,7 +391,13 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             if (swift != null && sservers != null) {
                 downloadTemplateFromSwiftToSecondaryStorage(zoneId, templateId);
             }
+        } else if (tmpltHostRef == null && _s3Mgr.isS3Enabled()) {
+            if (sservers != null) {
+                _s3Mgr.downloadTemplateFromS3ToSecondaryStorage(zoneId,
+                        templateId, _primaryStorageDownloadWait);
+            }
         }
+
         if (tmpltHostRef == null) {
             throw new InvalidParameterValueException("The " + desc + " has not been downloaded ");
         }
@@ -594,6 +611,12 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
                 s_logger.error("Unable to find a secondary storage host who has completely downloaded the template.");
                 return null;
             }
+            result = _s3Mgr.downloadTemplateFromS3ToSecondaryStorage(dcId,
+                    templateId, _primaryStorageDownloadWait);
+            if (result != null) {
+                s_logger.error("Unable to find a secondary storage host who has completely downloaded the template.");
+                return null;
+            }
             templateHostRef = _storageMgr.findVmTemplateHost(templateId, pool);
             if (templateHostRef == null || templateHostRef.getDownloadState() != Status.DOWNLOADED) {
                 s_logger.error("Unable to find a secondary storage host who has completely downloaded the template.");
@@ -644,7 +667,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             }
             String url = origUrl + "/" + templateHostRef.getInstallPath();
             PrimaryStorageDownloadCommand dcmd = new PrimaryStorageDownloadCommand(template.getUniqueName(), url, template.getFormat(), 
-                   template.getAccountId(), pool.getId(), pool.getUuid(), _primaryStorageDownloadWait);
+                   template.getAccountId(), pool, _primaryStorageDownloadWait);
             HostVO secondaryStorageHost = _hostDao.findById(templateHostRef.getHostId());
             assert(secondaryStorageHost != null);
             dcmd.setSecondaryStorageUrl(secondaryStorageHost.getStorageUrl());
@@ -704,6 +727,12 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 
         if (templateHostRef == null || templateHostRef.getDownloadState() != Status.DOWNLOADED) {
             String result = downloadTemplateFromSwiftToSecondaryStorage(dcId, templateId);
+            if (result != null) {
+                s_logger.error("Unable to find a secondary storage host who has completely downloaded the template.");
+                return null;
+            }
+            result = _s3Mgr.downloadTemplateFromS3ToSecondaryStorage(dcId,
+                    templateId, _primaryStorageDownloadWait);
             if (result != null) {
                 s_logger.error("Unable to find a secondary storage host who has completely downloaded the template.");
                 return null;
@@ -823,6 +852,12 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         if (_swiftMgr.isSwiftEnabled()) {
             throw new CloudRuntimeException("copytemplate API is disabled in Swift setup, templates in Swift can be accessed by all Zones");
         }
+
+        if (_s3Mgr.isS3Enabled()) {
+            throw new CloudRuntimeException(
+                    "copytemplate API is disabled in S3 setup -- S3 templates are accessible in all zones.");
+        }
+
         //Verify parameters
         if (sourceZoneId == destZoneId) {
             throw new InvalidParameterValueException("Please specify different source and destination zones.");
@@ -1003,12 +1038,32 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     @Override
     public boolean start() {
         _swiftTemplateSyncExecutor.scheduleAtFixedRate(getSwiftTemplateSyncTask(), 60, 60, TimeUnit.SECONDS);
+
+        if (_s3TemplateSyncExecutor != null) {
+
+            final int initialDelay = 60;
+            final int period = 60;
+
+            _s3TemplateSyncExecutor.scheduleAtFixedRate(new S3SyncTask(
+                    this._tmpltDao, this._s3Mgr), initialDelay, period,
+                    TimeUnit.SECONDS);
+            s_logger.info(String.format("Started S3 sync task to execute "
+                    + "execute every %1$s after an initial delay of %2$s.",
+                    period, initialDelay));
+
+        }
+
         return true;
     }
 
     @Override
     public boolean stop() {
         _swiftTemplateSyncExecutor.shutdownNow();
+
+        if (_s3TemplateSyncExecutor != null) {
+            _s3TemplateSyncExecutor.shutdownNow();
+        }
+
         return true;
     }
 
@@ -1041,7 +1096,16 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         _storagePoolMaxWaitSeconds = NumbersUtil.parseInt(_configDao.getValue(Config.StoragePoolMaxWaitSeconds.key()), 3600);
         _preloadExecutor = Executors.newFixedThreadPool(8, new NamedThreadFactory("Template-Preloader"));
         _swiftTemplateSyncExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("swift-template-sync-Executor"));
-        return false;
+
+        if (_s3Mgr.isS3Enabled()) {
+            _s3TemplateSyncExecutor = Executors
+                    .newSingleThreadScheduledExecutor(new NamedThreadFactory(
+                            "s3-template-sync"));
+        } else {
+            s_logger.info("S3 secondary storage synchronization is disabled.");
+        }
+
+      return false;
     }
     
     protected TemplateManagerImpl() {
@@ -1195,13 +1259,19 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         if (cmd.getZoneId() == null && _swiftMgr.isSwiftEnabled()) {
             _swiftMgr.deleteTemplate(cmd);
         }
+        if (cmd.getZoneId() == null && _s3Mgr.isS3Enabled()) {
+            _s3Mgr.deleteTemplate(cmd.getId(), caller.getAccountId());
+        }
+
     	TemplateAdapter adapter = getAdapter(template.getHypervisorType());
     	TemplateProfile profile = adapter.prepareDelete(cmd);
     	boolean result = adapter.delete(profile);
     	
     	if (result){
-            if (cmd.getZoneId() == null && _swiftMgr.isSwiftEnabled()) {
-                List<VMTemplateZoneVO> templateZones = _tmpltZoneDao.listByZoneTemplate(null, templateId);
+            if (cmd.getZoneId() == null
+                    && (_swiftMgr.isSwiftEnabled() || _s3Mgr.isS3Enabled())) {
+                List<VMTemplateZoneVO> templateZones = _tmpltZoneDao
+                        .listByZoneTemplate(null, templateId);
                 if (templateZones != null) {
                     for (VMTemplateZoneVO templateZone : templateZones) {
                         _tmpltZoneDao.remove(templateZone.getId());
@@ -1234,6 +1304,10 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         if (cmd.getZoneId() == null && _swiftMgr.isSwiftEnabled()) {
             _swiftMgr.deleteIso(cmd);
     	}
+        if (cmd.getZoneId() == null && _s3Mgr.isS3Enabled()) {
+            _s3Mgr.deleteTemplate(caller.getAccountId(), templateId);
+        }
+
     	if (zoneId != null && (_ssvmMgr.findSecondaryStorageHost(zoneId) == null)) {
     		throw new InvalidParameterValueException("Failed to find a secondary storage host in the specified zone.");
     	}
@@ -1241,8 +1315,10 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     	TemplateProfile profile = adapter.prepareDelete(cmd);
         boolean result = adapter.delete(profile);
         if (result) {
-            if (cmd.getZoneId() == null && _swiftMgr.isSwiftEnabled()) {
-                List<VMTemplateZoneVO> templateZones = _tmpltZoneDao.listByZoneTemplate(null, templateId);
+            if (cmd.getZoneId() == null
+                    && (_swiftMgr.isSwiftEnabled() || _s3Mgr.isS3Enabled())) {
+                List<VMTemplateZoneVO> templateZones = _tmpltZoneDao
+                        .listByZoneTemplate(null, templateId);
                 if (templateZones != null) {
                     for (VMTemplateZoneVO templateZone : templateZones) {
                         _tmpltZoneDao.remove(templateZone.getId());

@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.agent.api;
 
+import com.cloud.storage.StoragePool;
+
 /**
  * This currently assumes that both primary and secondary storage are mounted on the XenServer.  
  */
@@ -39,7 +41,8 @@ public class CreateVolumeFromSnapshotCommand extends SnapshotCommand {
      *                                 It may not be the UUID of the base copy of the snapshot, if no data was written since last snapshot.
      * @param templatePath             The install path of the template VHD on the secondary, if this a root volume                                 
      */
-    public CreateVolumeFromSnapshotCommand(String primaryStoragePoolNameLabel,
+
+    public CreateVolumeFromSnapshotCommand(StoragePool pool,
                                            String secondaryStoragePoolURL,
                                            Long   dcId,
                                            Long   accountId,
@@ -48,7 +51,7 @@ public class CreateVolumeFromSnapshotCommand extends SnapshotCommand {
                                            String backedUpSnapshotName,
                                            int wait)
     {
-        super(primaryStoragePoolNameLabel, secondaryStoragePoolURL, backedUpSnapshotUuid, backedUpSnapshotName, dcId, accountId, volumeId);
+        super(pool, secondaryStoragePoolURL, backedUpSnapshotUuid, backedUpSnapshotName, dcId, accountId, volumeId);
         setWait(wait);
     }
 }

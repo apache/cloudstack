@@ -726,38 +726,6 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public KVMStoragePool getStoragePoolByURI(String uri) {
-        URI storageUri = null;
-
-        try {
-            storageUri = new URI(uri);
-        } catch (URISyntaxException e) {
-            throw new CloudRuntimeException(e.toString());
-        }
-
-        String sourcePath = null;
-        String uuid = null;
-        String sourceHost = "";
-        StoragePoolType protocal = null;
-        if (storageUri.getScheme().equalsIgnoreCase("nfs")) {
-            sourcePath = storageUri.getPath();
-            sourcePath = sourcePath.replace("//", "/");
-            sourceHost = storageUri.getHost();
-            uuid = UUID.nameUUIDFromBytes(
-                    new String(sourceHost + sourcePath).getBytes()).toString();
-            protocal = StoragePoolType.NetworkFilesystem;
-        }
-
-        return createStoragePool(uuid, sourceHost, 0, sourcePath, "", protocal);
-    }
-
-    @Override
-    public KVMPhysicalDisk getPhysicalDiskFromURI(String uri) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public KVMPhysicalDisk createDiskFromSnapshot(KVMPhysicalDisk snapshot,
             String snapshotName, String name, KVMStoragePool destPool) {
         return null;

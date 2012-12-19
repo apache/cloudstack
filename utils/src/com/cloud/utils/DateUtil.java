@@ -82,6 +82,10 @@ public class DateUtil {
         return formattedString;
     }
 
+    public static Date now() {
+        return new Date(System.currentTimeMillis());
+    }
+
     public enum IntervalType {
         HOURLY,
     	DAILY,

@@ -23,19 +23,109 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 import com.cloud.agent.api.SnapshotCommand;
+import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolStatus;
 
 public class SnapshotCommandTest {
-    SnapshotCommand ssc = new SnapshotCommand("primaryStoragePoolNameLabel",
+
+    public StoragePool pool = new StoragePool() {
+        public long getId() {
+            return 1L;
+        };
+
+        public String getName() {
+            return "name";
+        };
+
+        public String getUuid() {
+            return "bed9f83e-cac3-11e1-ac8a-0050568b007e";
+        };
+
+        public StoragePoolType getPoolType() {
+            return StoragePoolType.Filesystem;
+        };
+
+        public Date getCreated() {
+            Date date = null;
+            try {
+                date = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss")
+                        .parse("01/01/1970 12:12:12");
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+            return date;
+        }
+
+        public Date getUpdateTime() {
+            return new Date();
+        };
+
+        public long getDataCenterId() {
+            return 0L;
+        };
+
+        public long getCapacityBytes() {
+            return 0L;
+        };
+
+        public long getAvailableBytes() {
+            return 0L;
+        };
+
+        public Long getClusterId() {
+            return 0L;
+        };
+
+        public String getHostAddress() {
+            return "hostAddress";
+        };
+
+        public String getPath() {
+            return "path";
+        };
+
+        public String getUserInfo() {
+            return "userInfo";
+        };
+
+        public boolean isShared() {
+            return false;
+        };
+
+        public boolean isLocal() {
+            return false;
+        };
+
+        public StoragePoolStatus getStatus() {
+            return StoragePoolStatus.Up;
+        };
+
+        public int getPort() {
+            return 25;
+        };
+
+        public Long getPodId() {
+            return 0L;
+        };
+    };
+
+    SnapshotCommand ssc = new SnapshotCommand(pool,
             "http://secondary.Storage.Url",
             "420fa39c-4ef1-a83c-fd93-46dc1ff515ae", "snapshotName", 101L, 102L,
             103L);
 
     SnapshotCommand ssc1;
 
+
     @Before
     public void setUp() {
-        ssc1 = new SnapshotCommand("primaryStoragePoolNameLabel",
+        ssc1 = new SnapshotCommand(pool,
                 "secondaryStorageUrl", "snapshotUuid", "snapshotName", 101L,
                 102L, 103L);
     }
@@ -43,7 +133,7 @@ public class SnapshotCommandTest {
     @Test
     public void testGetPrimaryStoragePoolNameLabel() {
         String label = ssc.getPrimaryStoragePoolNameLabel();
-        assertTrue(label.equals("primaryStoragePoolNameLabel"));
+        assertTrue(label.equals("bed9f83e-cac3-11e1-ac8a-0050568b007e"));
     }
 
     @Test

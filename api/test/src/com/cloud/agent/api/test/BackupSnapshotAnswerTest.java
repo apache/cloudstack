@@ -36,7 +36,7 @@ public class BackupSnapshotAnswerTest {
 
         StoragePool pool = Mockito.mock(StoragePool.class);
 
-        bsc = new BackupSnapshotCommand("primaryStoragePoolNameLabel",
+        bsc = new BackupSnapshotCommand(
                 "secondaryStoragePoolURL", 101L, 102L, 103L, 104L,
                 "volumePath", pool, "snapshotUuid", "snapshotName",
                 "prevSnapshotUuid", "prevBackupUuid", false, "vmName", 5);

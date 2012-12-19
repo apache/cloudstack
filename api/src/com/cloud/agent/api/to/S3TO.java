@@ -1,0 +1,252 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+package com.cloud.agent.api.to;
+
+import com.cloud.utils.S3Utils;
+
+import java.util.Date;
+
+public final class S3TO implements S3Utils.ClientOptions {
+
+    private Long id;
+    private String uuid;
+    private String accessKey;
+    private String secretKey;
+    private String endPoint;
+    private String bucketName;
+    private Boolean httpsFlag;
+    private Integer connectionTimeout;
+    private Integer maxErrorRetry;
+    private Integer socketTimeout;
+    private Date created;
+
+    public S3TO() {
+
+        super();
+
+    }
+
+    public S3TO(final Long id, final String uuid, final String accessKey,
+            final String secretKey, final String endPoint,
+            final String bucketName, final Boolean httpsFlag,
+            final Integer connectionTimeout, final Integer maxErrorRetry,
+            final Integer socketTimeout, final Date created) {
+
+        super();
+
+        this.id = id;
+        this.uuid = uuid;
+        this.accessKey = accessKey;
+        this.secretKey = secretKey;
+        this.endPoint = endPoint;
+        this.bucketName = bucketName;
+        this.httpsFlag = httpsFlag;
+        this.connectionTimeout = connectionTimeout;
+        this.maxErrorRetry = maxErrorRetry;
+        this.socketTimeout = socketTimeout;
+        this.created = created;
+
+    }
+
+    @Override
+    public boolean equals(final Object thatObject) {
+
+        if (this == thatObject)
+            return true;
+        if (thatObject == null || getClass() != thatObject.getClass())
+            return false;
+
+        final S3TO thatS3TO = (S3TO) thatObject;
+
+        if (httpsFlag != null ? !httpsFlag.equals(thatS3TO.httpsFlag)
+                : thatS3TO.httpsFlag != null) {
+            return false;
+        }
+
+        if (accessKey != null ? !accessKey.equals(thatS3TO.accessKey)
+                : thatS3TO.accessKey != null) {
+            return false;
+        }
+
+        if (connectionTimeout != null ? !connectionTimeout
+                .equals(thatS3TO.connectionTimeout)
+                : thatS3TO.connectionTimeout != null) {
+            return false;
+        }
+
+        if (endPoint != null ? !endPoint.equals(thatS3TO.endPoint)
+                : thatS3TO.endPoint != null) {
+            return false;
+        }
+
+        if (id != null ? !id.equals(thatS3TO.id) : thatS3TO.id != null) {
+            return false;
+        }
+
+        if (uuid != null ? !uuid.equals(thatS3TO.uuid) : thatS3TO.uuid != null) {
+            return false;
+        }
+
+        if (maxErrorRetry != null ? !maxErrorRetry
+                .equals(thatS3TO.maxErrorRetry)
+                : thatS3TO.maxErrorRetry != null) {
+            return false;
+        }
+
+        if (secretKey != null ? !secretKey.equals(thatS3TO.secretKey)
+                : thatS3TO.secretKey != null) {
+            return false;
+        }
+
+        if (socketTimeout != null ? !socketTimeout
+                .equals(thatS3TO.socketTimeout)
+                : thatS3TO.socketTimeout != null) {
+            return false;
+        }
+
+        if (bucketName != null ? !bucketName.equals(thatS3TO.bucketName)
+                : thatS3TO.bucketName != null) {
+            return false;
+        }
+
+        if (created != null ? !created.equals(thatS3TO.created)
+                : thatS3TO.created != null) {
+            return false;
+        }
+
+        return true;
+
+    }
+
+    @Override
+    public int hashCode() {
+
+        int result = id != null ? id.hashCode() : 0;
+
+        result = 31 * result + (accessKey != null ? accessKey.hashCode() : 0);
+        result = 31 * result + (secretKey != null ? secretKey.hashCode() : 0);
+        result = 31 * result + (endPoint != null ? endPoint.hashCode() : 0);
+        result = 31 * result + (bucketName != null ? bucketName.hashCode() : 0);
+        result = 31 * result + (httpsFlag ? 1 : 0);
+        result = 31
+                * result
+                + (connectionTimeout != null ? connectionTimeout.hashCode() : 0);
+        result = 31 * result
+                + (maxErrorRetry != null ? maxErrorRetry.hashCode() : 0);
+        result = 31 * result
+                + (socketTimeout != null ? socketTimeout.hashCode() : 0);
+
+        return result;
+
+    }
+
+    public Long getId() {
+        return this.id;
+    }
+
+    public void setId(final Long id) {
+        this.id = id;
+    }
+
+    public String getUuid() {
+        return this.uuid;
+    }
+
+    public void setUuid(final String uuid) {
+        this.uuid = uuid;
+    }
+
+    @Override
+    public String getAccessKey() {
+        return this.accessKey;
+    }
+
+    public void setAccessKey(final String accessKey) {
+        this.accessKey = accessKey;
+    }
+
+    @Override
+    public String getSecretKey() {
+        return this.secretKey;
+    }
+
+    public void setSecretKey(final String secretKey) {
+        this.secretKey = secretKey;
+    }
+
+    @Override
+    public String getEndPoint() {
+        return this.endPoint;
+    }
+
+    public void setEndPoint(final String endPoint) {
+        this.endPoint = endPoint;
+    }
+
+    public String getBucketName() {
+        return this.bucketName;
+    }
+
+    public void setBucketName(final String bucketName) {
+        this.bucketName = bucketName;
+    }
+
+    @Override
+    public Boolean isHttps() {
+        return this.httpsFlag;
+    }
+
+    public void setHttps(final Boolean httpsFlag) {
+        this.httpsFlag = httpsFlag;
+    }
+
+    @Override
+    public Integer getConnectionTimeout() {
+        return connectionTimeout;
+    }
+
+    public void setConnectionTimeout(final Integer connectionTimeout) {
+        this.connectionTimeout = connectionTimeout;
+    }
+
+    @Override
+    public Integer getMaxErrorRetry() {
+        return maxErrorRetry;
+    }
+
+    public void setMaxErrorRetry(final Integer maxErrorRetry) {
+        this.maxErrorRetry = maxErrorRetry;
+    }
+
+    @Override
+    public Integer getSocketTimeout() {
+        return socketTimeout;
+    }
+
+    public void setSocketTimeout(final Integer socketTimeout) {
+        this.socketTimeout = socketTimeout;
+    }
+
+    public Date getCreated() {
+        return this.created;
+    }
+
+    public void setCreated(final Date created) {
+        this.created = created;
+    }
+
+}

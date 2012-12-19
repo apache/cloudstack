@@ -20,10 +20,12 @@ import java.util.List;
 
 import com.cloud.api.commands.AddClusterCmd;
 import com.cloud.api.commands.AddHostCmd;
+import com.cloud.api.commands.AddS3Cmd;
 import com.cloud.api.commands.AddSecondaryStorageCmd;
 import com.cloud.api.commands.AddSwiftCmd;
 import com.cloud.api.commands.CancelMaintenanceCmd;
 import com.cloud.api.commands.DeleteClusterCmd;
+import com.cloud.api.commands.ListS3sCmd;
 import com.cloud.api.commands.ListSwiftsCmd;
 import com.cloud.api.commands.PrepareForMaintenanceCmd;
 import com.cloud.api.commands.ReconnectHostCmd;
@@ -35,6 +37,7 @@ import com.cloud.exception.ResourceInUseException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Cluster;
+import com.cloud.storage.S3;
 import com.cloud.storage.Swift;
 import com.cloud.utils.fsm.NoTransitionException;
 
@@ -93,8 +96,13 @@ public interface ResourceService {
     Cluster getCluster(Long clusterId);
 
     Swift discoverSwift(AddSwiftCmd addSwiftCmd) throws DiscoveryException;
+
+    S3 discoverS3(AddS3Cmd cmd) throws DiscoveryException;
     
     List<HypervisorType> getSupportedHypervisorTypes(long zoneId, boolean forVirtualRouter, Long podId);
 
     List<? extends Swift> listSwifts(ListSwiftsCmd cmd);
+
+    List<? extends S3> listS3s(ListS3sCmd cmd);
+
 }
