@@ -619,6 +619,8 @@ public class ApiDispatcher {
                     field.set(cmdObj, listParam);
                     break;
             case UUID:
+                if (paramObj.toString().isEmpty())
+                    break;
                 // There may be multiple entities defined on the @Entity of a Response.class
                 // UUID CommandType would expect only one entityType, so use the first entityType
                 Class<?>[] entities = annotation.entityType()[0].getAnnotation(Entity.class).value();
