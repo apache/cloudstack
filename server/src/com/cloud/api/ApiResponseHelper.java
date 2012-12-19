@@ -440,7 +440,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         domainResponse.setId(domain.getUuid());
         domainResponse.setLevel(domain.getLevel());
         domainResponse.setNetworkDomain(domain.getNetworkDomain());
-        domainResponse.setParentDomainId(ApiDBUtils.findDomainById(domain.getParent()).getUuid());
+        Domain parentDomain = ApiDBUtils.findDomainById(domain.getParent());
+        if (parentDomain != null) {
+            domainResponse.setParentDomainId(parentDomain.getUuid());
+        }
         StringBuilder domainPath = new StringBuilder("ROOT");
         (domainPath.append(domain.getPath())).deleteCharAt(domainPath.length() - 1);
         domainResponse.setPath(domainPath.toString());
