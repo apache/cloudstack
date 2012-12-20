@@ -19,11 +19,11 @@ package org.apache.cloudstack.api.command.user.vpn;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -40,9 +40,8 @@ public class ListRemoteAccessVpnsCmd extends BaseListProjectAndAccountResourcesC
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-
-    @IdentityMapper(entityTableName="user_ip_address")
-    @Parameter(name=ApiConstants.PUBLIC_IP_ID, type=CommandType.LONG, required=true, description="public ip address id of the vpn server")
+    @Parameter(name=ApiConstants.PUBLIC_IP_ID, type=CommandType.UUID, entityType=IPAddressResponse.class,
+            required=true, description="public ip address id of the vpn server")
     private Long publicIpId;
 
     /////////////////////////////////////////////////////

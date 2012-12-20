@@ -16,11 +16,14 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import com.cloud.network.RemoteAccessVpn;
 import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.Entity;
 
+@Entity(value=RemoteAccessVpn.class)
 @SuppressWarnings("unused")
 public class RemoteAccessVpnResponse extends BaseResponse implements ControlledEntityResponse{
 

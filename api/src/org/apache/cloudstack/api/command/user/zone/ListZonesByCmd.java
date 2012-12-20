@@ -19,11 +19,11 @@ package org.apache.cloudstack.api.command.user.zone;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -39,15 +39,17 @@ public class ListZonesByCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @IdentityMapper(entityTableName="data_center")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the ID of the zone")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=ZoneResponse.class,
+            description= "the ID of the zone")
     private Long id;
 
-    @Parameter(name=ApiConstants.AVAILABLE, type=CommandType.BOOLEAN, description="true if you want to retrieve all available Zones. False if you only want to return the Zones from which you have at least one VM. Default is false.")
+    @Parameter(name=ApiConstants.AVAILABLE, type=CommandType.BOOLEAN,
+            description="true if you want to retrieve all available Zones. False if you only want to return the Zones" +
+                    " from which you have at least one VM. Default is false.")
     private Boolean available;
 
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the ID of the domain associated with the zone")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType=DomainResponse.class,
+            description="the ID of the domain associated with the zone")
     private Long domainId;
 
     @Parameter(name=ApiConstants.SHOW_CAPACITIES, type=CommandType.BOOLEAN, description="flag to display the capacity of the zones")
