@@ -40,7 +40,9 @@
 
     $.each(args.sections, function(sectionID, args) {
       if (preFilter && $.inArray(sectionID, preFilter) == -1) {
-        return true;
+        if (!(args.preFilter && args.preFilter())) {
+          return true;
+        }
       }
 
       var $li = $('<li>')
