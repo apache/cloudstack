@@ -41,6 +41,11 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class VolumeEntityImpl implements VolumeEntity {
     private VolumeInfo volumeInfo;
     private final VolumeService vs;
+    
+    protected VolumeEntityImpl() {
+        this.vs = null;
+    }
+    
     public VolumeEntityImpl(VolumeInfo volumeObject, VolumeService vs) {
         this.volumeInfo = volumeObject;
         this.vs = vs;

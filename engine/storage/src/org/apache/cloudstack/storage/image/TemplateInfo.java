@@ -31,6 +31,4 @@ public interface TemplateInfo {
     String getPath();
     
     String getUuid();
-    
-    long getVirtualSize();
 }

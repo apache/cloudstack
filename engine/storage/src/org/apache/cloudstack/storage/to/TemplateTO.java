@@ -8,13 +8,13 @@ public class TemplateTO {
     private final String uuid;
     private final VolumeDiskType diskType;
     private final ImageDataStoreTO imageDataStore;
-    private final long size;
+    private final long size = 0;
     public TemplateTO(TemplateInfo template) {
         this.path = template.getPath();
         this.uuid = template.getUuid();
         this.diskType = template.getDiskType();
         this.imageDataStore = new ImageDataStoreTO(template.getImageDataStore());
-        this.size = template.getVirtualSize();
+       // this.size = template.getVirtualSize();
     }
     
     public String getPath() {

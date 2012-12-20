@@ -15,7 +15,11 @@ public class VolumeTO {
         this.path = volume.getPath();
         this.volumeType = volume.getType();
         this.diskType = volume.getDiskType();
-        this.dataStore = new PrimaryDataStoreTO(volume.getDataStore());
+        if (volume.getDataStore() != null) {
+            this.dataStore = new PrimaryDataStoreTO(volume.getDataStore());
+        } else {
+            this.dataStore = null;
+        }
     }
     
     public String getUuid() {

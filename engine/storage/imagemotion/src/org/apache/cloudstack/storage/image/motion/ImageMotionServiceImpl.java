@@ -22,8 +22,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
-import org.apache.cloudstack.framework.async.AsyncCallbackHandler;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.EndPoint;
 import org.apache.cloudstack.storage.command.CommandResult;
@@ -91,16 +89,8 @@ public class ImageMotionServiceImpl implements ImageMotionService {
         TemplateInfo template = templateStore.getTemplate();
         imageService.grantTemplateAccess(template, ep);
         
-        AsyncCallbackDispatcher caller = new AsyncCallbackDispatcher(this)
-            .setParentCallback(callback)
-            .setOperationName("imagemotionService.copytemplate.callback");
-        
-        ims.copyTemplateAsync(templateStore, ep, caller);
+        ims.copyTemplateAsync(templateStore, ep, callback);
     }
-    
-    @AsyncCallbackHandler(operationName="imagemotionService.copytemplate.callback")
-    public void copyTemplateAsyncCallback( AsyncCallbackDispatcher callback) {
-        AsyncCallbackDispatcher parentCaller = callback.getParentCallback();
-        parentCaller.complete(callback.getResult());
-    }
+
+
 }

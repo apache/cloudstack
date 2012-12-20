@@ -106,7 +106,7 @@ public class AsyncCallbackDispatcher<T> implements AsyncCompletionCallback {
 		} catch (IllegalAccessException e) {
 			throw new RuntimeException("IllegalAccessException when invoking RPC callback for command: " + callback.getCallbackMethod().getName());
 		} catch (InvocationTargetException e) {
-			throw new RuntimeException("InvocationTargetException when invoking RPC callback for command: " + callback.getCallbackMethod().getName());
+			throw new RuntimeException("InvocationTargetException when invoking RPC callback for command: " + callback.getCallbackMethod().getName(), e);
 		}
 		
 		return true;
