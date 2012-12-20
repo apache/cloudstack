@@ -22,9 +22,15 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.storage.command.CopyTemplateToPrimaryStorageCmd;
+import org.apache.cloudstack.storage.to.ImageDataStoreTO;
+import org.apache.cloudstack.storage.to.ImageOnPrimayDataStoreTO;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.storage.to.TemplateTO;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -112,6 +118,33 @@ public class DirectAgentTest {
     @Test
     public void testInitResource() {
         ReadyCommand cmd = new ReadyCommand(dcId);
+        try {
+            agentMgr.send(hostId, cmd);
+        } catch (AgentUnavailableException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (OperationTimedoutException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+    
+    @Test
+    public void testDownloadTemplate() {
+        ImageOnPrimayDataStoreTO image = Mockito.mock(ImageOnPrimayDataStoreTO.class);
+        PrimaryDataStoreTO primaryStore = Mockito.mock(PrimaryDataStoreTO.class);
+        Mockito.when(primaryStore.getUuid()).thenReturn("cd10cac1-4772-92e5-5da6-c2bc16b1ce1b");
+        Mockito.when(image.getPrimaryDataStore()).thenReturn(primaryStore);
+        
+        ImageDataStoreTO imageStore = Mockito.mock(ImageDataStoreTO.class);
+        Mockito.when(imageStore.getType()).thenReturn("http");
+        
+        TemplateTO template = Mockito.mock(TemplateTO.class);
+        Mockito.when(template.getPath()).thenReturn("http://download.cloud.com/templates/devcloud/defaulttemplates/5/ce5b212e-215a-3461-94fb-814a635b2215.vhd");
+        Mockito.when(template.getImageDataStore()).thenReturn(imageStore);
+        
+        Mockito.when(image.getTemplate()).thenReturn(template);
+        CopyTemplateToPrimaryStorageCmd cmd = new CopyTemplateToPrimaryStorageCmd(image);
         try {
             agentMgr.send(hostId, cmd);
         } catch (AgentUnavailableException e) {

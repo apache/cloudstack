@@ -18,6 +18,9 @@
  */
 package com.cloud.hypervisor.xen.resource;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.util.HashMap;
@@ -36,6 +39,13 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.http.Header;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpHead;
+import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
@@ -67,31 +77,70 @@ public class XenServerStorageResource {
     }
     
     private long getTemplateSize(String url) {
-        /*
-        HttpGet method = new HttpGet(url);
-        HttpClient client = new HttpClient();
+        HttpHead method = new HttpHead(url);
+        DefaultHttpClient client = new DefaultHttpClient();
         try {
-            int responseCode = client.executeMethod(method);
-            if (responseCode != HttpStatus.SC_OK) {
-                throw new CloudRuntimeException("http get returns error code:" + responseCode);
+            HttpResponse response = client.execute(method);
+            Header header = response.getFirstHeader("Content-Length");
+            if (header == null) {
+                throw new CloudRuntimeException("Can't get content-lenght header from :" + url);
             }
-            method.get
+            Long length = Long.parseLong(header.getValue());
+            return length;
         } catch (HttpException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            throw new CloudRuntimeException("Failed to get template lenght", e);
         } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            throw new CloudRuntimeException("Failed to get template lenght", e);
+        } catch (NumberFormatException e) {
+            throw new CloudRuntimeException("Failed to get template lenght", e);
         }
-        */
-        return 0;
     }
     
-    protected Answer directDownloadHttpTemplate(TemplateTO template, PrimaryDataStoreTO primarDataStore) {
+    private void downloadHttpToLocalFile(String destFilePath, String url) {
+        File destFile = new File(destFilePath);
+        if (!destFile.exists()) {
+            throw new CloudRuntimeException("dest file doesn't exist: " + destFilePath);
+        }
+        
+        DefaultHttpClient client = new DefaultHttpClient();
+        HttpGet getMethod = new HttpGet(url);
+        HttpResponse response;
+        BufferedOutputStream output = null;
+        long length = 0;
+        try {
+            response = client.execute(getMethod);
+            HttpEntity entity = response.getEntity();
+            length = entity.getContentLength();
+            output = new BufferedOutputStream(new FileOutputStream(destFile));
+            entity.writeTo(output);
+        } catch (ClientProtocolException e) {
+           throw new CloudRuntimeException("Failed to download template", e);
+        } catch (IOException e) {
+            throw new CloudRuntimeException("Failed to download template", e);
+        } finally {
+            if (output != null) {
+                try {
+                    output.close();
+                } catch (IOException e) {
+                    throw new CloudRuntimeException("Failed to download template", e);
+                }
+            }
+        }
+        
+        //double check the length
+        destFile = new File(destFilePath);
+        if (destFile.length() != length) {
+            throw new CloudRuntimeException("Download file length doesn't match: expected: " + length + ", actual: " + destFile.length());
+        }
+       
+    }
+    
+    protected Answer directDownloadHttpTemplate(CopyTemplateToPrimaryStorageCmd cmd, TemplateTO template, PrimaryDataStoreTO primarDataStore) {
         String primaryStoreUuid = primarDataStore.getUuid();
         Connection conn = hypervisorResource.getConnection();
         SR poolsr = null;
         VDI vdi = null;
+        boolean result = false;
         try {
             
             Set<SR> srs = SR.getByNameLabel(conn, primaryStoreUuid);
@@ -103,8 +152,8 @@ public class XenServerStorageResource {
             vdir.nameLabel = "Base-Image-" + UUID.randomUUID().toString();
             vdir.SR = poolsr;
             vdir.type = Types.VdiType.USER;
-
-            vdir.virtualSize = template.getSize();
+            
+            vdir.virtualSize = getTemplateSize(template.getPath());
             vdi = VDI.create(conn, vdir);
             
             vdir = vdi.getRecord(conn);
@@ -114,27 +163,40 @@ public class XenServerStorageResource {
                 throw new CloudRuntimeException("Don't how to handle multiple pbds:" + pbds.size() + " for sr: " + poolsr.getUuid(conn));
             }
             PBD pbd = pbds.iterator().next();
-            PBD.Record pbdRec = pbd.getRecord(conn);
             Map<String, String> deviceCfg = pbd.getDeviceConfig(conn);
             String pbdLocation = deviceCfg.get("location");
             if (pbdLocation == null) {
                 throw new CloudRuntimeException("Can't get pbd: " + pbd.getUuid(conn) + " location");
             }
             
-            String vdiPath = pbdLocation + "/" + vdiLocation;
+            String vdiPath = pbdLocation + "/" + vdiLocation + ".vhd";
             //download a url into vdipath
-            
+            //downloadHttpToLocalFile(vdiPath, template.getPath());
+            hypervisorResource.callHostPlugin(conn, "vmopsStorage", "downloadTemplateFromUrl", "destPath", vdiPath, "srcUrl", template.getPath());
+            result = true;
+            return new CopyTemplateToPrimaryStorageAnswer(cmd, vdi.getUuid(conn));
         } catch (BadServerResponse e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            s_logger.debug("Failed to download template", e);
         } catch (XenAPIException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            s_logger.debug("Failed to download template", e);
         } catch (XmlRpcException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            s_logger.debug("Failed to download template", e);
+        } catch (Exception e) {
+            s_logger.debug("Failed to download template", e);
+        } finally {
+            if (!result && vdi != null) {
+                try {
+                    vdi.destroy(conn);
+                } catch (BadServerResponse e) {
+                   s_logger.debug("Failed to cleanup newly created vdi");
+                } catch (XenAPIException e) {
+                    s_logger.debug("Failed to cleanup newly created vdi");
+                } catch (XmlRpcException e) {
+                    s_logger.debug("Failed to cleanup newly created vdi");
+                }
+            }
         }
-        return null;
+        return new Answer(cmd, false, "Failed to download template");
     }
     
     protected Answer execute(CopyTemplateToPrimaryStorageCmd cmd) {
@@ -142,7 +204,7 @@ public class XenServerStorageResource {
         TemplateTO template = imageTO.getTemplate();
         ImageDataStoreTO imageStore = template.getImageDataStore();
         if (imageStore.getType().equalsIgnoreCase("http")) {
-            return directDownloadHttpTemplate(template, imageTO.getPrimaryDataStore());
+            return directDownloadHttpTemplate(cmd, template, imageTO.getPrimaryDataStore());
         } else {
             return new Answer(cmd, false, "not implemented yet");
             /*
