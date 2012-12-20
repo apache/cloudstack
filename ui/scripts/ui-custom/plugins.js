@@ -37,14 +37,14 @@
   };
 
   cloudStack.uiCustom.plugins = function() {
-    var plugins = cloudStack.plugins.loaded;
+    var plugins = cloudStack.plugins;
 
     return elems.pluginListing({
       plugins: $(plugins).map(function(index, pluginID) {
-        var plugin = cloudStack.plugins.registry[pluginID];
+        var plugin = cloudStack.plugins[pluginID].config;
 
         return {
-          id: plugin.id,
+          id: pluginID,
           title: plugin.title,
           desc: plugin.desc
         };
