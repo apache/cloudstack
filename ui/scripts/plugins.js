@@ -1,4 +1,13 @@
 (function($, cloudStack, require) {
+  var pluginAPI = {
+    addSection: function(section) {
+      cloudStack.sections[section.id] = section;
+    },
+    extend: function(obj) {
+      $.extend(true, cloudStack, obj);
+    }
+  };
+  
   cloudStack.sections.plugins = {
     title: 'Plugins',
     show: cloudStack.uiCustom.plugins
@@ -15,11 +24,7 @@
 
       // Execute plugin
       cloudStack.plugins[pluginID]({
-        ui: {
-          extend: function(obj) {
-            $.extend(true, cloudStack, obj);
-          }
-        }
+        ui: pluginAPI
       });
     });
   });
