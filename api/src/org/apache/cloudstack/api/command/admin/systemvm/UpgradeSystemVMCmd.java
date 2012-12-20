@@ -16,7 +16,9 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.systemvm;
 
+import com.cloud.offering.DiskOffering;
 import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
+import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -43,13 +45,12 @@ public class UpgradeSystemVMCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="vm_instance")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="The ID of the system vm")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=SystemVmResponse.class,
+            required=true, description="The ID of the system vm")
     private Long id;
 
-    @IdentityMapper(entityTableName="disk_offering")
-    @Parameter(name=ApiConstants.SERVICE_OFFERING_ID, type=CommandType.LONG, required=true,
-                description="the service offering ID to apply to the system vm")
+    @Parameter(name=ApiConstants.SERVICE_OFFERING_ID, type=CommandType.UUID, entityType=DiskOfferingResponse.class,
+            required=true, description="the service offering ID to apply to the system vm")
     private Long serviceOfferingId;
 
     /////////////////////////////////////////////////////

@@ -18,12 +18,15 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 
+import com.cloud.storage.StoragePool;
 import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.cloud.storage.StoragePoolStatus;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.Entity;
 
+@Entity(value=StoragePool.class)
 public class StoragePoolResponse extends BaseResponse {
     @SerializedName("id") @Param(description="the ID of the storage pool")
     private String id;
