@@ -2,7 +2,9 @@ package org.apache.cloudstack.engine.datacenter.entity.api;
 
 
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State.Event;
+import org.apache.cloudstack.engine.datacenter.entity.api.db.ClusterVO;
 import org.apache.cloudstack.engine.datacenter.entity.api.db.DataCenterVO;
+import org.apache.cloudstack.engine.datacenter.entity.api.db.HostPodVO;
 
 import com.cloud.utils.fsm.NoTransitionException;
 
@@ -14,6 +16,14 @@ public interface DataCenterResourceManager {
 	
 	void saveDataCenter(DataCenterVO dc);
 	
-	boolean changeState(ZoneEntity dc, Event event) throws NoTransitionException;
+	void savePod(HostPodVO dc);
+	
+	void saveCluster(ClusterVO cluster);
+	
+	boolean changeState(DataCenterResourceEntity entity, Event event) throws NoTransitionException;
+	
+	HostPodVO loadPod(String uuid);
+	
+	ClusterVO loadCluster(String uuid);
 
 }

@@ -240,6 +240,7 @@ public class DataCenterVO implements DataCenter, Identity {
         this.zoneToken = zoneToken;
         this.domain = domainSuffix;
         this.uuid = UUID.randomUUID().toString();
+        this.state = State.Disabled;
     }
     
     @Override

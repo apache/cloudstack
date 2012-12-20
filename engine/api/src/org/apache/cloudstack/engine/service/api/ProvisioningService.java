@@ -42,22 +42,22 @@ public interface ProvisioningService {
     StorageEntity registerStorage(String name, List<String> tags, Map<String, String> details);
 
     @POST
-    ZoneEntity registerZone(String zoneUuid, String owner, List<String> tags, Map<String, String> details);
+    ZoneEntity registerZone(String zoneUuid, String name, String owner, List<String> tags, Map<String, String> details);
 
     @POST
-    PodEntity registerPod(String name, Long zoneId, String gateway, String cidr, String startIp, String endIp, List<String> tags, Map<String, String> details);
+    PodEntity registerPod(String podUuid, String name, String owner, String zoneUuid, List<String> tags, Map<String, String> details);
 
-    ClusterEntity registerCluster(String name, List<String> tags, Map<String, String> details);
+    ClusterEntity registerCluster(String clusterUuid, String name, String owner, List<String> tags, Map<String, String> details);
 
     String registerHost(String name, List<String> tags, Map<String, String> details);
 
     void deregisterStorage(String uuid);
 
-    void deregisterZone();
+    void deregisterZone(String uuid);
 
-    void deregisterPod();
+    void deregisterPod(String uuid);
 
-    void deregisterCluster();
+    void deregisterCluster(String uuid);
 
     void deregisterHost();
 

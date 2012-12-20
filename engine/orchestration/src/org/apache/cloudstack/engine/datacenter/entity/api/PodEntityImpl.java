@@ -23,62 +23,84 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State.Event;
+import org.apache.cloudstack.engine.datacenter.entity.api.db.HostPodVO;
+
 import com.cloud.org.Cluster;
+import com.cloud.org.Grouping.AllocationState;
+import com.cloud.utils.fsm.NoTransitionException;
 
 public class PodEntityImpl implements PodEntity {
-    String _uuid;
-    String _name;
 
-    public PodEntityImpl(String uuid, String name) {
-        _uuid = uuid;
-        _name = name;
+	
+	private DataCenterResourceManager manager;
+    
+    private HostPodVO podVO;
+
+    public PodEntityImpl(String uuid, DataCenterResourceManager manager) {
+    	this.manager = manager;
+    	podVO = manager.loadPod(uuid);
     }
 
     @Override
     public boolean enable() {
-        // TODO Auto-generated method stub
-        return false;
+    	try {
+			manager.changeState(this, Event.EnableRequest);
+		} catch (NoTransitionException e) {
+			return false;
+		}
+    	return true;
     }
 
     @Override
     public boolean disable() {
-        // TODO Auto-generated method stub
-        return false;
+    	try {
+			manager.changeState(this, Event.DisableRequest);
+		} catch (NoTransitionException e) {
+			return false;
+		}
+    	return true;
     }
 
     @Override
     public boolean deactivate() {
-        // TODO Auto-generated method stub
-        return false;
+    	try {
+			manager.changeState(this, Event.DeactivateRequest);
+		} catch (NoTransitionException e) {
+			return false;
+		}
+    	return true;
     }
 
     @Override
     public boolean reactivate() {
-        // TODO Auto-generated method stub
-        return false;
+    	try {
+			manager.changeState(this, Event.ActivatedRequest);
+		} catch (NoTransitionException e) {
+			return false;
+		}
+    	return true;
     }
 
     @Override
     public State getState() {
-        // TODO Auto-generated method stub
-        return null;
+        return podVO.getState();
     }
 
     @Override
     public String getUuid() {
-        return _uuid;
+        return podVO.getUuid();
     }
 
     @Override
     public long getId() {
-        // TODO Auto-generated method stub
-        return 0;
+        return podVO.getId();
     }
 
     @Override
     public String getCurrentState() {
         // TODO Auto-generated method stub
-        return null;
+    	return null;
     }
 
     @Override
@@ -89,20 +111,17 @@ public class PodEntityImpl implements PodEntity {
 
     @Override
     public Date getCreatedTime() {
-        // TODO Auto-generated method stub
-        return null;
+        return podVO.getCreated();
     }
 
     @Override
     public Date getLastUpdatedTime() {
-        // TODO Auto-generated method stub
-        return null;
+        return podVO.getLastUpdated();
     }
 
     @Override
     public String getOwner() {
-        // TODO Auto-generated method stub
-        return null;
+        return podVO.getOwner();
     }
 
 
@@ -114,49 +133,37 @@ public class PodEntityImpl implements PodEntity {
 
     @Override
     public String getCidrAddress() {
-        // TODO Auto-generated method stub
-        return null;
+        return podVO.getCidrAddress();
     }
 
     @Override
     public int getCidrSize() {
-        // TODO Auto-generated method stub
-        return 0;
+        return podVO.getCidrSize();
     }
 
     @Override
     public String getGateway() {
-        // TODO Auto-generated method stub
-        return null;
+        return podVO.getGateway();
     }
 
     @Override
     public long getDataCenterId() {
-        // TODO Auto-generated method stub
-        return 0;
-    }
-
-    @Override
-    public String getDescription() {
-        // TODO Auto-generated method stub
-        return null;
+        return podVO.getDataCenterId();
     }
 
     @Override
     public String getName() {
-        return _name;
+        return podVO.getName();
     }
 
     @Override
     public AllocationState getAllocationState() {
-        // TODO Auto-generated method stub
-        return null;
+        return podVO.getAllocationState();
     }
 
     @Override
     public boolean getExternalDhcp() {
-        // TODO Auto-generated method stub
-        return false;
+        return podVO.getExternalDhcp();
     }
 
     @Override
@@ -167,13 +174,12 @@ public class PodEntityImpl implements PodEntity {
 
 	@Override
 	public void persist() {
-		// TODO Auto-generated method stub
+		manager.savePod(podVO);
 		
 	}
 
 	@Override
 	public Map<String, String> getDetails() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
@@ -191,8 +197,15 @@ public class PodEntityImpl implements PodEntity {
 
 	@Override
 	public void updateDetail(String name, String value) {
-		// TODO Auto-generated method stub
-		
+
 	}
 
+	public void setOwner(String owner) {
+		podVO.setOwner(owner);		
+	}
+
+	public void setName(String name) {
+		podVO.setName(name);
+	}
+	
 }

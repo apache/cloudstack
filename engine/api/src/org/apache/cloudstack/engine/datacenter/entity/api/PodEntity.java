@@ -22,9 +22,24 @@ import java.util.List;
 
 import com.cloud.dc.Pod;
 import com.cloud.org.Cluster;
+import com.cloud.org.Grouping.AllocationState;
 
-public interface PodEntity extends DataCenterResourceEntity, Pod {
+public interface PodEntity extends DataCenterResourceEntity {
 
     List<Cluster> listClusters();
+    
+    String getCidrAddress();
+
+    int getCidrSize();
+
+    String getGateway();
+
+    long getDataCenterId();
+
+    String getName();
+
+    AllocationState getAllocationState();
+
+    boolean getExternalDhcp();
 
 }

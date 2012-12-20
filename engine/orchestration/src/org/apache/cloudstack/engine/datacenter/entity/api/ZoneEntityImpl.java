@@ -23,36 +23,26 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-
-import javax.inject.Inject;
 import javax.ws.rs.GET;
-import javax.ws.rs.POST;
 import javax.ws.rs.Path;
-
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State.Event;
 import org.apache.cloudstack.engine.datacenter.entity.api.db.DataCenterVO;
-import org.apache.cloudstack.engine.datacenter.entity.api.db.dao.DataCenterDao;
-import org.apache.cloudstack.engine.service.api.ProvisioningService;
-
-import org.springframework.stereotype.Component;
-
 import com.cloud.utils.fsm.FiniteStateObject;
 import com.cloud.utils.fsm.NoTransitionException;
 
 
-@Component
 @Path("/zone/{id}")
 public class ZoneEntityImpl implements ZoneEntity, FiniteStateObject<DataCenterResourceEntity.State, DataCenterResourceEntity.State.Event> {
 	
-	@Inject
-	DataCenterResourceManager manager;
-
 	
+	private DataCenterResourceManager manager;
+
 	private DataCenterVO dataCenterVO;
 	
 	
-	public ZoneEntityImpl(String dataCenterId) {
-    	this.dataCenterVO = manager.loadDataCenter(dataCenterId);
+	public ZoneEntityImpl(String dataCenterId, DataCenterResourceManager manager) {
+		this.manager = manager;
+    	this.dataCenterVO = this.manager.loadDataCenter(dataCenterId);
     }
 
 	@Override
@@ -133,6 +123,7 @@ public class ZoneEntityImpl implements ZoneEntity, FiniteStateObject<DataCenterR
         return dataCenterVO.getOwner();
     }
 
+    
     public void setOwner(String owner) {
     	dataCenterVO.setOwner(owner);
     }
@@ -191,6 +182,10 @@ public class ZoneEntityImpl implements ZoneEntity, FiniteStateObject<DataCenterR
 		manager.saveDataCenter(dataCenterVO);
 	}
 
+    @Override
+    public String getName() {
+        return dataCenterVO.getName();
+    }
 
     @Override
     public List<String> listPodIds() {
@@ -199,4 +194,8 @@ public class ZoneEntityImpl implements ZoneEntity, FiniteStateObject<DataCenterR
         podIds.add("pod-uuid-2");
         return podIds;
     }
+
+	public void setName(String name) {
+		dataCenterVO.setName(name);
+	}
 }

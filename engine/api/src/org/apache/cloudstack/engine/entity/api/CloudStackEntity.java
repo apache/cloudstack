@@ -92,4 +92,5 @@ public interface CloudStackEntity {
      * @return list of actions that can be performed on the object in its current state
      */
     List<Method> getApplicableActions();
+
 }

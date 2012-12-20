@@ -29,6 +29,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 
 import org.apache.cloudstack.engine.datacenter.entity.api.ClusterEntity;
+import org.apache.cloudstack.engine.datacenter.entity.api.ClusterEntityImpl;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceManager;
 import org.apache.cloudstack.engine.datacenter.entity.api.PodEntity;
@@ -50,6 +51,8 @@ import com.cloud.storage.StoragePool;
 @Path("/provisioning")
 public class ProvisioningServiceImpl implements ProvisioningService {
 
+	@Inject
+	DataCenterResourceManager manager;
 	
 	@Override
     public StorageEntity registerStorage(String name, List<String> tags, Map<String, String> details) {
@@ -58,27 +61,31 @@ public class ProvisioningServiceImpl implements ProvisioningService {
     }
 
     @Override
-    public ZoneEntity registerZone(String zoneUuid, String owner, List<String> tags, Map<String, String> details) {
-
-    	ZoneEntityImpl zoneEntity = new ZoneEntityImpl(zoneUuid);
+    public ZoneEntity registerZone(String zoneUuid, String name, String owner, List<String> tags, Map<String, String> details) {
+    	ZoneEntityImpl zoneEntity = new ZoneEntityImpl(zoneUuid, manager);
+    	zoneEntity.setName(name);
     	zoneEntity.setOwner(owner);
     	zoneEntity.setDetails(details);
-    	zoneEntity.setState(State.Disabled);
     	zoneEntity.persist();
-    	
     	return zoneEntity;
     }
 
-  //  @Override
-   // public PodEntity registerPod(String name, List<String> tags, Map<String, String> details) {
-     //   // TODO Auto-generated method stub
-     //   return null;
-    //}
+    @Override
+    public PodEntity registerPod(String podUuid, String name, String owner, String zoneUuid, List<String> tags, Map<String, String> details) {
+    	PodEntityImpl podEntity = new PodEntityImpl(podUuid, manager);
+    	podEntity.setOwner(owner);
+    	podEntity.setName(name);
+    	podEntity.persist();
+    	return podEntity;
+    }
 
     @Override
-    public ClusterEntity registerCluster(String name, List<String> tags, Map<String, String> details) {
-        // TODO Auto-generated method stub
-        return null;
+    public ClusterEntity registerCluster(String clusterUuid, String name, String owner, List<String> tags, Map<String, String> details) {
+    	ClusterEntityImpl clusterEntity = new ClusterEntityImpl(clusterUuid, manager);
+    	clusterEntity.setOwner(owner);
+    	clusterEntity.setName(name);
+    	clusterEntity.persist();
+    	return clusterEntity;
     }
 
     @Override
@@ -94,20 +101,21 @@ public class ProvisioningServiceImpl implements ProvisioningService {
     }
 
     @Override
-    public void deregisterZone() {
-        // TODO Auto-generated method stub
-
+    public void deregisterZone(String uuid) {
+    	ZoneEntityImpl zoneEntity = new ZoneEntityImpl(uuid, manager);
+    	zoneEntity.disable();
     }
 
     @Override
-    public void deregisterPod() {
-        // TODO Auto-generated method stub
-
+    public void deregisterPod(String uuid) {
+    	PodEntityImpl podEntity = new PodEntityImpl(uuid, manager);
+    	podEntity.disable();
     }
 
     @Override
-    public void deregisterCluster() {
-        // TODO Auto-generated method stub
+    public void deregisterCluster(String uuid) {
+    	ClusterEntityImpl clusterEntity = new ClusterEntityImpl(uuid, manager);
+    	clusterEntity.disable();
 
     }
 
@@ -132,16 +140,16 @@ public class ProvisioningServiceImpl implements ProvisioningService {
     @Override
     public List<PodEntity> listPods() {
         List<PodEntity> pods = new ArrayList<PodEntity>();
-        pods.add(new PodEntityImpl("pod-uuid-1", "pod1"));
-        pods.add(new PodEntityImpl("pod-uuid-2", "pod2"));
+        //pods.add(new PodEntityImpl("pod-uuid-1", "pod1"));
+        //pods.add(new PodEntityImpl("pod-uuid-2", "pod2"));
         return null;
     }
 
     @Override
     public List<ZoneEntity> listZones() {
         List<ZoneEntity> zones = new ArrayList<ZoneEntity>();
-        zones.add(new ZoneEntityImpl("zone-uuid-1"));
-        zones.add(new ZoneEntityImpl("zone-uuid-2"));
+        //zones.add(new ZoneEntityImpl("zone-uuid-1"));
+        //zones.add(new ZoneEntityImpl("zone-uuid-2"));
         return zones;
     }
 
@@ -153,18 +161,8 @@ public class ProvisioningServiceImpl implements ProvisioningService {
 
     @Override
     public ZoneEntity getZone(String uuid) {
-        ZoneEntityImpl impl = new ZoneEntityImpl(uuid);
+        ZoneEntityImpl impl = new ZoneEntityImpl(uuid, manager);
         return impl;
     }
-
-    @Override
-
-	public PodEntity registerPod(String arg0, Long arg1, String arg2,
-			String arg3, String arg4, String arg5, List<String> arg6,
-			Map<String, String> arg7) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
 
 }
