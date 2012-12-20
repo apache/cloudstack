@@ -77,7 +77,6 @@ import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Inject;
@@ -562,8 +561,8 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleManager, AutoScaleSe
         Account caller = UserContext.current().getCaller();
         Account owner = _accountDao.findActiveAccount(accountName, domainId);
         if (owner == null) {
-            List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
-            idList.add(new IdentityProxy("domain", domainId, "domainId"));
+            List<String> idList = new ArrayList<String>();
+            idList.add(ApiDBUtils.findDomainById(domainId).getUuid());
             throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain with specifed domainId");
         }
         _accountMgr.checkAccess(caller, null, false, owner);

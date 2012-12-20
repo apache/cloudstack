@@ -336,12 +336,11 @@ public class ApiServer implements HttpRequestHandler {
             	InvalidParameterValueException ref = (InvalidParameterValueException)ex;
 		ServerApiException e = new ServerApiException(BaseCmd.PARAM_ERROR, ex.getMessage());
                 // copy over the IdentityProxy information as well and throw the serverapiexception.
-                ArrayList<IdentityProxy> idList = ref.getIdProxyList();
+                ArrayList<String> idList = ref.getIdProxyList();
                 if (idList != null) {
                 	// Iterate through entire arraylist and copy over each proxy id.
                 	for (int i = 0 ; i < idList.size(); i++) {
-                		IdentityProxy obj = idList.get(i);
-                		e.addProxyObject(obj.getTableName(), obj.getValue(), obj.getidFieldName());
+                		e.addProxyObject(idList.get(i));
                 	}
                 }
                 // Also copy over the cserror code and the function/layer in which it was thrown.
@@ -351,12 +350,11 @@ public class ApiServer implements HttpRequestHandler {
             	PermissionDeniedException ref = (PermissionDeniedException)ex;
             	ServerApiException e = new ServerApiException(BaseCmd.ACCOUNT_ERROR, ex.getMessage());
                 // copy over the IdentityProxy information as well and throw the serverapiexception.
-            	ArrayList<IdentityProxy> idList = ref.getIdProxyList();
+            	ArrayList<String> idList = ref.getIdProxyList();
                 if (idList != null) {
                 	// Iterate through entire arraylist and copy over each proxy id.
                 	for (int i = 0 ; i < idList.size(); i++) {
-                		IdentityProxy obj = idList.get(i);
-                		e.addProxyObject(obj.getTableName(), obj.getValue(), obj.getidFieldName());
+                		e.addProxyObject(idList.get(i));
                 	}
                 }
                 e.setCSErrorCode(ref.getCSErrorCode());
@@ -963,33 +961,30 @@ public class ApiServer implements HttpRequestHandler {
             		// Cast the exception appropriately and retrieve the IdentityProxy
             		if (ex instanceof ServerApiException) {
             			ServerApiException ref = (ServerApiException) ex;
-            			ArrayList<IdentityProxy> idList = ref.getIdProxyList();
+            			ArrayList<String> idList = ref.getIdProxyList();
             			if (idList != null) {
             				for (int i=0; i < idList.size(); i++) {
-            					IdentityProxy id = idList.get(i);
-            					apiResponse.addProxyObject(id.getTableName(), id.getValue(), id.getidFieldName());
+            					apiResponse.addProxyObject(idList.get(i));
 					}
             			}
             			// Also copy over the cserror code and the function/layer in which it was thrown.
             			apiResponse.setCSErrorCode(ref.getCSErrorCode());
             		} else if (ex instanceof PermissionDeniedException) {
             			PermissionDeniedException ref = (PermissionDeniedException) ex;
-            			ArrayList<IdentityProxy> idList = ref.getIdProxyList();
+            			ArrayList<String> idList = ref.getIdProxyList();
             			if (idList != null) {
             				for (int i=0; i < idList.size(); i++) {
-            					IdentityProxy id = idList.get(i);
-            					apiResponse.addProxyObject(id.getTableName(), id.getValue(), id.getidFieldName());
+            					apiResponse.addProxyObject(idList.get(i));
 					}
             			}
             			// Also copy over the cserror code and the function/layer in which it was thrown.
             			apiResponse.setCSErrorCode(ref.getCSErrorCode());
             		} else if (ex instanceof InvalidParameterValueException) {
             			InvalidParameterValueException ref = (InvalidParameterValueException) ex;
-            			ArrayList<IdentityProxy> idList = ref.getIdProxyList();
+            			ArrayList<String> idList = ref.getIdProxyList();
             			if (idList != null) {
             				for (int i=0; i < idList.size(); i++) {
-            					IdentityProxy id = idList.get(i);
-            					apiResponse.addProxyObject(id.getTableName(), id.getValue(), id.getidFieldName());
+            					apiResponse.addProxyObject(idList.get(i));
 					}
             			}
             			// Also copy over the cserror code and the function/layer in which it was thrown.

@@ -30,7 +30,7 @@ import com.cloud.utils.AnnotationHelper;
 public class CloudException extends Exception {
 
 	// This holds a list of uuids and their names. Add uuid:fieldname pairs
-	protected ArrayList<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+	protected ArrayList<String> idList = new ArrayList<String>();
 
 	protected Integer csErrorCode;
 
@@ -44,26 +44,19 @@ public class CloudException extends Exception {
         setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
     }
 
-    public void addProxyObject(Object voObj, Long id, String idFieldName) {
-    	// Get the VO object's table name.
-    	String tablename = AnnotationHelper.getTableName(voObj);
-    	if (tablename != null) {
-    		addProxyObject(tablename, id, idFieldName);
-    	}
-    	return;
-    }
+
 
 	public CloudException() {
 		super();
 		setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
 	}
 
-	public void addProxyObject(String tableName, Long id, String idFieldName) {
-		idList.add(new IdentityProxy(tableName, id, idFieldName));
+	public void addProxyObject(String uuid) {
+		idList.add(uuid);
 		return;
 	}
 
-	public ArrayList<IdentityProxy> getIdProxyList() {
+	public ArrayList<String> getIdProxyList() {
 		return idList;
 	}
 
