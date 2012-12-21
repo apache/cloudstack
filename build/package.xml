@@ -217,6 +217,10 @@
         <include name="discovery-*.jar" />
         <include name="wsdl4j-*.jar" />
         <include name="ejb-api-3.0.jar" />
+        <include name="aws-java-sdk-1.3.21.1.jar" />
+        <include name="httpclient-4.1.jar" />
+        <include name="httpcore-4.1.jar" />
+        <include name="commons-lang-2.1.jar" />
       </zipfileset>
       <zipfileset dir="${jar.dir}">
         <include name="${agent.jar}" />

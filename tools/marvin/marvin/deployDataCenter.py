@@ -399,9 +399,11 @@ class deployDataCenters():
                                              logging=self.testClientLogger)
 
         """config database"""
-        #dbSvr = self.config.dbSvr
-        #self.testClient.dbConfigure(dbSvr.dbSvr, dbSvr.port, dbSvr.user, \
-        #                            dbSvr.passwd, dbSvr.db)
+        dbSvr = self.config.dbSvr
+        if dbSvr is not None:
+          self.testClient.dbConfigure(dbSvr.dbSvr, dbSvr.port, dbSvr.user, \
+                                      dbSvr.passwd, dbSvr.db)
+
         self.apiClient = self.testClient.getApiClient()
 
     def updateConfiguration(self, globalCfg):
