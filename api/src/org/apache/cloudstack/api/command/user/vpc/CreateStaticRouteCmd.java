@@ -16,12 +16,12 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpc;
 
+import org.apache.cloudstack.api.response.PrivateGatewayResponse;
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -41,9 +41,8 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd{
     private static final String s_name = "createstaticrouteresponse";
     public static final Logger s_logger = Logger.getLogger(CreateStaticRouteCmd.class.getName());
 
-    @IdentityMapper(entityTableName="vpc_gateways")
-    @Parameter(name=ApiConstants.GATEWAY_ID, type=CommandType.LONG, required=true,
-                                                description="the gateway id we are creating static route for")
+    @Parameter(name=ApiConstants.GATEWAY_ID, type=CommandType.UUID, entityType=PrivateGatewayResponse.class,
+            required=true, description="the gateway id we are creating static route for")
     private Long gatewayId;
 
     @Parameter(name = ApiConstants.CIDR, required = true, type = CommandType.STRING, description = "static route cidr")
