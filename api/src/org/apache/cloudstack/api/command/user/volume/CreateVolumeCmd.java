@@ -16,16 +16,15 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 
+import org.apache.cloudstack.api.response.*;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.VolumeResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
@@ -45,16 +44,17 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account associated with the disk volume. Must be used with the domainId parameter.")
     private String accountName;
 
-    @IdentityMapper(entityTableName="projects")
-    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="the project associated with the volume. Mutually exclusive with account parameter")
+    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.UUID, entityType=ProjectResponse.class,
+            description="the project associated with the volume. Mutually exclusive with account parameter")
     private Long projectId;
 
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID associated with the disk offering. If used with the account parameter returns the disk volume associated with the account for the specified domain.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType=DomainResponse.class,
+            description="the domain ID associated with the disk offering. If used with the account parameter" +
+                    " returns the disk volume associated with the account for the specified domain.")
     private Long domainId;
 
-    @IdentityMapper(entityTableName="disk_offering")
-    @Parameter(name=ApiConstants.DISK_OFFERING_ID,required = false, type=CommandType.LONG, description="the ID of the disk offering. Either diskOfferingId or snapshotId must be passed in.")
+    @Parameter(name=ApiConstants.DISK_OFFERING_ID,required = false, type=CommandType.UUID, entityType=DiskOfferingResponse.class,
+            description="the ID of the disk offering. Either diskOfferingId or snapshotId must be passed in.")
     private Long diskOfferingId;
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="the name of the disk volume")
@@ -63,12 +63,12 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     @Parameter(name=ApiConstants.SIZE, type=CommandType.LONG, description="Arbitrary volume size")
     private Long size;
 
-    @IdentityMapper(entityTableName="snapshots")
-    @Parameter(name=ApiConstants.SNAPSHOT_ID, type=CommandType.LONG, description="the snapshot ID for the disk volume. Either diskOfferingId or snapshotId must be passed in.")
+    @Parameter(name=ApiConstants.SNAPSHOT_ID, type=CommandType.UUID, entityType=SnapshotResponse.class,
+            description="the snapshot ID for the disk volume. Either diskOfferingId or snapshotId must be passed in.")
     private Long snapshotId;
 
-    @IdentityMapper(entityTableName="data_center")
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the ID of the availability zone")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType=ZoneResponse.class,
+            description="the ID of the availability zone")
     private Long zoneId;
 
 

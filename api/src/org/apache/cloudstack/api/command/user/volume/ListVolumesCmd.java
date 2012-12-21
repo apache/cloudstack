@@ -19,15 +19,13 @@ package org.apache.cloudstack.api.command.user.volume;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.api.response.*;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.VolumeResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.storage.Volume;
 import com.cloud.utils.Pair;
@@ -43,30 +41,30 @@ public class ListVolumesCmd extends BaseListTaggedResourcesCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="host")
-    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.LONG, description="list volumes on specified host")
+    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.UUID, entityType=HostResponse.class,
+            description="list volumes on specified host")
     private Long hostId;
 
-    @IdentityMapper(entityTableName="volumes")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the ID of the disk volume")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=VolumeResponse.class,
+            description="the ID of the disk volume")
     private Long id;
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the disk volume")
     private String volumeName;
 
-    @IdentityMapper(entityTableName="host_pod_ref")
-    @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, description="the pod id the disk volume belongs to")
+    @Parameter(name=ApiConstants.POD_ID, type=CommandType.UUID, entityType=PodResponse.class,
+            description="the pod id the disk volume belongs to")
     private Long podId;
 
     @Parameter(name=ApiConstants.TYPE, type=CommandType.STRING, description="the type of disk volume")
     private String type;
 
-    @IdentityMapper(entityTableName="vm_instance")
-    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, description="the ID of the virtual machine")
+    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.UUID, entityType=UserVmResponse.class,
+            description="the ID of the virtual machine")
     private Long virtualMachineId;
 
-    @IdentityMapper(entityTableName="data_center")
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the ID of the availability zone")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType=ZoneResponse.class,
+            description="the ID of the availability zone")
     private Long zoneId;
 
     /////////////////////////////////////////////////////

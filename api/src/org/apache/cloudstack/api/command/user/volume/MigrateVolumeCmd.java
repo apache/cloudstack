@@ -19,10 +19,10 @@ package org.apache.cloudstack.api.command.user.volume;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -38,12 +38,12 @@ public class MigrateVolumeCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="volumes")
-    @Parameter(name=ApiConstants.VOLUME_ID, type=CommandType.LONG, required=true, description="the ID of the volume")
+    @Parameter(name=ApiConstants.VOLUME_ID, type=CommandType.UUID, entityType=VolumeResponse.class,
+            required=true, description="the ID of the volume")
     private Long volumeId;
 
-    @IdentityMapper(entityTableName="storage_pool")
-    @Parameter(name=ApiConstants.STORAGE_ID, type=CommandType.LONG, required=true, description="destination storage pool ID to migrate the volume to")
+    @Parameter(name=ApiConstants.STORAGE_ID, type=CommandType.UUID, entityType=StoragePoolResponse.class,
+            required=true, description="destination storage pool ID to migrate the volume to")
     private Long storageId;
 
     /////////////////////////////////////////////////////
