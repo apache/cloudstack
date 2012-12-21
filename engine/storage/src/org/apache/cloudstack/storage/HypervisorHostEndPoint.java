@@ -42,24 +42,22 @@ public class HypervisorHostEndPoint implements EndPoint {
         this.hostId = hostId;
         this.hostAddress = hostAddress;
     }
+    
+    public String getHostAddr() {
+        return this.hostAddress;
+    }
+    
+    public long getHostId() {
+        return this.hostId;
+    }
 
     @Override
     public Answer sendMessage(Command cmd) {
-        Answer answer = null;
-        try {
-            answer = agentMgr.send(hostId, cmd);
-        } catch (AgentUnavailableException e) {
-            s_logger.debug("Unable to send command:" + cmd + ", due to: " + e.toString());
-        } catch (OperationTimedoutException e) {
-            s_logger.debug("Unable to send command:" + cmd + ", due to: " + e.toString());
-        } catch (Exception e) {
-            s_logger.debug("Unable to send command:" + cmd + ", due to: " + e.toString());
-        }
-        return answer;
+        return rpcServer.sendCommand(this, cmd);
     }
     
     @Override
     public void sendMessageAsync(Command cmd, AsyncCompletionCallback<Answer> callback) {
-        rpcServer.sendCommandAsync(this.hostAddress, cmd, callback);
+        rpcServer.sendCommandAsync(this, cmd, callback);
     }
 }

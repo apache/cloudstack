@@ -69,7 +69,7 @@ public class DirectAgentTest {
     private long dcId;
     private long clusterId;
     private long hostId;
-    private String hostGuid = "759ee4c9-a15a-297b-67c6-ac267d8aa429";
+    private String hostGuid = "9d4c9db8-32f7-25c3-0435-eab4bf3adcea";
     @Before
     public void setUp() {
         HostVO host = hostDao.findByGuid(hostGuid);
@@ -102,7 +102,7 @@ public class DirectAgentTest {
         host.setName("devcloud xen host");
         host.setType(Host.Type.Routing);
         host.setHypervisorType(HypervisorType.XenServer);
-        host.setPrivateIpAddress("192.168.56.2");
+        host.setPrivateIpAddress("192.168.56.10");
         host.setDataCenterId(dc.getId());
         host.setVersion("6.0.1");
         host.setAvailable(true);
@@ -133,7 +133,7 @@ public class DirectAgentTest {
     public void testDownloadTemplate() {
         ImageOnPrimayDataStoreTO image = Mockito.mock(ImageOnPrimayDataStoreTO.class);
         PrimaryDataStoreTO primaryStore = Mockito.mock(PrimaryDataStoreTO.class);
-        Mockito.when(primaryStore.getUuid()).thenReturn("cd10cac1-4772-92e5-5da6-c2bc16b1ce1b");
+        Mockito.when(primaryStore.getUuid()).thenReturn("9f3f9262-3f77-09cc-2df7-0d8475676260");
         Mockito.when(image.getPrimaryDataStore()).thenReturn(primaryStore);
         
         ImageDataStoreTO imageStore = Mockito.mock(ImageDataStoreTO.class);

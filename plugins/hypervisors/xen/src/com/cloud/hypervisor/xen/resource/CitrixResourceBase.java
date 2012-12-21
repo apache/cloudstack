@@ -5042,7 +5042,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         boolean add = cmd.getAdd();
         if( add ) {
             try {
-                SR sr = getStorageRepository(conn, pool);
+                SR sr = getStorageRepository(conn, pool.getUuid());
                 setupHeartbeatSr(conn, sr, false);
                 long capacity = sr.getPhysicalSize(conn);
                 long available = capacity - sr.getPhysicalUtilisation(conn);
@@ -5065,7 +5065,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
         } else {
             try {
-                SR sr = getStorageRepository(conn, pool);
+                SR sr = getStorageRepository(conn, pool.getUuid());
                 String srUuid = sr.getUuid(conn);
                 String result = callHostPluginPremium(conn, "setup_heartbeat_file", "host", _host.uuid, "sr", srUuid, "add", "false");
                 if (result == null || !result.split("#")[1].equals("0")) {
@@ -5330,7 +5330,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         Connection conn = getConnection();
         StorageFilerTO poolTO = cmd.getPool();
         try {
-            SR sr = getStorageRepository(conn, poolTO);
+            SR sr = getStorageRepository(conn, poolTO.getUuid());
             removeSR(conn, sr);
             Answer answer = new Answer(cmd, true, "success");
             return answer;
@@ -5587,7 +5587,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         DiskProfile dskch = cmd.getDiskCharacteristics();
         VDI vdi = null;
         try {
-            SR poolSr = getStorageRepository(conn, pool);
+            SR poolSr = getStorageRepository(conn, pool.getUuid());
             if (cmd.getTemplateUrl() != null) {
                 VDI tmpltvdi = null;
                 
@@ -5973,7 +5973,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             String remoteVolumesMountPath = uri.getHost() + ":" + uri.getPath() + "/volumes/";
             String volumeFolder = String.valueOf(cmd.getVolumeId()) + "/";
             String mountpoint = remoteVolumesMountPath + volumeFolder;
-            SR primaryStoragePool = getStorageRepository(conn, poolTO);
+            SR primaryStoragePool = getStorageRepository(conn, poolTO.getUuid());
             String srUuid = primaryStoragePool.getUuid(conn);
             if (toSecondaryStorage) {
                 // Create the volume folder
@@ -6685,30 +6685,30 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    protected SR getStorageRepository(Connection conn, StorageFilerTO pool) {
+    protected SR getStorageRepository(Connection conn, String uuid) {
         Set<SR> srs;
         try {
-            srs = SR.getByNameLabel(conn, pool.getUuid());
+            srs = SR.getByNameLabel(conn, uuid);
         } catch (XenAPIException e) {
-            throw new CloudRuntimeException("Unable to get SR " + pool.getUuid() + " due to " + e.toString(), e);
+            throw new CloudRuntimeException("Unable to get SR " + uuid + " due to " + e.toString(), e);
         } catch (Exception e) {
-            throw new CloudRuntimeException("Unable to get SR " + pool.getUuid() + " due to " + e.getMessage(), e);
+            throw new CloudRuntimeException("Unable to get SR " + uuid + " due to " + e.getMessage(), e);
         }
 
         if (srs.size() > 1) {
-            throw new CloudRuntimeException("More than one storage repository was found for pool with uuid: " + pool.getUuid());
+            throw new CloudRuntimeException("More than one storage repository was found for pool with uuid: " + uuid);
         } else if (srs.size() == 1) {
             SR sr = srs.iterator().next();
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("SR retrieved for " + pool.getId());
+                s_logger.debug("SR retrieved for " + uuid);
             }
 
             if (checkSR(conn, sr)) {
                 return sr;
             }
-            throw new CloudRuntimeException("SR check failed for storage pool: " + pool.getUuid() + "on host:" + _host.uuid);
+            throw new CloudRuntimeException("SR check failed for storage pool: " + uuid + "on host:" + _host.uuid);
         } else {
-            throw new CloudRuntimeException("Can not see storage pool: " + pool.getUuid() + " from on host:" + _host.uuid);
+            throw new CloudRuntimeException("Can not see storage pool: " + uuid + " from on host:" + _host.uuid);
         }
     }
 

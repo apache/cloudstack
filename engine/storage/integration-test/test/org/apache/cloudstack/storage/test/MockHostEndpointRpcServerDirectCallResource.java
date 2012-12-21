@@ -18,60 +18,70 @@
  */
 package org.apache.cloudstack.storage.test;
 
-import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import javax.inject.Inject;
+
+
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+
 import org.apache.cloudstack.storage.HostEndpointRpcServer;
 import org.apache.cloudstack.storage.HypervisorHostEndPoint;
-import org.apache.cloudstack.storage.command.CopyTemplateToPrimaryStorageCmd;
-import org.apache.cloudstack.storage.command.CopyTemplateToPrimaryStorageAnswer;
-import org.apache.cloudstack.storage.command.CreateVolumeAnswer;
-import org.apache.cloudstack.storage.command.CreateVolumeFromBaseImageCommand;
 
+import org.apache.log4j.Logger;
+
+import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.OperationTimedoutException;
 
-public class MockHypervsiorHostEndPointRpcServer implements HostEndpointRpcServer {
+
+public class MockHostEndpointRpcServerDirectCallResource implements HostEndpointRpcServer {
+    private static final Logger s_logger = Logger.getLogger(MockHostEndpointRpcServerDirectCallResource.class);
     private ScheduledExecutorService executor;
-    public MockHypervsiorHostEndPointRpcServer() {
+    @Inject
+    AgentManager agentMgr;
+    public MockHostEndpointRpcServerDirectCallResource() {
         executor = Executors.newScheduledThreadPool(10);
     }
-    
     protected class MockRpcCallBack implements Runnable {
         private final Command cmd;
+        private final long hostId;
         private final AsyncCompletionCallback<Answer> callback; 
-        public MockRpcCallBack(Command cmd, final AsyncCompletionCallback<Answer> callback) {
+        public MockRpcCallBack(long hostId, Command cmd, final AsyncCompletionCallback<Answer> callback) {
             this.cmd = cmd;
             this.callback = callback;
+            this.hostId = hostId;
         }
         @Override
         public void run() {
             try {
-            Answer answer = new Answer(cmd, false, "unknown command");
-            if (cmd instanceof CopyTemplateToPrimaryStorageCmd) {
-                answer = new CopyTemplateToPrimaryStorageAnswer(cmd, UUID.randomUUID().toString());
-            } else if (cmd instanceof CreateVolumeFromBaseImageCommand) {
-                answer = new CreateVolumeAnswer(cmd, UUID.randomUUID().toString());
-            }
-            
-           callback.complete(answer);
+                Answer answer = agentMgr.send(hostId, cmd);
+                callback.complete(answer);
             } catch (Exception e) {
-                e.printStackTrace();
+                s_logger.debug("send command failed:" + e.toString());
             }
         }
         
     }
     
     public void sendCommandAsync(HypervisorHostEndPoint host, final Command command, final AsyncCompletionCallback<Answer> callback) {
-        executor.schedule(new MockRpcCallBack(command, callback), 10, TimeUnit.SECONDS);
+        executor.schedule(new MockRpcCallBack(host.getHostId(), command, callback), 10, TimeUnit.SECONDS);
     }
-    
+
     @Override
     public Answer sendCommand(HypervisorHostEndPoint host, Command command) {
-        // TODO Auto-generated method stub
-        return null;
+        Answer answer;
+        try {
+            answer = agentMgr.send(host.getHostId(), command);
+            return answer;
+        } catch (AgentUnavailableException e) {
+           return null;
+        } catch (OperationTimedoutException e) {
+           return null;
+        }
     }
 }

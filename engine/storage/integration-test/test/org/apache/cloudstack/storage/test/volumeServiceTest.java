@@ -158,7 +158,7 @@ public class volumeServiceTest {
 		HostVO host = new HostVO(UUID.randomUUID().toString());
 		host.setName("devcloud xen host");
 		host.setType(Host.Type.Routing);
-		host.setPrivateIpAddress("192.168.56.2");
+		host.setPrivateIpAddress("192.168.56.10");
 		host.setDataCenterId(dc.getId());
 		host.setVersion("6.0.1");
 		host.setAvailable(true);
@@ -237,7 +237,7 @@ public class volumeServiceTest {
 			PrimaryDataStoreProvider provider = primaryDataStoreProviderMgr.getDataStoreProvider("default primary data store provider");
 
 			Map<String, String> params = new HashMap<String, String>();
-			params.put("url", "nfs://test/test");
+			params.put("url", "nfs://localhost/primarynfs");
 			params.put("dcId", dcId.toString());
 			params.put("clusterId", clusterId.toString());
 			params.put("name", "my primary data store");

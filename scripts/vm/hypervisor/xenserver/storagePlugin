@@ -22,24 +22,23 @@
 
 import os, sys, time
 import XenAPIPlugin
-sys.path.extend(["/opt/xensource/sm/", "/usr/local/sbin/", "/sbin/"])
+sys.path.extend(["/usr/lib/xcp/sm/", "/usr/local/sbin/", "/sbin/"])
+import util
 import base64
-import hostvmstats
 import socket
 import stat
 import tempfile
-import util
 import subprocess
 import zlib
 import urllib2
-from util import CommandException
+import traceback
 
 def echo(fn):
     def wrapped(*v, **k):
         name = fn.__name__
-        util.SMlog("#### VMOPS enter  %s ####" % name )
+        util.SMlog("#### xen plugin enter  %s ####" % name )
         res = fn(*v, **k)
-        util.SMlog("#### VMOPS exit  %s ####" % name )
+        util.SMlog("#### xen plugin exit  %s ####" % name )
         return res
     return wrapped
 
@@ -47,10 +46,26 @@ def echo(fn):
 def downloadTemplateFromUrl(session, args):
     destPath = args["destPath"]
     srcUrl = args["srcUrl"]
-    template = urllib2.urlopen(srcUrl)
-    destFile = open(destPath, "wb")
-    destFile.write(template.read())
-    destFile.close()
+    try:
+        template = urllib2.urlopen(srcUrl)
+        destFile = open(destPath, "wb")
+        destFile.write(template.read())
+        destFile.close()
+        return "success"
+    except:
+        util.SMlog("exception: " + str(sys.exc_info()))
+        return ""
     
+@echo
+def getTemplateSize(session, args):
+   srcUrl = args["srcUrl"]
+   try:
+       template = urllib2.urlopen(srcUrl)
+       headers = template.info()
+       return str(headers["Content-Length"])
+   except:
+       return ""
 if __name__ == "__main__":
-    XenAPIPlugin.dispatch({"downloadTemplateFromUrl": downloadTemplateFromUrl})
+    XenAPIPlugin.dispatch({"downloadTemplateFromUrl": downloadTemplateFromUrl
+                           ,"getTemplateSize": getTemplateSize
+                          })

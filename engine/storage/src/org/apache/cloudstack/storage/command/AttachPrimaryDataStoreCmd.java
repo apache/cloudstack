@@ -16,14 +16,26 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage;
+package org.apache.cloudstack.storage.command;
 
-import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 
-import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 
-public interface HostEndpointRpcServer {
-    void sendCommandAsync(HypervisorHostEndPoint ep, final Command command, final AsyncCompletionCallback<Answer> callback);
-    Answer sendCommand(HypervisorHostEndPoint ep, final Command command);
+public class AttachPrimaryDataStoreCmd extends Command implements StorageSubSystemCommand {
+    private final PrimaryDataStoreTO dataStore;
+    public AttachPrimaryDataStoreCmd(PrimaryDataStoreInfo dataStore) {
+        this.dataStore = new PrimaryDataStoreTO(dataStore);
+    }
+    
+    public PrimaryDataStoreTO getDataStore() {
+        return this.dataStore;
+    }
+
+    @Override
+    public boolean executeInSequence() {
+        // TODO Auto-generated method stub
+        return false;
+    }
 }

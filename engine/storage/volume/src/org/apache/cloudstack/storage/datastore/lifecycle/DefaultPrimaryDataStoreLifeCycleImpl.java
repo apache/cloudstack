@@ -23,12 +23,15 @@ import java.util.Map;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
+import org.apache.cloudstack.storage.EndPoint;
+import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreCmd;
 import org.apache.cloudstack.storage.datastore.DataStoreStatus;
+import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreVO;
 
 public class DefaultPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
-    protected PrimaryDataStoreInfo dataStore;
+    protected PrimaryDataStore dataStore;
     protected PrimaryDataStoreDao dataStoreDao;
     public DefaultPrimaryDataStoreLifeCycleImpl(PrimaryDataStoreDao dataStoreDao) {
         this.dataStoreDao = dataStoreDao;
@@ -36,7 +39,7 @@ public class DefaultPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLif
     
     @Override
     public void setDataStore(PrimaryDataStoreInfo dataStore) {
-        this.dataStore = dataStore;
+        this.dataStore = (PrimaryDataStore)dataStore;
     }
     
     @Override
@@ -50,11 +53,18 @@ public class DefaultPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLif
 
     @Override
     public boolean attachCluster(ClusterScope scope) {
-        PrimaryDataStoreVO dataStore = dataStoreDao.findById(this.dataStore.getId());
-        dataStore.setDataCenterId(scope.getZoneId());
-        dataStore.setPodId(scope.getPodId());
-        dataStore.setClusterId(scope.getScopeId());
-        dataStoreDao.update(this.dataStore.getId(), dataStore);
+        PrimaryDataStoreVO dataStoreVO = dataStoreDao.findById(this.dataStore.getId());
+        dataStoreVO.setDataCenterId(scope.getZoneId());
+        dataStoreVO.setPodId(scope.getPodId());
+        dataStoreVO.setClusterId(scope.getScopeId());
+        dataStoreVO.setStatus(DataStoreStatus.Up);
+        dataStoreDao.update(dataStoreVO.getId(), dataStoreVO);
+        
+        //send down createStoragePool command to all the hosts in the cluster
+        AttachPrimaryDataStoreCmd cmd = new AttachPrimaryDataStoreCmd(this.dataStore);
+        for (EndPoint ep : dataStore.getEndPoints()) {
+            ep.sendMessage(cmd);
+        }
         return false;
     }
 

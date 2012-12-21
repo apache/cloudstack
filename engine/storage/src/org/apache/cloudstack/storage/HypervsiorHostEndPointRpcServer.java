@@ -20,19 +20,23 @@ package org.apache.cloudstack.storage;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+import org.apache.cloudstack.framework.async.AsyncRpcConext;
 import org.apache.cloudstack.framework.rpc.RpcCallbackListener;
 import org.apache.cloudstack.framework.rpc.RpcException;
 import org.apache.cloudstack.framework.rpc.RpcProvider;
 import org.apache.cloudstack.framework.rpc.RpcServiceDispatcher;
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class HypervsiorHostEndPointRpcServer implements HostEndpointRpcServer {
-    
+    private static final Logger s_logger = Logger.getLogger(HypervsiorHostEndPointRpcServer.class);
     private RpcProvider _rpcProvider;
     @Inject
     public HypervsiorHostEndPointRpcServer(RpcProvider rpcProvider) {
@@ -41,8 +45,8 @@ public class HypervsiorHostEndPointRpcServer implements HostEndpointRpcServer {
     }
     
     @Override
-    public void sendCommandAsync(String host, final Command command, final AsyncCompletionCallback<Answer> callback) {
-        _rpcProvider.newCall(host).addCallbackListener(new RpcCallbackListener<Answer>() {
+    public void sendCommandAsync(HypervisorHostEndPoint host, final Command command, final AsyncCompletionCallback<Answer> callback) {
+        _rpcProvider.newCall(host.getHostAddr()).addCallbackListener(new RpcCallbackListener<Answer>() {
             @Override
             public void onSuccess(Answer result) {
                 callback.complete(result);
@@ -54,5 +58,51 @@ public class HypervsiorHostEndPointRpcServer implements HostEndpointRpcServer {
                 callback.complete(answer);
             }
         }).apply();
+    }
+    
+    private class SendCommandContext<T> extends AsyncRpcConext<T> {
+        private T answer;
+       
+        public SendCommandContext(AsyncCompletionCallback<T> callback) {
+            super(callback);
+        }
+        
+        public void setAnswer(T answer) {
+            this.answer = answer;
+        }
+        
+        public T getAnswer() {
+            return this.answer;
+        }
+        
+    }
+
+    @Override
+    public Answer sendCommand(HypervisorHostEndPoint host, Command command) {
+        SendCommandContext<Answer> context = new SendCommandContext<Answer>(null);
+        AsyncCallbackDispatcher<HypervsiorHostEndPointRpcServer> caller = AsyncCallbackDispatcher.create(this);
+        caller.setCallback(caller.getTarget().sendCommandCallback(null, null))
+        .setContext(context);
+        
+        this.sendCommandAsync(host, command, caller);
+        
+        synchronized (context) {
+            try {
+                context.wait();
+            } catch (InterruptedException e) {
+                s_logger.debug(e.toString());
+                throw new CloudRuntimeException("wait on context is interrupted", e);
+            }
+        }
+        
+        return context.getAnswer();
+    }
+    
+    protected Object sendCommandCallback(AsyncCallbackDispatcher<HypervsiorHostEndPointRpcServer> callback, SendCommandContext<Answer> context) {
+        context.setAnswer((Answer)callback.getResult());
+        synchronized(context) {
+            context.notify();
+        }
+        return null;
     }
 }

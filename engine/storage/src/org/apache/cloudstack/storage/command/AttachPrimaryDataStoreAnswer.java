@@ -16,14 +16,40 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage;
-
-import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+package org.apache.cloudstack.storage.command;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 
-public interface HostEndpointRpcServer {
-    void sendCommandAsync(HypervisorHostEndPoint ep, final Command command, final AsyncCompletionCallback<Answer> callback);
-    Answer sendCommand(HypervisorHostEndPoint ep, final Command command);
+public class AttachPrimaryDataStoreAnswer extends Answer {
+    private String uuid;
+    private long capacity;
+    private long avail;
+    public AttachPrimaryDataStoreAnswer(Command cmd) {
+        super(cmd);
+    }
+    
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+    
+    public String getUuid() {
+        return this.uuid;
+    }
+    
+    public void setCapacity(long capacity) {
+        this.capacity = capacity;
+    }
+    
+    public long getCapacity() {
+        return this.capacity;
+    }
+    
+    public void setAvailable(long avail) {
+        this.avail = avail;
+    }
+    
+    public long getAvailable() {
+        return this.avail;
+    }
 }

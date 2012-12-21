@@ -28,6 +28,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreAnswer;
+import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreCmd;
 import org.apache.cloudstack.storage.command.CopyTemplateToPrimaryStorageCmd;
 import org.apache.cloudstack.storage.command.CopyTemplateToPrimaryStorageAnswer;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
@@ -51,7 +53,10 @@ import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.ModifyStoragePoolAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
+import com.cloud.agent.api.to.StorageFilerTO;
+import com.cloud.storage.template.TemplateInfo;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.PBD;
@@ -72,11 +77,25 @@ public class XenServerStorageResource {
     public Answer handleStorageCommands(StorageSubSystemCommand command) {
         if (command instanceof CopyTemplateToPrimaryStorageCmd) {
             return this.execute((CopyTemplateToPrimaryStorageCmd)command);
+        } else if (command instanceof AttachPrimaryDataStoreCmd) {
+            return this.execute((AttachPrimaryDataStoreCmd)command);
         }
         return new Answer((Command)command, false, "not implemented yet"); 
     }
     
-    private long getTemplateSize(String url) {
+    private long getTemplateSize(Connection conn, String url) {
+        String size = hypervisorResource.callHostPlugin(conn, "storagePlugin", "getTemplateSize", "srcUrl", url);
+        if (size == "" || size == null) {
+            throw new CloudRuntimeException("Can't get template size");
+        }
+        
+        try {
+            return Long.parseLong(size);
+        } catch (NumberFormatException e) {
+            throw new CloudRuntimeException("Failed to get template lenght", e);
+        }
+        
+        /*
         HttpHead method = new HttpHead(url);
         DefaultHttpClient client = new DefaultHttpClient();
         try {
@@ -93,7 +112,7 @@ public class XenServerStorageResource {
             throw new CloudRuntimeException("Failed to get template lenght", e);
         } catch (NumberFormatException e) {
             throw new CloudRuntimeException("Failed to get template lenght", e);
-        }
+        }*/
     }
     
     private void downloadHttpToLocalFile(String destFilePath, String url) {
@@ -143,17 +162,17 @@ public class XenServerStorageResource {
         boolean result = false;
         try {
             
-            Set<SR> srs = SR.getByNameLabel(conn, primaryStoreUuid);
-            if (srs.size() != 1) {
+            SR sr = SR.getByUuid(conn, primaryStoreUuid);
+            if (sr == null) {
                 throw new CloudRuntimeException("storage uuid: " + primaryStoreUuid + " is not unique");
             }
-            poolsr = srs.iterator().next();
+            poolsr = sr;
             VDI.Record vdir = new VDI.Record();
             vdir.nameLabel = "Base-Image-" + UUID.randomUUID().toString();
             vdir.SR = poolsr;
             vdir.type = Types.VdiType.USER;
             
-            vdir.virtualSize = getTemplateSize(template.getPath());
+            vdir.virtualSize = getTemplateSize(conn, template.getPath());
             vdi = VDI.create(conn, vdir);
             
             vdir = vdi.getRecord(conn);
@@ -172,7 +191,7 @@ public class XenServerStorageResource {
             String vdiPath = pbdLocation + "/" + vdiLocation + ".vhd";
             //download a url into vdipath
             //downloadHttpToLocalFile(vdiPath, template.getPath());
-            hypervisorResource.callHostPlugin(conn, "vmopsStorage", "downloadTemplateFromUrl", "destPath", vdiPath, "srcUrl", template.getPath());
+            hypervisorResource.callHostPlugin(conn, "storagePlugin", "downloadTemplateFromUrl", "destPath", vdiPath, "srcUrl", template.getPath());
             result = true;
             return new CopyTemplateToPrimaryStorageAnswer(cmd, vdi.getUuid(conn));
         } catch (BadServerResponse e) {
@@ -197,6 +216,35 @@ public class XenServerStorageResource {
             }
         }
         return new Answer(cmd, false, "Failed to download template");
+    }
+    
+    protected Answer execute(AttachPrimaryDataStoreCmd cmd) {
+        PrimaryDataStoreTO dataStore = cmd.getDataStore();
+        Connection conn = hypervisorResource.getConnection();
+        try {
+            SR sr = hypervisorResource.getStorageRepository(conn, dataStore.getUuid());
+            hypervisorResource.setupHeartbeatSr(conn, sr, false);
+            long capacity = sr.getPhysicalSize(conn);
+            long available = capacity - sr.getPhysicalUtilisation(conn);
+            if (capacity == -1) {
+                String msg = "Pool capacity is -1! pool: ";
+                s_logger.warn(msg);
+                return new Answer(cmd, false, msg);
+            }
+            AttachPrimaryDataStoreAnswer answer = new AttachPrimaryDataStoreAnswer(cmd);
+            answer.setCapacity(capacity);
+            answer.setUuid(sr.getUuid(conn));
+            answer.setAvailable(available);
+            return answer;
+        } catch (XenAPIException e) {
+            String msg = "AttachPrimaryDataStoreCmd add XenAPIException:" + e.toString();
+            s_logger.warn(msg, e);
+            return new Answer(cmd, false, msg);
+        } catch (Exception e) {
+            String msg = "AttachPrimaryDataStoreCmd failed:" + e.getMessage();
+            s_logger.warn(msg, e);
+            return new Answer(cmd, false, msg);
+        }
     }
     
     protected Answer execute(CopyTemplateToPrimaryStorageCmd cmd) {

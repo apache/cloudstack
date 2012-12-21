@@ -31,12 +31,14 @@ import com.cloud.agent.Listener;
 import com.cloud.agent.StartupCommandProcessor;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.SetupCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.manager.AgentAttache;
 import com.cloud.agent.manager.Commands;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.OperationTimedoutException;
+import com.cloud.host.HostEnvironment;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status.Event;
 import com.cloud.host.dao.HostDao;
@@ -100,6 +102,11 @@ public class DirectAgentManagerSimpleImpl implements AgentManager {
         } catch (ConfigurationException e) {
             logger.debug("Failed to load resource:" + e.toString());
         }
+        HostEnvironment env = new HostEnvironment();
+        SetupCommand cmd = new SetupCommand(env);
+        cmd.setNeedSetup(true);
+        
+        resource.executeRequest(cmd);
     }
 
     @Override
