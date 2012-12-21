@@ -167,7 +167,7 @@ public class RpcProviderImpl implements RpcProvider {
 			RpcServerCall call = new RpcServerCallImpl(this, sourceAddress, targetAddress, pdu);
 			
 			// TODO, we are trying to avoid locking when calling into callbacks
-			// this can be optimized later
+			// this should be optimized later
 			List<RpcServiceEndpoint> endpoints = new ArrayList<RpcServiceEndpoint>();
 			synchronized(_serviceEndpoints) {
 				endpoints.addAll(_serviceEndpoints);

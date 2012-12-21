@@ -95,10 +95,10 @@ public class ServerTransportProvider implements TransportProvider {
 		String endpointId;
 		if(predefinedAddress != null && !predefinedAddress.isEmpty()) {
 			endpointId = predefinedAddress;
-			transportAddress = new TransportAddress(_nodeId, endpointId, 0);
+			transportAddress = new TransportAddress(_nodeId, TransportAddress.LOCAL_SERVICE_CONNECTION, endpointId, 0);
 		} else {
 			endpointId = String.valueOf(getNextEndpointId());
-			transportAddress = new TransportAddress(_nodeId, endpointId);
+			transportAddress = new TransportAddress(_nodeId, TransportAddress.LOCAL_SERVICE_CONNECTION, endpointId);
 		}
 		
 		TransportEndpointSite endpointSite;

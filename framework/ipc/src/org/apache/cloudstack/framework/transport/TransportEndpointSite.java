@@ -44,6 +44,16 @@ public class TransportEndpointSite {
 		
 		_outstandingSignalRequests = 0;
 	}
+
+	public TransportEndpointSite(TransportProvider provider, TransportEndpoint endpoint) {
+		assert(provider != null);
+		assert(endpoint != null);
+		
+		_provider = provider;
+		_endpoint = endpoint;
+		
+		_outstandingSignalRequests = 0;
+	}
 	
 	public TransportEndpoint getEndpoint() {
 		return _endpoint;
