@@ -16,16 +16,19 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpc;
 
+import org.apache.cloudstack.api.response.VpcResponse;
+import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.VpcResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -47,17 +50,17 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd{
             "Must be used with the domainId parameter.")
     private String accountName;
 
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID associated with the VPC. " +
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType=DomainResponse.class,
+            description="the domain ID associated with the VPC. " +
             "If used with the account parameter returns the VPC associated with the account for the specified domain.")
     private Long domainId;
 
-    @IdentityMapper(entityTableName="projects")
-    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="create VPC for the project")
+    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.UUID, entityType=ProjectResponse.class,
+            description="create VPC for the project")
     private Long projectId;
 
-    @IdentityMapper(entityTableName="data_center")
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="the ID of the availability zone")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType=ZoneResponse.class,
+            required=true, description="the ID of the availability zone")
     private Long zoneId;
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="the name of the VPC")
@@ -71,9 +74,8 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd{
             "guest networks' cidrs should be within this CIDR")
     private String cidr;
 
-
-    @IdentityMapper(entityTableName="vpc_offerings")
-    @Parameter(name=ApiConstants.VPC_OFF_ID, type=CommandType.LONG, required=true, description="the ID of the VPC offering")
+    @Parameter(name=ApiConstants.VPC_OFF_ID, type=CommandType.UUID, entityType=VpcOfferingResponse.class,
+            required=true, description="the ID of the VPC offering")
     private Long vpcOffering;
 
     @Parameter(name=ApiConstants.NETWORK_DOMAIN, type=CommandType.STRING,

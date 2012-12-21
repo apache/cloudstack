@@ -19,15 +19,17 @@ package org.apache.cloudstack.api.command.user.vpc;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.api.response.VpcResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.api.response.VpcOfferingResponse;
+import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.VpcResponse;
 import com.cloud.network.vpc.Vpc;
 
 
@@ -38,13 +40,13 @@ public class ListVPCsCmd extends BaseListTaggedResourcesCmd{
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
-    @IdentityMapper(entityTableName="vpc")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list VPC by id")
+    ////////////////////////////////////////////////////
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=VpcResponse.class,
+            description="list VPC by id")
     private Long id;
 
-    @IdentityMapper(entityTableName="data_center")
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="list by zone")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType=ZoneResponse.class,
+            description="list by zone")
     private Long zoneId;
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="list by name of the VPC")
@@ -58,16 +60,16 @@ public class ListVPCsCmd extends BaseListTaggedResourcesCmd{
             "guest networks' cidrs should be within this CIDR")
     private String cidr;
 
-    @IdentityMapper(entityTableName="vpc_offerings")
-    @Parameter(name=ApiConstants.VPC_OFF_ID, type=CommandType.LONG, description="list by ID of the VPC offering")
+    @Parameter(name=ApiConstants.VPC_OFF_ID, type=CommandType.UUID, entityType=VpcOfferingResponse.class
+            , description="list by ID of the VPC offering")
     private Long VpcOffId;
 
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="list by account associated with the VPC. " +
             "Must be used with the domainId parameter.")
     private String accountName;
 
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="list by domain ID associated with the VPC. " +
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType=DomainResponse.class,
+            description="list by domain ID associated with the VPC. " +
             "If used with the account parameter returns the VPC associated with the account for the specified domain.")
     private Long domainId;
 

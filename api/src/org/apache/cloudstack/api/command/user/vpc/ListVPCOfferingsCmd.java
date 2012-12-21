@@ -23,7 +23,6 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -38,8 +37,8 @@ public class ListVPCOfferingsCmd extends BaseListCmd{
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @IdentityMapper(entityTableName="vpc_offerings")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list VPC offerings by id")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=VpcOfferingResponse.class,
+            description="list VPC offerings by id")
     private Long id;
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="list VPC offerings by name")

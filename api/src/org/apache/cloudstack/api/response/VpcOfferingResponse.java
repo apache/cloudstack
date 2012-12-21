@@ -19,11 +19,14 @@ package org.apache.cloudstack.api.response;
 import java.util.Date;
 import java.util.List;
 
+import com.cloud.network.vpc.VpcOffering;
 import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.Entity;
 
+@Entity(value=VpcOffering.class)
 @SuppressWarnings("unused")
 public class VpcOfferingResponse extends BaseResponse {
     @SerializedName("id") @Param(description="the id of the vpc offering")
