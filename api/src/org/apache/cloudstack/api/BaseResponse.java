@@ -46,18 +46,12 @@ public abstract class BaseResponse implements ResponseObject {
         this.objectName = objectName;
     }
 
-    //TODO: TO be replaced by getObjectUuid() after all response refactoring
-    public Long getObjectId() {
-        return null;
-    }
-
-    public String getObjectUuid(){
+    public String getObjectId() {
         return null;
     }
 
     // For use by list commands with pending async jobs
-    //TODO: To be replaced by jobUuid after all response refactoring
-    protected IdentityProxy jobId = new IdentityProxy("async_job");
+    protected String jobId;
 
     @SerializedName(ApiConstants.JOB_ID) @Param(description="the UUID of the latest async job acting on this object")
     protected String jobUuid;
@@ -65,13 +59,12 @@ public abstract class BaseResponse implements ResponseObject {
     @SerializedName(ApiConstants.JOB_STATUS) @Param(description="the current status of the latest async job acting on this object")
     private Integer jobStatus;
 
-    //TODO: TO be replaced by getter and setters for jobUuid.
-    public Long getJobId() {
-        return jobId.getValue();
+    public String getJobId() {
+        return jobId;
     }
 
-    public void setJobId(Long jobId) {
-        this.jobId.setValue(jobId);
+    public void setJobId(String jobId) {
+        this.jobId = jobId;
     }
 
     public String getJobUuid() {

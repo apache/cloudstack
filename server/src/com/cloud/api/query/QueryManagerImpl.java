@@ -71,6 +71,7 @@ import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.SecurityGroupJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
+import com.cloud.async.AsyncJob;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -1306,11 +1307,6 @@ public class QueryManagerImpl implements QueryService, Manager {
         }
 
         return  _projectAccountJoinDao.searchAndCount(sc, searchFilter);
-    }
-
-    @Override
-    public Snapshot findSnapshotById(long snapshotId) {
-        return ApiDBUtils.findSnapshotById(snapshotId);
     }
 
 

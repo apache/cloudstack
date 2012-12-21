@@ -2511,6 +2511,7 @@ INSERT INTO `cloud`.`counter` (id, source, name, value,created) VALUES (100,'net
 
 SET foreign_key_checks = 1;
 
+ALTER TABLE upload ADD uuid VARCHAR(40);
 
 --- DB views for list api ---
 DROP VIEW IF EXISTS `cloud`.`user_vm_view`;

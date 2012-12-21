@@ -48,6 +48,12 @@ public class CounterResponse extends BaseResponse {
     @Param(description = "zone id of counter")
     private String zoneId;
 
+
+    @Override
+    public String getObjectId() {
+        return this.id;
+    }
+
     public void setId(String id) {
         this.id = id;
     }

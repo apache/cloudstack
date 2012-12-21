@@ -117,6 +117,11 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
         this.ipAddress = ipAddress;
     }
 
+    @Override
+    public String getObjectId() {
+        return this.getId();
+    }
+
     public void setAllocated(Date allocated) {
         this.allocated = allocated;
     }

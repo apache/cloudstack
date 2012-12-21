@@ -60,6 +60,13 @@ public class PhysicalNetworkResponse extends BaseResponse {
     @SerializedName(ApiConstants.NETWORK_SPEED) @Param(description="the speed of the physical network")
     private String networkSpeed;
 
+
+    @Override
+    public String getObjectId() {
+        return this.id;
+
+    }
+
     public void setId(String uuid) {
         this.id = uuid;
     }

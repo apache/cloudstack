@@ -51,6 +51,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.apache.cloudstack.api.*;
+import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
@@ -85,6 +86,8 @@ import org.apache.http.protocol.ResponseServer;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
+import org.apache.cloudstack.api.command.user.project.ListProjectInvitationsCmd;
+import org.apache.cloudstack.api.command.user.project.ListProjectsCmd;
 import org.apache.cloudstack.api.command.user.securitygroup.ListSecurityGroupsCmd;
 import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
 import com.cloud.acl.ControlledEntity;
@@ -454,7 +457,10 @@ public class ApiServer implements HttpRequestHandler {
                     && !(cmdObj instanceof ListSecurityGroupsCmd)
                     && !(cmdObj instanceof ListTagsCmd)
                     && !(cmdObj instanceof ListEventsCmd)
-                    && !(cmdObj instanceof ListVMGroupsCmd)) {
+                    && !(cmdObj instanceof ListVMGroupsCmd)
+                    && !(cmdObj instanceof ListProjectsCmd)
+                    && !(cmdObj instanceof ListProjectAccountsCmd)
+                    && !(cmdObj instanceof ListProjectInvitationsCmd)) {
                 buildAsyncListResponse((BaseListCmd) cmdObj, caller);
             }
 
@@ -479,17 +485,22 @@ public class ApiServer implements HttpRequestHandler {
                 return;
             }
 
-            // Using maps might possibly be more efficient if the set is large enough but for now, we'll just do a
-            // comparison of two lists. Either way, there shouldn't be too many async jobs active for the account.
+            Map<String, AsyncJob> objectJobMap = new HashMap<String, AsyncJob>();
             for (AsyncJob job : jobs) {
                 if (job.getInstanceId() == null) {
                     continue;
                 }
-                for (ResponseObject response : responses) {
-                    if (response.getObjectId() != null && job.getInstanceId().longValue() == response.getObjectId().longValue()) {
-                        response.setJobId(job.getId());
-                        response.setJobStatus(job.getStatus());
-                    }
+                String instanceUuid = ApiDBUtils.findJobInstanceUuid(job);
+                if (instanceUuid != null) {
+                    objectJobMap.put(instanceUuid, job);
+                }
+            }
+
+            for (ResponseObject response : responses) {
+                if (response.getObjectId() != null && objectJobMap.containsKey(response.getObjectId())) {
+                    AsyncJob job = objectJobMap.get(response.getObjectId());
+                    response.setJobId(job.getUuid());
+                    response.setJobStatus(job.getStatus());
                 }
             }
         }

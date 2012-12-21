@@ -80,6 +80,12 @@ public class StoragePoolResponse extends BaseResponse {
     private StoragePoolStatus state;
 
 
+
+    @Override
+    public String getObjectId() {
+        return this.getId();
+    }
+
     public String getId() {
         return id;
     }

@@ -92,6 +92,13 @@ public class AutoScaleVmProfileResponse extends BaseResponse implements Controll
 
     }
 
+
+    @Override
+    public String getObjectId() {
+        return this.id;
+    }
+
+
     public void setId(String id) {
         this.id = id;
     }

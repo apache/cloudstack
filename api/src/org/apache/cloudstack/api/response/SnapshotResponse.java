@@ -85,6 +85,11 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
     private List<ResourceTagResponse> tags;
 
 
+    @Override
+    public String getObjectId() {
+        return this.getId();
+    }
+
     private String getId() {
         return id;
     }

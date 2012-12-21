@@ -185,8 +185,10 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
         return this.id;
     }
 
+
+
     @Override
-    public String getObjectUuid() {
+    public String getObjectId() {
         return this.getId();
     }
 

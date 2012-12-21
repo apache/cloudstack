@@ -160,6 +160,11 @@ public class HostResponse extends BaseResponse {
     private Boolean haHost;
 
 
+    @Override
+    public String getObjectId() {
+        return this.getId();
+    }
+
     public String getId() {
         return id;
     }

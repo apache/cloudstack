@@ -55,6 +55,11 @@ public class IsoVmResponse extends BaseResponse {
     private String virtualMachineState;
 
 
+    @Override
+    public String getObjectId() {
+        return this.getId();
+    }
+
     public String getOsTypeId() {
         return osTypeId;
     }

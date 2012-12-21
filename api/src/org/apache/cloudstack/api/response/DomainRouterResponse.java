@@ -154,10 +154,14 @@ public class DomainRouterResponse extends BaseResponse implements ControlledView
         nics = new HashSet<NicResponse>();
     }
 
+
+
     @Override
-    public String getObjectUuid() {
+    public String getObjectId() {
         return this.getId();
     }
+
+
 
     public String getId() {
         return id;

@@ -19,20 +19,19 @@ package org.apache.cloudstack.api.response;
 import java.util.Date;
 
 import org.apache.cloudstack.api.ApiConstants;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
 
 public class ExtractResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the id of extracted object")
-    private IdentityProxy id = new IdentityProxy("vm_template");
+    private String id;
 
     @SerializedName(ApiConstants.NAME) @Param(description="the name of the extracted object")
     private String name;
 
     @SerializedName("extractId") @Param(description="the upload id of extracted object")
-    private IdentityProxy uploadId = new IdentityProxy("async_job");
+    private String uploadId;
 
     @SerializedName("uploadpercentage") @Param(description="the percentage of the entity uploaded to the specified location")
     private Integer uploadPercent;
@@ -41,7 +40,7 @@ public class ExtractResponse extends BaseResponse {
     private String status;
 
     @SerializedName("accountid") @Param(description="the account id to which the extracted object belongs")
-    private IdentityProxy accountId = new IdentityProxy("account");
+    private String accountId;
 
     @SerializedName("resultstring") @Param(includeInApiDoc=false)
     private String resultString;
@@ -59,7 +58,7 @@ public class ExtractResponse extends BaseResponse {
     private String storage;
 
     @SerializedName(ApiConstants.ZONE_ID) @Param(description="zone ID the object was extracted from")
-    private IdentityProxy zoneId = new IdentityProxy("data_center");
+    private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME) @Param(description="zone name the object was extracted from")
     private String zoneName;
@@ -73,26 +72,23 @@ public class ExtractResponse extends BaseResponse {
     public ExtractResponse(){
     }
 
-    public ExtractResponse(Long typeId, String typeName, long accountId,
-            String state, Long uploadId) {
-        this.id.setValue(typeId);
+    public ExtractResponse(String typeId, String typeName, String accountId,
+            String state, String uploadId) {
+        this.id = typeId;
         this.name = typeName;
-        this.accountId.setValue(accountId);
+        this.accountId = accountId;
         this.state = state;
-        this.uploadId.setValue(uploadId);
+        this.uploadId = uploadId;
     }
 
-    public Long getId() {
-        return id.getValue();
+    public String getId() {
+        return id;
     }
 
-    public void setId(long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public void setIdentityTableName(String tableName) {
-        this.id.setTableName(tableName);
-    }
 
     public String getName() {
         return name;
@@ -102,12 +98,12 @@ public class ExtractResponse extends BaseResponse {
         this.name = name;
     }
 
-    public Long getUploadId() {
-        return uploadId.getValue();
+    public String getUploadId() {
+        return uploadId;
     }
 
-    public void setUploadId(Long uploadId) {
-        this.uploadId.setValue(uploadId);
+    public void setUploadId(String uploadId) {
+        this.uploadId = uploadId;
     }
 
     public Integer getUploadPercent() {
@@ -126,12 +122,12 @@ public class ExtractResponse extends BaseResponse {
         this.status = status;
     }
 
-    public Long getAccountId() {
-        return accountId.getValue();
+    public String getAccountId() {
+        return accountId;
     }
 
-    public void setAccountId(long accountId) {
-        this.accountId.setValue(accountId);
+    public void setAccountId(String accountId) {
+        this.accountId = accountId;
     }
 
     public String getResultString() {
@@ -174,12 +170,12 @@ public class ExtractResponse extends BaseResponse {
         this.storage = storage;
     }
 
-    public Long getZoneId() {
-        return zoneId.getValue();
+    public String getZoneId() {
+        return zoneId;
     }
 
-    public void setZoneId(Long zoneId) {
-        this.zoneId.setValue(zoneId);
+    public void setZoneId(String zoneId) {
+        this.zoneId = zoneId;
     }
 
     public String getZoneName() {

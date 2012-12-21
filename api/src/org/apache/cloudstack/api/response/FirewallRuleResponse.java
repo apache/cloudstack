@@ -67,6 +67,12 @@ public class FirewallRuleResponse extends BaseResponse {
     @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with the rule", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
 
+
+    @Override
+    public String getObjectId() {
+        return this.getId();
+    }
+
     public String getId() {
         return id;
     }

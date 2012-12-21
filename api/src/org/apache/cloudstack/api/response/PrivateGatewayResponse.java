@@ -72,6 +72,11 @@ public class PrivateGatewayResponse extends BaseResponse implements ControlledEn
     private String state;
 
 
+    @Override
+    public String getObjectId() {
+        return this.id;
+    }
+
     public void setId(String id) {
         this.id = id;
     }

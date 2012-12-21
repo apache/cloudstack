@@ -38,47 +38,50 @@ public class UploadVO implements Upload {
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
 	long id;
-	
+
+    @Column(name="uuid")
+	private String uuid;
+
 	@Column(name="host_id")
 	private long hostId;
-	
+
 	@Column(name="type_id")
 	private long typeId;
-	
+
 	@Column(name=GenericDaoBase.CREATED_COLUMN)
 	private Date created = null;
-	
+
 	@Column(name="last_updated")
 	@Temporal(value=TemporalType.TIMESTAMP)
-	private Date lastUpdated = null;	
-	
+	private Date lastUpdated = null;
+
 	@Column (name="upload_pct")
-	private int uploadPercent;	
-	
+	private int uploadPercent;
+
 	@Column (name="type")
 	@Enumerated(EnumType.STRING)
 	private Type type;
-	
+
 	@Column (name="mode")
     @Enumerated(EnumType.STRING)
     private Mode mode = Mode.FTP_UPLOAD;
-	
+
 	@Column (name="upload_state")
 	@Enumerated(EnumType.STRING)
 	private Status uploadState;
-	
+
 	@Column (name="error_str")
 	private String errorString;
 
 	@Column (name="job_id")
 	private String jobId;
-	
+
 	@Column (name="url")
 	private String uploadUrl;
 
 	@Column (name="install_path")
 	private String installPath;
-	   
+
 	@Override
     public long getHostId() {
 		return hostId;
@@ -93,7 +96,12 @@ public class UploadVO implements Upload {
 		return id;
 	}
 
-	@Override
+
+	public String getUuid() {
+        return uuid;
+    }
+
+    @Override
     public Date getCreated() {
 		return created;
 	}
@@ -102,7 +110,7 @@ public class UploadVO implements Upload {
     public Date getLastUpdated() {
 		return lastUpdated;
 	}
-	
+
 	public void setLastUpdated(Date date) {
 	    lastUpdated = date;
 	}
@@ -125,7 +133,7 @@ public class UploadVO implements Upload {
 		this.type = type;
 		this.uploadUrl = uploadUrl;
 	}
-	
+
 	public UploadVO(long hostId, long typeId, Date lastUpdated,
             Status uploadState, int uploadPercent, Type type,
             Mode mode) {
@@ -139,7 +147,7 @@ public class UploadVO implements Upload {
         this.mode = mode;
     }
 
-	protected UploadVO() {		
+	protected UploadVO() {
 	}
 
 	public UploadVO(Long uploadId) {
@@ -219,7 +227,7 @@ public class UploadVO implements Upload {
         return mode;
     }
 
-    public void setMode(Mode mode) { 
+    public void setMode(Mode mode) {
         this.mode = mode;
     }
 

@@ -69,10 +69,14 @@ public class SecurityGroupResponse extends BaseResponse implements ControlledVie
         this.tags = new HashSet<ResourceTagResponse>();
     }
 
+
+
     @Override
-    public String getObjectUuid() {
+    public String getObjectId() {
         return this.getId();
     }
+
+
 
     public String getId() {
         return id;

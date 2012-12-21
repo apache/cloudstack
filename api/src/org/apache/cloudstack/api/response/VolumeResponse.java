@@ -157,6 +157,11 @@ public class VolumeResponse extends BaseResponse implements ControlledEntityResp
 
 
 
+    @Override
+    public String getObjectId() {
+        return this.getId();
+    }
+
     public Boolean getDestroyed() {
         return destroyed;
     }

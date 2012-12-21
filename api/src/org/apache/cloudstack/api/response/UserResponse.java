@@ -72,6 +72,12 @@ public class UserResponse extends BaseResponse {
     @SerializedName("accountid") @Param(description="the account ID of the user")
     private String accountId;
 
+
+    @Override
+    public String getObjectId() {
+        return this.getId();
+    }
+
     public String getId() {
         return id;
     }

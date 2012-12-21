@@ -17,6 +17,8 @@
 package org.apache.cloudstack.api;
 
 import org.apache.cloudstack.api.response.CreateCmdResponse;
+
+import com.cloud.async.AsyncJob;
 import com.cloud.exception.ResourceAllocationException;
 
 public abstract class BaseAsyncCreateCmd extends BaseAsyncCmd {
@@ -37,7 +39,8 @@ public abstract class BaseAsyncCreateCmd extends BaseAsyncCmd {
 
     public String getResponse(long jobId, long objectId, String objectEntityTable) {
         CreateCmdResponse response = new CreateCmdResponse();
-        response.setJobId(jobId);
+        AsyncJob job = _entityMgr.findById(AsyncJob.class, jobId);
+        response.setJobId(job.getUuid());
         response.setId(objectId);
         response.setIdEntityTable(objectEntityTable);
         response.setResponseName(getCommandName());

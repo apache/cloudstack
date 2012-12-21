@@ -512,8 +512,9 @@ public abstract class BaseCmd {
                     throw new PermissionDeniedException("Can't add resources to the account id=" + account.getId() + " in state=" + account.getState() + " as it's no longer active");
                 }
             } else {
-                List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
-                idList.add(new IdentityProxy("domain", domainId, "domainId"));
+                // idList is not used anywhere, so removed it now
+                //List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+                //idList.add(new IdentityProxy("domain", domainId, "domainId"));
                 throw new InvalidParameterValueException("Unable to find account by name " + accountName + " in domain with specified id");
             }
         }

@@ -68,10 +68,6 @@ public class NicResponse extends BaseResponse {
         this.id = id;
     }
 
-    @Override
-    public String getObjectUuid() {
-        return this.getId();
-    }
 
     public void setNetworkid(String networkid) {
         this.networkId = networkid;

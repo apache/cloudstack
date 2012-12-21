@@ -149,6 +149,12 @@ public class AccountResponse extends BaseResponse {
     @SerializedName(ApiConstants.ACCOUNT_DETAILS) @Param(description="details for the account")
     private Map<String, String> details;
 
+
+    @Override
+    public String getObjectId() {
+        return this.id;
+    }
+
     public void setId(String id) {
         this.id = id;
     }

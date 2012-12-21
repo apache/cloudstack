@@ -167,7 +167,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
             VolumeResponse response = _responseGenerator.createVolumeResponse(volume);
             //FIXME - have to be moved to ApiResponseHelper
             if (getSnapshotId() != null) {
-                Snapshot snap = _queryService.findSnapshotById(getSnapshotId());
+                Snapshot snap = _entityMgr.findById(Snapshot.class, getSnapshotId());
                 if (snap != null) {
                     response.setSnapshotId(snap.getUuid()); // if the volume was
                                                             // created from a

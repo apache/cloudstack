@@ -70,8 +70,14 @@ public class ConditionResponse extends BaseResponse implements ControlledEntityR
     // ///////////////// Setters ///////////////////////
     // ///////////////////////////////////////////////////
 
+
     public void setId(String id) {
         this.id = id;
+    }
+
+    @Override
+    public String getObjectId() {
+        return this.id;
     }
 
     public void setThreshold(long threshold) {

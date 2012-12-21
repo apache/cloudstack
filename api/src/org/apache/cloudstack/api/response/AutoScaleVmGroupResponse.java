@@ -81,6 +81,13 @@ public class AutoScaleVmGroupResponse extends BaseResponse implements Controlled
 
     }
 
+
+    @Override
+    public String getObjectId() {
+        return this.id;
+    }
+
+
     public void setId(String id) {
         this.id = id;
     }

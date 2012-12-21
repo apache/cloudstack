@@ -39,6 +39,7 @@ import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 
 
+import com.cloud.async.AsyncJob;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.storage.Snapshot;
 
@@ -69,6 +70,5 @@ public interface QueryService {
 
     public ListResponse<ProjectAccountResponse> listProjectAccounts(ListProjectAccountsCmd cmd);
 
-    public Snapshot findSnapshotById(long snapshotId);
 
 }

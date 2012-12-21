@@ -2891,8 +2891,10 @@ public class ManagementServerImpl implements ManagementServer {
             uploadJob = _uploadDao.createForUpdate(uploadJob.getId());
 
             // Update the async Job
-            ExtractResponse resultObj = new ExtractResponse(volumeId, volume.getName(), accountId, UploadVO.Status.COPY_IN_PROGRESS.toString(),
-                    uploadJob.getId());
+
+            ExtractResponse resultObj = new ExtractResponse(ApiDBUtils.findVolumeById(volumeId).getUuid(),
+                    volume.getName(), ApiDBUtils.findAccountById(accountId).getUuid(), UploadVO.Status.COPY_IN_PROGRESS.toString(),
+                    uploadJob.getUuid());
             resultObj.setResponseName(cmd.getCommandName());
             AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
             if (asyncExecutor != null) {

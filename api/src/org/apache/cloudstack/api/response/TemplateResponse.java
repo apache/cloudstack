@@ -135,6 +135,11 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
 
 
 
+    @Override
+    public String getObjectId() {
+        return this.getId();
+    }
+
     public String getId() {
         return id;
     }

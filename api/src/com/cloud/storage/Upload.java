@@ -36,6 +36,8 @@ public interface Upload {
 
     long getId();
 
+    String getUuid();
+
     Date getCreated();
 
     Date getLastUpdated();

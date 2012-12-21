@@ -52,8 +52,10 @@ import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.SecurityGroupJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
+import com.cloud.async.AsyncJob;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
+import com.cloud.async.dao.AsyncJobDao;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
@@ -95,6 +97,7 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.NetworkRuleConfigVO;
 import com.cloud.network.NetworkVO;
+import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PhysicalNetworkVO;
 import com.cloud.network.Site2SiteVpnGatewayVO;
 import com.cloud.network.Site2SiteCustomerGatewayVO;
@@ -311,6 +314,7 @@ public class ApiDBUtils {
     private static VpcDao _vpcDao;
     private static VpcOfferingDao _vpcOfferingDao;
     private static SnapshotPolicyDao _snapshotPolicyDao;
+    private static AsyncJobDao _asyncJobDao;
 
     static {
         _ms = (ManagementServer) ComponentLocator.getComponent(ManagementServer.Name);
@@ -397,6 +401,7 @@ public class ApiDBUtils {
         _vpcDao = locator.getDao(VpcDao.class);
         _vpcOfferingDao = locator.getDao(VpcOfferingDao.class);
         _snapshotPolicyDao = locator.getDao(SnapshotPolicyDao.class);
+        _asyncJobDao = locator.getDao(AsyncJobDao.class);
 
         // Note: stats collector should already have been initialized by this time, otherwise a null instance is returned
         _statsCollector = StatsCollector.getInstance();
@@ -1044,6 +1049,130 @@ public class ApiDBUtils {
     public static VpcOffering findVpcOfferingById(long offeringId){
         return _vpcOfferingDao.findById(offeringId);
     }
+
+
+    public static AsyncJob findAsyncJobById(long jobId){
+        return _asyncJobDao.findById(jobId);
+    }
+
+    public static String findJobInstanceUuid(AsyncJob job){
+        if ( job == null )
+            return null;
+        String jobInstanceId = null;
+        if (job.getInstanceType() == AsyncJob.Type.Volume) {
+            VolumeVO volume = ApiDBUtils.findVolumeById(job.getInstanceId());
+            if (volume != null) {
+                jobInstanceId = volume.getUuid();
+            }
+        } else if (job.getInstanceType() == AsyncJob.Type.Template || job.getInstanceType() == AsyncJob.Type.Iso) {
+            VMTemplateVO template = ApiDBUtils.findTemplateById(job.getInstanceId());
+            if (template != null) {
+                jobInstanceId = template.getUuid();
+            }
+        } else if (job.getInstanceType() == AsyncJob.Type.VirtualMachine || job.getInstanceType() == AsyncJob.Type.ConsoleProxy
+                || job.getInstanceType() == AsyncJob.Type.SystemVm || job.getInstanceType() == AsyncJob.Type.DomainRouter) {
+            VMInstanceVO vm = ApiDBUtils.findVMInstanceById(job.getInstanceId());
+            if (vm != null) {
+                jobInstanceId = vm.getUuid();
+            }
+        } else if (job.getInstanceType() == AsyncJob.Type.Snapshot) {
+            Snapshot snapshot = ApiDBUtils.findSnapshotById(job.getInstanceId());
+            if (snapshot != null) {
+                jobInstanceId = snapshot.getUuid();
+            }
+        } else if (job.getInstanceType() == AsyncJob.Type.Host) {
+            Host host = ApiDBUtils.findHostById(job.getInstanceId());
+            if (host != null) {
+                jobInstanceId = host.getUuid();
+            }
+        } else if (job.getInstanceType() == AsyncJob.Type.StoragePool) {
+            StoragePoolVO spool = ApiDBUtils.findStoragePoolById(job.getInstanceId());
+            if (spool != null) {
+                jobInstanceId = spool.getUuid();
+            }
+        } else if (job.getInstanceType() == AsyncJob.Type.IpAddress) {
+            IPAddressVO ip = ApiDBUtils.findIpAddressById(job.getInstanceId());
+            if (ip != null) {
+                jobInstanceId = ip.getUuid();
+            }
+        } else if (job.getInstanceType() == AsyncJob.Type.SecurityGroup) {
+            SecurityGroup sg = ApiDBUtils.findSecurityGroupById(job.getInstanceId());
+            if (sg != null) {
+                jobInstanceId = sg.getUuid();
+            }
+        } else if (job.getInstanceType() == AsyncJob.Type.PhysicalNetwork) {
+            PhysicalNetworkVO pnet = ApiDBUtils.findPhysicalNetworkById(job.getInstanceId());
+            if (pnet != null) {
+                jobInstanceId = pnet.getUuid();
+            }
+        } else if (job.getInstanceType() == AsyncJob.Type.TrafficType) {
+            PhysicalNetworkTrafficTypeVO trafficType = ApiDBUtils.findPhysicalNetworkTrafficTypeById(job.getInstanceId());
+            if (trafficType != null) {
+                jobInstanceId = trafficType.getUuid();
+            }
+        } else if (job.getInstanceType() == AsyncJob.Type.PhysicalNetworkServiceProvider) {
+            PhysicalNetworkServiceProvider sp = ApiDBUtils.findPhysicalNetworkServiceProviderById(job.getInstanceId());
+            if (sp != null) {
+                jobInstanceId = sp.getUuid();
+            }
+        } else if (job.getInstanceType() == AsyncJob.Type.FirewallRule) {
+            FirewallRuleVO fw = ApiDBUtils.findFirewallRuleById(job.getInstanceId());
+            if (fw != null) {
+                jobInstanceId = fw.getUuid();
+            }
+        } else if (job.getInstanceType() == AsyncJob.Type.Account) {
+            Account acct = ApiDBUtils.findAccountById(job.getInstanceId());
+            if (acct != null) {
+                jobInstanceId = acct.getUuid();
+            }
+        } else if (job.getInstanceType() == AsyncJob.Type.User) {
+            User usr = ApiDBUtils.findUserById(job.getInstanceId());
+            if (usr != null) {
+                jobInstanceId = usr.getUuid();
+            }
+        } else if (job.getInstanceType() == AsyncJob.Type.StaticRoute) {
+            StaticRouteVO route = ApiDBUtils.findStaticRouteById(job.getInstanceId());
+            if (route != null) {
+                jobInstanceId = route.getUuid();
+            }
+        } else if (job.getInstanceType() == AsyncJob.Type.PrivateGateway) {
+            VpcGatewayVO gateway = ApiDBUtils.findVpcGatewayById(job.getInstanceId());
+            if (gateway != null) {
+                jobInstanceId = gateway.getUuid();
+            }
+        } else if (job.getInstanceType() == AsyncJob.Type.Counter) {
+            CounterVO counter = ApiDBUtils.getCounter(job.getInstanceId());
+            if (counter != null) {
+                jobInstanceId = counter.getUuid();
+            }
+        } else if (job.getInstanceType() == AsyncJob.Type.Condition) {
+            ConditionVO condition = ApiDBUtils.findConditionById(job.getInstanceId());
+            if (condition != null) {
+                jobInstanceId = condition.getUuid();
+            }
+        } else if (job.getInstanceType() == AsyncJob.Type.AutoScalePolicy) {
+            AutoScalePolicyVO policy = ApiDBUtils.findAutoScalePolicyById(job.getInstanceId());
+            if (policy != null) {
+                jobInstanceId = policy.getUuid();
+            }
+        } else if (job.getInstanceType() == AsyncJob.Type.AutoScaleVmProfile) {
+            AutoScaleVmProfileVO profile = ApiDBUtils.findAutoScaleVmProfileById(job.getInstanceId());
+            if (profile != null) {
+                jobInstanceId = profile.getUuid();
+            }
+        } else if (job.getInstanceType() == AsyncJob.Type.AutoScaleVmGroup) {
+            AutoScaleVmGroupVO group = ApiDBUtils.findAutoScaleVmGroupById(job.getInstanceId());
+            if (group != null) {
+                jobInstanceId = group.getUuid();
+            }
+        } else if (job.getInstanceType() != AsyncJob.Type.None) {
+            // TODO : when we hit here, we need to add instanceType -> UUID
+            // entity table mapping
+            assert (false);
+        }
+        return jobInstanceId;
+    }
+
     ///////////////////////////////////////////////////////////////////////
     //  Newly Added Utility Methods for List API refactoring             //
     ///////////////////////////////////////////////////////////////////////

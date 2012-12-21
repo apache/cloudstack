@@ -45,40 +45,24 @@ public interface ResponseObject {
     void setObjectName(String name);
 
     /**
-     * Returns the object Id
+     * Returns the object UUid
      */
-    Long getObjectId();
-
-    /**
-    * Returns the object uuid. To replace getObjectId() later.
-    */
-    String getObjectUuid();
+    String getObjectId();
 
     /**
      * Returns the job id
      *
      * @return
      */
-    Long getJobId();
+    String getJobId();
 
-    /**
-     * Return the async job uuid. To replace getJobId() later.
-     * @return
-     */
-    String getJobUuid();
 
     /**
      * Sets the job id
      *
      * @param jobId
      */
-    void setJobId(Long jobId);
-
-    /**
-     * Set the job uuid. To replace setJobId() later.
-     * @param jobUuid job uuid
-     */
-    void setJobUuid(String jobUuid);
+    void setJobId(String jobId);
 
     /**
      * Returns the job status

@@ -133,15 +133,17 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
                 ExtractResponse response = new ExtractResponse();
                 response.setResponseName(getCommandName());
                 response.setObjectName("volume");
-                response.setIdentityTableName("volumes");
-                response.setId(id);
-                response.setName(_entityMgr.findById(Volume.class, id).getName());
-                response.setZoneId(zoneId);
-                response.setZoneName(_entityMgr.findById(DataCenter.class, zoneId).getName());
+                Volume vol = _entityMgr.findById(Volume.class, id);
+                response.setId(vol.getUuid());
+                response.setName(vol.getName());
+                DataCenter zone = _entityMgr.findById(DataCenter.class, id);
+                response.setZoneId(zone.getUuid());
+                response.setZoneName(zone.getName());
                 response.setMode(mode);
-                response.setUploadId(uploadId);
+                response.setUploadId(uploadInfo.getUuid());
                 response.setState(uploadInfo.getUploadState().toString());
-                response.setAccountId(getEntityOwnerId());
+                Account account = _entityMgr.findById(Account.class, getEntityOwnerId());
+                response.setAccountId(account.getUuid());
                 response.setUrl(uploadInfo.getUploadUrl());
                 this.setResponseObject(response);
             } else {

@@ -41,6 +41,12 @@ public class TrafficTypeResponse extends BaseResponse {
     @SerializedName(ApiConstants.VMWARE_NETWORK_LABEL) @Param(description="The network name label of the physical device dedicated to this traffic on a VMware host")
     private String vmwareNetworkLabel;
 
+
+    @Override
+    public String getObjectId() {
+        return this.id;
+    }
+
     public void setPhysicalNetworkId(String physicalNetworkId) {
         this.physicalNetworkId = physicalNetworkId;
     }

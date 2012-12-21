@@ -60,6 +60,12 @@ public class AutoScalePolicyResponse extends BaseResponse implements ControlledE
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the autoscale policy")
     private String domainName;
 
+
+    @Override
+    public String getObjectId() {
+        return this.id;
+    }
+
     public void setId(String id) {
         this.id = id;
     }
