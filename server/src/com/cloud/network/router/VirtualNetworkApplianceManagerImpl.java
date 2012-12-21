@@ -341,6 +341,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     int _routerCheckInterval = 30;
     protected ServiceOfferingVO _offering;
     private String _dnsBasicZoneUpdates = "all";
+    private Set<String> _guestOSNeedGatewayOnNonDefaultNetwork = new HashSet<String>();
 
     private boolean _disable_rp_filter = false;
     int _routerExtraPublicNics = 2;
@@ -501,6 +502,14 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         if(virtualRouter == null){
             throw new CloudRuntimeException("Failed to stop router with id " + routerId);
         }
+        
+        // Clear stop pending flag after stopped successfully
+        if (router.isStopPending()) {
+            s_logger.info("Clear the stop pending flag of router " + router.getHostName() + " after stop router successfully");
+            router.setStopPending(false);
+            router = _routerDao.persist(router);
+            virtualRouter.setStopPending(false);
+        }
         return virtualRouter;
     }
 
@@ -584,6 +593,14 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         _routerExtraPublicNics = NumbersUtil.parseInt(_configDao.getValue(Config.RouterExtraPublicNics.key()), 2);
 
+        String guestOSString = configs.get("network.dhcp.nondefaultnetwork.setgateway.guestos");
+        if (guestOSString != null) {
+            String[] guestOSList = guestOSString.split(",");
+            for (String os : guestOSList) {
+                _guestOSNeedGatewayOnNonDefaultNetwork.add(os);
+            }
+        }
+        
         String value = configs.get("start.retry");
         _retry = NumbersUtil.parseInt(value, 2);
 
@@ -2413,6 +2430,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Starting router " + router);
         if (_itMgr.start(router, params, user, caller, planToDeploy) != null) {
+            if (router.isStopPending()) {
+                s_logger.info("Clear the stop pending flag of router " + router.getHostName() + " after start router successfully!");
+                router.setStopPending(false);
+                router = _routerDao.persist(router);
+            }
             // We don't want the failure of VPN Connection affect the status of router, so we try to make connection
             // only after router start successfully
             Long vpcId = router.getVpcId();
@@ -2918,13 +2940,21 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         DhcpEntryCommand dhcpCommand = new DhcpEntryCommand(nic.getMacAddress(), nic.getIp4Address(), vm.getHostName());
         DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
         String gatewayIp = findGatewayIp(vm.getId());
+        boolean needGateway = true;
         if (!gatewayIp.equals(nic.getGateway())) {
+            needGateway = false;
             GuestOSVO guestOS = _guestOSDao.findById(vm.getGuestOSId());
-            // Don't set dhcp:router option for non-default nic on CentOS/RHEL, because they would set routing on wrong interface
-            // This is tricky, we may need to update this when we have more information on various OS's behavior
-            if (guestOS.getDisplayName().startsWith("CentOS") || guestOS.getDisplayName().startsWith("Red Hat Enterprise")) {
-                gatewayIp = "0.0.0.0";
+            // Do set dhcp:router option for non-default nic on certain OS(including Windows), and leave other OS unset.
+            // Because some OS(e.g. CentOS) would set routing on wrong interface
+            for (String name : _guestOSNeedGatewayOnNonDefaultNetwork) {
+                if (guestOS.getDisplayName().startsWith(name)) {
+                    needGateway = true;
+                    break;
+                }
             }
+        }
+        if (!needGateway) {
+            gatewayIp = "0.0.0.0";
         }
         dhcpCommand.setDefaultRouter(gatewayIp);
         dhcpCommand.setDefaultDns(findDefaultDnsIp(vm.getId()));
@@ -3308,6 +3338,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         List<DomainRouterVO> routers = _routerDao.listIsolatedByHostId(host.getId());
         for (DomainRouterVO router : routers) {
             if (router.isStopPending()) {
+                s_logger.info("Stopping router " + router.getInstanceName() + " due to stop pending flag found!");
                 State state = router.getState();
                 if (state != State.Stopped && state != State.Destroyed) {
                     try {

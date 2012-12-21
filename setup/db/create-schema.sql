@@ -166,7 +166,7 @@ CREATE TABLE `cloud`.`version` (
   INDEX `i_version__version`(`version`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-INSERT INTO `version` (`version`, `updated`, `step`) VALUES('4.0.0.2012-09-12T14:47:37Z', now(), 'Complete');
+INSERT INTO `version` (`version`, `updated`, `step`) VALUES('4.1.0', now(), 'Complete');
 
 CREATE TABLE `cloud`.`op_it_work` (
   `id` char(40) COMMENT 'reservation id',

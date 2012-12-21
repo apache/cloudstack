@@ -26,7 +26,9 @@ from cloudmonkey import __version__
 
 name = 'cloudmonkey'
 version = __version__
-requires = ['clint>=0.3.0',]
+requires = ['clint>=0.3.0',
+            'prettytable>=0.6',
+           ]
 
 try:
     import readline
