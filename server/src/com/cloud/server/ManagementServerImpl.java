@@ -203,6 +203,7 @@ import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.UploadDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.storage.swift.SwiftManager;
@@ -292,6 +293,7 @@ public class ManagementServerImpl implements ManagementServer {
     private final ConsoleProxyManager _consoleProxyMgr;
     private final SecondaryStorageVmManager _secStorageVmMgr;
     private final SwiftManager _swiftMgr;
+    private final S3Manager _s3Mgr;
     private final ServiceOfferingDao _offeringsDao;
     private final DiskOfferingDao _diskOfferingDao;
     private final VMTemplateDao _templateDao;
@@ -370,6 +372,7 @@ public class ManagementServerImpl implements ManagementServer {
         _consoleProxyMgr = locator.getManager(ConsoleProxyManager.class);
         _secStorageVmMgr = locator.getManager(SecondaryStorageVmManager.class);
         _swiftMgr = locator.getManager(SwiftManager.class);
+        _s3Mgr = locator.getManager(S3Manager.class);
         _storageMgr = locator.getManager(StorageManager.class);
         _publicIpAddressDao = locator.getDao(IPAddressDao.class);
         _consoleProxyDao = locator.getDao(ConsoleProxyDao.class);
@@ -1391,6 +1394,29 @@ public class ManagementServerImpl implements ManagementServer {
                     }
                 }
 
+            } else {
+                // if template is not public, perform permission check here
+                if (!template.isPublicTemplate() && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+                    Account owner = _accountMgr.getAccount(template.getAccountId());
+                    _accountMgr.checkAccess(caller, null, true, owner);
+                }
+                templateZonePairSet.add(new Pair<Long, Long>(template.getId(), zoneId));
+            }
+        } else if (_s3Mgr.isS3Enabled()) {
+            if (template == null) {
+                templateZonePairSet = _templateDao.searchSwiftTemplates(name, keyword, templateFilter, isIso, 
+                        hypers, bootable, domain, pageSize, startIndex, zoneId, hyperType, onlyReady, showDomr,
+                        permittedAccounts, caller, tags);
+                Set<Pair<Long, Long>> templateZonePairSet2 = new HashSet<Pair<Long, Long>>();
+                templateZonePairSet2 = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, hypers, 
+                        bootable, domain, pageSize, startIndex, zoneId, hyperType, onlyReady, showDomr,
+                        permittedAccounts, caller, listProjectResourcesCriteria, tags);
+                
+                for (Pair<Long, Long> tmpltPair : templateZonePairSet2) {
+                    if (!templateZonePairSet.contains(new Pair<Long, Long>(tmpltPair.first(), -1L))) {
+                        templateZonePairSet.add(tmpltPair);
+                    }
+                }
             } else {
                 // if template is not public, perform permission check here
                 if (!template.isPublicTemplate() && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
