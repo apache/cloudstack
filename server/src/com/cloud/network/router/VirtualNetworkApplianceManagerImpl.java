@@ -501,6 +501,14 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         if(virtualRouter == null){
             throw new CloudRuntimeException("Failed to stop router with id " + routerId);
         }
+        
+        // Clear stop pending flag after stopped successfully
+        if (router.isStopPending()) {
+            s_logger.info("Clear the stop pending flag of router " + router.getHostName() + " after stop router successfully");
+            router.setStopPending(false);
+            router = _routerDao.persist(router);
+            virtualRouter.setStopPending(false);
+        }
         return virtualRouter;
     }
 
@@ -2413,6 +2421,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Starting router " + router);
         if (_itMgr.start(router, params, user, caller, planToDeploy) != null) {
+            if (router.isStopPending()) {
+                s_logger.info("Clear the stop pending flag of router " + router.getHostName() + " after start router successfully!");
+                router.setStopPending(false);
+                router = _routerDao.persist(router);
+            }
             // We don't want the failure of VPN Connection affect the status of router, so we try to make connection
             // only after router start successfully
             Long vpcId = router.getVpcId();
@@ -3308,6 +3321,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         List<DomainRouterVO> routers = _routerDao.listIsolatedByHostId(host.getId());
         for (DomainRouterVO router : routers) {
             if (router.isStopPending()) {
+                s_logger.info("Stopping router " + router.getInstanceName() + " due to stop pending flag found!");
                 State state = router.getState();
                 if (state != State.Stopped && state != State.Destroyed) {
                     try {
