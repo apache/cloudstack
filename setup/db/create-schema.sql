@@ -164,7 +164,8 @@ CREATE TABLE `cloud`.`version` (
   INDEX `i_version__version`(`version`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-INSERT INTO `version` (`version`, `updated`, `step`) VALUES('@VERSION@', now(), 'Complete');
+
+INSERT INTO `version` (`version`, `updated`, `step`) VALUES('4.1.0', now(), 'Complete');
 
 CREATE TABLE `cloud`.`op_it_work` (
   `id` char(40) COMMENT 'reservation id',
@@ -1115,6 +1116,7 @@ CREATE TABLE  `cloud`.`upload` (
   `id` bigint unsigned NOT NULL auto_increment,
   `host_id` bigint unsigned NOT NULL,
   `type_id` bigint unsigned NOT NULL,
+  `uuid` varchar(40),
   `type` varchar(255),
   `mode` varchar(255),
   `created` DATETIME NOT NULL,
@@ -1337,7 +1339,7 @@ CREATE TABLE `cloud`.`async_job` (
   `session_key` varchar(64) COMMENT 'all async-job manage to apply session based security enforcement',
   `instance_type` varchar(64) COMMENT 'instance_type and instance_id work together to allow attaching an instance object to a job',			
   `instance_id` bigint unsigned,
-  `job_cmd` varchar(64) NOT NULL COMMENT 'command name',
+  `job_cmd` varchar(255) NOT NULL COMMENT 'command name',
   `job_cmd_originator` varchar(64) COMMENT 'command originator',
   `job_cmd_info` text COMMENT 'command parameter info',
   `job_cmd_ver` int(1) COMMENT 'command version',
@@ -2511,7 +2513,7 @@ INSERT INTO `cloud`.`counter` (id, source, name, value,created) VALUES (100,'net
 
 SET foreign_key_checks = 1;
 
-ALTER TABLE upload ADD uuid VARCHAR(40);
+
 
 --- DB views for list api ---
 DROP VIEW IF EXISTS `cloud`.`user_vm_view`;

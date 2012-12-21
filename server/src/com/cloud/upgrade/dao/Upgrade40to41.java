@@ -27,7 +27,7 @@ import com.cloud.utils.script.Script;
  * @author htrippaers
  *
  */
-public class Upgrade40to41 extends Upgrade30xBase implements DbUpgrade {
+public class Upgrade40to41 implements DbUpgrade {
 
 	/**
 	 *
@@ -65,9 +65,9 @@ public class Upgrade40to41 extends Upgrade30xBase implements DbUpgrade {
 	 */
 	@Override
 	public File[] getPrepareScripts() {
-        String script = Script.findScript("", "db/schema-40to41.sql");
+		String script = Script.findScript("", "db/schema-40to410.sql");
         if (script == null) {
-            throw new CloudRuntimeException("Unable to find db/schema-40to41.sql");
+            throw new CloudRuntimeException("Unable to find db/schema-40to410.sql");
         }
 
         return new File[] { new File(script) };
