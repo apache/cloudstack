@@ -20,6 +20,9 @@ package com.cloud.upgrade.dao;
 import java.io.File;
 import java.sql.Connection;
 
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.script.Script;
+
 /**
  * @author htrippaers
  *
@@ -27,7 +30,7 @@ import java.sql.Connection;
 public class Upgrade40to41 extends Upgrade30xBase implements DbUpgrade {
 
 	/**
-	 * 
+	 *
 	 */
 	public Upgrade40to41() {
 		// TODO Auto-generated constructor stub
@@ -62,7 +65,12 @@ public class Upgrade40to41 extends Upgrade30xBase implements DbUpgrade {
 	 */
 	@Override
 	public File[] getPrepareScripts() {
-		return new File[0];
+        String script = Script.findScript("", "db/schema-40to41.sql");
+        if (script == null) {
+            throw new CloudRuntimeException("Unable to find db/schema-40to41.sql");
+        }
+
+        return new File[] { new File(script) };
 	}
 
 	/* (non-Javadoc)
