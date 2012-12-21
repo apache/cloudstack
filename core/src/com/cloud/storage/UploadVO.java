@@ -17,6 +17,7 @@
 package com.cloud.storage;
 
 import java.util.Date;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -119,6 +120,7 @@ public class UploadVO implements Upload {
 		super();
 		this.hostId = hostId;
 		this.typeId = templateId;
+		this.uuid = UUID.randomUUID().toString();
 	}
 
 	public UploadVO(long hostId, long typeId, Date lastUpdated,
@@ -132,6 +134,7 @@ public class UploadVO implements Upload {
 		this.mode = mode;
 		this.type = type;
 		this.uploadUrl = uploadUrl;
+        this.uuid = UUID.randomUUID().toString();
 	}
 
 	public UploadVO(long hostId, long typeId, Date lastUpdated,
@@ -145,6 +148,8 @@ public class UploadVO implements Upload {
         this.uploadPercent = uploadPercent;
         this.type = type;
         this.mode = mode;
+        this.uuid = UUID.randomUUID().toString();
+
     }
 
 	protected UploadVO() {
