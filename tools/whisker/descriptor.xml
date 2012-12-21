@@ -2634,6 +2634,29 @@ Copyright (c) 2004 Clinton Begin
             </by-organisation>
         </with-license>
     </within>
+    <within dir='scripts/storage/secondary'>
+    	<with-license id='ApacheLicenseVersion2'>
+    		<copyright-notice>
+Copyright (c) 2010-2011 OpenStack, LLC.
+			</copyright-notice>
+			<by-organisation id='openstack.org'>
+				<resource name='swift' />
+			</by-organisation>
+		</with-license>
+	</within>
+    <within dir='scripts/vm/hypervisor/xenserver'>
+    	<with-license id='ApacheLicenseVersion2'>
+    		<copyright-notice>
+Copyright (c) 2010-2011 OpenStack, LLC.
+			</copyright-notice>
+			<by-organisation id='openstack.org'>
+				<resource name='swift' />
+			</by-organisation>
+		</with-license>
+	</within>
+
+<!-- Resources below this line are binary dependencies that are only pulled in during the build process.  -->
+
     <within dir='target/jar'>
         <with-license id='MIT'>
             <copyright-notice>
@@ -2788,26 +2811,6 @@ All rights reserved.
                 <resource name='cloud-backport-util-concurrent-3.0.jar' source='http://backport-jsr166.sourceforge.net/' />
             </by-organisation>
         </public-domain>
-    </within>
-    <within dir='scripts/storage/secondary'>
-        <with-license id='ApacheLicenseVersion2'>
-            <copyright-notice>
-Copyright (c) 2010-2011 OpenStack, LLC.
-            </copyright-notice>
-            <by-organisation id='openstack.org'>
-                <resource name='swift' />
-            </by-organisation>
-        </with-license>
-    </within>
-    <within dir='scripts/vm/hypervisor/xenserver'>
-        <with-license id='ApacheLicenseVersion2'>
-            <copyright-notice>
-Copyright (c) 2010-2011 OpenStack, LLC.
-            </copyright-notice>
-            <by-organisation id='openstack.org'>
-                <resource name='swift' />
-            </by-organisation>
-        </with-license>
     </within>
     <within dir='deps/awsapi-lib'>
         <with-license id='ApacheLicenseVersion2'>
