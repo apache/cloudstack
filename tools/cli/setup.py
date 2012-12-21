@@ -27,7 +27,7 @@ from cloudmonkey import __version__
 name = 'cloudmonkey'
 version = __version__
 requires = ['clint>=0.3.0',
-            'prettytable>=0.5',
+            'prettytable>=0.6',
            ]
 
 try:

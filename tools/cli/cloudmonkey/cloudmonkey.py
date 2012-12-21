@@ -66,7 +66,7 @@ logger = logging.getLogger(__name__)
 completions = cloudstackAPI.__all__
 
 
-class CloudStackShell(cmd.Cmd, object):
+class CloudMonkeyShell(cmd.Cmd, object):
     intro = ("☁ Apache CloudStack 🐵 cloudmonkey " + __version__ +
              ". Type help or ? to list commands.\n")
     ruler = "="
@@ -138,7 +138,7 @@ class CloudStackShell(cmd.Cmd, object):
         print self.intro
         while True:
             try:
-                super(CloudStackShell, self).cmdloop(intro = "")
+                super(CloudMonkeyShell, self).cmdloop(intro="")
                 self.postloop()
             except KeyboardInterrupt:
                 print("^C")
@@ -425,7 +425,7 @@ class CloudStackShell(cmd.Cmd, object):
 
     def do_set(self, args):
         """
-        Set config for CloudStack CLI. Available options are:
+        Set config for cloudmonkey. For example, options can be:
         host, port, apikey, secretkey, log_file, history_file
         You may also edit your ~/.cloudmonkey_config instead of using set.
 
@@ -497,13 +497,13 @@ class CloudStackShell(cmd.Cmd, object):
 
     def do_exit(self, args):
         """
-        Quit Apache CloudStack CLI
+        Quit CloudMonkey CLI
         """
         return self.do_quit(args)
 
     def do_quit(self, args):
         """
-        Quit Apache CloudStack CLI
+        Quit CloudMonkey CLI
         """
         self.print_shell("Bye!")
         return self.do_EOF(args)
@@ -517,7 +517,7 @@ class CloudStackShell(cmd.Cmd, object):
 
 def main():
     # Create handlers on the fly using closures
-    self = CloudStackShell
+    self = CloudMonkeyShell
     global grammar
     for rule in grammar:
         def add_grammar(rule):
@@ -547,7 +547,7 @@ def main():
         grammar_handler.__name__ = 'do_' + rule
         setattr(self, grammar_handler.__name__, grammar_handler)
 
-    shell = CloudStackShell()
+    shell = CloudMonkeyShell()
     if len(sys.argv) > 1:
         shell.onecmd(' '.join(sys.argv[1:]))
     else:
