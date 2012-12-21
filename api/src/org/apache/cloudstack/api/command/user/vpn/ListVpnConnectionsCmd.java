@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.vpn;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -40,13 +41,12 @@ public class ListVpnConnectionsCmd extends BaseListProjectAndAccountResourcesCmd
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-
-    @IdentityMapper(entityTableName="s2s_vpn_connection")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="id of the vpn connection")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=Site2SiteVpnConnectionResponse.class,
+            description="id of the vpn connection")
     private Long id;
 
-    @IdentityMapper(entityTableName="vpc")
-    @Parameter(name=ApiConstants.VPC_ID, type=CommandType.LONG, description="id of vpc")
+    @Parameter(name=ApiConstants.VPC_ID, type=CommandType.UUID, entityType=VpcResponse.class,
+            description="id of vpc")
     private Long vpcId;
 
     /////////////////////////////////////////////////////

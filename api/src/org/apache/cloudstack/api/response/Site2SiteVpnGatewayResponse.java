@@ -18,11 +18,14 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 
+import com.cloud.network.Site2SiteVpnGateway;
 import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.Entity;
 
+@Entity(value=Site2SiteVpnGateway.class)
 @SuppressWarnings("unused")
 public class Site2SiteVpnGatewayResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the vpn gateway ID")

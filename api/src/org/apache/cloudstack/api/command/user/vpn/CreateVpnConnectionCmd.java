@@ -16,13 +16,14 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpn;
 
+import org.apache.cloudstack.api.response.Site2SiteCustomerGatewayResponse;
+import org.apache.cloudstack.api.response.Site2SiteVpnGatewayResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -43,12 +44,12 @@ public class CreateVpnConnectionCmd extends BaseAsyncCreateCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @IdentityMapper(entityTableName="s2s_vpn_gateway")
-    @Parameter(name=ApiConstants.S2S_VPN_GATEWAY_ID, type=CommandType.LONG, required=true, description="id of the vpn gateway")
+    @Parameter(name=ApiConstants.S2S_VPN_GATEWAY_ID, type=CommandType.UUID, entityType=Site2SiteVpnGatewayResponse.class,
+            required=true, description="id of the vpn gateway")
     private Long vpnGatewayId;
 
-    @IdentityMapper(entityTableName="s2s_customer_gateway")
-    @Parameter(name=ApiConstants.S2S_CUSTOMER_GATEWAY_ID, type=CommandType.LONG, required=true, description="id of the customer gateway")
+    @Parameter(name=ApiConstants.S2S_CUSTOMER_GATEWAY_ID, type=CommandType.UUID, entityType=Site2SiteCustomerGatewayResponse.class,
+            required=true, description="id of the customer gateway")
     private Long customerGatewayId;
 
     /////////////////////////////////////////////////////

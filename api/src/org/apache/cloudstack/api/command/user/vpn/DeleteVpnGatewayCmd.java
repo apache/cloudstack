@@ -16,12 +16,12 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpn;
 
+import org.apache.cloudstack.api.response.Site2SiteVpnGatewayResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -39,8 +39,8 @@ public class DeleteVpnGatewayCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @IdentityMapper(entityTableName="s2s_vpn_gateway")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="id of customer gateway")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=Site2SiteVpnGatewayResponse.class,
+            required=true, description="id of customer gateway")
     private Long id;
 
     /////////////////////////////////////////////////////

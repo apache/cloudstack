@@ -23,7 +23,6 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -41,8 +40,8 @@ public class ListVpnCustomerGatewaysCmd extends BaseListProjectAndAccountResourc
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="s2s_customer_gateway")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="id of the customer gateway")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=Site2SiteCustomerGatewayResponse.class,
+            description="id of the customer gateway")
     private Long id;
 
     /////////////////////////////////////////////////////
