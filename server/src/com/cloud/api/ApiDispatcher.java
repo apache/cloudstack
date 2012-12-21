@@ -617,6 +617,12 @@ public class ApiDispatcher {
             case UUID:
                 if (paramObj.toString().isEmpty())
                     break;
+                if (paramObj.toString().equals("-1")) {
+                    // FIXME: This is to handle a lot of hardcoded special cases where -1 is sent
+                    // APITODO: Find and get rid of all hardcoded params in API Cmds and service layer
+                    field.set(cmdObj, -1L);
+                    break;
+                }
                 // There may be multiple entities defined on the @Entity of a Response.class
                 // UUID CommandType would expect only one entityType, so use the first entityType
                 Class<?>[] entities = annotation.entityType()[0].getAnnotation(Entity.class).value();
