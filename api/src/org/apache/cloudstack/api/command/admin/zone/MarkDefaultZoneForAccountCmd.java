@@ -43,16 +43,16 @@ public class MarkDefaultZoneForAccountCmd extends BaseAsyncCmd {
     ////////////////API parameters //////////////////////
     /////////////////////////////////////////////////////
 
-    //@IdentityMapper(entityTableName="account")
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, required=true, description="Name of the account that is to be marked.", entityType=AccountResponse.class)
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, entityType=AccountResponse.class,
+            required=true, description="Name of the account that is to be marked.")
     private String accountName;
 
-    //@IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, required=true, description="Marks the account that belongs to the specified domain.", entityType=DomainResponse.class)
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType=DomainResponse.class,
+            required=true, description="Marks the account that belongs to the specified domain.")
     private Long domainId;
 
-    //@IdentityMapper(entityTableName="data_center")
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="The Zone ID with which the account is to be marked.", entityType=ZoneResponse.class)
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType=ZoneResponse.class,
+            required=true, description="The Zone ID with which the account is to be marked.")
     private Long defaultZoneId;
 
     /////////////////////////////////////////////////////

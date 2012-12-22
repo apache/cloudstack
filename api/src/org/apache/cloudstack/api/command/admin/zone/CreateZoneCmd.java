@@ -61,8 +61,8 @@ public class CreateZoneCmd extends BaseCmd {
     @Parameter(name=ApiConstants.DOMAIN, type=CommandType.STRING, description="Network domain name for the networks in the zone")
     private String domain;
 
-    //@IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the ID of the containing domain, null for public zones", entityType=DomainResponse.class)
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType=DomainResponse.class,
+            description="the ID of the containing domain, null for public zones")
     private Long domainId;
 
     @Parameter(name=ApiConstants.NETWORK_TYPE, type=CommandType.STRING, required=true, description="network type of the zone, can be Basic or Advanced")

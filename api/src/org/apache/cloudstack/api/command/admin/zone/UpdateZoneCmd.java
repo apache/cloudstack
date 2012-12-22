@@ -50,8 +50,8 @@ public class UpdateZoneCmd extends BaseCmd {
     @Parameter(name=ApiConstants.GUEST_CIDR_ADDRESS, type=CommandType.STRING, description="the guest CIDR address for the Zone")
     private String guestCidrAddress;
 
-    //@IdentityMapper(entityTableName="data_center")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the Zone", entityType=ZoneResponse.class)
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=ZoneResponse.class,
+            required=true, description="the ID of the Zone")
     private Long id;
 
     @Parameter(name=ApiConstants.INTERNAL_DNS1, type=CommandType.STRING, description="the first internal DNS for the Zone")

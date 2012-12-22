@@ -38,8 +38,8 @@ public class DeleteZoneCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    //@IdentityMapper(entityTableName="data_center")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the Zone", entityType=ZoneResponse.class)
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=ZoneResponse.class,
+            required=true, description="the ID of the Zone")
     private Long id;
 
 

@@ -23,7 +23,6 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -43,15 +42,15 @@ public class ListPodsByCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    //@IdentityMapper(entityTableName="host_pod_ref")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list Pods by ID", entityType=PodResponse.class)
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=PodResponse.class,
+            description="list Pods by ID")
     private Long id;
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="list Pods by name")
     private String podName;
 
-    //@IdentityMapper(entityTableName="data_center")
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="list Pods by Zone ID", entityType=ZoneResponse.class)
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType=ZoneResponse.class,
+            description="list Pods by Zone ID")
     private Long zoneId;
 
     @Parameter(name=ApiConstants.ALLOCATION_STATE, type=CommandType.STRING, description="list pods by allocation state")

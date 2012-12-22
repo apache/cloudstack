@@ -20,13 +20,11 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.cloudstack.api.response.ZoneResponse;
 
 import com.cloud.user.Account;
 
@@ -40,10 +38,9 @@ public class DeletePodCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    //@IdentityMapper(entityTableName="host_pod_ref")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the Pod", entityType=PodResponse.class)
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=PodResponse.class,
+            required=true, description="the ID of the Pod")
     private Long id;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
