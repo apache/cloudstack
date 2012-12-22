@@ -50,7 +50,7 @@ public interface AsyncJob extends Identity {
         AutoScaleVmGroup
     }
 
-    Long getId();
+    long getId();
 
     long getUserId();
 

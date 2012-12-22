@@ -17,8 +17,6 @@
 package com.cloud.api;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -48,7 +46,6 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -635,21 +632,12 @@ public class ApiDispatcher {
                     if (objVO == null) {
                         continue;
                     }
-                    Method method = null;
-                    try {
-                        method = objVO.getClass().getMethod("getId", null);
-                    } catch (NoSuchMethodException e) {
-                        continue;
-                    } catch (SecurityException e) {
-                        continue;
-                    }
                     // Invoke the getId method, get the internal long ID
                     // If that fails hide exceptions as the uuid may not exist
                     try {
-                        id = (Long) method.invoke(objVO);
-                    } catch (InvocationTargetException e) {
+                        id = (Long) ((Identity)objVO).getId();
                     } catch (IllegalArgumentException e) {
-                    } catch (IllegalAccessException e) {
+                    } catch (NullPointerException e) {
                     }
                     // Return on first non-null Id for the uuid entity
                     if (id != null)
