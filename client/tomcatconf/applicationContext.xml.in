@@ -13,9 +13,49 @@
                       http://www.springframework.org/schema/context/spring-context-3.0.xsd">                     
 
   <context:annotation-config />
-  
- <!-- 
+
   <context:component-scan base-package="org.apache.cloudstack, com.cloud" />
--->
+
+  <!--
+    @DB support
+  -->
+  <aop:config proxy-target-class="true">
+    <aop:aspect id="dbContextBuilder" ref="transactionContextBuilder">
+    <aop:pointcut id="captureAnyMethod"
+      expression="execution(* *(..))" />
+      <aop:around pointcut-ref="captureAnyMethod" method="AroundAnyMethod"/> 
+    </aop:aspect>
+  </aop:config>
+
+  <bean id="transactionContextBuilder" class="com.cloud.utils.db.TransactionContextBuilder" />
+
+  <!--
+    RPC/Async/EventBus
+  -->
+  <bean id="onwireRegistry" class="org.apache.cloudstack.framework.serializer.OnwireClassRegistry"
+    init-method="scan" >
+    <property name="packages">
+      <list>
+        <value>org.apache.cloudstack.framework</value>
+      </list>
+    </property>
+  </bean>
+  
+  <bean id="messageSerializer" class="org.apache.cloudstack.framework.serializer.JsonMessageSerializer">
+    <property name="onwireClassRegistry" ref="onwireRegistry" />
+  </bean>
+
+  <bean id="transportProvider" class="org.apache.cloudstack.framework.server.ServerTransportProvider"  init-method="initialize">
+    <property name="workerPoolSize" value="5" />
+    <property name="nodeId" value="Node1" />
+    <property name="messageSerializer" ref="messageSerializer" />
+  </bean>
+  
+  <bean id="rpcProvider" class="org.apache.cloudstack.framework.rpc.RpcProviderImpl" init-method="initialize">
+    <constructor-arg ref="transportProvider" />
+    <property name="messageSerializer" ref="messageSerializer" />
+  </bean>
+
+  <bean id="eventBus" class = "org.apache.cloudstack.framework.eventbus.EventBusBase" />
 
 </beans>

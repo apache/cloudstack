@@ -18,6 +18,7 @@
  */
 package org.apache.cloudstack.storage;
 
+import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
@@ -37,10 +38,20 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @Component
 public class HypervsiorHostEndPointRpcServer implements HostEndpointRpcServer {
     private static final Logger s_logger = Logger.getLogger(HypervsiorHostEndPointRpcServer.class);
-    private RpcProvider _rpcProvider;
+    
     @Inject
+    private RpcProvider _rpcProvider;
+    
+    public HypervsiorHostEndPointRpcServer() {
+    }
+    
     public HypervsiorHostEndPointRpcServer(RpcProvider rpcProvider) {
         _rpcProvider = rpcProvider;
+        _rpcProvider.registerRpcServiceEndpoint(RpcServiceDispatcher.getDispatcher(this));
+    }
+    
+    @PostConstruct
+    public void Initialize() {
         _rpcProvider.registerRpcServiceEndpoint(RpcServiceDispatcher.getDispatcher(this));
     }
     

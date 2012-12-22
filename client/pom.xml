@@ -103,6 +103,78 @@
       <version>5.1.21</version>
       <scope>runtime</scope>
     </dependency>
+    <dependency>
+    	<groupId>org.apache.cloudstack</groupId>
+    	<artifactId>cloud-framework-ipc</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloud-framework-rest</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloud-engine-api</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.cloudstack</groupId>
+    	<artifactId>cloud-engine-components-api</artifactId>
+    	<version>${project.version}</version>
+    </dependency>
+
+    <dependency>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloud-engine-compute</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+
+    <dependency>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloud-engine-network</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloud-engine-orchestration</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloud-engine-schema</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloud-engine-storage</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloud-engine-storage-backup</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloud-engine-storage-image</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloud-engine-storage-imagemotion</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloud-engine-storage-snapshot</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloud-engine-storage-volume</artifactId>
+        <version>${project.version}</version>
+    </dependency>
   </dependencies>
   <build>
     <defaultGoal>install</defaultGoal>

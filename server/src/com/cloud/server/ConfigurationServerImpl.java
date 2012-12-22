@@ -44,6 +44,7 @@ import javax.crypto.SecretKey;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationVO;
@@ -105,6 +106,7 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
 import com.cloud.uuididentity.dao.IdentityDao;
 
+@Component
 public class ConfigurationServerImpl implements ConfigurationServer {
     public static final Logger s_logger = Logger.getLogger(ConfigurationServerImpl.class.getName());
 

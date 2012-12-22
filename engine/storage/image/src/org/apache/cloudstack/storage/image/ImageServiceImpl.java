@@ -33,6 +33,9 @@ public class ImageServiceImpl implements ImageService {
     @Inject
     ImageDataStoreProviderManager imageStoreProviderMgr;
 
+    public ImageServiceImpl() {
+    }
+    
     @Override
     public TemplateEntity registerTemplate(long templateId, long imageStoreId) {
         ImageDataStore ids = imageStoreProviderMgr.getDataStore(imageStoreId);

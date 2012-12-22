@@ -27,7 +27,11 @@ import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
 public class ImageDataStoreProviderDaoImpl extends GenericDaoBase<ImageDataStoreProviderVO, Long> implements ImageDataStoreProviderDao {
-    @Override
+
+	public ImageDataStoreProviderDaoImpl() {
+	}
+	
+	@Override
     public ImageDataStoreProviderVO findByName(String name) {
         SearchCriteriaService<ImageDataStoreProviderVO, ImageDataStoreProviderVO> service = SearchCriteria2.create(ImageDataStoreProviderVO.class);
         service.addAnd(service.getEntity().getName(), Op.EQ, name);

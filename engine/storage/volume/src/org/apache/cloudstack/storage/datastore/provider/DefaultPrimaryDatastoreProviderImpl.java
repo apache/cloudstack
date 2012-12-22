@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
@@ -42,6 +43,21 @@ public class DefaultPrimaryDatastoreProviderImpl implements PrimaryDataStoreProv
     @Inject
     protected ClusterDao clusterDao;
     protected Map<String, PrimaryDataStoreConfigurator> configuratorMaps = new HashMap<String, PrimaryDataStoreConfigurator>();
+
+    @Qualifier("defaultProvider") 
+    @Inject
+    List<PrimaryDataStoreConfigurator> defaultConfigurators;
+    
+    public DefaultPrimaryDatastoreProviderImpl() {
+    }
+    
+    @PostConstruct
+    public void intialize() {
+        for (PrimaryDataStoreConfigurator configurator : defaultConfigurators) {
+            String key = generateKey(configurator.getSupportedHypervisor(), configurator.getSupportedDataStoreType().toString());
+            configuratorMaps.put(key, configurator);
+        }
+    }
 
     @Inject
     public DefaultPrimaryDatastoreProviderImpl(@Qualifier("defaultProvider") List<PrimaryDataStoreConfigurator> configurators) {

@@ -56,6 +56,9 @@ public class VolumeServiceImpl implements VolumeService {
     @Inject
     ImageMotionService imageMotion;
 
+    public VolumeServiceImpl() {
+    }
+    
     @Override
     public VolumeInfo createVolume(VolumeInfo volume, long dataStoreId, VolumeDiskType diskType) {
         PrimaryDataStore dataStore = dataStoreMgr.getPrimaryDataStore(dataStoreId);
