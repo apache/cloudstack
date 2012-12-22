@@ -76,6 +76,7 @@ CREATE TABLE `simulator`.`mockvm` (
   `vnc_port` bigint unsigned,
   `memory` bigint unsigned,
   `cpu` bigint unsigned,
+  `bootargs` varchar(255),
   PRIMARY KEY  (`id`),
   INDEX `i_mockvm__host_id`(`host_id`),
   INDEX `i_mockvm__state`(`state`),

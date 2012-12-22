@@ -55,6 +55,9 @@ public class MockVMVO implements MockVm{
     @Column(name="cpu")
     private int cpu;
 
+    @Column(name="bootargs")
+    private String bootargs;
+
     public MockVMVO() {
 
     }
@@ -127,4 +130,11 @@ public class MockVMVO implements MockVm{
 	this.vmType = type;
     }
 
+    public String getBootargs() {
+        return bootargs;
+    }
+
+    public void setBootargs(String bootargs) {
+        this.bootargs = bootargs;
+    }
 }
