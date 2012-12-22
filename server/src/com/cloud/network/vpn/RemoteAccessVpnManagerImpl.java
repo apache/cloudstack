@@ -23,7 +23,7 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.api.command.user.user.ListVpnUsersCmd;
+import org.apache.cloudstack.api.command.user.vpn.ListVpnUsersCmd;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.command.user.vpn.ListRemoteAccessVpnsCmd;
