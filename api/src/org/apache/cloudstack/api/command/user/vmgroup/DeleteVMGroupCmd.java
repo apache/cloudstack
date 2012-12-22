@@ -38,8 +38,8 @@ public class DeleteVMGroupCmd extends BaseCmd{
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    //@IdentityMapper(entityTableName="instance_group")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the instance group", entityType=InstanceGroupResponse.class)
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=InstanceGroupResponse.class,
+            required=true, description="the ID of the instance group")
     private Long id;
 
     /////////////////////////////////////////////////////

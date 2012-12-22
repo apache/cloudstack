@@ -43,15 +43,16 @@ public class CreateVMGroupCmd extends BaseCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the instance group")
     private String groupName;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "the account of the instance group. The account parameter must be used with the domainId parameter.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING,
+            description = "the account of the instance group. The account parameter must be used with the domainId parameter.")
     private String accountName;
 
-    //@IdentityMapper(entityTableName = "domain")
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.LONG, description = "the domain ID of account owning the instance group", entityType=DomainResponse.class)
+    @Parameter(name = ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType=DomainResponse.class,
+            description = "the domain ID of account owning the instance group")
     private Long domainId;
 
-    //@IdentityMapper(entityTableName = "projects")
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.LONG, description = "The project of the instance group", entityType=ProjectAccountResponse.class)
+    @Parameter(name = ApiConstants.PROJECT_ID, type=CommandType.UUID, entityType=ProjectAccountResponse.class,
+            description = "The project of the instance group")
     private Long projectId;
 
     // ///////////////////////////////////////////////////
