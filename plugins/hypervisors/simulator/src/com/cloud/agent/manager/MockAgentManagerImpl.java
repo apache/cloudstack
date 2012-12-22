@@ -430,15 +430,6 @@ public class MockAgentManagerImpl implements MockAgentManager {
 	}
 
 	@Override
-	public PrepareForMigrationAnswer prepareForMigrate(PrepareForMigrationCommand cmd) {
-		VirtualMachineTO vm = cmd.getVirtualMachine();
-		if (s_logger.isDebugEnabled()) {
-			s_logger.debug("Preparing host for migrating " + vm);
-		}
-		return new PrepareForMigrationAnswer(cmd);
-	}
-
-	@Override
 	public boolean start() {
 		return true;
 	}

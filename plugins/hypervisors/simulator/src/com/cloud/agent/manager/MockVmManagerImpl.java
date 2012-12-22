@@ -388,8 +388,12 @@ public class MockVmManagerImpl implements MockVmManager {
 			String destGuid = cmd.getHostGuid();
 			MockVMVO vm = _mockVmDao.findByVmNameAndHost(vmName, info.getHostUuid());
 			if (vm == null) {
-				return new MigrateAnswer(cmd, false, "can;t find vm:" + vmName + " on host:" + info.getHostUuid(), null);
-			}
+				return new MigrateAnswer(cmd, false, "can't find vm:" + vmName + " on host:" + info.getHostUuid(), null);
+			} else {
+                if (vm.getState() == State.Migrating) {
+                    vm.setState(State.Running);
+                }
+            }
 
 			MockHost destHost = _mockHostDao.findByGuid(destGuid);
 			if (destHost == null) {
@@ -408,6 +412,27 @@ public class MockVmManagerImpl implements MockVmManager {
             txn.close();
 		}
 	}
+
+    @Override
+    public PrepareForMigrationAnswer prepareForMigrate(PrepareForMigrationCommand cmd) {
+        Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
+        VirtualMachineTO vmTo = cmd.getVirtualMachine();
+        try {
+            txn.start();
+            MockVMVO vm = _mockVmDao.findById(vmTo.getId());
+            vm.setState(State.Migrating);
+            _mockVmDao.update(vm.getId(), vm);
+            txn.commit();
+        } catch (Exception ex) {
+            txn.rollback();
+            throw new CloudRuntimeException("unable to find vm " + vmTo.getName(), ex);
+        } finally {
+            txn.close();
+            txn = Transaction.open(Transaction.CLOUD_DB);
+            txn.close();
+            return new PrepareForMigrationAnswer(cmd);
+        }
+    }
 
     @Override
     public Answer IpAssoc(IpAssocCommand cmd) {

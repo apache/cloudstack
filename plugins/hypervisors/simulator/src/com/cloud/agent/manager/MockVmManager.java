@@ -74,6 +74,7 @@ public interface MockVmManager extends Manager {
     HashMap<String, Pair<Long, Long>> syncNetworkGroups(SimulatorInfo info);
     SecurityGroupRuleAnswer AddSecurityGroupRules(SecurityGroupRulesCmd cmd, SimulatorInfo info);
 	MigrateAnswer Migrate(MigrateCommand cmd, SimulatorInfo info);
+    PrepareForMigrationAnswer prepareForMigrate(PrepareForMigrationCommand cmd);
 	GetDomRVersionAnswer getDomRVersion(GetDomRVersionCmd cmd);
 	Map<String, MockVMVO> getVms(String hostGuid);
 

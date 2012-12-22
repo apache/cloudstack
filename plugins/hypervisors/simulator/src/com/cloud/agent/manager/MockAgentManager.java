@@ -56,8 +56,6 @@ public interface MockAgentManager extends Manager {
 
 	Answer pingTest(PingTestCommand cmd);
 
-	Answer prepareForMigrate(PrepareForMigrationCommand cmd);
-
 	MockHost getHost(String guid);
 
 	Answer maintain(MaintainCommand cmd);

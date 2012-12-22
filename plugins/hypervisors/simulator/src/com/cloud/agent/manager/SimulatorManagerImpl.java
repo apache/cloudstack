@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.agent.manager;
 
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -58,6 +56,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine.State;
+
 @Local(value = { SimulatorManager.class })
 public class SimulatorManagerImpl implements SimulatorManager {
     private static final Logger s_logger = Logger.getLogger(SimulatorManagerImpl.class);
@@ -165,7 +164,7 @@ public class SimulatorManagerImpl implements SimulatorManager {
             } else if (cmd instanceof PingTestCommand) {
                 return _mockAgentMgr.pingTest((PingTestCommand)cmd);
             } else if (cmd instanceof PrepareForMigrationCommand) {
-		return _mockAgentMgr.prepareForMigrate((PrepareForMigrationCommand)cmd);
+        		return _mockVmMgr.prepareForMigrate((PrepareForMigrationCommand)cmd);
             } else if (cmd instanceof MigrateCommand) {
                 return _mockVmMgr.Migrate((MigrateCommand)cmd, info);
             } else if (cmd instanceof StartCommand) {
@@ -173,11 +172,11 @@ public class SimulatorManagerImpl implements SimulatorManager {
             } else if (cmd instanceof CheckSshCommand) {
                 return _mockVmMgr.checkSshCommand((CheckSshCommand)cmd);
             } else if (cmd instanceof CheckVirtualMachineCommand) {
-		return _mockVmMgr.checkVmState((CheckVirtualMachineCommand)cmd);
+        		return _mockVmMgr.checkVmState((CheckVirtualMachineCommand)cmd);
             } else if (cmd instanceof SetStaticNatRulesCommand) {
                 return _mockVmMgr.SetStaticNatRules((SetStaticNatRulesCommand)cmd);
             } else if (cmd instanceof SetFirewallRulesCommand) {
-		return _mockVmMgr.SetFirewallRules((SetFirewallRulesCommand)cmd);
+	        	return _mockVmMgr.SetFirewallRules((SetFirewallRulesCommand)cmd);
             } else if (cmd instanceof SetPortForwardingRulesCommand) {
                 return _mockVmMgr.SetPortForwardingRules((SetPortForwardingRulesCommand)cmd);
             } else if (cmd instanceof NetworkUsageCommand) {
@@ -193,7 +192,7 @@ public class SimulatorManagerImpl implements SimulatorManager {
             } else if (cmd instanceof CleanupNetworkRulesCmd) {
                 return _mockVmMgr.CleanupNetworkRules((CleanupNetworkRulesCmd)cmd, info);
             } else if (cmd instanceof CheckNetworkCommand) {
-		return _mockAgentMgr.checkNetworkCommand((CheckNetworkCommand) cmd);
+        		return _mockAgentMgr.checkNetworkCommand((CheckNetworkCommand) cmd);
             }else if (cmd instanceof StopCommand) {
                 return _mockVmMgr.stopVM((StopCommand)cmd);
             } else if (cmd instanceof RebootCommand) {
@@ -261,12 +260,11 @@ public class SimulatorManagerImpl implements SimulatorManager {
             } else if (cmd instanceof BumpUpPriorityCommand) {
                 return _mockVmMgr.bumpPriority((BumpUpPriorityCommand) cmd);
             } else if (cmd instanceof GetDomRVersionCmd) {
-		return _mockVmMgr.getDomRVersion((GetDomRVersionCmd) cmd);
+		        return _mockVmMgr.getDomRVersion((GetDomRVersionCmd) cmd);
             } else if (cmd instanceof ClusterSyncCommand) {
-		return new Answer(cmd);
-		//return new ClusterSyncAnswer(((ClusterSyncCommand) cmd).getClusterId(), this.getVmStates(hostGuid));
+        		return new Answer(cmd);
             } else if (cmd instanceof CopyVolumeCommand) {
-		return _mockStorageMgr.CopyVolume((CopyVolumeCommand) cmd);
+	        	return _mockStorageMgr.CopyVolume((CopyVolumeCommand) cmd);
             } else {
                 return Answer.createUnsupportedCommandAnswer(cmd);
             }
