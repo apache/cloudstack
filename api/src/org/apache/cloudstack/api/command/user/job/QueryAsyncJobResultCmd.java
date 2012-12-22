@@ -20,7 +20,6 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
@@ -36,8 +35,8 @@ public class QueryAsyncJobResultCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="async_job")
-    @Parameter(name=ApiConstants.JOB_ID, type=CommandType.LONG, required=true, description="the ID of the asychronous job")
+    @Parameter(name=ApiConstants.JOB_ID, type=CommandType.UUID, entityType=AsyncJobResponse.class,
+            required=true, description="the ID of the asychronous job")
     private Long id;
 
     /////////////////////////////////////////////////////

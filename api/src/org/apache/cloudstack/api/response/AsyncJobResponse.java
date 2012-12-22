@@ -20,11 +20,13 @@ import java.util.Date;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.Entity;
 import org.apache.cloudstack.api.ResponseObject;
 import com.cloud.async.AsyncJob;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
+@Entity(value=AsyncJob.class)
 @SuppressWarnings("unused")
 public class AsyncJobResponse extends BaseResponse {
 

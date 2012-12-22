@@ -50,11 +50,8 @@ public abstract class BaseResponse implements ResponseObject {
         return null;
     }
 
-    // For use by list commands with pending async jobs
-    protected String jobId;
-
     @SerializedName(ApiConstants.JOB_ID) @Param(description="the UUID of the latest async job acting on this object")
-    protected String jobUuid;
+    protected String jobId;
 
     @SerializedName(ApiConstants.JOB_STATUS) @Param(description="the current status of the latest async job acting on this object")
     private Integer jobStatus;
@@ -65,14 +62,6 @@ public abstract class BaseResponse implements ResponseObject {
 
     public void setJobId(String jobId) {
         this.jobId = jobId;
-    }
-
-    public String getJobUuid() {
-        return jobUuid;
-    }
-
-    public void setJobUuid(String jobUuid) {
-        this.jobUuid = jobUuid;
     }
 
     public Integer getJobStatus() {
