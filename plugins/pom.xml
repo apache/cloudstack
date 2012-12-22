@@ -126,7 +126,7 @@
       </modules>
     </profile>
     <profile>
-      <id>kvm</id>
+      <id>simulator</id>
       <activation>
         <property>
           <name>nonoss</name>
