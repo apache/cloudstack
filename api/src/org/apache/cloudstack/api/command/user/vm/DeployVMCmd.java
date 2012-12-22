@@ -38,7 +38,7 @@ import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
-import org.apache.cloudstack.api.response.ProjectAccountResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
@@ -56,7 +56,6 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
-import com.cloud.network.security.SecurityGroup;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.template.VirtualMachineTemplate;
@@ -75,18 +74,18 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    //@IdentityMapper(entityTableName="data_center")
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="availability zone for the virtual machine", entityType=ZoneResponse.class)
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType=ZoneResponse.class,
+            required=true, description="availability zone for the virtual machine")
     private Long zoneId;
 
     @ACL
-    //@IdentityMapper(entityTableName="disk_offering")
-    @Parameter(name=ApiConstants.SERVICE_OFFERING_ID, type=CommandType.LONG, required=true, description="the ID of the service offering for the virtual machine", entityType=ServiceOfferingResponse.class)
+    @Parameter(name=ApiConstants.SERVICE_OFFERING_ID, type=CommandType.UUID, entityType=ServiceOfferingResponse.class,
+            required=true, description="the ID of the service offering for the virtual machine")
     private Long serviceOfferingId;
 
     @ACL
-    //@IdentityMapper(entityTableName="vm_template")
-    @Parameter(name=ApiConstants.TEMPLATE_ID, type=CommandType.LONG, required=true, description="the ID of the template for the virtual machine", entityType=TemplateResponse.class)
+    @Parameter(name=ApiConstants.TEMPLATE_ID, type=CommandType.UUID, entityType=TemplateResponse.class,
+            required=true, description="the ID of the template for the virtual machine")
     private Long templateId;
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="host name for the virtual machine")
@@ -99,20 +98,24 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="an optional account for the virtual machine. Must be used with domainId.")
     private String accountName;
 
-    //@IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="an optional domainId for the virtual machine. If the account parameter is used, domainId must also be used.", entityType=DomainResponse.class)
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType=DomainResponse.class,
+            description="an optional domainId for the virtual machine. If the account parameter is used, domainId must also be used.")
     private Long domainId;
 
     //Network information
     @ACL
-    //@IdentityMapper(entityTableName="networks")
-    @Parameter(name=ApiConstants.NETWORK_IDS, type=CommandType.LIST, collectionType=CommandType.LONG, description="list of network ids used by virtual machine. Can't be specified with ipToNetworkList parameter", entityType=NetworkResponse.class)
+    @Parameter(name=ApiConstants.NETWORK_IDS, type=CommandType.LIST, collectionType=CommandType.UUID, entityType=NetworkResponse.class,
+            description="list of network ids used by virtual machine. Can't be specified with ipToNetworkList parameter")
     private List<Long> networkIds;
 
     //DataDisk information
     @ACL
-    //@IdentityMapper(entityTableName="disk_offering")
-    @Parameter(name=ApiConstants.DISK_OFFERING_ID, type=CommandType.LONG, description="the ID of the disk offering for the virtual machine. If the template is of ISO format, the diskOfferingId is for the root disk volume. Otherwise this parameter is used to indicate the offering for the data disk volume. If the templateId parameter passed is from a Template object, the diskOfferingId refers to a DATA Disk Volume created. If the templateId parameter passed is from an ISO object, the diskOfferingId refers to a ROOT Disk Volume created.", entityType=DiskOfferingResponse.class)
+    @Parameter(name=ApiConstants.DISK_OFFERING_ID, type=CommandType.UUID, entityType=DiskOfferingResponse.class,
+            description="the ID of the disk offering for the virtual machine. If the template is of ISO format," +
+                    " the diskOfferingId is for the root disk volume. Otherwise this parameter is used to indicate the " +
+                    "offering for the data disk volume. If the templateId parameter passed is from a Template object," +
+                    " the diskOfferingId refers to a DATA Disk Volume created. If the templateId parameter passed is " +
+                    "from an ISO object, the diskOfferingId refers to a ROOT Disk Volume created.")
     private Long diskOfferingId;
 
     @Parameter(name=ApiConstants.SIZE, type=CommandType.LONG, description="the arbitrary size for the DATADISK volume. Mutually exclusive with diskOfferingId")
@@ -130,22 +133,29 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     @Parameter(name=ApiConstants.SSH_KEYPAIR, type=CommandType.STRING, description="name of the ssh key pair used to login to the virtual machine")
     private String sshKeyPairName;
 
-
-    //@IdentityMapper(entityTableName="host")
-    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.LONG, description="destination Host ID to deploy the VM to - parameter available for root admin only", entityType=HostResponse.class)
+    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.UUID, entityType=HostResponse.class,
+            description="destination Host ID to deploy the VM to - parameter available for root admin only")
     private Long hostId;
 
     @ACL
-    //@IdentityMapper(entityTableName="security_group")
-    @Parameter(name=ApiConstants.SECURITY_GROUP_IDS, type=CommandType.LIST, collectionType=CommandType.LONG, description="comma separated list of security groups id that going to be applied to the virtual machine. Should be passed only when vm is created from a zone with Basic Network support. Mutually exclusive with securitygroupnames parameter", entityType=SecurityGroupResponse.class)
+    @Parameter(name=ApiConstants.SECURITY_GROUP_IDS, type=CommandType.LIST, collectionType=CommandType.UUID, entityType=SecurityGroupResponse.class,
+            description="comma separated list of security groups id that going to be applied to the virtual machine. " +
+                    "Should be passed only when vm is created from a zone with Basic Network support." +
+                    " Mutually exclusive with securitygroupnames parameter")
     private List<Long> securityGroupIdList;
 
     @ACL
-    @Parameter(name=ApiConstants.SECURITY_GROUP_NAMES, type=CommandType.LIST, collectionType=CommandType.STRING, description="comma separated list of security groups names that going to be applied to the virtual machine. Should be passed only when vm is created from a zone with Basic Network support. Mutually exclusive with securitygroupids parameter", entityType=SecurityGroupResponse.class)
+    @Parameter(name=ApiConstants.SECURITY_GROUP_NAMES, type=CommandType.LIST, collectionType=CommandType.STRING, entityType=SecurityGroupResponse.class,
+            description="comma separated list of security groups names that going to be applied to the virtual machine." +
+                    " Should be passed only when vm is created from a zone with Basic Network support. " +
+                    "Mutually exclusive with securitygroupids parameter")
     private List<String> securityGroupNameList;
 
     @ACL(checkKeyAccess=true)
-    @Parameter(name = ApiConstants.IP_NETWORK_LIST, type = CommandType.MAP, description = "ip to network mapping. Can't be specified with networkIds parameter. Example: iptonetworklist[0].ip=10.10.10.11&iptonetworklist[0].networkid=204 - requests to use ip 10.10.10.11 in network id=204",entityType={Network.class,IpAddress.class})
+    @Parameter(name = ApiConstants.IP_NETWORK_LIST, type = CommandType.MAP,entityType={Network.class,IpAddress.class},
+            description = "ip to network mapping. Can't be specified with networkIds parameter." +
+                    " Example: iptonetworklist[0].ip=10.10.10.11&iptonetworklist[0].networkid=204 - requests to" +
+                    " use ip 10.10.10.11 in network id=204")
     private Map ipToNetworkList;
 
     @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, description="the ip address for default vm's network")
@@ -154,8 +164,8 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     @Parameter(name=ApiConstants.KEYBOARD, type=CommandType.STRING, description="an optional keyboard device type for the virtual machine. valid value can be one of de,de-ch,es,fi,fr,fr-be,fr-ch,is,it,jp,nl-be,no,pt,uk,us")
     private String keyboard;
 
-    //@IdentityMapper(entityTableName="projects")
-    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="Deploy vm for the project", entityType=ProjectAccountResponse.class)
+    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.UUID, entityType=ProjectResponse.class,
+            description="Deploy vm for the project")
     private Long projectId;
 
     @Parameter(name=ApiConstants.START_VM, type=CommandType.BOOLEAN, description="true if network offering supports specifying ip ranges; defaulted to true if not specified")
@@ -456,5 +466,4 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
         }
     }
-
 }

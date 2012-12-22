@@ -21,7 +21,6 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -40,8 +39,8 @@ public class RestoreVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RestoreVMCmd.class);
     private static final String s_name = "restorevmresponse";
 
-    @IdentityMapper(entityTableName="vm_instance")
-    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, required=true, description="Virtual Machine ID", entityType=UserVmResponse.class)
+    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.UUID, entityType=UserVmResponse.class,
+            required=true, description="Virtual Machine ID")
     private Long vmId;
 
     @Override
@@ -86,5 +85,4 @@ public class RestoreVMCmd extends BaseAsyncCmd {
     public long getVmId() {
         return vmId;
     }
-
 }

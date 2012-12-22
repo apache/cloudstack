@@ -20,7 +20,6 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -34,8 +33,8 @@ import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 
 @Implementation(responseObject=UserVmResponse.class, description="Changes the service offering for a virtual machine. " +
-                                                                                            "The virtual machine must be in a \"Stopped\" state for " +
-                                                                                            "this command to take effect.")
+                                            "The virtual machine must be in a \"Stopped\" state for " +
+                                            "this command to take effect.")
 public class UpgradeVMCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpgradeVMCmd.class.getName());
     private static final String s_name = "changeserviceforvirtualmachineresponse";
@@ -44,12 +43,12 @@ public class UpgradeVMCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="vm_instance")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="The ID of the virtual machine", entityType=UserVmResponse.class)
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=UserVmResponse.class,
+            required=true, description="The ID of the virtual machine")
     private Long id;
 
-    @IdentityMapper(entityTableName="disk_offering")
-    @Parameter(name=ApiConstants.SERVICE_OFFERING_ID, type=CommandType.LONG, required=true, description="the service offering ID to apply to the virtual machine", entityType=DiskOfferingResponse.class)
+    @Parameter(name=ApiConstants.SERVICE_OFFERING_ID, type=CommandType.UUID, entityType=DiskOfferingResponse.class,
+            required=true, description="the service offering ID to apply to the virtual machine")
     private Long serviceOfferingId;
 
     /////////////////////////////////////////////////////

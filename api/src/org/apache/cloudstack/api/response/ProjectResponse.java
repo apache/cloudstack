@@ -27,7 +27,7 @@ import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.Entity;
 
-@Entity(value = Project.class)
+@Entity(value=Project.class)
 @SuppressWarnings("unused")
 public class ProjectResponse extends BaseResponse {
 

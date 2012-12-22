@@ -21,7 +21,6 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -35,8 +34,8 @@ import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 
 @Implementation(responseObject=UserVmResponse.class, description="Resets the password for virtual machine. " +
-                                                                                    "The virtual machine must be in a \"Stopped\" state and the template must already " +
-                                                                                    "support this feature for this command to take effect. [async]")
+                    "The virtual machine must be in a \"Stopped\" state and the template must already " +
+                    "support this feature for this command to take effect. [async]")
 public class ResetVMPasswordCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ResetVMPasswordCmd.class.getName());
 
@@ -46,8 +45,8 @@ public class ResetVMPasswordCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="vm_instance")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="The ID of the virtual machine", entityType=UserVmResponse.class)
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=UserVmResponse.class,
+            required=true, description="The ID of the virtual machine")
     private Long id;
 
     // unexposed parameter needed for serializing/deserializing the command
