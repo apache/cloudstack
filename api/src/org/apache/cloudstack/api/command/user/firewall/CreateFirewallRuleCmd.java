@@ -19,13 +19,13 @@ package org.apache.cloudstack.api.command.user.firewall;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -51,8 +51,8 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="user_ip_address")
-    @Parameter(name = ApiConstants.IP_ADDRESS_ID, type = CommandType.LONG, required=true, description = "the IP address id of the port forwarding rule")
+    @Parameter(name = ApiConstants.IP_ADDRESS_ID, type = CommandType.UUID, entityType = IPAddressResponse.class,
+            required=true, description = "the IP address id of the port forwarding rule")
     private Long ipAddressId;
 
     @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, required = true, description = "the protocol for the firewall rule. Valid values are TCP/UDP/ICMP.")

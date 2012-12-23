@@ -18,13 +18,15 @@ package org.apache.cloudstack.api.command.user.firewall;
 
 import java.util.List;
 
+import org.apache.cloudstack.api.response.IPAddressResponse;
+import org.apache.cloudstack.api.response.NetworkResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -50,8 +52,8 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName = "user_ip_address")
-    @Parameter(name = ApiConstants.IP_ADDRESS_ID, type = CommandType.LONG, required = true,
+    @Parameter(name = ApiConstants.IP_ADDRESS_ID, type = CommandType.UUID, entityType = IPAddressResponse.class,
+            required = true,
     description = "the IP address id of the port forwarding rule")
     private Long ipAddressId;
 
@@ -73,8 +75,8 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
     @Parameter(name = ApiConstants.PUBLIC_END_PORT, type = CommandType.INTEGER, required = false, description = "the ending port of port forwarding rule's private port range")
     private Integer publicEndPort;
 
-    @IdentityMapper(entityTableName = "vm_instance")
-    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.LONG, required = true,
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = UserVmResponse.class,
+            required = true,
                 description = "the ID of the virtual machine for the port forwarding rule")
     private Long virtualMachineId;
 
@@ -88,9 +90,8 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
                     " rule is being created for VPC guest network 2) in all other cases defaulted to true")
     private Boolean openFirewall;
 
-    @IdentityMapper(entityTableName="networks")
-    @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG,
-        description="The network of the vm the Port Forwarding rule will be created for. " +
+    @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.UUID, entityType = NetworkResponse.class,
+            description="The network of the vm the Port Forwarding rule will be created for. " +
                 "Required when public Ip address is not associated with any Guest network yet (VPC case)")
     private Long networkId;
 

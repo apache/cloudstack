@@ -23,7 +23,9 @@ import com.cloud.event.Event;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.Entity;
 
+@Entity(value=Event.class)
 @SuppressWarnings("unused")
 public class EventResponse extends BaseResponse implements ControlledViewEntityResponse{
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the event")

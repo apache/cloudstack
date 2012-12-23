@@ -19,11 +19,11 @@ package org.apache.cloudstack.api.command.user.firewall;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
@@ -41,12 +41,12 @@ public class ListPortForwardingRulesCmd extends BaseListTaggedResourcesCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="firewall_rules")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="Lists rule with the specified ID.")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = FirewallRuleResponse.class,
+            description="Lists rule with the specified ID.")
     private Long id;
 
-    @IdentityMapper(entityTableName="user_ip_address")
-    @Parameter(name=ApiConstants.IP_ADDRESS_ID, type=CommandType.LONG, description="the id of IP address of the port forwarding services")
+    @Parameter(name=ApiConstants.IP_ADDRESS_ID, type=CommandType.UUID, entityType = IPAddressResponse.class,
+            description="the id of IP address of the port forwarding services")
     private Long ipAddressId;
 
     /////////////////////////////////////////////////////

@@ -21,7 +21,6 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.EventResponse;
@@ -37,8 +36,8 @@ public class ListEventsCmd extends BaseListProjectAndAccountResourcesCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="event")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the ID of the event")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = EventResponse.class,
+            description="the ID of the event")
     private Long id;
 
     @Parameter(name=ApiConstants.DURATION, type=CommandType.INTEGER, description="the duration of the event")

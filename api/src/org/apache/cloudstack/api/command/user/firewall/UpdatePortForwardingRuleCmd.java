@@ -16,11 +16,12 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.firewall;
 
+import org.apache.cloudstack.api.response.IPAddressResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
@@ -46,15 +47,15 @@ public class UpdatePortForwardingRuleCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.PROTOCOL, type=CommandType.STRING, required=true, description="the protocol for the port fowarding rule. Valid values are TCP or UDP.")
     private String protocol;
 
-    @IdentityMapper(entityTableName="user_ip_address")
-    @Parameter(name=ApiConstants.IP_ADDRESS_ID, type=CommandType.LONG, required=true, description="the IP address id of the port forwarding rule")
+    @Parameter(name=ApiConstants.IP_ADDRESS_ID, type=CommandType.UUID, entityType = IPAddressResponse.class,
+            required=true, description="the IP address id of the port forwarding rule")
     private Long publicIpId;
 
     @Parameter(name=ApiConstants.PUBLIC_PORT, type=CommandType.STRING, required=true, description="the public port of the port forwarding rule")
     private String publicPort;
 
-    @IdentityMapper(entityTableName="vm_instance")
-    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, description="the ID of the virtual machine for the port forwarding rule")
+    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.UUID, entityType = UserVmResponse.class,
+            description="the ID of the virtual machine for the port forwarding rule")
     private Long virtualMachineId;
 
     /////////////////////////////////////////////////////
