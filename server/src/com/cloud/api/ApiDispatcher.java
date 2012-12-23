@@ -533,6 +533,39 @@ public class ApiDispatcher {
         //check access on the entities.
     }
 
+    private static Long translateUuidToInternalId(String uuid, Parameter annotation)
+    {
+        if (uuid.equals("-1")) {
+            // FIXME: This is to handle a lot of hardcoded special cases where -1 is sent
+            // APITODO: Find and get rid of all hardcoded params in API Cmds and service layer
+            return -1L;
+        }
+        // There may be multiple entities defined on the @Entity of a Response.class
+        // UUID CommandType would expect only one entityType, so use the first entityType
+        Class<?>[] entities = annotation.entityType()[0].getAnnotation(Entity.class).value();
+        Long internalId = null;
+        // Go through each entity which is an interface to a VO class and get a VO object
+        // Try to getId() for the object using reflection, break on first non-null value
+        for (Class<?> entity: entities) {
+            // findByUuid returns one VO object using uuid, use reflect to get the Id
+            Object objVO = s_instance._entityMgr.findByUuid(entity, uuid);
+            if (objVO == null) {
+                continue;
+            }
+            // Invoke the getId method, get the internal long ID
+            // If that fails hide exceptions as the uuid may not exist
+            try {
+                internalId = (Long) ((Identity)objVO).getId();
+            } catch (IllegalArgumentException e) {
+            } catch (NullPointerException e) {
+            }
+            // Return on first non-null Id for the uuid entity
+            if (internalId != null)
+                break;
+        }
+        return internalId;
+    }
+
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private static void setFieldValue(Field field, BaseCmd cmdObj, Object paramObj, Parameter annotation, IdentityMapper identityMapper) throws IllegalArgumentException, ParseException {
         try {
@@ -590,7 +623,15 @@ public class ApiDispatcher {
                                 listParam.add(Integer.valueOf(token));
                                 break;
                             case UUID:
-                                //APITODO: FIXME if there is any APICmd that has List<UUID>
+                                if (token.isEmpty())
+                                    break;
+                                Long internalId = translateUuidToInternalId(token, annotation);
+                                // If id is null, entity with the uuid was not found, throw exception
+                                if (internalId == null) {
+                                    throw new InvalidParameterValueException("No entity with " + field.getName() + "(uuid)="
+                                            + paramObj.toString() + " was found in the database.");
+                                }
+                                listParam.add(internalId);
                                 break;
                             case LONG: {
                                 Long val = null;
@@ -614,41 +655,13 @@ public class ApiDispatcher {
             case UUID:
                 if (paramObj.toString().isEmpty())
                     break;
-                if (paramObj.toString().equals("-1")) {
-                    // FIXME: This is to handle a lot of hardcoded special cases where -1 is sent
-                    // APITODO: Find and get rid of all hardcoded params in API Cmds and service layer
-                    field.set(cmdObj, -1L);
-                    break;
-                }
-                // There may be multiple entities defined on the @Entity of a Response.class
-                // UUID CommandType would expect only one entityType, so use the first entityType
-                Class<?>[] entities = annotation.entityType()[0].getAnnotation(Entity.class).value();
-                Long id = null;
-                // Go through each entity which is an interface to a VO class and get a VO object
-                // Try to getId() for the object using reflection, break on first non-null value
-                for (Class<?> entity: entities) {
-                    // findByUuid returns one VO object using uuid, use reflect to get the Id
-                    Object objVO = s_instance._entityMgr.findByUuid(entity, paramObj.toString());
-                    if (objVO == null) {
-                        continue;
-                    }
-                    // Invoke the getId method, get the internal long ID
-                    // If that fails hide exceptions as the uuid may not exist
-                    try {
-                        id = (Long) ((Identity)objVO).getId();
-                    } catch (IllegalArgumentException e) {
-                    } catch (NullPointerException e) {
-                    }
-                    // Return on first non-null Id for the uuid entity
-                    if (id != null)
-                        break;
-                }
+                Long internalId = translateUuidToInternalId(paramObj.toString(), annotation);
                 // If id is null, entity with the uuid was not found, throw exception
-                if (id == null) {
+                if (internalId == null) {
                     throw new InvalidParameterValueException("No entity with " + field.getName() + "(uuid)="
                             + paramObj.toString() + " was found in the database.");
                 }
-                field.set(cmdObj, id);
+                field.set(cmdObj, internalId);
                 break;
             case LONG:
                 // APITODO: Remove identityMapper, simply convert the over the wire param to Long
