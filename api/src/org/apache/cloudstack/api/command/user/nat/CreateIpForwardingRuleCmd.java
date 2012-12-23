@@ -18,13 +18,13 @@ package org.apache.cloudstack.api.command.user.nat;
 
 import java.util.List;
 
+import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -51,8 +51,8 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="user_ip_address")
-    @Parameter(name=ApiConstants.IP_ADDRESS_ID, type=CommandType.LONG, required=true, description="the public IP address id of the forwarding rule, already associated via associateIp")
+    @Parameter(name=ApiConstants.IP_ADDRESS_ID, type=CommandType.UUID, entityType = IPAddressResponse.class,
+            required=true, description="the public IP address id of the forwarding rule, already associated via associateIp")
     private Long ipAddressId;
 
     @Parameter(name=ApiConstants.START_PORT, type=CommandType.INTEGER, required=true, description="the start port for the rule")

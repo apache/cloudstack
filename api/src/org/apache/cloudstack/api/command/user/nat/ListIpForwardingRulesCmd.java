@@ -23,12 +23,13 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
+import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.IpForwardingRuleResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.StaticNatRule;
 import com.cloud.utils.Pair;
@@ -43,16 +44,16 @@ public class ListIpForwardingRulesCmd extends BaseListProjectAndAccountResources
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="user_ip_address")
-    @Parameter(name=ApiConstants.IP_ADDRESS_ID, type=CommandType.LONG, description="list the rule belonging to this public ip address")
+    @Parameter(name=ApiConstants.IP_ADDRESS_ID, type=CommandType.UUID, entityType = IPAddressResponse.class,
+            description="list the rule belonging to this public ip address")
     private Long publicIpAddressId;
 
-    @IdentityMapper(entityTableName="firewall_rules")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="Lists rule with the specified ID.")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = FirewallRuleResponse.class,
+            description="Lists rule with the specified ID.")
     private Long id;
 
-    @IdentityMapper(entityTableName="vm_instance")
-    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, description="Lists all rules applied to the specified Vm.")
+    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.UUID, entityType = UserVmResponse.class,
+            description="Lists all rules applied to the specified Vm.")
     private Long vmId;
 
     /////////////////////////////////////////////////////

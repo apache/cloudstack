@@ -20,11 +20,13 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.api.response.IPAddressResponse;
+import org.apache.cloudstack.api.response.NetworkResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -42,18 +44,17 @@ public class EnableStaticNatCmd extends BaseCmd{
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="user_ip_address")
-    @Parameter(name=ApiConstants.IP_ADDRESS_ID, type=CommandType.LONG, required=true, description="the public IP " +
+    @Parameter(name=ApiConstants.IP_ADDRESS_ID, type=CommandType.UUID, entityType = IPAddressResponse.class,
+            required=true, description="the public IP " +
             "address id for which static nat feature is being enabled")
     private Long ipAddressId;
 
-    @IdentityMapper(entityTableName="vm_instance")
-    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, required=true, description="the ID of " +
+    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.UUID, entityType = UserVmResponse.class,
+            required=true, description="the ID of " +
             "the virtual machine for enabling static nat feature")
     private Long virtualMachineId;
 
-    @IdentityMapper(entityTableName="networks")
-    @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG,
+    @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.UUID, entityType = NetworkResponse.class,
         description="The network of the vm the static nat will be enabled for." +
                 " Required when public Ip address is not associated with any Guest network yet (VPC case)")
     private Long networkId;

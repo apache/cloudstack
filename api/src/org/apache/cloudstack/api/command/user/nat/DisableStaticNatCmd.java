@@ -17,12 +17,12 @@
 package org.apache.cloudstack.api.command.user.nat;
 
 import org.apache.cloudstack.api.command.user.firewall.DeletePortForwardingRuleCmd;
+import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -43,8 +43,8 @@ public class DisableStaticNatCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="user_ip_address")
-    @Parameter(name=ApiConstants.IP_ADDRESS_ID, type=CommandType.LONG, required=true, description="the public IP address id for which static nat feature is being disableed")
+    @Parameter(name=ApiConstants.IP_ADDRESS_ID, type=CommandType.UUID, entityType = IPAddressResponse.class,
+            required=true, description="the public IP address id for which static nat feature is being disableed")
     private Long ipAddressId;
 
     /////////////////////////////////////////////////////
