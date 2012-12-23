@@ -16,11 +16,11 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.offering;
 
+import com.cloud.offering.DiskOffering;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -36,8 +36,8 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @IdentityMapper(entityTableName="disk_offering")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the service offering to be updated")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType= DiskOffering.class,
+            required=true, description="the ID of the service offering to be updated")
     private Long id;
 
     @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="the display text of the service offering to be updated")
