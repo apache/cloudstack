@@ -21,7 +21,6 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -52,16 +51,16 @@ public class MigrateVMCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    //@IdentityMapper(entityTableName="host")
-    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.LONG, required=false, description="Destination Host ID to migrate VM to. Required for live migrating a VM from host to host", entityType=HostResponse.class)
+    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.UUID, entityType=HostResponse.class,
+            required=false, description="Destination Host ID to migrate VM to. Required for live migrating a VM from host to host")
     private Long hostId;
 
-    @IdentityMapper(entityTableName="vm_instance")
-    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, required=true, description="the ID of the virtual machine", entityType=UserVmResponse.class)
+    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.UUID, entityType=UserVmResponse.class,
+            required=true, description="the ID of the virtual machine")
     private Long virtualMachineId;
 
-    @IdentityMapper(entityTableName="storage_pool")
-    @Parameter(name=ApiConstants.STORAGE_ID, type=CommandType.LONG, required=false, description="Destination storage pool ID to migrate VM volumes to. Required for migrating the root disk volume", entityType=StoragePoolResponse.class)
+    @Parameter(name=ApiConstants.STORAGE_ID, type=CommandType.LONG, entityType=StoragePoolResponse.class,
+            required=false, description="Destination storage pool ID to migrate VM volumes to. Required for migrating the root disk volume")
     private Long storageId;
 
     /////////////////////////////////////////////////////
