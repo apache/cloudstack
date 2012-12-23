@@ -18,11 +18,11 @@ package org.apache.cloudstack.api.command.admin.template;
 
 import java.util.List;
 
+import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -40,12 +40,12 @@ public class PrepareTemplateCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="data_center")
-    @Parameter(name=ApiConstants.ZONE_ID, required=true, type=CommandType.LONG, description="zone ID of the template to be prepared in primary storage(s).")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
+            required=true, description="zone ID of the template to be prepared in primary storage(s).")
     private Long zoneId;
 
-    @IdentityMapper(entityTableName="vm_template")
-    @Parameter(name=ApiConstants.TEMPLATE_ID, required=true, type=CommandType.LONG, description="template ID of the template to be prepared in primary storage(s).")
+    @Parameter(name=ApiConstants.TEMPLATE_ID, type=CommandType.UUID, entityType = TemplateResponse.class,
+            required=true, description="template ID of the template to be prepared in primary storage(s).")
     private Long templateId;
 
 
