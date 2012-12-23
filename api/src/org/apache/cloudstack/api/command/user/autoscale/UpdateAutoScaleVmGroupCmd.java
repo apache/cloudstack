@@ -19,12 +19,12 @@ package org.apache.cloudstack.api.command.user.autoscale;
 
 import java.util.List;
 
+import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -54,16 +54,16 @@ public class UpdateAutoScaleVmGroupCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.INTERVAL, type=CommandType.INTEGER, description="the frequency at which the conditions have to be evaluated")
     private Integer interval;
 
-    @IdentityMapper(entityTableName = "autoscale_policies")
-    @Parameter(name = ApiConstants.SCALEUP_POLICY_IDS, type = CommandType.LIST, collectionType = CommandType.LONG, description = "list of scaleup autoscale policies")
+    @Parameter(name = ApiConstants.SCALEUP_POLICY_IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = AutoScalePolicyResponse.class,
+            description = "list of scaleup autoscale policies")
     private List<Long> scaleUpPolicyIds;
 
-    @IdentityMapper(entityTableName = "autoscale_policies")
-    @Parameter(name = ApiConstants.SCALEDOWN_POLICY_IDS, type = CommandType.LIST, collectionType = CommandType.LONG, description = "list of scaledown autoscale policies")
+    @Parameter(name = ApiConstants.SCALEDOWN_POLICY_IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = AutoScalePolicyResponse.class,
+            description = "list of scaledown autoscale policies")
     private List<Long> scaleDownPolicyIds;
 
-    @IdentityMapper(entityTableName = "autoscale_vmgroups")
-    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, required = true, description = "the ID of the autoscale group")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AutoScaleVmGroupResponse.class,
+            required = true, description = "the ID of the autoscale group")
     private Long id;
 
     // ///////////////////////////////////////////////////

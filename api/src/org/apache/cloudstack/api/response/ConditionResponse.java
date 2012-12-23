@@ -19,11 +19,14 @@ package org.apache.cloudstack.api.response;
 
 import java.util.List;
 
+import com.cloud.network.as.Condition;
 import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.Entity;
 
+@Entity(value=Condition.class)
 @SuppressWarnings("unused")
 public class ConditionResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName("id")

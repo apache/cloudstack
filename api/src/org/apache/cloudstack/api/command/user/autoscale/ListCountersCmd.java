@@ -24,7 +24,6 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.CounterResponse;
@@ -41,8 +40,8 @@ public class ListCountersCmd extends BaseListCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName = "counter")
-    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, description = "ID of the Counter.")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = CounterResponse.class,
+            description = "ID of the Counter.")
     private Long id;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "Name of the counter.")

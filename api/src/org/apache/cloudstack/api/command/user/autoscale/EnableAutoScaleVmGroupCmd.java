@@ -22,7 +22,6 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -41,8 +40,8 @@ public class EnableAutoScaleVmGroupCmd extends BaseAsyncCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="autoscale_vmgroups")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the autoscale group")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = AutoScaleVmGroupResponse.class,
+            required=true, description="the ID of the autoscale group")
     private Long id;
 
     // ///////////////////////////////////////////////////

@@ -17,12 +17,13 @@
 
 package org.apache.cloudstack.api.command.user.autoscale;
 
+import org.apache.cloudstack.api.response.CounterResponse;
+import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -42,8 +43,8 @@ public class CreateConditionCmd extends BaseAsyncCreateCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName = "counter")
-    @Parameter(name = ApiConstants.COUNTER_ID, type = CommandType.LONG, required = true, description = "ID of the Counter.")
+    @Parameter(name = ApiConstants.COUNTER_ID, type = CommandType.UUID, entityType = CounterResponse.class,
+            required = true, description = "ID of the Counter.")
     private long counterId;
 
     @Parameter(name = ApiConstants.RELATIONAL_OPERATOR, type = CommandType.STRING, required = true, description = "Relational Operator to be used with threshold.")
@@ -56,8 +57,8 @@ public class CreateConditionCmd extends BaseAsyncCreateCmd {
     "Must be used with the domainId parameter.")
     private String accountName;
 
-    @IdentityMapper(entityTableName = "domain")
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.LONG, description = "the domain ID of the account.")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class,
+            description = "the domain ID of the account.")
     private Long domainId;
 
     // ///////////////////////////////////////////////////

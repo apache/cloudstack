@@ -19,11 +19,11 @@ package org.apache.cloudstack.api.command.user.autoscale;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
@@ -40,12 +40,12 @@ public class ListAutoScaleVmProfilesCmd extends BaseListProjectAndAccountResourc
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="autoscale_vmprofiles")
-    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, description = "the ID of the autoscale vm profile")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AutoScaleVmProfileResponse.class,
+            description = "the ID of the autoscale vm profile")
     private Long id;
 
-    @IdentityMapper(entityTableName="vm_template")
-    @Parameter(name=ApiConstants.TEMPLATE_ID, type=CommandType.LONG, description="the templateid of the autoscale vm profile")
+    @Parameter(name=ApiConstants.TEMPLATE_ID, type=CommandType.UUID, entityType = TemplateResponse.class,
+            description="the templateid of the autoscale vm profile")
     private Long templateId;
 
     @Parameter(name=ApiConstants.OTHER_DEPLOY_PARAMS, type=CommandType.STRING, description="the otherdeployparameters of the autoscale vm profile")

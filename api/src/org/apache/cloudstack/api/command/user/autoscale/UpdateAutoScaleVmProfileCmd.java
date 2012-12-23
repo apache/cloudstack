@@ -19,12 +19,13 @@ package org.apache.cloudstack.api.command.user.autoscale;
 
 import java.util.Map;
 
+import org.apache.cloudstack.api.response.TemplateResponse;
+import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -45,12 +46,12 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName = "autoscale_vmprofiles")
-    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, required = true, description = "the ID of the autoscale vm profile")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AutoScaleVmProfileResponse.class,
+            required = true, description = "the ID of the autoscale vm profile")
     private Long id;
 
-    @IdentityMapper(entityTableName = "vm_template")
-    @Parameter(name = ApiConstants.TEMPLATE_ID, type = CommandType.LONG, description = "the template of the auto deployed virtual machine")
+    @Parameter(name = ApiConstants.TEMPLATE_ID, type = CommandType.UUID, entityType = TemplateResponse.class,
+            description = "the template of the auto deployed virtual machine")
     private Long templateId;
 
     @Parameter(name = ApiConstants.AUTOSCALE_VM_DESTROY_TIME, type = CommandType.INTEGER, description = "the time allowed for existing connections to get closed before a vm is destroyed")
@@ -59,8 +60,8 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.COUNTERPARAM_LIST, type = CommandType.MAP, description = "counterparam list. Example: counterparam[0].name=snmpcommunity&counterparam[0].value=public&counterparam[1].name=snmpport&counterparam[1].value=161")
     private Map counterParamList;
 
-    @IdentityMapper(entityTableName = "user")
-    @Parameter(name = ApiConstants.AUTOSCALE_USER_ID, type = CommandType.LONG, description = "the ID of the user used to launch and destroy the VMs")
+    @Parameter(name = ApiConstants.AUTOSCALE_USER_ID, type = CommandType.UUID, entityType = UserResponse.class,
+            description = "the ID of the user used to launch and destroy the VMs")
     private Long autoscaleUserId;
 
     // ///////////////////////////////////////////////////

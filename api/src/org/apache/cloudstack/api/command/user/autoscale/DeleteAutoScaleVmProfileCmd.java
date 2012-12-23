@@ -16,12 +16,12 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.autoscale;
 
+import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -40,8 +40,8 @@ public class DeleteAutoScaleVmProfileCmd extends BaseAsyncCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName = "autoscale_vmprofiles")
-    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, required = true, description = "the ID of the autoscale profile")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AutoScaleVmProfileResponse.class,
+            required = true, description = "the ID of the autoscale profile")
     private Long id;
 
     // ///////////////////////////////////////////////////

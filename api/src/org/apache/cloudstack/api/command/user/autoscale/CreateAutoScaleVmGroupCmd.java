@@ -23,11 +23,13 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
+import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
+import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
+import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -45,8 +47,8 @@ public class CreateAutoScaleVmGroupCmd extends BaseAsyncCreateCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName = "firewall_rules")
-    @Parameter(name = ApiConstants.LBID, type = CommandType.LONG, required = true, description = "the ID of the load balancer rule")
+    @Parameter(name = ApiConstants.LBID, type = CommandType.UUID, entityType = FirewallRuleResponse.class,
+            required = true, description = "the ID of the load balancer rule")
     private long lbRuleId;
 
     @Parameter(name = ApiConstants.MIN_MEMBERS, type = CommandType.INTEGER, required = true, description = "the minimum number of members in the vmgroup, the number of instances in the vm group will be equal to or more than this number.")
@@ -58,16 +60,16 @@ public class CreateAutoScaleVmGroupCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.INTERVAL, type = CommandType.INTEGER, description = "the frequency at which the conditions have to be evaluated")
     private Integer interval;
 
-    @IdentityMapper(entityTableName = "autoscale_policies")
-    @Parameter(name = ApiConstants.SCALEUP_POLICY_IDS, type = CommandType.LIST, collectionType = CommandType.LONG, required = true, description = "list of scaleup autoscale policies")
+    @Parameter(name = ApiConstants.SCALEUP_POLICY_IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = AutoScalePolicyResponse.class,
+            required = true, description = "list of scaleup autoscale policies")
     private List<Long> scaleUpPolicyIds;
 
-    @IdentityMapper(entityTableName = "autoscale_policies")
-    @Parameter(name = ApiConstants.SCALEDOWN_POLICY_IDS, type = CommandType.LIST, collectionType = CommandType.LONG, required = true, description = "list of scaledown autoscale policies")
+    @Parameter(name = ApiConstants.SCALEDOWN_POLICY_IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = AutoScalePolicyResponse.class,
+            required = true, description = "list of scaledown autoscale policies")
     private List<Long> scaleDownPolicyIds;
 
-    @IdentityMapper(entityTableName = "autoscale_vmprofiles")
-    @Parameter(name = ApiConstants.VMPROFILE_ID, type = CommandType.LONG, required = true, description = "the autoscale profile that contains information about the vms in the vm group.")
+    @Parameter(name = ApiConstants.VMPROFILE_ID, type = CommandType.UUID, entityType = AutoScaleVmProfileResponse.class,
+            required = true, description = "the autoscale profile that contains information about the vms in the vm group.")
     private long profileId;
 
     // ///////////////////////////////////////////////////

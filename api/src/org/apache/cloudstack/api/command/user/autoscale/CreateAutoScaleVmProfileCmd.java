@@ -24,11 +24,14 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
+import org.apache.cloudstack.api.response.DiskOfferingResponse;
+import org.apache.cloudstack.api.response.TemplateResponse;
+import org.apache.cloudstack.api.response.UserResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -49,16 +52,16 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName = "data_center")
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.LONG, required = true, description = "availability zone for the auto deployed virtual machine")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class,
+            required = true, description = "availability zone for the auto deployed virtual machine")
     private Long zoneId;
 
-    @IdentityMapper(entityTableName = "disk_offering")
-    @Parameter(name = ApiConstants.SERVICE_OFFERING_ID, type = CommandType.LONG, required = true, description = "the service offering of the auto deployed virtual machine")
+    @Parameter(name = ApiConstants.SERVICE_OFFERING_ID, type = CommandType.UUID, entityType = DiskOfferingResponse.class,
+            required = true, description = "the service offering of the auto deployed virtual machine")
     private Long serviceOfferingId;
 
-    @IdentityMapper(entityTableName = "vm_template")
-    @Parameter(name = ApiConstants.TEMPLATE_ID, type = CommandType.LONG, required = true, description = "the template of the auto deployed virtual machine")
+    @Parameter(name = ApiConstants.TEMPLATE_ID, type = CommandType.UUID, entityType = TemplateResponse.class,
+            required = true, description = "the template of the auto deployed virtual machine")
     private Long templateId;
 
     @Parameter(name = ApiConstants.OTHER_DEPLOY_PARAMS, type = CommandType.STRING, description = "parameters other than zoneId/serviceOfferringId/templateId of the auto deployed virtual machine")
@@ -70,8 +73,8 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.COUNTERPARAM_LIST, type = CommandType.MAP, description = "counterparam list. Example: counterparam[0].name=snmpcommunity&counterparam[0].value=public&counterparam[1].name=snmpport&counterparam[1].value=161")
     private Map counterParamList;
 
-    @IdentityMapper(entityTableName = "user")
-    @Parameter(name = ApiConstants.AUTOSCALE_USER_ID, type = CommandType.LONG, description = "the ID of the user used to launch and destroy the VMs")
+    @Parameter(name = ApiConstants.AUTOSCALE_USER_ID, type = CommandType.UUID, entityType = UserResponse.class,
+            description = "the ID of the user used to launch and destroy the VMs")
     private Long autoscaleUserId;
 
     private Map<String, String> otherDeployParamMap;

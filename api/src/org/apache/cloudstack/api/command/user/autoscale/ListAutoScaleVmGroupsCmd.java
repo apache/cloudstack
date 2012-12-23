@@ -23,11 +23,14 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
+import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
+import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.as.AutoScaleVmGroup;
 
@@ -41,24 +44,24 @@ public class ListAutoScaleVmGroupsCmd extends BaseListProjectAndAccountResources
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="autoscale_vmgroups")
-    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, description = "the ID of the autoscale vm group")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AutoScaleVmGroupResponse.class,
+            description = "the ID of the autoscale vm group")
     private Long id;
 
-    @IdentityMapper(entityTableName="firewall_rules")
-    @Parameter(name = ApiConstants.LBID, type = CommandType.LONG, description = "the ID of the loadbalancer")
+    @Parameter(name = ApiConstants.LBID, type = CommandType.UUID, entityType = FirewallRuleResponse.class,
+            description = "the ID of the loadbalancer")
     private Long loadBalancerId;
 
-    @IdentityMapper(entityTableName="autoscale_vmprofiles")
-    @Parameter(name = ApiConstants.VMPROFILE_ID, type = CommandType.LONG, description = "the ID of the profile")
+    @Parameter(name = ApiConstants.VMPROFILE_ID, type = CommandType.UUID, entityType = AutoScaleVmProfileResponse.class,
+            description = "the ID of the profile")
     private Long profileId;
 
-    @IdentityMapper(entityTableName="autoscale_policies")
-    @Parameter(name = ApiConstants.POLICY_ID, type = CommandType.LONG, description = "the ID of the policy")
+    @Parameter(name = ApiConstants.POLICY_ID, type = CommandType.UUID, entityType = AutoScalePolicyResponse.class,
+            description = "the ID of the policy")
     private Long policyId;
 
-    @IdentityMapper(entityTableName="data_center")
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.LONG, description = "the availability zone ID")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class,
+            description = "the availability zone ID")
     private Long zoneId;
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////

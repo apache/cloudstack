@@ -16,13 +16,16 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import com.cloud.network.as.AutoScalePolicy;
 import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.Entity;
 
 import java.util.List;
 
+@Entity(value=AutoScalePolicy.class)
 public class AutoScalePolicyResponse extends BaseResponse implements ControlledEntityResponse {
 
     @SerializedName(ApiConstants.ID)

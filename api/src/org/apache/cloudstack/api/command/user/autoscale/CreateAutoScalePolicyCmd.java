@@ -18,12 +18,12 @@ package org.apache.cloudstack.api.command.user.autoscale;
 
 import java.util.List;
 
+import org.apache.cloudstack.api.response.ConditionResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -55,8 +55,8 @@ public class CreateAutoScalePolicyCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.QUIETTIME, type = CommandType.INTEGER, description = "the cool down period for which the policy should not be evaluated after the action has been taken")
     private Integer quietTime;
 
-    @IdentityMapper(entityTableName = "conditions")
-    @Parameter(name = ApiConstants.CONDITION_IDS, type = CommandType.LIST, collectionType = CommandType.LONG, required = true, description = "the list of IDs of the conditions that are being evaluated on every interval")
+    @Parameter(name = ApiConstants.CONDITION_IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = ConditionResponse.class,
+            required = true, description = "the list of IDs of the conditions that are being evaluated on every interval")
     private List<Long> conditionIds;
 
     // ///////////////////////////////////////////////////

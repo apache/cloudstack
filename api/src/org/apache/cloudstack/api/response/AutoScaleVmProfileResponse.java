@@ -20,14 +20,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.network.as.AutoScaleVmProfile;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.Entity;
 import org.apache.cloudstack.api.Parameter;
 import com.cloud.serializer.Param;
 import com.cloud.utils.Pair;
 import com.google.gson.annotations.SerializedName;
 
+@Entity(value=AutoScaleVmProfile.class)
 public class AutoScaleVmProfileResponse extends BaseResponse implements ControlledEntityResponse {
 
     @SerializedName(ApiConstants.ID)

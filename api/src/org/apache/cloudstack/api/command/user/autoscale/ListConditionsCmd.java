@@ -20,11 +20,11 @@ package org.apache.cloudstack.api.command.user.autoscale;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListAccountResourcesCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ConditionResponse;
@@ -41,16 +41,16 @@ public class ListConditionsCmd extends BaseListAccountResourcesCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName = "conditions")
-    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, required = false, description = "ID of the Condition.")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ConditionResponse.class,
+            required = false, description = "ID of the Condition.")
     private Long id;
 
-    @IdentityMapper(entityTableName = "counter")
-    @Parameter(name = ApiConstants.COUNTER_ID, type = CommandType.LONG, required = false, description = "Counter-id of the condition.")
+    @Parameter(name = ApiConstants.COUNTER_ID, type = CommandType.UUID, entityType = CounterResponse.class,
+            required = false, description = "Counter-id of the condition.")
     private Long counterId;
 
-    @IdentityMapper(entityTableName="autoscale_policies")
-    @Parameter(name = ApiConstants.POLICY_ID, type = CommandType.LONG, description = "the ID of the policy")
+    @Parameter(name = ApiConstants.POLICY_ID, type = CommandType.UUID, entityType = AutoScalePolicyResponse.class,
+            description = "the ID of the policy")
     private Long policyId;
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
