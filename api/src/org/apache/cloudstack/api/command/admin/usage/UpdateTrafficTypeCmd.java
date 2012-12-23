@@ -21,7 +21,6 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -41,8 +40,8 @@ public class UpdateTrafficTypeCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="physical_network_traffic_types")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="traffic type id")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = TrafficTypeResponse.class,
+            required=true, description="traffic type id")
     private Long id;
 
     @Parameter(name=ApiConstants.XEN_NETWORK_LABEL, type=CommandType.STRING, description="The network name label of the physical device dedicated to this traffic on a XenServer host")
