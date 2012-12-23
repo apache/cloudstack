@@ -21,5 +21,3 @@ while read i
 do
     ifconfig $i down
 done < /tmp/iflist
-service cloud-passwd-srvr stop
-service dnsmasq stop

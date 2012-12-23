@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.api;
 
+import static org.apache.commons.lang.StringUtils.isNotBlank;
+
 import java.lang.reflect.Field;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -607,10 +609,20 @@ public class ApiDispatcher {
                 }
                 break;
             case FLOAT:
-                field.set(cmdObj, Float.valueOf(paramObj.toString()));
+                // Assuming that the parameters have been checked for required before now,
+                // we ignore blank or null values and defer to the command to set a default
+                // value for optional parameters ...
+                if (paramObj != null && isNotBlank(paramObj.toString())) {
+                    field.set(cmdObj, Float.valueOf(paramObj.toString()));
+                }
                 break;
             case INTEGER:
-                field.set(cmdObj, Integer.valueOf(paramObj.toString()));
+                // Assuming that the parameters have been checked for required before now,
+                // we ignore blank or null values and defer to the command to set a default
+                // value for optional parameters ...
+                if (paramObj != null && isNotBlank(paramObj.toString())) {
+                    field.set(cmdObj, Integer.valueOf(paramObj.toString()));
+                }
                 break;
                 case LIST:
                     List listParam = new ArrayList();

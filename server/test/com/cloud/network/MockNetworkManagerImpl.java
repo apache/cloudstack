@@ -16,14 +16,6 @@
 // under the License.
 package com.cloud.network;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.ejb.Local;
-import javax.naming.ConfigurationException;
-
 import com.cloud.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
@@ -35,12 +27,7 @@ import com.cloud.dc.Vlan.VlanType;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.*;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.GuestType;
@@ -61,13 +48,14 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
-import com.cloud.vm.Nic;
-import com.cloud.vm.NicProfile;
-import com.cloud.vm.ReservationContext;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.VirtualMachineProfileImpl;
+import com.cloud.vm.*;
+
+import javax.ejb.Local;
+import javax.naming.ConfigurationException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Local(value = { NetworkManager.class, NetworkService.class })
 public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkService {
@@ -796,10 +784,10 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.network.NetworkService#allocateIP(com.cloud.user.Account, boolean, long)
+     * @see com.cloud.network.NetworkService#allocateIP(com.cloud.user.Account, long, Long)
      */
     @Override
-    public IpAddress allocateIP(Account ipOwner, boolean isSystem, long zoneId) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException {
+    public IpAddress allocateIP(Account ipOwner, long zoneId, Long networkId) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -939,7 +927,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     /* (non-Javadoc)
-<<<<<<< HEAD
      * @see com.cloud.network.NetworkManager#getDefaultPublicTrafficLabel(long, com.cloud.hypervisor.Hypervisor.HypervisorType)
      */
     @Override
@@ -950,9 +937,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
 
     /* (non-Javadoc)
      * @see com.cloud.network.NetworkManager#assignSourceNatIpAddressToGuestNetwork(com.cloud.user.Account, com.cloud.network.Network)
-=======
-     * @see com.cloud.network.NetworkManager#getNicProfile(com.cloud.vm.VirtualMachine, long)
->>>>>>> ddb9e49... VPC: unittest preparation
      */
     @Override
     public PublicIp assignSourceNatIpAddressToGuestNetwork(Account owner, Network guestNetwork) throws InsufficientAddressCapacityException, ConcurrentOperationException {
@@ -1007,7 +991,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     /* (non-Javadoc)
-<<<<<<< HEAD
      * @see com.cloud.network.NetworkManager#getSite2SiteVpnElements()
      */
     @Override
@@ -1018,9 +1001,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
 
     /* (non-Javadoc)
      * @see com.cloud.network.NetworkManager#isPrivateGateway(com.cloud.vm.Nic)
-=======
-     * @see com.cloud.network.NetworkService#canUseForDeploy(com.cloud.network.Network)
->>>>>>> ddb9e49... VPC: unittest preparation
      */
     @Override
     public boolean isPrivateGateway(Nic guestNic) {

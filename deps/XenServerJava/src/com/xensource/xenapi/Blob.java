@@ -1,18 +1,19 @@
-/* Copyright (c) Citrix Systems, Inc.
+/*
+ * Copyright (c) Citrix Systems, Inc.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  *   1) Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
- * 
+ *
  *   2) Redistributions in binary form must reproduce the above
  *      copyright notice, this list of conditions and the following
  *      disclaimer in the documentation and/or other materials
  *      provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -26,6 +27,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 
 package com.xensource.xenapi;
 
@@ -51,7 +53,7 @@ import org.apache.xmlrpc.XmlRpcException;
 public class Blob extends XenAPIObject {
 
     /**
-     * The XenAPI reference to this object.
+     * The XenAPI reference (OpaqueRef) to this object.
      */
     protected final String ref;
 
@@ -62,6 +64,9 @@ public class Blob extends XenAPIObject {
        this.ref = ref;
     }
 
+    /**
+     * @return The XenAPI reference (OpaqueRef) to this object.
+     */
     public String toWireString() {
        return this.ref;
     }
@@ -99,6 +104,7 @@ public class Blob extends XenAPIObject {
             print.printf("%1$20s: %2$s\n", "nameLabel", this.nameLabel);
             print.printf("%1$20s: %2$s\n", "nameDescription", this.nameDescription);
             print.printf("%1$20s: %2$s\n", "size", this.size);
+            print.printf("%1$20s: %2$s\n", "_public", this._public);
             print.printf("%1$20s: %2$s\n", "lastUpdated", this.lastUpdated);
             print.printf("%1$20s: %2$s\n", "mimeType", this.mimeType);
             return writer.toString();
@@ -113,6 +119,7 @@ public class Blob extends XenAPIObject {
             map.put("name_label", this.nameLabel == null ? "" : this.nameLabel);
             map.put("name_description", this.nameDescription == null ? "" : this.nameDescription);
             map.put("size", this.size == null ? 0 : this.size);
+            map.put("public", this._public == null ? false : this._public);
             map.put("last_updated", this.lastUpdated == null ? new Date(0) : this.lastUpdated);
             map.put("mime_type", this.mimeType == null ? "" : this.mimeType);
             return map;
@@ -127,13 +134,17 @@ public class Blob extends XenAPIObject {
          */
         public String nameLabel;
         /**
-         * a notes field containg human-readable description
+         * a notes field containing human-readable description
          */
         public String nameDescription;
         /**
          * Size of the binary data, in bytes
          */
         public Long size;
+        /**
+         * True if the blob is publicly accessible
+         */
+        public Boolean _public;
         /**
          * Time at which the data in the blob was last updated
          */
@@ -266,6 +277,23 @@ public class Blob extends XenAPIObject {
     }
 
     /**
+     * Get the public field of the given blob.
+     *
+     * @return value of the field
+     */
+    public Boolean getPublic(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "blob.get_public";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toBoolean(result);
+    }
+
+    /**
      * Get the last_updated field of the given blob.
      *
      * @return value of the field
@@ -332,25 +360,42 @@ public class Blob extends XenAPIObject {
     }
 
     /**
+     * Set the public field of the given blob.
+     *
+     * @param _public New value to set
+     */
+    public void setPublic(Connection c, Boolean _public) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "blob.set_public";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(_public)};
+        Map response = c.dispatch(method_call, method_params);
+        return;
+    }
+
+    /**
      * Create a placeholder for a binary blob
      *
      * @param mimeType The mime-type of the blob. Defaults to 'application/octet-stream' if the empty string is supplied
+     * @param _public True if the blob should be publicly available
      * @return The reference to the created blob
      */
-    public static Blob create(Connection c, String mimeType) throws
+    public static Blob create(Connection c, String mimeType, Boolean _public) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
         String method_call = "blob.create";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(mimeType)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(mimeType), Marshalling.toXMLRPC(_public)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
             return Types.toBlob(result);
     }
 
     /**
-     * 
+     *
      *
      */
     public void destroy(Connection c) throws

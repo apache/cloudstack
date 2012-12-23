@@ -119,6 +119,8 @@ import com.cloud.user.UserVO;
 import com.cloud.utils.IdentityProxy;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Adapters;
+import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -220,7 +222,7 @@ public class ApiServer implements HttpRequestHandler {
             InetAddress remoteAddr = ((SocketHttpServerConnection) connObj).getRemoteAddress();
             sb.append(remoteAddr.toString() + " -- ");
         }
-        sb.append(request.getRequestLine());
+        sb.append(StringUtils.cleanString(request.getRequestLine().toString()));
 
         try {
             List<NameValuePair> paramList = null;
@@ -513,21 +515,12 @@ public class ApiServer implements HttpRequestHandler {
             return;
         }
         auditTrailSb.append(" " + HttpServletResponse.SC_OK + " ");
-        auditTrailSb.append(result);
-        /*
-         * if (command.equals("queryAsyncJobResult")){ //For this command we need to also log job status and job
-         * resultcode for
-         * (Pair<String,Object> pair : resultValues){ String key = pair.first(); if (key.equals("jobstatus")){
-         * auditTrailSb.append(" "); auditTrailSb.append(key); auditTrailSb.append("=");
-         * auditTrailSb.append(pair.second());
-         * }else if (key.equals("jobresultcode")){ auditTrailSb.append(" "); auditTrailSb.append(key);
-         * auditTrailSb.append("=");
-         * auditTrailSb.append(pair.second()); } } }else { for (Pair<String,Object> pair : resultValues){ if
-         * (pair.first().equals("jobid")){ // Its an async job so report the jobid auditTrailSb.append(" ");
-         * auditTrailSb.append(pair.first()); auditTrailSb.append("="); auditTrailSb.append(pair.second()); } } }
-         */
+        if (command.equals("createSSHKeyPair")){
+            auditTrailSb.append("This result was not logged because it contains sensitive data.");
+        } else {
+            auditTrailSb.append(StringUtils.cleanString(result));
+        }
     }
-
 
     public boolean verifyRequest(Map<String, Object[]> requestParameters, Long userId) throws ServerApiException {
         try {

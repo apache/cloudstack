@@ -1,18 +1,19 @@
-/* Copyright (c) Citrix Systems, Inc.
+/*
+ * Copyright (c) Citrix Systems, Inc.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  *   1) Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
- * 
+ *
  *   2) Redistributions in binary form must reproduce the above
  *      copyright notice, this list of conditions and the following
  *      disclaimer in the documentation and/or other materials
  *      provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -26,6 +27,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 
 package com.xensource.xenapi;
 
@@ -51,7 +53,7 @@ import org.apache.xmlrpc.XmlRpcException;
 public class Task extends XenAPIObject {
 
     /**
-     * The XenAPI reference to this object.
+     * The XenAPI reference (OpaqueRef) to this object.
      */
     protected final String ref;
 
@@ -62,6 +64,9 @@ public class Task extends XenAPIObject {
        this.ref = ref;
     }
 
+    /**
+     * @return The XenAPI reference (OpaqueRef) to this object.
+     */
     public String toWireString() {
        return this.ref;
     }
@@ -147,7 +152,7 @@ public class Task extends XenAPIObject {
          */
         public String nameLabel;
         /**
-         * a notes field containg human-readable description
+         * a notes field containing human-readable description
          */
         public String nameDescription;
         /**
@@ -175,7 +180,7 @@ public class Task extends XenAPIObject {
          */
         public Host residentOn;
         /**
-         * if the task is still pending, this field contains the estimated fraction complete (0.-1.). If task has completed (successfully or unsuccessfully) this should be 1.
+         * This field contains the estimated fraction of the task which is complete. This field should not be used to determine whether the task is complete - for this the status field of the task should be used.
          */
         public Double progress;
         /**

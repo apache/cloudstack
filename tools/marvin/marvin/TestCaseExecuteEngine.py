@@ -87,8 +87,8 @@ class TestCaseExecuteEngine(object):
                 setattr(test, "config", self.config)
                 setattr(test, "debug", partial(testCaseLogger, logger=testcaselogger))
                 setattr(test.__class__, "clstestclient", self.testclient)
-                if hasattr(test, "UserName"):
-                    self.testclient.createNewApiClient(test.UserName, test.DomainName, test.AcctType)
+                if hasattr(test, "user"): #attribute when test is entirely executed as user
+                    self.testclient.createUserApiClient(test.UserName, test.DomainName, test.AcctType)
 
     def run(self):
         if self.suite:

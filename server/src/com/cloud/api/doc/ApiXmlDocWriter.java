@@ -312,6 +312,11 @@ public class ApiXmlDocWriter {
             impl = clas.getSuperclass().getAnnotation(Implementation.class);
         }
 
+        if (impl == null) {
+            throw new IllegalStateException(String.format("An %1$s annotation is required for class %2$s.", 
+                    Implementation.class.getCanonicalName(), clas.getCanonicalName()));
+        }
+
         if (impl.includeInApiDoc()) {
             String commandDescription = impl.description();
             if (commandDescription != null && !commandDescription.isEmpty()) {

@@ -258,9 +258,9 @@ class deployDataCenters():
         traffic_type = addTrafficType.addTrafficTypeCmd()
         traffic_type.physicalnetworkid = physical_network_id
         traffic_type.traffictype = traffictype.typ
-        if traffictype.labeldict:
-            traffic_type.kvmnetworklabel = traffictype.labeldict.xen
-            traffic_type.xennetworklabel = traffictype.labeldict.kvm
+        if traffictype.labeldict is not None:
+            traffic_type.kvmnetworklabel = traffictype.labeldict.kvm
+            traffic_type.xennetworklabel = traffictype.labeldict.xen
             traffic_type.vmwarenetworklabel = traffictype.labeldict.vmware
         return self.apiClient.addTrafficType(traffic_type)
 
@@ -399,9 +399,9 @@ class deployDataCenters():
                                              logging=self.testClientLogger)
 
         """config database"""
-        dbSvr = self.config.dbSvr
-        self.testClient.dbConfigure(dbSvr.dbSvr, dbSvr.port, dbSvr.user, \
-                                    dbSvr.passwd, dbSvr.db)
+        #dbSvr = self.config.dbSvr
+        #self.testClient.dbConfigure(dbSvr.dbSvr, dbSvr.port, dbSvr.user, \
+        #                            dbSvr.passwd, dbSvr.db)
         self.apiClient = self.testClient.getApiClient()
 
     def updateConfiguration(self, globalCfg):
@@ -414,11 +414,29 @@ class deployDataCenters():
             updateCfg.value = config.value
             self.apiClient.updateConfiguration(updateCfg)
 
+    def copyAttributesToCommand(self, source, command):
+
+        map(lambda attr : setattr(command, attr, getattr(source, attr, None)),
+                filter(lambda attr : not attr.startswith("__") and
+                    attr not in [ "required", "isAsync" ], dir(command)))
+
+
+    def configureS3(self, s3):
+
+        if s3 is None:
+            return
+
+        command = addS3.addS3Cmd()
+
+        self.copyAttributesToCommand(s3, command)
+
+        self.apiClient.addS3(command)
+
     def deploy(self):
         self.loadCfg()
-        self.createZones(self.config.zones)
         self.updateConfiguration(self.config.globalConfig)
-
+        self.createZones(self.config.zones)
+        self.configureS3(self.config.s3)
 
 if __name__ == "__main__":
 

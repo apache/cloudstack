@@ -637,4 +637,3 @@ left join host_tags on host_tags.host_id = host.id
 left join op_host_capacity mem_caps on host.id = mem_caps.host_id and mem_caps.capacity_type = 0
 left join op_host_capacity cpu_caps on host.id = cpu_caps.host_id and cpu_caps.capacity_type = 1
 left join async_job on async_job.instance_id = host.id and async_job.instance_type = "Host" and async_job.job_status = 0;
-

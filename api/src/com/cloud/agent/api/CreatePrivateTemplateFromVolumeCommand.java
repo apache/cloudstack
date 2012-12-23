@@ -16,6 +16,9 @@
 // under the License.
 package com.cloud.agent.api;
 
+import com.cloud.agent.api.to.StorageFilerTO;
+import com.cloud.storage.StoragePool;
+
 public class CreatePrivateTemplateFromVolumeCommand extends SnapshotCommand {
     private String _vmName;
     private String _volumePath;
@@ -23,13 +26,14 @@ public class CreatePrivateTemplateFromVolumeCommand extends SnapshotCommand {
     private String _uniqueName;
     private long _templateId;
     private long _accountId;
+    StorageFilerTO _primaryPool;
     // For XenServer
     private String _secondaryStorageUrl;
 
     public CreatePrivateTemplateFromVolumeCommand() {
     }
 
-    public CreatePrivateTemplateFromVolumeCommand(String StoragePoolUUID, String secondaryStorageUrl, long templateId, long accountId, String userSpecifiedName, String uniqueName, String volumePath, String vmName, int wait) {
+    public CreatePrivateTemplateFromVolumeCommand(StoragePool pool, String secondaryStorageUrl, long templateId, long accountId, String userSpecifiedName, String uniqueName, String volumePath, String vmName, int wait) {
         _secondaryStorageUrl = secondaryStorageUrl;
         _templateId = templateId;
         _accountId = accountId;
@@ -37,13 +41,18 @@ public class CreatePrivateTemplateFromVolumeCommand extends SnapshotCommand {
         _uniqueName = uniqueName;
         _volumePath = volumePath;
         _vmName = vmName;
-        primaryStoragePoolNameLabel = StoragePoolUUID;
+        primaryStoragePoolNameLabel = pool.getUuid();
+        _primaryPool = new StorageFilerTO(pool);
         setWait(wait);
     }
 
     @Override
     public boolean executeInSequence() {
         return false;
+    }
+
+    public StorageFilerTO getPool() {
+        return _primaryPool;
     }
 
     public String getSecondaryStorageUrl() {

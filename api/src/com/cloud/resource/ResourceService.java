@@ -24,12 +24,15 @@ import org.apache.cloudstack.api.command.admin.host.*;
 import org.apache.cloudstack.api.command.admin.swift.AddSwiftCmd;
 import org.apache.cloudstack.api.command.admin.swift.ListSwiftsCmd;
 import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
+import com.cloud.api.commands.AddS3Cmd;
+import com.cloud.api.commands.ListS3sCmd;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Cluster;
+import com.cloud.storage.S3;
 import com.cloud.storage.Swift;
 import com.cloud.utils.fsm.NoTransitionException;
 import org.apache.cloudstack.api.command.admin.host.ReconnectHostCmd;
@@ -90,7 +93,12 @@ public interface ResourceService {
 
     Swift discoverSwift(AddSwiftCmd addSwiftCmd) throws DiscoveryException;
 
+    S3 discoverS3(AddS3Cmd cmd) throws DiscoveryException;
+    
     List<HypervisorType> getSupportedHypervisorTypes(long zoneId, boolean forVirtualRouter, Long podId);
 
     List<? extends Swift> listSwifts(ListSwiftsCmd cmd);
+
+    List<? extends S3> listS3s(ListS3sCmd cmd);
+
 }

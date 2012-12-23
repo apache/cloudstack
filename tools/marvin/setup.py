@@ -20,10 +20,6 @@ from setuptools import setup
 from sys import version
 import sys
 
-if version < "2.7":
-    print "Marvin needs at least python 2.7, found : \n%s"%version
-    sys.exit(1)
-
 setup(name="Marvin",
       version="0.1.0",
       description="Marvin - Python client for testing cloudstack",

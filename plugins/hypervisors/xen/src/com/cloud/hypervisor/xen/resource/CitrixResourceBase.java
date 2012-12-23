@@ -17,6 +17,10 @@
 package com.cloud.hypervisor.xen.resource;
 
 
+import java.beans.BeanInfo;
+import java.beans.IntrospectionException;
+import java.beans.Introspector;
+import java.beans.PropertyDescriptor;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -24,11 +28,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -179,6 +185,7 @@ import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
+import com.cloud.agent.api.to.S3TO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.SwiftTO;
@@ -217,6 +224,8 @@ import com.cloud.storage.template.TemplateInfo;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.S3Utils;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
@@ -3113,11 +3122,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     protected void setMemory(Connection conn, VM vm, long memsize) throws XmlRpcException, XenAPIException {
-        vm.setMemoryStaticMin(conn, memsize);
-        vm.setMemoryDynamicMin(conn, memsize);
-
-        vm.setMemoryDynamicMax(conn, memsize);
-        vm.setMemoryStaticMax(conn, memsize);
+        vm.setMemoryLimits(conn, memsize, memsize, memsize, memsize);
     }
 
     private void waitForTask(Connection c, Task task, long pollInterval, long timeout) throws XenAPIException, XmlRpcException {
@@ -6511,7 +6516,14 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                         } finally {
                             deleteSnapshotBackup(conn, dcId, accountId, volumeId, secondaryStorageMountPath, snapshotBackupUuid);
                         }
-                    }                    
+                    } else if (cmd.getS3() != null) {
+                        try {
+                            backupSnapshotToS3(conn, cmd.getS3(), snapshotSr.getUuid(conn), snapshotBackupUuid, isISCSI, wait);
+                            snapshotBackupUuid = snapshotBackupUuid + ".vhd";
+                        } finally {
+                            deleteSnapshotBackup(conn, dcId, accountId, volumeId, secondaryStorageMountPath, snapshotBackupUuid);
+                        }
+                    }
                     success = true;
                 } finally {
                     if( snapshotSr != null) {
@@ -6528,6 +6540,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                         snapshotBackupUuid = snapshotPaUuid + ".vhd";
                     }
                     success = true;
+                } else if (cmd.getS3() != null) {
+                    backupSnapshotToS3(conn, cmd.getS3(), primaryStorageSRUuid, snapshotPaUuid, isISCSI, wait);
                 } else {
                     snapshotBackupUuid = backupSnapshot(conn, primaryStorageSRUuid, dcId, accountId, volumeId, secondaryStorageMountPath, snapshotUuid, prevBackupUuid, isISCSI, wait);
                     success = (snapshotBackupUuid != null);
@@ -6548,6 +6562,88 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
 
         return new BackupSnapshotAnswer(cmd, success, details, snapshotBackupUuid, fullbackup);
+    }
+
+    private static List<String> serializeProperties(final Object object,
+            final Class<?> propertySet) {
+
+        assert object != null;
+        assert propertySet != null;
+        assert propertySet.isAssignableFrom(object.getClass());
+
+        try {
+
+            final BeanInfo beanInfo = Introspector.getBeanInfo(propertySet);
+            final PropertyDescriptor[] descriptors = beanInfo
+                    .getPropertyDescriptors();
+
+            final List<String> serializedProperties = new ArrayList<String>();
+            for (final PropertyDescriptor descriptor : descriptors) {
+
+                serializedProperties.add(descriptor.getName());
+                final Object value = descriptor.getReadMethod().invoke(object);
+                serializedProperties.add(value != null ? value.toString()
+                        : "null");
+
+            }
+
+            return Collections.unmodifiableList(serializedProperties);
+
+        } catch (IntrospectionException e) {
+            s_logger.warn(
+                    "Ignored IntrospectionException when serializing class "
+                            + object.getClass().getCanonicalName(), e);
+        } catch (IllegalArgumentException e) {
+            s_logger.warn(
+                    "Ignored IllegalArgumentException when serializing class "
+                            + object.getClass().getCanonicalName(), e);
+        } catch (IllegalAccessException e) {
+            s_logger.warn(
+                    "Ignored IllegalAccessException when serializing class "
+                            + object.getClass().getCanonicalName(), e);
+        } catch (InvocationTargetException e) {
+            s_logger.warn(
+                    "Ignored InvocationTargetException when serializing class "
+                            + object.getClass().getCanonicalName(), e);
+        }
+
+        return Collections.emptyList();
+
+    }
+
+    private boolean backupSnapshotToS3(final Connection connection,
+            final S3TO s3, final String srUuid, final String snapshotUuid,
+            final Boolean iSCSIFlag, final int wait) {
+
+        final String filename = iSCSIFlag ? "VHD-" + snapshotUuid
+                : snapshotUuid + ".vhd";
+        final String dir = (iSCSIFlag ? "/dev/VG_XenStorage-"
+                : "/var/run/sr-mount/") + srUuid;
+        final String key = StringUtils.join("/", "snapshots", snapshotUuid);
+
+        try {
+
+            final List<String> parameters = new ArrayList<String>(
+                    serializeProperties(s3, S3Utils.ClientOptions.class));
+            parameters.addAll(Arrays.asList("operation", "put", "directory",
+                    dir, "filename", filename, "iSCSIFlag",
+                    iSCSIFlag.toString(), "key", key));
+            final String result = callHostPluginAsync(connection, "s3xen",
+                    "s3", wait,
+                    parameters.toArray(new String[parameters.size()]));
+
+            if (result != null && result.equals("true")) {
+                return true;
+            }
+
+        } catch (Exception e) {
+            s_logger.error(String.format(
+                    "S3 upload failed of snapshot %1$s due to %2$s.",
+                    snapshotUuid, e.toString()), e);
+        }
+
+        return false;
+
     }
 
     protected CreateVolumeFromSnapshotAnswer execute(final CreateVolumeFromSnapshotCommand cmd) {

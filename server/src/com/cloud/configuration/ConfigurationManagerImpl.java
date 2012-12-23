@@ -65,59 +65,27 @@ import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.dc.AccountVlanMapVO;
-import com.cloud.dc.ClusterVO;
-import com.cloud.dc.DataCenter;
+import com.cloud.dc.*;
 import com.cloud.dc.DataCenter.NetworkType;
-import com.cloud.dc.DataCenterIpAddressVO;
-import com.cloud.dc.DataCenterLinkLocalIpAddressVO;
-import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.HostPodVO;
-import com.cloud.dc.Pod;
-import com.cloud.dc.PodVlanMapVO;
-import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
-import com.cloud.dc.VlanVO;
-import com.cloud.dc.dao.AccountVlanMapDao;
-import com.cloud.dc.dao.ClusterDao;
-import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.dc.dao.DataCenterIpAddressDao;
-import com.cloud.dc.dao.DataCenterLinkLocalIpAddressDaoImpl;
-import com.cloud.dc.dao.HostPodDao;
-import com.cloud.dc.dao.PodVlanMapDao;
-import com.cloud.dc.dao.VlanDao;
+import com.cloud.dc.dao.*;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.*;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.IPAddressVO;
-import com.cloud.network.Network;
+import com.cloud.network.*;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.network.NetworkManager;
-import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.PhysicalNetwork;
-import com.cloud.network.PhysicalNetworkVO;
-import com.cloud.network.dao.FirewallRulesDao;
-import com.cloud.network.dao.IPAddressDao;
-import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.PhysicalNetworkDao;
-import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
-import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
+import com.cloud.network.dao.*;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
@@ -136,16 +104,13 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.SwiftVO;
 import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.S3Dao;
 import com.cloud.storage.dao.SwiftDao;
+import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.swift.SwiftManager;
 import com.cloud.test.IPRangeConfig;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
-import com.cloud.user.AccountVO;
-import com.cloud.user.ResourceLimitService;
-import com.cloud.user.User;
-import com.cloud.user.UserContext;
+import com.cloud.user.*;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.StringUtils;
@@ -161,8 +126,20 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.NicDao;
-
 import edu.emory.mathcs.backport.java.util.Arrays;
+import org.apache.log4j.Logger;
+
+import javax.ejb.Local;
+import javax.naming.ConfigurationException;
+import javax.naming.Context;
+import javax.naming.NamingException;
+import javax.naming.directory.DirContext;
+import javax.naming.directory.InitialDirContext;
+import java.net.URI;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.*;
 
 @Local(value = { ConfigurationManager.class, ConfigurationService.class })
 public class ConfigurationManagerImpl implements ConfigurationManager, ConfigurationService {
@@ -183,6 +160,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     DomainDao _domainDao;
     @Inject
     SwiftDao _swiftDao;
+    @Inject
+    S3Dao _s3Dao;
     @Inject
     ServiceOfferingDao _serviceOfferingDao;
     @Inject
@@ -223,6 +202,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     PhysicalNetworkDao _physicalNetworkDao;
     @Inject
     SwiftManager _swiftMgr;
+    @Inject
+    S3Manager _s3Mgr;
     @Inject
     PhysicalNetworkTrafficTypeDao _trafficTypeDao;
     @Inject
@@ -484,6 +465,14 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 SwiftVO swift = _swiftDao.findById(1L);
                 if (swift != null) {
                     return " can not change " + Config.SwiftEnable.key() + " after you have added Swift";
+                }
+                if (this._s3Mgr.isS3Enabled()) {
+                    return String.format("Swift is not supported when S3 is enabled.");
+                }
+            }
+            if (Config.S3Enable.key().equals(name)) {
+                if (this._swiftMgr.isSwiftEnabled()) {
+                    return String.format("S3-backed Secondary Storage is not supported when Swift is enabled.");
                 }
             }
             return null;
@@ -1586,6 +1575,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             createDefaultSystemNetworks(zone.getId());
 
             _swiftMgr.propagateSwiftTmplteOnZone(zone.getId());
+            _s3Mgr.propagateTemplatesToZone(zone);
             txn.commit();
             return zone;
         } catch (Exception ex) {
@@ -3136,20 +3126,33 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
     void validateStaticNatServiceCapablities(Map<Capability, String> staticNatServiceCapabilityMap) {
         if (staticNatServiceCapabilityMap != null && !staticNatServiceCapabilityMap.isEmpty()) {
-            if (staticNatServiceCapabilityMap.keySet().size() > 1) {
-                throw new InvalidParameterValueException("Only " + Capability.ElasticIp.getName() + " capabilitiy can be sepcified for static nat service");
+            if (staticNatServiceCapabilityMap.keySet().size() > 2) {
+                throw new InvalidParameterValueException("Only " + Capability.ElasticIp.getName() +  " and " + Capability.AssociatePublicIP.getName() +  " capabilitiy can be sepcified for static nat service");
             }
-
+            boolean eipEnabled = false;
+            boolean eipDisabled = false;
+            boolean associatePublicIP = true;
             for (Capability capability : staticNatServiceCapabilityMap.keySet()) {
                 String value = staticNatServiceCapabilityMap.get(capability);
                 if (capability == Capability.ElasticIp) {
-                    boolean enabled = value.contains("true");
-                    boolean disabled = value.contains("false");
-                    if (!enabled && !disabled) {
+                    eipEnabled = value.contains("true");
+                    eipDisabled = value.contains("false");
+                    if (!eipEnabled && !eipDisabled) {
                         throw new InvalidParameterValueException("Unknown specified value for " + Capability.ElasticIp.getName());
                     }
+                } else if (capability == Capability.AssociatePublicIP) {
+                    if (value.contains("true")) {
+                        associatePublicIP = true;
+                    } else if (value.contains("false")) {
+                        associatePublicIP = false;
+                    } else {
+                        throw new InvalidParameterValueException("Unknown specified value for " + Capability.AssociatePublicIP.getName());
+                    }
                 } else {
-                    throw new InvalidParameterValueException("Only " + Capability.ElasticIp.getName() + " capabilitiy can be sepcified for static nat service");
+                    throw new InvalidParameterValueException("Only " + Capability.ElasticIp.getName() +  " and " + Capability.AssociatePublicIP.getName() +  " capabilitiy can be sepcified for static nat service");
+                }
+                if (eipDisabled && associatePublicIP) {
+                    throw new InvalidParameterValueException("Capability " + Capability.AssociatePublicIP.getName() + " can only be set when capability " + Capability.ElasticIp.getName() + " is true");
                 }
             }
         }
@@ -3203,6 +3206,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         boolean sharedSourceNat = false;
         boolean redundantRouter = false;
         boolean elasticIp = false;
+        boolean associatePublicIp = false;
         if (serviceCapabilityMap != null && !serviceCapabilityMap.isEmpty()) {
             Map<Capability, String> lbServiceCapabilityMap = serviceCapabilityMap.get(Service.Lb);
             
@@ -3243,13 +3247,17 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 String param = staticNatServiceCapabilityMap.get(Capability.ElasticIp);
                 if (param != null) {
                     elasticIp = param.contains("true");
+                    String associatePublicIP = staticNatServiceCapabilityMap.get(Capability.AssociatePublicIP);
+                    if (associatePublicIP != null) {
+                        associatePublicIp = associatePublicIP.contains("true");
+                    }
                 }
             }
         }
 
         NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, systemOnly, specifyVlan, 
                 networkRate, multicastRate, isDefault, availability, tags, type, conserveMode, dedicatedLb,
-                sharedSourceNat, redundantRouter, elasticIp, elasticLb, specifyIpRanges);
+                sharedSourceNat, redundantRouter, elasticIp, elasticLb, associatePublicIp, specifyIpRanges);
 
         if (serviceOfferingId != null) {
             offering.setServiceOfferingId(serviceOfferingId);

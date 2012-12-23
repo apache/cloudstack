@@ -23,10 +23,15 @@
 -->
 
 <section id="nfs-shares-on-management-server">
-    <title>Using the Management Server As the NFS Server</title>
+    <title>Using the Management Server as the NFS Server</title>
     <para>This section tells how to set up NFS shares for primary and secondary storage on the same node with the Management Server.  This is more typical of a trial installation, but is technically possible in a larger deployment. It is assumed that you will have less than 16TB of storage on the host.</para> 
     <para>The exact commands for the following steps may vary depending on your operating system version.</para>
     <orderedlist>
+        <listitem><para>On Ubuntu/Debian systems, you'll need to install the nfs-kernel-server package:</para>
+        <programlisting>
+$ sudo apt-get install nfs-kernel-server
+        </programlisting>
+        </listitem>
         <listitem><para>On the Management Server host, create two directories that you will use for primary and secondary storage. For example:</para>
         <programlisting>
 # mkdir -p /export/primary

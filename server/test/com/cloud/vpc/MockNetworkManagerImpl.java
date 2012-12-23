@@ -38,30 +38,14 @@ import com.cloud.dc.Vlan.VlanType;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.*;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.IPAddressVO;
-import com.cloud.network.IpAddress;
-import com.cloud.network.Network;
+import com.cloud.network.*;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.network.NetworkManager;
-import com.cloud.network.NetworkProfile;
-import com.cloud.network.NetworkService;
-import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.PhysicalNetwork;
-import com.cloud.network.PhysicalNetworkServiceProvider;
-import com.cloud.network.PhysicalNetworkSetupInfo;
-import com.cloud.network.PhysicalNetworkTrafficType;
-import com.cloud.network.PublicIpAddress;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.element.NetworkElement;
@@ -80,14 +64,13 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
-import com.cloud.vm.Nic;
-import com.cloud.vm.NicProfile;
-import com.cloud.vm.ReservationContext;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.VirtualMachineProfileImpl;
+import com.cloud.vm.*;
 import com.cloud.vpc.dao.MockVpcVirtualRouterElement;
+import org.apache.log4j.Logger;
+
+import javax.ejb.Local;
+import javax.naming.ConfigurationException;
+import java.util.*;
 
 @Local(value = { NetworkManager.class, NetworkService.class })
 public class MockNetworkManagerImpl implements NetworkManager, Manager{
@@ -1493,7 +1476,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager{
      * @see com.cloud.network.NetworkService#allocateIP(com.cloud.user.Account, boolean, long)
      */
     @Override
-    public IpAddress allocateIP(Account ipOwner, boolean isSystem, long zoneId) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException {
+    public IpAddress allocateIP(Account ipOwner, long zoneId, Long networkId) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException {
         // TODO Auto-generated method stub
         return null;
     }

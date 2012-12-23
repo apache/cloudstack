@@ -29,6 +29,30 @@ from base import *
 import time
 
 
+def wait_for_cleanup(apiclient, configs=None):
+    """Sleeps till the cleanup configs passed"""
+
+    # Configs list consists of the list of global configs
+    if not isinstance(configs, list):
+        return
+    for config in configs:
+        cmd = listConfigurations.listConfigurationsCmd()
+        cmd.name = config
+        cmd.listall = True
+        try:
+            config_descs = apiclient.listConfigurations(cmd)
+        except Exception as e:
+            raise Exception("Failed to fetch configurations: %s" % e)
+
+        if not isinstance(config_descs, list):
+            raise Exception("List configs didn't returned a valid data")
+
+        config_desc = config_descs[0]
+        # Sleep for the config_desc.value time
+        time.sleep(int(config_desc.value))
+    return
+
+
 def get_domain(apiclient, services=None):
     "Returns a default domain"
 
@@ -40,6 +64,7 @@ def get_domain(apiclient, services=None):
     domains = apiclient.listDomains(cmd)
 
     if isinstance(domains, list):
+        assert len(domains) > 0
         return domains[0]
     else:
         raise Exception("Failed to find specified domain.")
@@ -56,6 +81,7 @@ def get_zone(apiclient, services=None):
     zones = apiclient.listZones(cmd)
 
     if isinstance(zones, list):
+        assert len(zones) > 0, "There are no available zones in the deployment"
         return zones[0]
     else:
         raise Exception("Failed to find specified zone.")
@@ -74,13 +100,24 @@ def get_pod(apiclient, zoneid, services=None):
     pods = apiclient.listPods(cmd)
 
     if isinstance(pods, list):
+        assert len(pods) > 0, "No pods found for zone %s"%zoneid
         return pods[0]
     else:
         raise Exception("Exception: Failed to find specified pod.")
 
 
-def get_template(apiclient, zoneid, ostypeid=12, services=None):
+def get_template(apiclient, zoneid, ostype, services=None):
     "Returns a template"
+
+    cmd = listOsTypes.listOsTypesCmd()
+    cmd.description = ostype
+    ostypes = apiclient.listOsTypes(cmd)
+
+    if isinstance(ostypes, list):
+        ostypeid = ostypes[0].id
+    else:
+        raise Exception(
+            "Failed to find OS type with description: %s" % ostype)
 
     cmd = listTemplates.listTemplatesCmd()
     cmd.templatefilter = 'featured'
@@ -92,9 +129,11 @@ def get_template(apiclient, zoneid, ostypeid=12, services=None):
 
     list_templates = apiclient.listTemplates(cmd)
 
-    for template in list_templates:
-        if template.ostypeid == ostypeid:
-            return template
+    if isinstance(list_templates, list):
+        assert len(list_templates) > 0, "received empty response on template of type %s"%ostype
+        for template in list_templates:
+            if template.ostypeid == ostypeid:
+                return template
 
     raise Exception("Exception: Failed to find template with OSTypeID: %s" %
                                                                     ostypeid)
@@ -263,6 +302,14 @@ def update_resource_limit(apiclient, resourcetype, account=None,
         cmd.projectid = projectid
     apiclient.updateResourceLimit(cmd)
     return
+
+
+def list_os_types(apiclient, **kwargs):
+    """List all os types matching criteria"""
+
+    cmd = listOsTypes.listOsTypesCmd()
+    [setattr(cmd, k, v) for k, v in kwargs.items()]
+    return(apiclient.listOsTypes(cmd))
 
 
 def list_routers(apiclient, **kwargs):
@@ -513,3 +560,10 @@ def list_resource_limits(apiclient, **kwargs):
     cmd = listResourceLimits.listResourceLimitsCmd()
     [setattr(cmd, k, v) for k, v in kwargs.items()]
     return(apiclient.listResourceLimits(cmd))
+
+def list_vpc_offerings(apiclient, **kwargs):
+    """ Lists VPC offerings """
+
+    cmd = listVPCOfferings.listVPCOfferingsCmd()
+    [setattr(cmd, k, v) for k, v in kwargs.items()]
+    return(apiclient.listVPCOfferings(cmd))

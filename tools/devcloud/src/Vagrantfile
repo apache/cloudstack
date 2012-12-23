@@ -1,0 +1,58 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+Vagrant::Config.run do |config|
+  config.vm.network :hostonly, "192.168.56.10", :auto_config => false
+  #config.vm.box = "devcloud"
+  config.vm.box = "devcloudbase-xen"
+  #config.vm.box_url = "http://basho-cloudstack.s3.amazonaws.com/devcloud.box"
+
+  config.vm.guest = :xen
+  config.ssh.username = "devcloud"
+  config.vm.host_name = "devcloud.local"
+  # Uncomment this line to enable the console for debugging the
+  # build process.
+  # config.vm.boot_mode = :gui
+
+  # Setup port forwarding
+  config.vm.forward_port 22, 7222
+  config.vm.forward_port 3306, 3306
+  config.vm.forward_port 8080, 8080
+  config.vm.forward_port 8443, 8443
+  config.vm.forward_port 5901, 5901
+  config.vm.forward_port 8787, 8787
+  config.vm.forward_port 8250, 8250
+  config.vm.forward_port 8096, 8096
+  config.vm.forward_port 7080, 7080
+  # Ensure the VM has the right virtual resources
+  #config.vm.
+  config.vm.customize ["modifyvm", :id, "--memory", 2048]
+  config.vm.customize ["modifyvm", :id, "--nicpromisc2", "allow-all"]
+  config.vm.provision :shell, :path => "waitforxe.sh"
+  config.vm.provision :puppet do |puppet|
+     puppet.with_ssh       = true
+     puppet.manifests_path = File.join 'puppet', 'manifests'
+     puppet.module_path    = File.join 'puppet', 'modules', 'devcloud'
+     puppet.manifest_file  = 'vagrant-devcloud.pp'
+     puppet.options        = ['--pluginsync', '--trace', '--debug', '--verbose']
+  end
+
+
+end

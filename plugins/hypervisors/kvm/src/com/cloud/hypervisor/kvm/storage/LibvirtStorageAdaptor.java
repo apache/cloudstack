@@ -688,10 +688,16 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         PhysicalDiskFormat destFormat = newDisk.getFormat();
 
         if ((srcPool.getType() != StoragePoolType.RBD) && (destPool.getType() != StoragePoolType.RBD)) {
-            Script.runSimpleBashScript("qemu-img convert -f " + sourceFormat
-                + " -O " + destFormat
-                + " " + sourcePath
-                + " " + destPath);
+            if (sourceFormat.equals(destFormat) && 
+                Script.runSimpleBashScript("qemu-img info " + sourcePath + "|grep backing") == null) {
+                Script.runSimpleBashScript("cp -f " + sourcePath + " " + destPath);
+
+            } else {
+                Script.runSimpleBashScript("qemu-img convert -f " + sourceFormat
+                    + " -O " + destFormat
+                    + " " + sourcePath
+                    + " " + destPath);
+            }
         } else if ((srcPool.getType() != StoragePoolType.RBD) && (destPool.getType() == StoragePoolType.RBD))  {
             Script.runSimpleBashScript("qemu-img convert -f " + sourceFormat
                     + " -O " + destFormat
@@ -717,38 +723,6 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
 
         return newDisk;
-    }
-
-    @Override
-    public KVMStoragePool getStoragePoolByURI(String uri) {
-        URI storageUri = null;
-
-        try {
-            storageUri = new URI(uri);
-        } catch (URISyntaxException e) {
-            throw new CloudRuntimeException(e.toString());
-        }
-
-        String sourcePath = null;
-        String uuid = null;
-        String sourceHost = "";
-        StoragePoolType protocal = null;
-        if (storageUri.getScheme().equalsIgnoreCase("nfs")) {
-            sourcePath = storageUri.getPath();
-            sourcePath = sourcePath.replace("//", "/");
-            sourceHost = storageUri.getHost();
-            uuid = UUID.nameUUIDFromBytes(
-                    new String(sourceHost + sourcePath).getBytes()).toString();
-            protocal = StoragePoolType.NetworkFilesystem;
-        }
-
-        return createStoragePool(uuid, sourceHost, 0, sourcePath, "", protocal);
-    }
-
-    @Override
-    public KVMPhysicalDisk getPhysicalDiskFromURI(String uri) {
-        // TODO Auto-generated method stub
-        return null;
     }
 
     @Override

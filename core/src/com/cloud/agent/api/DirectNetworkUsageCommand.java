@@ -24,11 +24,15 @@ public class DirectNetworkUsageCommand extends Command {
     private List<String> publicIps;
     private Date start;
     private Date end;
+    private String includeZones;
+    private String excludeZones;
 
-	public DirectNetworkUsageCommand(List<String> publicIps, Date start, Date end) {
+	public DirectNetworkUsageCommand(List<String> publicIps, Date start, Date end, String includeZones, String excludeZones) {
 	    this.setPublicIps(publicIps);
 	    this.setStart(start);
 	    this.setEnd(end);
+	    this.setIncludeZones(includeZones);
+	    this.setExcludeZones(excludeZones);
     }
 	
 	@Override
@@ -59,4 +63,21 @@ public class DirectNetworkUsageCommand extends Command {
     public Date getEnd() {
         return end;
     }
+
+	public String getIncludeZones() {
+		return includeZones;
+	}
+
+	public void setIncludeZones(String includeZones) {
+		this.includeZones = includeZones;
+	}
+
+	public String getExcludeZones() {
+		return excludeZones;
+	}
+
+	public void setExcludeZones(String excludeZones) {
+		this.excludeZones = excludeZones;
+	}
+    
 }

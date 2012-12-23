@@ -16,6 +16,9 @@
 // under the License.
 package com.cloud.api;
 
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
+
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -127,8 +130,8 @@ import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.VpnUsersResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.bouncycastle.util.IPAddress;
 
+import com.cloud.api.response.S3Response;
 import com.cloud.async.AsyncJob;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
@@ -215,6 +218,7 @@ import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSCategoryVO;
+import com.cloud.storage.S3;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
@@ -226,6 +230,7 @@ import com.cloud.storage.StorageStats;
 import com.cloud.storage.Swift;
 import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateHostVO;
+import com.cloud.storage.VMTemplateS3VO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateSwiftVO;
 import com.cloud.storage.VMTemplateVO;
@@ -632,6 +637,25 @@ public class ApiResponseHelper implements ResponseGenerator {
         swiftResponse.setUsername(swift.getUserName());
         swiftResponse.setObjectName("swift");
         return swiftResponse;
+    }
+
+    @Override
+    public S3Response createS3Response(final S3 result) {
+
+        final S3Response response = new S3Response();
+
+        response.setAccessKey(result.getAccessKey());
+        response.setConnectionTimeout(result.getConnectionTimeout());
+        response.setEndPoint(result.getEndPoint());
+        response.setHttpsFlag(result.getHttpsFlag());
+        response.setMaxErrorRetry(result.getMaxErrorRetry());
+        response.setObjectId(result.getId());
+        response.setSecretKey(result.getSecretKey());
+        response.setSocketTimeout(result.getSocketTimeout());
+        response.setTemplateBucketName(result.getBucketName());
+
+        return response;
+
     }
 
     @Override
@@ -1751,7 +1775,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public List<TemplateResponse> createIsoResponses(long isoId, Long zoneId, boolean readyOnly) {
 
-        List<TemplateResponse> isoResponses = new ArrayList<TemplateResponse>();
+        final List<TemplateResponse> isoResponses = new ArrayList<TemplateResponse>();
         VirtualMachineTemplate iso = findTemplateById(isoId);
         if (iso.getTemplateType() == TemplateType.PERHOST) {
             TemplateResponse isoResponse = new TemplateResponse();
@@ -1789,11 +1813,17 @@ public class ApiResponseHelper implements ResponseGenerator {
             return isoResponses;
         } else {
             if (zoneId == null || zoneId == -1) {
-                isoResponses = createSwiftIsoResponses(iso);
+                isoResponses.addAll(createSwiftIsoResponses(iso));
                 if (!isoResponses.isEmpty()) {
                     return isoResponses;
                 }
-                List<DataCenterVO> dcs = new ArrayList<DataCenterVO>();
+
+                isoResponses.addAll(createS3IsoResponses(iso));
+                if (!isoResponses.isEmpty()) {
+                    return isoResponses;
+                }
+
+                final List<DataCenterVO> dcs = new ArrayList<DataCenterVO>();
                 dcs.addAll(ApiDBUtils.listZones());
                 for (DataCenterVO dc : dcs) {
                     isoResponses.addAll(createIsoResponses(iso, dc.getId(), readyOnly));
@@ -1803,6 +1833,65 @@ public class ApiResponseHelper implements ResponseGenerator {
                 return createIsoResponses(iso, zoneId, readyOnly);
             }
         }
+    }
+
+    private List<? extends TemplateResponse> createS3IsoResponses(final VirtualMachineTemplate iso) {
+
+        final VMTemplateS3VO s3Iso = ApiDBUtils.findTemplateS3Ref(iso.getId());
+
+        if (s3Iso == null) {
+            return emptyList();
+        }
+
+        final TemplateResponse templateResponse = new TemplateResponse();
+
+        templateResponse.setId(iso.getUuid());
+        templateResponse.setName(iso.getName());
+        templateResponse.setDisplayText(iso.getDisplayText());
+        templateResponse.setPublic(iso.isPublicTemplate());
+        templateResponse.setExtractable(iso.isExtractable());
+        templateResponse.setCreated(s3Iso.getCreated());
+        templateResponse.setReady(true);
+        templateResponse.setBootable(iso.isBootable());
+        templateResponse.setFeatured(iso.isFeatured());
+        templateResponse.setCrossZones(iso.isCrossZones());
+        templateResponse.setChecksum(iso.getChecksum());
+        templateResponse.setDetails(iso.getDetails());
+
+        final GuestOS os = ApiDBUtils.findGuestOSById(iso.getGuestOSId());
+
+        if (os != null) {
+            templateResponse.setOsTypeId(os.getUuid());
+            templateResponse.setOsTypeName(os.getDisplayName());
+        } else {
+            templateResponse.setOsTypeId("");
+            templateResponse.setOsTypeName("");
+        }
+
+        final Account account = ApiDBUtils.findAccountByIdIncludingRemoved(iso.getAccountId());
+        populateAccount(templateResponse, account.getId());
+        populateDomain(templateResponse, account.getDomainId());
+
+        boolean isAdmin = false;
+        if ((account == null) || BaseCmd.isAdmin(account.getType())) {
+            isAdmin = true;
+        }
+
+        // If the user is an admin, add the template download status
+        if (isAdmin || account.getId() == iso.getAccountId()) {
+            // add download status
+            templateResponse.setStatus("Successfully Installed");
+        }
+
+        final Long isoSize = s3Iso.getSize();
+        if (isoSize > 0) {
+            templateResponse.setSize(isoSize);
+        }
+
+        templateResponse.setObjectName("iso");
+
+        return singletonList(templateResponse);
+
     }
 
     private List<TemplateResponse> createSwiftIsoResponses(VirtualMachineTemplate iso) {
@@ -2526,7 +2615,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         // populate network offering information
-        NetworkOffering networkOffering = ApiDBUtils.findNetworkOfferingById(network.getNetworkOfferingId());
+        NetworkOffering networkOffering = (NetworkOffering) ApiDBUtils.findNetworkOfferingById(network.getNetworkOfferingId());
         if (networkOffering != null) {
             response.setNetworkOfferingId(networkOffering.getUuid());
             response.setNetworkOfferingName(networkOffering.getName());

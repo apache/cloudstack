@@ -174,6 +174,10 @@ cloudStack.docs = {
   desc: 'Yes makes the offering available to all domains. No limits the scope to a subdomain; you will be prompted for the subdomain\'s name.',
   externalLink: ''
   },
+  helpDiskOfferingDomain: {
+  desc: 'Select the subdomain in which this offering is available',
+  externalLink: ''
+  },
   // Add domain
   helpDomainName: {
   desc: 'Any desired name for the new sub-domain. Must be unique within the current domain.',
@@ -361,6 +365,10 @@ cloudStack.docs = {
   desc: 'Any desired name for the network offering',
   externalLink: ''
   },
+  helpNetworkOfferingDescription: {
+  desc: 'A short description of the offering that can be displayed to users',
+  externalLink: ''
+  },
   helpNetworkOfferingNetworkRate: {
   desc: 'Allowed data transfer rate in MB per second',
   externalLink: ''
@@ -375,6 +383,38 @@ cloudStack.docs = {
   },
   helpNetworkOfferingSpecifyVLAN: {
   desc: '(Isolated guest networks only) Indicate whether a VLAN should be specified when this offering is used',
+  externalLink: ''
+  },
+  helpNetworkOfferingVPC: {
+  desc: 'Specify whether this offering is for a virtual private cloud',
+  externalLink: ''
+  },
+  helpNetworkOfferingSystemOffering: {
+  desc: 'Choose the system service offering that you want the virtual routers to use in this network',
+  externalLink: ''
+  },
+  helpNetworkOfferingLBIsolation: {
+  desc: 'Specify what type of load balancer isolation you want for the network: Shared or Dedicated',
+  externalLink: ''
+  },
+  helpNetworkOfferingMode: {
+  desc: 'Choose Inline or Side by Side to specify whether a firewall is placed in front of the load balancing device (inline) or in parallel with it (side-by-side)',
+  externalLink: ''
+  },
+  helpNetworkOfferingAssociatePublicIP: {
+  desc: 'Select this option if you want to assign a public IP address to the VMs deployed in the guest network',
+  externalLink: ''
+  },
+  helpNetworkOfferingRedundantRouterCapability: {
+  desc: 'Select this option if you want to use two virtual routers in the network for uninterrupted connection: one operating as the master virtual router and the other as the backup',
+  externalLink: ''
+  },
+  helpNetworkOfferingConserveMode: {
+  desc: 'Check this box to use conserve mode, where network resources are allocated only when the first VM starts. You can define more than one service on the same public IP only when conserve mode is on.',
+  externalLink: ''
+  },
+  helpNetworkOfferingTags: {
+  desc: 'Network tag to specify which physical network to use',
   externalLink: ''
   },
   // Add pod
@@ -570,6 +610,10 @@ cloudStack.docs = {
   desc: 'Yes makes the offering available to all domains. No limits the scope to a subdomain; you will be prompted for the subdomain\'s name.',
   externalLink: ''
   },
+  helpSystemOfferingDomain: {
+  desc: 'Select the subdomain in which this offering is available',
+  externalLink: ''
+  },
   // Add tier
   helpTierName: {
   desc: 'A unique name for the tier',
@@ -671,14 +715,118 @@ cloudStack.docs = {
   desc: 'The netmask associated with the VPC gateway',
   externalLink: ''
   },
+  // Add VPN customer gateway
+  helpVPNGatewayName: {
+  desc: 'A unique name for the VPN customer gateway',
+  externalLink: ''
+  },
+  helpVPNGatewayGateway: {
+  desc: 'The IP address for the remote gateway',
+  externalLink: ''
+  },
+  helpVPNGatewayCIDRList: {
+  desc: 'The guest CIDR list of the remote subnets. Enter a CIDR or a comma-separated list. Do not overlap the VPC\'s CIDR or another guest CIDR.',
+  externalLink: ''
+  },
+  helpVPNGatewayIPsecPresharedKey: {
+  desc: 'Enter a secret key value. The endpoints of the VPN share a secret key. This is used to authenticate the customer gateway and the VPC VPN gateway to each other.',
+  externalLink: ''
+  },
+  helpVPNGatewayIKEEncryption: {
+  desc: 'Enter AES128, AES192, AES256, or 3DES to specify the Internet Key Exchange (IKE) policy for phase-1. Authentication is accomplished with Preshared Keys.',
+  externalLink: ''
+  },
+  helpVPNGatewayIKEHash: {
+  desc: 'Enter SHA1 or MD5 to specify the IKE hash algorithm for phase-1',
+  externalLink: ''
+  },
+  helpVPNGatewayIKEDH: {
+  desc: 'Enter Group-5 (1536-bit), Group-2 (1024-bit), or None to specify the public-key cryptography protocol to use. The 1536-bit Diffie-Hellman group is used within IKE to establish session keys.',
+  externalLink: ''
+  },
+  helpVPNGatewayESPEncryption: {
+  desc: 'Enter AES128, AES192, AES256, or 3DES to specify the Encapsulating Security Payload (ESP) algorithm within phase-2',
+  externalLink: ''
+  },
+  helpVPNGatewayESPHash: {
+  desc: 'Enter SHA1 or MD5 to specify the Encapsulating Security Payload (ESP) hash for phase-2',
+  externalLink: ''
+  },
+  helpVPNGatewayPerfectForwardSecrecy: {
+  desc: 'Choose Group-5 (1536-bit), Group-2 (1024-bit), or None to specify whether to enforce a new Diffie-Hellman key exchange and, if so, what size of DH group to use',
+  externalLink: ''	  
+  },
+  helpVPNGatewayIKELifetime: {
+  desc: 'The phase-1 lifetime of the security association in seconds. Whenever the time expires, a new phase-1 exchange is performed.',
+  externalLink: ''  
+  },
+  helpVPNGatewayESPLifetime: {
+  desc: 'The phase-2 lifetime of the security association in seconds. Whenever the time expires, a re-key is initiated to provide a new IPsec encryption and authentication session keys.',
+  externalLink: ''  
+  },
+  helpVPNGatewayDeadPeerDetection: {
+  desc: 'Check this to make the virtual router query its IKE peer at regular intervals to ensure continued availability. It is recommended to have the same DPD setting on both sides of the VPN connection.',
+  externalLink: ''  
+  },
   // Copy template
   helpCopyTemplateDestination: {
   desc: 'The zone to which you want to copy the template',
   externalLink: ''
   },
+  // Enter token
+  helpEnterTokenProjectID: {
+  desc: 'Unique identifying number for the project. Use the number you received in the invitation email',
+  externalLink: ''
+  },
+  helpEnterTokenToken: {
+  desc: 'Unique security code that authorizes you to accept the project invitation. Use the token you received in the invitation email',
+  externalLink: ''
+  },
   // Register template
   helpRegisterTemplate: {
   desc: '',
+  externalLink: ''
+  },
+  // Register template
+  helpRegisterTemplate: {
+  desc: '',
+  externalLink: ''
+  },
+  // Register ISO
+  helpRegisterISOName: {
+  desc: 'A unique name for the ISO. This will be visible to users, so choose something descriptive.',
+  externalLink: ''
+  },
+  helpRegisterISODescription: {
+  desc: 'Display text describing the ISO. This will be visible to users, so choose something descriptive.',
+  externalLink: ''
+  },
+  helpRegisterISOURL: {
+  desc: 'The Management Server will download the file from the specified URL, such as http://my.web.server/filename.iso',
+  externalLink: ''
+  },
+  helpRegisterISOZone: {
+  desc: 'Choose the zone where you want the ISO to be available, or All Zones to make it available throughout the cloud',
+  externalLink: ''
+  },
+  helpRegisterISOBootable: {
+  desc: 'Indicate whether the machine can be booted using this ISO',
+  externalLink: ''
+  },
+  helpRegisterISOOSType: {
+  desc: 'Operating system of the VM represented by the ISO. If the OS type of the ISO is not listed, choose Other.',
+  externalLink: ''
+  },
+  helpRegisterISOExtractable: {
+  desc: 'Whether the ISO is extractable or not',
+  externalLink: ''
+  },
+  helpRegisterISOPublic: {
+  desc: 'Check this to make the ISO accessible to all users. The ISO will appear in the Community ISOs list.',
+  externalLink: ''
+  },
+  helpRegisterISOFeatured: {
+  desc: 'Check this to make the ISO more prominent for users. The ISO will appear in the Featured ISOs list.',
   externalLink: ''
   },
   // Register template

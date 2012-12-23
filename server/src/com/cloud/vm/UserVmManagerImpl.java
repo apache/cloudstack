@@ -41,21 +41,9 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
 import com.cloud.acl.ControlledEntity.ACLType;
+import com.cloud.acl.SecurityChecker.AccessType;
 import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.AttachIsoCommand;
-import com.cloud.agent.api.AttachVolumeAnswer;
-import com.cloud.agent.api.AttachVolumeCommand;
-import com.cloud.agent.api.ComputeChecksumCommand;
-import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
-import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
-import com.cloud.agent.api.GetVmStatsAnswer;
-import com.cloud.agent.api.GetVmStatsCommand;
-import com.cloud.agent.api.SnapshotCommand;
-import com.cloud.agent.api.StartAnswer;
-import com.cloud.agent.api.StopAnswer;
-import com.cloud.agent.api.UpgradeSnapshotCommand;
-import com.cloud.agent.api.VmStatsEntry;
+import com.cloud.agent.api.*;
 import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -101,37 +89,18 @@ import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.UsageEventDao;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.ManagementServerException;
-import com.cloud.exception.OperationTimedoutException;
-import com.cloud.exception.PermissionDeniedException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.exception.StorageUnavailableException;
-import com.cloud.exception.VirtualMachineMigrationException;
+import com.cloud.exception.*;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
-import com.cloud.network.IPAddressVO;
-import com.cloud.network.LoadBalancerVMMapVO;
-import com.cloud.network.Network;
+import com.cloud.network.*;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.network.NetworkManager;
-import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.PhysicalNetwork;
-import com.cloud.network.dao.FirewallRulesDao;
-import com.cloud.network.dao.IPAddressDao;
-import com.cloud.network.dao.LoadBalancerVMMapDao;
-import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.NetworkServiceMapDao;
-import com.cloud.network.dao.PhysicalNetworkDao;
+import com.cloud.network.dao.*;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.rules.FirewallManager;
@@ -159,49 +128,18 @@ import com.cloud.resource.ResourceState;
 import com.cloud.server.Criteria;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.GuestOSVO;
-import com.cloud.storage.Snapshot;
-import com.cloud.storage.SnapshotVO;
-import com.cloud.storage.Storage;
+import com.cloud.storage.*;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Storage.TemplateType;
-import com.cloud.storage.StorageManager;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.StoragePoolStatus;
-import com.cloud.storage.StoragePoolVO;
-import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VMTemplateZoneVO;
-import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.Type;
-import com.cloud.storage.VolumeHostVO;
-import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.DiskOfferingDao;
-import com.cloud.storage.dao.GuestOSDao;
-import com.cloud.storage.dao.SnapshotDao;
-import com.cloud.storage.dao.StoragePoolDao;
-import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VMTemplateDetailsDao;
-import com.cloud.storage.dao.VMTemplateHostDao;
-import com.cloud.storage.dao.VMTemplateZoneDao;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.dao.VolumeHostDao;
+import com.cloud.storage.dao.*;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
-import com.cloud.user.AccountService;
-import com.cloud.user.AccountVO;
-import com.cloud.user.ResourceLimitService;
-import com.cloud.user.SSHKeyPair;
-import com.cloud.user.User;
-import com.cloud.user.UserContext;
-import com.cloud.user.UserVO;
+import com.cloud.user.*;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserDao;
@@ -227,12 +165,16 @@ import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VirtualMachine.State;
-import com.cloud.vm.dao.InstanceGroupDao;
-import com.cloud.vm.dao.InstanceGroupVMMapDao;
-import com.cloud.vm.dao.NicDao;
-import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
-import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.dao.*;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
+
+import javax.ejb.Local;
+import javax.naming.ConfigurationException;
+import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 @Local(value = { UserVmManager.class, UserVmService.class })
 public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager {
@@ -1547,7 +1489,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 if( snapshot.getSwiftId() != null && snapshot.getSwiftId() != 0 ) {
                     _snapshotMgr.downloadSnapshotsFromSwift(snapshot);
                 }
-                cmd = new CreatePrivateTemplateFromSnapshotCommand(pool.getUuid(), secondaryStorageURL, dcId, accountId, snapshot.getVolumeId(), backupSnapshotUUID, snapshot.getName(),
+                cmd = new CreatePrivateTemplateFromSnapshotCommand(pool, secondaryStorageURL, dcId, accountId, snapshot.getVolumeId(), backupSnapshotUUID, snapshot.getName(),
                         origTemplateInstallPath, templateId, name, _createprivatetemplatefromsnapshotwait);
             } else if (volumeId != null) {
                 VolumeVO volume = _volsDao.findById(volumeId);
@@ -1569,7 +1511,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 secondaryStorageURL = secondaryStorageHost.getStorageUrl();
 
                 pool = _storagePoolDao.findById(volume.getPoolId());
-                cmd = new CreatePrivateTemplateFromVolumeCommand(pool.getUuid(), secondaryStorageURL, templateId, accountId, command.getTemplateName(), uniqueName, volume.getPath(), vmName, _createprivatetemplatefromvolumewait);
+                cmd = new CreatePrivateTemplateFromVolumeCommand(pool, secondaryStorageURL, templateId, accountId, command.getTemplateName(), uniqueName, volume.getPath(), vmName, _createprivatetemplatefromvolumewait);
 
             } else {
                 throw new CloudRuntimeException("Creating private Template need to specify snapshotId or volumeId");
@@ -2176,8 +2118,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             isSecurityGroupEnabledNetworkUsed = true;
 
         } else {
-            // Verify that all the networks are Direct/Guest/AccountSpecific; can't create combination of SG enabled network and
-            // regular networks
+            // Verify that all the networks are Shared/Guest; can't create combination of SG enabled and disabled networks 
             for (Long networkId : networkIdList) {
                 NetworkVO network = _networkDao.findById(networkId);
 
@@ -2193,21 +2134,17 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                     }
 
                     isSecurityGroupEnabledNetworkUsed = true;
-                }
+                }            
 
-                if (network.getTrafficType() != TrafficType.Guest || network.getGuestType() != Network.GuestType.Shared || (network.getGuestType() == Network.GuestType.Shared && !isSecurityGroupEnabled)) {
-                    throw new InvalidParameterValueException("Can specify only Direct Guest Account specific networks when deploy vm in Security Group enabled zone");
+                if (!(network.getTrafficType() == TrafficType.Guest && network.getGuestType() == Network.GuestType.Shared)) {
+                    throw new InvalidParameterValueException("Can specify only Shared Guest networks when" +
+                    		" deploy vm in Advance Security Group enabled zone");
                 }
 
                 // Perform account permission check
-                if (network.getGuestType() != Network.GuestType.Shared) {
-                    // Check account permissions
-                    List<NetworkVO> networkMap = _networkDao.listBy(owner.getId(), network.getId());
-                    if (networkMap == null || networkMap.isEmpty()) {
-                        throw new PermissionDeniedException("Unable to create a vm using network with id " + network.getId() + ", permission denied");
-                    }
+                if (network.getAclType() == ACLType.Account) {
+                    _accountMgr.checkAccess(caller, AccessType.UseNetwork, false, network);
                 }
-
                 networkList.add(network);
             }
         }
@@ -2268,7 +2205,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             if (requiredOfferings.get(0).getState() == NetworkOffering.State.Enabled) {
                 // get Virtual networks
                 List<NetworkVO> virtualNetworks = _networkMgr.listNetworksForAccount(owner.getId(), zone.getId(), Network.GuestType.Isolated);
-
                 if (virtualNetworks.isEmpty()) {
                     long physicalNetworkId = _networkMgr.findPhysicalNetworkId(zone.getId(), requiredOfferings.get(0).getTags(), requiredOfferings.get(0).getTrafficType());
                     // Validate physical network
@@ -2284,7 +2220,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 } else if (virtualNetworks.size() > 1) {
                     throw new InvalidParameterValueException("More than 1 default Isolated networks are found for account " + owner + "; please specify networkIds");
                 } else {
-                    defaultNetwork = virtualNetworks.get(0);
+                    defaultNetwork = _networkDao.findById(virtualNetworks.get(0).getId());
                 }
             } else {
                 throw new InvalidParameterValueException("Required network offering id=" + requiredOfferings.get(0).getId() + " is not in " + NetworkOffering.State.Enabled);
@@ -2864,6 +2800,10 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (ip != null && ip.getSystem()) {
             UserContext ctx = UserContext.current();
             try {
+                long networkId = ip.getAssociatedWithNetworkId();
+                Network guestNetwork = _networkMgr.getNetwork(networkId);
+                NetworkOffering offering = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
+                assert (offering.getAssociatePublicIP() == true) : "User VM should not have system owned public IP associated with it when offering configured not to associate public IP.";
                 _rulesMgr.disableStaticNat(ip.getId(), ctx.getCaller(), ctx.getCallerUserId(), true);
             } catch (Exception ex) {
                 s_logger.warn("Failed to disable static nat and release system ip " + ip + " as a part of vm " + profile.getVirtualMachine() + " stop due to exception ", ex);
@@ -3183,10 +3123,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         if (zone != null) {
             sc.setParameters("dataCenterId", zone);
-
-            if (state == null) {
-                sc.setParameters("stateNEQ", "Destroyed");
-            }
         }
         if (pod != null) {
             sc.setParameters("podId", pod);
@@ -3632,7 +3568,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                     if (requiredOfferings.get(0).getState() == NetworkOffering.State.Enabled) {
                         // get Virtual networks
                         List<NetworkVO> virtualNetworks = _networkMgr.listNetworksForAccount(newAccount.getId(), zone.getId(), Network.GuestType.Isolated);
-
                         if (virtualNetworks.isEmpty()) {
                             long physicalNetworkId = _networkMgr.findPhysicalNetworkId(zone.getId(), requiredOfferings.get(0).getTags(), requiredOfferings.get(0).getTrafficType());
                             // Validate physical network
@@ -3640,7 +3575,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                             if (physicalNetwork == null) {
                                 throw new InvalidParameterValueException("Unable to find physical network with id: "+physicalNetworkId   + " and tag: " +requiredOfferings.get(0).getTags());
                             }
-
                             s_logger.debug("Creating network for account " + newAccount + " from the network offering id=" +
                         requiredOfferings.get(0).getId() + " as a part of deployVM process");
                             Network newNetwork = _networkMgr.createGuestNetwork(requiredOfferings.get(0).getId(),
@@ -3651,7 +3585,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                             throw new InvalidParameterValueException("More than 1 default Isolated networks are found " +
                                     "for account " + newAccount + "; please specify networkIds");
                         } else {
-                            defaultNetwork = virtualNetworks.get(0);
+                            defaultNetwork = _networkDao.findById(virtualNetworks.get(0).getId());
                         }
                     } else {
                         throw new InvalidParameterValueException("Required network offering id=" + requiredOfferings.get(0).getId() + " is not in " + NetworkOffering.State.Enabled);

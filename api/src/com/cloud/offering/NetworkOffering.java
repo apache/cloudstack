@@ -107,6 +107,8 @@ public interface NetworkOffering {
 
     boolean getElasticIp();
 
+    boolean getAssociatePublicIP();
+
     boolean getElasticLb();
 
     boolean getSpecifyIpRanges();

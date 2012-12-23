@@ -92,6 +92,7 @@ import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.VpnUsersResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 
+import com.cloud.api.response.S3Response;
 
 import com.cloud.async.AsyncJob;
 import com.cloud.capacity.Capacity;
@@ -144,6 +145,7 @@ import com.cloud.projects.ProjectAccount;
 import com.cloud.projects.ProjectInvitation;
 import com.cloud.server.ResourceTag;
 import com.cloud.storage.GuestOS;
+import com.cloud.storage.S3;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Swift;
@@ -296,6 +298,8 @@ public interface ResponseGenerator {
 
     SwiftResponse createSwiftResponse(Swift swift);
 
+    S3Response createS3Response(S3 result);
+
     PhysicalNetworkResponse createPhysicalNetworkResponse(PhysicalNetwork result);
 
     ServiceResponse createNetworkServiceResponse(Service service);
@@ -375,5 +379,4 @@ public interface ResponseGenerator {
     GuestOSResponse createGuestOSResponse(GuestOS os);
 
     SnapshotScheduleResponse createSnapshotScheduleResponse(SnapshotSchedule sched);
-
 }

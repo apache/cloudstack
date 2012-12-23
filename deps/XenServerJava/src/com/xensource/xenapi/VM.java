@@ -1,18 +1,19 @@
-/* Copyright (c) Citrix Systems, Inc.
+/*
+ * Copyright (c) Citrix Systems, Inc.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  *   1) Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
- * 
+ *
  *   2) Redistributions in binary form must reproduce the above
  *      copyright notice, this list of conditions and the following
  *      disclaimer in the documentation and/or other materials
  *      provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -26,6 +27,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 
 package com.xensource.xenapi;
 
@@ -51,7 +53,7 @@ import org.apache.xmlrpc.XmlRpcException;
 public class VM extends XenAPIObject {
 
     /**
-     * The XenAPI reference to this object.
+     * The XenAPI reference (OpaqueRef) to this object.
      */
     protected final String ref;
 
@@ -62,6 +64,9 @@ public class VM extends XenAPIObject {
        this.ref = ref;
     }
 
+    /**
+     * @return The XenAPI reference (OpaqueRef) to this object.
+     */
     public String toWireString() {
        return this.ref;
     }
@@ -161,6 +166,14 @@ public class VM extends XenAPIObject {
             print.printf("%1$20s: %2$s\n", "biosStrings", this.biosStrings);
             print.printf("%1$20s: %2$s\n", "protectionPolicy", this.protectionPolicy);
             print.printf("%1$20s: %2$s\n", "isSnapshotFromVmpp", this.isSnapshotFromVmpp);
+            print.printf("%1$20s: %2$s\n", "appliance", this.appliance);
+            print.printf("%1$20s: %2$s\n", "startDelay", this.startDelay);
+            print.printf("%1$20s: %2$s\n", "shutdownDelay", this.shutdownDelay);
+            print.printf("%1$20s: %2$s\n", "order", this.order);
+            print.printf("%1$20s: %2$s\n", "VGPUs", this.VGPUs);
+            print.printf("%1$20s: %2$s\n", "attachedPCIs", this.attachedPCIs);
+            print.printf("%1$20s: %2$s\n", "suspendSR", this.suspendSR);
+            print.printf("%1$20s: %2$s\n", "version", this.version);
             return writer.toString();
         }
 
@@ -235,6 +248,14 @@ public class VM extends XenAPIObject {
             map.put("bios_strings", this.biosStrings == null ? new HashMap<String, String>() : this.biosStrings);
             map.put("protection_policy", this.protectionPolicy == null ? new VMPP("OpaqueRef:NULL") : this.protectionPolicy);
             map.put("is_snapshot_from_vmpp", this.isSnapshotFromVmpp == null ? false : this.isSnapshotFromVmpp);
+            map.put("appliance", this.appliance == null ? new VMAppliance("OpaqueRef:NULL") : this.appliance);
+            map.put("start_delay", this.startDelay == null ? 0 : this.startDelay);
+            map.put("shutdown_delay", this.shutdownDelay == null ? 0 : this.shutdownDelay);
+            map.put("order", this.order == null ? 0 : this.order);
+            map.put("VGPUs", this.VGPUs == null ? new LinkedHashSet<VGPU>() : this.VGPUs);
+            map.put("attached_PCIs", this.attachedPCIs == null ? new LinkedHashSet<PCI>() : this.attachedPCIs);
+            map.put("suspend_SR", this.suspendSR == null ? new SR("OpaqueRef:NULL") : this.suspendSR);
+            map.put("version", this.version == null ? 0 : this.version);
             return map;
         }
 
@@ -259,7 +280,7 @@ public class VM extends XenAPIObject {
          */
         public String nameLabel;
         /**
-         * a notes field containg human-readable description
+         * a notes field containing human-readable description
          */
         public String nameDescription;
         /**
@@ -439,7 +460,7 @@ public class VM extends XenAPIObject {
          */
         public Boolean haAlwaysRun;
         /**
-         * Only defined if ha_always_run is set possible values: "best-effort" meaning "try to restart this VM if possible but don't consider the Pool to be overcommitted if this is not possible"; and a numerical restart priority (e.g. 1, 2, 3,...)
+         * has possible values: "best-effort" meaning "try to restart this VM if possible but don't consider the Pool to be overcommitted if this is not possible"; "restart" meaning "this VM should be restarted"; "" meaning "do not try to restart this VM"
          */
         public String haRestartPriority;
         /**
@@ -502,6 +523,38 @@ public class VM extends XenAPIObject {
          * true if this snapshot was created by the protection policy
          */
         public Boolean isSnapshotFromVmpp;
+        /**
+         * the appliance to which this VM belongs
+         */
+        public VMAppliance appliance;
+        /**
+         * The delay to wait before proceeding to the next order in the startup sequence (seconds)
+         */
+        public Long startDelay;
+        /**
+         * The delay to wait before proceeding to the next order in the shutdown sequence (seconds)
+         */
+        public Long shutdownDelay;
+        /**
+         * The point in the startup or shutdown sequence at which this VM will be started
+         */
+        public Long order;
+        /**
+         * Virtual GPUs
+         */
+        public Set<VGPU> VGPUs;
+        /**
+         * Currently passed-through PCI devices
+         */
+        public Set<PCI> attachedPCIs;
+        /**
+         * The SR on which a suspend image is stored
+         */
+        public SR suspendSR;
+        /**
+         * The number of times this VM has been recovered
+         */
+        public Long version;
     }
 
     /**
@@ -1276,10 +1329,11 @@ public class VM extends XenAPIObject {
 
     /**
      * Get the PCI_bus field of the given VM.
+     * @deprecated
      *
      * @return value of the field
      */
-    public String getPCIBus(Connection c) throws
+   @Deprecated public String getPCIBus(Connection c) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
@@ -1463,10 +1517,11 @@ public class VM extends XenAPIObject {
 
     /**
      * Get the ha_always_run field of the given VM.
+     * @deprecated
      *
      * @return value of the field
      */
-    public Boolean getHaAlwaysRun(Connection c) throws
+   @Deprecated public Boolean getHaAlwaysRun(Connection c) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
@@ -1748,6 +1803,142 @@ public class VM extends XenAPIObject {
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
             return Types.toBoolean(result);
+    }
+
+    /**
+     * Get the appliance field of the given VM.
+     *
+     * @return value of the field
+     */
+    public VMAppliance getAppliance(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "VM.get_appliance";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toVMAppliance(result);
+    }
+
+    /**
+     * Get the start_delay field of the given VM.
+     *
+     * @return value of the field
+     */
+    public Long getStartDelay(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "VM.get_start_delay";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toLong(result);
+    }
+
+    /**
+     * Get the shutdown_delay field of the given VM.
+     *
+     * @return value of the field
+     */
+    public Long getShutdownDelay(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "VM.get_shutdown_delay";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toLong(result);
+    }
+
+    /**
+     * Get the order field of the given VM.
+     *
+     * @return value of the field
+     */
+    public Long getOrder(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "VM.get_order";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toLong(result);
+    }
+
+    /**
+     * Get the VGPUs field of the given VM.
+     *
+     * @return value of the field
+     */
+    public Set<VGPU> getVGPUs(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "VM.get_VGPUs";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toSetOfVGPU(result);
+    }
+
+    /**
+     * Get the attached_PCIs field of the given VM.
+     *
+     * @return value of the field
+     */
+    public Set<PCI> getAttachedPCIs(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "VM.get_attached_PCIs";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toSetOfPCI(result);
+    }
+
+    /**
+     * Get the suspend_SR field of the given VM.
+     *
+     * @return value of the field
+     */
+    public SR getSuspendSR(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "VM.get_suspend_SR";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toSR(result);
+    }
+
+    /**
+     * Get the version field of the given VM.
+     *
+     * @return value of the field
+     */
+    public Long getVersion(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "VM.get_version";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toLong(result);
     }
 
     /**
@@ -2139,10 +2330,11 @@ public class VM extends XenAPIObject {
 
     /**
      * Set the PCI_bus field of the given VM.
+     * @deprecated
      *
      * @param PCIBus New value to set
      */
-    public void setPCIBus(Connection c, String PCIBus) throws
+   @Deprecated public void setPCIBus(Connection c, String PCIBus) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
@@ -2360,6 +2552,22 @@ public class VM extends XenAPIObject {
         String method_call = "VM.remove_from_blocked_operations";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(key)};
+        Map response = c.dispatch(method_call, method_params);
+        return;
+    }
+
+    /**
+     * Set the suspend_SR field of the given VM.
+     *
+     * @param suspendSR New value to set
+     */
+    public void setSuspendSR(Connection c, SR suspendSR) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "VM.set_suspend_SR";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(suspendSR)};
         Map response = c.dispatch(method_call, method_params);
         return;
     }
@@ -3302,10 +3510,11 @@ public class VM extends XenAPIObject {
 
     /**
      * Set the value of the ha_always_run
+     * @deprecated
      *
      * @param value The value
      */
-    public void setHaAlwaysRun(Connection c, Boolean value) throws
+   @Deprecated public void setHaAlwaysRun(Connection c, Boolean value) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
@@ -3599,10 +3808,11 @@ public class VM extends XenAPIObject {
 
     /**
      * Return true if the VM is currently 'co-operative' i.e. is expected to reach a balloon target and actually has done
+     * @deprecated
      *
      * @return Task
      */
-    public Task getCooperativeAsync(Connection c) throws
+   @Deprecated public Task getCooperativeAsync(Connection c) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
@@ -3616,10 +3826,11 @@ public class VM extends XenAPIObject {
 
     /**
      * Return true if the VM is currently 'co-operative' i.e. is expected to reach a balloon target and actually has done
+     * @deprecated
      *
      * @return true if the VM is currently 'co-operative'; false otherwise
      */
-    public Boolean getCooperative(Connection c) throws
+   @Deprecated public Boolean getCooperative(Connection c) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
@@ -3824,6 +4035,92 @@ public class VM extends XenAPIObject {
     }
 
     /**
+     * Migrate the VM to another host.  This can only be called when the specified VM is in the Running state.
+     *
+     * @param dest The result of a Host.migrate_receive call.
+     * @param live Live migration
+     * @param vdiMap Map of source VDI to destination SR
+     * @param vifMap Map of source VIF to destination network
+     * @param options Other parameters
+     * @return Task
+     */
+    public Task migrateSendAsync(Connection c, Map<String, String> dest, Boolean live, Map<VDI, SR> vdiMap, Map<VIF, Network> vifMap, Map<String, String> options) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException,
+       Types.VmBadPowerState {
+        String method_call = "Async.VM.migrate_send";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(dest), Marshalling.toXMLRPC(live), Marshalling.toXMLRPC(vdiMap), Marshalling.toXMLRPC(vifMap), Marshalling.toXMLRPC(options)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+        return Types.toTask(result);
+    }
+
+    /**
+     * Migrate the VM to another host.  This can only be called when the specified VM is in the Running state.
+     *
+     * @param dest The result of a Host.migrate_receive call.
+     * @param live Live migration
+     * @param vdiMap Map of source VDI to destination SR
+     * @param vifMap Map of source VIF to destination network
+     * @param options Other parameters
+     */
+    public void migrateSend(Connection c, Map<String, String> dest, Boolean live, Map<VDI, SR> vdiMap, Map<VIF, Network> vifMap, Map<String, String> options) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException,
+       Types.VmBadPowerState {
+        String method_call = "VM.migrate_send";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(dest), Marshalling.toXMLRPC(live), Marshalling.toXMLRPC(vdiMap), Marshalling.toXMLRPC(vifMap), Marshalling.toXMLRPC(options)};
+        Map response = c.dispatch(method_call, method_params);
+        return;
+    }
+
+    /**
+     * Assert whether a VM can be migrated to the specified destination.
+     *
+     * @param dest The result of a VM.migrate_receive call.
+     * @param live Live migration
+     * @param vdiMap Map of source VDI to destination SR
+     * @param vifMap Map of source VIF to destination network
+     * @param options Other parameters
+     * @return Task
+     */
+    public Task assertCanMigrateAsync(Connection c, Map<String, String> dest, Boolean live, Map<VDI, SR> vdiMap, Map<VIF, Network> vifMap, Map<String, String> options) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "Async.VM.assert_can_migrate";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(dest), Marshalling.toXMLRPC(live), Marshalling.toXMLRPC(vdiMap), Marshalling.toXMLRPC(vifMap), Marshalling.toXMLRPC(options)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+        return Types.toTask(result);
+    }
+
+    /**
+     * Assert whether a VM can be migrated to the specified destination.
+     *
+     * @param dest The result of a VM.migrate_receive call.
+     * @param live Live migration
+     * @param vdiMap Map of source VDI to destination SR
+     * @param vifMap Map of source VIF to destination network
+     * @param options Other parameters
+     */
+    public void assertCanMigrate(Connection c, Map<String, String> dest, Boolean live, Map<VDI, SR> vdiMap, Map<VIF, Network> vifMap, Map<String, String> options) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "VM.assert_can_migrate";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(dest), Marshalling.toXMLRPC(live), Marshalling.toXMLRPC(vdiMap), Marshalling.toXMLRPC(vifMap), Marshalling.toXMLRPC(options)};
+        Map response = c.dispatch(method_call, method_params);
+        return;
+    }
+
+    /**
      * Returns a record describing the VM's dynamic state, initialised when the VM boots and updated to reflect runtime configuration changes e.g. CPU hotplug
      *
      * @return A record describing the VM
@@ -3841,7 +4138,7 @@ public class VM extends XenAPIObject {
     }
 
     /**
-     * 
+     *
      *
      * @return A set of data sources
      */
@@ -4052,7 +4349,8 @@ public class VM extends XenAPIObject {
        XenAPIException,
        XmlRpcException,
        Types.HostNotEnoughFreeMemory,
-       Types.VmRequiresSr {
+       Types.VmRequiresSr,
+       Types.VmHostIncompatibleVersion {
         String method_call = "Async.VM.assert_can_boot_here";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(host)};
@@ -4071,7 +4369,8 @@ public class VM extends XenAPIObject {
        XenAPIException,
        XmlRpcException,
        Types.HostNotEnoughFreeMemory,
-       Types.VmRequiresSr {
+       Types.VmRequiresSr,
+       Types.VmHostIncompatibleVersion {
         String method_call = "VM.assert_can_boot_here";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(host)};
@@ -4084,15 +4383,16 @@ public class VM extends XenAPIObject {
      *
      * @param name The name associated with the blob
      * @param mimeType The mime type for the data. Empty string translates to application/octet-stream
+     * @param _public True if the blob should be publicly available
      * @return Task
      */
-    public Task createNewBlobAsync(Connection c, String name, String mimeType) throws
+    public Task createNewBlobAsync(Connection c, String name, String mimeType, Boolean _public) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
         String method_call = "Async.VM.create_new_blob";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(name), Marshalling.toXMLRPC(mimeType)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(name), Marshalling.toXMLRPC(mimeType), Marshalling.toXMLRPC(_public)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
         return Types.toTask(result);
@@ -4103,15 +4403,16 @@ public class VM extends XenAPIObject {
      *
      * @param name The name associated with the blob
      * @param mimeType The mime type for the data. Empty string translates to application/octet-stream
+     * @param _public True if the blob should be publicly available
      * @return The reference of the blob, needed for populating its data
      */
-    public Blob createNewBlob(Connection c, String name, String mimeType) throws
+    public Blob createNewBlob(Connection c, String name, String mimeType, Boolean _public) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
         String method_call = "VM.create_new_blob";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(name), Marshalling.toXMLRPC(mimeType)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(name), Marshalling.toXMLRPC(mimeType), Marshalling.toXMLRPC(_public)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
             return Types.toBlob(result);
@@ -4231,6 +4532,326 @@ public class VM extends XenAPIObject {
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
         Map response = c.dispatch(method_call, method_params);
         return;
+    }
+
+    /**
+     * Set this VM's start delay in seconds
+     *
+     * @param value This VM's start delay in seconds
+     * @return Task
+     */
+    public Task setStartDelayAsync(Connection c, Long value) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "Async.VM.set_start_delay";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+        return Types.toTask(result);
+    }
+
+    /**
+     * Set this VM's start delay in seconds
+     *
+     * @param value This VM's start delay in seconds
+     */
+    public void setStartDelay(Connection c, Long value) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "VM.set_start_delay";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
+        Map response = c.dispatch(method_call, method_params);
+        return;
+    }
+
+    /**
+     * Set this VM's shutdown delay in seconds
+     *
+     * @param value This VM's shutdown delay in seconds
+     * @return Task
+     */
+    public Task setShutdownDelayAsync(Connection c, Long value) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "Async.VM.set_shutdown_delay";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+        return Types.toTask(result);
+    }
+
+    /**
+     * Set this VM's shutdown delay in seconds
+     *
+     * @param value This VM's shutdown delay in seconds
+     */
+    public void setShutdownDelay(Connection c, Long value) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "VM.set_shutdown_delay";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
+        Map response = c.dispatch(method_call, method_params);
+        return;
+    }
+
+    /**
+     * Set this VM's boot order
+     *
+     * @param value This VM's boot order
+     * @return Task
+     */
+    public Task setOrderAsync(Connection c, Long value) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "Async.VM.set_order";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+        return Types.toTask(result);
+    }
+
+    /**
+     * Set this VM's boot order
+     *
+     * @param value This VM's boot order
+     */
+    public void setOrder(Connection c, Long value) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "VM.set_order";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
+        Map response = c.dispatch(method_call, method_params);
+        return;
+    }
+
+    /**
+     * Set this VM's suspend VDI, which must be indentical to its current one
+     *
+     * @param value The suspend VDI uuid
+     * @return Task
+     */
+    public Task setSuspendVDIAsync(Connection c, VDI value) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "Async.VM.set_suspend_VDI";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+        return Types.toTask(result);
+    }
+
+    /**
+     * Set this VM's suspend VDI, which must be indentical to its current one
+     *
+     * @param value The suspend VDI uuid
+     */
+    public void setSuspendVDI(Connection c, VDI value) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "VM.set_suspend_VDI";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
+        Map response = c.dispatch(method_call, method_params);
+        return;
+    }
+
+    /**
+     * Assert whether all SRs required to recover this VM are available.
+     *
+     * @param sessionTo The session to which the VM is to be recovered.
+     * @return Task
+     */
+    public Task assertCanBeRecoveredAsync(Connection c, Session sessionTo) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException,
+       Types.VmIsPartOfAnAppliance,
+       Types.VmRequiresSr {
+        String method_call = "Async.VM.assert_can_be_recovered";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(sessionTo)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+        return Types.toTask(result);
+    }
+
+    /**
+     * Assert whether all SRs required to recover this VM are available.
+     *
+     * @param sessionTo The session to which the VM is to be recovered.
+     */
+    public void assertCanBeRecovered(Connection c, Session sessionTo) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException,
+       Types.VmIsPartOfAnAppliance,
+       Types.VmRequiresSr {
+        String method_call = "VM.assert_can_be_recovered";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(sessionTo)};
+        Map response = c.dispatch(method_call, method_params);
+        return;
+    }
+
+    /**
+     * Recover the VM
+     *
+     * @param sessionTo The session to which the VM is to be recovered.
+     * @param force Whether the VM should replace newer versions of itself.
+     * @return Task
+     */
+    public Task recoverAsync(Connection c, Session sessionTo, Boolean force) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "Async.VM.recover";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(sessionTo), Marshalling.toXMLRPC(force)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+        return Types.toTask(result);
+    }
+
+    /**
+     * Recover the VM
+     *
+     * @param sessionTo The session to which the VM is to be recovered.
+     * @param force Whether the VM should replace newer versions of itself.
+     */
+    public void recover(Connection c, Session sessionTo, Boolean force) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "VM.recover";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(sessionTo), Marshalling.toXMLRPC(force)};
+        Map response = c.dispatch(method_call, method_params);
+        return;
+    }
+
+    /**
+     * Import using a conversion service.
+     *
+     * @param type Type of the conversion
+     * @param username Admin username on the host
+     * @param password Password on the host
+     * @param sr The destination SR
+     * @param remoteConfig Remote configuration options
+     * @return Task
+     */
+    public static Task importConvertAsync(Connection c, String type, String username, String password, SR sr, Map<String, String> remoteConfig) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "Async.VM.import_convert";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(type), Marshalling.toXMLRPC(username), Marshalling.toXMLRPC(password), Marshalling.toXMLRPC(sr), Marshalling.toXMLRPC(remoteConfig)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+        return Types.toTask(result);
+    }
+
+    /**
+     * Import using a conversion service.
+     *
+     * @param type Type of the conversion
+     * @param username Admin username on the host
+     * @param password Password on the host
+     * @param sr The destination SR
+     * @param remoteConfig Remote configuration options
+     */
+    public static void importConvert(Connection c, String type, String username, String password, SR sr, Map<String, String> remoteConfig) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "VM.import_convert";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(type), Marshalling.toXMLRPC(username), Marshalling.toXMLRPC(password), Marshalling.toXMLRPC(sr), Marshalling.toXMLRPC(remoteConfig)};
+        Map response = c.dispatch(method_call, method_params);
+        return;
+    }
+
+    /**
+     * Assign this VM to an appliance.
+     *
+     * @param value The appliance to which this VM should be assigned.
+     * @return Task
+     */
+    public Task setApplianceAsync(Connection c, VMAppliance value) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "Async.VM.set_appliance";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+        return Types.toTask(result);
+    }
+
+    /**
+     * Assign this VM to an appliance.
+     *
+     * @param value The appliance to which this VM should be assigned.
+     */
+    public void setAppliance(Connection c, VMAppliance value) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "VM.set_appliance";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
+        Map response = c.dispatch(method_call, method_params);
+        return;
+    }
+
+    /**
+     * Query the system services advertised by this VM and register them. This can only be applied to a system domain.
+     *
+     * @return Task
+     */
+    public Task queryServicesAsync(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "Async.VM.query_services";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+        return Types.toTask(result);
+    }
+
+    /**
+     * Query the system services advertised by this VM and register them. This can only be applied to a system domain.
+     *
+     * @return map of service type to name
+     */
+    public Map<String, String> queryServices(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "VM.query_services";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toMapOfStringString(result);
     }
 
     /**

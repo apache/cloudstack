@@ -17,7 +17,8 @@
 package com.cloud.agent.api.storage;
 
 import com.cloud.storage.Storage.ImageFormat;
-
+import com.cloud.agent.api.to.StorageFilerTO;
+import com.cloud.storage.StoragePool;
 
 /**
  *
@@ -27,16 +28,19 @@ public class PrimaryStorageDownloadCommand extends AbstractDownloadCommand {
 	String poolUuid;
 	long poolId;
 
+    StorageFilerTO primaryPool;
+
 	String secondaryStorageUrl;
 	String primaryStorageUrl;
 
     protected PrimaryStorageDownloadCommand() {
 	}
 
-    public PrimaryStorageDownloadCommand(String name, String url, ImageFormat format, long accountId, long poolId, String poolUuid, int wait) {
+    public PrimaryStorageDownloadCommand(String name, String url, ImageFormat format, long accountId, StoragePool pool, int wait) {
         super(name, url, format, accountId);
-        this.poolId = poolId;
-        this.poolUuid = poolUuid;
+        this.poolId = pool.getId();
+        this.poolUuid = pool.getUuid();
+        this.primaryPool = new StorageFilerTO(pool);
         setWait(wait);
     }
 
@@ -48,6 +52,10 @@ public class PrimaryStorageDownloadCommand extends AbstractDownloadCommand {
         return poolId;
     }
 
+    public StorageFilerTO getPool() {
+        return primaryPool;
+    }
+    
     public void setLocalPath(String path) {
     	this.localPath = path;
     }

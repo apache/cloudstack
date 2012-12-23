@@ -552,6 +552,7 @@ under the License.
                         class="traffic-type-draggable management">
                       <!-- Edit buttton -->
                       <div class="edit-traffic-type">
+                        <span class="name"><fmt:message key="label.management"/></span>
                         <span class="icon">&nbsp;</span>
                         <span>Edit</span>
                       </div>
@@ -569,6 +570,7 @@ under the License.
                         class="traffic-type-draggable public">
                       <!-- Edit buttton -->
                       <div class="edit-traffic-type">
+                        <span class="name"><fmt:message key="label.public"/></span>
                         <span class="icon">&nbsp;</span>
                         <span>Edit</span>
                       </div>
@@ -586,6 +588,7 @@ under the License.
                         class="traffic-type-draggable guest">
                       <!-- Edit buttton -->
                       <div class="edit-traffic-type">
+                        <span class="name"><fmt:message key="label.guest"/></span>
                         <span class="icon">&nbsp;</span>
                         <span>Edit</span>
                       </div>
@@ -603,6 +606,7 @@ under the License.
                         class="traffic-type-draggable storage">
                       <!-- Edit buttton -->
                       <div class="edit-traffic-type">
+                        <span class="name"><fmt:message key="label.storage"/></span>
                         <span class="icon">&nbsp;</span>
                         <span>Edit</span>
                       </div>

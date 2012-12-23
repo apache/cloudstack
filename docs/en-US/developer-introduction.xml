@@ -23,7 +23,7 @@
 -->
 
 <chapter id="developer-introduction">
-    <title>Introduction for Developers</title>
+    <title>Introduction to the &PRODUCT; API</title>
     <xi:include href="roles.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="api-reference.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="developer-getting-started.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />    

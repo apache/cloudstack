@@ -71,4 +71,6 @@ public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long> {
     List<Long> listPrivateTemplatesByHost(Long hostId);
     public Long countTemplatesForAccount(long accountId);
 	
+    List<VMTemplateVO> findTemplatesToSyncToS3();
+
 }

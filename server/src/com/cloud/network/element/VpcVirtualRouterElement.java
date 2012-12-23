@@ -304,7 +304,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         Map<Capability, String> networkACLCapabilities = new HashMap<Capability, String>();
         networkACLCapabilities.put(Capability.SupportedProtocols, "tcp,udp,icmp");
         capabilities.put(Service.NetworkACL, networkACLCapabilities);
-        
+
         return capabilities;
     }
     

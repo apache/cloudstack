@@ -1,18 +1,19 @@
-/* Copyright (c) Citrix Systems, Inc.
+/*
+ * Copyright (c) Citrix Systems, Inc.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  *   1) Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
- * 
+ *
  *   2) Redistributions in binary form must reproduce the above
  *      copyright notice, this list of conditions and the following
  *      disclaimer in the documentation and/or other materials
  *      provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -26,6 +27,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 
 package com.xensource.xenapi;
 
@@ -51,7 +53,7 @@ import org.apache.xmlrpc.XmlRpcException;
 public class Pool extends XenAPIObject {
 
     /**
-     * The XenAPI reference to this object.
+     * The XenAPI reference (OpaqueRef) to this object.
      */
     protected final String ref;
 
@@ -62,6 +64,9 @@ public class Pool extends XenAPIObject {
        this.ref = ref;
     }
 
+    /**
+     * @return The XenAPI reference (OpaqueRef) to this object.
+     */
     public String toWireString() {
        return this.ref;
     }
@@ -121,6 +126,7 @@ public class Pool extends XenAPIObject {
             print.printf("%1$20s: %2$s\n", "redoLogVdi", this.redoLogVdi);
             print.printf("%1$20s: %2$s\n", "vswitchController", this.vswitchController);
             print.printf("%1$20s: %2$s\n", "restrictions", this.restrictions);
+            print.printf("%1$20s: %2$s\n", "metadataVDIs", this.metadataVDIs);
             return writer.toString();
         }
 
@@ -155,6 +161,7 @@ public class Pool extends XenAPIObject {
             map.put("redo_log_vdi", this.redoLogVdi == null ? new VDI("OpaqueRef:NULL") : this.redoLogVdi);
             map.put("vswitch_controller", this.vswitchController == null ? "" : this.vswitchController);
             map.put("restrictions", this.restrictions == null ? new HashMap<String, String>() : this.restrictions);
+            map.put("metadata_VDIs", this.metadataVDIs == null ? new LinkedHashSet<VDI>() : this.metadataVDIs);
             return map;
         }
 
@@ -262,6 +269,10 @@ public class Pool extends XenAPIObject {
          * Pool-wide restrictions currently in effect
          */
         public Map<String, String> restrictions;
+        /**
+         * The set of currently known metadata VDIs for this pool
+         */
+        public Set<VDI> metadataVDIs;
     }
 
     /**
@@ -739,6 +750,23 @@ public class Pool extends XenAPIObject {
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
             return Types.toMapOfStringString(result);
+    }
+
+    /**
+     * Get the metadata_VDIs field of the given pool.
+     *
+     * @return value of the field
+     */
+    public Set<VDI> getMetadataVDIs(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "pool.get_metadata_VDIs";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toSetOfVDI(result);
     }
 
     /**
@@ -1537,15 +1565,16 @@ public class Pool extends XenAPIObject {
      *
      * @param name The name associated with the blob
      * @param mimeType The mime type for the data. Empty string translates to application/octet-stream
+     * @param _public True if the blob should be publicly available
      * @return Task
      */
-    public Task createNewBlobAsync(Connection c, String name, String mimeType) throws
+    public Task createNewBlobAsync(Connection c, String name, String mimeType, Boolean _public) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
         String method_call = "Async.pool.create_new_blob";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(name), Marshalling.toXMLRPC(mimeType)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(name), Marshalling.toXMLRPC(mimeType), Marshalling.toXMLRPC(_public)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
         return Types.toTask(result);
@@ -1556,15 +1585,16 @@ public class Pool extends XenAPIObject {
      *
      * @param name The name associated with the blob
      * @param mimeType The mime type for the data. Empty string translates to application/octet-stream
+     * @param _public True if the blob should be publicly available
      * @return The reference of the blob, needed for populating its data
      */
-    public Blob createNewBlob(Connection c, String name, String mimeType) throws
+    public Blob createNewBlob(Connection c, String name, String mimeType, Boolean _public) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
         String method_call = "pool.create_new_blob";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(name), Marshalling.toXMLRPC(mimeType)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(name), Marshalling.toXMLRPC(mimeType), Marshalling.toXMLRPC(_public)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
             return Types.toBlob(result);
@@ -1798,9 +1828,9 @@ public class Pool extends XenAPIObject {
     /**
      * Send the given body to the given host and port, using HTTPS, and print the response.  This is used for debugging the SSL layer.
      *
-     * @param host 
-     * @param port 
-     * @param body 
+     * @param host
+     * @param port
+     * @param body
      * @return Task
      */
     public static Task sendTestPostAsync(Connection c, String host, Long port, String body) throws
@@ -1818,9 +1848,9 @@ public class Pool extends XenAPIObject {
     /**
      * Send the given body to the given host and port, using HTTPS, and print the response.  This is used for debugging the SSL layer.
      *
-     * @param host 
-     * @param port 
-     * @param body 
+     * @param host
+     * @param port
+     * @param body
      * @return The response
      */
     public static String sendTestPost(Connection c, String host, Long port, String body) throws

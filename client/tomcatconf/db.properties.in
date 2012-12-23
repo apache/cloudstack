@@ -37,9 +37,6 @@ db.cloud.testOnBorrow=true
 db.cloud.testWhileIdle=true
 db.cloud.timeBetweenEvictionRunsMillis=40000
 db.cloud.minEvictableIdleTimeMillis=240000
-db.cloud.removeAbandoned=false
-db.cloud.removeAbandonedTimeout=300
-db.cloud.logAbandoned=true
 db.cloud.poolPreparedStatements=false
 db.cloud.url.params=prepStmtCacheSize=517&cachePrepStmts=true
 

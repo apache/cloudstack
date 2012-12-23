@@ -1,18 +1,19 @@
-/* Copyright (c) Citrix Systems, Inc.
+/*
+ * Copyright (c) Citrix Systems, Inc.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  *   1) Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
- * 
+ *
  *   2) Redistributions in binary form must reproduce the above
  *      copyright notice, this list of conditions and the following
  *      disclaimer in the documentation and/or other materials
  *      provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -26,6 +27,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 
 package com.xensource.xenapi;
 
@@ -51,7 +53,7 @@ import org.apache.xmlrpc.XmlRpcException;
 public class Host extends XenAPIObject {
 
     /**
-     * The XenAPI reference to this object.
+     * The XenAPI reference (OpaqueRef) to this object.
      */
     protected final String ref;
 
@@ -62,6 +64,9 @@ public class Host extends XenAPIObject {
        this.ref = ref;
     }
 
+    /**
+     * @return The XenAPI reference (OpaqueRef) to this object.
+     */
     public String toWireString() {
        return this.ref;
     }
@@ -139,6 +144,9 @@ public class Host extends XenAPIObject {
             print.printf("%1$20s: %2$s\n", "powerOnMode", this.powerOnMode);
             print.printf("%1$20s: %2$s\n", "powerOnConfig", this.powerOnConfig);
             print.printf("%1$20s: %2$s\n", "localCacheSr", this.localCacheSr);
+            print.printf("%1$20s: %2$s\n", "chipsetInfo", this.chipsetInfo);
+            print.printf("%1$20s: %2$s\n", "PCIs", this.PCIs);
+            print.printf("%1$20s: %2$s\n", "PGPUs", this.PGPUs);
             return writer.toString();
         }
 
@@ -191,6 +199,9 @@ public class Host extends XenAPIObject {
             map.put("power_on_mode", this.powerOnMode == null ? "" : this.powerOnMode);
             map.put("power_on_config", this.powerOnConfig == null ? new HashMap<String, String>() : this.powerOnConfig);
             map.put("local_cache_sr", this.localCacheSr == null ? new SR("OpaqueRef:NULL") : this.localCacheSr);
+            map.put("chipset_info", this.chipsetInfo == null ? new HashMap<String, String>() : this.chipsetInfo);
+            map.put("PCIs", this.PCIs == null ? new LinkedHashSet<PCI>() : this.PCIs);
+            map.put("PGPUs", this.PGPUs == null ? new LinkedHashSet<PGPU>() : this.PGPUs);
             return map;
         }
 
@@ -203,7 +214,7 @@ public class Host extends XenAPIObject {
          */
         public String nameLabel;
         /**
-         * a notes field containg human-readable description
+         * a notes field containing human-readable description
          */
         public String nameDescription;
         /**
@@ -370,6 +381,18 @@ public class Host extends XenAPIObject {
          * The SR that is used as a local cache
          */
         public SR localCacheSr;
+        /**
+         * Information about chipset features
+         */
+        public Map<String, String> chipsetInfo;
+        /**
+         * List of PCI devices in the host
+         */
+        public Set<PCI> PCIs;
+        /**
+         * List of physical GPUs in the host
+         */
+        public Set<PGPU> PGPUs;
     }
 
     /**
@@ -1174,6 +1197,57 @@ public class Host extends XenAPIObject {
     }
 
     /**
+     * Get the chipset_info field of the given host.
+     *
+     * @return value of the field
+     */
+    public Map<String, String> getChipsetInfo(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "host.get_chipset_info";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toMapOfStringString(result);
+    }
+
+    /**
+     * Get the PCIs field of the given host.
+     *
+     * @return value of the field
+     */
+    public Set<PCI> getPCIs(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "host.get_PCIs";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toSetOfPCI(result);
+    }
+
+    /**
+     * Get the PGPUs field of the given host.
+     *
+     * @return value of the field
+     */
+    public Set<PGPU> getPGPUs(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "host.get_PGPUs";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toSetOfPGPU(result);
+    }
+
+    /**
      * Set the name/label field of the given host.
      *
      * @param label New value to set
@@ -1897,7 +1971,7 @@ public class Host extends XenAPIObject {
     }
 
     /**
-     * 
+     *
      *
      * @return A set of data sources
      */
@@ -2031,10 +2105,11 @@ public class Host extends XenAPIObject {
 
     /**
      * Return a set of VMs which are not co-operating with the host's memory control system
+     * @deprecated
      *
      * @return Task
      */
-    public Task getUncooperativeResidentVMsAsync(Connection c) throws
+   @Deprecated public Task getUncooperativeResidentVMsAsync(Connection c) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
@@ -2048,10 +2123,11 @@ public class Host extends XenAPIObject {
 
     /**
      * Return a set of VMs which are not co-operating with the host's memory control system
+     * @deprecated
      *
      * @return VMs which are not co-operating
      */
-    public Set<VM> getUncooperativeResidentVMs(Connection c) throws
+   @Deprecated public Set<VM> getUncooperativeResidentVMs(Connection c) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
@@ -2193,7 +2269,41 @@ public class Host extends XenAPIObject {
     }
 
     /**
-     * 
+     * Returns the management interface for the specified host
+     *
+     * @return Task
+     */
+    public Task getManagementIfaceAsync(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "Async.host.get_management_interface";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+        return Types.toTask(result);
+    }
+
+    /**
+     * Returns the management interface for the specified host
+     *
+     * @return The managment interface for the host
+     */
+    public PIF getManagementIface(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "host.get_management_interface";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toPIF(result);
+    }
+
+    /**
+     *
      *
      * @return An XML fragment containing the system status capabilities.
      */
@@ -2377,15 +2487,16 @@ public class Host extends XenAPIObject {
      *
      * @param name The name associated with the blob
      * @param mimeType The mime type for the data. Empty string translates to application/octet-stream
+     * @param _public True if the blob should be publicly available
      * @return Task
      */
-    public Task createNewBlobAsync(Connection c, String name, String mimeType) throws
+    public Task createNewBlobAsync(Connection c, String name, String mimeType, Boolean _public) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
         String method_call = "Async.host.create_new_blob";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(name), Marshalling.toXMLRPC(mimeType)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(name), Marshalling.toXMLRPC(mimeType), Marshalling.toXMLRPC(_public)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
         return Types.toTask(result);
@@ -2396,15 +2507,16 @@ public class Host extends XenAPIObject {
      *
      * @param name The name associated with the blob
      * @param mimeType The mime type for the data. Empty string translates to application/octet-stream
+     * @param _public True if the blob should be publicly available
      * @return The reference of the blob, needed for populating its data
      */
-    public Blob createNewBlob(Connection c, String name, String mimeType) throws
+    public Blob createNewBlob(Connection c, String name, String mimeType, Boolean _public) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
         String method_call = "host.create_new_blob";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(name), Marshalling.toXMLRPC(mimeType)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(name), Marshalling.toXMLRPC(mimeType), Marshalling.toXMLRPC(_public)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
             return Types.toBlob(result);
@@ -2635,7 +2747,7 @@ public class Host extends XenAPIObject {
     }
 
     /**
-     * Set the power-on-mode, host, user and password 
+     * Set the power-on-mode, host, user and password
      *
      * @param powerOnMode power-on-mode can be empty,iLO,wake-on-lan, DRAC or other
      * @param powerOnConfig Power on config
@@ -2654,7 +2766,7 @@ public class Host extends XenAPIObject {
     }
 
     /**
-     * Set the power-on-mode, host, user and password 
+     * Set the power-on-mode, host, user and password
      *
      * @param powerOnMode power-on-mode can be empty,iLO,wake-on-lan, DRAC or other
      * @param powerOnConfig Power on config
@@ -2730,6 +2842,44 @@ public class Host extends XenAPIObject {
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         return;
+    }
+
+    /**
+     * Prepare to receive a VM, returning a token which can be passed to VM.migrate.
+     *
+     * @param network The network through which migration traffic should be received.
+     * @param options Extra configuration operations
+     * @return Task
+     */
+    public Task migrateReceiveAsync(Connection c, Network network, Map<String, String> options) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "Async.host.migrate_receive";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(network), Marshalling.toXMLRPC(options)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+        return Types.toTask(result);
+    }
+
+    /**
+     * Prepare to receive a VM, returning a token which can be passed to VM.migrate.
+     *
+     * @param network The network through which migration traffic should be received.
+     * @param options Extra configuration operations
+     * @return A value which should be passed to VM.migrate
+     */
+    public Map<String, String> migrateReceive(Connection c, Network network, Map<String, String> options) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "host.migrate_receive";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(network), Marshalling.toXMLRPC(options)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toMapOfStringString(result);
     }
 
     /**

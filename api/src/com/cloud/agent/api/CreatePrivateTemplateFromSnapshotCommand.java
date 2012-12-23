@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.agent.api;
 
+import com.cloud.storage.StoragePool;
+
 /**
  * This currently assumes that both primary and secondary storage are mounted on the XenServer.
  */
@@ -40,7 +42,8 @@ public class CreatePrivateTemplateFromSnapshotCommand extends SnapshotCommand {
      *                                 It may not be the UUID of the base copy of the snapshot, if no data was written since last snapshot.
      * @param origTemplateInstallPath  The install path of the original template VHD on the secondary
      */
-    public CreatePrivateTemplateFromSnapshotCommand(String primaryStoragePoolNameLabel,
+
+    public CreatePrivateTemplateFromSnapshotCommand(StoragePool pool,
                                                     String secondaryStoragePoolURL,
                                                     Long   dcId,
                                                     Long   accountId,
@@ -52,7 +55,7 @@ public class CreatePrivateTemplateFromSnapshotCommand extends SnapshotCommand {
                                                     String templateName,
                                                     int wait)
     {
-        super(primaryStoragePoolNameLabel, secondaryStoragePoolURL, backedUpSnapshotUuid, backedUpSnapshotName, dcId, accountId, volumeId);
+        super(pool, secondaryStoragePoolURL, backedUpSnapshotUuid, backedUpSnapshotName, dcId, accountId, volumeId);
         this.origTemplateInstallPath = origTemplateInstallPath;
         this.newTemplateId = newTemplateId;
         this.templateName = templateName;

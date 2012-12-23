@@ -804,8 +804,12 @@
             tabFilter: function(args) {
               var networkOfferingHavingELB = false;
               var hasNetworkACL = false;
+              var hasSRXFirewall = false;
               var isVPC = false;
-              
+              var isAdvancedSGZone = false;
+              var hiddenTabs = [];
+
+              // Get network offering data
               $.ajax({
                 url: createURL("listNetworkOfferings&id=" + args.context.networks[0].networkofferingid),
                 dataType: "json",
@@ -829,17 +833,41 @@
                         }
                       });
                     }
+
+                    if (thisService.name == 'Firewall') {
+                      $(thisService.provider).each(function() {
+                        if (this.name == 'JuniperSRX') {
+                          hasSRXFirewall = true;
+
+                          return false;
+                        }
+
+                        return true;
+                      });
+                    }
                   });
                 }
               });
 
-              var hiddenTabs = [];
-              
+              // Get zone data
+              $.ajax({
+                url: createURL('listZones'),
+                data: {
+                  id: args.context.networks[0].zoneid
+                },
+                async: false,
+                success: function(json) {
+                  var zone = json.listzonesresponse.zone[0];
+
+                  isAdvancedSGZone = zone.securitygroupsenabled;
+                }
+              });
+
               if (!networkOfferingHavingELB) {
                 hiddenTabs.push("addloadBalancer");
               }
 
-              if (isVPC) {
+              if (isVPC || isAdvancedSGZone || hasSRXFirewall) {
                 hiddenTabs.push('egressRules');
               }
               
@@ -884,19 +912,13 @@
                     hiddenFields.push("networkofferingid");
                     hiddenFields.push("networkdomain");
                   }
+									
+									if(!isAdmin()) {
+									  hiddenFields.push("vlan");
+									}
+									
                   return hiddenFields;
-                },								
-								
-								preFilter: function(args) {
-                  var hiddenFields;
-                  if(isAdmin()) {
-                    hiddenFields = [];
-                  }
-                  else {
-                    hiddenFields = ["vlan"];
-                  }
-                  return hiddenFields;
-                },
+                },						
 																
                 fields: [
                   {
@@ -933,6 +955,11 @@
                       label: 'label.network.offering',
                       isEditable: true,
                       select: function(args){
+											  if (args.context.networks[0].type == 'Shared') { //Shared network is not allowed to upgrade to a different network offering
+												  args.response.success({ data: [] });
+                          return;
+												}
+											
                         if (args.context.networks[0].state == 'Destroyed') {
                           args.response.success({ data: [] });
                           return;
@@ -1026,7 +1053,7 @@
                     noSelect: true,
                     noHeaderActionsColumn: true,
                     fields: {
-                      'cidrlist': { edit: true, label: 'label.cidr', isOptional: true },
+                      'cidrlist': { edit: true, label: 'label.cidr.list', isOptional: true },
                       'protocol': {
                         label: 'label.protocol',
                         select: function(args) {
@@ -1072,10 +1099,10 @@
                           });
                         }
                       },
-                      'startport': { edit: true, label: 'label.start.port' },
-                      'endport': { edit: true, label: 'label.end.port' },
-                      'icmptype': { edit: true, label: 'ICMP.type', isHidden: true },
-                      'icmpcode': { edit: true, label: 'ICMP.code', isHidden: true },
+                      'startport': { edit: true, label: 'label.start.port', isOptional: true },
+                      'endport': { edit: true, label: 'label.end.port', isOptional: true },
+                      'icmptype': { edit: true, label: 'ICMP.type', isHidden: true, isOptional: true },
+                      'icmpcode': { edit: true, label: 'ICMP.code', isHidden: true, isOptional: true },
                       'add-rule': {
                         label: 'label.add',
                         addButton: true
@@ -1178,6 +1205,14 @@
                                   startport: 'All',
                                   endport: 'All'
                                 });
+                              } else if (rule.protocol == 'tcp' || rule.protocol == 'udp') {
+                                if (!rule.startport) {
+                                  rule.startport = ' ';
+                                }
+
+                                if (!rule.endport) {
+                                  rule.endport = ' ';
+                                }
                               }
 
                               return rule;
@@ -1190,7 +1225,7 @@
                 }
               },
 
-              addloadBalancer: {
+              addloadBalancer: { // EIP/ELB Basic zone: Add Load Balancer tab in network detailView
                 title: 'label.add.load.balancer',
                 custom: function(args) {
                   var context = args.context;
@@ -1201,21 +1236,18 @@
                       listView: $.extend(true, {}, cloudStack.sections.instances, {
                         listView: {
                           filters: false,
-                          dataProvider: function(args) {                           
-														var networkid;
-														if('vpc' in args.context) 
-															networkid = args.context.multiData.tier;														
-														else 
-															networkid = args.context.ipAddresses[0].associatednetworkid;
+
+                          dataProvider: function(args) {
+                            var data = {
+                              page: args.page,
+                              pageSize: pageSize,
+															domainid: g_domainid,
+                              account: g_account,
+                              networkid: args.context.networks[0].id,
+                              listAll: true
+                            };
 														
-														var data = {
-															page: args.page,
-															pageSize: pageSize,
-															networkid: networkid,
-															listAll: true
-														};
-														
-														$.ajax({
+                            $.ajax({
                               url: createURL('listVirtualMachines'),
                               data: data,
                               dataType: 'json',
@@ -1321,7 +1353,7 @@
                             async: true,
                             success: function(data) {
                               var itemData = args.itemData;
-                              var jobID = data.createloadbalancerruleresponse.jobid;
+                              //var jobID = data.createloadbalancerruleresponse.jobid; //CS-16964: use jobid from assignToLoadBalancerRule instead of createLoadBalancerRule
 
                               $.ajax({
                                 url: createURL('assignToLoadBalancerRule'),
@@ -1334,7 +1366,8 @@
                                 dataType: 'json',
                                 async: true,
                                 success: function(data) {
-                                  var lbCreationComplete = false;
+                                  var jobID = data.assigntoloadbalancerruleresponse.jobid; //CS-16964: use jobid from assignToLoadBalancerRule instead of createLoadBalancerRule
+																	var lbCreationComplete = false;
 
                                   args.response.success({
                                     _custom: {
@@ -1437,28 +1470,34 @@
               addRow: 'true',
               preFilter: function(args) {                
 								var zoneObj;
-                                                                var dataObj = {};
-                                                                if('vpc' in args.context) { //from VPC section
-                                                                $.extend(dataObj, {
-                                                                    id: args.context.vpc[0].zoneid
-                                                                   });
-                                                                 }
-                                                               else if('networks' in args.context) { //from Guest Network section
-                                                                  $.extend(dataObj, {
-                                                                    id: args.context.networks[0].zoneid
-                                                                   });
-                                                                 }
+ 								var dataObj = {};
+                
+                if ('vpc' in args.context) { //from VPC section
+                  $.extend(dataObj, {
+                    id: args.context.vpc[0].zoneid
+                  });
+                } else if ('networks' in args.context) { //from Guest Network section
+                  $.extend(dataObj, {
+                    id: args.context.networks[0].zoneid
+                  });
+                }
 
 								$.ajax({
 								  url: createURL('listZones'),
 									data: dataObj,
+								  //	  id: args.context.networks[0].zoneid
+								  //	},
 									async: false,
 									success: function(json) {									  
 										zoneObj = json.listzonesresponse.zone[0];										
 									}
 								});
+
+                if (zoneObj.networktype == 'Advanced' && zoneObj.securitygroupsenabled) {
+                  return false;
+                }
 																							
-								if(zoneObj.networktype == 'Basic') { 
+								if (zoneObj.networktype == 'Basic') {
 								  var havingEIP = false, havingELB = false;
 								  $.ajax({
 									  url: createURL('listNetworkOfferings'),
@@ -1466,20 +1505,19 @@
 										  id: args.context.networks[0].networkofferingid
 										},
 										async: false,
-										success: function(json) {										  
+										success: function(json) {									  
 											$(json.listnetworkofferingsresponse.networkoffering[0].service).each(function(){											 
 												var thisService = this;														
-												if(thisService.name == "StaticNat") {
+												if (thisService.name == "StaticNat") {
 													$(thisService.capability).each(function(){
-														if(this.name == "ElasticIp" && this.value == "true") {
+														if (this.name == "ElasticIp" && this.value == "true") {
 															havingEIP = true;
 															return false; //break $.each() loop
 														}
 													});
-												}
-												else if(thisService.name == "Lb") {
+												} else if (thisService.name == "Lb") {
 													$(thisService.capability).each(function(){
-														if(this.name == "ElasticLb" && this.value == "true") {
+														if (this.name == "ElasticLb" && this.value == "true") {
 															havingELB = true;
 															return false; //break $.each() loop
 														}
@@ -2302,8 +2340,8 @@
                           });
                         }
                       },
-                      'startport': { edit: true, label: 'label.start.port' },
-                      'endport': { edit: true, label: 'label.end.port' },
+                      'startport': { edit: true, label: 'label.start.port',isOptional: true },
+                      'endport': { edit: true, label: 'label.end.port',isOptional: true },
                       'icmptype': { edit: true, label: 'ICMP.type', isDisabled: true },
                       'icmpcode': { edit: true, label: 'ICMP.code', isDisabled: true },
                       'add-rule': {
@@ -4152,10 +4190,10 @@
                         url: createURL('listZones'),
                         data: data,
                         success: function(json) {
-                          var zones = json.listzonesresponse.zone;													
-													var advZones = $.grep(zones, function(zone) {													  
-													  return zone.networktype == 'Advanced';
-													});		
+                          var zones = json.listzonesresponse.zone;
+                          var advZones = $.grep(zones, function(zone) {
+                            return zone.networktype == 'Advanced' && ! zone.securitygroupsenabled;
+                          });
                           args.response.success({
                             data: $.map(advZones, function(zone) {
                               return {
@@ -4506,6 +4544,7 @@
                 fields: {
 								  name: {
 									  label: 'label.name',
+                    docID: 'helpVPNGatewayName',
 										validation: { required: true }
 									},								
 									gateway: { 
@@ -4519,21 +4558,25 @@
 									},
                   gateway: {
                     label: 'label.gateway',
+                    docID: 'helpVPNGatewayGateway',
                     validation: { required: true }
                   },
                   cidrlist: {
                     label: 'label.CIDR.list',
                     desc:'Please enter a comma separated list of CIDRs if more than one',    
+                    docID: 'helpVPNGatewayCIDRList',
                     validation: { required: true }
                   },
                   ipsecpsk: {
                     label: 'label.IPsec.preshared.key',
+                    docID: 'helpVPNGatewayIPsecPresharedKey',
                     validation: { required: true }
                   },                 								
 									
                   //IKE Policy									
 									ikeEncryption: {
                     label: 'label.IKE.encryption',
+                    docID: 'helpVPNGatewayIKEEncryption',
                     select: function(args) {
                       var items = [];
                       items.push({id: '3des', description: '3des'});
@@ -4545,6 +4588,7 @@
                   },									
 									ikeHash: {
                     label: 'label.IKE.hash',
+                    docID: 'helpVPNGatewayIKEHash',
                     select: function(args) {
                       var items = [];
                       items.push({id: 'md5', description: 'md5'});
@@ -4554,6 +4598,7 @@
                   },									
 									ikeDh: {
                     label: 'label.IKE.DH',
+                    docID: 'helpVPNGatewayIKEDH',
                     select: function(args) {
                       var items = [];
                       items.push({id: '', description: 'None'});
@@ -4566,6 +4611,7 @@
 									//ESP Policy
                   espEncryption: {
                     label: 'label.ESP.encryption',
+                    docID: 'helpVPNGatewayESPLifetime',
                     select: function(args) {
                       var items = [];
                       items.push({id: '3des', description: '3des'});
@@ -4577,6 +4623,7 @@
                   },									
 									espHash: {
                     label: 'label.ESP.hash',
+                    docID: 'helpVPNGatewayESPHash',
                     select: function(args) {
                       var items = [];
                       items.push({id: 'md5', description: 'md5'});
@@ -4586,6 +4633,7 @@
                   },									
 									perfectForwardSecrecy: {
                     label: 'label.perfect.forward.secrecy',
+                    docID: 'helpVPNGatewayPerfectForwardSecrecy',
                     select: function(args) {
                       var items = [];
                       items.push({id: '', description: 'None'});
@@ -4597,17 +4645,20 @@
 									
 									ikelifetime: {
                     label: 'label.IKE.lifetime',
+                    docID: 'helpVPNGatewayIKELifetime',
                     defaultValue: '86400',
                     validation: { required: false, number: true }
                   },
 									esplifetime: {
                     label: 'label.ESP.lifetime',
+                    docID: 'helpVPNGatewayESPLifetime',
                     defaultValue: '3600',
                     validation: { required: false, number: true }
                   },
 									
 									dpd: {
 									  label: 'label.dead.peer.detection',
+                    docID: 'helpVPNGatewayDeadPeerDetection',
 										isBoolean: true,
 										isChecked: false
 									}                 

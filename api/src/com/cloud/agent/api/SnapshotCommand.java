@@ -16,12 +16,16 @@
 // under the License.
 package com.cloud.agent.api;
 
+import com.cloud.agent.api.to.StorageFilerTO;
+import com.cloud.storage.StoragePool;
+
 /**
  * This currently assumes that both primary and secondary storage are mounted on
  * the XenServer.
  */
 public class SnapshotCommand extends Command {
     protected String primaryStoragePoolNameLabel;
+    StorageFilerTO primaryPool;
     private String snapshotUuid;
     private String snapshotName;
     private String secondaryStorageUrl;
@@ -46,10 +50,11 @@ public class SnapshotCommand extends Command {
      *            is the value of that field If you have better ideas on how to
      *            get it, you are welcome.
      */
-    public SnapshotCommand(String primaryStoragePoolNameLabel,
+    public SnapshotCommand(StoragePool pool,
             String secondaryStorageUrl, String snapshotUuid,
             String snapshotName, Long dcId, Long accountId, Long volumeId) {
-        this.primaryStoragePoolNameLabel = primaryStoragePoolNameLabel;
+        this.primaryStoragePoolNameLabel = pool.getUuid();
+        this.primaryPool = new StorageFilerTO(pool);
         this.snapshotUuid = snapshotUuid;
         this.secondaryStorageUrl = secondaryStorageUrl;
         this.dcId = dcId;
@@ -63,6 +68,13 @@ public class SnapshotCommand extends Command {
      */
     public String getPrimaryStoragePoolNameLabel() {
         return primaryStoragePoolNameLabel;
+    }
+
+    /**
+     * @return the primaryPool
+     */
+    public StorageFilerTO getPool() {
+        return primaryPool;
     }
 
     /**

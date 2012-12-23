@@ -1,18 +1,19 @@
-/* Copyright (c) Citrix Systems, Inc.
+/*
+ * Copyright (c) Citrix Systems, Inc.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  *   1) Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
- * 
+ *
  *   2) Redistributions in binary form must reproduce the above
  *      copyright notice, this list of conditions and the following
  *      disclaimer in the documentation and/or other materials
  *      provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -26,6 +27,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 
 package com.xensource.xenapi;
 
@@ -51,7 +53,7 @@ import org.apache.xmlrpc.XmlRpcException;
 public class Network extends XenAPIObject {
 
     /**
-     * The XenAPI reference to this object.
+     * The XenAPI reference (OpaqueRef) to this object.
      */
     protected final String ref;
 
@@ -62,6 +64,9 @@ public class Network extends XenAPIObject {
        this.ref = ref;
     }
 
+    /**
+     * @return The XenAPI reference (OpaqueRef) to this object.
+     */
     public String toWireString() {
        return this.ref;
     }
@@ -107,6 +112,7 @@ public class Network extends XenAPIObject {
             print.printf("%1$20s: %2$s\n", "bridge", this.bridge);
             print.printf("%1$20s: %2$s\n", "blobs", this.blobs);
             print.printf("%1$20s: %2$s\n", "tags", this.tags);
+            print.printf("%1$20s: %2$s\n", "defaultLockingMode", this.defaultLockingMode);
             return writer.toString();
         }
 
@@ -127,6 +133,7 @@ public class Network extends XenAPIObject {
             map.put("bridge", this.bridge == null ? "" : this.bridge);
             map.put("blobs", this.blobs == null ? new HashMap<String, Blob>() : this.blobs);
             map.put("tags", this.tags == null ? new LinkedHashSet<String>() : this.tags);
+            map.put("default_locking_mode", this.defaultLockingMode == null ? Types.NetworkDefaultLockingMode.UNRECOGNIZED : this.defaultLockingMode);
             return map;
         }
 
@@ -139,7 +146,7 @@ public class Network extends XenAPIObject {
          */
         public String nameLabel;
         /**
-         * a notes field containg human-readable description
+         * a notes field containing human-readable description
          */
         public String nameDescription;
         /**
@@ -178,6 +185,10 @@ public class Network extends XenAPIObject {
          * user-specified tags for categorization purposes
          */
         public Set<String> tags;
+        /**
+         * The network will use this value to determine the behaviour of all VIFs where locking_mode = default
+         */
+        public Types.NetworkDefaultLockingMode defaultLockingMode;
     }
 
     /**
@@ -508,6 +519,23 @@ public class Network extends XenAPIObject {
     }
 
     /**
+     * Get the default_locking_mode field of the given network.
+     *
+     * @return value of the field
+     */
+    public Types.NetworkDefaultLockingMode getDefaultLockingMode(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "network.get_default_locking_mode";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toNetworkDefaultLockingMode(result);
+    }
+
+    /**
      * Set the name/label field of the given network.
      *
      * @param label New value to set
@@ -657,15 +685,16 @@ public class Network extends XenAPIObject {
      *
      * @param name The name associated with the blob
      * @param mimeType The mime type for the data. Empty string translates to application/octet-stream
+     * @param _public True if the blob should be publicly available
      * @return Task
      */
-    public Task createNewBlobAsync(Connection c, String name, String mimeType) throws
+    public Task createNewBlobAsync(Connection c, String name, String mimeType, Boolean _public) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
         String method_call = "Async.network.create_new_blob";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(name), Marshalling.toXMLRPC(mimeType)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(name), Marshalling.toXMLRPC(mimeType), Marshalling.toXMLRPC(_public)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
         return Types.toTask(result);
@@ -676,18 +705,53 @@ public class Network extends XenAPIObject {
      *
      * @param name The name associated with the blob
      * @param mimeType The mime type for the data. Empty string translates to application/octet-stream
+     * @param _public True if the blob should be publicly available
      * @return The reference of the blob, needed for populating its data
      */
-    public Blob createNewBlob(Connection c, String name, String mimeType) throws
+    public Blob createNewBlob(Connection c, String name, String mimeType, Boolean _public) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
         String method_call = "network.create_new_blob";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(name), Marshalling.toXMLRPC(mimeType)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(name), Marshalling.toXMLRPC(mimeType), Marshalling.toXMLRPC(_public)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
             return Types.toBlob(result);
+    }
+
+    /**
+     * Set the default locking mode for VIFs attached to this network
+     *
+     * @param value The default locking mode for VIFs attached to this network.
+     * @return Task
+     */
+    public Task setDefaultLockingModeAsync(Connection c, Types.NetworkDefaultLockingMode value) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "Async.network.set_default_locking_mode";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+        return Types.toTask(result);
+    }
+
+    /**
+     * Set the default locking mode for VIFs attached to this network
+     *
+     * @param value The default locking mode for VIFs attached to this network.
+     */
+    public void setDefaultLockingMode(Connection c, Types.NetworkDefaultLockingMode value) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "network.set_default_locking_mode";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
+        Map response = c.dispatch(method_call, method_params);
+        return;
     }
 
     /**

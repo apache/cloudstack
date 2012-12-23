@@ -38,6 +38,7 @@ import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.UserContext;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -125,7 +126,7 @@ public class ApiServlet extends HttpServlet {
         String reqStr = "";
         if (s_logger.isDebugEnabled()) {
             reqStr = auditTrailSb.toString() + " " + req.getQueryString();
-            s_logger.debug("===START=== " + reqStr);
+            s_logger.debug("===START=== " + StringUtils.cleanString(reqStr));
         }
         
         try {
@@ -342,7 +343,7 @@ public class ApiServlet extends HttpServlet {
         } finally {
             s_accessLogger.info(auditTrailSb.toString());
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("===END=== " + reqStr);
+                s_logger.debug("===END=== " + StringUtils.cleanString(reqStr));
             }
             // cleanup user context to prevent from being peeked in other request context
             UserContext.unregisterContext();

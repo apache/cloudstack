@@ -35,6 +35,11 @@ import org.apache.cloudstack.api.command.admin.swift.AddSwiftCmd;
 import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
 import org.apache.cloudstack.api.command.admin.host.*;
 import org.apache.cloudstack.api.command.admin.swift.ListSwiftsCmd;
+import com.cloud.api.commands.AddS3Cmd;
+import com.cloud.api.commands.ListS3sCmd;
+import com.cloud.storage.S3;
+import com.cloud.storage.S3VO;
+import com.cloud.storage.s3.S3Manager;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -176,6 +181,8 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     protected HostDao                        _hostDao;
     @Inject
     protected SwiftManager _swiftMgr;
+    @Inject
+    protected S3Manager                      _s3Mgr;
     @Inject
     protected HostDetailsDao                 _hostDetailsDao;
     @Inject
@@ -555,6 +562,16 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     @Override
     public List<SwiftVO> listSwifts(ListSwiftsCmd cmd) {
         return _swiftMgr.listSwifts(cmd);
+    }
+
+    @Override
+    public S3 discoverS3(final AddS3Cmd cmd) throws DiscoveryException {
+        return this._s3Mgr.addS3(cmd);
+    }
+
+    @Override
+    public List<S3VO> listS3s(final ListS3sCmd cmd) {
+        return this._s3Mgr.listS3s(cmd);
     }
 
     private List<HostVO> discoverHostsFull(Long dcId, Long podId, Long clusterId, String clusterName, String url, String username, String password, String hypervisorType, List<String> hostTags,

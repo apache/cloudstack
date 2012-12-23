@@ -33,6 +33,7 @@ config_fields = {'host': 'localhost', 'port': '8080',
                  'apikey': '', 'secretkey': '',
                  'timeout': '3600', 'asyncblock': 'true',
                  'prompt': '🐵 cloudmonkey>', 'color': 'true',
+                 'tabularize': 'false',
                  'log_file':
                  os.path.expanduser('~/.cloudmonkey_log'),
                  'history_file':

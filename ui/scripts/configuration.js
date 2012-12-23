@@ -506,6 +506,7 @@
                   },
                   domainId: {
                     label: 'label.domain',
+                    docID: 'helpSystemOfferingDomain',
                     dependsOn: 'isPublic',
                     select: function(args) {										
                       $.ajax({
@@ -866,6 +867,7 @@
                   },
                   domainId: {
                     label: 'label.domain',
+                    docID: 'helpDiskOfferingDomain',
                     dependsOn: 'isPublic',
                     select: function(args) {										 
                       $.ajax({
@@ -1352,7 +1354,7 @@
                 fields: {
                   name: { label: 'label.name', validation: { required: true }, docID: 'helpNetworkOfferingName' },
 
-                  displayText: { label: 'label.description', validation: { required: true } },
+                  displayText: { label: 'label.description', validation: { required: true }, docID: 'helpNetworkOfferingDescription' },
 
                   networkRate: { label: 'label.network.rate.megabytes', docID: 'helpNetworkOfferingNetworkRate' },
 
@@ -1397,6 +1399,7 @@
 
                   useVpc: {
                     label: 'VPC',
+                    docID: 'helpNetworkOfferingVPC',
                     isBoolean: true,
                     onChange: function(args) {
                       var $checkbox = args.$checkbox;
@@ -1542,6 +1545,7 @@
 									//show or hide upon checked services and selected providers above (begin)
                   serviceOfferingId: {
                     label: 'label.system.offering',
+                    docID: 'helpNetworkOfferingSystemOffering',
                     select: function(args) {
                       $.ajax({
                         url: createURL('listServiceOfferings&issystem=true&systemvmtype=domainrouter'),
@@ -1576,6 +1580,7 @@
                     label: "label.redundant.router.capability",
                     isHidden: true,
                     dependsOn: 'service.SourceNat.isEnabled',
+                    docID: 'helpNetworkOfferingRedundantRouterCapability',
                     isBoolean: true
                   },
 
@@ -1600,6 +1605,7 @@
                   },                  
                   "service.Lb.lbIsolationDropdown": {
                     label: 'label.LB.isolation',
+                    docID: 'helpNetworkOfferingLBIsolation',
                     isHidden: true,                   
                     select: function(args) {
                       args.response.success({
@@ -1612,6 +1618,7 @@
                   },	                
 									"service.Lb.inlineModeDropdown": {
 										label: 'Mode',
+                    docID: 'helpNetworkOfferingMode',
 										select: function(args) {
 											var items = [];
 											items.push({id: "false", description: "side by side"});
@@ -1628,15 +1635,16 @@
 
 									"service.StaticNat.associatePublicIP": {
                     label: 'Associate Public IP',
+                    docID: 'helpNetworkOfferingAssociatePublicIP',
                     isBoolean: true,
                     isHidden: true                  
                   },
                   //show or hide upon checked services and selected providers above (end)
 									
 									
-									conservemode: { label: 'label.conserve.mode', isBoolean: true },
+									conservemode: { label: 'label.conserve.mode', isBoolean: true , docID: 'helpNetworkOfferingConserveMode'},
 									
-                  tags: { label: 'label.tags' },
+                  tags: { label: 'label.tags', docID: 'helpNetworkOfferingTags' },
 									
 									availability: {
                     label: 'label.availability',
@@ -1720,7 +1728,28 @@
                     inputData[key] = value;
                   }
                 });
-
+								
+							  for(var key1 in inputData) { 								  
+								  /* When capability ElasticIp=true is passed to API, if capability associatePublicIP is not passed to API, cloudStack API will assume associatePublicIP=true. 
+									So, UI has to explicitly pass associatePublicIP=false to API if its checkbox is unchecked. */
+								  if(inputData[key1] == 'ElasticIp') { //ElasticIp checkbox is checked 									 
+										var associatePublicIPExists = false;
+									  for(var key2 in inputData) { 										  
+										  if(inputData[key2] == 'associatePublicIP') {
+											  associatePublicIPExists = true;
+											  break; //break key2 for loop
+											}
+										}											
+                    if(associatePublicIPExists == false) { //but associatePublicIP checkbox is unchecked
+                      //UI explicitly passes associatePublicIP=false to API 
+										  inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'StaticNat';
+											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'associatePublicIP'; 
+											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = false; //associatePublicIP checkbox is unchecked 		
+                    }										
+									  break; //break key1 for loop
+									}
+								}
+																
                 // Make supported services list
                 inputData['supportedServices'] = $.map(serviceProviderMap, function(value, key) {
                   return key;
