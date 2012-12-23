@@ -2971,3 +2971,60 @@ from project_invitations
 left join account on project_invitations.account_id = account.id
 left join domain on project_invitations.domain_id=domain.id
 left join projects on projects.id = project_invitations.project_id;
+
+DROP VIEW IF EXISTS `cloud`.`host_view`;
+CREATE VIEW host_view AS
+select 
+host.id,
+host.uuid,
+host.name,
+host.status,
+host.disconnected,
+host.type,
+host.private_ip_address,
+host.version,
+host.hypervisor_type,
+host.hypervisor_version,
+host.capabilities,
+host.last_ping,
+host.created,
+host.removed,
+host.resource_state,
+host.mgmt_server_id,
+host.cpus,
+host.speed,
+host.ram,
+cluster.id cluster_id,
+cluster.uuid cluster_uuid,
+cluster.name cluster_name,
+cluster.cluster_type,
+data_center.id data_center_id, 
+data_center.uuid data_center_uuid,
+data_center.name data_center_name, 
+host_pod_ref.id pod_id, 
+host_pod_ref.uuid pod_uuid,
+host_pod_ref.name pod_name,
+host_tags.tag,
+guest_os_category.id guest_os_category_id,
+guest_os_category.uuid guest_os_category_uuid,
+guest_os_category.name guest_os_category_name,
+mem_caps.used_capacity memory_used_capacity,
+mem_caps.reserved_capacity memory_reserved_capacity,
+cpu_caps.used_capacity cpu_used_capacity,
+cpu_caps.reserved_capacity cpu_reserved_capacity,
+async_job.id job_id,
+async_job.uuid job_uuid,
+async_job.job_status job_status,
+async_job.account_id job_account_id
+from host 
+left join cluster on host.cluster_id = cluster.id
+left join data_center on host.data_center_id = data_center.id
+left join host_pod_ref on host.pod_id = host_pod_ref.id
+left join host_details on host.id = host_details.id and host_details.name = "guest.os.category.id"
+left join guest_os_category on guest_os_category.id = CONVERT( host_details.value, UNSIGNED )
+left join host_tags on host_tags.host_id = host.id
+left join op_host_capacity mem_caps on host.id = mem_caps.host_id and mem_caps.capacity_type = 0
+left join op_host_capacity cpu_caps on host.id = cpu_caps.host_id and cpu_caps.capacity_type = 1
+left join async_job on async_job.instance_id = host.id and async_job.instance_type = "Host" and async_job.job_status = 0;
+
+
