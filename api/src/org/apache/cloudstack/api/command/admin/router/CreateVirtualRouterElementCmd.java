@@ -16,12 +16,12 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.router;
 
+import org.apache.cloudstack.api.response.ProviderResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.PlugService;
@@ -47,8 +47,7 @@ public class CreateVirtualRouterElementCmd extends BaseAsyncCreateCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.NETWORK_SERVICE_PROVIDER_ID, type=CommandType.LONG, required=true, description="the network service provider ID of the virtual router element")
-    @IdentityMapper(entityTableName="physical_network_service_providers")
+    @Parameter(name=ApiConstants.NETWORK_SERVICE_PROVIDER_ID, type=CommandType.UUID, entityType = ProviderResponse.class, required=true, description="the network service provider ID of the virtual router element")
     private Long nspId;
 
     /////////////////////////////////////////////////////

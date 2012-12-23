@@ -16,11 +16,14 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import com.cloud.network.VirtualRouterProvider;
 import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.Entity;
 
+@Entity(value=VirtualRouterProvider.class)
 public class VirtualRouterProviderResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the id of the router")
     private String id;

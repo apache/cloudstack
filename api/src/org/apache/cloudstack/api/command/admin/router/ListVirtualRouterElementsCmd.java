@@ -20,11 +20,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
+import org.apache.cloudstack.api.response.ProviderResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.PlugService;
@@ -49,12 +49,12 @@ public class ListVirtualRouterElementsCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @IdentityMapper(entityTableName = "virtual_router_providers")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list virtual router elements by id")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = VirtualRouterProviderResponse.class,
+            description="list virtual router elements by id")
     private Long id;
 
-    @IdentityMapper(entityTableName = "physical_network_service_providers")
-    @Parameter(name=ApiConstants.NSP_ID, type=CommandType.LONG, description="list virtual router elements by network service provider id")
+    @Parameter(name=ApiConstants.NSP_ID, type=CommandType.UUID, entityType = ProviderResponse.class,
+            description="list virtual router elements by network service provider id")
     private Long nspId;
 
     @Parameter(name=ApiConstants.ENABLED, type=CommandType.BOOLEAN, description="list network offerings by enabled state")

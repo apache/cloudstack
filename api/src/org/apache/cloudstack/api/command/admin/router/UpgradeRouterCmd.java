@@ -16,11 +16,11 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.router;
 
+import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -37,12 +37,12 @@ public class UpgradeRouterCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="vm_instance")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="The ID of the router")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = DomainRouterResponse.class,
+            required=true, description="The ID of the router")
     private Long id;
 
-    @IdentityMapper(entityTableName="disk_offering")
-    @Parameter(name=ApiConstants.SERVICE_OFFERING_ID, type=CommandType.LONG, required=true, description="the service offering ID to apply to the domain router")
+    @Parameter(name=ApiConstants.SERVICE_OFFERING_ID, type=CommandType.UUID, entityType = DiskOfferingResponse.class,
+            required=true, description="the service offering ID to apply to the domain router")
     private Long serviceOfferingId;
 
     /////////////////////////////////////////////////////
