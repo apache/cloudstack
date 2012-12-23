@@ -42,8 +42,8 @@ public class ListAlertsCmd extends BaseListCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="alert")
-    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, description = "the ID of the alert")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AlertResponse.class,
+            description = "the ID of the alert")
     private Long id;
 
     @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "list by alert type")

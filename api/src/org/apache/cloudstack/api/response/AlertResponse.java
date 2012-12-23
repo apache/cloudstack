@@ -18,11 +18,14 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 
+import com.cloud.alert.Alert;
 import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.Entity;
 
+@Entity(value=Alert.class)
 @SuppressWarnings("unused")
 public class AlertResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the id of the alert")
