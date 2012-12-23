@@ -23,11 +23,12 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.TemplateResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
@@ -45,16 +46,16 @@ public class CopyTemplateCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="data_center")
-    @Parameter(name=ApiConstants.DESTINATION_ZONE_ID, type=CommandType.LONG, required=true, description="ID of the zone the template is being copied to.")
+    @Parameter(name=ApiConstants.DESTINATION_ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
+            required=true, description="ID of the zone the template is being copied to.")
     private Long destZoneId;
 
-    @IdentityMapper(entityTableName="vm_template")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="Template ID.")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = UserVmResponse.class,
+            required=true, description="Template ID.")
     private Long id;
 
-    @IdentityMapper(entityTableName="data_center")
-    @Parameter(name=ApiConstants.SOURCE_ZONE_ID, type=CommandType.LONG, required=true, description="ID of the zone the template is currently hosted on.")
+    @Parameter(name=ApiConstants.SOURCE_ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
+            required=true, description="ID of the zone the template is currently hosted on.")
     private Long sourceZoneId;
 
 
