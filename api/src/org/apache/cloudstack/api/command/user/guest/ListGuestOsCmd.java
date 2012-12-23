@@ -20,11 +20,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.cloudstack.api.command.user.iso.ListIsosCmd;
+import org.apache.cloudstack.api.response.GuestOSCategoryResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.GuestOSResponse;
@@ -42,12 +42,12 @@ public class ListGuestOsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="guest_os")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list by Os type Id")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = GuestOSResponse.class,
+            description="list by Os type Id")
     private Long id;
 
-    @IdentityMapper(entityTableName="guest_os_category")
-    @Parameter(name=ApiConstants.OS_CATEGORY_ID, type=CommandType.LONG, description="list by Os Category id")
+    @Parameter(name=ApiConstants.OS_CATEGORY_ID, type=CommandType.UUID, entityType = GuestOSCategoryResponse.class,
+            description="list by Os Category id")
     private Long osCategoryId;
 
     @Parameter(name=ApiConstants.DESCRIPTION, type=CommandType.STRING, description="list os by description", since="3.0.1")

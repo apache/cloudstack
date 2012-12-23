@@ -24,7 +24,6 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.GuestOSCategoryResponse;
@@ -42,8 +41,8 @@ public class ListGuestOsCategoriesCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="guest_os_category")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list Os category by id")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = GuestOSCategoryResponse.class,
+            description="list Os category by id")
     private Long id;
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="list os category by name", since="3.0.1")
