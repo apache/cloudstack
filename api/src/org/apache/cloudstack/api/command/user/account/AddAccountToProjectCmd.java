@@ -16,12 +16,12 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.account;
 
+import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -42,8 +42,8 @@ public class AddAccountToProjectCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="projects")
-    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, required=true, description="id of the project to add the account to")
+    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.UUID, entityType = ProjectResponse.class,
+            required=true, description="id of the project to add the account to")
     private Long projectId;
 
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="name of the account to be added to the project")

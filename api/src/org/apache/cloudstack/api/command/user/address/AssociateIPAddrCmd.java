@@ -24,11 +24,15 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
+import org.apache.cloudstack.api.response.NetworkResponse;
+import org.apache.cloudstack.api.response.VpcResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -58,28 +62,24 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
             description="the account to associate with this IP address")
     private String accountName;
 
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG,
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType = DomainResponse.class,
         description="the ID of the domain to associate with this IP address")
     private Long domainId;
 
-    @IdentityMapper(entityTableName="data_center")
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG,
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
         description="the ID of the availability zone you want to acquire an public IP address from")
     private Long zoneId;
 
-    @IdentityMapper(entityTableName="networks")
-    @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG,
+    @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.UUID, entityType = NetworkResponse.class,
         description="The network this ip address should be associated to.")
     private Long networkId;
 
-    @IdentityMapper(entityTableName="projects")
-    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG,
+    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.UUID, entityType = ProjectResponse.class,
         description="Deploy vm for the project")
     private Long projectId;
 
-    @IdentityMapper(entityTableName="vpc")
-    @Parameter(name=ApiConstants.VPC_ID, type=CommandType.LONG, description="the VPC you want the ip address to " +
+    @Parameter(name=ApiConstants.VPC_ID, type=CommandType.UUID, entityType = VpcResponse.class,
+            description="the VPC you want the ip address to " +
             "be associated with")
     private Long vpcId;
 

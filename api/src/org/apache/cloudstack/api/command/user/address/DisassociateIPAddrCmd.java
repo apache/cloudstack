@@ -16,12 +16,13 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.address;
 
+import org.apache.cloudstack.api.response.AccountResponse;
+import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -44,14 +45,14 @@ public class DisassociateIPAddrCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="user_ip_address")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the id of the public ip address" +
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID,entityType = IPAddressResponse.class,
+            required=true, description="the id of the public ip address" +
             " to disassociate")
     private Long id;
 
     // unexposed parameter needed for events logging
-    @IdentityMapper(entityTableName="account")
-    @Parameter(name=ApiConstants.ACCOUNT_ID, type=CommandType.LONG, expose=false)
+    @Parameter(name=ApiConstants.ACCOUNT_ID, type=CommandType.UUID, entityType = AccountResponse.class,
+            expose=false)
     private Long ownerId;
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////

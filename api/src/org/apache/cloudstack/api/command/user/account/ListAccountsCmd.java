@@ -23,7 +23,6 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListDomainResourcesCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.AccountResponse;
@@ -43,8 +42,8 @@ public class ListAccountsCmd extends BaseListDomainResourcesCmd {
     @Parameter(name=ApiConstants.ACCOUNT_TYPE, type=CommandType.LONG, description="list accounts by account type. Valid account types are 1 (admin), 2 (domain-admin), and 0 (user).")
     private Long accountType;
 
-    @IdentityMapper(entityTableName="account")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list account by account ID")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = AccountResponse.class,
+            description="list account by account ID")
     private Long id;
 
     @Parameter(name=ApiConstants.IS_CLEANUP_REQUIRED, type=CommandType.BOOLEAN, description="list accounts by cleanuprequred attribute (values are true or false)")
