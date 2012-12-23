@@ -16,11 +16,14 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import com.cloud.dc.Vlan;
 import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.Entity;
 
+@Entity(value=Vlan.class)
 @SuppressWarnings("unused")
 public class VlanIpRangeResponse extends BaseResponse implements ControlledEntityResponse{
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the VLAN IP range")

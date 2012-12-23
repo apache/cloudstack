@@ -16,11 +16,11 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.vlan;
 
+import org.apache.cloudstack.api.response.VlanIpRangeResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -37,8 +37,8 @@ public class DeleteVlanIpRangeCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="vlan")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the id of the VLAN IP range")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = VlanIpRangeResponse.class,
+            required=true, description="the id of the VLAN IP range")
     private Long id;
 
     /////////////////////////////////////////////////////

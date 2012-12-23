@@ -21,7 +21,6 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -39,7 +38,6 @@ public class DeletePoolCmd extends BaseCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="storage_pool")
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = StoragePoolResponse.class,
             required = true, description = "Storage pool id")
     private Long id;
