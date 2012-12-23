@@ -23,10 +23,10 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
+import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.offering.DiskOffering;
 
@@ -40,12 +40,12 @@ public class ListDiskOfferingsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the ID of the domain of the disk offering.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType = DomainResponse.class,
+            description="the ID of the domain of the disk offering.")
     private Long domainId;
 
-    @IdentityMapper(entityTableName="disk_offering")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="ID of the disk offering")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = DiskOfferingResponse.class,
+            description="ID of the disk offering")
     private Long id;
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="name of the disk offering")

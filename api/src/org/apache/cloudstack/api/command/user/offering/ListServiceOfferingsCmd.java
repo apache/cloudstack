@@ -23,11 +23,13 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
 import com.cloud.offering.ServiceOffering;
 
 @Implementation(description="Lists all available service offerings.", responseObject=ServiceOfferingResponse.class)
@@ -40,19 +42,19 @@ public class ListServiceOfferingsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="disk_offering")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="ID of the service offering")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = DiskOfferingResponse.class,
+            description="ID of the service offering")
     private Long id;
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="name of the service offering")
     private String serviceOfferingName;
 
-    @IdentityMapper(entityTableName="vm_instance")
-    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, description="the ID of the virtual machine. Pass this in if you want to see the available service offering that a virtual machine can be changed to.")
+    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.UUID, entityType = UserVmResponse.class,
+            description="the ID of the virtual machine. Pass this in if you want to see the available service offering that a virtual machine can be changed to.")
     private Long virtualMachineId;
 
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the ID of the domain associated with the service offering")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType = DomainResponse.class,
+            description="the ID of the domain associated with the service offering")
     private Long domainId;
 
     @Parameter(name=ApiConstants.IS_SYSTEM_OFFERING, type=CommandType.BOOLEAN, description="is this a system vm offering")
