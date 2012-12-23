@@ -20,11 +20,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -51,8 +51,8 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name=ApiConstants.HYPERVISOR, type=CommandType.STRING, description="the hypervisor for which to restrict the search")
     private String hypervisor;
 
-    @IdentityMapper(entityTableName="vm_template")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list all isos by id")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = TemplateResponse.class,
+            description="list all isos by id")
     private Long id;
 
     @Parameter(name=ApiConstants.IS_PUBLIC, type=CommandType.BOOLEAN, description="true if the ISO is publicly available to all users, false otherwise.")
@@ -71,8 +71,8 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="list all isos by name")
     private String isoName;
 
-    @IdentityMapper(entityTableName="data_center")
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the ID of the zone")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
+            description="the ID of the zone")
     private Long zoneId;
 
     /////////////////////////////////////////////////////

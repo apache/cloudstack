@@ -18,11 +18,12 @@ package com.cloud.api.commands;
 
 import java.util.List;
 
+import org.apache.cloudstack.api.response.ProjectResponse;
+import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
@@ -39,8 +40,8 @@ public abstract class UpdateTemplateOrIsoPermissionsCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ACCOUNTS, type = CommandType.LIST, collectionType = CommandType.STRING, description = "a comma delimited list of accounts. If specified, \"op\" parameter has to be passed in.")
     private List<String> accountNames;
 
-    @IdentityMapper(entityTableName="vm_template")
-    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, required = true, description = "the template ID")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TemplateResponse.class,
+            required = true, description = "the template ID")
     private Long id;
 
     @Parameter(name = ApiConstants.IS_FEATURED, type = CommandType.BOOLEAN, description = "true for featured template/iso, false otherwise")
@@ -55,8 +56,8 @@ public abstract class UpdateTemplateOrIsoPermissionsCmd extends BaseCmd {
     @Parameter(name = ApiConstants.OP, type = CommandType.STRING, description = "permission operator (add, remove, reset)")
     private String operation;
 
-    @IdentityMapper(entityTableName="projects")
-    @Parameter(name = ApiConstants.PROJECT_IDS, type = CommandType.LIST, collectionType = CommandType.LONG, description = "a comma delimited list of projects. If specified, \"op\" parameter has to be passed in.")
+    @Parameter(name = ApiConstants.PROJECT_IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = ProjectResponse.class,
+            description = "a comma delimited list of projects. If specified, \"op\" parameter has to be passed in.")
     private List<Long> projectIds;
 
     // ///////////////////////////////////////////////////

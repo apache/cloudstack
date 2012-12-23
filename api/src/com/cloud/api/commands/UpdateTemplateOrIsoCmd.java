@@ -17,11 +17,12 @@
 package com.cloud.api.commands;
 
 import org.apache.cloudstack.api.command.user.iso.UpdateIsoCmd;
+import org.apache.cloudstack.api.response.GuestOSResponse;
+import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Parameter;
 
 public abstract class UpdateTemplateOrIsoCmd extends BaseCmd {
@@ -37,15 +38,15 @@ public abstract class UpdateTemplateOrIsoCmd extends BaseCmd {
     @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="the display text of the image", length=4096)
     private String displayText;
 
-    @IdentityMapper(entityTableName="vm_template")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the image file")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = TemplateResponse.class,
+            required=true, description="the ID of the image file")
     private Long id;
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the image file")
     private String templateName;
 
-    @IdentityMapper(entityTableName="guest_os")
-    @Parameter(name=ApiConstants.OS_TYPE_ID, type=CommandType.LONG, description="the ID of the OS type that best represents the OS of this image.")
+    @Parameter(name=ApiConstants.OS_TYPE_ID, type=CommandType.UUID, entityType = GuestOSResponse.class,
+            description="the ID of the OS type that best represents the OS of this image.")
     private Long osTypeId;
 
     @Parameter(name=ApiConstants.FORMAT, type=CommandType.STRING, description="the format for the image")

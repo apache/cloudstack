@@ -40,7 +40,8 @@ public class ListTemplateOrIsoPermissionsCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @IdentityMapper(entityTableName="vm_template")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the template ID")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = TemplatePermissionsResponse.class,
+            required=true, description="the template ID")
     private Long id;
 
     /////////////////////////////////////////////////////
