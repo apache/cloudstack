@@ -67,7 +67,7 @@ public interface Snapshot extends ControlledEntity {
 
     public static final long MANUAL_POLICY_ID = 0L;
 
-    Long getId();
+    long getId();
 
     String getUuid();
 

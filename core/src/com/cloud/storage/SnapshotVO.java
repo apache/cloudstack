@@ -35,7 +35,7 @@ import com.google.gson.annotations.Expose;
 
 @Entity
 @Table(name="snapshots")
-public class SnapshotVO implements Snapshot {
+public class SnapshotVO implements Snapshot, Identity {
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -131,7 +131,7 @@ public class SnapshotVO implements Snapshot {
     }
 
     @Override
-    public Long getId() {
+    public long getId() {
         return id;
     }
 

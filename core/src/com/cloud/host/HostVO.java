@@ -48,7 +48,7 @@ import com.cloud.utils.db.GenericDao;
 @Table(name="host")
 @Inheritance(strategy=InheritanceType.TABLE_PER_CLASS)
 @DiscriminatorColumn(name="type", discriminatorType=DiscriminatorType.STRING, length=32)
-public class HostVO implements Host {
+public class HostVO implements Host, Identity {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")

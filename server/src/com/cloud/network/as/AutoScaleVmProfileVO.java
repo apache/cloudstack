@@ -41,7 +41,7 @@ import com.cloud.utils.net.NetUtils;
 @Entity
 @Table(name = "autoscale_vmprofiles")
 @Inheritance(strategy = InheritanceType.JOINED)
-public class AutoScaleVmProfileVO implements AutoScaleVmProfile{
+public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

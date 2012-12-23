@@ -33,7 +33,7 @@ import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="domain")
-public class DomainVO implements Domain {
+public class DomainVO implements Domain, Identity {
 	public static final Logger s_logger = Logger.getLogger(DomainVO.class.getName());
 
     @Id

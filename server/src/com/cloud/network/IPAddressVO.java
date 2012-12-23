@@ -40,7 +40,7 @@ import com.cloud.utils.net.Ip;
  */
 @Entity
 @Table(name=("user_ip_address"))
-public class IPAddressVO implements IpAddress {
+public class IPAddressVO implements IpAddress, Identity {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")

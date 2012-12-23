@@ -44,7 +44,7 @@ import com.cloud.utils.net.NetUtils;
  */
 @Entity
 @Table(name="networks")
-public class NetworkVO implements Network {
+public class NetworkVO implements Network, Identity {
     @Id
     @TableGenerator(name="networks_sq", table="sequence", pkColumnName="name", valueColumnName="value", pkColumnValue="networks_seq", allocationSize=1)
     @Column(name="id")

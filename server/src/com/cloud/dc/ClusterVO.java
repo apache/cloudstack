@@ -38,7 +38,7 @@ import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="cluster")
-public class ClusterVO implements Cluster {
+public class ClusterVO implements Cluster, Identity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

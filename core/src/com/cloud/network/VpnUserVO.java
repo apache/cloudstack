@@ -32,7 +32,7 @@ import com.cloud.utils.db.Encrypt;
 
 @Entity
 @Table(name=("vpn_users"))
-public class VpnUserVO implements VpnUser {
+public class VpnUserVO implements VpnUser, Identity {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")

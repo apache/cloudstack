@@ -31,7 +31,7 @@ import org.apache.cloudstack.api.Identity;
 
 @Entity
 @Table(name="vlan")
-public class VlanVO implements Vlan {
+public class VlanVO implements Vlan, Identity {
 
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)

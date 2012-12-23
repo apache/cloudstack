@@ -39,7 +39,7 @@ import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="data_center")
-public class DataCenterVO implements DataCenter {
+public class DataCenterVO implements DataCenter, Identity {
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

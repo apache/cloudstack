@@ -33,7 +33,7 @@ import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="account")
-public class AccountVO implements Account {
+public class AccountVO implements Account, Identity {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")

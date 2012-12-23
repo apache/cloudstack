@@ -37,7 +37,7 @@ import com.cloud.utils.db.Encrypt;
 
 @Entity
 @Table(name="virtual_supervisor_module")
-public class CiscoNexusVSMDeviceVO implements CiscoNexusVSMDevice{
+public class CiscoNexusVSMDeviceVO implements CiscoNexusVSMDevice, Identity{
 
     // We need to know what properties a VSM has. Put them here.
 
