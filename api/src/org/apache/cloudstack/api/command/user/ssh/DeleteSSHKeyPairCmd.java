@@ -20,9 +20,10 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
@@ -31,7 +32,6 @@ import com.cloud.user.UserContext;
 public class DeleteSSHKeyPairCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateSSHKeyPairCmd.class.getName());
     private static final String s_name = "deletesshkeypairresponse";
-
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -43,12 +43,12 @@ public class DeleteSSHKeyPairCmd extends BaseCmd {
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account associated with the keypair. Must be used with the domainId parameter.")
     private String accountName;
 
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID associated with the keypair")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType = DomainResponse.class,
+            description="the domain ID associated with the keypair")
     private Long domainId;
 
-    @IdentityMapper(entityTableName="projects")
-    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="the project associated with keypair")
+    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.UUID, entityType = ProjectResponse.class,
+            description="the project associated with keypair")
     private Long projectId;
 
     /////////////////////////////////////////////////////

@@ -20,9 +20,10 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SSHKeyPairResponse;
 import com.cloud.user.SSHKeyPair;
 import com.cloud.user.UserContext;
@@ -31,7 +32,6 @@ import com.cloud.user.UserContext;
 public class RegisterSSHKeyPairCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(RegisterSSHKeyPairCmd.class.getName());
     private static final String s_name = "registersshkeypairresponse";
-
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -47,12 +47,12 @@ public class RegisterSSHKeyPairCmd extends BaseCmd {
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="an optional account for the ssh key. Must be used with domainId.")
     private String accountName;
 
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="an optional domainId for the ssh key. If the account parameter is used, domainId must also be used.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType = DomainResponse.class,
+            description="an optional domainId for the ssh key. If the account parameter is used, domainId must also be used.")
     private Long domainId;
 
-    @IdentityMapper(entityTableName="projects")
-    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="an optional project for the ssh key")
+    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.UUID, entityType = ProjectResponse.class,
+            description="an optional project for the ssh key")
     private Long projectId;
 
     /////////////////////////////////////////////////////
