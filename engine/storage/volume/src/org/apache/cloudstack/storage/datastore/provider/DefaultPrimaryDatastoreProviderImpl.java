@@ -125,6 +125,7 @@ public class DefaultPrimaryDatastoreProviderImpl implements PrimaryDataStoreProv
         dataStoreVO.setPort(Integer.parseInt(dsInfos.get("port")));
         dataStoreVO.setKey(key);
         dataStoreVO.setName(dsInfos.get("name"));
+        dataStoreVO.setUuid(dsInfos.get("uuid"));
         dataStoreVO = dataStoreDao.persist(dataStoreVO);
 
         DefaultPrimaryDataStore dataStore = (DefaultPrimaryDataStore)configurator.getDataStore(dataStoreVO.getId());

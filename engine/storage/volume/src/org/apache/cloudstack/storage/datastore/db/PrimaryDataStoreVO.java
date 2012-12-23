@@ -53,7 +53,7 @@ public class PrimaryDataStoreVO implements Identity {
     private String uuid = null;
 
     @Column(name = "pool_type", updatable = false, nullable = false, length = 32)
-    private String protocol;
+    private String poolType;
 
     @Column(name = GenericDao.CREATED_COLUMN)
     Date created;
@@ -123,11 +123,11 @@ public class PrimaryDataStoreVO implements Identity {
     }
 
     public String getPoolType() {
-        return protocol;
+        return poolType;
     }
     
     public void setPoolType(String protocol) {
-        this.protocol = protocol;
+        this.poolType = protocol;
     }
 
     public Date getCreated() {
@@ -262,6 +262,6 @@ public class PrimaryDataStoreVO implements Identity {
 
     @Override
     public String toString() {
-        return new StringBuilder("Pool[").append(id).append("|").append(protocol).append("]").toString();
+        return new StringBuilder("Pool[").append(id).append("|").append(poolType).append("]").toString();
     }
 }

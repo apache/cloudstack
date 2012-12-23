@@ -23,6 +23,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -48,6 +49,7 @@ public class NfsValidator implements ProtocolValidator {
 			params.put("path", hostPath);
 			params.put("user", userInfo);
 			params.put("port", String.valueOf(port));
+			params.put("uuid", UUID.fromString(storageHost + hostPath).toString());
 			
 		} catch (URISyntaxException e) {
 			throw new CloudRuntimeException("invalid url: " + e.toString());

@@ -18,6 +18,7 @@
  */
 package org.apache.cloudstack.storage.test;
 
+import java.lang.reflect.Method;
 import java.util.UUID;
 
 import javax.inject.Inject;
@@ -27,12 +28,16 @@ import org.apache.cloudstack.storage.to.ImageDataStoreTO;
 import org.apache.cloudstack.storage.to.ImageOnPrimayDataStoreTO;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateTO;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+
 import org.mockito.Mockito;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.testng.AbstractTestNGSpringContextTests;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.BeforeTest;
+import org.testng.annotations.Parameters;
+import org.testng.annotations.Test;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.ReadyCommand;
@@ -52,10 +57,11 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Cluster.ClusterType;
 import com.cloud.org.Managed.ManagedState;
 import com.cloud.resource.ResourceState;
+import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Transaction;
 
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations="classpath:/resource/storageContext.xml")
-public class DirectAgentTest {
+@ContextConfiguration(locations="classpath:/storageContext.xml")
+public class DirectAgentTest extends CloudStackTestNGBase {
     @Inject
     AgentManager agentMgr;
     @Inject 
@@ -69,10 +75,10 @@ public class DirectAgentTest {
     private long dcId;
     private long clusterId;
     private long hostId;
-    private String hostGuid = "9d4c9db8-32f7-25c3-0435-eab4bf3adcea";
-    @Before
+    
+    @Test(priority = -1)
     public void setUp() {
-        HostVO host = hostDao.findByGuid(hostGuid);
+        HostVO host = hostDao.findByGuid(this.getHostGuid());
         if (host != null) {
             hostId = host.getId();
             dcId = host.getDataCenterId();
@@ -86,7 +92,7 @@ public class DirectAgentTest {
         dcId = dc.getId();
         //create pod
 
-        HostPodVO pod = new HostPodVO(UUID.randomUUID().toString(), dc.getId(), "192.168.56.1", "192.168.56.0/24", 8, "test");
+        HostPodVO pod = new HostPodVO(UUID.randomUUID().toString(), dc.getId(), this.getHostGateway(), this.getHostCidr(), 8, "test");
         pod = podDao.persist(pod);
         //create xen cluster
         ClusterVO cluster = new ClusterVO(dc.getId(), pod.getId(), "devcloud cluster");
@@ -97,12 +103,11 @@ public class DirectAgentTest {
         clusterId = cluster.getId();
         //create xen host
 
-        //TODO: this hardcode host uuid in devcloud
-        host = new HostVO(hostGuid);
+        host = new HostVO(this.getHostGuid());
         host.setName("devcloud xen host");
         host.setType(Host.Type.Routing);
         host.setHypervisorType(HypervisorType.XenServer);
-        host.setPrivateIpAddress("192.168.56.10");
+        host.setPrivateIpAddress(this.getHostIp());
         host.setDataCenterId(dc.getId());
         host.setVersion("6.0.1");
         host.setAvailable(true);
@@ -133,14 +138,14 @@ public class DirectAgentTest {
     public void testDownloadTemplate() {
         ImageOnPrimayDataStoreTO image = Mockito.mock(ImageOnPrimayDataStoreTO.class);
         PrimaryDataStoreTO primaryStore = Mockito.mock(PrimaryDataStoreTO.class);
-        Mockito.when(primaryStore.getUuid()).thenReturn("9f3f9262-3f77-09cc-2df7-0d8475676260");
+        Mockito.when(primaryStore.getUuid()).thenReturn(this.getLocalStorageUuid());
         Mockito.when(image.getPrimaryDataStore()).thenReturn(primaryStore);
         
         ImageDataStoreTO imageStore = Mockito.mock(ImageDataStoreTO.class);
         Mockito.when(imageStore.getType()).thenReturn("http");
         
         TemplateTO template = Mockito.mock(TemplateTO.class);
-        Mockito.when(template.getPath()).thenReturn("http://download.cloud.com/templates/devcloud/defaulttemplates/5/ce5b212e-215a-3461-94fb-814a635b2215.vhd");
+        Mockito.when(template.getPath()).thenReturn(this.getTemplateUrl());
         Mockito.when(template.getImageDataStore()).thenReturn(imageStore);
         
         Mockito.when(image.getTemplate()).thenReturn(template);

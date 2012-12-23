@@ -22,7 +22,7 @@
 
 import os, sys, time
 import XenAPIPlugin
-sys.path.extend(["/usr/lib/xcp/sm/", "/usr/local/sbin/", "/sbin/"])
+sys.path.extend(["/opt/xensource/sm/", "/usr/lib/xcp/sm/", "/usr/local/sbin/", "/sbin/"])
 import util
 import base64
 import socket

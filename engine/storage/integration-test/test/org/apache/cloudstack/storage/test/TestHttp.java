@@ -40,13 +40,15 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.testng.AbstractTestNGSpringContextTests;
+import org.testng.annotations.Parameters;
 
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations="classpath:/resource/storageContext.xml")
-public class TestHttp {
+@ContextConfiguration(locations="classpath:/storageContext.xml")
+public class TestHttp extends AbstractTestNGSpringContextTests {
     @Test
-    public void testHttpclient() {
-        HttpHead method = new HttpHead("http://download.cloud.com/templates/devcloud/defaulttemplates/5/ce5b212e-215a-3461-94fb-814a635b2215.vhd");
+    @Parameters("template-url")
+    public void testHttpclient(String templateUrl) {
+        HttpHead method = new HttpHead(templateUrl);
         DefaultHttpClient client = new DefaultHttpClient();
 
         OutputStream output = null;
@@ -60,7 +62,7 @@ public class TestHttp {
                localFile.createNewFile();
             }
             
-            HttpGet getMethod = new HttpGet("http://download.cloud.com/templates/devcloud/defaulttemplates/5/ce5b212e-215a-3461-94fb-814a635b2215.vhd");
+            HttpGet getMethod = new HttpGet(templateUrl);
             response = client.execute(getMethod);
             HttpEntity entity = response.getEntity();
          

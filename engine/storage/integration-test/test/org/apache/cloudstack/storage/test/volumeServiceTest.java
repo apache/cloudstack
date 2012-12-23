@@ -105,7 +105,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations="classpath:/resource/storageContext.xml")
+@ContextConfiguration(locations="classpath:/storageContext.xml")
 public class volumeServiceTest {
 	@Inject
 	ImageDataStoreProviderManager imageProviderMgr;
@@ -158,7 +158,7 @@ public class volumeServiceTest {
 		HostVO host = new HostVO(UUID.randomUUID().toString());
 		host.setName("devcloud xen host");
 		host.setType(Host.Type.Routing);
-		host.setPrivateIpAddress("192.168.56.10");
+		host.setPrivateIpAddress("192.168.56.2");
 		host.setDataCenterId(dc.getId());
 		host.setVersion("6.0.1");
 		host.setAvailable(true);
