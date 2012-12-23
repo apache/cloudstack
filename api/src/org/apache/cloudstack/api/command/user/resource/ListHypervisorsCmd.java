@@ -24,11 +24,11 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.HypervisorResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 import com.cloud.user.Account;
 
 @Implementation(description = "List hypervisors", responseObject = HypervisorResponse.class)
@@ -45,8 +45,8 @@ public class ListHypervisorsCmd extends BaseCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="data_center")
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.LONG, description = "the zone id for listing hypervisors.")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class,
+            description = "the zone id for listing hypervisors.")
     private Long zoneId;
 
     // ///////////////////////////////////////////////////

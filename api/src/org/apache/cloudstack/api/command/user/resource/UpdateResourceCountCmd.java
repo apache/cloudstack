@@ -23,16 +23,16 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ResourceCountResponse;
 import com.cloud.configuration.ResourceCount;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
-
 
 @Implementation(description="Recalculate and update resource count for an account or domain.", responseObject=ResourceCountResponse.class)
 public class UpdateResourceCountCmd extends BaseCmd {
@@ -48,8 +48,8 @@ public class UpdateResourceCountCmd extends BaseCmd {
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="Update resource count for a specified account. Must be used with the domainId parameter.")
     private String accountName;
 
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, required=true, description="If account parameter specified then updates resource counts for a specified account in this domain else update resource counts for all accounts & child domains in specified domain.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType = DomainResponse.class,
+            required=true, description="If account parameter specified then updates resource counts for a specified account in this domain else update resource counts for all accounts & child domains in specified domain.")
     private Long domainId;
 
     @Parameter(name=ApiConstants.RESOURCE_TYPE, type=CommandType.INTEGER, description=  "Type of resource to update. If specifies valid values are 0, 1, 2, 3, and 4. If not specified will update all resource counts" +
@@ -60,8 +60,8 @@ public class UpdateResourceCountCmd extends BaseCmd {
                                                                                         "4 - Template. Number of templates that a user can register/create.")
     private Integer resourceType;
 
-    @IdentityMapper(entityTableName="projects")
-    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="Update resource limits for project")
+    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.UUID, entityType = ProjectResponse.class,
+            description="Update resource limits for project")
     private Long projectId;
 
     /////////////////////////////////////////////////////

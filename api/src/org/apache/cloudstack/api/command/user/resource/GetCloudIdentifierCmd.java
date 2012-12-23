@@ -22,11 +22,11 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.CloudIdentifierResponse;
+import org.apache.cloudstack.api.response.UserResponse;
 import com.cloud.user.Account;
 
 @Implementation(description="Retrieves a cloud identifier.", responseObject=CloudIdentifierResponse.class)
@@ -38,10 +38,9 @@ public class GetCloudIdentifierCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="user")
-    @Parameter(name=ApiConstants.USER_ID, type=CommandType.LONG, required=true, description="the user ID for the cloud identifier")
+    @Parameter(name=ApiConstants.USER_ID, type=CommandType.UUID, entityType = UserResponse.class,
+            required=true, description="the user ID for the cloud identifier")
     private Long userid;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -50,7 +49,6 @@ public class GetCloudIdentifierCmd extends BaseCmd {
     public Long getUserId() {
         return userid;
     }
-
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
