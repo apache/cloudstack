@@ -23,11 +23,13 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.storage.StoragePool;
 import com.cloud.utils.Pair;
@@ -42,8 +44,8 @@ public class ListStoragePoolsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="cluster")
-    @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.LONG, description="list storage pools belongig to the specific cluster")
+    @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.UUID, entityType = ClusterResponse.class,
+            description="list storage pools belongig to the specific cluster")
     private Long clusterId;
 
     @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, description="the IP address for the storage pool")
@@ -55,16 +57,16 @@ public class ListStoragePoolsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.PATH, type=CommandType.STRING, description="the storage pool path")
     private String path;
 
-    @IdentityMapper(entityTableName="host_pod_ref")
-    @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, description="the Pod ID for the storage pool")
+    @Parameter(name=ApiConstants.POD_ID, type=CommandType.UUID, entityType = PodResponse.class,
+            description="the Pod ID for the storage pool")
     private Long podId;
 
-    @IdentityMapper(entityTableName="data_center")
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the Zone ID for the storage pool")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
+            description="the Zone ID for the storage pool")
     private Long zoneId;
 
-    @IdentityMapper(entityTableName="storage_pool")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the ID of the storage pool")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = StoragePoolResponse.class,
+            description="the ID of the storage pool")
     private Long id;
 
     /////////////////////////////////////////////////////

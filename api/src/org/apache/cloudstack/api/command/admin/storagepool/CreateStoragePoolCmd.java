@@ -19,11 +19,13 @@ package org.apache.cloudstack.api.command.admin.storagepool;
 import java.net.UnknownHostException;
 import java.util.Map;
 
+import org.apache.cloudstack.api.response.ClusterResponse;
+import org.apache.cloudstack.api.response.PodResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -44,8 +46,8 @@ public class CreateStoragePoolCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="cluster")
-    @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.LONG, required=true, description="the cluster ID for the storage pool")
+    @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.UUID, entityType = ClusterResponse.class,
+            required=true, description="the cluster ID for the storage pool")
     private Long clusterId;
 
     @Parameter(name=ApiConstants.DETAILS, type=CommandType.MAP, description="the details for the storage pool")
@@ -54,8 +56,8 @@ public class CreateStoragePoolCmd extends BaseCmd {
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="the name for the storage pool")
     private String storagePoolName;
 
-    @IdentityMapper(entityTableName="host_pod_ref")
-    @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, required=true, description="the Pod ID for the storage pool")
+    @Parameter(name=ApiConstants.POD_ID, type=CommandType.UUID, entityType = PodResponse.class,
+            required=true, description="the Pod ID for the storage pool")
     private Long podId;
 
     @Parameter(name=ApiConstants.TAGS, type=CommandType.STRING, description="the tags for the storage pool")
@@ -64,8 +66,8 @@ public class CreateStoragePoolCmd extends BaseCmd {
     @Parameter(name=ApiConstants.URL, type=CommandType.STRING, required=true, description="the URL of the storage pool")
     private String url;
 
-    @IdentityMapper(entityTableName="data_center")
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="the Zone ID for the storage pool")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
+            required=true, description="the Zone ID for the storage pool")
     private Long zoneId;
 
     /////////////////////////////////////////////////////

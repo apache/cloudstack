@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.storagepool;
 
+import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -39,7 +40,8 @@ public class DeletePoolCmd extends BaseCmd {
     // ///////////////////////////////////////////////////
 
     @IdentityMapper(entityTableName="storage_pool")
-    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, required = true, description = "Storage pool id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = StoragePoolResponse.class,
+            required = true, description = "Storage pool id")
     private Long id;
 
     @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false, description = "Force destroy storage pool " +
