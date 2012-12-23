@@ -16,12 +16,12 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.vpc;
 
+import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -38,10 +38,9 @@ public class DeleteVPCOfferingCmd extends BaseAsyncCmd{
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="vpc_offerings")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the VPC offering")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = VpcOfferingResponse.class,
+            required=true, description="the ID of the VPC offering")
     private Long id;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -50,7 +49,6 @@ public class DeleteVPCOfferingCmd extends BaseAsyncCmd{
     public Long getId() {
         return id;
     }
-
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

@@ -16,12 +16,12 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.vpc;
 
+import org.apache.cloudstack.api.response.PrivateGatewayResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -44,8 +44,8 @@ public class DeletePrivateGatewayCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="vpc_gateways")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the private gateway")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = PrivateGatewayResponse.class,
+            required=true, description="the ID of the private gateway")
     private Long id;
 
     /////////////////////////////////////////////////////

@@ -16,13 +16,14 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.vpc;
 
+import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
+import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -48,8 +49,8 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="physical_network")
-    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, description="the Physical Network ID the network belongs to")
+    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.UUID, entityType = PhysicalNetworkResponse.class,
+            description="the Physical Network ID the network belongs to")
     private Long physicalNetworkId;
 
     @Parameter(name=ApiConstants.GATEWAY, type=CommandType.STRING, required=true, description="the gateway of the Private gateway")
@@ -64,8 +65,8 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
     @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, required=true, description="the Vlan for the private gateway")
     private String vlan;
 
-    @IdentityMapper(entityTableName="vpc")
-    @Parameter(name=ApiConstants.VPC_ID, type=CommandType.LONG, required=true, description="the VPC network belongs to")
+    @Parameter(name=ApiConstants.VPC_ID, type=CommandType.UUID, entityType = VpcResponse.class,
+            required=true, description="the VPC network belongs to")
     private Long vpcId;
 
     /////////////////////////////////////////////////////

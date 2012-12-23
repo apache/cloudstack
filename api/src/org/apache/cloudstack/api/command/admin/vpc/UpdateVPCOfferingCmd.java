@@ -21,7 +21,6 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -39,8 +38,8 @@ public class UpdateVPCOfferingCmd extends BaseAsyncCmd{
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="vpc_offerings")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the id of the VPC offering")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = VpcOfferingResponse.class,
+            description="the id of the VPC offering")
     private Long id;
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the VPC offering")
