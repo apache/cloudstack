@@ -19,11 +19,11 @@ package org.apache.cloudstack.api.command.user.loadbalancer;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.LBStickinessResponse;
@@ -43,11 +43,9 @@ public class ListLBStickinessPoliciesCmd extends BaseListCmd {
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
-    @IdentityMapper(entityTableName="firewall_rules")
-    @Parameter(name = ApiConstants.LBID, type = CommandType.LONG, required = true, description = "the ID of the load balancer rule")
+    @Parameter(name = ApiConstants.LBID, type = CommandType.UUID, entityType = FirewallRuleResponse.class,
+            required = true, description = "the ID of the load balancer rule")
     private Long lbRuleId;
-
-
 
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
@@ -55,8 +53,6 @@ public class ListLBStickinessPoliciesCmd extends BaseListCmd {
     public Long getLbRuleId() {
         return lbRuleId;
     }
-
-
 
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////

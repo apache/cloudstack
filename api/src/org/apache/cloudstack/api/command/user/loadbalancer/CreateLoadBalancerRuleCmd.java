@@ -23,11 +23,14 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.LoadBalancerResponse;
+import org.apache.cloudstack.api.response.NetworkResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -66,12 +69,12 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
     @Parameter(name=ApiConstants.PRIVATE_PORT, type=CommandType.INTEGER, required=true, description="the private port of the private ip address/virtual machine where the network traffic will be load balanced to")
     private Integer privatePort;
 
-    @IdentityMapper(entityTableName="user_ip_address")
-    @Parameter(name=ApiConstants.PUBLIC_IP_ID, type=CommandType.LONG, description="public ip address id from where the network traffic will be load balanced from")
+    @Parameter(name=ApiConstants.PUBLIC_IP_ID, type=CommandType.UUID, entityType = IPAddressResponse.class,
+            description="public ip address id from where the network traffic will be load balanced from")
     private Long publicIpId;
 
-    @IdentityMapper(entityTableName="data_center")
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=false, description="zone where the load balancer is going to be created. This parameter is required when LB service provider is ElasticLoadBalancerVm")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
+            required=false, description="zone where the load balancer is going to be created. This parameter is required when LB service provider is ElasticLoadBalancerVm")
     private Long zoneId;
 
     @Parameter(name=ApiConstants.PUBLIC_PORT, type=CommandType.INTEGER, required=true, description="the public port from where the network traffic will be load balanced from")
@@ -85,15 +88,15 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account associated with the load balancer. Must be used with the domainId parameter.")
     private String accountName;
 
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID associated with the load balancer")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType = DomainResponse.class,
+            description="the domain ID associated with the load balancer")
     private Long domainId;
 
     @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the cidr list to forward traffic from")
     private List<String> cidrlist;
 
-    @IdentityMapper(entityTableName="networks")
-    @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, description="The guest network this " +
+    @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.UUID, entityType = NetworkResponse.class,
+            description="The guest network this " +
             "rule will be created for. Required when public Ip address is not associated with any Guest network yet (VPC case)")
     private Long networkId;
 

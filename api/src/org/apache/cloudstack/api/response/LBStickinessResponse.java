@@ -16,13 +16,16 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import com.cloud.network.rules.StickinessPolicy;
 import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.Entity;
 
 import java.util.List;
 
+@Entity(value=StickinessPolicy.class)
 public class LBStickinessResponse extends BaseResponse {
     @SerializedName("lbruleid")
     @Param(description = "the LB rule ID")
