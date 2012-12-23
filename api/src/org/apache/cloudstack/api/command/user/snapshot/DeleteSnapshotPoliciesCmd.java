@@ -22,10 +22,10 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.SnapshotPolicyResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.user.Account;
 
@@ -39,14 +39,13 @@ public class DeleteSnapshotPoliciesCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="snapshot_policy")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the Id of the snapshot policy")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = SnapshotPolicyResponse.class,
+            description="the Id of the snapshot policy")
     private Long id;
 
-    @IdentityMapper(entityTableName="snapshot_policy")
-    @Parameter(name=ApiConstants.IDS, type=CommandType.LIST, collectionType=CommandType.LONG, description="list of snapshots policy IDs separated by comma")
+    @Parameter(name=ApiConstants.IDS, type=CommandType.LIST, collectionType=CommandType.UUID, entityType = SnapshotPolicyResponse.class,
+            description="list of snapshots policy IDs separated by comma")
     private List<Long> ids;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -59,7 +58,6 @@ public class DeleteSnapshotPoliciesCmd extends BaseCmd {
     public List<Long> getIds() {
         return ids;
     }
-
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
