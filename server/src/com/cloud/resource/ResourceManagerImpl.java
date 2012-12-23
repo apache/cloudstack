@@ -181,22 +181,22 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     @Inject
     protected ConfigurationDao _configDao;
     @Inject
-    protected HostTagsDao                    _hostTagsDao;    
+    protected HostTagsDao                    _hostTagsDao;
     @Inject
     protected GuestOSCategoryDao             _guestOSCategoryDao;
-    @Inject 
+    @Inject
     protected StoragePoolDao                _storagePoolDao;
     @Inject
     protected DataCenterIpAddressDao         _privateIPAddressDao;
     @Inject
     protected IPAddressDao                   _publicIPAddressDao;
     @Inject
-    protected VirtualMachineManager          _vmMgr; 
+    protected VirtualMachineManager          _vmMgr;
     @Inject
-    protected VMInstanceDao                  _vmDao;  
+    protected VMInstanceDao                  _vmDao;
     @Inject
     protected HighAvailabilityManager        _haMgr;
-    @Inject 
+    @Inject
     protected StorageService                 _storageSvr;
     @Inject(adapter = Discoverer.class)
     protected Adapters<? extends Discoverer> _discoverers;
@@ -581,7 +581,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             if (pod == null) {
                 throw new InvalidParameterValueException("Can't find pod by id " + podId);
             }
-            // check if pod belongs to the zone            
+            // check if pod belongs to the zone
             if (!Long.valueOf(pod.getDataCenterId()).equals(dcId)) {
                 InvalidParameterValueException ex = new InvalidParameterValueException("Pod with specified podId" + podId + " doesn't belong to the zone with specified zoneId" + dcId);
                 ex.addProxyObject(pod, podId, "podId");
@@ -643,7 +643,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                     CloudRuntimeException ex = new CloudRuntimeException("Unable to create cluster " + clusterName + " in pod with specified podId and data center with specified dcID", e);
                     ex.addProxyObject(pod, podId, "podId");
                     ex.addProxyObject(zone, dcId, "dcId");
-                    throw ex;   
+                    throw ex;
                 }
             }
             clusterId = cluster.getId();
@@ -744,7 +744,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         // Verify that host exists
         HostVO host = _hostDao.findById(hostId);
         if (host == null) {
-            throw new InvalidParameterValueException("Host with id " + hostId + " doesn't exist");            
+            throw new InvalidParameterValueException("Host with id " + hostId + " doesn't exist");
         }
         _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), host.getDataCenterId());
 
@@ -752,7 +752,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
          * TODO: check current agent status and updateAgentStatus to removed. If it was already removed, that means
          * someone is deleting host concurrently, return. And consider the situation of CloudStack shutdown during delete.
          * A global lock?
-         * 
+         *
          */
         AgentAttache attache = _agentMgr.findAttache(hostId);
         // Get storage pool host mappings here because they can be removed as a part of handleDisconnect later
@@ -847,7 +847,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     @DB
     public boolean deleteCluster(DeleteClusterCmd cmd) {
         Transaction txn = Transaction.currentTxn();
-        try {        	
+        try {
             txn.start();
             ClusterVO cluster = _clusterDao.lockRow(cmd.getId(), true);
             if (cluster == null) {
@@ -973,7 +973,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             try {
                 txn.start();
                 _clusterDao.update(cluster.getId(), cluster);
-                txn.commit();               
+                txn.commit();
             } catch (Exception e) {
                 s_logger.error("Unable to update cluster due to " + e.getMessage(), e);
                 throw new CloudRuntimeException("Failed to update cluster. Please contact Cloud Support.");
@@ -989,12 +989,12 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                     cluster.setManagedState(Managed.ManagedState.PrepareUnmanaged);
                     _clusterDao.update(cluster.getId(), cluster);
                     txn.commit();
-                    List<HostVO>  hosts = listAllUpAndEnabledHosts(Host.Type.Routing, cluster.getId(), cluster.getPodId(), cluster.getDataCenterId());                  
+                    List<HostVO>  hosts = listAllUpAndEnabledHosts(Host.Type.Routing, cluster.getId(), cluster.getPodId(), cluster.getDataCenterId());
                     for( HostVO host : hosts ) {
-                        if(host.getType().equals(Host.Type.Routing) && !host.getStatus().equals(Status.Down) &&  !host.getStatus().equals(Status.Disconnected) 
+                        if(host.getType().equals(Host.Type.Routing) && !host.getStatus().equals(Status.Down) &&  !host.getStatus().equals(Status.Disconnected)
                                 && !host.getStatus().equals(Status.Up) && !host.getStatus().equals(Status.Alert) ) {
                             String msg = "host " + host.getPrivateIpAddress() + " should not be in " + host.getStatus().toString() + " status";
-                            throw new CloudRuntimeException("PrepareUnmanaged Failed due to " + msg);                                   
+                            throw new CloudRuntimeException("PrepareUnmanaged Failed due to " + msg);
                         }
                     }
 
@@ -1011,9 +1011,9 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                             Thread.sleep(5 * 1000);
                         } catch (Exception e) {
                         }
-                        hosts = listAllUpAndEnabledHosts(Host.Type.Routing, cluster.getId(), cluster.getPodId(), cluster.getDataCenterId()); 
+                        hosts = listAllUpAndEnabledHosts(Host.Type.Routing, cluster.getId(), cluster.getPodId(), cluster.getDataCenterId());
                         for( HostVO host : hosts ) {
-                            if ( !host.getStatus().equals(Status.Down) && !host.getStatus().equals(Status.Disconnected) 
+                            if ( !host.getStatus().equals(Status.Down) && !host.getStatus().equals(Status.Disconnected)
                                     && !host.getStatus().equals(Status.Alert)) {
                                 lsuccess = false;
                                 break;
@@ -1025,7 +1025,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                         }
                     }
                     if ( success == false ) {
-                        throw new CloudRuntimeException("PrepareUnmanaged Failed due to some hosts are still in UP status after 5 Minutes, please try later "); 
+                        throw new CloudRuntimeException("PrepareUnmanaged Failed due to some hosts are still in UP status after 5 Minutes, please try later ");
                     }
                 } finally {
                     txn.start();
@@ -1033,7 +1033,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                     _clusterDao.update(cluster.getId(), cluster);
                     txn.commit();
                 }
-            } else if( newManagedState.equals(Managed.ManagedState.Managed)) {               
+            } else if( newManagedState.equals(Managed.ManagedState.Managed)) {
                 txn.start();
                 cluster.setManagedState(Managed.ManagedState.Managed);
                 _clusterDao.update(cluster.getId(), cluster);
@@ -1159,7 +1159,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             throw new InvalidParameterValueException("There are other servers in PrepareForMaintenance OR ErrorInMaintenance STATUS in cluster " + host.getClusterId());
         }
 
-        if (_storageMgr.isLocalStorageActiveOnHost(host)) {
+        if (_storageMgr.isLocalStorageActiveOnHost(host.getId())) {
             throw new InvalidParameterValueException("There are active VMs using the host's local storage pool. Please stop all VMs on this host that use local storage.");
         }
 
@@ -1353,7 +1353,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     public void unregisterResourceStateAdapter(String name) {
         synchronized (_resourceStateAdapters) {
             _resourceStateAdapters.remove(name);
-        }   
+        }
     }
 
     private Object dispatchToStateAdapters(ResourceStateAdapter.Event event, boolean singleTaker, Object... args) {
@@ -1605,7 +1605,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                     }
                 }
             }
-            
+
             if (s_logger.isDebugEnabled()) {
                 new Request(-1l, -1l, cmds, true, false).logD("Startup request from directly connected host: ", true);
             }
@@ -1646,7 +1646,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                         }
                     }
                 }
-                
+
                 if (tempHost != null) {
                     /* Change agent status to Alert */
                     _agentMgr.agentStatusTransitTo(tempHost, Status.Event.AgentDisconnected, _nodeId);
@@ -1754,7 +1754,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         host.setCpus(ssCmd.getCpus());
         host.setTotalMemory(ssCmd.getMemory());
         host.setSpeed(ssCmd.getSpeed());
-        host.setHypervisorType(hyType);        
+        host.setHypervisorType(hyType);
         return host;
     }
 

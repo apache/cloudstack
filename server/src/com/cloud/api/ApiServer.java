@@ -85,6 +85,7 @@ import org.apache.http.protocol.ResponseDate;
 import org.apache.http.protocol.ResponseServer;
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
 import org.apache.cloudstack.api.command.user.project.ListProjectInvitationsCmd;
 import org.apache.cloudstack.api.command.user.project.ListProjectsCmd;
@@ -460,7 +461,8 @@ public class ApiServer implements HttpRequestHandler {
                     && !(cmdObj instanceof ListVMGroupsCmd)
                     && !(cmdObj instanceof ListProjectsCmd)
                     && !(cmdObj instanceof ListProjectAccountsCmd)
-                    && !(cmdObj instanceof ListProjectInvitationsCmd)) {
+                    && !(cmdObj instanceof ListProjectInvitationsCmd)
+                    && !(cmdObj instanceof ListHostsCmd)) {
                 buildAsyncListResponse((BaseListCmd) cmdObj, caller);
             }
 

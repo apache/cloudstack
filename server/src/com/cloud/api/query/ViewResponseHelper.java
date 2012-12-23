@@ -21,9 +21,11 @@ import java.util.EnumSet;
 import java.util.Hashtable;
 import java.util.List;
 
+import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
+import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
 import org.apache.cloudstack.api.response.ProjectInvitationResponse;
@@ -37,6 +39,7 @@ import org.apache.log4j.Logger;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.api.query.vo.EventJoinVO;
+import com.cloud.api.query.vo.HostJoinVO;
 import com.cloud.api.query.vo.InstanceGroupJoinVO;
 import com.cloud.api.query.vo.ProjectAccountJoinVO;
 import com.cloud.api.query.vo.ProjectInvitationJoinVO;
@@ -192,5 +195,23 @@ public class ViewResponseHelper {
             respList.add(ApiDBUtils.newProjectInvitationResponse(v));
         }
         return respList;
+    }
+
+    public static List<HostResponse> createHostResponse(EnumSet<HostDetails> details, HostJoinVO... hosts) {
+        Hashtable<Long, HostResponse> vrDataList = new Hashtable<Long, HostResponse>();
+        // Initialise the vrdatalist with the input data
+        for (HostJoinVO vr : hosts) {
+            HostResponse vrData = vrDataList.get(vr.getId());
+            if ( vrData == null ){
+                // first time encountering this vm
+                vrData = ApiDBUtils.newHostResponse(vr, details);
+            }
+            else{
+                // update tags
+                vrData = ApiDBUtils.fillHostDetails(vrData, vr);
+            }
+            vrDataList.put(vr.getId(), vrData);
+        }
+        return new ArrayList<HostResponse>(vrDataList.values());
     }
 }

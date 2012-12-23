@@ -924,23 +924,6 @@ public class ManagementServerImpl implements ManagementServer {
         return new Pair<List<? extends Cluster>, Integer>(result.first(), result.second());
     }
 
-    @Override
-    public List<HostVO> searchForServers(ListHostsCmd cmd) {
-
-        Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), cmd.getZoneId());
-        Object name = cmd.getHostName();
-        Object type = cmd.getType();
-        Object state = cmd.getState();
-        Object pod = cmd.getPodId();
-        Object cluster = cmd.getClusterId();
-        Object id = cmd.getId();
-        Object keyword = cmd.getKeyword();
-        Object resourceState = cmd.getResourceState();
-        Object haHosts = cmd.getHaHost();
-
-        return searchForServers(cmd.getStartIndex(), cmd.getPageSizeVal(), name, type, state, zoneId, pod, cluster, id, keyword, resourceState,
-                haHosts);
-    }
 
     @Override
     public Pair<List<? extends Host>, List<? extends Host>> listHostsForMigrationOfVM(Long vmId, Long startIndex, Long pageSize) {

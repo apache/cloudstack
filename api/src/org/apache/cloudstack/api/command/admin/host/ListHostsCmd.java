@@ -28,6 +28,7 @@ import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ClusterResponse;
+import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.PodResponse;
@@ -164,32 +165,35 @@ public class ListHostsCmd extends BaseListCmd {
 
     @Override
     public void execute(){
-        List<? extends Host> result = new ArrayList<Host>();
-        List<? extends Host> hostsWithCapacity = new ArrayList<Host>();
+        ListResponse<HostResponse> response = null;
+        if (getVirtualMachineId() == null) {
+            response = _queryService.searchForServers(this);
+        } else {
+            List<? extends Host> result = new ArrayList<Host>();
+            List<? extends Host> hostsWithCapacity = new ArrayList<Host>();
 
-        if(getVirtualMachineId() != null){
-            Pair<List<? extends Host>, List<? extends Host>> hostsForMigration = _mgr.listHostsForMigrationOfVM(getVirtualMachineId(), this.getStartIndex(), this.getPageSizeVal());
+            Pair<List<? extends Host>, List<? extends Host>> hostsForMigration = _mgr.listHostsForMigrationOfVM(getVirtualMachineId(),
+                    this.getStartIndex(), this.getPageSizeVal());
             result = hostsForMigration.first();
             hostsWithCapacity = hostsForMigration.second();
-        }else{
-            result = _mgr.searchForServers(this);
-        }
 
-        ListResponse<HostResponse> response = new ListResponse<HostResponse>();
-        List<HostResponse> hostResponses = new ArrayList<HostResponse>();
-        for (Host host : result) {
-            HostResponse hostResponse = _responseGenerator.createHostResponse(host, getDetails());
-            Boolean suitableForMigration = false;
-            if(hostsWithCapacity.contains(host)){
-                suitableForMigration = true;
+            response = new ListResponse<HostResponse>();
+            List<HostResponse> hostResponses = new ArrayList<HostResponse>();
+            for (Host host : result) {
+                HostResponse hostResponse = _responseGenerator.createHostResponse(host, getDetails());
+                Boolean suitableForMigration = false;
+                if (hostsWithCapacity.contains(host)) {
+                    suitableForMigration = true;
+                }
+                hostResponse.setSuitableForMigration(suitableForMigration);
+                hostResponse.setObjectName("host");
+                hostResponses.add(hostResponse);
             }
-            hostResponse.setSuitableForMigration(suitableForMigration);
-            hostResponse.setObjectName("host");
-            hostResponses.add(hostResponse);
-        }
 
-        response.setResponses(hostResponses);
+            response.setResponses(hostResponses);
+        }
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
+
     }
 }

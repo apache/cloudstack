@@ -146,14 +146,6 @@ public interface ManagementService {
      */
     Pair<List<? extends Pod>, Integer> searchForPods(ListPodsByCmd cmd);
 
-    /**
-     * Searches for servers by the specified search criteria Can search by: "name", "type", "state", "dataCenterId",
-     * "podId"
-     *
-     * @param cmd
-     * @return List of Hosts
-     */
-    List<? extends Host> searchForServers(ListHostsCmd cmd);
 
     /**
      * Creates a new template

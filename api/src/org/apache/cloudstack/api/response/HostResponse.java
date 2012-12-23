@@ -317,6 +317,11 @@ public class HostResponse extends BaseResponse {
         this.events = events;
     }
 
+
+    public String getHostTags() {
+        return hostTags;
+    }
+
     public void setHostTags(String hostTags) {
         this.hostTags = hostTags;
     }

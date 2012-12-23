@@ -22,9 +22,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
+import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
 import org.apache.cloudstack.api.response.ProjectInvitationResponse;
@@ -35,6 +37,7 @@ import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 
 import com.cloud.api.query.dao.DomainRouterJoinDao;
+import com.cloud.api.query.dao.HostJoinDao;
 import com.cloud.api.query.dao.InstanceGroupJoinDao;
 import com.cloud.api.query.dao.ProjectAccountJoinDao;
 import com.cloud.api.query.dao.ProjectInvitationJoinDao;
@@ -44,6 +47,7 @@ import com.cloud.api.query.dao.SecurityGroupJoinDao;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.api.query.vo.EventJoinVO;
+import com.cloud.api.query.vo.HostJoinVO;
 import com.cloud.api.query.vo.InstanceGroupJoinVO;
 import com.cloud.api.query.vo.ProjectAccountJoinVO;
 import com.cloud.api.query.vo.ProjectInvitationJoinVO;
@@ -305,6 +309,7 @@ public class ApiDBUtils {
     private static ProjectJoinDao _projectJoinDao;
     private static ProjectAccountJoinDao _projectAccountJoinDao;
     private static ProjectInvitationJoinDao _projectInvitationJoinDao;
+    private static HostJoinDao _hostJoinDao;
 
     private static PhysicalNetworkTrafficTypeDao _physicalNetworkTrafficTypeDao;
     private static PhysicalNetworkServiceProviderDao _physicalNetworkServiceProviderDao;
@@ -390,6 +395,7 @@ public class ApiDBUtils {
         _projectJoinDao = locator.getDao(ProjectJoinDao.class);
         _projectAccountJoinDao = locator.getDao(ProjectAccountJoinDao.class);
         _projectInvitationJoinDao = locator.getDao(ProjectInvitationJoinDao.class);
+        _hostJoinDao = locator.getDao(HostJoinDao.class);
 
         _physicalNetworkTrafficTypeDao = locator.getDao(PhysicalNetworkTrafficTypeDao.class);
         _physicalNetworkServiceProviderDao = locator.getDao(PhysicalNetworkServiceProviderDao.class);
@@ -506,8 +512,8 @@ public class ApiDBUtils {
         return _storageMgr.getStoragePoolTags(poolId);
     }
 
-    public static boolean isLocalStorageActiveOnHost(Host host) {
-        return _storageMgr.isLocalStorageActiveOnHost(host);
+    public static boolean isLocalStorageActiveOnHost(Long hostId) {
+        return _storageMgr.isLocalStorageActiveOnHost(hostId);
     }
 
     public static InstanceGroupVO findInstanceGroupForVM(long vmId) {
@@ -1295,5 +1301,15 @@ public class ApiDBUtils {
         return _projectInvitationJoinDao.newProjectInvitationView(proj);
     }
 
+    public static HostResponse newHostResponse(HostJoinVO vr, EnumSet<HostDetails> details) {
+        return _hostJoinDao.newHostResponse(vr, details);
+    }
 
+    public static HostResponse fillHostDetails(HostResponse vrData, HostJoinVO vr){
+         return _hostJoinDao.setHostResponse(vrData, vr);
+    }
+
+    public static List<HostJoinVO> newHostView(Host vr){
+        return _hostJoinDao.newHostView(vr);
+    }
 }

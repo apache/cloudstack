@@ -26,7 +26,9 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.ResponseGenerator;
+import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
+import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
@@ -39,6 +41,7 @@ import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
+import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
@@ -54,6 +57,7 @@ import org.apache.log4j.Logger;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.dao.DomainRouterJoinDao;
+import com.cloud.api.query.dao.HostJoinDao;
 import com.cloud.api.query.dao.InstanceGroupJoinDao;
 import com.cloud.api.query.dao.ProjectAccountJoinDao;
 import com.cloud.api.query.dao.ProjectInvitationJoinDao;
@@ -63,6 +67,7 @@ import com.cloud.api.query.dao.SecurityGroupJoinDao;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.api.query.vo.EventJoinVO;
+import com.cloud.api.query.vo.HostJoinVO;
 import com.cloud.api.query.vo.InstanceGroupJoinVO;
 import com.cloud.api.query.vo.ProjectAccountJoinVO;
 import com.cloud.api.query.vo.ProjectInvitationJoinVO;
@@ -78,6 +83,10 @@ import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.dao.EventJoinDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.ha.HighAvailabilityManager;
+import com.cloud.host.Host;
+import com.cloud.host.HostTagVO;
+import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.security.SecurityGroupVMMapVO;
 import com.cloud.network.security.dao.SecurityGroupVMMapDao;
@@ -104,6 +113,7 @@ import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
@@ -174,6 +184,12 @@ public class QueryManagerImpl implements QueryService, Manager {
 
     @Inject
     private ProjectAccountJoinDao _projectAccountJoinDao;
+
+    @Inject
+    private HostJoinDao _hostJoinDao;
+
+    @Inject
+    private HighAvailabilityManager _haMgr;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -1309,5 +1325,118 @@ public class QueryManagerImpl implements QueryService, Manager {
         return  _projectAccountJoinDao.searchAndCount(sc, searchFilter);
     }
 
+    @Override
+    public ListResponse<HostResponse> searchForServers(ListHostsCmd cmd) {
+        //FIXME: do we need to support list hosts with VmId, maybe we should create another command just for this
+        // Right now it is handled separately outside this QueryService
+        s_logger.debug(">>>Searching for hosts>>>");
+        Pair<List<HostJoinVO>, Integer> hosts = searchForServersInternal(cmd);
+        ListResponse<HostResponse> response = new ListResponse<HostResponse>();
+        s_logger.debug(">>>Generating Response>>>");
+        List<HostResponse> hostResponses = ViewResponseHelper.createHostResponse(cmd.getDetails(), hosts.first().toArray(new HostJoinVO[hosts.first().size()]));
+        response.setResponses(hostResponses, hosts.second());
+        return response;
+    }
+
+    public Pair<List<HostJoinVO>, Integer> searchForServersInternal(ListHostsCmd cmd) {
+
+        Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), cmd.getZoneId());
+        Object name = cmd.getHostName();
+        Object type = cmd.getType();
+        Object state = cmd.getState();
+        Object pod = cmd.getPodId();
+        Object cluster = cmd.getClusterId();
+        Object id = cmd.getId();
+        Object keyword = cmd.getKeyword();
+        Object resourceState = cmd.getResourceState();
+        Object haHosts = cmd.getHaHost();
+        Long startIndex = cmd.getStartIndex();
+        Long pageSize = cmd.getPageSizeVal();
+
+        Filter searchFilter = new Filter(HostJoinVO.class, "id", Boolean.TRUE, startIndex, pageSize);
+
+        SearchBuilder<HostJoinVO> sb = _hostJoinDao.createSearchBuilder();
+        sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct ids
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("type", sb.entity().getType(), SearchCriteria.Op.LIKE);
+        sb.and("status", sb.entity().getStatus(), SearchCriteria.Op.EQ);
+        sb.and("dataCenterId", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
+        sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
+        sb.and("clusterId", sb.entity().getClusterId(), SearchCriteria.Op.EQ);
+        sb.and("resourceState", sb.entity().getResourceState(), SearchCriteria.Op.EQ);
+
+        String haTag = _haMgr.getHaTag();
+        if (haHosts != null && haTag != null && !haTag.isEmpty()) {
+            if ((Boolean) haHosts) {
+                sb.and("tag", sb.entity().getTag(), SearchCriteria.Op.EQ);
+            } else {
+                sb.and("tag", sb.entity().getTag(), SearchCriteria.Op.NEQ);
+                //FIXME: should we have another condition say tag = null?
+                //hostTagSearch.or("tagNull", hostTagSearch.entity().getTag(), SearchCriteria.Op.NULL);
+            }
+
+        }
+
+
+        SearchCriteria<HostJoinVO> sc = sb.create();
+
+        if (keyword != null) {
+            SearchCriteria<HostJoinVO> ssc = _hostJoinDao.createSearchCriteria();
+            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("status", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("type", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+
+            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+        }
+
+        if (id != null) {
+            sc.setParameters("id", id);
+        }
+
+        if (name != null) {
+            sc.setParameters("name", "%" + name + "%");
+        }
+        if (type != null) {
+            sc.setParameters("type", "%" + type);
+        }
+        if (state != null) {
+            sc.setParameters("status", state);
+        }
+        if (zoneId != null) {
+            sc.setParameters("dataCenterId", zoneId);
+        }
+        if (pod != null) {
+            sc.setParameters("podId", pod);
+        }
+        if (cluster != null) {
+            sc.setParameters("clusterId", cluster);
+        }
+
+        if (resourceState != null) {
+            sc.setParameters("resourceState", resourceState);
+        }
+
+        if (haHosts != null && haTag != null && !haTag.isEmpty()) {
+            sc.setJoinParameters("hostTagSearch", "tag", haTag);
+        }
+
+        // search host details by ids
+        Pair<List<HostJoinVO>, Integer> uniqueHostPair =  _hostJoinDao.searchAndCount(sc, searchFilter);
+        Integer count = uniqueHostPair.second();
+        if ( count.intValue() == 0 ){
+            // handle empty result cases
+            return uniqueHostPair;
+        }
+        List<HostJoinVO> uniqueHosts = uniqueHostPair.first();
+        Long[] hostIds = new Long[uniqueHosts.size()];
+        int i = 0;
+        for (HostJoinVO v : uniqueHosts ){
+            hostIds[i++] = v.getId();
+        }
+        List<HostJoinVO> hosts = _hostJoinDao.searchByIds(hostIds);
+        return new Pair<List<HostJoinVO>, Integer>(hosts, count);
+
+    }
 
 }
