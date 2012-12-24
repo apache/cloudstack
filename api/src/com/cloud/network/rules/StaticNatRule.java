@@ -17,8 +17,9 @@
 package com.cloud.network.rules;
 
 import com.cloud.acl.ControlledEntity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-public interface StaticNatRule extends ControlledEntity, FirewallRule {
+public interface StaticNatRule extends ControlledEntity, InternalIdentity, FirewallRule {
 
     long getId();
 

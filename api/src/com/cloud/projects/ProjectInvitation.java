@@ -19,8 +19,9 @@ package com.cloud.projects;
 import java.util.Date;
 
 import com.cloud.acl.ControlledEntity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-public interface ProjectInvitation extends ControlledEntity {
+public interface ProjectInvitation extends ControlledEntity, InternalIdentity {
     public enum State {
         Pending, Completed, Expired, Declined
     }

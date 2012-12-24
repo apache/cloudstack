@@ -21,11 +21,12 @@ import java.util.List;
 
 import com.cloud.acl.ControlledEntity;
 import com.cloud.utils.Pair;
+import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * AutoScaleVmProfile
  */
-public interface AutoScaleVmProfile extends ControlledEntity {
+public interface AutoScaleVmProfile extends ControlledEntity, InternalIdentity {
 
     public long getId();
 

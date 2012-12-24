@@ -18,9 +18,10 @@
 package com.cloud.network.as;
 
 import com.cloud.acl.ControlledEntity;
+import org.apache.cloudstack.api.InternalIdentity;
 
 
-public interface AutoScaleVmGroup extends ControlledEntity {
+public interface AutoScaleVmGroup extends ControlledEntity, InternalIdentity {
 
     String State_New = "new";
     String State_Revoke = "revoke";

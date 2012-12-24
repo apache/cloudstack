@@ -19,12 +19,13 @@ package com.cloud.domain;
 import java.util.Date;
 
 import com.cloud.user.OwnedBy;
+import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * Domain defines the Domain object.
  */
 
-public interface Domain extends OwnedBy {
+public interface Domain extends OwnedBy, InternalIdentity {
     public static final long ROOT_DOMAIN = 1L;
 
     enum State {

@@ -19,8 +19,9 @@ package com.cloud.network;
 import java.util.Date;
 
 import com.cloud.acl.ControlledEntity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-public interface Site2SiteCustomerGateway extends ControlledEntity {
+public interface Site2SiteCustomerGateway extends ControlledEntity, InternalIdentity {
     public long getId();
     public String getUuid();
     public String getGatewayIp();

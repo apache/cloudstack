@@ -19,8 +19,9 @@ package com.cloud.event;
 import java.util.Date;
 
 import com.cloud.acl.ControlledEntity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-public interface Event extends ControlledEntity{
+public interface Event extends ControlledEntity, InternalIdentity {
     public enum State {
         Created,
         Scheduled,

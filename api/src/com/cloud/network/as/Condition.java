@@ -18,8 +18,9 @@
 package com.cloud.network.as;
 
 import com.cloud.acl.ControlledEntity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-public interface Condition extends ControlledEntity {
+public interface Condition extends ControlledEntity, InternalIdentity {
 
     static enum Operator {
         EQ, GT, LT, GE, LE

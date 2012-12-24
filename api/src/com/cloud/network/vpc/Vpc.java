@@ -18,8 +18,9 @@ package com.cloud.network.vpc;
 
 import com.cloud.acl.ControlledEntity;
 import com.cloud.network.Network;
+import org.apache.cloudstack.api.InternalIdentity;
 
-public interface Vpc extends ControlledEntity{
+public interface Vpc extends ControlledEntity, InternalIdentity{
     public enum State {
         Enabled,
         Inactive

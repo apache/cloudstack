@@ -19,8 +19,9 @@ package com.cloud.vm;
 import java.util.Date;
 
 import com.cloud.acl.ControlledEntity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-public interface InstanceGroup extends ControlledEntity {
+public interface InstanceGroup extends ControlledEntity, InternalIdentity {
     long getId();
 
     String getName();

@@ -18,8 +18,9 @@ package com.cloud.network.vpc;
 
 import com.cloud.acl.ControlledEntity;
 import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-public interface VpcGateway extends Identity, ControlledEntity {
+public interface VpcGateway extends Identity, ControlledEntity, InternalIdentity {
     public enum Type {
         Private,
         Public,

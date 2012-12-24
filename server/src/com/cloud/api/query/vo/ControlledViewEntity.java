@@ -17,6 +17,7 @@
 package com.cloud.api.query.vo;
 
 import com.cloud.acl.ControlledEntity;
+import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * This is the interface for all VO classes representing DB views created for previous ControlledEntity.
@@ -24,7 +25,7 @@ import com.cloud.acl.ControlledEntity;
  * @author minc
  *
  */
-public interface ControlledViewEntity extends ControlledEntity {
+public interface ControlledViewEntity extends ControlledEntity, InternalIdentity {
 
     public String getDomainPath();
 

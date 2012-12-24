@@ -23,8 +23,9 @@ import com.cloud.acl.ControlledEntity;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
+import org.apache.cloudstack.api.InternalIdentity;
 
-public interface VirtualMachineTemplate extends ControlledEntity {
+public interface VirtualMachineTemplate extends ControlledEntity, InternalIdentity {
 
     public static enum BootloaderType {
         PyGrub, HVM, External, CD

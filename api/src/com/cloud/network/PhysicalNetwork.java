@@ -16,12 +16,14 @@
 // under the License.
 package com.cloud.network;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import java.util.List;
 
 /**
  *
  */
-public interface PhysicalNetwork {
+public interface PhysicalNetwork extends InternalIdentity {
 
     public enum State {
         Disabled,

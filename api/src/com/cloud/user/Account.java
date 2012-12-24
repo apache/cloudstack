@@ -19,8 +19,9 @@ package com.cloud.user;
 import java.util.Date;
 
 import com.cloud.acl.ControlledEntity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-public interface Account extends ControlledEntity {
+public interface Account extends ControlledEntity, InternalIdentity {
     public enum Type {
         Normal,
         Admin,

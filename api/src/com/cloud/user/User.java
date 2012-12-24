@@ -16,9 +16,11 @@
 // under the License.
 package com.cloud.user;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import java.util.Date;
 
-public interface User extends OwnedBy {
+public interface User extends OwnedBy, InternalIdentity {
     public static final long UID_SYSTEM = 1;
 
     public long getId();

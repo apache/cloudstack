@@ -17,8 +17,9 @@
 package com.cloud.server;
 
 import com.cloud.acl.ControlledEntity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-public interface ResourceTag extends ControlledEntity{
+public interface ResourceTag extends ControlledEntity, InternalIdentity {
 
     public enum  TaggedResourceType {
         UserVm,

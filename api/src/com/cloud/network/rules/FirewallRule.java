@@ -19,8 +19,9 @@ package com.cloud.network.rules;
 import java.util.List;
 
 import com.cloud.acl.ControlledEntity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-public interface FirewallRule extends ControlledEntity {
+public interface FirewallRule extends ControlledEntity, InternalIdentity {
     enum Purpose {
         Firewall,
         PortForwarding,
@@ -31,8 +32,8 @@ public interface FirewallRule extends ControlledEntity {
     }
 
     enum FirewallRuleType {
-    	System, // The pre-defined rules created by admin, in the system wide
-    	User; // the rules created by user, to a specific ip
+        System, // The pre-defined rules created by admin, in the system wide
+        User // the rules created by user, to a specific ip
     }
 
     enum State {

@@ -557,7 +557,7 @@ public class ApiDispatcher {
             // Invoke the getId method, get the internal long ID
             // If that fails hide exceptions as the uuid may not exist
             try {
-                internalId = (Long) ((Identity)objVO).getId();
+                internalId = (Long) ((InternalIdentity)objVO).getId();
             } catch (IllegalArgumentException e) {
             } catch (NullPointerException e) {
             }

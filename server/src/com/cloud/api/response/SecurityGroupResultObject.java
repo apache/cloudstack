@@ -27,8 +27,9 @@ import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupRules;
 import com.cloud.serializer.Param;
 import com.cloud.user.Account;
+import org.apache.cloudstack.api.InternalIdentity;
 
-public class SecurityGroupResultObject implements ControlledEntity{
+public class SecurityGroupResultObject implements ControlledEntity, InternalIdentity {
     @Param(name = "id")
     private Long id;
 
@@ -63,7 +64,7 @@ public class SecurityGroupResultObject implements ControlledEntity{
         this.securityGroupRules = ingressRules;
     }
 
-    public Long getId() {
+    public long getId() {
         return id;
     }
 

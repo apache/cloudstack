@@ -17,9 +17,10 @@
 package com.cloud.network.security;
 
 import com.cloud.acl.ControlledEntity;
+import org.apache.cloudstack.api.InternalIdentity;
 
 //FIXME: Annotation @doc("")
-public interface SecurityGroup extends ControlledEntity {
+public interface SecurityGroup extends ControlledEntity, InternalIdentity {
     long getId();
 
     String getUuid();

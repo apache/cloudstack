@@ -22,6 +22,7 @@ import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.utils.fsm.FiniteState;
 import com.cloud.utils.fsm.StateMachine;
+import org.apache.cloudstack.api.InternalIdentity;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -31,7 +32,7 @@ import java.util.Set;
 /**
  * owned by an account.
  */
-public interface Network extends ControlledEntity {
+public interface Network extends ControlledEntity, InternalIdentity {
 
     public enum GuestType {
         Shared,

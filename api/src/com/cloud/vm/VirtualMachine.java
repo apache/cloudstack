@@ -24,12 +24,13 @@ import org.apache.cloudstack.api.Identity;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.fsm.StateObject;
+import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * VirtualMachine describes the properties held by a virtual machine
  *
  */
-public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, StateObject<VirtualMachine.State> {
+public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, InternalIdentity, StateObject<VirtualMachine.State> {
 
     public enum State {
         Starting(true, "VM is being started.  At this state, you should find host id filled which means it's being started on that host."),
