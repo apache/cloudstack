@@ -406,8 +406,6 @@ public class ApiDispatcher {
             if ((parameterAnnotation == null) || !parameterAnnotation.expose()) {
                 continue;
             }
-            // APITODO Will remove this
-            IdentityMapper identityMapper = field.getAnnotation(IdentityMapper.class);
 
             //ACL checkAccess = field.getAnnotation(ACL.class);
 
@@ -423,7 +421,7 @@ public class ApiDispatcher {
 
             // marshall the parameter into the correct type and set the field value
             try {
-                setFieldValue(field, cmd, paramObj, parameterAnnotation, identityMapper);
+                setFieldValue(field, cmd, paramObj, parameterAnnotation);
             } catch (IllegalArgumentException argEx) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Unable to execute API command " + cmd.getCommandName() + " due to invalid value " + paramObj + " for parameter " + parameterAnnotation.name());
@@ -569,7 +567,7 @@ public class ApiDispatcher {
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    private static void setFieldValue(Field field, BaseCmd cmdObj, Object paramObj, Parameter annotation, IdentityMapper identityMapper) throws IllegalArgumentException, ParseException {
+    private static void setFieldValue(Field field, BaseCmd cmdObj, Object paramObj, Parameter annotation) throws IllegalArgumentException, ParseException {
         try {
             field.setAccessible(true);
             CommandType fieldType = annotation.type();
@@ -646,13 +644,7 @@ public class ApiDispatcher {
                                 listParam.add(internalId);
                                 break;
                             case LONG: {
-                                Long val = null;
-                                if (identityMapper != null)
-                                    val = s_instance._identityDao.getIdentityId(identityMapper, token);
-                                else
-                                    val = Long.valueOf(token);
-
-                                listParam.add(val);
+                                listParam.add(Long.valueOf(token));
                             }
                             break;
                             case SHORT:
@@ -676,11 +668,7 @@ public class ApiDispatcher {
                 field.set(cmdObj, internalId);
                 break;
             case LONG:
-                // APITODO: Remove identityMapper, simply convert the over the wire param to Long
-                if (identityMapper != null)
-                    field.set(cmdObj, s_instance._identityDao.getIdentityId(identityMapper, paramObj.toString()));
-                else
-                    field.set(cmdObj, Long.valueOf(paramObj.toString()));
+                field.set(cmdObj, Long.valueOf(paramObj.toString()));
                 break;
             case SHORT:
                 field.set(cmdObj, Short.valueOf(paramObj.toString()));
