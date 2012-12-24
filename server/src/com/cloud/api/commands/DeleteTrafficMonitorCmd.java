@@ -16,11 +16,11 @@
 // under the License.
 package com.cloud.api.commands;
 
+import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -40,8 +40,8 @@ public class DeleteTrafficMonitorCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 	
-    @IdentityMapper(entityTableName="host")
-	@Parameter(name=ApiConstants.ID, type=CommandType.LONG, required = true, description="Id of the Traffic Monitor Host.")
+	@Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = HostResponse.class,
+            required = true, description="Id of the Traffic Monitor Host.")
 	private Long id;
 	
 	///////////////////////////////////////////////////

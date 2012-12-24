@@ -18,11 +18,11 @@ package com.cloud.api.commands;
 
 import java.util.Date;
 
+import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -40,8 +40,8 @@ public class GenerateUsageRecordsCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="List events for the specified domain.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType = DomainResponse.class,
+            description="List events for the specified domain.")
     private Long domainId;
 
     @Parameter(name=ApiConstants.END_DATE, type=CommandType.DATE, required=true, description="End date range for usage record query. Use yyyy-MM-dd as the date format, e.g. startDate=2009-06-03.")

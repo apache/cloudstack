@@ -23,6 +23,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 
+import org.apache.cloudstack.api.response.AccountResponse;
+import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -31,7 +34,6 @@ import com.cloud.dc.DataCenter;
 import com.cloud.domain.Domain;
 
 import org.apache.cloudstack.api.BaseListCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -59,8 +61,8 @@ public class GetUsageRecordsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="List usage records for the specified user.")
     private String accountName;
 
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="List usage records for the specified domain.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType = DomainResponse.class,
+            description="List usage records for the specified domain.")
     private Long domainId;
 
     @Parameter(name=ApiConstants.END_DATE, type=CommandType.DATE, required=true, description="End date range for usage record query. Use yyyy-MM-dd as the date format, e.g. startDate=2009-06-03.")
@@ -69,12 +71,12 @@ public class GetUsageRecordsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.START_DATE, type=CommandType.DATE, required=true, description="Start date range for usage record query. Use yyyy-MM-dd as the date format, e.g. startDate=2009-06-01.")
     private Date startDate;
 
-    @IdentityMapper(entityTableName="account")
-    @Parameter(name=ApiConstants.ACCOUNT_ID, type=CommandType.LONG, description="List usage records for the specified account")
+    @Parameter(name=ApiConstants.ACCOUNT_ID, type=CommandType.UUID, entityType = AccountResponse.class,
+            description="List usage records for the specified account")
     private Long accountId;
 
-    @IdentityMapper(entityTableName="projects")
-    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="List usage records for specified project")
+    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.UUID, entityType = ProjectResponse.class,
+            description="List usage records for specified project")
     private Long projectId;
 
     @Parameter(name=ApiConstants.TYPE, type=CommandType.LONG, description="List usage records for the specified usage type")
