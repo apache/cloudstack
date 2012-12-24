@@ -26,7 +26,7 @@ public class ImageOnPrimayDataStoreTO {
     private final TemplateTO template;
     public ImageOnPrimayDataStoreTO(TemplateOnPrimaryDataStoreInfo template) {
         this.pathOnPrimaryDataStore = template.getPath();
-        this.dataStore = new PrimaryDataStoreTO(template.getPrimaryDataStore());
+        this.dataStore = template.getPrimaryDataStore().getDataStoreTO();
         this.template = new TemplateTO(template.getTemplate());
     }
     

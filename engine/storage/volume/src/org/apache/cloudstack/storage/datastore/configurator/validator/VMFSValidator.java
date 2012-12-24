@@ -21,16 +21,33 @@ package org.apache.cloudstack.storage.datastore.configurator.validator;
 import java.util.List;
 import java.util.Map;
 
-public class VMFSValidator implements ProtocolValidator {
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.storage.to.VolumeTO;
+
+public class VMFSValidator implements StorageProtocolTransformer {
 
     @Override
-    public boolean validate(Map<String, String> params) {
+    public boolean normalizeUserInput(Map<String, String> params) {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
     public List<String> getInputParamNames() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public PrimaryDataStoreTO getDataStoreTO(PrimaryDataStoreInfo dataStore) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public VolumeTO getVolumeTO(VolumeInfo volume) {
         // TODO Auto-generated method stub
         return null;
     }

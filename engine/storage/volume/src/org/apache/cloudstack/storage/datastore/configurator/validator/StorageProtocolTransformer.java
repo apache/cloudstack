@@ -21,7 +21,14 @@ package org.apache.cloudstack.storage.datastore.configurator.validator;
 import java.util.List;
 import java.util.Map;
 
-public interface ProtocolValidator {
-    public boolean validate(Map<String, String> params);
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.storage.to.VolumeTO;
+
+public interface StorageProtocolTransformer {
+    public boolean normalizeUserInput(Map<String, String> params);
+    public PrimaryDataStoreTO getDataStoreTO(PrimaryDataStoreInfo dataStore);
+    public VolumeTO getVolumeTO(VolumeInfo volume);
     public List<String> getInputParamNames();
 }

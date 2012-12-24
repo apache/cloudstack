@@ -19,7 +19,7 @@
 package org.apache.cloudstack.storage.datastore.configurator.vmware;
 
 import org.apache.cloudstack.storage.datastore.configurator.validator.ISCSIValiator;
-import org.apache.cloudstack.storage.datastore.configurator.validator.ProtocolValidator;
+import org.apache.cloudstack.storage.datastore.configurator.validator.StorageProtocolTransformer;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
@@ -27,14 +27,19 @@ import org.springframework.stereotype.Component;
 @Qualifier("defaultProvider")
 public class VmwareIsciConfigurator extends AbstractVmwareConfigurator {
 
-    @Override
     public String getSupportedDataStoreType() {
         return "iscsi";
     }
 
     @Override
-    public ProtocolValidator getValidator() {
+    public StorageProtocolTransformer getProtocolTransformer() {
         return new ISCSIValiator();
+    }
+
+    @Override
+    protected boolean isLocalStorageSupported() {
+        // TODO Auto-generated method stub
+        return false;
     }
     
 }

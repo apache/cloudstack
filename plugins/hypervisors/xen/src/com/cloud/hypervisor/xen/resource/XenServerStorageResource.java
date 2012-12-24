@@ -33,9 +33,13 @@ import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreCmd;
 import org.apache.cloudstack.storage.command.CopyTemplateToPrimaryStorageCmd;
 import org.apache.cloudstack.storage.command.CopyTemplateToPrimaryStorageAnswer;
 import org.apache.cloudstack.storage.command.CreatePrimaryDataStoreCmd;
+import org.apache.cloudstack.storage.command.CreateVolumeAnswer;
+import org.apache.cloudstack.storage.command.CreateVolumeFromBaseImageCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+import org.apache.cloudstack.storage.datastore.protocol.DataStoreProtocol;
 import org.apache.cloudstack.storage.to.ImageDataStoreTO;
 import org.apache.cloudstack.storage.to.ImageOnPrimayDataStoreTO;
+import org.apache.cloudstack.storage.to.NfsPrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateTO;
 import org.apache.commons.httpclient.HttpClient;
@@ -86,14 +90,20 @@ public class XenServerStorageResource {
             return this.execute((AttachPrimaryDataStoreCmd)command);
         } else if (command instanceof CreatePrimaryDataStoreCmd) {
             return execute((CreatePrimaryDataStoreCmd) command);
+        } else if (command instanceof CreateVolumeFromBaseImageCommand) {
+            return execute((CreateVolumeFromBaseImageCommand)command);
         }
         return new Answer((Command)command, false, "not implemented yet"); 
     }
-    /*
-    protected SR getNfsSR(Connection conn, PrimaryDataStoreTO pool) {
+    
+    public Answer execute(CreateVolumeFromBaseImageCommand cmd) {
+        return new CreateVolumeAnswer(cmd, UUID.randomUUID().toString());
+    }
+    
+    protected SR getNfsSR(Connection conn, NfsPrimaryDataStoreTO pool) {
         Map<String, String> deviceConfig = new HashMap<String, String>();
         try {
-            String server = pool.getHost();
+            String server = pool.getServer();
             String serverpath = pool.getPath();
             serverpath = serverpath.replace("//", "/");
             Set<SR> srs = SR.getAll(conn);
@@ -125,13 +135,13 @@ public class XenServerStorageResource {
 
                 if (server.equals(dc.get("server")) && serverpath.equals(dc.get("serverpath"))) {
                     throw new CloudRuntimeException("There is a SR using the same configuration server:" + dc.get("server") + ", serverpath:"
-                            + dc.get("serverpath") + " for pool " + pool.getUuid() + "on host:" + _host.uuid);
+                            + dc.get("serverpath") + " for pool " + pool.getUuid() + "on host:" + hypervisorResource.getHost().uuid);
                 }
 
             }
             deviceConfig.put("server", server);
             deviceConfig.put("serverpath", serverpath);
-            Host host = Host.getByUuid(conn, _host.uuid);
+            Host host = Host.getByUuid(conn, hypervisorResource.getHost().uuid);
             SR sr = SR.create(conn, host, deviceConfig, new Long(0), pool.getUuid(), Long.toString(pool.getId()), SRType.NFS.toString(), "user", true,
                     new HashMap<String, String>());
             sr.scan(conn);
@@ -142,7 +152,7 @@ public class XenServerStorageResource {
             throw new CloudRuntimeException("Unable to create NFS SR " + pool.toString(), e);
         }
     }
-    
+    /*
     protected SR getIscsiSR(Connection conn, PrimaryDataStoreTO pool) {
         synchronized (pool.getUuid().intern()) {
             Map<String, String> deviceConfig = new HashMap<String, String>();
@@ -271,9 +281,9 @@ public class XenServerStorageResource {
         Connection conn = hypervisorResource.getConnection();
         PrimaryDataStoreTO dataStore = cmd.getDataStore();
         try {
-            if (dataStore.getType() == StoragePoolType.NetworkFilesystem.toString()) {
-                //getNfsSR(conn, dataStore);
-            } else if (dataStore.getType() == StoragePoolType.IscsiLUN.toString()) {
+            if (DataStoreProtocol.NFS.toString().equalsIgnoreCase(dataStore.getType())) {
+                getNfsSR(conn, (NfsPrimaryDataStoreTO)dataStore);
+            } else if (DataStoreProtocol.NFS.toString().equalsIgnoreCase(dataStore.getType())) {
                 //getIscsiSR(conn, dataStore);
             } else if (dataStore.getType() == StoragePoolType.PreSetup.toString()) {
             } else {
@@ -366,11 +376,11 @@ public class XenServerStorageResource {
         boolean result = false;
         try {
             
-            SR sr = SR.getByUuid(conn, primaryStoreUuid);
-            if (sr == null) {
+            Set<SR> srs = SR.getByNameLabel(conn, primaryStoreUuid);
+            if (srs.size() != 1) {
                 throw new CloudRuntimeException("storage uuid: " + primaryStoreUuid + " is not unique");
             }
-            poolsr = sr;
+            poolsr = srs.iterator().next();
             VDI.Record vdir = new VDI.Record();
             vdir.nameLabel = "Base-Image-" + UUID.randomUUID().toString();
             vdir.SR = poolsr;
@@ -381,15 +391,20 @@ public class XenServerStorageResource {
             
             vdir = vdi.getRecord(conn);
             String vdiLocation = vdir.location;
-            Set<PBD> pbds = poolsr.getPBDs(conn);
-            if (pbds.size() != 1) {
-                throw new CloudRuntimeException("Don't how to handle multiple pbds:" + pbds.size() + " for sr: " + poolsr.getUuid(conn));
+            String pbdLocation = null;
+            if (primarDataStore.getType().equalsIgnoreCase(DataStoreProtocol.NFS.toString())) {
+                pbdLocation = "/run/sr-mount/" + poolsr.getUuid(conn);
+            } else {
+                Set<PBD> pbds = poolsr.getPBDs(conn);
+                if (pbds.size() != 1) {
+                    throw new CloudRuntimeException("Don't how to handle multiple pbds:" + pbds.size() + " for sr: " + poolsr.getUuid(conn));
+                }
+                PBD pbd = pbds.iterator().next();
+                Map<String, String> deviceCfg = pbd.getDeviceConfig(conn);
+                pbdLocation = deviceCfg.get("location");
             }
-            PBD pbd = pbds.iterator().next();
-            Map<String, String> deviceCfg = pbd.getDeviceConfig(conn);
-            String pbdLocation = deviceCfg.get("location");
             if (pbdLocation == null) {
-                throw new CloudRuntimeException("Can't get pbd: " + pbd.getUuid(conn) + " location");
+                throw new CloudRuntimeException("Can't get pbd location");
             }
             
             String vdiPath = pbdLocation + "/" + vdiLocation + ".vhd";
@@ -454,8 +469,7 @@ public class XenServerStorageResource {
     protected Answer execute(CopyTemplateToPrimaryStorageCmd cmd) {
         ImageOnPrimayDataStoreTO imageTO = cmd.getImage();
         TemplateTO template = imageTO.getTemplate();
-        ImageDataStoreTO imageStore = template.getImageDataStore();
-        if (imageStore.getType().equalsIgnoreCase("http")) {
+        if (template.getPath().startsWith("http")) {
             return directDownloadHttpTemplate(cmd, template, imageTO.getPrimaryDataStore());
         } else {
             return new Answer(cmd, false, "not implemented yet");

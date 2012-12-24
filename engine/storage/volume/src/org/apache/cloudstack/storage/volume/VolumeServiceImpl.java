@@ -187,10 +187,8 @@ public class VolumeServiceImpl implements VolumeService {
         CommandResult result = callback.getResult();
         TemplateOnPrimaryDataStoreObject templateOnPrimaryStoreObj = context.getTemplate();
         if (result.isSuccess()) {
-            templateOnPrimaryStoreObj.updateStatus(Status.DOWNLOADED);
             templateOnPrimaryStoreObj.stateTransit(TemplateOnPrimaryDataStoreStateMachine.Event.OperationSuccessed);
         } else {
-            templateOnPrimaryStoreObj.updateStatus(Status.ABANDONED);
             templateOnPrimaryStoreObj.stateTransit(TemplateOnPrimaryDataStoreStateMachine.Event.OperationFailed);
         }
         

@@ -15,9 +15,13 @@ import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.EndPoint;
 import org.apache.cloudstack.storage.HypervisorHostEndPoint;
 import org.apache.cloudstack.storage.command.CommandResult;
+import org.apache.cloudstack.storage.datastore.configurator.validator.StorageProtocolTransformer;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreVO;
 import org.apache.cloudstack.storage.datastore.driver.PrimaryDataStoreDriver;
 import org.apache.cloudstack.storage.image.TemplateInfo;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.storage.to.VolumeTO;
 import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreInfo;
 import org.apache.cloudstack.storage.volume.TemplatePrimaryDataStoreManager;
 import org.apache.cloudstack.storage.volume.VolumeObject;
@@ -36,18 +40,20 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
     private static final Logger s_logger = Logger.getLogger(DefaultPrimaryDataStore.class);
     protected PrimaryDataStoreDriver driver;
     protected PrimaryDataStoreVO pdsv;
-    protected PrimaryDataStoreInfo pdsInfo;
     protected PrimaryDataStoreLifeCycle lifeCycle;
     protected PrimaryDataStoreProvider provider;
+    protected StorageProtocolTransformer protocalTransformer;
     private HypervisorType supportedHypervisor;
     private boolean isLocalStorageSupported = false;
     @Inject
     private VolumeDao volumeDao;
     @Inject
-    HostDao hostDao;
+    private HostDao hostDao;
     @Inject
-    TemplatePrimaryDataStoreManager templatePrimaryStoreMgr;
-
+    private PrimaryDataStoreDao dataStoreDao;
+    @Inject
+    private TemplatePrimaryDataStoreManager templatePrimaryStoreMgr;
+    
     private DefaultPrimaryDataStore(PrimaryDataStoreVO pdsv) {
         this.pdsv = pdsv;
     }
@@ -64,6 +70,20 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
     
     public void setProvider(PrimaryDataStoreProvider provider) {
         this.provider = provider;
+    }
+    
+    public void setProtocolTransFormer(StorageProtocolTransformer transformer) {
+        this.protocalTransformer = transformer;
+    }
+    
+    @Override
+    public PrimaryDataStoreTO getDataStoreTO() {
+        return this.protocalTransformer.getDataStoreTO(this);
+    }
+    
+    @Override
+    public VolumeTO getVolumeTO(VolumeInfo volume) {
+        return this.protocalTransformer.getVolumeTO(volume);
     }
     
     public static DefaultPrimaryDataStore createDataStore(PrimaryDataStoreVO pdsv) {
@@ -97,8 +117,13 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
     public List<EndPoint> getEndPoints() {
         Long clusterId = pdsv.getClusterId();
         if (clusterId == null) {
-            return null;
+            pdsv = dataStoreDao.findById(pdsv.getId());
+            clusterId = pdsv.getClusterId();
+            if (clusterId == null) {
+                return new ArrayList<EndPoint>();
+            }
         }
+        
         List<EndPoint> endpoints = new ArrayList<EndPoint>();
         List<HostVO> hosts = hostDao.findHypervisorHostInCluster(clusterId);
         for (HostVO host : hosts) {
@@ -206,26 +231,22 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
 
     @Override
     public String getUuid() {
-        // TODO Auto-generated method stub
-        return null;
+        return this.pdsv.getUuid();
     }
 
     @Override
     public DataCenterResourceEntity.State getManagedState() {
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public String getName() {
-        // TODO Auto-generated method stub
-        return null;
+        return this.pdsv.getName();
     }
 
     @Override
     public String getType() {
-        // TODO Auto-generated method stub
-        return null;
+        return this.pdsv.getPoolType();
     }
 
     @Override

@@ -25,12 +25,25 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreVO;
+import org.apache.cloudstack.storage.to.NfsPrimaryDataStoreTO;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.storage.to.VolumeTO;
+
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class NfsValidator implements ProtocolValidator {
-
+public class NfsProtocolTransformer implements StorageProtocolTransformer {
+    private final PrimaryDataStoreDao dataStoreDao;
+    
+    public NfsProtocolTransformer(PrimaryDataStoreDao dao) {
+        this.dataStoreDao = dao;
+    }
+    
     @Override
-    public boolean validate(Map<String, String> params) {
+    public boolean normalizeUserInput(Map<String, String> params) {
     	String url = params.get("url");
     	
     	try {
@@ -49,8 +62,7 @@ public class NfsValidator implements ProtocolValidator {
 			params.put("path", hostPath);
 			params.put("user", userInfo);
 			params.put("port", String.valueOf(port));
-			params.put("uuid", UUID.fromString(storageHost + hostPath).toString());
-			
+			params.put("uuid", UUID.nameUUIDFromBytes((storageHost + hostPath).getBytes()).toString());
 		} catch (URISyntaxException e) {
 			throw new CloudRuntimeException("invalid url: " + e.toString());
 		}
@@ -63,6 +75,21 @@ public class NfsValidator implements ProtocolValidator {
         paramNames.add("server");
         paramNames.add("path");
         return paramNames;
+    }
+
+    @Override
+    public PrimaryDataStoreTO getDataStoreTO(PrimaryDataStoreInfo dataStore) {
+        NfsPrimaryDataStoreTO dataStoreTO = new NfsPrimaryDataStoreTO(dataStore);
+        PrimaryDataStoreVO dataStoreVO = dataStoreDao.findById(dataStore.getId());
+        dataStoreTO.setServer(dataStoreVO.getHostAddress());
+        dataStoreTO.setPath(dataStoreVO.getPath());
+        return dataStoreTO;
+    }
+
+    @Override
+    public VolumeTO getVolumeTO(VolumeInfo volume) {
+        // TODO Auto-generated method stub
+        return null;
     }
 
 }

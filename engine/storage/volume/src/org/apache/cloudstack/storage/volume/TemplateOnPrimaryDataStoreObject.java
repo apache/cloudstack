@@ -71,13 +71,17 @@ public class TemplateOnPrimaryDataStoreObject implements TemplateOnPrimaryDataSt
     public void updateStatus(Status status) {
         vo.setDownloadState(status);
         templateStoreDao.update(vo.getId(), vo);
+        vo = templateStoreDao.findById(vo.getId());
     }
     
     public void stateTransit(TemplateOnPrimaryDataStoreStateMachine.Event event) {
         try {
             this.stateMachine.transitTo(vo, event, null, templateStoreDao);
+            vo = templateStoreDao.findById(vo.getId());
         } catch (NoTransitionException e) {
            throw new CloudRuntimeException("Failed change state", e);
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Failed change state", e);
         }
     }
 }

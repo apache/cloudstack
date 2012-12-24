@@ -27,6 +27,8 @@ import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.EndPoint;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.image.TemplateInfo;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.storage.to.VolumeTO;
 import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreInfo;
 
 public interface PrimaryDataStore extends PrimaryDataStoreInfo {
@@ -53,4 +55,8 @@ public interface PrimaryDataStore extends PrimaryDataStoreInfo {
     boolean installTemplate(TemplateOnPrimaryDataStoreInfo template);
 
     VolumeDiskType getDefaultDiskType();
+
+    PrimaryDataStoreTO getDataStoreTO();
+
+    VolumeTO getVolumeTO(VolumeInfo volume);
 }

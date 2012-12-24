@@ -1,5 +1,6 @@
 package org.apache.cloudstack.storage.command;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 
 import com.cloud.agent.api.Command;

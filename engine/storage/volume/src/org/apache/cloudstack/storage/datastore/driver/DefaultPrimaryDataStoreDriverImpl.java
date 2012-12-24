@@ -47,7 +47,7 @@ public class DefaultPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         // which can access its datastore
         List<EndPoint> endPoints = vol.getDataStore().getEndPoints();
         VolumeInfo volInfo = vol;
-        CreateVolumeCommand createCmd = new CreateVolumeCommand(new VolumeTO(volInfo));
+        CreateVolumeCommand createCmd = new CreateVolumeCommand(this.dataStore.getVolumeTO(volInfo));
         Answer answer = sendOutCommand(createCmd, endPoints);
 
         CreateVolumeAnswer volAnswer = (CreateVolumeAnswer) answer;

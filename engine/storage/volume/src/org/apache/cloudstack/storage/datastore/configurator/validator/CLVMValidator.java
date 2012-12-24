@@ -21,10 +21,15 @@ package org.apache.cloudstack.storage.datastore.configurator.validator;
 import java.util.List;
 import java.util.Map;
 
-public class CLVMValidator implements ProtocolValidator {
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.storage.to.VolumeTO;
+
+public class CLVMValidator implements StorageProtocolTransformer {
 
     @Override
-    public boolean validate(Map<String, String> params) {
+    public boolean normalizeUserInput(Map<String, String> params) {
         // TODO Auto-generated method stub
         return false;
     }
@@ -34,5 +39,18 @@ public class CLVMValidator implements ProtocolValidator {
         // TODO Auto-generated method stub
         return null;
     }
+
+    @Override
+    public PrimaryDataStoreTO getDataStoreTO(PrimaryDataStoreInfo dataStore) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public VolumeTO getVolumeTO(VolumeInfo volume) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
 
 }

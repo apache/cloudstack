@@ -37,6 +37,9 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
+import com.cloud.utils.component.ComponentInject;
+import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Transaction;
 
 
 public class MockHostEndpointRpcServerDirectCallResource implements HostEndpointRpcServer {
@@ -47,29 +50,14 @@ public class MockHostEndpointRpcServerDirectCallResource implements HostEndpoint
     public MockHostEndpointRpcServerDirectCallResource() {
         executor = Executors.newScheduledThreadPool(10);
     }
-    protected class MockRpcCallBack implements Runnable {
-        private final Command cmd;
-        private final long hostId;
-        private final AsyncCompletionCallback<Answer> callback; 
-        public MockRpcCallBack(long hostId, Command cmd, final AsyncCompletionCallback<Answer> callback) {
-            this.cmd = cmd;
-            this.callback = callback;
-            this.hostId = hostId;
-        }
-        @Override
-        public void run() {
-            try {
-                Answer answer = agentMgr.send(hostId, cmd);
-                callback.complete(answer);
-            } catch (Exception e) {
-                s_logger.debug("send command failed:" + e.toString());
-            }
-        }
-        
-    }
     
     public void sendCommandAsync(HypervisorHostEndPoint host, final Command command, final AsyncCompletionCallback<Answer> callback) {
-        executor.schedule(new MockRpcCallBack(host.getHostId(), command, callback), 10, TimeUnit.SECONDS);
+       // new MockRpcCallBack(host.getHostId(), command, callback);
+        MockRpcCallBack run = ComponentInject.inject(MockRpcCallBack.class);
+        run.setCallback(callback);
+        run.setCmd(command);
+        run.setHostId(host.getHostId());
+        executor.schedule(run, 10, TimeUnit.SECONDS);
     }
 
     @Override

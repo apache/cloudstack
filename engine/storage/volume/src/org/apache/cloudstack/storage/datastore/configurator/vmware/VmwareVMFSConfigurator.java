@@ -18,7 +18,7 @@
  */
 package org.apache.cloudstack.storage.datastore.configurator.vmware;
 
-import org.apache.cloudstack.storage.datastore.configurator.validator.ProtocolValidator;
+import org.apache.cloudstack.storage.datastore.configurator.validator.StorageProtocolTransformer;
 import org.apache.cloudstack.storage.datastore.configurator.validator.VMFSValidator;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -35,7 +35,13 @@ public class VmwareVMFSConfigurator extends AbstractVmwareConfigurator {
     }
 
     @Override
-    public ProtocolValidator getValidator() {
+    public StorageProtocolTransformer getProtocolTransformer() {
         return new VMFSValidator();
+    }
+
+    @Override
+    protected boolean isLocalStorageSupported() {
+        // TODO Auto-generated method stub
+        return false;
     }
 }

@@ -338,6 +338,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         s_statesTable.put(Types.VmPowerState.UNRECOGNIZED, State.Unknown);
     }
 
+    public XsHost getHost() {
+        return this._host;
+    }
 
     protected boolean cleanupHaltedVms(Connection conn) throws XenAPIException, XmlRpcException {
         Host host = Host.getByUuid(conn, _host.uuid);

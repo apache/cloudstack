@@ -12,19 +12,13 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 public abstract class AbstractPrimaryDataStoreConfigurator implements PrimaryDataStoreConfigurator {
     @Inject
-    PrimaryDataStoreDao dataStoreDao;
+    protected PrimaryDataStoreDao dataStoreDao;
     
-    protected PrimaryDataStoreLifeCycle getLifeCycle() {
-        return null;
-    }
+    protected abstract PrimaryDataStoreLifeCycle getLifeCycle();
     
-    protected PrimaryDataStoreDriver getDriver() {
-        return null;
-    }
+    protected abstract PrimaryDataStoreDriver getDriver();
     
-    protected boolean isLocalStorageSupported() {
-        return false;
-    }
+    protected abstract boolean isLocalStorageSupported();
 
     @Override
     public PrimaryDataStore getDataStore(long dataStoreId) {
@@ -34,10 +28,11 @@ public abstract class AbstractPrimaryDataStoreConfigurator implements PrimaryDat
         }
         
         DefaultPrimaryDataStore dataStore = DefaultPrimaryDataStore.createDataStore(dataStoreVO);
-        dataStore.setDriver(this.getDriver());
+        dataStore.setDriver(getDriver());
         dataStore.setLifeCycle(getLifeCycle());
         dataStore.setSupportedHypervisor(getSupportedHypervisor());
         dataStore.setLocalStorageFlag(isLocalStorageSupported());
+        dataStore.setProtocolTransFormer(getProtocolTransformer());
         return dataStore;
     }
 }

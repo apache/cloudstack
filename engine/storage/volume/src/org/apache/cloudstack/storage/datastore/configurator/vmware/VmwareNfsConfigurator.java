@@ -18,24 +18,33 @@
  */
 package org.apache.cloudstack.storage.datastore.configurator.vmware;
 
-import org.apache.cloudstack.storage.datastore.configurator.validator.NfsValidator;
-import org.apache.cloudstack.storage.datastore.configurator.validator.ProtocolValidator;
+import org.apache.cloudstack.storage.datastore.configurator.validator.NfsProtocolTransformer;
+import org.apache.cloudstack.storage.datastore.configurator.validator.StorageProtocolTransformer;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.utils.component.Inject;
 
 @Component
 @Qualifier("defaultProvider")
 public class VmwareNfsConfigurator extends AbstractVmwareConfigurator {
-
+    @Inject
+    PrimaryDataStoreDao dataStoreDao;
     @Override
     public String getSupportedDataStoreType() {
         return "nfs";
     }
 
     @Override
-    public ProtocolValidator getValidator() {
-        return new NfsValidator();
+    public StorageProtocolTransformer getProtocolTransformer() {
+        return new NfsProtocolTransformer(dataStoreDao);
+    }
+
+    @Override
+    protected boolean isLocalStorageSupported() {
+        // TODO Auto-generated method stub
+        return false;
     }
 }

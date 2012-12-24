@@ -19,7 +19,7 @@
 package org.apache.cloudstack.storage.datastore.configurator;
 
 import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
-import org.apache.cloudstack.storage.datastore.configurator.validator.ProtocolValidator;
+import org.apache.cloudstack.storage.datastore.configurator.validator.StorageProtocolTransformer;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage.StoragePoolType;
@@ -28,5 +28,5 @@ public interface PrimaryDataStoreConfigurator {
     public HypervisorType getSupportedHypervisor();
     public String getSupportedDataStoreType();
     public PrimaryDataStore getDataStore(long dataStoreId);
-    public ProtocolValidator getValidator();
+    public StorageProtocolTransformer getProtocolTransformer();
 }

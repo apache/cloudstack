@@ -24,7 +24,7 @@ public class ChildTestConfiguration extends TestConfiguration {
 	
     @Bean
     public HostEndpointRpcServer rpcServer() {
-        return new MockHypervsiorHostEndPointRpcServer();
+        return new MockHostEndpointRpcServerDirectCallResource();
     }
 /*	@Override
 	@Bean

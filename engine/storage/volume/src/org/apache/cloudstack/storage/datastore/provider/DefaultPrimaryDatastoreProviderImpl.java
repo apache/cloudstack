@@ -14,7 +14,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvid
 import org.apache.cloudstack.storage.datastore.DefaultPrimaryDataStore;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
 import org.apache.cloudstack.storage.datastore.configurator.PrimaryDataStoreConfigurator;
-import org.apache.cloudstack.storage.datastore.configurator.validator.ProtocolValidator;
+import org.apache.cloudstack.storage.datastore.configurator.validator.StorageProtocolTransformer;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreProviderDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreProviderVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreVO;
@@ -43,21 +43,6 @@ public class DefaultPrimaryDatastoreProviderImpl implements PrimaryDataStoreProv
     @Inject
     protected ClusterDao clusterDao;
     protected Map<String, PrimaryDataStoreConfigurator> configuratorMaps = new HashMap<String, PrimaryDataStoreConfigurator>();
-
-    @Qualifier("defaultProvider") 
-    @Inject
-    List<PrimaryDataStoreConfigurator> defaultConfigurators;
-    
-    public DefaultPrimaryDatastoreProviderImpl() {
-    }
-    
-    @PostConstruct
-    public void intialize() {
-        for (PrimaryDataStoreConfigurator configurator : defaultConfigurators) {
-            String key = generateKey(configurator.getSupportedHypervisor(), configurator.getSupportedDataStoreType().toString());
-            configuratorMaps.put(key, configurator);
-        }
-    }
 
     @Inject
     public DefaultPrimaryDatastoreProviderImpl(@Qualifier("defaultProvider") List<PrimaryDataStoreConfigurator> configurators) {
@@ -114,10 +99,15 @@ public class DefaultPrimaryDatastoreProviderImpl implements PrimaryDataStoreProv
             throw new CloudRuntimeException("can't find configurator from key: " + key);
         }
 
-        ProtocolValidator validator = configurator.getValidator();
-        validator.validate(dsInfos);
+        StorageProtocolTransformer validator = configurator.getProtocolTransformer();
+        validator.normalizeUserInput(dsInfos);
 
-        PrimaryDataStoreVO dataStoreVO = new PrimaryDataStoreVO();
+        PrimaryDataStoreVO dataStoreVO = dataStoreDao.findPoolByUUID(dsInfos.get("uuid"));
+        if (dataStoreVO != null) {
+            throw new CloudRuntimeException("duplicate uuid: " + dsInfos.get("uuid"));
+        }
+        
+        dataStoreVO = new PrimaryDataStoreVO();
         dataStoreVO.setStorageProviderId(this.getId());
         dataStoreVO.setHostAddress(dsInfos.get("server"));
         dataStoreVO.setPath(dsInfos.get("path"));

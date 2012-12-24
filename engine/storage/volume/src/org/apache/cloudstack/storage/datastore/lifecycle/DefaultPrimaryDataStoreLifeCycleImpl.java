@@ -52,8 +52,8 @@ public class DefaultPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLif
     }
 
     protected void attachCluster() {
-        //send down createStoragePool command to all the hosts in the cluster
-        AttachPrimaryDataStoreCmd cmd = new AttachPrimaryDataStoreCmd(this.dataStore);
+        //send down AttachPrimaryDataStoreCmd command to all the hosts in the cluster
+        AttachPrimaryDataStoreCmd cmd = new AttachPrimaryDataStoreCmd(this.dataStore.getDataStoreTO());
         for (EndPoint ep : dataStore.getEndPoints()) {
             ep.sendMessage(cmd);
         } 
@@ -61,14 +61,19 @@ public class DefaultPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLif
     
     @Override
     public boolean attachCluster(ClusterScope scope) {
-        attachCluster();
-        
         PrimaryDataStoreVO dataStoreVO = dataStoreDao.findById(this.dataStore.getId());
         dataStoreVO.setDataCenterId(scope.getZoneId());
         dataStoreVO.setPodId(scope.getPodId());
         dataStoreVO.setClusterId(scope.getScopeId());
+        dataStoreVO.setStatus(DataStoreStatus.Attaching);
+        dataStoreDao.update(dataStoreVO.getId(), dataStoreVO);
+        
+        attachCluster();
+        
+        dataStoreVO = dataStoreDao.findById(this.dataStore.getId());
         dataStoreVO.setStatus(DataStoreStatus.Up);
         dataStoreDao.update(dataStoreVO.getId(), dataStoreVO);
+        
         return true;
     }
 

@@ -18,7 +18,7 @@
  */
 package org.apache.cloudstack.storage.datastore.configurator.kvm;
 
-import org.apache.cloudstack.storage.datastore.configurator.validator.ProtocolValidator;
+import org.apache.cloudstack.storage.datastore.configurator.validator.StorageProtocolTransformer;
 import org.apache.cloudstack.storage.datastore.configurator.validator.RBDValidator;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -29,13 +29,18 @@ import com.cloud.storage.Storage.StoragePoolType;
 @Qualifier("defaultProvider")
 public class KvmRBDConfigurator extends AbstractKvmConfigurator {
 
-    @Override
     public String getSupportedDataStoreType() {
         return "rbd";
     }
 
     @Override
-    public ProtocolValidator getValidator() {
+    public StorageProtocolTransformer getProtocolTransformer() {
         return new RBDValidator();
+    }
+
+    @Override
+    protected boolean isLocalStorageSupported() {
+        // TODO Auto-generated method stub
+        return false;
     }
 }

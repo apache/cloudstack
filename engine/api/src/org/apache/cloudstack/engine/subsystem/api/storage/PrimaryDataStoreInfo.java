@@ -41,4 +41,5 @@ public interface PrimaryDataStoreInfo {
 	public String getType();
 	public PrimaryDataStoreLifeCycle getLifeCycle();
 	PrimaryDataStoreProvider getProvider();
+	
 }

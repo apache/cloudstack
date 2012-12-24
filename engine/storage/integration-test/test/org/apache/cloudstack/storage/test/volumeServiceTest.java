@@ -18,8 +18,9 @@
  */
 package org.apache.cloudstack.storage.test;
 
-import static org.junit.Assert.*;
-
+import org.testng.annotations.Test;
+import org.testng.annotations.BeforeMethod;
+import org.testng.AssertJUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -51,7 +52,6 @@ import org.apache.cloudstack.storage.command.CreateVolumeFromBaseImageCommand;
 import org.apache.cloudstack.storage.datastore.DefaultPrimaryDataStore;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreVO;
-import org.apache.cloudstack.storage.datastore.provider.DefaultPrimaryDatastoreProviderImpl;
 import org.apache.cloudstack.storage.datastore.provider.PrimaryDataStoreProviderManager;
 import org.apache.cloudstack.storage.image.ImageService;
 import org.apache.cloudstack.storage.image.db.ImageDataDao;
@@ -68,14 +68,7 @@ import org.apache.cloudstack.storage.image.store.lifecycle.ImageDataStoreLifeCyc
 import org.apache.cloudstack.storage.volume.VolumeService;
 import org.apache.cloudstack.storage.volume.db.VolumeDao;
 import org.apache.cloudstack.storage.volume.db.VolumeVO;
-
-import org.junit.Before;
-import org.junit.Test;
-
-import org.junit.runner.RunWith;
-
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.mockito.Mockito;
 import org.mockito.Mockito.*;
 
@@ -100,13 +93,9 @@ import com.cloud.org.Cluster.ClusterType;
 import com.cloud.org.Managed.ManagedState;
 import com.cloud.resource.ResourceState;
 import com.cloud.storage.Storage.TemplateType;
-import com.cloud.utils.component.ComponentInject;
-import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Transaction;
 
-@RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations="classpath:/storageContext.xml")
-public class volumeServiceTest {
+public class volumeServiceTest extends CloudStackTestNGBase {
 	@Inject
 	ImageDataStoreProviderManager imageProviderMgr;
 	@Inject
@@ -134,8 +123,19 @@ public class volumeServiceTest {
 	Long dcId;
 	Long clusterId;
 	Long podId;
-	@Before
+	HostVO host;
+	String primaryName = "my primary data store";
+	
+    @Test(priority = -1)
 	public void setUp() {
+        
+        host = hostDao.findByGuid(this.getHostGuid());
+        if (host != null) {
+            dcId = host.getDataCenterId();
+            clusterId = host.getClusterId();
+            podId = host.getPodId();
+            return;
+        }
 		//create data center
 		DataCenterVO dc = new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null,  "10.0.0.1/24", 
 				null, null, NetworkType.Basic, null, null, true,  true);
@@ -143,7 +143,7 @@ public class volumeServiceTest {
 		dcId = dc.getId();
 		//create pod
 
-		HostPodVO pod = new HostPodVO(UUID.randomUUID().toString(), dc.getId(), "192.168.56.1", "192.168.56.0/24", 8, "test");
+		HostPodVO pod = new HostPodVO(UUID.randomUUID().toString(), dc.getId(), this.getHostGateway(), this.getHostCidr(), 8, "test");
 		pod = podDao.persist(pod);
 		podId = pod.getId();
 		//create xen cluster
@@ -155,23 +155,23 @@ public class volumeServiceTest {
 		clusterId = cluster.getId();
 		//create xen host
 
-		HostVO host = new HostVO(UUID.randomUUID().toString());
+		host = new HostVO(this.getHostGuid());
 		host.setName("devcloud xen host");
 		host.setType(Host.Type.Routing);
-		host.setPrivateIpAddress("192.168.56.2");
+		host.setPrivateIpAddress(this.getHostIp());
 		host.setDataCenterId(dc.getId());
 		host.setVersion("6.0.1");
 		host.setAvailable(true);
 		host.setSetup(true);
+		host.setPodId(podId);
 		host.setLastPinged(0);
 		host.setResourceState(ResourceState.Enabled);
+		host.setHypervisorType(HypervisorType.XenServer);
 		host.setClusterId(cluster.getId());
 
 		host = hostDao.persist(host);
-		List<HostVO> results = new ArrayList<HostVO>();
-		results.add(host);
-		Mockito.when(hostDao.listAll()).thenReturn(results);
-		Mockito.when(hostDao.findHypervisorHostInCluster(Mockito.anyLong())).thenReturn(results);
+		
+	
 		//CreateVolumeAnswer createVolumeFromImageAnswer = new CreateVolumeAnswer(UUID.randomUUID().toString());
 
 		/*try {
@@ -187,11 +187,22 @@ public class volumeServiceTest {
 
 		//Mockito.when(primaryStoreDao.findById(Mockito.anyLong())).thenReturn(primaryStore);
 	}
+    
+    @Override
+    protected void injectMockito() {
+        if (host == null) {
+            return;
+        }
+        List<HostVO> results = new ArrayList<HostVO>();
+        results.add(host);
+        Mockito.when(hostDao.listAll()).thenReturn(results);
+        Mockito.when(hostDao.findHypervisorHostInCluster(Mockito.anyLong())).thenReturn(results);
+    }
 
 	private ImageDataVO createImageData() {
 		ImageDataVO image = new ImageDataVO();
 		image.setTemplateType(TemplateType.USER);
-		image.setUrl("http://testurl/test.vhd");
+		image.setUrl(this.getTemplateUrl());
 		image.setUniqueName(UUID.randomUUID().toString());
 		image.setName(UUID.randomUUID().toString());
 		image.setPublicTemplate(true);
@@ -226,21 +237,29 @@ public class volumeServiceTest {
 		}
 	}
 
-	@Test
 	public void createTemplateTest() {
 		createTemplate();
 	}
 
 	private PrimaryDataStoreInfo createPrimaryDataStore() {
 		try {
-			primaryDataStoreProviderMgr.configure("primary data store mgr", new HashMap<String, Object>());
-			PrimaryDataStoreProvider provider = primaryDataStoreProviderMgr.getDataStoreProvider("default primary data store provider");
-
+		    PrimaryDataStoreProvider provider = primaryDataStoreProviderMgr.getDataStoreProvider("default primary data store provider");
+		    primaryDataStoreProviderMgr.configure("primary data store mgr", new HashMap<String, Object>());
+            
+		    List<PrimaryDataStoreVO> ds = primaryStoreDao.findPoolByName(this.primaryName);
+		    if (ds.size() >= 1) {
+		        PrimaryDataStoreVO store = ds.get(0);
+		        if (store.getRemoved() == null) {
+		            return provider.getDataStore(store.getId());
+		        }
+		    }
+		    
+		
 			Map<String, String> params = new HashMap<String, String>();
-			params.put("url", "nfs://localhost/primarynfs");
+			params.put("url", this.getPrimaryStorageUrl());
 			params.put("dcId", dcId.toString());
 			params.put("clusterId", clusterId.toString());
-			params.put("name", "my primary data store");
+			params.put("name", this.primaryName);
 			PrimaryDataStoreInfo primaryDataStoreInfo = provider.registerDataStore(params);
 			PrimaryDataStoreLifeCycle lc = primaryDataStoreInfo.getLifeCycle();
 			ClusterScope scope = new ClusterScope(clusterId, podId, dcId);
@@ -251,11 +270,6 @@ public class volumeServiceTest {
 		}
 	}
 
-	@Test
-	public void createPrimaryDataStoreTest() {
-		createPrimaryDataStore();
-	}
-
 	private VolumeVO createVolume(long templateId) {
 		VolumeVO volume = new VolumeVO(1000, new RootDisk().toString(), UUID.randomUUID().toString(), templateId);
 		volume = volumeDao.persist(volume);
@@ -263,7 +277,7 @@ public class volumeServiceTest {
 
 	}
 
-	@Test
+	@Test(priority=2)
 	public void createVolumeFromTemplate() {
 		TemplateEntity te = createTemplate();
 		PrimaryDataStoreInfo dataStoreInfo = createPrimaryDataStore();
@@ -271,37 +285,40 @@ public class volumeServiceTest {
 		VolumeEntity ve = volumeService.getVolumeEntity(volume.getId());
 		ve.createVolumeFromTemplate(dataStoreInfo.getId(), new VHD(), te);
 	}
-
-	//@Test
-	public void test1() {
-		System.out.println(VolumeTypeHelper.getType("Root"));
-		System.out.println(VolumeDiskTypeHelper.getDiskType("vmdk"));
-		System.out.println(ImageFormatHelper.getFormat("ova"));
-		assertFalse(new VMDK().equals(new VHD()));
-		VMDK vmdk = new VMDK();
-		assertTrue(vmdk.equals(vmdk));
-		VMDK newvmdk = new VMDK();
-		assertTrue(vmdk.equals(newvmdk));
-
-		ImageFormat ova = new OVA();
-		ImageFormat iso = new ISO();
-		assertTrue(ova.equals(new OVA()));
-		assertFalse(ova.equals(iso));
-		assertTrue(ImageFormatHelper.getFormat("test").equals(new Unknown()));
-
-		VolumeDiskType qcow2 = new QCOW2();
-		ImageFormat qcow2format = new org.apache.cloudstack.storage.image.format.QCOW2();
-		assertFalse(qcow2.equals(qcow2format));
-
+	
+	@Test(priority=3)
+	public void tearDown() {
+	    List<PrimaryDataStoreVO> ds = primaryStoreDao.findPoolByName(this.primaryName);
+	    for (int i = 0; i < ds.size(); i++) {
+	        PrimaryDataStoreVO store = ds.get(i);
+	        store.setUuid(null);
+	        primaryStoreDao.remove(ds.get(i).getId());
+	        primaryStoreDao.expunge(ds.get(i).getId());
+	    }
 	}
 
 	//@Test
-	public void testStaticBean() {
-		DefaultPrimaryDatastoreProviderImpl provider = ComponentInject.inject(DefaultPrimaryDatastoreProviderImpl.class);
-		//assertNotNull(provider.dataStoreDao);
+	@Test
+    public void test1() {
+		System.out.println(VolumeTypeHelper.getType("Root"));
+		System.out.println(VolumeDiskTypeHelper.getDiskType("vmdk"));
+		System.out.println(ImageFormatHelper.getFormat("ova"));
+		AssertJUnit.assertFalse(new VMDK().equals(new VHD()));
+		VMDK vmdk = new VMDK();
+		AssertJUnit.assertTrue(vmdk.equals(vmdk));
+		VMDK newvmdk = new VMDK();
+		AssertJUnit.assertTrue(vmdk.equals(newvmdk));
 
-		DefaultPrimaryDataStore dpdsi = DefaultPrimaryDataStore.createDataStore(null);
-		//assertNotNull(dpdsi.volumeDao);
+		ImageFormat ova = new OVA();
+		ImageFormat iso = new ISO();
+		AssertJUnit.assertTrue(ova.equals(new OVA()));
+		AssertJUnit.assertFalse(ova.equals(iso));
+		AssertJUnit.assertTrue(ImageFormatHelper.getFormat("test").equals(new Unknown()));
+
+		VolumeDiskType qcow2 = new QCOW2();
+		ImageFormat qcow2format = new org.apache.cloudstack.storage.image.format.QCOW2();
+		AssertJUnit.assertFalse(qcow2.equals(qcow2format));
+
 	}
 
 }

@@ -22,6 +22,8 @@ package org.apache.cloudstack.framework.async;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
+import net.sf.cglib.proxy.CallbackFilter;
+import net.sf.cglib.proxy.Callback;
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
@@ -52,14 +54,33 @@ public class AsyncCallbackDispatcher<T> implements AsyncCompletionCallback {
 	
 	@SuppressWarnings("unchecked")
 	public T getTarget() {
-		return (T)Enhancer.create(_targetObject.getClass(), new MethodInterceptor() {
-			@Override
-			public Object intercept(Object arg0, Method arg1, Object[] arg2,
-				MethodProxy arg3) throws Throwable {
-				_callbackMethod = arg1;
-				return null;
-			}
-		});
+	    Enhancer en = new Enhancer();
+	    en.setSuperclass(_targetObject.getClass());
+	    en.setCallbacks(new Callback[]{new MethodInterceptor() {
+            @Override
+            public Object intercept(Object arg0, Method arg1, Object[] arg2,
+                MethodProxy arg3) throws Throwable {
+                _callbackMethod = arg1;
+                return null;
+            }
+        }, 
+        new MethodInterceptor() {
+            @Override
+            public Object intercept(Object arg0, Method arg1, Object[] arg2,
+                MethodProxy arg3) throws Throwable {
+                return null;
+            }
+        }
+	    });
+	    en.setCallbackFilter(new CallbackFilter() {
+	        public int accept(Method method) {
+	            if (method.getParameterTypes().length == 0 && method.getName().equals("finalize")) {
+	                return 1;
+	            }
+	            return 0;
+	        }}
+	       );
+		return (T)en.create();
 	}
 
 	public AsyncCallbackDispatcher<T> setCallback(Object useless) {

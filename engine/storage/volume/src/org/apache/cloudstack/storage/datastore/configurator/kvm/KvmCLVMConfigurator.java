@@ -19,7 +19,7 @@
 package org.apache.cloudstack.storage.datastore.configurator.kvm;
 
 import org.apache.cloudstack.storage.datastore.configurator.validator.CLVMValidator;
-import org.apache.cloudstack.storage.datastore.configurator.validator.ProtocolValidator;
+import org.apache.cloudstack.storage.datastore.configurator.validator.StorageProtocolTransformer;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
@@ -33,8 +33,14 @@ public class KvmCLVMConfigurator extends AbstractKvmConfigurator {
     }
 
     @Override
-    public ProtocolValidator getValidator() {
+    public StorageProtocolTransformer getProtocolTransformer() {
         return new CLVMValidator();
+    }
+
+    @Override
+    protected boolean isLocalStorageSupported() {
+        // TODO Auto-generated method stub
+        return false;
     }
 
 
