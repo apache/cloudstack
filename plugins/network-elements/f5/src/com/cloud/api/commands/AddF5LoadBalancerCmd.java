@@ -17,12 +17,12 @@
 
 package com.cloud.api.commands;
 
+import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.PlugService;
@@ -50,8 +50,8 @@ public class AddF5LoadBalancerCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="physical_network")
-    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, required=true, description="the Physical Network ID")
+    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.UUID, entityType = PhysicalNetworkResponse.class,
+            required=true, description="the Physical Network ID")
     private Long physicalNetworkId;
 
     @Parameter(name=ApiConstants.URL, type=CommandType.STRING, required = true, description="URL of the F5 load balancer appliance.")

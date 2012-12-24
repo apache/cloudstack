@@ -15,6 +15,7 @@
 
 package com.cloud.api.commands;
 
+import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -47,8 +48,8 @@ public class AddNetscalerLoadBalancerCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="physical_network")
-    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, required=true, description="the Physical Network ID")
+    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.UUID, entityType = PhysicalNetworkResponse.class,
+            required=true, description="the Physical Network ID")
     private Long physicalNetworkId;
 
     @Parameter(name=ApiConstants.URL, type=CommandType.STRING, required = true, description="URL of the netscaler load balancer appliance.")

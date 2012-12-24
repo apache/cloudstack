@@ -17,6 +17,7 @@
 
 package com.cloud.api.commands;
 
+import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -43,8 +44,8 @@ public class AddExternalLoadBalancerCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 	
-    @IdentityMapper(entityTableName="data_center")
-	@Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required = true, description="Zone in which to add the external load balancer appliance.")
+	@Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
+            required = true, description="Zone in which to add the external load balancer appliance.")
 	private Long zoneId;
 
     @Parameter(name=ApiConstants.URL, type=CommandType.STRING, required = true, description="URL of the external load balancer appliance.")

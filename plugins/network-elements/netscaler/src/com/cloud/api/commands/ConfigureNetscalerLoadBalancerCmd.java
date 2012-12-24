@@ -16,6 +16,7 @@ package com.cloud.api.commands;
 
 import java.util.List;
 
+import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -62,8 +63,8 @@ public class ConfigureNetscalerLoadBalancerCmd extends BaseAsyncCmd {
     @Parameter (name=ApiConstants.INLINE, type=CommandType.BOOLEAN, required=false, description="true if netscaler load balancer is intended to be used in in-line with firewall, false if netscaler load balancer will side-by-side with firewall")
     private Boolean inline;
 
-    @IdentityMapper(entityTableName="host_pod_ref")
-    @Parameter(name=ApiConstants.POD_IDS, type=CommandType.LIST, required=false, description="Used when NetScaler device is provider of EIP service." +
+    @Parameter(name=ApiConstants.POD_IDS, type=CommandType.LIST, collectionType = CommandType.UUID, entityType = PodResponse.class,
+            required=false, description="Used when NetScaler device is provider of EIP service." +
             " This parameter represents the list of pod's, for which there exists a policy based route on datacenter L3 router to " +
             "route pod's subnet IP to a NetScaler device.")
     private List<Long> podIds;

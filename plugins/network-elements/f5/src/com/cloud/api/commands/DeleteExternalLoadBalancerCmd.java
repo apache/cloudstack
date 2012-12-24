@@ -17,6 +17,7 @@
 
 package com.cloud.api.commands;
 
+import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -41,8 +42,8 @@ public class DeleteExternalLoadBalancerCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
     
-    @IdentityMapper(entityTableName="host")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required = true, description="Id of the external loadbalancer appliance.")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = HostResponse.class,
+            required = true, description="Id of the external loadbalancer appliance.")
     private Long id;
     
     ///////////////////////////////////////////////////

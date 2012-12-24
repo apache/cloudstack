@@ -44,8 +44,8 @@ public class ListExternalLoadBalancersCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="data_center")
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="zone Id")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneRespones.class,
+            description="zone Id")
     private long zoneId;
 
     /////////////////////////////////////////////////////
