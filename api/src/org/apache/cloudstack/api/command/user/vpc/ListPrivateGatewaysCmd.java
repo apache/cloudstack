@@ -40,7 +40,7 @@ public class ListPrivateGatewaysCmd extends BaseListProjectAndAccountResourcesCm
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID,  entityType=PrivateGatewayResponse.class,
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=PrivateGatewayResponse.class,
             description="list private gateway by id")
     private Long id;
 

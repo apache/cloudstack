@@ -16,12 +16,12 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpc;
 
+import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -32,7 +32,6 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.user.Account;
 
-
 @Implementation(description="Deletes a VPC", responseObject=SuccessResponse.class)
 public class DeleteVPCCmd extends BaseAsyncCmd{
     public static final Logger s_logger = Logger.getLogger(DeleteVPCCmd.class.getName());
@@ -42,10 +41,9 @@ public class DeleteVPCCmd extends BaseAsyncCmd{
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="vpc")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the VPC")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = VpcResponse.class,
+            required=true, description="the ID of the VPC")
     private Long id;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -54,7 +52,6 @@ public class DeleteVPCCmd extends BaseAsyncCmd{
     public Long getId() {
         return id;
     }
-
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
