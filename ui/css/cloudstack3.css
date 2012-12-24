@@ -453,6 +453,12 @@ div.list-view table tbody td span {
 
 }
 
+div.list-view table tbody td span:hover {
+
+overflow:auto;
+
+}
+
 div.list-view div.toolbar div.section-switcher div.section-select label {
   margin: 0 9px 0 0;
 }
