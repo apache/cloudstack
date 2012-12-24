@@ -129,7 +129,7 @@
       <id>simulator</id>
       <activation>
         <property>
-          <name>nonoss</name>
+          <name>simulator</name>
         </property>
       </activation>
       <modules>

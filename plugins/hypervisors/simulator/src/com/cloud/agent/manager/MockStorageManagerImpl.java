@@ -30,6 +30,7 @@ import java.util.UUID;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.storage.*;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -56,20 +57,6 @@ import com.cloud.agent.api.SecStorageSetupAnswer;
 import com.cloud.agent.api.SecStorageSetupCommand;
 import com.cloud.agent.api.SecStorageVMSetupCommand;
 import com.cloud.agent.api.StoragePoolInfo;
-import com.cloud.agent.api.storage.CopyVolumeAnswer;
-import com.cloud.agent.api.storage.CopyVolumeCommand;
-import com.cloud.agent.api.storage.CreateAnswer;
-import com.cloud.agent.api.storage.CreateCommand;
-import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
-import com.cloud.agent.api.storage.DeleteTemplateCommand;
-import com.cloud.agent.api.storage.DestroyCommand;
-import com.cloud.agent.api.storage.DownloadAnswer;
-import com.cloud.agent.api.storage.DownloadCommand;
-import com.cloud.agent.api.storage.DownloadProgressCommand;
-import com.cloud.agent.api.storage.ListTemplateAnswer;
-import com.cloud.agent.api.storage.ListTemplateCommand;
-import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
-import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.simulator.MockHost;
@@ -139,8 +126,8 @@ public class MockStorageManagerImpl implements MockStorageManager {
 
 	@Override
 	public PrimaryStorageDownloadAnswer primaryStorageDownload(PrimaryStorageDownloadCommand cmd) {
-		MockVolumeVO template = findVolumeFromSecondary(cmd.getUrl(), cmd.getSecondaryStorageUrl(),
-				MockVolumeType.TEMPLATE);
+        MockVolumeVO template = findVolumeFromSecondary(cmd.getUrl(), cmd.getSecondaryStorageUrl(),
+                MockVolumeType.TEMPLATE);
 		if (template == null) {
 			return new PrimaryStorageDownloadAnswer("Can't find primary storage");
 		}
@@ -419,6 +406,49 @@ public class MockStorageManagerImpl implements MockStorageManager {
             txn.close();
 		}
 		return new SecStorageSetupAnswer(storage.getMountPoint());
+	}
+
+    @Override
+	public Answer ListVolumes(ListVolumeCommand cmd) {
+		Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
+		MockSecStorageVO storage = null;
+		try {
+			txn.start();
+			storage = _mockSecStorageDao.findByUrl(cmd.getSecUrl());
+			if (storage == null) {
+				return new Answer(cmd, false, "Failed to get secondary storage");
+			}
+			txn.commit();
+		} catch (Exception ex) {
+			txn.rollback();
+			throw new CloudRuntimeException("Error when finding sec storage " + cmd.getSecUrl(), ex);
+		} finally {
+			txn.close();
+            txn = Transaction.open(Transaction.CLOUD_DB);
+            txn.close();
+		}
+
+		txn = Transaction.open(Transaction.SIMULATOR_DB);
+		try {
+			txn.start();
+			List<MockVolumeVO> volumes = _mockVolumeDao.findByStorageIdAndType(storage.getId(),
+					MockVolumeType.VOLUME);
+
+			Map<String, TemplateInfo> templateInfos = new HashMap<String, TemplateInfo>();
+			for (MockVolumeVO volume : volumes) {
+				templateInfos.put(volume.getName(), new TemplateInfo(volume.getName(), volume.getPath()
+						.replaceAll(storage.getMountPoint(), ""), volume.getSize(), volume.getSize(), true, false));
+			}
+			txn.commit();
+			return new ListTemplateAnswer(cmd.getSecUrl(), templateInfos);
+		} catch (Exception ex) {
+			txn.rollback();
+			throw new CloudRuntimeException("Error when finding template on sec storage " + storage.getId(), ex);
+		} finally {
+			txn.close();
+            txn = Transaction.open(Transaction.CLOUD_DB);
+            txn.close();
+		}
 	}
 
 	@Override
@@ -907,7 +937,7 @@ public class MockStorageManagerImpl implements MockStorageManager {
 			long defaultTemplateSize = 2 * 1024 * 1024 * 1024L;
 			MockVolumeVO template = new MockVolumeVO();
 			template.setName("simulator-domR");
-			template.setPath(storage.getMountPoint() + "template/tmpl/1/9/" + UUID.randomUUID().toString());
+			template.setPath(storage.getMountPoint() + "template/tmpl/1/10/" + UUID.randomUUID().toString());
 			template.setPoolId(storage.getId());
 			template.setSize(defaultTemplateSize);
 			template.setType(MockVolumeType.TEMPLATE);
@@ -928,7 +958,7 @@ public class MockStorageManagerImpl implements MockStorageManager {
 
 			template = new MockVolumeVO();
 			template.setName("simulator-Centos");
-			template.setPath(storage.getMountPoint() + "template/tmpl/1/10/" + UUID.randomUUID().toString());
+			template.setPath(storage.getMountPoint() + "template/tmpl/1/11/" + UUID.randomUUID().toString());
 			template.setPoolId(storage.getId());
 			template.setSize(defaultTemplateSize);
 			template.setType(MockVolumeType.TEMPLATE);
