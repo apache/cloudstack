@@ -25,12 +25,15 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
 import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.GuestOSResponse;
+import org.apache.cloudstack.api.response.SnapshotResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.VolumeResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -68,8 +71,8 @@ import com.cloud.user.UserContext;
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the template")
     private String templateName;
 
-    @IdentityMapper(entityTableName="guest_os")
-    @Parameter(name = ApiConstants.OS_TYPE_ID, type = CommandType.LONG, required = true, description = "the ID of the OS Type that best represents the OS of this template.")
+    @Parameter(name = ApiConstants.OS_TYPE_ID, type = CommandType.UUID, entityType = GuestOSResponse.class,
+            required = true, description = "the ID of the OS Type that best represents the OS of this template.")
     private Long osTypeId;
 
     @Parameter(name = ApiConstants.PASSWORD_ENABLED, type = CommandType.BOOLEAN, description = "true if the template supports the password reset feature; default is false")
@@ -78,16 +81,16 @@ import com.cloud.user.UserContext;
     @Parameter(name = ApiConstants.REQUIRES_HVM, type = CommandType.BOOLEAN, description = "true if the template requres HVM, false otherwise")
     private Boolean requiresHvm;
 
-    @IdentityMapper(entityTableName="snapshots")
-    @Parameter(name = ApiConstants.SNAPSHOT_ID, type = CommandType.LONG, description = "the ID of the snapshot the template is being created from. Either this parameter, or volumeId has to be passed in")
+    @Parameter(name = ApiConstants.SNAPSHOT_ID, type = CommandType.UUID, entityType = SnapshotResponse.class,
+            description = "the ID of the snapshot the template is being created from. Either this parameter, or volumeId has to be passed in")
     private Long snapshotId;
 
-    @IdentityMapper(entityTableName="volumes")
-    @Parameter(name = ApiConstants.VOLUME_ID, type = CommandType.LONG, description = "the ID of the disk volume the template is being created from. Either this parameter, or snapshotId has to be passed in")
+    @Parameter(name = ApiConstants.VOLUME_ID, type = CommandType.UUID, entityType = VolumeResponse.class,
+            description = "the ID of the disk volume the template is being created from. Either this parameter, or snapshotId has to be passed in")
     private Long volumeId;
 
-    @IdentityMapper(entityTableName="vm_instance")
-    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, description="Optional, VM ID. If this presents, it is going to create a baremetal template for VM this ID refers to. This is only for VM whose hypervisor type is BareMetal")
+    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.UUID, entityType = UserVmResponse.class,
+            description="Optional, VM ID. If this presents, it is going to create a baremetal template for VM this ID refers to. This is only for VM whose hypervisor type is BareMetal")
     private Long vmId;
 
     @Parameter(name=ApiConstants.URL, type=CommandType.STRING, description="Optional, only for baremetal hypervisor. The directory name where template stored on CIFS server")

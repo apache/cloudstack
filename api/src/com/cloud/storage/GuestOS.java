@@ -16,7 +16,9 @@
 // under the License.
 package com.cloud.storage;
 
-public interface GuestOS {
+import org.apache.cloudstack.api.InternalIdentity;
+
+public interface GuestOS extends InternalIdentity {
 
     long getId();
 

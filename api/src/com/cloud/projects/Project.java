@@ -20,8 +20,9 @@ import java.util.Date;
 
 import org.apache.cloudstack.api.Identity;
 import com.cloud.domain.PartOf;
+import org.apache.cloudstack.api.InternalIdentity;
 
-public interface Project extends PartOf, Identity {
+public interface Project extends PartOf, Identity, InternalIdentity {
     public enum State {
         Active, Disabled, Suspended
     }
