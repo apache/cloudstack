@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.api.commands;
 
+import com.cloud.server.api.response.ExternalLoadBalancerResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
