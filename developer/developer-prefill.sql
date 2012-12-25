@@ -16,6 +16,8 @@
 -- under the License.
 
 -- Add a default ROOT domain
+use cloud;
+
 INSERT INTO `cloud`.`domain` (id, name, parent, path, owner) VALUES
             (1, 'ROOT', NULL, '/', 2);
 

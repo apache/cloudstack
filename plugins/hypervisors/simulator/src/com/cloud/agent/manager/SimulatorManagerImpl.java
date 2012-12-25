@@ -23,6 +23,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import com.cloud.agent.api.*;
+import com.cloud.agent.api.storage.*;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.check.CheckSshCommand;
@@ -36,14 +37,6 @@ import com.cloud.agent.api.routing.SetFirewallRulesCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
-import com.cloud.agent.api.storage.CopyVolumeCommand;
-import com.cloud.agent.api.storage.CreateCommand;
-import com.cloud.agent.api.storage.DeleteTemplateCommand;
-import com.cloud.agent.api.storage.DestroyCommand;
-import com.cloud.agent.api.storage.DownloadCommand;
-import com.cloud.agent.api.storage.DownloadProgressCommand;
-import com.cloud.agent.api.storage.ListTemplateCommand;
-import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.simulator.MockConfigurationVO;
 import com.cloud.simulator.MockHost;
 import com.cloud.simulator.MockVMVO;
@@ -158,45 +151,45 @@ public class SimulatorManagerImpl implements SimulatorManager {
             }
 
             if (cmd instanceof GetHostStatsCommand) {
-                return _mockAgentMgr.getHostStatistic((GetHostStatsCommand)cmd);
+                return _mockAgentMgr.getHostStatistic((GetHostStatsCommand) cmd);
             } else if (cmd instanceof CheckHealthCommand) {
-                return _mockAgentMgr.checkHealth((CheckHealthCommand)cmd);
+                return _mockAgentMgr.checkHealth((CheckHealthCommand) cmd);
             } else if (cmd instanceof PingTestCommand) {
-                return _mockAgentMgr.pingTest((PingTestCommand)cmd);
+                return _mockAgentMgr.pingTest((PingTestCommand) cmd);
             } else if (cmd instanceof PrepareForMigrationCommand) {
-        		return _mockVmMgr.prepareForMigrate((PrepareForMigrationCommand)cmd);
+			return _mockVmMgr.prepareForMigrate((PrepareForMigrationCommand) cmd);
             } else if (cmd instanceof MigrateCommand) {
-                return _mockVmMgr.Migrate((MigrateCommand)cmd, info);
+                return _mockVmMgr.Migrate((MigrateCommand) cmd, info);
             } else if (cmd instanceof StartCommand) {
-                return _mockVmMgr.startVM((StartCommand)cmd, info);
+                return _mockVmMgr.startVM((StartCommand) cmd, info);
             } else if (cmd instanceof CheckSshCommand) {
-                return _mockVmMgr.checkSshCommand((CheckSshCommand)cmd);
+                return _mockVmMgr.checkSshCommand((CheckSshCommand) cmd);
             } else if (cmd instanceof CheckVirtualMachineCommand) {
-        		return _mockVmMgr.checkVmState((CheckVirtualMachineCommand)cmd);
+			return _mockVmMgr.checkVmState((CheckVirtualMachineCommand) cmd);
             } else if (cmd instanceof SetStaticNatRulesCommand) {
-                return _mockVmMgr.SetStaticNatRules((SetStaticNatRulesCommand)cmd);
+                return _mockVmMgr.SetStaticNatRules((SetStaticNatRulesCommand) cmd);
             } else if (cmd instanceof SetFirewallRulesCommand) {
-	        	return _mockVmMgr.SetFirewallRules((SetFirewallRulesCommand)cmd);
+			return _mockVmMgr.SetFirewallRules((SetFirewallRulesCommand) cmd);
             } else if (cmd instanceof SetPortForwardingRulesCommand) {
-                return _mockVmMgr.SetPortForwardingRules((SetPortForwardingRulesCommand)cmd);
+                return _mockVmMgr.SetPortForwardingRules((SetPortForwardingRulesCommand) cmd);
             } else if (cmd instanceof NetworkUsageCommand) {
-                return _mockVmMgr.getNetworkUsage((NetworkUsageCommand)cmd);
+                return _mockVmMgr.getNetworkUsage((NetworkUsageCommand) cmd);
             } else if (cmd instanceof IpAssocCommand) {
-                return _mockVmMgr.IpAssoc((IpAssocCommand)cmd);
+                return _mockVmMgr.IpAssoc((IpAssocCommand) cmd);
             } else if (cmd instanceof LoadBalancerConfigCommand) {
-                return _mockVmMgr.LoadBalancerConfig((LoadBalancerConfigCommand)cmd);
+                return _mockVmMgr.LoadBalancerConfig((LoadBalancerConfigCommand) cmd);
             } else if (cmd instanceof DhcpEntryCommand) {
-                return _mockVmMgr.AddDhcpEntry((DhcpEntryCommand)cmd);
+                return _mockVmMgr.AddDhcpEntry((DhcpEntryCommand) cmd);
             } else if (cmd instanceof VmDataCommand) {
-                return _mockVmMgr.setVmData((VmDataCommand)cmd);
+                return _mockVmMgr.setVmData((VmDataCommand) cmd);
             } else if (cmd instanceof CleanupNetworkRulesCmd) {
-                return _mockVmMgr.CleanupNetworkRules((CleanupNetworkRulesCmd)cmd, info);
+                return _mockVmMgr.CleanupNetworkRules((CleanupNetworkRulesCmd) cmd, info);
             } else if (cmd instanceof CheckNetworkCommand) {
         		return _mockAgentMgr.checkNetworkCommand((CheckNetworkCommand) cmd);
             }else if (cmd instanceof StopCommand) {
                 return _mockVmMgr.stopVM((StopCommand)cmd);
             } else if (cmd instanceof RebootCommand) {
-                return _mockVmMgr.rebootVM((RebootCommand)cmd);
+                return _mockVmMgr.rebootVM((RebootCommand) cmd);
             } else if (cmd instanceof GetVncPortCommand) {
                 return _mockVmMgr.getVncPort((GetVncPortCommand)cmd);
             } else if (cmd instanceof CheckConsoleProxyLoadCommand) {
@@ -225,6 +218,8 @@ public class SimulatorManagerImpl implements SimulatorManager {
                 return _mockStorageMgr.SecStorageSetup((SecStorageSetupCommand)cmd);
             } else if (cmd instanceof ListTemplateCommand) {
                 return _mockStorageMgr.ListTemplates((ListTemplateCommand)cmd);
+            } else if (cmd instanceof ListVolumeCommand) {
+                return _mockStorageMgr.ListVolumes((ListVolumeCommand)cmd);
             } else if (cmd instanceof DestroyCommand) {
                 return _mockStorageMgr.Destroy((DestroyCommand)cmd);
             } else if (cmd instanceof DownloadProgressCommand) {

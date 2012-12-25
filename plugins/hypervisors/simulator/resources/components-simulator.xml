@@ -18,7 +18,7 @@ specific language governing permissions and limitations
 under the License.
 -->
 <components-simulator.xml>
-        <system-integrity-checker class="com.cloud.upgrade.DatabaseUpgradeChecker">
+    <system-integrity-checker class="com.cloud.upgrade.DatabaseUpgradeChecker">
         <checker name="ManagementServerNode" class="com.cloud.cluster.ManagementServerNode"/>
         <checker name="EncryptionSecretKeyChecker" class="com.cloud.utils.crypt.EncryptionSecretKeyChecker"/>
         <checker name="DatabaseIntegrityChecker" class="com.cloud.upgrade.DatabaseIntegrityChecker"/>
@@ -30,44 +30,12 @@ under the License.
         <dao name="Configuration configuration server" class="com.cloud.configuration.dao.ConfigurationDaoImpl">
             <param name="premium">true</param>
         </dao>
-        <adapters key="com.cloud.agent.manager.allocator.HostAllocator">
-            <adapter name="FirstFitRouting" class="com.cloud.agent.manager.allocator.impl.FirstFitRoutingAllocator"/>
-        </adapters>
-        <adapters key="com.cloud.storage.allocator.StoragePoolAllocator">
-            <adapter name="LocalStorage" class="com.cloud.storage.allocator.LocalStoragePoolAllocator"/>
-            <adapter name="Storage" class="com.cloud.storage.allocator.FirstFitStoragePoolAllocator"/>
-        </adapters>
-        <adapters key="com.cloud.agent.manager.allocator.PodAllocator">
-            <adapter name="User First" class="com.cloud.agent.manager.allocator.impl.UserConcentratedAllocator"/>
-        </adapters>
-        <adapters key="com.cloud.consoleproxy.ConsoleProxyAllocator">
-            <adapter name="Balance" class="com.cloud.consoleproxy.ConsoleProxyBalanceAllocator"/>
-        </adapters>
-        <adapters key="com.cloud.ha.Investigator">
-            <adapter name="SimpleInvestigator" class="com.cloud.ha.CheckOnAgentInvestigator"/>
-            <adapter name="PingInvestigator" class="com.cloud.ha.UserVmDomRInvestigator"/>
-            <adapter name="ManagementIPSysVMInvestigator" class="com.cloud.ha.ManagementIPSystemVMInvestigator"/>
-        </adapters>
         <adapters key="com.cloud.resource.Discoverer">
             <adapter name="Simulator Agent" class="com.cloud.resource.SimulatorDiscoverer"/>
-            <adapter name="SecondaryStorage" class="com.cloud.resource.SimulatorSecondaryDiscoverer"/>
-            <adapter name="XCP Agent" class="com.cloud.hypervisor.xen.discoverer.XcpServerDiscoverer"/>
-            <adapter name="SecondaryStorage" class="com.cloud.storage.secondary.SecondaryStorageDiscoverer"/>
-            <adapter name="KVM Agent" class="com.cloud.hypervisor.kvm.discoverer.KvmServerDiscoverer"/>
+            <adapter name="SimulatorSecondaryStorage" class="com.cloud.resource.SimulatorSecondaryDiscoverer"/>
         </adapters>
         <adapters key="com.cloud.hypervisor.HypervisorGuru">
             <adapter name="SimulatorGuru" class="com.cloud.simulator.SimulatorGuru"/>
-            <adapter name="XenServerGuru" class="com.cloud.hypervisor.XenServerGuru"/>
-            <adapter name="KVMGuru" class="com.cloud.hypervisor.KVMGuru"/>
-        </adapters>
-        <adapters key="com.cloud.deploy.DeploymentPlanner">
-            <adapter name="First Fit" class="com.cloud.deploy.FirstFitPlanner"/>
-            <adapter name="UserDispersing" class="com.cloud.deploy.UserDispersingPlanner"/>
-            <adapter name="UserConcentratedPod" class="com.cloud.deploy.UserConcentratedPodPlanner"/>
-            <adapter name="BareMetal Fit" class="com.cloud.deploy.BareMetalPlanner"/>
-        </adapters>
-        <adapters key="com.cloud.agent.StartupCommandProcessor">
-            <adapter name="BasicAgentAuthorizer" class="com.cloud.agent.manager.authn.impl.BasicAgentAuthManager"/>
         </adapters>
     </management-server>
     <configuration-server class="com.cloud.server.ConfigurationServerImpl" extends="components.xml:configuration-server">

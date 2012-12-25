@@ -31,7 +31,7 @@ markDefaultZoneForAccount=org.apache.cloudstack.api.command.admin.zone.MarkDefau
 #### User commands
 createUser=org.apache.cloudstack.api.command.admin.user.CreateUserCmd;3
 deleteUser=org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;3
-updateUser=org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;3
+updateUser=org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;15
 listUsers=org.apache.cloudstack.api.command.admin.user.ListUsersCmd;7
 lockUser=org.apache.cloudstack.api.command.admin.user.LockUserCmd;7
 disableUser=org.apache.cloudstack.api.command.admin.user.DisableUserCmd;7
