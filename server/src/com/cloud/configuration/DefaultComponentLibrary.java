@@ -34,6 +34,7 @@ import com.cloud.api.query.dao.ResourceTagJoinDaoImpl;
 import com.cloud.api.query.dao.SecurityGroupJoinDaoImpl;
 import com.cloud.api.query.dao.UserVmJoinDaoImpl;
 import com.cloud.api.query.dao.HostJoinDaoImpl;
+import com.cloud.api.query.dao.VolumeJoinDaoImpl;
 import com.cloud.async.AsyncJobExecutorContextImpl;
 import com.cloud.async.AsyncJobManagerImpl;
 import com.cloud.async.SyncQueueManagerImpl;
@@ -222,6 +223,7 @@ import com.cloud.vm.dao.VMInstanceDaoImpl;
 import com.cloud.event.dao.EventJoinDaoImpl;
 
 
+
 public class DefaultComponentLibrary extends ComponentLibraryBase implements ComponentLibrary {
     protected void populateDaos() {
         addDao("StackMaidDao", StackMaidDaoImpl.class);
@@ -241,6 +243,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("ProjectAccountJoinDao", ProjectAccountJoinDaoImpl.class);
         addDao("ProjectInvitationJoinDao", ProjectInvitationJoinDaoImpl.class);
         addDao("HostJoinDao", HostJoinDaoImpl.class);
+        addDao("VolumeJoinDao", VolumeJoinDaoImpl.class);
         ComponentInfo<? extends GenericDao<?, ? extends Serializable>> info = addDao("ServiceOfferingDao", ServiceOfferingDaoImpl.class);
         info.addParameter("cache.size", "50");
         info.addParameter("cache.time.to.live", "600");

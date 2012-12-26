@@ -27,6 +27,7 @@ import org.apache.cloudstack.api.command.user.securitygroup.ListSecurityGroupsCm
 import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
+import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.HostResponse;
@@ -39,11 +40,11 @@ import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.VolumeResponse;
 
 
-import com.cloud.async.AsyncJob;
+
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.storage.Snapshot;
 
 /**
  * Service used for list api query.
@@ -73,4 +74,6 @@ public interface QueryService {
     public ListResponse<ProjectAccountResponse> listProjectAccounts(ListProjectAccountsCmd cmd);
 
     public ListResponse<HostResponse> searchForServers(ListHostsCmd cmd);
+
+    public ListResponse<VolumeResponse> searchForVolumes(ListVolumesCmd cmd);
 }

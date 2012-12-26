@@ -35,6 +35,7 @@ import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.VolumeResponse;
 
 import com.cloud.api.query.dao.DomainRouterJoinDao;
 import com.cloud.api.query.dao.HostJoinDao;
@@ -45,6 +46,7 @@ import com.cloud.api.query.dao.ProjectJoinDao;
 import com.cloud.api.query.dao.ResourceTagJoinDao;
 import com.cloud.api.query.dao.SecurityGroupJoinDao;
 import com.cloud.api.query.dao.UserVmJoinDao;
+import com.cloud.api.query.dao.VolumeJoinDao;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.api.query.vo.EventJoinVO;
 import com.cloud.api.query.vo.HostJoinVO;
@@ -56,6 +58,7 @@ import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.SecurityGroupJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
+import com.cloud.api.query.vo.VolumeJoinVO;
 import com.cloud.async.AsyncJob;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
@@ -180,6 +183,7 @@ import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateS3VO;
 import com.cloud.storage.VMTemplateSwiftVO;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.Type;
 import com.cloud.storage.VolumeHostVO;
 import com.cloud.storage.VolumeVO;
@@ -313,6 +317,7 @@ public class ApiDBUtils {
     private static ProjectAccountJoinDao _projectAccountJoinDao;
     private static ProjectInvitationJoinDao _projectInvitationJoinDao;
     private static HostJoinDao _hostJoinDao;
+    private static VolumeJoinDao _volJoinDao;
 
     private static PhysicalNetworkTrafficTypeDao _physicalNetworkTrafficTypeDao;
     private static PhysicalNetworkServiceProviderDao _physicalNetworkServiceProviderDao;
@@ -400,6 +405,7 @@ public class ApiDBUtils {
         _projectAccountJoinDao = locator.getDao(ProjectAccountJoinDao.class);
         _projectInvitationJoinDao = locator.getDao(ProjectInvitationJoinDao.class);
         _hostJoinDao = locator.getDao(HostJoinDao.class);
+        _volJoinDao = locator.getDao(VolumeJoinDao.class);
 
         _physicalNetworkTrafficTypeDao = locator.getDao(PhysicalNetworkTrafficTypeDao.class);
         _physicalNetworkServiceProviderDao = locator.getDao(PhysicalNetworkServiceProviderDao.class);
@@ -1324,4 +1330,18 @@ public class ApiDBUtils {
     public static List<HostJoinVO> newHostView(Host vr){
         return _hostJoinDao.newHostView(vr);
     }
+
+    public static VolumeResponse newVolumeResponse(VolumeJoinVO vr) {
+        return _volJoinDao.newVolumeResponse(vr);
+    }
+
+
+    public static VolumeResponse fillVolumeDetails(VolumeResponse vrData, VolumeJoinVO vr){
+        return _volJoinDao.setVolumeResponse(vrData, vr);
+   }
+
+   public static List<VolumeJoinVO> newVolumeView(Volume vr){
+       return _volJoinDao.newVolumeView(vr);
+   }
+
 }

@@ -116,17 +116,7 @@ public class ListVolumesCmd extends BaseListTaggedResourcesCmd {
 
     @Override
     public void execute(){
-        Pair<List<? extends Volume>, Integer> volumes = _storageService.searchForVolumes(this);
-
-        ListResponse<VolumeResponse> response = new ListResponse<VolumeResponse>();
-        List<VolumeResponse> volResponses = new ArrayList<VolumeResponse>();
-        for (Volume volume : volumes.first()) {
-            VolumeResponse volResponse = _responseGenerator.createVolumeResponse(volume);
-            volResponse.setObjectName("volume");
-            volResponses.add(volResponse);
-        }
-
-        response.setResponses(volResponses, volumes.second());
+        ListResponse<VolumeResponse> response = _queryService.searchForVolumes(this);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

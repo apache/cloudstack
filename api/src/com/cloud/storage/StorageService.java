@@ -115,7 +115,6 @@ public interface StorageService{
 
     Volume migrateVolume(Long volumeId, Long storagePoolId) throws ConcurrentOperationException;
 
-    Pair<List<? extends Volume>, Integer> searchForVolumes(ListVolumesCmd cmd);
 
     /**
      * Uploads the volume to secondary storage

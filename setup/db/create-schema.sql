@@ -3062,4 +3062,86 @@ left join op_host_capacity mem_caps on host.id = mem_caps.host_id and mem_caps.c
 left join op_host_capacity cpu_caps on host.id = cpu_caps.host_id and cpu_caps.capacity_type = 1
 left join async_job on async_job.instance_id = host.id and async_job.instance_type = "Host" and async_job.job_status = 0;
 
+DROP VIEW IF EXISTS `cloud`.`volume_view`;
+CREATE VIEW volume_view AS
+select 
+volumes.id,
+volumes.uuid,
+volumes.name,
+volumes.device_id,
+volumes.volume_type,
+volumes.size,
+volumes.created,
+volumes.state,
+volumes.attached,
+volumes.removed,
+volumes.pod_id,
+account.id account_id, 
+account.uuid account_uuid,
+account.account_name account_name,
+account.type account_type,
+domain.id domain_id, 
+domain.uuid domain_uuid,
+domain.name domain_name, 
+domain.path domain_path,
+projects.id project_id,
+projects.uuid project_uuid,
+projects.name project_name,
+data_center.id data_center_id, 
+data_center.uuid data_center_uuid,
+data_center.name data_center_name, 
+vm_instance.id vm_id,
+vm_instance.uuid vm_uuid,
+vm_instance.name vm_name,
+vm_instance.state vm_state,
+vm_instance.vm_type,
+user_vm.display_name vm_display_name,
+volume_host_ref.size volume_host_size,
+volume_host_ref.created volume_host_created,
+volume_host_ref.format,
+volume_host_ref.download_pct,
+volume_host_ref.download_state,
+volume_host_ref.error_str,
+disk_offering.id disk_offering_id,
+disk_offering.uuid disk_offering_uuid,
+disk_offering.name disk_offering_name,
+disk_offering.display_text disk_offering_display_text,
+disk_offering.use_local_storage,
+disk_offering.system_use,
+storage_pool.id pool_id,
+storage_pool.uuid pool_uuid,
+storage_pool.name pool_name,
+cluster.hypervisor_type,
+vm_template.id template_id,
+vm_template.uuid template_uuid,
+vm_template.extractable,
+vm_template.type template_type,
+resource_tags.id tag_id, 
+resource_tags.uuid tag_uuid,
+resource_tags.key tag_key,
+resource_tags.value tag_value,
+resource_tags.domain_id tag_domain_id, 
+resource_tags.account_id tag_account_id, 
+resource_tags.resource_id tag_resource_id, 
+resource_tags.resource_uuid tag_resource_uuid, 
+resource_tags.resource_type tag_resource_type, 
+resource_tags.customer tag_customer,
+async_job.id job_id,
+async_job.uuid job_uuid,
+async_job.job_status job_status,
+async_job.account_id job_account_id
+from volumes 
+inner join account on volumes.account_id=account.id 
+inner join domain on volumes.domain_id=domain.id
+left join projects on projects.project_account_id = account.id
+left join data_center on volumes.data_center_id = data_center.id
+left join vm_instance on volumes.instance_id = vm_instance.id
+left join user_vm on user_vm.id = vm_instance.id
+left join volume_host_ref on volumes.id = volume_host_ref.volume_id and volumes.data_center_id = volume_host_ref.zone_id
+left join disk_offering on volumes.disk_offering_id = disk_offering.id
+left join storage_pool on volumes.pool_id = storage_pool.id
+left join cluster on storage_pool.cluster_id = cluster.id
+left join vm_template on volumes.template_id = vm_template.id
+left join resource_tags on resource_tags.resource_id = volumes.id and resource_tags.resource_type = "Volume"
+left join async_job on async_job.instance_id = volumes.id and async_job.instance_type = "Volume" and async_job.job_status = 0;
 

@@ -39,6 +39,7 @@ import org.apache.cloudstack.api.command.user.securitygroup.ListSecurityGroupsCm
 import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
+import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.HostResponse;
@@ -51,6 +52,7 @@ import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.log4j.Logger;
 
@@ -65,6 +67,7 @@ import com.cloud.api.query.dao.ProjectJoinDao;
 import com.cloud.api.query.dao.ResourceTagJoinDao;
 import com.cloud.api.query.dao.SecurityGroupJoinDao;
 import com.cloud.api.query.dao.UserVmJoinDao;
+import com.cloud.api.query.dao.VolumeJoinDao;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.api.query.vo.EventJoinVO;
 import com.cloud.api.query.vo.HostJoinVO;
@@ -76,6 +79,7 @@ import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.SecurityGroupJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
+import com.cloud.api.query.vo.VolumeJoinVO;
 import com.cloud.async.AsyncJob;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
@@ -98,7 +102,12 @@ import com.cloud.projects.ProjectService;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.server.Criteria;
+import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Snapshot;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
+import com.cloud.tags.ResourceTagVO;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountManagerImpl;
@@ -119,6 +128,8 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.UserVmDao;
 
 /**
@@ -187,6 +198,9 @@ public class QueryManagerImpl implements QueryService, Manager {
 
     @Inject
     private HostJoinDao _hostJoinDao;
+
+    @Inject
+    private VolumeJoinDao _volumeJoinDao;
 
     @Inject
     private HighAvailabilityManager _haMgr;
@@ -1371,9 +1385,9 @@ public class QueryManagerImpl implements QueryService, Manager {
             if ((Boolean) haHosts) {
                 sb.and("tag", sb.entity().getTag(), SearchCriteria.Op.EQ);
             } else {
-                sb.and("tag", sb.entity().getTag(), SearchCriteria.Op.NEQ);
-                //FIXME: should we have another condition say tag = null?
-                //hostTagSearch.or("tagNull", hostTagSearch.entity().getTag(), SearchCriteria.Op.NULL);
+                sb.and().op("tag", sb.entity().getTag(), SearchCriteria.Op.NEQ);
+                sb.or("tagNull", sb.entity().getTag(), SearchCriteria.Op.NULL);
+                sb.cp();
             }
 
         }
@@ -1438,5 +1452,143 @@ public class QueryManagerImpl implements QueryService, Manager {
         return new Pair<List<HostJoinVO>, Integer>(hosts, count);
 
     }
+
+    @Override
+    public ListResponse<VolumeResponse> searchForVolumes(ListVolumesCmd cmd) {
+        Pair<List<VolumeJoinVO>, Integer> result = searchForVolumesInternal(cmd);
+        ListResponse<VolumeResponse> response = new ListResponse<VolumeResponse>();
+
+        List<VolumeResponse> routerResponses = ViewResponseHelper.createVolumeResponse(result.first().toArray(new VolumeJoinVO[result.first().size()]));
+        response.setResponses(routerResponses, result.second());
+        return response;
+    }
+
+
+    private Pair<List<VolumeJoinVO>, Integer> searchForVolumesInternal(ListVolumesCmd cmd) {
+
+        Account caller = UserContext.current().getCaller();
+        List<Long> permittedAccounts = new ArrayList<Long>();
+
+        Long id = cmd.getId();
+        Long vmInstanceId = cmd.getVirtualMachineId();
+        String name = cmd.getVolumeName();
+        String keyword = cmd.getKeyword();
+        String type = cmd.getType();
+        Map<String, String> tags = cmd.getTags();
+
+        Long zoneId = cmd.getZoneId();
+        Long podId = null;
+        if (_accountMgr.isAdmin(caller.getType())) {
+            podId = cmd.getPodId();
+        }
+
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
+        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
+        Long domainId = domainIdRecursiveListProject.first();
+        Boolean isRecursive = domainIdRecursiveListProject.second();
+        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
+        Filter searchFilter = new Filter(VolumeJoinVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
+
+        // hack for now, this should be done better but due to needing a join I opted to
+        // do this quickly and worry about making it pretty later
+        SearchBuilder<VolumeJoinVO> sb = _volumeJoinDao.createSearchBuilder();
+        sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct
+        // ids to get
+        // number of
+        // records with
+        // pagination
+        _accountMgr.buildACLViewSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("volumeType", sb.entity().getVolumeType(), SearchCriteria.Op.LIKE);
+        sb.and("instanceId", sb.entity().getVmId(), SearchCriteria.Op.EQ);
+        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
+        // Only return volumes that are not destroyed
+        sb.and("state", sb.entity().getState(), SearchCriteria.Op.NEQ);
+        sb.and("systemUse", sb.entity().isSystemUse(), SearchCriteria.Op.NEQ);
+        // display UserVM volumes only
+        sb.and().op("type", sb.entity().getVmType(), SearchCriteria.Op.NIN);
+        sb.or("nulltype", sb.entity().getVmType(), SearchCriteria.Op.NULL);
+        sb.cp();
+
+        if (tags != null && !tags.isEmpty()) {
+            for (int count=0; count < tags.size(); count++) {
+                sb.or().op("key" + String.valueOf(count), sb.entity().getTagKey(), SearchCriteria.Op.EQ);
+                sb.and("value" + String.valueOf(count), sb.entity().getTagValue(), SearchCriteria.Op.EQ);
+                sb.cp();
+            }
+        }
+
+
+
+        // now set the SC criteria...
+        SearchCriteria<VolumeJoinVO> sc = sb.create();
+        _accountMgr.buildACLViewSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+
+        if (keyword != null) {
+            SearchCriteria<VolumeJoinVO> ssc = _volumeJoinDao.createSearchCriteria();
+            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("volumeType", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+
+            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+        }
+
+        if (name != null) {
+            sc.setParameters("name", "%" + name + "%");
+        }
+
+        sc.setParameters("systemUse", 1);
+
+        if (tags != null && !tags.isEmpty()) {
+            int count = 0;
+             for (String key : tags.keySet()) {
+                sc.setParameters("key" + String.valueOf(count), key);
+                sc.setParameters("value" + String.valueOf(count), tags.get(key));
+                count++;
+            }
+        }
+
+        if (id != null) {
+            sc.setParameters("id", id);
+        }
+
+        if (type != null) {
+            sc.setParameters("volumeType", "%" + type + "%");
+        }
+        if (vmInstanceId != null) {
+            sc.setParameters("instanceId", vmInstanceId);
+        }
+        if (zoneId != null) {
+            sc.setParameters("dataCenterId", zoneId);
+        }
+        if (podId != null) {
+            sc.setParameters("podId", podId);
+        }
+
+        // Don't return DomR and ConsoleProxy volumes
+        sc.setParameters("type", VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm, VirtualMachine.Type.DomainRouter);
+
+        // Only return volumes that are not destroyed
+        sc.setParameters("state", Volume.State.Destroy);
+
+        // search Volume details by ids
+        Pair<List<VolumeJoinVO>, Integer> uniqueVolPair = _volumeJoinDao.searchAndCount(sc, searchFilter);
+        Integer count = uniqueVolPair.second();
+        if (count.intValue() == 0) {
+            // empty result
+            return uniqueVolPair;
+        }
+        List<VolumeJoinVO> uniqueVols = uniqueVolPair.first();
+        Long[] vrIds = new Long[uniqueVols.size()];
+        int i = 0;
+        for (VolumeJoinVO v : uniqueVols) {
+            vrIds[i++] = v.getId();
+        }
+        List<VolumeJoinVO> vrs = _volumeJoinDao.searchByIds(vrIds);
+        return new Pair<List<VolumeJoinVO>, Integer>(vrs, count);
+    }
+
 
 }

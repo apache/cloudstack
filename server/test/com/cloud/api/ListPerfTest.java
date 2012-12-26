@@ -106,4 +106,18 @@ public class ListPerfTest extends APITest {
         System.out.println("Time taken to list Hosts: " + (after - before) + " ms");
 
     }
+
+    @Test
+    public void testListVolumes(){
+        // issue list Hosts calls
+        HashMap<String, String> params = new HashMap<String, String>();
+        params.put("response", "json");
+        params.put("listAll", "true");
+        params.put("sessionkey", sessionKey);
+        long before = System.currentTimeMillis();
+        String result = this.sendRequest("listVolumes", params);
+        long after = System.currentTimeMillis();
+        System.out.println("Time taken to list Volumes: " + (after - before) + " ms");
+
+    }
 }

@@ -17,7 +17,9 @@
 package org.apache.cloudstack.api.response;
 
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.cloud.storage.Volume;
 import org.apache.cloudstack.api.ApiConstants;
@@ -28,7 +30,7 @@ import org.apache.cloudstack.api.Entity;
 
 @Entity(value=Volume.class)
 @SuppressWarnings("unused")
-public class VolumeResponse extends BaseResponse implements ControlledEntityResponse{
+public class VolumeResponse extends BaseResponse implements ControlledViewEntityResponse{
     @SerializedName(ApiConstants.ID)
     @Param(description = "ID of the disk volume")
     private String id;
@@ -156,9 +158,11 @@ public class VolumeResponse extends BaseResponse implements ControlledEntityResp
     private String status;
 
     @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with volume", responseObject = ResourceTagResponse.class)
-    private List<ResourceTagResponse> tags;
+    private Set<ResourceTagResponse> tags;
 
-
+    public VolumeResponse(){
+        tags = new HashSet<ResourceTagResponse>();
+    }
 
     @Override
     public String getObjectId() {
@@ -304,7 +308,11 @@ public class VolumeResponse extends BaseResponse implements ControlledEntityResp
         this.projectName = projectName;
     }
 
-    public void setTags(List<ResourceTagResponse> tags) {
+    public void setTags(Set<ResourceTagResponse> tags) {
         this.tags = tags;
+    }
+
+    public void addTag(ResourceTagResponse tag){
+        this.tags.add(tag);
     }
 }

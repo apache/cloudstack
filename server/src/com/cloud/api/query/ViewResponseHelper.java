@@ -34,6 +34,7 @@ import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
@@ -48,6 +49,7 @@ import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.SecurityGroupJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
+import com.cloud.api.query.vo.VolumeJoinVO;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
@@ -213,5 +215,22 @@ public class ViewResponseHelper {
             vrDataList.put(vr.getId(), vrData);
         }
         return new ArrayList<HostResponse>(vrDataList.values());
+    }
+
+    public static List<VolumeResponse> createVolumeResponse(VolumeJoinVO... volumes) {
+        Hashtable<Long, VolumeResponse> vrDataList = new Hashtable<Long, VolumeResponse>();
+        for (VolumeJoinVO vr : volumes) {
+            VolumeResponse vrData = vrDataList.get(vr.getId());
+            if ( vrData == null ){
+                // first time encountering this volume
+                vrData = ApiDBUtils.newVolumeResponse(vr);
+            }
+            else{
+                // update tags
+                vrData = ApiDBUtils.fillVolumeDetails(vrData, vr);
+            }
+            vrDataList.put(vr.getId(), vrData);
+        }
+        return new ArrayList<VolumeResponse>(vrDataList.values());
     }
 }
