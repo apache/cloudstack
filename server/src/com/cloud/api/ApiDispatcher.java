@@ -540,9 +540,9 @@ public class ApiDispatcher {
             // APITODO: Find and get rid of all hardcoded params in API Cmds and service layer
             return -1L;
         }
-        // There may be multiple entities defined on the @Entity of a Response.class
+        // There may be multiple entities defined on the @EntityReference of a Response.class
         // UUID CommandType would expect only one entityType, so use the first entityType
-        Class<?>[] entities = annotation.entityType()[0].getAnnotation(Entity.class).value();
+        Class<?>[] entities = annotation.entityType()[0].getAnnotation(EntityReference.class).value();
         Long internalId = null;
         // Go through each entity which is an interface to a VO class and get a VO object
         // Try to getId() for the object using reflection, break on first non-null value

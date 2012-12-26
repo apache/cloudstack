@@ -21,9 +21,9 @@ import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.api.Entity;
+import org.apache.cloudstack.api.EntityReference;
 
-@Entity(value = VpnUser.class)
+@EntityReference(value = VpnUser.class)
 @SuppressWarnings("unused")
 public class VpnUsersResponse extends BaseResponse implements ControlledEntityResponse{
     @SerializedName(ApiConstants.ID) @Param(description="the vpn userID")

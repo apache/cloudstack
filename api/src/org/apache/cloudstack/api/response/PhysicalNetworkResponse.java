@@ -19,14 +19,13 @@ package org.apache.cloudstack.api.response;
 import java.util.List;
 
 import com.cloud.network.PhysicalNetwork;
-import com.cloud.network.PhysicalNetworkServiceProvider;
 import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.api.Entity;
+import org.apache.cloudstack.api.EntityReference;
 
-@Entity(value=PhysicalNetwork.class)
+@EntityReference(value=PhysicalNetwork.class)
 @SuppressWarnings("unused")
 public class PhysicalNetworkResponse extends BaseResponse {
 

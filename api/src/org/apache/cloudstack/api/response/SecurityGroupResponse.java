@@ -21,13 +21,13 @@ import java.util.Set;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.api.Entity;
+import org.apache.cloudstack.api.EntityReference;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
-@Entity(value = SecurityGroup.class)
+@EntityReference(value = SecurityGroup.class)
 public class SecurityGroupResponse extends BaseResponse implements ControlledViewEntityResponse{
 
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the security group")

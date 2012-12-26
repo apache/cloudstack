@@ -20,16 +20,15 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.Entity;
+import org.apache.cloudstack.api.EntityReference;
 
-import com.cloud.domain.Domain;
 import com.cloud.serializer.Param;
 import com.cloud.user.Account;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
 
 @SuppressWarnings("unused")
-@Entity(value = Account.class)
+@EntityReference(value = Account.class)
 public class AccountResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the id of the account")
     private String id;

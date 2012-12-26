@@ -20,14 +20,13 @@ import java.util.Date;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.api.Entity;
+import org.apache.cloudstack.api.EntityReference;
 import com.cloud.vm.InstanceGroup;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
-@Entity(value = InstanceGroup.class)
+@EntityReference(value = InstanceGroup.class)
 public class InstanceGroupResponse extends BaseResponse implements ControlledViewEntityResponse{
     @SerializedName(ApiConstants.ID) @Param(description="the id of the instance group")
     private String id;

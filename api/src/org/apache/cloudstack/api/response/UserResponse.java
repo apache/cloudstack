@@ -23,9 +23,9 @@ import com.cloud.serializer.Param;
 import com.cloud.user.User;
 
 import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.api.Entity;
+import org.apache.cloudstack.api.EntityReference;
 
-@Entity(value = User.class)
+@EntityReference(value = User.class)
 public class UserResponse extends BaseResponse {
     @SerializedName("id") @Param(description="the user ID")
     private String id;

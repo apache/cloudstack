@@ -27,9 +27,9 @@ import com.cloud.serializer.Param;
 import com.cloud.vm.VirtualMachine.State;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.api.Entity;
+import org.apache.cloudstack.api.EntityReference;
 
-@Entity(value=VirtualMachine.class)
+@EntityReference(value=VirtualMachine.class)
 @SuppressWarnings("unused")
 public class DomainRouterResponse extends BaseResponse implements ControlledViewEntityResponse{
     @SerializedName(ApiConstants.ID) @Param(description="the id of the router")

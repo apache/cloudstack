@@ -21,11 +21,11 @@ import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.api.Entity;
+import org.apache.cloudstack.api.EntityReference;
 
 import java.util.List;
 
-@Entity(value=StickinessPolicy.class)
+@EntityReference(value=StickinessPolicy.class)
 public class LBStickinessResponse extends BaseResponse {
     @SerializedName("lbruleid")
     @Param(description = "the LB rule ID")

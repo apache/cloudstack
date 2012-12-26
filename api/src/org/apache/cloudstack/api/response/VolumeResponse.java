@@ -18,7 +18,6 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import com.cloud.storage.Volume;
@@ -26,9 +25,9 @@ import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.api.Entity;
+import org.apache.cloudstack.api.EntityReference;
 
-@Entity(value=Volume.class)
+@EntityReference(value=Volume.class)
 @SuppressWarnings("unused")
 public class VolumeResponse extends BaseResponse implements ControlledViewEntityResponse{
     @SerializedName(ApiConstants.ID)

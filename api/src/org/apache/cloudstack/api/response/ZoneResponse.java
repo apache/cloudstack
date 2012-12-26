@@ -20,13 +20,13 @@ import java.util.List;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.api.Entity;
+import org.apache.cloudstack.api.EntityReference;
 import com.cloud.dc.DataCenter;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
-@Entity(value = DataCenter.class)
+@EntityReference(value = DataCenter.class)
 public class ZoneResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="Zone id")
     private String id;

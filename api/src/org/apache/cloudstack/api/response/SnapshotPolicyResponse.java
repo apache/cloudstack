@@ -20,9 +20,9 @@ import com.cloud.serializer.Param;
 import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.api.Entity;
+import org.apache.cloudstack.api.EntityReference;
 
-@Entity(value=SnapshotPolicy.class)
+@EntityReference(value=SnapshotPolicy.class)
 public class SnapshotPolicyResponse extends BaseResponse {
     @SerializedName("id") @Param(description="the ID of the snapshot policy")
     private String id;

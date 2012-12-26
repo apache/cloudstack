@@ -26,9 +26,9 @@ import com.cloud.serializer.Param;
 import com.cloud.storage.Storage.ImageFormat;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.api.Entity;
+import org.apache.cloudstack.api.EntityReference;
 
-@Entity(value=VirtualMachineTemplate.class)
+@EntityReference(value=VirtualMachineTemplate.class)
 @SuppressWarnings("unused")
 public class TemplateResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the template ID")

@@ -18,7 +18,7 @@
 package org.apache.cloudstack.api.response;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.Entity;
+import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.network.as.Counter;
 import com.cloud.serializer.Param;
@@ -26,7 +26,7 @@ import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
 
 @SuppressWarnings("unused")
-@Entity(value=Counter.class)
+@EntityReference(value=Counter.class)
 public class CounterResponse extends BaseResponse {
     @SerializedName("id")
     @Param(description = "the id of the Counter")

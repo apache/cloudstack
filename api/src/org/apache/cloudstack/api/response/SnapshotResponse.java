@@ -24,9 +24,9 @@ import com.cloud.serializer.Param;
 import com.cloud.storage.Snapshot;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.api.Entity;
+import org.apache.cloudstack.api.EntityReference;
 
-@Entity(value=Snapshot.class)
+@EntityReference(value=Snapshot.class)
 @SuppressWarnings("unused")
 public class SnapshotResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID)

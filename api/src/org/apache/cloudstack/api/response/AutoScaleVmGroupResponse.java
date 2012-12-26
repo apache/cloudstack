@@ -18,15 +18,14 @@ package org.apache.cloudstack.api.response;
 
 import com.cloud.network.as.AutoScaleVmGroup;
 import org.apache.cloudstack.api.ApiConstants;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.api.Entity;
+import org.apache.cloudstack.api.EntityReference;
 
 import java.util.List;
 
-@Entity(value=AutoScaleVmGroup.class)
+@EntityReference(value=AutoScaleVmGroup.class)
 public class AutoScaleVmGroupResponse extends BaseResponse implements ControlledEntityResponse {
 
     @SerializedName(ApiConstants.ID)

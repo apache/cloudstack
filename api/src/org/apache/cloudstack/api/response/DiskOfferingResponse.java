@@ -23,9 +23,9 @@ import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.api.Entity;
+import org.apache.cloudstack.api.EntityReference;
 
-@Entity(value=DiskOffering.class)
+@EntityReference(value=DiskOffering.class)
 public class DiskOfferingResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="unique ID of the disk offering")
     private String id;

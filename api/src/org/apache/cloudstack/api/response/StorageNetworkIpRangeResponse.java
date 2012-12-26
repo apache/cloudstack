@@ -21,9 +21,9 @@ import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.api.Entity;
+import org.apache.cloudstack.api.EntityReference;
 
-@Entity(value=StorageNetworkIpRange.class)
+@EntityReference(value=StorageNetworkIpRange.class)
 public class StorageNetworkIpRangeResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the uuid of storage network IP range.")
     private String uuid;

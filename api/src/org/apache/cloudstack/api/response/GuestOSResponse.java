@@ -21,9 +21,9 @@ import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.api.Entity;
+import org.apache.cloudstack.api.EntityReference;
 
-@Entity(value=GuestOS.class)
+@EntityReference(value=GuestOS.class)
 public class GuestOSResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the OS type")
     private String id;

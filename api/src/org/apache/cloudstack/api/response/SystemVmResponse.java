@@ -23,9 +23,9 @@ import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.api.Entity;
+import org.apache.cloudstack.api.EntityReference;
 
-@Entity(value=VirtualMachine.class)
+@EntityReference(value=VirtualMachine.class)
 public class SystemVmResponse extends BaseResponse {
     @SerializedName("id") @Param(description="the ID of the system VM")
     private String id;

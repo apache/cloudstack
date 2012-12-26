@@ -24,9 +24,9 @@ import com.cloud.serializer.Param;
 import com.cloud.storage.StoragePoolStatus;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.api.Entity;
+import org.apache.cloudstack.api.EntityReference;
 
-@Entity(value=StoragePool.class)
+@EntityReference(value=StoragePool.class)
 public class StoragePoolResponse extends BaseResponse {
     @SerializedName("id") @Param(description="the ID of the storage pool")
     private String id;

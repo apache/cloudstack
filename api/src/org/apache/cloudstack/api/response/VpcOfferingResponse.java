@@ -24,9 +24,9 @@ import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.api.Entity;
+import org.apache.cloudstack.api.EntityReference;
 
-@Entity(value=VpcOffering.class)
+@EntityReference(value=VpcOffering.class)
 @SuppressWarnings("unused")
 public class VpcOfferingResponse extends BaseResponse {
     @SerializedName("id") @Param(description="the id of the vpc offering")

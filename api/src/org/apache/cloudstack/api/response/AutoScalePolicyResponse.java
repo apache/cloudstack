@@ -21,11 +21,11 @@ import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.api.Entity;
+import org.apache.cloudstack.api.EntityReference;
 
 import java.util.List;
 
-@Entity(value=AutoScalePolicy.class)
+@EntityReference(value=AutoScalePolicy.class)
 public class AutoScalePolicyResponse extends BaseResponse implements ControlledEntityResponse {
 
     @SerializedName(ApiConstants.ID)

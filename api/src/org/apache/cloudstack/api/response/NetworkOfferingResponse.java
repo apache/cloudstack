@@ -24,9 +24,9 @@ import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.api.Entity;
+import org.apache.cloudstack.api.EntityReference;
 
-@Entity(value=NetworkOffering.class)
+@EntityReference(value=NetworkOffering.class)
 @SuppressWarnings("unused")
 public class NetworkOfferingResponse extends BaseResponse {
     @SerializedName("id") @Param(description="the id of the network offering")

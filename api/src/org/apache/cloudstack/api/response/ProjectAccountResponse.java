@@ -20,13 +20,12 @@ import java.util.List;
 
 import com.cloud.projects.ProjectAccount;
 import org.apache.cloudstack.api.ApiConstants;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.api.Entity;
+import org.apache.cloudstack.api.EntityReference;
 
-@Entity(value=ProjectAccount.class)
+@EntityReference(value=ProjectAccount.class)
 @SuppressWarnings("unused")
 public class ProjectAccountResponse extends BaseResponse implements ControlledViewEntityResponse {
     @SerializedName(ApiConstants.PROJECT_ID)
