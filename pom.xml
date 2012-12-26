@@ -155,7 +155,6 @@
     <module>utils</module>
     <module>deps/XenServerJava</module>
     <module>plugins</module>
-    <module>vmware-base</module>
     <module>awsapi</module>
     <module>patches</module>
     <module>test</module>

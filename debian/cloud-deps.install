@@ -31,14 +31,3 @@
 /usr/share/java/javax.persistence-2.0.0.jar
 /usr/share/java/gson-1.7.1.jar
 /usr/share/java/xapi-5.6.100-1-SNAPSHOT.jar
-/usr/share/java/axis-1.4.jar
-/usr/share/java/axis-jaxrpc-1.4.jar
-/usr/share/java/junit-4.10.jar
-/usr/share/java/jetty-6.1.26.jar
-/usr/share/java/jetty-util-6.1.26.jar
-/usr/share/java/mysql-connector-java-5.1.21.jar
-/usr/share/java/cloud-netscaler.jar
-/usr/share/java/cloud-netscaler-sdx.jar
-/usr/share/java/cloud-iControl.jar
-/usr/share/java/cloud-manageontap.jar
-/usr/share/java/vmware-*.jar

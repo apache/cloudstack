@@ -29,10 +29,3 @@
 /usr/share/java/cloud-user-authenticator-md5.jar
 /usr/share/java/cloud-user-authenticator-plaintext.jar
 /usr/share/java/cloud-plugin-hypervisor-xen.jar
-/usr/share/java/cloud-vmware-base.jar
-/usr/share/java/cloud-vmware.jar
-/usr/share/java/cloud-plugin-hypervisor-kvm.jar
-/usr/share/java/cloud-plugin-f5.jar
-/usr/share/java/cloud-plugin-netscaler.jar
-/usr/share/java/cloud-plugin-srx.jar
-/usr/share/java/cloud-plugin-netapp.jar

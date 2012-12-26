@@ -209,25 +209,20 @@
         <include name="gson-1.7.1.jar" />
         <include name="commons-httpclient-3.1.jar" />
         <include name="commons-logging-1.1.1.jar" />
-        <include name="commons-collections-3*.jar" />
+        <include name="commons-collections-3.1.jar" />
         <include name="commons-codec-1.6.jar" />
         <include name="commons-pool-1.6.jar" />
-        <include name="commons-discovery*.jar" />
         <include name="cglib-*.jar" />
         <include name="axis-*.jar" />
+        <include name="discovery-*.jar" />
         <include name="wsdl4j-*.jar" />
         <include name="ejb-api-3.0.jar" />
-        <include name="vmware-apputils.jar" />
-        <include name="vmware-vim.jar" />
-        <include name="vmware-vim25.jar" />
       </zipfileset>
       <zipfileset dir="${jar.dir}">
         <include name="${agent.jar}" />
         <include name="${utils.jar}" />
         <include name="${core.jar}" />
         <include name="${api.jar}" />
-        <include name="${vmware-base.jar}" />
-        <include name="${vmware.jar}" />
       </zipfileset>
       <zipfileset dir="${console-proxy.dist.dir}" filemode="555"/>
       <zipfileset dir="${scripts.dir}/storage/secondary" prefix="scripts/storage/secondary" filemode="555">

@@ -436,25 +436,18 @@ fi
 %files server
 %defattr(0644,root,root,0755)
 %{_javadir}/%{name}-server.jar
-%{_javadir}/%{name}-vmware-base.jar
-%{_javadir}/%{name}-vmware.jar
 %{_javadir}/%{name}-ovm.jar
 %{_javadir}/%{name}-dp-user-concentrated-pod.jar
 %{_javadir}/%{name}-dp-user-dispersing.jar
 %{_javadir}/%{name}-host-allocator-random.jar
-%{_javadir}/%{name}-plugin-f5.jar
-%{_javadir}/%{name}-plugin-netscaler.jar
 %{_javadir}/%{name}-plugin-ovs.jar
-%{_javadir}/%{name}-plugin-srx.jar
 %{_javadir}/%{name}-storage-allocator-random.jar
 %{_javadir}/%{name}-user-authenticator-ldap.jar
 %{_javadir}/%{name}-user-authenticator-md5.jar
 %{_javadir}/%{name}-user-authenticator-plaintext.jar
 %{_javadir}/%{name}-plugin-hypervisor-xen.jar
-%{_javadir}/%{name}-plugin-hypervisor-kvm.jar
-%{_javadir}/%{name}-plugin-netapp.jar
-%{_javadir}/%{name}-plugin-nicira-nvp.jar
 %{_javadir}/%{name}-plugin-elb.jar
+%{_javadir}/%{name}-plugin-nicira-nvp.jar
 %config(noreplace) %{_sysconfdir}/%{name}/server/*
 %doc LICENSE
 %doc NOTICE
@@ -504,25 +497,11 @@ fi
 %{_javadir}/jasypt-1.*.jar
 %{_javadir}/commons-configuration-1.8.jar
 %{_javadir}/ejb-api-3.0.jar
-%{_javadir}/axis-1.4.jar
 %{_javadir}/axis2-1.5.1.jar
-%{_javadir}/axis-jaxrpc-1.4.jar
-%{_javadir}/axis2-kernel-*.jar
 %{_javadir}/commons-discovery-0.5.jar
 %{_javadir}/jstl-1.2.jar
 %{_javadir}/javax.persistence-2.0.0.jar
 %{_javadir}/bcprov-jdk16-1.45.jar
-%{_javadir}/commons-lang-*.jar
-%{_javadir}/mysql-connector-java-5.1.21.jar
-%{_javadir}/junit-4.10.jar
-%{_javadir}/jetty-6.1.26.jar
-%{_javadir}/jetty-util-6.1.26.jar
-%{_javadir}/libvirt-0.4.9.jar
-%{_javadir}/cloud-netscaler.jar
-%{_javadir}/cloud-netscaler-sdx.jar
-%{_javadir}/cloud-iControl.jar
-%{_javadir}/cloud-manageontap.jar
-%{_javadir}/vmware*.jar
 %doc LICENSE
 %doc NOTICE
 
