@@ -37,6 +37,7 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.NetUtils;
+import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * NetworkConfigurationVO contains information about a specific network.
@@ -44,7 +45,7 @@ import com.cloud.utils.net.NetUtils;
  */
 @Entity
 @Table(name="networks")
-public class NetworkVO implements Network, Identity {
+public class NetworkVO implements Network, Identity, InternalIdentity {
     @Id
     @TableGenerator(name="networks_sq", table="sequence", pkColumnName="name", valueColumnName="value", pkColumnValue="networks_seq", allocationSize=1)
     @Column(name="id")

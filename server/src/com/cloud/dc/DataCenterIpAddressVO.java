@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.dc;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import java.util.Date;
 
 import javax.persistence.Column;
@@ -29,7 +31,7 @@ import javax.persistence.TemporalType;
 
 @Entity
 @Table(name="op_dc_ip_address_alloc")
-public class DataCenterIpAddressVO {
+public class DataCenterIpAddressVO implements InternalIdentity {
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -75,7 +77,7 @@ public class DataCenterIpAddressVO {
         this.podId = podId;
     }
     
-    public Long getId() {
+    public long getId() {
         return id;
     }
     

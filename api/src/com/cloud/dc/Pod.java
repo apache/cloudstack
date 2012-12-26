@@ -17,12 +17,13 @@
 package com.cloud.dc;
 
 import com.cloud.org.Grouping;
+import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * Represents one pod in the cloud stack.
  *
  */
-public interface Pod extends Grouping {
+public interface Pod extends Grouping, InternalIdentity {
     /**
      * @return unique id mapped to the pod.
      */

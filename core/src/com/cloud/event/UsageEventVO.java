@@ -26,10 +26,11 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="usage_event")
-public class UsageEventVO implements UsageEvent {
+public class UsageEventVO implements UsageEvent, InternalIdentity {
 	@Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")

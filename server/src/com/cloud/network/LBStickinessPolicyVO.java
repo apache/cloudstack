@@ -32,11 +32,12 @@ import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.Table;
 import com.cloud.network.rules.StickinessPolicy;
 import com.cloud.utils.Pair;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = ("load_balancer_stickiness_policies"))
 @PrimaryKeyJoinColumn(name = "load_balancer_id", referencedColumnName = "id")
-public class LBStickinessPolicyVO implements StickinessPolicy {
+public class LBStickinessPolicyVO implements StickinessPolicy, InternalIdentity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")

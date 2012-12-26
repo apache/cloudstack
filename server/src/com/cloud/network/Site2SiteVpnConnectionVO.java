@@ -29,10 +29,11 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name=("s2s_vpn_connection"))
-public class Site2SiteVpnConnectionVO implements Site2SiteVpnConnection {
+public class Site2SiteVpnConnectionVO implements Site2SiteVpnConnection, InternalIdentity {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")

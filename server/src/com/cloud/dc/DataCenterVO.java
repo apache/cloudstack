@@ -36,10 +36,11 @@ import com.cloud.network.Network.Provider;
 import com.cloud.org.Grouping;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="data_center")
-public class DataCenterVO implements DataCenter, Identity {
+public class DataCenterVO implements DataCenter, InternalIdentity, Identity {
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

@@ -23,10 +23,11 @@ import javax.persistence.Enumerated;
 import javax.persistence.Table;
 
 import com.cloud.projects.ProjectAccount.Role;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="project_account_view")
-public class ProjectAccountJoinVO extends BaseViewVO {
+public class ProjectAccountJoinVO extends BaseViewVO implements InternalIdentity {
 
     @Column(name="id", updatable=false, nullable = false)
     private long id;

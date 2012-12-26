@@ -35,10 +35,11 @@ import com.cloud.org.Managed.ManagedState;
 import com.cloud.org.Grouping;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="cluster")
-public class ClusterVO implements Cluster, Identity {
+public class ClusterVO implements Cluster, Identity, InternalIdentity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

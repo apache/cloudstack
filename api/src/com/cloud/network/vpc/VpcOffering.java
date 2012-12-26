@@ -16,7 +16,9 @@
 // under the License.
 package com.cloud.network.vpc;
 
-public interface VpcOffering {
+import org.apache.cloudstack.api.InternalIdentity;
+
+public interface VpcOffering extends InternalIdentity {
     public enum State {
         Disabled,
         Enabled

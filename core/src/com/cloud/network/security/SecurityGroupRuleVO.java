@@ -29,10 +29,11 @@ import javax.persistence.Table;
 
 import com.cloud.async.AsyncInstanceCreateStatus;
 import com.google.gson.annotations.Expose;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = ("security_group_rule"))
-public class SecurityGroupRuleVO implements SecurityRule {
+public class SecurityGroupRuleVO implements SecurityRule, InternalIdentity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")

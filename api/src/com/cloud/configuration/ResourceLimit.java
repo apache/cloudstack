@@ -16,9 +16,11 @@
 // under the License.
 package com.cloud.configuration;
 
-public interface ResourceLimit extends Resource {
+import org.apache.cloudstack.api.InternalIdentity;
 
-    public Long getId();
+public interface ResourceLimit extends Resource, InternalIdentity {
+
+    public long getId();
 
     public Long getMax();
 

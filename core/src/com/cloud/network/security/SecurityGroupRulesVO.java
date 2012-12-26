@@ -27,12 +27,13 @@ import javax.persistence.Table;
 
 import com.cloud.network.security.SecurityRule.SecurityRuleType;
 import com.cloud.utils.db.JoinType;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = ("security_group"))
 @JoinType(type = "left")
 @SecondaryTable(name = "security_group_rule", pkJoinColumns = { @PrimaryKeyJoinColumn(name = "id", referencedColumnName = "security_group_id") })
-public class SecurityGroupRulesVO implements SecurityGroupRules {
+public class SecurityGroupRulesVO implements SecurityGroupRules, InternalIdentity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")

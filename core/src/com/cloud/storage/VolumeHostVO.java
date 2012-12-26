@@ -33,6 +33,7 @@ import javax.persistence.TemporalType;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.utils.db.GenericDaoBase;
+import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * Join table for storage hosts and volumes
@@ -40,7 +41,7 @@ import com.cloud.utils.db.GenericDaoBase;
  */
 @Entity
 @Table(name="volume_host_ref")
-public class VolumeHostVO {
+public class VolumeHostVO implements InternalIdentity {
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
 	Long id;

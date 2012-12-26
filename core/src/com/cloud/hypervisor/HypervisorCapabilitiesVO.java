@@ -30,10 +30,11 @@ import javax.persistence.Table;
 import org.apache.cloudstack.api.Identity;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.NumbersUtil;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="hypervisor_capabilities")
-public class HypervisorCapabilitiesVO implements HypervisorCapabilities, Identity {
+public class HypervisorCapabilitiesVO implements HypervisorCapabilities, Identity, InternalIdentity {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")

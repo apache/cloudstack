@@ -31,10 +31,11 @@ import javax.persistence.Table;
 
 import org.apache.cloudstack.api.Identity;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "counter")
-public class CounterVO implements Counter, Identity {
+public class CounterVO implements Counter, Identity, InternalIdentity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

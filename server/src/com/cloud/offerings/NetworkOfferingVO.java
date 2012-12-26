@@ -35,6 +35,7 @@ import com.cloud.network.Network;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.InternalIdentity;
 
 import javax.persistence.*;
 import java.util.Date;
@@ -42,7 +43,7 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "network_offerings")
-public class NetworkOfferingVO implements NetworkOffering {
+public class NetworkOfferingVO implements NetworkOffering, InternalIdentity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

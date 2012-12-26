@@ -32,10 +32,11 @@ import org.apache.cloudstack.api.Identity;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.db.GenericDao;
 import com.google.gson.annotations.Expose;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="snapshots")
-public class SnapshotVO implements Snapshot, Identity {
+public class SnapshotVO implements Snapshot, Identity, InternalIdentity {
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

@@ -32,10 +32,11 @@ import org.apache.cloudstack.api.Identity;
 import com.cloud.org.Grouping;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "host_pod_ref")
-public class HostPodVO implements Pod {
+public class HostPodVO implements Pod, InternalIdentity {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	long id;

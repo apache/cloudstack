@@ -32,10 +32,11 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="volume_view")
-public class VolumeJoinVO extends BaseViewVO implements ControlledViewEntity {
+public class VolumeJoinVO extends BaseViewVO implements ControlledViewEntity, InternalIdentity {
 
     @Column(name="id")
     private long id;

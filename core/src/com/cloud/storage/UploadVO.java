@@ -32,10 +32,11 @@ import javax.persistence.TemporalType;
 
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDaoBase;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="upload")
-public class UploadVO implements Upload {
+public class UploadVO implements Upload, InternalIdentity {
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
 	long id;

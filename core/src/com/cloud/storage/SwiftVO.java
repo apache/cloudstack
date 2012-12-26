@@ -29,10 +29,11 @@ import javax.persistence.Table;
 import com.cloud.agent.api.to.SwiftTO;
 import org.apache.cloudstack.api.Identity;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="swift")
-public class SwiftVO implements Swift {
+public class SwiftVO implements Swift, InternalIdentity {
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

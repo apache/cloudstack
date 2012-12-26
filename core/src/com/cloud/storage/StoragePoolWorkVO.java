@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.storage;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 
@@ -26,9 +28,9 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name="storage_pool_work")
-public class StoragePoolWorkVO {
+public class StoragePoolWorkVO implements InternalIdentity {
     
-    public Long getId() {
+    public long getId() {
         return id;
     }
 

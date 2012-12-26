@@ -29,10 +29,11 @@ import javax.persistence.Table;
 
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkTrafficType;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "physical_network_traffic_types")
-public class PhysicalNetworkTrafficTypeVO implements PhysicalNetworkTrafficType {
+public class PhysicalNetworkTrafficTypeVO implements PhysicalNetworkTrafficType, InternalIdentity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")

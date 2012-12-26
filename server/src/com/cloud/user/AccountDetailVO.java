@@ -24,10 +24,11 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.utils.db.Encrypt;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="account_details")
-public class AccountDetailVO {
+public class AccountDetailVO implements InternalIdentity {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")

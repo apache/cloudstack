@@ -28,6 +28,7 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 import com.cloud.utils.db.GenericDaoBase;
+import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * Join table for storage pools and hosts
@@ -35,7 +36,7 @@ import com.cloud.utils.db.GenericDaoBase;
  */
 @Entity
 @Table(name="storage_pool_host_ref")
-public class StoragePoolHostVO implements StoragePoolHostAssoc {
+public class StoragePoolHostVO implements StoragePoolHostAssoc, InternalIdentity {
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
 	private Long id;
@@ -75,7 +76,7 @@ public class StoragePoolHostVO implements StoragePoolHostAssoc {
 	}
 
 
-    public Long getId() {
+    public long getId() {
         return id;
     }
 

@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.network.as;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -25,7 +27,7 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name=("autoscale_policy_condition_map"))
-public class AutoScalePolicyConditionMapVO {
+public class AutoScalePolicyConditionMapVO implements InternalIdentity {
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

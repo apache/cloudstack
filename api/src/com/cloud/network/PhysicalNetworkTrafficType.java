@@ -17,11 +17,12 @@
 package com.cloud.network;
 
 import com.cloud.network.Networks.TrafficType;
+import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  *
  */
-public interface PhysicalNetworkTrafficType {
+public interface PhysicalNetworkTrafficType extends InternalIdentity {
 
     long getId();
 

@@ -21,9 +21,10 @@ import java.net.URI;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.template.VirtualMachineTemplate;
+import org.apache.cloudstack.api.InternalIdentity;
 
 
-public class DownloadCommand extends AbstractDownloadCommand {
+public class DownloadCommand extends AbstractDownloadCommand implements InternalIdentity {
 	public static class PasswordAuth {
 		String userName;
 		String password;

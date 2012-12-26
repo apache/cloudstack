@@ -18,8 +18,9 @@ package com.cloud.agent.api.to;
 
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.template.VirtualMachineTemplate;
+import org.apache.cloudstack.api.InternalIdentity;
 
-public class TemplateTO {
+public class TemplateTO implements InternalIdentity {
     private long id;
     private String uniqueName;
     private ImageFormat format;

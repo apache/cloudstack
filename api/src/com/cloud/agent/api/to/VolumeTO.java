@@ -19,8 +19,9 @@ package com.cloud.agent.api.to;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
+import org.apache.cloudstack.api.InternalIdentity;
 
-public class VolumeTO {
+public class VolumeTO implements InternalIdentity {
     protected VolumeTO() {
     }
 

@@ -19,8 +19,9 @@ package com.cloud.async;
 import java.util.Date;
 
 import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-public interface AsyncJob extends Identity {
+public interface AsyncJob extends Identity, InternalIdentity {
     public enum Type {
         None,
         VirtualMachine,

@@ -26,10 +26,11 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="guest_os_category")
-public class GuestOSCategoryVO implements GuestOsCategory, Identity {
+public class GuestOSCategoryVO implements GuestOsCategory, Identity, InternalIdentity {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")

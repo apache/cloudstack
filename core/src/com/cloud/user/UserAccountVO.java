@@ -29,12 +29,13 @@ import javax.persistence.Table;
 
 import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="user")
 @SecondaryTable(name="account",
 pkJoinColumns={@PrimaryKeyJoinColumn(name="account_id", referencedColumnName="id")})
-public class UserAccountVO implements UserAccount {
+public class UserAccountVO implements UserAccount, InternalIdentity {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
@@ -101,7 +102,7 @@ public class UserAccountVO implements UserAccount {
     public UserAccountVO() {}
 
     @Override
-    public Long getId() {
+    public long getId() {
         return id;
     }
 

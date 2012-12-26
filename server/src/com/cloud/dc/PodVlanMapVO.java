@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.dc;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -25,7 +27,7 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name="pod_vlan_map")
-public class PodVlanMapVO {
+public class PodVlanMapVO implements InternalIdentity {
 	    
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)

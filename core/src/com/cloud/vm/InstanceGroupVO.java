@@ -30,12 +30,13 @@ import javax.persistence.Table;
 
 import org.apache.cloudstack.api.Identity;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="instance_group")
 @SecondaryTable(name="account",
         pkJoinColumns={@PrimaryKeyJoinColumn(name="account_id", referencedColumnName="id")})
-public class InstanceGroupVO implements InstanceGroup, Identity {
+public class InstanceGroupVO implements InstanceGroup, Identity, InternalIdentity {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")

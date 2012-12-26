@@ -35,6 +35,7 @@ import javax.persistence.TableGenerator;
 
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * NetworkConfigurationVO contains information about a specific physical network.
@@ -42,7 +43,7 @@ import com.cloud.utils.db.GenericDao;
  */
 @Entity
 @Table(name="physical_network")
-public class PhysicalNetworkVO implements PhysicalNetwork {
+public class PhysicalNetworkVO implements PhysicalNetwork, InternalIdentity {
     @Id
     @TableGenerator(name="physical_networks_sq", table="sequence", pkColumnName="name", valueColumnName="value", pkColumnValue="physical_networks_seq", allocationSize=1)
     @Column(name="id")

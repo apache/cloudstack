@@ -39,12 +39,13 @@ import com.cloud.network.dao.FirewallRulesCidrsDaoImpl;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.NetUtils;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="firewall_rules")
 @Inheritance(strategy=InheritanceType.JOINED)
 @DiscriminatorColumn(name="purpose", discriminatorType=DiscriminatorType.STRING, length=32)
-public class FirewallRuleVO implements FirewallRule, Identity {
+public class FirewallRuleVO implements FirewallRule, Identity, InternalIdentity {
     protected final FirewallRulesCidrsDaoImpl _firewallRulesCidrsDao = ComponentLocator.inject(FirewallRulesCidrsDaoImpl.class);
 
     @Id

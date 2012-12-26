@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.configuration;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -27,7 +29,7 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name = "resource_limit")
-public class ResourceLimitVO implements ResourceLimit {
+public class ResourceLimitVO implements ResourceLimit, InternalIdentity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -62,7 +64,7 @@ public class ResourceLimitVO implements ResourceLimit {
     }
 
     @Override
-    public Long getId() {
+    public long getId() {
         return id;
     }
 

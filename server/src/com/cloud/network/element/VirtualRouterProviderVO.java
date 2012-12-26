@@ -30,10 +30,11 @@ import javax.persistence.Table;
 
 import com.cloud.network.VirtualRouterProvider;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name=("virtual_router_providers"))
-public class VirtualRouterProviderVO implements VirtualRouterProvider {
+public class VirtualRouterProviderVO implements VirtualRouterProvider, InternalIdentity {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")

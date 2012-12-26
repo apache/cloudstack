@@ -30,11 +30,12 @@ import javax.persistence.Table;
 
 import org.apache.cloudstack.api.Identity;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.InternalIdentity;
 
 
 @Entity
 @Table(name="static_routes")
-public class StaticRouteVO implements StaticRoute{
+public class StaticRouteVO implements StaticRoute, InternalIdentity {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")

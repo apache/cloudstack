@@ -22,6 +22,7 @@ import java.util.List;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.State;
 import com.cloud.utils.net.NetUtils;
+import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * FirewallRuleTO transfers a port range for an ip to be opened.
@@ -37,7 +38,7 @@ import com.cloud.utils.net.NetUtils;
  *   - protocol: protocol to open for.  Usually tcp and udp.
  *
  */
-public class FirewallRuleTO {
+public class FirewallRuleTO implements InternalIdentity {
     long id;
     String srcVlanTag;
     String srcIp;

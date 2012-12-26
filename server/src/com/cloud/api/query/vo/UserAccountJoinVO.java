@@ -24,10 +24,11 @@ import javax.persistence.Table;
 
 import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="user_view")
-public class UserAccountJoinVO extends BaseViewVO {
+public class UserAccountJoinVO extends BaseViewVO implements InternalIdentity {
 
     @Column(name="id", updatable=false, nullable = false)
     private long id;

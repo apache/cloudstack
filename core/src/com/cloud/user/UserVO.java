@@ -32,6 +32,7 @@ import org.apache.cloudstack.api.Identity;
 import com.cloud.user.Account.State;
 import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * A bean representing a user
@@ -39,7 +40,7 @@ import com.cloud.utils.db.GenericDao;
  */
 @Entity
 @Table(name = "user")
-public class UserVO implements User, Identity {
+public class UserVO implements User, Identity, InternalIdentity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")

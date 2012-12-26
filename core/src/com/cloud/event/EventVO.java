@@ -31,10 +31,11 @@ import javax.persistence.Transient;
 
 import org.apache.cloudstack.api.Identity;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="event")
-public class EventVO implements Event, Identity {
+public class EventVO implements Event, Identity, InternalIdentity {
 	@Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")

@@ -28,10 +28,11 @@ import javax.persistence.Table;
 import org.apache.cloudstack.api.Identity;
 import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.cloud.utils.DateUtil.IntervalType;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="snapshot_policy")
-public class SnapshotPolicyVO implements SnapshotPolicy{
+public class SnapshotPolicyVO implements SnapshotPolicy, InternalIdentity {
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

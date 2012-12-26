@@ -26,10 +26,11 @@ import javax.persistence.Table;
 
 import com.cloud.utils.db.GenericDao;
 import com.cloud.event.Event.State;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="event_view")
-public class EventJoinVO extends BaseViewVO implements ControlledViewEntity {
+public class EventJoinVO extends BaseViewVO implements ControlledViewEntity, InternalIdentity {
 
     @Column(name="id", updatable=false, nullable = false)
     private long id;

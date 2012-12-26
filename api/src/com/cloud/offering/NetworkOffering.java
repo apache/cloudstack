@@ -18,12 +18,13 @@ package com.cloud.offering;
 
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Networks.TrafficType;
+import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * Describes network offering
  *
  */
-public interface NetworkOffering {
+public interface NetworkOffering extends InternalIdentity {
 
     public enum Availability {
         Required,

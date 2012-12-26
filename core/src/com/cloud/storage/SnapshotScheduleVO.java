@@ -30,10 +30,11 @@ import javax.persistence.TemporalType;
 
 import org.apache.cloudstack.api.Identity;
 import com.cloud.storage.snapshot.SnapshotSchedule;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="snapshot_schedule")
-public class SnapshotScheduleVO implements SnapshotSchedule {
+public class SnapshotScheduleVO implements SnapshotSchedule, InternalIdentity {
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

@@ -33,6 +33,7 @@ import javax.persistence.Transient;
 
 import org.apache.cloudstack.api.Identity;
 import com.cloud.utils.net.Ip;
+import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * A bean representing a public IP Address
@@ -40,7 +41,7 @@ import com.cloud.utils.net.Ip;
  */
 @Entity
 @Table(name=("user_ip_address"))
-public class IPAddressVO implements IpAddress, Identity {
+public class IPAddressVO implements IpAddress, Identity, InternalIdentity {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")

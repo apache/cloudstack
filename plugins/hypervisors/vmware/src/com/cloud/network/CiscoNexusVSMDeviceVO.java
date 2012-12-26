@@ -28,6 +28,7 @@ import javax.persistence.Table;
 
 import org.apache.cloudstack.api.Identity;
 import com.cloud.utils.db.Encrypt;
+import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * CiscoNexusVSMDeviceVO contains information on external Cisco Nexus 1000v VSM devices added into a deployment.
@@ -37,7 +38,7 @@ import com.cloud.utils.db.Encrypt;
 
 @Entity
 @Table(name="virtual_supervisor_module")
-public class CiscoNexusVSMDeviceVO implements CiscoNexusVSMDevice, Identity{
+public class CiscoNexusVSMDeviceVO implements CiscoNexusVSMDevice, Identity, InternalIdentity {
 
     // We need to know what properties a VSM has. Put them here.
 
