@@ -121,7 +121,7 @@ def getResultObj(returnObj, responsecls=None):
     
     if len(returnObj) == 0:
         return None
-    responseName = returnObj.keys()[0]
+    responseName = filter(lambda a: a!=u'cloudstack-version', returnObj.keys())[0]
     
     response = returnObj[responseName]
     if len(response) == 0:
