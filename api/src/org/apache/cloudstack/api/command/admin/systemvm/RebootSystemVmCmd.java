@@ -21,7 +21,7 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SystemVmResponse;
@@ -31,7 +31,7 @@ import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.vm.VirtualMachine;
 
-@Implementation(description="Reboots a system VM.", responseObject=SystemVmResponse.class)
+@APICommand(description="Reboots a system VM.", responseObject=SystemVmResponse.class)
 public class RebootSystemVmCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RebootSystemVmCmd.class.getName());
 

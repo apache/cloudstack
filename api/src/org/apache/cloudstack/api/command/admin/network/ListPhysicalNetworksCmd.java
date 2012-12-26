@@ -25,7 +25,7 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseListCmd;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -34,7 +34,7 @@ import com.cloud.network.PhysicalNetwork;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
-@Implementation(description="Lists physical networks", responseObject=PhysicalNetworkResponse.class, since="3.0.0")
+@APICommand(description="Lists physical networks", responseObject=PhysicalNetworkResponse.class, since="3.0.0")
 public class ListPhysicalNetworksCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListPhysicalNetworksCmd.class.getName());
 

@@ -22,7 +22,7 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.VolumeResponse;
@@ -32,7 +32,7 @@ import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Attaches a disk volume to a virtual machine.", responseObject=VolumeResponse.class)
+@APICommand(description="Attaches a disk volume to a virtual machine.", responseObject=VolumeResponse.class)
 public class AttachVolumeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AttachVolumeCmd.class.getName());
     private static final String s_name = "attachvolumeresponse";

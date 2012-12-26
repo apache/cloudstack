@@ -25,13 +25,13 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListAccountResourcesCmd;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.network.as.AutoScalePolicy;
 
-@Implementation(description = "Lists autoscale policies.", responseObject = AutoScalePolicyResponse.class)
+@APICommand(description = "Lists autoscale policies.", responseObject = AutoScalePolicyResponse.class)
 public class ListAutoScalePoliciesCmd extends BaseListAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListAutoScalePoliciesCmd.class.getName());
 

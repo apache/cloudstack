@@ -16,14 +16,11 @@
 // under the License.
 package com.cloud.api.commands;
 
+import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
-import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.APICommand;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.network.NetworkUsageManager;
@@ -34,7 +31,7 @@ import com.cloud.user.Account;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Implementation(description="Adds Traffic Monitor Host for Direct Network Usage", responseObject = ExternalFirewallResponse.class)
+@APICommand(description="Adds Traffic Monitor Host for Direct Network Usage", responseObject = ExternalFirewallResponse.class)
 public class AddTrafficMonitorCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(AddTrafficMonitorCmd.class.getName());	
 	private static final String s_name = "addtrafficmonitorresponse";	

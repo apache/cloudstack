@@ -18,19 +18,16 @@ package com.cloud.api.commands;
 
 import java.util.Date;
 
+import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
-import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.server.ManagementServerExt;
 import com.cloud.user.Account;
 
-@Implementation(description="Generates usage records. This will generate records only if there any records to be generated, i.e if the scheduled usage job was not run or failed", responseObject=SuccessResponse.class)
+@APICommand(description="Generates usage records. This will generate records only if there any records to be generated, i.e if the scheduled usage job was not run or failed", responseObject=SuccessResponse.class)
 public class GenerateUsageRecordsCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(GenerateUsageRecordsCmd.class.getName());
 

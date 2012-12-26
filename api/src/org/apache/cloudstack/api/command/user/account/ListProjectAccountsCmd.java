@@ -16,11 +16,11 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.account;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
-import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
@@ -28,7 +28,7 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 
 import com.cloud.user.Account;
 
-@Implementation(description="Lists project's accounts", responseObject=ProjectResponse.class, since="3.0.0")
+@APICommand(description="Lists project's accounts", responseObject=ProjectResponse.class, since="3.0.0")
 public class ListProjectAccountsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListProjectAccountsCmd.class.getName());
 

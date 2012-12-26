@@ -20,7 +20,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
@@ -28,7 +28,7 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 
 import com.cloud.async.AsyncJob;
 
-@Implementation(description="Lists security groups", responseObject=SecurityGroupResponse.class)
+@APICommand(description="Lists security groups", responseObject=SecurityGroupResponse.class)
 public class ListSecurityGroupsCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListSecurityGroupsCmd.class.getName());
 

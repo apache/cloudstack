@@ -25,7 +25,7 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 
 import org.apache.cloudstack.api.response.HostResponse;
@@ -44,7 +44,7 @@ import com.cloud.async.AsyncJob;
 import com.cloud.exception.InvalidParameterValueException;
 
 
-@Implementation(description="List the virtual machines owned by the account.", responseObject=UserVmResponse.class)
+@APICommand(description="List the virtual machines owned by the account.", responseObject=UserVmResponse.class)
 public class ListVMsCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListVMsCmd.class.getName());
 

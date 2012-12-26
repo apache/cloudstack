@@ -19,15 +19,15 @@ package com.cloud.api.commands;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
-import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.SnapshotScheduleResponse;
 import com.cloud.storage.snapshot.SnapshotSchedule;
 
-@Implementation(description="Lists recurring snapshot schedule", responseObject=SnapshotScheduleResponse.class)
+@APICommand(description="Lists recurring snapshot schedule", responseObject=SnapshotScheduleResponse.class)
 public class ListRecurringSnapshotScheduleCmd extends BaseListCmd {
     private static final String s_name = "listrecurringsnapshotscheduleresponse";
 

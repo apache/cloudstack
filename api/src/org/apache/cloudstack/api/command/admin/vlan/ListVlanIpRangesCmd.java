@@ -19,11 +19,11 @@ package org.apache.cloudstack.api.command.admin.vlan;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
-import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -36,7 +36,7 @@ import org.apache.cloudstack.api.response.VlanIpRangeResponse;
 import com.cloud.dc.Vlan;
 import com.cloud.utils.Pair;
 
-@Implementation(description="Lists all VLAN IP ranges.", responseObject=VlanIpRangeResponse.class)
+@APICommand(description="Lists all VLAN IP ranges.", responseObject=VlanIpRangeResponse.class)
 public class ListVlanIpRangesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListVlanIpRangesCmd.class.getName());
 

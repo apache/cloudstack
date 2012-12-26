@@ -25,7 +25,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
@@ -41,7 +41,7 @@ import com.cloud.network.rules.StaticNatRule;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Creates an ip forwarding rule", responseObject=FirewallRuleResponse.class)
+@APICommand(description="Creates an ip forwarding rule", responseObject=FirewallRuleResponse.class)
 public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements StaticNatRule {
     public static final Logger s_logger = Logger.getLogger(CreateIpForwardingRuleCmd.class.getName());
 

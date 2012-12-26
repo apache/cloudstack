@@ -23,7 +23,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ClusterResponse;
@@ -35,7 +35,7 @@ import com.cloud.exception.DiscoveryException;
 import com.cloud.host.Host;
 import com.cloud.user.Account;
 
-@Implementation(description="Adds a new host.", responseObject=HostResponse.class)
+@APICommand(description="Adds a new host.", responseObject=HostResponse.class)
 public class AddHostCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddHostCmd.class.getName());
 

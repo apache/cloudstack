@@ -16,20 +16,17 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.pod;
 
+import org.apache.cloudstack.api.*;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
-import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 
 import com.cloud.dc.Pod;
 import com.cloud.user.Account;
 
-@Implementation(description="Creates a new Pod.", responseObject=PodResponse.class)
+@APICommand(description="Creates a new Pod.", responseObject=PodResponse.class)
 public class CreatePodCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreatePodCmd.class.getName());
 

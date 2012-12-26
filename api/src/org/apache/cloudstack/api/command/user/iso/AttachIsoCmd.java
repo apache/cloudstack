@@ -23,7 +23,7 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.UserVmResponse;
@@ -32,7 +32,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 
-@Implementation(description="Attaches an ISO to a virtual machine.", responseObject=UserVmResponse.class)
+@APICommand(description="Attaches an ISO to a virtual machine.", responseObject=UserVmResponse.class)
 public class AttachIsoCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AttachIsoCmd.class.getName());
 

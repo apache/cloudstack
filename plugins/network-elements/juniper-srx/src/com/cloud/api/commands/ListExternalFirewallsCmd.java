@@ -25,7 +25,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.PlugService;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -33,7 +33,7 @@ import com.cloud.host.Host;
 import com.cloud.network.element.JuniperSRXFirewallElementService;
 import com.cloud.server.api.response.ExternalFirewallResponse;
 
-@Implementation(description="List external firewall appliances.", responseObject = ExternalFirewallResponse.class)
+@APICommand(description="List external firewall appliances.", responseObject = ExternalFirewallResponse.class)
 public class ListExternalFirewallsCmd extends BaseListCmd {
 	public static final Logger s_logger = Logger.getLogger(ListServiceOfferingsCmd.class.getName());
     private static final String s_name = "listexternalfirewallsresponse";

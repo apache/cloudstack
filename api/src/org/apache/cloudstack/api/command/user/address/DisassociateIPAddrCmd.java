@@ -16,16 +16,12 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.address;
 
+import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
-import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
@@ -35,7 +31,7 @@ import com.cloud.network.IpAddress;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Disassociates an ip address from the account.", responseObject=SuccessResponse.class)
+@APICommand(description="Disassociates an ip address from the account.", responseObject=SuccessResponse.class)
 public class DisassociateIPAddrCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DisassociateIPAddrCmd.class.getName());
 

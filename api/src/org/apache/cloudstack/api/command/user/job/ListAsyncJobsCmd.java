@@ -20,16 +20,16 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListAccountResourcesCmd;
-import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.utils.Pair;
 
-@Implementation(description="Lists all pending asynchronous jobs for the account.", responseObject=AsyncJobResponse.class)
+@APICommand(description="Lists all pending asynchronous jobs for the account.", responseObject=AsyncJobResponse.class)
 public class ListAsyncJobsCmd extends BaseListAccountResourcesCmd {
     private static final String s_name = "listasyncjobsresponse";
 

@@ -21,7 +21,7 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
@@ -33,7 +33,7 @@ import com.cloud.network.VpnUser;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Adds vpn users", responseObject=VpnUsersResponse.class)
+@APICommand(description="Adds vpn users", responseObject=VpnUsersResponse.class)
 public class AddVpnUserCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(AddVpnUserCmd.class.getName());
 

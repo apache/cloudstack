@@ -23,7 +23,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -36,7 +36,7 @@ import com.cloud.async.AsyncJob;
 import com.cloud.network.IpAddress;
 import com.cloud.utils.Pair;
 
-@Implementation(description="Lists all public ip addresses", responseObject=IPAddressResponse.class)
+@APICommand(description="Lists all public ip addresses", responseObject=IPAddressResponse.class)
 public class ListPublicIpAddressesCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListPublicIpAddressesCmd.class.getName());
 

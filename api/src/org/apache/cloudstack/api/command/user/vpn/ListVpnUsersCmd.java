@@ -19,18 +19,18 @@ package org.apache.cloudstack.api.command.user.vpn;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
-import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.VpnUsersResponse;
 import com.cloud.network.VpnUser;
 import com.cloud.utils.Pair;
 
-@Implementation(description="Lists vpn users", responseObject=VpnUsersResponse.class)
+@APICommand(description="Lists vpn users", responseObject=VpnUsersResponse.class)
 public class ListVpnUsersCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger (ListVpnUsersCmd.class.getName());
 

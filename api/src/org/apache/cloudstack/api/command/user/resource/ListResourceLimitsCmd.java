@@ -23,13 +23,13 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ResourceLimitResponse;
 import com.cloud.configuration.ResourceLimit;
 
-@Implementation(description="Lists resource limits.", responseObject=ResourceLimitResponse.class)
+@APICommand(description="Lists resource limits.", responseObject=ResourceLimitResponse.class)
 public class ListResourceLimitsCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListResourceLimitsCmd.class.getName());
 

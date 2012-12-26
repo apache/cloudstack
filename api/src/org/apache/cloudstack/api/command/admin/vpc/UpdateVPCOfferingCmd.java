@@ -16,20 +16,16 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.vpc;
 
+import org.apache.cloudstack.api.*;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
-import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.network.vpc.VpcOffering;
 import com.cloud.user.Account;
 
-@Implementation(description="Updates VPC offering", responseObject=VpcOfferingResponse.class)
+@APICommand(description="Updates VPC offering", responseObject=VpcOfferingResponse.class)
 public class UpdateVPCOfferingCmd extends BaseAsyncCmd{
     public static final Logger s_logger = Logger.getLogger(UpdateVPCOfferingCmd.class.getName());
     private static final String _name = "updatevpcofferingresponse";

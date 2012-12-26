@@ -16,17 +16,11 @@ package com.cloud.api.commands;
 
 import java.util.List;
 
+import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
-import org.apache.cloudstack.api.Implementation;
-import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.PlugService;
-import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.APICommand;
 import com.cloud.api.response.NetscalerLoadBalancerResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -39,7 +33,7 @@ import com.cloud.network.element.NetscalerLoadBalancerElementService;
 import com.cloud.user.UserContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Implementation(responseObject=NetscalerLoadBalancerResponse.class, description="configures a netscaler load balancer device")
+@APICommand(responseObject=NetscalerLoadBalancerResponse.class, description="configures a netscaler load balancer device")
 public class ConfigureNetscalerLoadBalancerCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(ConfigureNetscalerLoadBalancerCmd.class.getName());

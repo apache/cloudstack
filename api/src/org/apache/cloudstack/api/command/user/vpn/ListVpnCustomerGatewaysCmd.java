@@ -19,18 +19,18 @@ package org.apache.cloudstack.api.command.user.vpn;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
-import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.Site2SiteCustomerGatewayResponse;
 import com.cloud.network.Site2SiteCustomerGateway;
 import com.cloud.utils.Pair;
 
-@Implementation(description="Lists site to site vpn customer gateways", responseObject=Site2SiteCustomerGatewayResponse.class)
+@APICommand(description="Lists site to site vpn customer gateways", responseObject=Site2SiteCustomerGatewayResponse.class)
 public class ListVpnCustomerGatewaysCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger (ListVpnCustomerGatewaysCmd.class.getName());
 

@@ -20,14 +20,14 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.user.Account;
 
-@Implementation(description = "Update password of a host/pool on management server.", responseObject = SuccessResponse.class)
+@APICommand(description = "Update password of a host/pool on management server.", responseObject = SuccessResponse.class)
 public class UpdateHostPasswordCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateHostPasswordCmd.class.getName());
 

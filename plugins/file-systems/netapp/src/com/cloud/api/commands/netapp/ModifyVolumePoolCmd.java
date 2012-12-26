@@ -21,7 +21,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import com.cloud.exception.ConcurrentOperationException;
@@ -33,7 +33,7 @@ import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.ModifyVolumePoolCmdResponse;
 import com.cloud.utils.component.ComponentLocator;
 
-@Implementation(description="Modify pool", responseObject = ModifyVolumePoolCmdResponse.class)
+@APICommand(description="Modify pool", responseObject = ModifyVolumePoolCmdResponse.class)
 public class ModifyVolumePoolCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(ModifyVolumePoolCmd.class.getName());
     private static final String s_name = "modifypoolresponse";

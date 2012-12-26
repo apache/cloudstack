@@ -23,7 +23,7 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
@@ -36,7 +36,7 @@ import com.cloud.network.PhysicalNetwork;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Creates a physical network", responseObject=PhysicalNetworkResponse.class, since="3.0.0")
+@APICommand(description="Creates a physical network", responseObject=PhysicalNetworkResponse.class, since="3.0.0")
 public class CreatePhysicalNetworkCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreatePhysicalNetworkCmd.class.getName());
 

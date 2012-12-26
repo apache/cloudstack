@@ -20,7 +20,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
@@ -39,7 +39,7 @@ import com.cloud.network.Network.GuestType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Creates a network", responseObject=NetworkResponse.class)
+@APICommand(description="Creates a network", responseObject=NetworkResponse.class)
 public class CreateNetworkCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateNetworkCmd.class.getName());
 

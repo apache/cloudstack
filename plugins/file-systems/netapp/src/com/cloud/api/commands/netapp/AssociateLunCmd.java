@@ -22,7 +22,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -31,7 +31,7 @@ import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.AssociateLunCmdResponse;
 import com.cloud.utils.component.ComponentLocator;
 
-@Implementation(description="Associate a LUN with a guest IQN", responseObject = AssociateLunCmdResponse.class)
+@APICommand(description="Associate a LUN with a guest IQN", responseObject = AssociateLunCmdResponse.class)
 public class AssociateLunCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(AssociateLunCmd.class.getName());
     private static final String s_name = "associatelunresponse";

@@ -17,14 +17,14 @@
 
 package org.apache.cloudstack.api.command.user.tag;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
-import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
 
-@Implementation(description = "List resource tag(s)", responseObject = ResourceTagResponse.class, since = "Burbank")
+@APICommand(description = "List resource tag(s)", responseObject = ResourceTagResponse.class, since = "Burbank")
 public class ListTagsCmd extends BaseListProjectAndAccountResourcesCmd{
     private static final String s_name = "listtagsresponse";
 

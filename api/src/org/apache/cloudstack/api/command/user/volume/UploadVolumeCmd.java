@@ -16,16 +16,12 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 
+import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
-import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -36,7 +32,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.storage.Volume;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Uploads a data disk.", responseObject=VolumeResponse.class)
+@APICommand(description="Uploads a data disk.", responseObject=VolumeResponse.class)
 public class UploadVolumeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UploadVolumeCmd.class.getName());
     private static final String s_name = "uploadvolumeresponse";

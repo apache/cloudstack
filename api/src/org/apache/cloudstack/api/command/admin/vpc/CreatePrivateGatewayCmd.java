@@ -24,7 +24,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.PrivateGatewayResponse;
@@ -39,7 +39,7 @@ import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.user.Account;
 
-@Implementation(description="Creates a private gateway", responseObject=PrivateGatewayResponse.class)
+@APICommand(description="Creates a private gateway", responseObject=PrivateGatewayResponse.class)
 public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreatePrivateGatewayCmd.class.getName());
 

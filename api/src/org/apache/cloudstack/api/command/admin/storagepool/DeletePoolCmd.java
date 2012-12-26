@@ -16,20 +16,17 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.storagepool;
 
+import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
-import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.user.Account;
 
-@Implementation(description = "Deletes a storage pool.", responseObject = SuccessResponse.class)
+@APICommand(description = "Deletes a storage pool.", responseObject = SuccessResponse.class)
 public class DeletePoolCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeletePoolCmd.class.getName());
     private static final String s_name = "deletestoragepoolresponse";

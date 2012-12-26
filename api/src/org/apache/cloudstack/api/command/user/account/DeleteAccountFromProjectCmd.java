@@ -16,23 +16,19 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.account;
 
+import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.command.user.project.DeleteProjectCmd;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
-import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.projects.Project;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Deletes account from the project", responseObject=SuccessResponse.class, since="3.0.0")
+@APICommand(description="Deletes account from the project", responseObject=SuccessResponse.class, since="3.0.0")
 public class DeleteAccountFromProjectCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteProjectCmd.class.getName());
 

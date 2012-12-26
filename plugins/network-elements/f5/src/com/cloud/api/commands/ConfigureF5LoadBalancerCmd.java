@@ -17,16 +17,10 @@
 
 package com.cloud.api.commands;
 
+import org.apache.cloudstack.api.*;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
-import org.apache.cloudstack.api.Implementation;
-import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.PlugService;
-import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.APICommand;
 import com.cloud.api.response.F5LoadBalancerResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -39,7 +33,7 @@ import com.cloud.network.element.F5ExternalLoadBalancerElementService;
 import com.cloud.user.UserContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Implementation(responseObject=F5LoadBalancerResponse.class, description="configures a F5 load balancer device")
+@APICommand(responseObject=F5LoadBalancerResponse.class, description="configures a F5 load balancer device")
 public class ConfigureF5LoadBalancerCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(ConfigureF5LoadBalancerCmd.class.getName());

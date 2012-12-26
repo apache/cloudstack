@@ -16,20 +16,17 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.swift;
 
+import org.apache.cloudstack.api.*;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
-import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.SwiftResponse;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.storage.Swift;
 import com.cloud.user.Account;
 
-@Implementation(description = "Adds Swift.", responseObject = HostResponse.class, since="3.0.0")
+@APICommand(description = "Adds Swift.", responseObject = HostResponse.class, since="3.0.0")
 public class AddSwiftCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddSwiftCmd.class.getName());
     private static final String s_name = "addswiftresponse";

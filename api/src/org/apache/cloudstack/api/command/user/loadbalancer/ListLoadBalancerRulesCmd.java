@@ -23,7 +23,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
@@ -34,7 +34,7 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.utils.Pair;
 
-@Implementation(description = "Lists load balancer rules.", responseObject = LoadBalancerResponse.class)
+@APICommand(description = "Lists load balancer rules.", responseObject = LoadBalancerResponse.class)
 public class ListLoadBalancerRulesCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListLoadBalancerRulesCmd.class.getName());
 

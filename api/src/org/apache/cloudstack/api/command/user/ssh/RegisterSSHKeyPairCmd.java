@@ -20,7 +20,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
@@ -28,7 +28,7 @@ import org.apache.cloudstack.api.response.SSHKeyPairResponse;
 import com.cloud.user.SSHKeyPair;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Register a public key in a keypair under a certain name", responseObject=SSHKeyPairResponse.class)
+@APICommand(description="Register a public key in a keypair under a certain name", responseObject=SSHKeyPairResponse.class)
 public class RegisterSSHKeyPairCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(RegisterSSHKeyPairCmd.class.getName());
     private static final String s_name = "registersshkeypairresponse";

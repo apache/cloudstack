@@ -19,20 +19,20 @@ package org.apache.cloudstack.api.command.user.guest;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.command.user.iso.ListIsosCmd;
 import org.apache.cloudstack.api.response.GuestOSCategoryResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
-import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.GuestOSResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.storage.GuestOS;
 import com.cloud.utils.Pair;
 
-@Implementation(description="Lists all supported OS types for this cloud.", responseObject=GuestOSResponse.class)
+@APICommand(description="Lists all supported OS types for this cloud.", responseObject=GuestOSResponse.class)
 public class ListGuestOsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListIsosCmd.class.getName());
 

@@ -19,14 +19,11 @@ package org.apache.cloudstack.api.command.admin.vm;
 
 import java.util.List;
 
+import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
-import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.APICommand;
 
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
@@ -35,7 +32,7 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
-@Implementation(description="Move a user VM to another user under same domain.", responseObject=UserVmResponse.class, since="3.0.0")
+@APICommand(description="Move a user VM to another user under same domain.", responseObject=UserVmResponse.class, since="3.0.0")
 public class AssignVMCmd extends BaseCmd  {
     public static final Logger s_logger = Logger.getLogger(AssignVMCmd.class.getName());
 

@@ -18,18 +18,13 @@ package org.apache.cloudstack.api.command.user.firewall;
 
 import java.util.List;
 
+import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.BaseAsyncCreateCmd;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
-import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
@@ -42,7 +37,7 @@ import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.utils.net.Ip;
 
-@Implementation(description = "Creates a port forwarding rule", responseObject = FirewallRuleResponse.class)
+@APICommand(description = "Creates a port forwarding rule", responseObject = FirewallRuleResponse.class)
 public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements PortForwardingRule {
     public static final Logger s_logger = Logger.getLogger(CreatePortForwardingRuleCmd.class.getName());
 

@@ -23,7 +23,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
@@ -32,7 +32,7 @@ import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
-@Implementation(description="Lists network serviceproviders for a given physical network.", responseObject=ProviderResponse.class, since="3.0.0")
+@APICommand(description="Lists network serviceproviders for a given physical network.", responseObject=ProviderResponse.class, since="3.0.0")
 public class ListNetworkServiceProvidersCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListNetworkServiceProvidersCmd.class.getName());
     private static final String _name = "listnetworkserviceprovidersresponse";

@@ -20,12 +20,12 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import com.cloud.user.Account;
 
-@Implementation(description="Retrieves the current status of asynchronous job.", responseObject=AsyncJobResponse.class)
+@APICommand(description="Retrieves the current status of asynchronous job.", responseObject=AsyncJobResponse.class)
 public class QueryAsyncJobResultCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(QueryAsyncJobResultCmd.class.getName());
 

@@ -16,14 +16,10 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.network;
 
+import org.apache.cloudstack.api.*;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
-import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.response.StorageNetworkIpRangeResponse;
 import com.cloud.dc.StorageNetworkIpRange;
 import com.cloud.event.EventTypes;
@@ -33,7 +29,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
-@Implementation(description="Update a Storage network IP range, only allowed when no IPs in this range have been allocated.", responseObject=StorageNetworkIpRangeResponse.class, since="3.0.0")
+@APICommand(description="Update a Storage network IP range, only allowed when no IPs in this range have been allocated.", responseObject=StorageNetworkIpRangeResponse.class, since="3.0.0")
 public class UpdateStorageNetworkIpRangeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateStorageNetworkIpRangeCmd.class);
     private static final String s_name = "updatestoragenetworkiprangeresponse";

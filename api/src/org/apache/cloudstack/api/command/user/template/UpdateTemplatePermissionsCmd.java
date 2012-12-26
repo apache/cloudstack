@@ -19,12 +19,12 @@ package org.apache.cloudstack.api.command.user.template;
 import com.cloud.api.commands.UpdateTemplateOrIsoPermissionsCmd;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 
-@Implementation(responseObject=SuccessResponse.class, description="Updates a template visibility permissions. " +
+@APICommand(responseObject=SuccessResponse.class, description="Updates a template visibility permissions. " +
                                                                                         "A public template is visible to all accounts within the same domain. " +
                                                                                         "A private template is visible only to the owner of the template. " +
                                                                                         "A priviledged template is a private template with account permissions added. " +

@@ -25,7 +25,7 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseListCmd;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager;
@@ -41,7 +41,7 @@ import com.cloud.server.ManagementService;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Implementation(description="List network devices", responseObject = NetworkDeviceResponse.class)
+@APICommand(description="List network devices", responseObject = NetworkDeviceResponse.class)
 public class ListNetworkDeviceCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListNetworkDeviceCmd.class);
     private static final String s_name = "listnetworkdevice";

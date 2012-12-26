@@ -19,11 +19,11 @@ package org.apache.cloudstack.api.command.admin.swift;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
-import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -31,7 +31,7 @@ import org.apache.cloudstack.api.response.SwiftResponse;
 import com.cloud.storage.Swift;
 import com.cloud.user.Account;
 
-@Implementation(description = "List Swift.", responseObject = HostResponse.class, since="3.0.0")
+@APICommand(description = "List Swift.", responseObject = HostResponse.class, since="3.0.0")
 public class ListSwiftsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListSwiftsCmd.class.getName());
     private static final String s_name = "listswiftsresponse";

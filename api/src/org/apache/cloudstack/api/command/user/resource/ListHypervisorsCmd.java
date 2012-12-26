@@ -24,14 +24,14 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.HypervisorResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import com.cloud.user.Account;
 
-@Implementation(description = "List hypervisors", responseObject = HypervisorResponse.class)
+@APICommand(description = "List hypervisors", responseObject = HypervisorResponse.class)
 public class ListHypervisorsCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpgradeRouterCmd.class.getName());
     private static final String s_name = "listhypervisorsresponse";

@@ -21,7 +21,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
@@ -31,7 +31,7 @@ import com.cloud.server.ManagementService;
 import com.cloud.user.Account;
 import com.cloud.utils.component.ComponentLocator;
 
-@Implementation(description="Deletes an traffic monitor host.", responseObject = SuccessResponse.class)
+@APICommand(description="Deletes an traffic monitor host.", responseObject = SuccessResponse.class)
 public class DeleteTrafficMonitorCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(DeleteTrafficMonitorCmd.class.getName());	
 	private static final String s_name = "deletetrafficmonitorresponse";	

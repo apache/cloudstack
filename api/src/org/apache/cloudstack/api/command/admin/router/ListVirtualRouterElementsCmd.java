@@ -25,7 +25,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.PlugService;
 import org.apache.cloudstack.api.ServerApiException;
@@ -38,7 +38,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.element.VirtualRouterElementService;
 
-@Implementation(description="Lists all available virtual router elements.", responseObject=VirtualRouterProviderResponse.class)
+@APICommand(description="Lists all available virtual router elements.", responseObject=VirtualRouterProviderResponse.class)
 public class ListVirtualRouterElementsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListNetworkOfferingsCmd.class.getName());
     private static final String _name = "listvirtualrouterelementsresponse";

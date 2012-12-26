@@ -18,16 +18,16 @@ package com.cloud.api.commands;
 
 import java.util.List;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.server.ManagementServerExt;
 import com.cloud.server.api.response.UsageTypeResponse;
 import com.cloud.user.Account;
 
-@Implementation(description = "List Usage Types", responseObject = UsageTypeResponse.class)
+@APICommand(description = "List Usage Types", responseObject = UsageTypeResponse.class)
 public class ListUsageTypesCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(ListUsageTypesCmd.class.getName());
     private static final String s_name = "listusagetypesresponse";

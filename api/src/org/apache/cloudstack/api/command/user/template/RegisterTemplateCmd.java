@@ -25,7 +25,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
@@ -39,7 +39,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Registers an existing template into the CloudStack cloud. ", responseObject=TemplateResponse.class)
+@APICommand(description="Registers an existing template into the CloudStack cloud. ", responseObject=TemplateResponse.class)
 public class RegisterTemplateCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(RegisterTemplateCmd.class.getName());
 

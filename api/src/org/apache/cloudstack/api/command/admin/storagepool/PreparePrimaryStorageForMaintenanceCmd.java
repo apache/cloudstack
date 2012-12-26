@@ -21,7 +21,7 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
@@ -33,7 +33,7 @@ import com.cloud.storage.StoragePool;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Puts storage pool into maintenance state", responseObject=StoragePoolResponse.class)
+@APICommand(description="Puts storage pool into maintenance state", responseObject=StoragePoolResponse.class)
 public class PreparePrimaryStorageForMaintenanceCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(PreparePrimaryStorageForMaintenanceCmd.class.getName());
     private static final String s_name = "prepareprimarystorageformaintenanceresponse";

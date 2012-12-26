@@ -21,13 +21,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.cloudstack.api.*;
 import org.apache.log4j.Logger;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
-import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
 import org.apache.cloudstack.api.response.SecurityGroupRuleResponse;
@@ -39,7 +36,7 @@ import com.cloud.network.security.SecurityRule;
 import com.cloud.user.UserContext;
 import com.cloud.utils.StringUtils;
 
-@Implementation(responseObject = SecurityGroupRuleResponse.class, description = "Authorizes a particular egress rule for this security group", since="3.0.0")
+@APICommand(responseObject = SecurityGroupRuleResponse.class, description = "Authorizes a particular egress rule for this security group", since="3.0.0")
 @SuppressWarnings("rawtypes")
 public class AuthorizeSecurityGroupEgressCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AuthorizeSecurityGroupIngressCmd.class.getName());

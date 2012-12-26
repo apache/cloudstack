@@ -19,12 +19,12 @@ package org.apache.cloudstack.api.command.user.iso;
 import com.cloud.api.commands.UpdateTemplateOrIsoPermissionsCmd;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 
-@Implementation(description="Updates iso permissions", responseObject=SuccessResponse.class)
+@APICommand(description="Updates iso permissions", responseObject=SuccessResponse.class)
 public class UpdateIsoPermissionsCmd extends UpdateTemplateOrIsoPermissionsCmd {
     protected String getResponseName() {
         return "updateisopermissionsresponse";

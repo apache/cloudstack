@@ -23,14 +23,14 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.domain.Domain;
 import com.cloud.utils.Pair;
 
-@Implementation(description="Lists domains and provides detailed information for listed domains", responseObject=DomainResponse.class)
+@APICommand(description="Lists domains and provides detailed information for listed domains", responseObject=DomainResponse.class)
 public class ListDomainsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListDomainsCmd.class.getName());
 

@@ -16,19 +16,16 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.zone;
 
+import org.apache.cloudstack.api.*;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
-import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Deletes a Zone.", responseObject=SuccessResponse.class)
+@APICommand(description="Deletes a Zone.", responseObject=SuccessResponse.class)
 public class DeleteZoneCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteZoneCmd.class.getName());
 

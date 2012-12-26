@@ -19,19 +19,19 @@ package org.apache.cloudstack.api.command.user.vpc;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
-import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.PrivateGatewayResponse;
 import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.utils.Pair;
 
-@Implementation(description="List private gateways", responseObject=PrivateGatewayResponse.class)
+@APICommand(description="List private gateways", responseObject=PrivateGatewayResponse.class)
 public class ListPrivateGatewaysCmd extends BaseListProjectAndAccountResourcesCmd{
     public static final Logger s_logger = Logger.getLogger(ListPrivateGatewaysCmd.class.getName());
 

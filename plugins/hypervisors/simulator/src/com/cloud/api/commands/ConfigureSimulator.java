@@ -21,7 +21,7 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.manager.SimulatorManager;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
@@ -33,7 +33,7 @@ import com.cloud.server.ManagementService;
 import com.cloud.user.Account;
 import com.cloud.utils.component.ComponentLocator;
 
-@Implementation(description="configure simulator", responseObject=SuccessResponse.class)
+@APICommand(description="configure simulator", responseObject=SuccessResponse.class)
 public class ConfigureSimulator extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(ConfigureSimulator.class.getName());
     private static final String s_name = "configuresimulatorresponse";

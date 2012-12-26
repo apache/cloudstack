@@ -24,14 +24,14 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.utils.Pair;
 
-@Implementation(description="Lists all port forwarding rules for an IP address.", responseObject=FirewallRuleResponse.class)
+@APICommand(description="Lists all port forwarding rules for an IP address.", responseObject=FirewallRuleResponse.class)
 public class ListPortForwardingRulesCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListPortForwardingRulesCmd.class.getName());
 

@@ -20,12 +20,12 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 
-@Implementation(description="Lists vm groups", responseObject=InstanceGroupResponse.class)
+@APICommand(description="Lists vm groups", responseObject=InstanceGroupResponse.class)
 public class ListVMGroupsCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListVMGroupsCmd.class.getName());
 

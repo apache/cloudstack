@@ -17,15 +17,15 @@
 package org.apache.cloudstack.api.command.admin.ldap;
 
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.response.LDAPConfigResponse;
 import org.apache.cloudstack.api.response.LDAPRemoveResponse;
 import com.cloud.user.Account;
 
-@Implementation(description="Remove the LDAP context for this site.", responseObject=LDAPConfigResponse.class, since="3.0.1")
+@APICommand(description="Remove the LDAP context for this site.", responseObject=LDAPConfigResponse.class, since="3.0.1")
 public class LDAPRemoveCmd extends BaseCmd  {
     public static final Logger s_logger = Logger.getLogger(LDAPRemoveCmd.class.getName());
 

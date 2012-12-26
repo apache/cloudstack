@@ -20,7 +20,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 
@@ -33,7 +33,7 @@ import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 
 
-@Implementation(description="Updates properties of a virtual machine. The VM has to be stopped and restarted for the " +
+@APICommand(description="Updates properties of a virtual machine. The VM has to be stopped and restarted for the " +
         "new properties to take effect. UpdateVirtualMachine does not first check whether the VM is stopped. " +
         "Therefore, stop the VM manually before issuing this call.", responseObject=UserVmResponse.class)
 public class UpdateVMCmd extends BaseCmd{

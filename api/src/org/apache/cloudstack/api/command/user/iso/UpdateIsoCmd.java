@@ -20,13 +20,13 @@ import com.cloud.api.commands.UpdateTemplateOrIsoCmd;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 
-@Implementation(description="Updates an ISO file.", responseObject=TemplateResponse.class)
+@APICommand(description="Updates an ISO file.", responseObject=TemplateResponse.class)
 public class UpdateIsoCmd extends UpdateTemplateOrIsoCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateIsoCmd.class.getName());
     private static final String s_name = "updateisoresponse";

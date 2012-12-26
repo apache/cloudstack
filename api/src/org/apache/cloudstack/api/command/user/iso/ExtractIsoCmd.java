@@ -16,16 +16,12 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.iso;
 
+import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
-import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.response.ExtractResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
@@ -34,7 +30,7 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Extracts an ISO", responseObject=ExtractResponse.class)
+@APICommand(description="Extracts an ISO", responseObject=ExtractResponse.class)
 public class ExtractIsoCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ExtractIsoCmd.class.getName());
 

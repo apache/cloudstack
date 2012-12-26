@@ -22,7 +22,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import com.cloud.exception.ConcurrentOperationException;
@@ -35,7 +35,7 @@ import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.CreateLunCmdResponse;
 import com.cloud.utils.component.ComponentLocator;
 
-@Implementation(description="Create a LUN from a pool", responseObject = CreateLunCmdResponse.class)
+@APICommand(description="Create a LUN from a pool", responseObject = CreateLunCmdResponse.class)
 public class CreateLunCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(CreateLunCmd.class.getName());
     private static final String s_name = "createlunresponse";

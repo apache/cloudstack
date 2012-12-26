@@ -16,14 +16,13 @@
 // under the License.
 package com.cloud.api.commands;
 
-import com.cloud.server.api.response.ExternalLoadBalancerResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.IdentityMapper;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.PlugService;
 import org.apache.cloudstack.api.ServerApiException;
@@ -39,7 +38,7 @@ import com.cloud.network.element.JuniperSRXFirewallElementService;
 import com.cloud.user.UserContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Implementation(responseObject=SrxFirewallResponse.class, description="Configures a SRX firewall device")
+@APICommand(responseObject=SrxFirewallResponse.class, description="Configures a SRX firewall device")
 public class ConfigureSrxFirewallCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(ConfigureSrxFirewallCmd.class.getName());

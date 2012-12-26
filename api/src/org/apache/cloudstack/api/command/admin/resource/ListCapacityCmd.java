@@ -19,11 +19,11 @@ package org.apache.cloudstack.api.command.admin.resource;
 import java.text.DecimalFormat;
 import java.util.List;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
-import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.CapacityResponse;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -33,7 +33,7 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import com.cloud.capacity.Capacity;
 import com.cloud.exception.InvalidParameterValueException;
 
-@Implementation(description="Lists all the system wide capacities.", responseObject=CapacityResponse.class)
+@APICommand(description="Lists all the system wide capacities.", responseObject=CapacityResponse.class)
 public class ListCapacityCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListCapacityCmd.class.getName());

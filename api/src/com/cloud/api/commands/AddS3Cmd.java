@@ -32,7 +32,7 @@ import static org.apache.cloudstack.api.BaseCmd.CommandType.BOOLEAN;
 import static com.cloud.user.Account.ACCOUNT_ID_SYSTEM;
 
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import com.cloud.api.response.S3Response;
@@ -44,7 +44,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.storage.S3;
 
-@Implementation(description = "Adds S3", responseObject = S3Response.class, since = "4.0.0")
+@APICommand(description = "Adds S3", responseObject = S3Response.class, since = "4.0.0")
 public final class AddS3Cmd extends BaseCmd {
 
     private static String COMMAND_NAME = "adds3response";

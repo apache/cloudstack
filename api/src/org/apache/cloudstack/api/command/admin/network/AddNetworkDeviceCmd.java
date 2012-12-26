@@ -22,7 +22,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import com.cloud.exception.ConcurrentOperationException;
@@ -37,7 +37,7 @@ import org.apache.cloudstack.api.response.NetworkDeviceResponse;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Implementation(description="Adds a network device of one of the following types: ExternalDhcp, ExternalFirewall, ExternalLoadBalancer, PxeServer", responseObject = NetworkDeviceResponse.class)
+@APICommand(description="Adds a network device of one of the following types: ExternalDhcp, ExternalFirewall, ExternalLoadBalancer, PxeServer", responseObject = NetworkDeviceResponse.class)
 public class AddNetworkDeviceCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddNetworkDeviceCmd.class);
     private static final String s_name = "addnetworkdeviceresponse";

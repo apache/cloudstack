@@ -24,14 +24,14 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.RemoteAccessVpnResponse;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.utils.Pair;
 
-@Implementation(description="Lists remote access vpns", responseObject=RemoteAccessVpnResponse.class)
+@APICommand(description="Lists remote access vpns", responseObject=RemoteAccessVpnResponse.class)
 public class ListRemoteAccessVpnsCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger (ListRemoteAccessVpnsCmd.class.getName());
 

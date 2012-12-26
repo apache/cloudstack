@@ -16,18 +16,15 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vmgroup;
 
+import org.apache.cloudstack.api.*;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
-import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import com.cloud.user.Account;
 import com.cloud.vm.InstanceGroup;
 
-@Implementation(description="Updates a vm group", responseObject=InstanceGroupResponse.class)
+@APICommand(description="Updates a vm group", responseObject=InstanceGroupResponse.class)
 public class UpdateVMGroupCmd extends BaseCmd{
 
     private static final String s_name = "updateinstancegroupresponse";

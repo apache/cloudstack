@@ -21,7 +21,7 @@ import java.rmi.ServerException;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import com.cloud.exception.ConcurrentOperationException;
@@ -34,7 +34,7 @@ import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.CreateVolumeOnFilerCmdResponse;
 import com.cloud.utils.component.ComponentLocator;
 
-@Implementation(description="Create a volume", responseObject = CreateVolumeOnFilerCmdResponse.class)
+@APICommand(description="Create a volume", responseObject = CreateVolumeOnFilerCmdResponse.class)
 public class CreateVolumeOnFilerCmd extends BaseCmd {
     private static final String s_name = "createvolumeresponse";
 

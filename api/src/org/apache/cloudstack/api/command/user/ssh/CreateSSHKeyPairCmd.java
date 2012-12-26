@@ -16,11 +16,11 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.ssh;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
@@ -28,7 +28,7 @@ import org.apache.cloudstack.api.response.SSHKeyPairResponse;
 import com.cloud.user.SSHKeyPair;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Create a new keypair and returns the private key", responseObject=SSHKeyPairResponse.class)
+@APICommand(description="Create a new keypair and returns the private key", responseObject=SSHKeyPairResponse.class)
 public class CreateSSHKeyPairCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateSSHKeyPairCmd.class.getName());
     private static final String s_name = "createsshkeypairresponse";

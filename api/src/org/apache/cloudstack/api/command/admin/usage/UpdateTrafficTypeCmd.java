@@ -21,7 +21,7 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.TrafficTypeResponse;
@@ -30,7 +30,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.user.Account;
 
-@Implementation(description="Updates traffic type of a physical network", responseObject=TrafficTypeResponse.class, since="3.0.0")
+@APICommand(description="Updates traffic type of a physical network", responseObject=TrafficTypeResponse.class, since="3.0.0")
 public class UpdateTrafficTypeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateTrafficTypeCmd.class.getName());
 

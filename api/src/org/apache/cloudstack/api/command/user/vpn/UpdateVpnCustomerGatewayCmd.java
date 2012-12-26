@@ -16,21 +16,17 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpn;
 
+import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
-import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.response.Site2SiteCustomerGatewayResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.network.Site2SiteCustomerGateway;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Update site to site vpn customer gateway", responseObject=Site2SiteCustomerGatewayResponse.class)
+@APICommand(description="Update site to site vpn customer gateway", responseObject=Site2SiteCustomerGatewayResponse.class)
 public class UpdateVpnCustomerGatewayCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateVpnCustomerGatewayCmd.class.getName());
 

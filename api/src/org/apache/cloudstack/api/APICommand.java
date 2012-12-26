@@ -24,7 +24,7 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ TYPE })
-public @interface Implementation {
+public @interface APICommand {
     Class<? extends BaseResponse> responseObject();
 
     String description() default "";

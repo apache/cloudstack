@@ -16,18 +16,15 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.network;
 
+import org.apache.cloudstack.api.*;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
-import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.response.NetworkOfferingResponse;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 
-@Implementation(description="Updates a network offering.", responseObject=NetworkOfferingResponse.class)
+@APICommand(description="Updates a network offering.", responseObject=NetworkOfferingResponse.class)
 public class UpdateNetworkOfferingCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateNetworkOfferingCmd.class.getName());
     private static final String _name = "updatenetworkofferingresponse";

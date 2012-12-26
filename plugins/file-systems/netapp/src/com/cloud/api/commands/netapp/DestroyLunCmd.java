@@ -22,7 +22,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import com.cloud.exception.ConcurrentOperationException;
@@ -35,7 +35,7 @@ import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.DeleteLUNCmdResponse;
 import com.cloud.utils.component.ComponentLocator;
 
-@Implementation(description="Destroy a LUN", responseObject = DeleteLUNCmdResponse.class)
+@APICommand(description="Destroy a LUN", responseObject = DeleteLUNCmdResponse.class)
 public class DestroyLunCmd extends BaseCmd {
     
 	public static final Logger s_logger = Logger.getLogger(DestroyLunCmd.class.getName());

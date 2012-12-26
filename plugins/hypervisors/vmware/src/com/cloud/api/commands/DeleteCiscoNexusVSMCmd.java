@@ -22,7 +22,7 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.IdentityMapper;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.PlugService;
 import org.apache.cloudstack.api.ServerApiException;
@@ -35,7 +35,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.element.CiscoNexusVSMElementService;
 import com.cloud.user.Account;
 
-@Implementation(responseObject=SuccessResponse.class, description=" delete a Cisco Nexus VSM device")
+@APICommand(responseObject=SuccessResponse.class, description=" delete a Cisco Nexus VSM device")
 public class DeleteCiscoNexusVSMCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(DeleteCiscoNexusVSMCmd.class.getName());

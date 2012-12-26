@@ -20,7 +20,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.HostResponse;
@@ -33,7 +33,7 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 
 import com.cloud.async.AsyncJob;
 
-@Implementation(description="List routers.", responseObject=DomainRouterResponse.class)
+@APICommand(description="List routers.", responseObject=DomainRouterResponse.class)
 public class ListRoutersCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListRoutersCmd.class.getName());
 

@@ -37,16 +37,12 @@ import java.util.TreeMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import org.apache.cloudstack.api.*;
 import org.apache.log4j.Logger;
 
 import com.cloud.alert.AlertManager;
-import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.BaseAsyncCreateCmd;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
-import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
-import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
@@ -307,14 +303,14 @@ public class ApiXmlDocWriter {
         Command apiCommand = new Command();
         apiCommand.setName(command);
 
-        Implementation impl = clas.getAnnotation(Implementation.class);
+        APICommand impl = clas.getAnnotation(APICommand.class);
         if (impl == null) {
-            impl = clas.getSuperclass().getAnnotation(Implementation.class);
+            impl = clas.getSuperclass().getAnnotation(APICommand.class);
         }
 
         if (impl == null) {
             throw new IllegalStateException(String.format("An %1$s annotation is required for class %2$s.", 
-                    Implementation.class.getCanonicalName(), clas.getCanonicalName()));
+                    APICommand.class.getCanonicalName(), clas.getCanonicalName()));
         }
 
         if (impl.includeInApiDoc()) {

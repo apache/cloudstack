@@ -16,22 +16,17 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.cloudstack.api.response.*;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import com.cloud.async.AsyncJob;
-import com.cloud.storage.Volume;
-import com.cloud.utils.Pair;
 
 
-@Implementation(description="Lists all volumes.", responseObject=VolumeResponse.class)
+@APICommand(description="Lists all volumes.", responseObject=VolumeResponse.class)
 public class ListVolumesCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListVolumesCmd.class.getName());
 

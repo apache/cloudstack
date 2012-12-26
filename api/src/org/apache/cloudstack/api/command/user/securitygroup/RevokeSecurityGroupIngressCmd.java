@@ -21,7 +21,7 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SecurityGroupRuleResponse;
@@ -31,7 +31,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.user.Account;
 
-@Implementation(responseObject = SuccessResponse.class, description = "Deletes a particular ingress rule from this security group")
+@APICommand(responseObject = SuccessResponse.class, description = "Deletes a particular ingress rule from this security group")
 public class RevokeSecurityGroupIngressCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RevokeSecurityGroupIngressCmd.class.getName());
 

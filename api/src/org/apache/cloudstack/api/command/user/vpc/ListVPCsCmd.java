@@ -28,12 +28,12 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import com.cloud.network.vpc.Vpc;
 
 
-@Implementation(description="Lists VPCs", responseObject=VpcResponse.class)
+@APICommand(description="Lists VPCs", responseObject=VpcResponse.class)
 public class ListVPCsCmd extends BaseListTaggedResourcesCmd{
     public static final Logger s_logger = Logger.getLogger(ListVPCsCmd.class.getName());
     private static final String s_name = "listvpcsresponse";

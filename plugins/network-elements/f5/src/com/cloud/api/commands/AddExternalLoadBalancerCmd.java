@@ -22,8 +22,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.IdentityMapper;
-import org.apache.cloudstack.api.Implementation;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.PlugService;
 import org.apache.cloudstack.api.ServerApiException;
@@ -34,7 +33,7 @@ import com.cloud.server.api.response.ExternalLoadBalancerResponse;
 import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Implementation(description="Adds F5 external load balancer appliance.", responseObject = ExternalLoadBalancerResponse.class)
+@APICommand(description="Adds F5 external load balancer appliance.", responseObject = ExternalLoadBalancerResponse.class)
 @Deprecated // API supported only for backward compatibility.
 public class AddExternalLoadBalancerCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddExternalLoadBalancerCmd.class.getName());
