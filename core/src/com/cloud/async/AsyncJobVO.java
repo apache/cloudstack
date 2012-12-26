@@ -32,10 +32,11 @@ import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="async_job")
-public class AsyncJobVO implements AsyncJob {
+public class AsyncJobVO implements AsyncJob, InternalIdentity {
 	public static final int CALLBACK_POLLING = 0;
 	public static final int CALLBACK_EMAIL = 1;
 	
