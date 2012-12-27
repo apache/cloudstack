@@ -3430,7 +3430,6 @@ Dialogs*/
   display: inline;
   padding: 0;
   float: right;
-  text-decoration: underline;
   color: #516374;
   /*+text-shadow:0px -1px 1px #FFFFFF;*/
   -moz-text-shadow: 0px -1px 1px #FFFFFF;
@@ -3527,6 +3526,11 @@ Dialogs*/
   -webkit-text-shadow: 0px -1px 1px #495968;
   -o-text-shadow: 0px -1px 1px #495968;
   text-shadow: 0px -1px 1px #495968;
+  background: url(../images/icons.png) no-repeat 0px -255px;
+}
+
+.notice .ui-dialog-title {
+  background-position: 0px -288px;
 }
 
 .ui-dialog.confirm .ui-dialog-title {
@@ -7469,11 +7473,12 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
 }
 
 .multi-edit .data .data-body .data-item > table tbody tr td span {
-  overflow-x: auto;
-  overflow-y: hidden;
-  max-width: 88px;
+  overflow: hidden;
+  max-width: 78px;
   display: block;
   float: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .multi-edit .data .data-body .data-item table tbody tr td.blank {
@@ -8793,6 +8798,7 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
 .project-selector .listing .data ul li {
   padding: 10px 0 10px 7px;
   cursor: pointer;
+  font-size: 12px;
 }
 
 .project-selector .listing .data ul li.odd {
@@ -8816,8 +8822,8 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
   text-shadow: 0px 1px 1px #FFFFFF;
   text-align: left;
   color: #4F6171;
-  font-size: 12px;
-  padding: 2px 2px 3px 7px;
+  font-size: 11px;
+  padding: 3px 2px 3px 7px;
   border-bottom: 1px solid #FFFFFF;
   position: absolute;
   left: 0;
@@ -8830,17 +8836,14 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
   border-radius: 4px 4px 4px 4px;
   font-size: 13px;
   font-weight: bold;
+  padding: 8px 20px;
   float: none;
   cursor: pointer;
   color: #838181;
-  /*+placement:shift 488px 9px;*/
-  position: relative;
-  left: 488px;
-  top: 9px;
   left: 170px;
   top: -8px;
-  margin: 19px 0 0 0px;
   width: 54px;
+  margin: auto auto 17px;
 }
 
 .project-selector .button.cancel:hover {
@@ -9205,9 +9208,9 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
 }
 
 .info-boxes .info-box ul li .date {
-  font-size: 13px;
+  font-size: 11px;
   text-align: center;
-  margin: 0;
+  margin: 1px 0 0;
 }
 
 .info-boxes .info-box ul li .date span {
@@ -9226,7 +9229,10 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
   top: 8px;
   display: inline-block;
   padding-bottom: 13px;
-  max-width: 171px;
+  max-width: 153px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .info-boxes .info-box ul li .total span {
