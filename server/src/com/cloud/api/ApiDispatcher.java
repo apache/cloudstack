@@ -540,10 +540,29 @@ public class ApiDispatcher {
             // APITODO: Find and get rid of all hardcoded params in API Cmds and service layer
             return -1L;
         }
+        Long internalId = null;
+        // If annotation's empty, the cmd existed before 3.x try conversion to long
+        // FIXME: Fails if someone adds since field for any pre 3.x apis
+        boolean isPre3x = annotation.since().isEmpty();
+        // Match against Java's UUID regex to check if input is uuid string
+        boolean isUuid = uuid.matches("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$");
+        // Enforce that it's uuid for newly added apis from version 3.x
+        if (!isPre3x && !isUuid)
+            return null;
+        // Allow both uuid and internal id for pre3x apis
+        if (isPre3x && !isUuid) {
+            try {
+                internalId = Long.parseLong(uuid);
+            } catch(NumberFormatException e) {
+                // In case regex failed, and it's still uuid string
+                internalId = null;
+            }
+            if (internalId != null)
+                return internalId;
+        }
         // There may be multiple entities defined on the @EntityReference of a Response.class
         // UUID CommandType would expect only one entityType, so use the first entityType
         Class<?>[] entities = annotation.entityType()[0].getAnnotation(EntityReference.class).value();
-        Long internalId = null;
         // Go through each entity which is an interface to a VO class and get a VO object
         // Try to getId() for the object using reflection, break on first non-null value
         for (Class<?> entity: entities) {
@@ -662,8 +681,8 @@ public class ApiDispatcher {
                 Long internalId = translateUuidToInternalId(paramObj.toString(), annotation);
                 // If id is null, entity with the uuid was not found, throw exception
                 if (internalId == null) {
-                    throw new InvalidParameterValueException("No entity with " + field.getName() + "(uuid)="
-                            + paramObj.toString() + " was found in the database.");
+                    throw new InvalidParameterValueException("Object entity with " + field.getName() + "(uuid)="
+                            + paramObj.toString() + " was not found.");
                 }
                 field.set(cmdObj, internalId);
                 break;
