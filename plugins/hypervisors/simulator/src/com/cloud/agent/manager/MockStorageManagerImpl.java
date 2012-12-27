@@ -434,13 +434,13 @@ public class MockStorageManagerImpl implements MockStorageManager {
 			List<MockVolumeVO> volumes = _mockVolumeDao.findByStorageIdAndType(storage.getId(),
 					MockVolumeType.VOLUME);
 
-			Map<String, TemplateInfo> templateInfos = new HashMap<String, TemplateInfo>();
+			Map<Long, TemplateInfo> templateInfos = new HashMap<Long, TemplateInfo>();
 			for (MockVolumeVO volume : volumes) {
-				templateInfos.put(volume.getName(), new TemplateInfo(volume.getName(), volume.getPath()
+				templateInfos.put(volume.getId(), new TemplateInfo(volume.getName(), volume.getPath()
 						.replaceAll(storage.getMountPoint(), ""), volume.getSize(), volume.getSize(), true, false));
 			}
 			txn.commit();
-			return new ListTemplateAnswer(cmd.getSecUrl(), templateInfos);
+			return new ListVolumeAnswer(cmd.getSecUrl(), templateInfos);
 		} catch (Exception ex) {
 			txn.rollback();
 			throw new CloudRuntimeException("Error when finding template on sec storage " + storage.getId(), ex);
