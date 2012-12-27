@@ -914,6 +914,8 @@
             $('<span></span>').html(_s(content))
           );
         }
+        
+        $td.attr('title', _s(content));
       });
 
       $tr.find('td:first').addClass('first');

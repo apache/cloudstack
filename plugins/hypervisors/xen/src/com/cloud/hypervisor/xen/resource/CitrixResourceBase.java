@@ -4333,8 +4333,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
             XsLocalNetwork storageNic1 = null;
             storageNic1 = getNetworkByName(conn, _storageNetworkName1);
-            _host.storageNetwork1 = storageNic1.getNetworkRecord(conn).uuid;
-            _host.storagePif1 = storageNic1.getPifRecord(conn).uuid;
+            if (storageNic1 == null) {
+                s_logger.warn("Unable to find storage network " + _storageNetworkName1 + " for host " + _host.ip);
+                throw new IllegalArgumentException("Unable to find storage network " + _storageNetworkName1 + " for host " + _host.ip);
+            } else {
+                _host.storageNetwork1 = storageNic1.getNetworkRecord(conn).uuid;
+                _host.storagePif1 = storageNic1.getPifRecord(conn).uuid;
+            }
 
             XsLocalNetwork storageNic2 = null;
             if (_storageNetworkName2 != null) {

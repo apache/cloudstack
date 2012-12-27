@@ -384,7 +384,5 @@
         <module>vmware-base</module>
       </modules>
     </profile>
-
   </profiles>
-
 </project>

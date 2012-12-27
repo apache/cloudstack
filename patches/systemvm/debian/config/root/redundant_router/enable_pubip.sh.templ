@@ -30,6 +30,4 @@ do
         ifconfig $i up
     fi
 done < /tmp/iflist
-ip route add default via [GATEWAY] dev eth2 && \
-service cloud-passwd-srvr restart && \
-service dnsmasq restart
+ip route add default via [GATEWAY] dev eth2

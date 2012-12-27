@@ -26,7 +26,6 @@ try:
     import logging
     import os
     import pdb
-    import sets
     import shlex
     import sys
     import time
@@ -332,8 +331,8 @@ class CloudMonkeyShell(cmd.Cmd, object):
             setattr(api_cmd, attribute, args_dict[attribute])
 
         command = api_cmd()
-        missing_args = list(sets.Set(command.required).difference(
-                            sets.Set(args_dict.keys())))
+        missing_args = filter(lambda x: x not in args_dict.keys(),
+                              command.required)
 
         if len(missing_args) > 0:
             self.print_shell("Missing arguments:", ' '.join(missing_args))

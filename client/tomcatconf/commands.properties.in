@@ -31,7 +31,7 @@ markDefaultZoneForAccount=com.cloud.api.commands.MarkDefaultZoneForAccountCmd;1
 #### User commands
 createUser=com.cloud.api.commands.CreateUserCmd;3
 deleteUser=com.cloud.api.commands.DeleteUserCmd;3
-updateUser=com.cloud.api.commands.UpdateUserCmd;3
+updateUser=com.cloud.api.commands.UpdateUserCmd;15
 listUsers=com.cloud.api.commands.ListUsersCmd;7
 ####lockUser=com.cloud.api.commands.LockUserCmd;7
 disableUser=com.cloud.api.commands.DisableUserCmd;7

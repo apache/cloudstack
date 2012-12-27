@@ -477,6 +477,7 @@ setup_redundant_router() {
     cp /root/redundant_router/check_bumpup.sh $rrouter_bin_path/
     cp /root/redundant_router/disable_pubip.sh $rrouter_bin_path/
     cp /root/redundant_router/checkrouter.sh.templ /opt/cloud/bin/checkrouter.sh
+    cp /root/redundant_router/services.sh $rrouter_bin_path/
     sed -i "s/\[ROUTER_ID\]/$NAME/g" /etc/keepalived/keepalived.conf
     sed -i "s/\[ROUTER_IP\]/$GUEST_GW\/$GUEST_CIDR_SIZE/g" /etc/keepalived/keepalived.conf
     sed -i "s/\[BOARDCAST\]/$GUEST_BRD/g" /etc/keepalived/keepalived.conf
