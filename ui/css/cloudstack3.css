@@ -454,6 +454,7 @@ div.list-view table tbody td span {
 
 div.list-view table tbody td span:hover {
   overflow: auto;
+  margin-top: 4px;
 }
 
 div.list-view div.toolbar div.section-switcher div.section-select label {
