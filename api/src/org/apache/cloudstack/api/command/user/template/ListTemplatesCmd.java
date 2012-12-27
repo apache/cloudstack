@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import com.cloud.storage.template.TemplateInfo;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
@@ -49,7 +50,7 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name=ApiConstants.HYPERVISOR, type=CommandType.STRING, description="the hypervisor for which to restrict the search")
     private String hypervisor;
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = UserVmResponse.class,
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=TemplateInfo.class,
             description="the template ID")
     private Long id;
 
