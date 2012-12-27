@@ -18,11 +18,14 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 
+import com.cloud.offering.ServiceOffering;
 import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.EntityReference;
 
+@EntityReference(value = ServiceOffering.class)
 public class ServiceOfferingResponse extends BaseResponse {
     @SerializedName("id") @Param(description="the id of the service offering")
     private String id;
