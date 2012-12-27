@@ -19,9 +19,10 @@ package com.cloud.network.rules;
 import java.util.List;
 
 import com.cloud.acl.ControlledEntity;
+import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
-public interface FirewallRule extends ControlledEntity, InternalIdentity {
+public interface FirewallRule extends ControlledEntity, Identity, InternalIdentity {
     enum Purpose {
         Firewall,
         PortForwarding,
@@ -47,17 +48,6 @@ public interface FirewallRule extends ControlledEntity, InternalIdentity {
         Ingress,
         Egress
     }
-
-    /**
-     * @return database id.
-     */
-    long getId();
-
-    /**
-     *
-     * @return uuid
-     */
-    String getUuid();
 
     /**
      * @return external id.

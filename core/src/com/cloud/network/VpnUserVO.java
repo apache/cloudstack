@@ -33,7 +33,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name=("vpn_users"))
-public class VpnUserVO implements VpnUser, Identity, InternalIdentity {
+public class VpnUserVO implements VpnUser {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")

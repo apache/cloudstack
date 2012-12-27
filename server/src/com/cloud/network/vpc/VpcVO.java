@@ -32,7 +32,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="vpc")
-public class VpcVO implements Vpc, Identity, InternalIdentity {
+public class VpcVO implements Vpc {
     @Id
     @Column(name="id")
     long id;

@@ -34,7 +34,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="hypervisor_capabilities")
-public class HypervisorCapabilitiesVO implements HypervisorCapabilities, Identity, InternalIdentity {
+public class HypervisorCapabilitiesVO implements HypervisorCapabilities {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")

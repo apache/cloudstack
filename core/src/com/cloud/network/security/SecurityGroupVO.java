@@ -30,7 +30,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = ("security_group"))
-public class SecurityGroupVO implements SecurityGroup, Identity, InternalIdentity {
+public class SecurityGroupVO implements SecurityGroup {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")

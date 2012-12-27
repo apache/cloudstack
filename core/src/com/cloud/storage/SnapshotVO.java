@@ -36,7 +36,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="snapshots")
-public class SnapshotVO implements Snapshot, Identity, InternalIdentity {
+public class SnapshotVO implements Snapshot {
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

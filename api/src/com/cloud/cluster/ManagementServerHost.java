@@ -16,7 +16,9 @@
 // under the License.
 package com.cloud.cluster;
 
-public interface ManagementServerHost {
+import org.apache.cloudstack.api.InternalIdentity;
+
+public interface ManagementServerHost extends InternalIdentity {
 
     public static enum State {
         Up, Starting, Down

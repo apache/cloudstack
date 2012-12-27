@@ -34,7 +34,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="mshost")
-public class ManagementServerHostVO implements ManagementServerHost, InternalIdentity {
+public class ManagementServerHostVO implements ManagementServerHost {
 
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)

@@ -17,14 +17,13 @@
 package com.cloud.network;
 
 import com.cloud.network.Networks.TrafficType;
+import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  *
  */
-public interface PhysicalNetworkTrafficType extends InternalIdentity {
-
-    long getId();
+public interface PhysicalNetworkTrafficType extends InternalIdentity, Identity {
 
     long getPhysicalNetworkId();
 
@@ -37,6 +36,4 @@ public interface PhysicalNetworkTrafficType extends InternalIdentity {
     String getVmwareNetworkLabel();
 
     String getSimulatorNetworkLabel();
-
-    String getUuid();
 }

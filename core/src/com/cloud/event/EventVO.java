@@ -35,7 +35,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="event")
-public class EventVO implements Event, Identity, InternalIdentity {
+public class EventVO implements Event {
 	@Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")

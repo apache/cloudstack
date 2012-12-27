@@ -43,7 +43,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 @Table(name="disk_offering")
 @Inheritance(strategy=InheritanceType.JOINED)
 @DiscriminatorColumn(name="type", discriminatorType=DiscriminatorType.STRING, length=32)
-public class DiskOfferingVO implements DiskOffering, Identity, InternalIdentity {
+public class DiskOfferingVO implements DiskOffering {
     public enum Type {
         Disk,
         Service

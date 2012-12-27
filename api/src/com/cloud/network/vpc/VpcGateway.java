@@ -33,8 +33,6 @@ public interface VpcGateway extends Identity, ControlledEntity, InternalIdentity
         Deleting
     }
 
-    long getId();
-
     /**
      * @return
      */

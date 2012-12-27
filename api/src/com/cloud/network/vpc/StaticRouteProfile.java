@@ -18,7 +18,7 @@ package com.cloud.network.vpc;
 
 import org.apache.cloudstack.api.InternalIdentity;
 
-public class StaticRouteProfile implements StaticRoute, InternalIdentity {
+public class StaticRouteProfile implements StaticRoute {
     private long id;
     private String uuid;
     private String targetCidr;

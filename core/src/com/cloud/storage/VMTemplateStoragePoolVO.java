@@ -38,7 +38,7 @@ import org.apache.cloudstack.api.InternalIdentity;
  */
 @Entity
 @Table(name="template_spool_ref")
-public class VMTemplateStoragePoolVO implements VMTemplateStorageResourceAssoc, InternalIdentity {
+public class VMTemplateStoragePoolVO implements VMTemplateStorageResourceAssoc {
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
 	long id;

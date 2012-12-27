@@ -19,11 +19,10 @@ package com.cloud.network;
 import java.util.Date;
 
 import com.cloud.acl.ControlledEntity;
+import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
-public interface Site2SiteVpnGateway extends ControlledEntity, InternalIdentity {
-    public long getId();
-    public String getUuid();
+public interface Site2SiteVpnGateway extends ControlledEntity, Identity, InternalIdentity {
     public long getAddrId();
     public long getVpcId();
     public Date getRemoved();

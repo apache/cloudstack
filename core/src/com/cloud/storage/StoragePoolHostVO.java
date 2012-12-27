@@ -36,7 +36,7 @@ import org.apache.cloudstack.api.InternalIdentity;
  */
 @Entity
 @Table(name="storage_pool_host_ref")
-public class StoragePoolHostVO implements StoragePoolHostAssoc, InternalIdentity {
+public class StoragePoolHostVO implements StoragePoolHostAssoc {
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
 	private Long id;

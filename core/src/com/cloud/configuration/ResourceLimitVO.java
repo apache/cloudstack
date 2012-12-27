@@ -29,7 +29,7 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name = "resource_limit")
-public class ResourceLimitVO implements ResourceLimit, InternalIdentity {
+public class ResourceLimitVO implements ResourceLimit {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

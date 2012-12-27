@@ -37,7 +37,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 @Entity
 @Table(name = ("load_balancer_stickiness_policies"))
 @PrimaryKeyJoinColumn(name = "load_balancer_id", referencedColumnName = "id")
-public class LBStickinessPolicyVO implements StickinessPolicy, InternalIdentity {
+public class LBStickinessPolicyVO implements StickinessPolicy {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")

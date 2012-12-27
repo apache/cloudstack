@@ -41,7 +41,7 @@ import org.apache.cloudstack.api.InternalIdentity;
  */
 @Entity
 @Table(name=("user_ip_address"))
-public class IPAddressVO implements IpAddress, Identity, InternalIdentity {
+public class IPAddressVO implements IpAddress {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")

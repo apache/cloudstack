@@ -34,7 +34,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="account")
-public class AccountVO implements Account, Identity, InternalIdentity {
+public class AccountVO implements Account {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")

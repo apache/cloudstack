@@ -45,7 +45,7 @@ import org.apache.cloudstack.api.InternalIdentity;
  */
 @Entity
 @Table(name="networks")
-public class NetworkVO implements Network, Identity, InternalIdentity {
+public class NetworkVO implements Network {
     @Id
     @TableGenerator(name="networks_sq", table="sequence", pkColumnName="name", valueColumnName="value", pkColumnValue="networks_seq", allocationSize=1)
     @Column(name="id")

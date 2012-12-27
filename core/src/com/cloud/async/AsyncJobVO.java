@@ -36,7 +36,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="async_job")
-public class AsyncJobVO implements AsyncJob, InternalIdentity {
+public class AsyncJobVO implements AsyncJob {
 	public static final int CALLBACK_POLLING = 0;
 	public static final int CALLBACK_EMAIL = 1;
 	
@@ -124,23 +124,23 @@ public class AsyncJobVO implements AsyncJob, InternalIdentity {
     public AsyncJobVO() {
         this.uuid = UUID.randomUUID().toString();
     }
-    
+
     public AsyncJobVO(long userId, long accountId, String cmd, String cmdInfo, Long instanceId, Type instanceType) {
-    	this.userId = userId;
-    	this.accountId = accountId;
-    	this.cmd = cmd;
-    	this.cmdInfo = cmdInfo;
+	this.userId = userId;
+	this.accountId = accountId;
+	this.cmd = cmd;
+	this.cmdInfo = cmdInfo;
     	this.callbackType = CALLBACK_POLLING;
     	this.uuid = UUID.randomUUID().toString();
         this.instanceId = instanceId;
     }
-    
+
     public AsyncJobVO(long userId, long accountId, String cmd, String cmdInfo,
-    	int callbackType, String callbackAddress, Long instanceId, Type instanceType) {
-    	
-    	this(userId, accountId, cmd, cmdInfo, instanceId, instanceType);
-    	this.callbackType = callbackType;
-    	this.callbackAddress = callbackAddress;
+	int callbackType, String callbackAddress, Long instanceId, Type instanceType) {
+
+	this(userId, accountId, cmd, cmdInfo, instanceId, instanceType);
+	this.callbackType = callbackType;
+	this.callbackAddress = callbackAddress;
     	this.uuid = UUID.randomUUID().toString();
     }
 

@@ -34,7 +34,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="snapshot_schedule")
-public class SnapshotScheduleVO implements SnapshotSchedule, InternalIdentity {
+public class SnapshotScheduleVO implements SnapshotSchedule {
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

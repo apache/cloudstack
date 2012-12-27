@@ -48,7 +48,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 @Table(name="vm_instance")
 @Inheritance(strategy=InheritanceType.JOINED)
 @DiscriminatorColumn(name="type", discriminatorType=DiscriminatorType.STRING, length=32)
-public class VMInstanceVO implements VirtualMachine, InternalIdentity, FiniteStateObject<State, VirtualMachine.Event> {
+public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, VirtualMachine.Event> {
 	@Id
     @TableGenerator(name="vm_instance_sq", table="sequence", pkColumnName="name", valueColumnName="value", pkColumnValue="vm_instance_seq", allocationSize=1)
     @Column(name="id", updatable=false, nullable = false)

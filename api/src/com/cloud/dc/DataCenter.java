@@ -19,19 +19,17 @@ package com.cloud.dc;
 import java.util.Map;
 
 import com.cloud.org.Grouping;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  *
  */
-public interface DataCenter extends Grouping {
+public interface DataCenter extends Grouping, Identity, InternalIdentity {
     public enum NetworkType {
         Basic,
         Advanced,
     }
-
-    long getId();
-
-    String getUuid();
 
     String getDns1();
 

@@ -43,7 +43,7 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "network_offerings")
-public class NetworkOfferingVO implements NetworkOffering, InternalIdentity {
+public class NetworkOfferingVO implements NetworkOffering {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

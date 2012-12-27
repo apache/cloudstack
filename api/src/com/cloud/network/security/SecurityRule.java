@@ -17,8 +17,10 @@
 package com.cloud.network.security;
 
 import com.cloud.async.AsyncInstanceCreateStatus;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-public interface SecurityRule {
+public interface SecurityRule extends Identity, InternalIdentity {
 
     public static class SecurityRuleType {
         public static final SecurityRuleType IngressRule = new SecurityRuleType("ingress");
@@ -33,7 +35,6 @@ public interface SecurityRule {
         }
         private String _type;
     }
-    long getId();
 
     long getSecurityGroupId();
 
@@ -52,7 +53,4 @@ public interface SecurityRule {
     Long getAllowedNetworkId();
 
     String getAllowedSourceIpCidr();
-
-    String getUuid();
-
 }

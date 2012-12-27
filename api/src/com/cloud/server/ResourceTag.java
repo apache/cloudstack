@@ -17,9 +17,10 @@
 package com.cloud.server;
 
 import com.cloud.acl.ControlledEntity;
+import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
-public interface ResourceTag extends ControlledEntity, InternalIdentity {
+public interface ResourceTag extends ControlledEntity, Identity, InternalIdentity {
 
     public enum  TaggedResourceType {
         UserVm,
@@ -38,11 +39,6 @@ public interface ResourceTag extends ControlledEntity, InternalIdentity {
         NetworkACL,
         StaticRoute
     }
-
-    /**
-     * @return
-     */
-    long getId();
 
     /**
      * @return

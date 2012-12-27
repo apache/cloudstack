@@ -49,7 +49,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 @Table(name="host")
 @Inheritance(strategy=InheritanceType.TABLE_PER_CLASS)
 @DiscriminatorColumn(name="type", discriminatorType=DiscriminatorType.STRING, length=32)
-public class HostVO implements Host, Identity, InternalIdentity {
+public class HostVO implements Host {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")

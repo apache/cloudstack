@@ -39,7 +39,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="cluster")
-public class ClusterVO implements Cluster, Identity, InternalIdentity {
+public class ClusterVO implements Cluster {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -21,7 +21,6 @@ import org.apache.cloudstack.api.InternalIdentity;
 import java.util.Date;
 
 public interface UsageEvent extends InternalIdentity {
-    long getId();
     String getType();
 
     Date getCreateDate();

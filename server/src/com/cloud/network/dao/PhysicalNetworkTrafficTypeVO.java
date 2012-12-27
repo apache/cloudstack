@@ -33,7 +33,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "physical_network_traffic_types")
-public class PhysicalNetworkTrafficTypeVO implements PhysicalNetworkTrafficType, InternalIdentity {
+public class PhysicalNetworkTrafficTypeVO implements PhysicalNetworkTrafficType {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")

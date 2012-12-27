@@ -447,5 +447,4 @@ public class SecurityGroupJoinVO extends BaseViewVO implements ControlledViewEnt
         this.tagCustomer = tagCustomer;
     }
 
-
 }

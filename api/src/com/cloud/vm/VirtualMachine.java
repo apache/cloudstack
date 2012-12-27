@@ -208,11 +208,6 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
     public String getInstanceName();
 
     /**
-     * @return the id of this virtual machine. null means the id has not been set.
-     */
-    public long getId();
-
-    /**
      * @return the host name of the virtual machine. If the user did not
      *         specify the host name when creating the virtual machine then it is
      *         defaults to the instance name.

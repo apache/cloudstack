@@ -30,7 +30,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="guest_os")
-public class GuestOSVO implements GuestOS, Identity, InternalIdentity {
+public class GuestOSVO implements GuestOS {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")

@@ -34,7 +34,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="resource_tags")
-public class ResourceTagVO implements Identity, InternalIdentity, ResourceTag{
+public class ResourceTagVO implements ResourceTag {
     
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

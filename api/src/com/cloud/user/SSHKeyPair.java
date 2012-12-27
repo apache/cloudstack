@@ -22,11 +22,6 @@ import org.apache.cloudstack.api.InternalIdentity;
 public interface SSHKeyPair extends ControlledEntity, InternalIdentity {
 
     /**
-     * @return The id of the key pair.
-     */
-    public long getId();
-
-    /**
      * @return The given name of the key pair.
      */
     public String getName();

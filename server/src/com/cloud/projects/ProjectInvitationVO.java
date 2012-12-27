@@ -34,7 +34,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "project_invitations")
-public class ProjectInvitationVO implements ProjectInvitation, Identity, InternalIdentity {
+public class ProjectInvitationVO implements ProjectInvitation {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")

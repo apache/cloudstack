@@ -16,6 +16,9 @@
 // under the License.
 package com.cloud.offering;
 
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
+
 import java.util.Date;
 
 /**
@@ -23,10 +26,7 @@ import java.util.Date;
  * the disk offering.
  *
  */
-public interface DiskOffering {
-    long getId();
-
-    String getUuid();
+public interface DiskOffering extends Identity, InternalIdentity {
 
     String getUniqueName();
 

@@ -38,7 +38,7 @@ import org.apache.cloudstack.api.InternalIdentity;
  */
 @Entity
 @Table(name="template_host_ref")
-public class VMTemplateHostVO implements VMTemplateStorageResourceAssoc, InternalIdentity {
+public class VMTemplateHostVO implements VMTemplateStorageResourceAssoc {
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
 	Long id;

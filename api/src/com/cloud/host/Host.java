@@ -21,12 +21,14 @@ import java.util.Date;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceState;
 import com.cloud.utils.fsm.StateObject;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
 
 /**
  *  Host represents one particular host server.
  */
-public interface Host extends StateObject<Status> {
+public interface Host extends StateObject<Status>, Identity, InternalIdentity {
     public enum Type {
         Storage(false),
         Routing(false),
@@ -60,13 +62,6 @@ public interface Host extends StateObject<Status> {
             return strs;
         }
     }
-
-    /**
-     * @return id of the host.
-     */
-    long getId();
-
-    String getUuid();
 
     /**
      * @return name of the machine.

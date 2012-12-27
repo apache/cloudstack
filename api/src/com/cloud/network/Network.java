@@ -22,6 +22,7 @@ import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.utils.fsm.FiniteState;
 import com.cloud.utils.fsm.StateMachine;
+import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 import java.net.URI;
@@ -32,7 +33,7 @@ import java.util.Set;
 /**
  * owned by an account.
  */
-public interface Network extends ControlledEntity, InternalIdentity {
+public interface Network extends ControlledEntity, InternalIdentity, Identity {
 
     public enum GuestType {
         Shared,
@@ -251,13 +252,6 @@ public interface Network extends ControlledEntity, InternalIdentity {
             s_fsm.addTransition(State.Shutdown, Event.OperationFailed, State.Implemented);
         }
     }
-
-    /**
-     * @return id of the network profile.  Null means the network profile is not from the database.
-     */
-    long getId();
-
-    String getUuid();
 
     String getName();
 

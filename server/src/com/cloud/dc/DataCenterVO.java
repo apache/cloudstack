@@ -40,7 +40,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="data_center")
-public class DataCenterVO implements DataCenter, InternalIdentity, Identity {
+public class DataCenterVO implements DataCenter {
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

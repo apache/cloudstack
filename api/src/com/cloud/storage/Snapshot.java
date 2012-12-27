@@ -20,9 +20,10 @@ import java.util.Date;
 
 import com.cloud.acl.ControlledEntity;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
-public interface Snapshot extends ControlledEntity, InternalIdentity {
+public interface Snapshot extends ControlledEntity, Identity, InternalIdentity {
     public enum Type {
         MANUAL,
         RECURRING,
@@ -67,10 +68,6 @@ public interface Snapshot extends ControlledEntity, InternalIdentity {
     }
 
     public static final long MANUAL_POLICY_ID = 0L;
-
-    long getId();
-
-    String getUuid();
 
     long getAccountId();
 

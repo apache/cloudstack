@@ -39,7 +39,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "volumes")
-public class VolumeVO implements Volume, Identity, InternalIdentity {
+public class VolumeVO implements Volume {
     @Id
     @TableGenerator(name = "volume_sq", table = "sequence", pkColumnName = "name", valueColumnName = "value", pkColumnValue = "volume_seq", allocationSize = 1)
     @GeneratedValue(strategy = GenerationType.TABLE)

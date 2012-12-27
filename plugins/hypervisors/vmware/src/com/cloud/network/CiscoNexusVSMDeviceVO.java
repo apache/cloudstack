@@ -38,7 +38,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="virtual_supervisor_module")
-public class CiscoNexusVSMDeviceVO implements CiscoNexusVSMDevice, Identity, InternalIdentity {
+public class CiscoNexusVSMDeviceVO implements CiscoNexusVSMDevice {
 
     // We need to know what properties a VSM has. Put them here.
 

@@ -45,7 +45,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 @Table(name="firewall_rules")
 @Inheritance(strategy=InheritanceType.JOINED)
 @DiscriminatorColumn(name="purpose", discriminatorType=DiscriminatorType.STRING, length=32)
-public class FirewallRuleVO implements FirewallRule, Identity, InternalIdentity {
+public class FirewallRuleVO implements FirewallRule {
     protected final FirewallRulesCidrsDaoImpl _firewallRulesCidrsDao = ComponentLocator.inject(FirewallRulesCidrsDaoImpl.class);
 
     @Id

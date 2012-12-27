@@ -34,7 +34,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name=("virtual_router_providers"))
-public class VirtualRouterProviderVO implements VirtualRouterProvider, InternalIdentity {
+public class VirtualRouterProviderVO implements VirtualRouterProvider {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")

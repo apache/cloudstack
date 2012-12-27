@@ -19,9 +19,10 @@ package com.cloud.user;
 import java.util.Date;
 
 import com.cloud.acl.ControlledEntity;
+import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
-public interface Account extends ControlledEntity, InternalIdentity {
+public interface Account extends ControlledEntity, InternalIdentity, Identity {
     public enum Type {
         Normal,
         Admin,
@@ -49,10 +50,6 @@ public interface Account extends ControlledEntity, InternalIdentity {
     public static final String ACCOUNT_STATE_LOCKED = "locked";
 
     public static final long ACCOUNT_ID_SYSTEM = 1;
-
-    public long getId();
-
-    public String getUuid();
 
     public String getAccountName();
 

@@ -33,7 +33,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 @Table(name = ("security_group"))
 @JoinType(type = "left")
 @SecondaryTable(name = "security_group_rule", pkJoinColumns = { @PrimaryKeyJoinColumn(name = "id", referencedColumnName = "security_group_id") })
-public class SecurityGroupRulesVO implements SecurityGroupRules, InternalIdentity {
+public class SecurityGroupRulesVO implements SecurityGroupRules {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")

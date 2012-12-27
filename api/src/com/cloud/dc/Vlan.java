@@ -16,17 +16,16 @@
 // under the License.
 package com.cloud.dc;
 
-public interface Vlan {
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
+
+public interface Vlan extends InternalIdentity, Identity {
     public enum VlanType {
         DirectAttached,
         VirtualNetwork
     }
 
     public final static String UNTAGGED = "untagged";
-
-    public long getId();
-
-    public String getUuid();
 
     public String getVlanTag();
 

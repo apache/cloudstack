@@ -31,5 +31,4 @@ public interface LoadBalancer extends FirewallRule {
 
     String getAlgorithm();
 
-    String getUuid();
 }

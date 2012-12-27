@@ -33,7 +33,7 @@ import java.util.Date;
 
 @Entity
 @Table(name = "s3")
-public class S3VO implements S3, Identity, InternalIdentity {
+public class S3VO implements S3 {
 
     public static final String ID_COLUMN_NAME = "id";
 

@@ -36,7 +36,7 @@ import javax.persistence.Table;
 	@SecondaryTable(name="host_pod_ref", pkJoinColumns={@PrimaryKeyJoinColumn(name="pod_id", referencedColumnName="id")}),
 	@SecondaryTable(name="data_center", pkJoinColumns={@PrimaryKeyJoinColumn(name="data_center_id", referencedColumnName="id")})
 })
-public class StorageNetworkIpRangeVO implements StorageNetworkIpRange, InternalIdentity {
+public class StorageNetworkIpRangeVO implements StorageNetworkIpRange {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "id")

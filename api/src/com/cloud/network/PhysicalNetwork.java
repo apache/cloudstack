@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.network;
 
+import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 import java.util.List;
@@ -23,7 +24,7 @@ import java.util.List;
 /**
  *
  */
-public interface PhysicalNetwork extends InternalIdentity {
+public interface PhysicalNetwork extends Identity, InternalIdentity {
 
     public enum State {
         Disabled,
@@ -42,8 +43,6 @@ public interface PhysicalNetwork extends InternalIdentity {
         ZONE;
     }
 
-    long getId();
-
     BroadcastDomainRange getBroadcastDomainRange();
 
     // TrafficType getTrafficType();
@@ -61,8 +60,6 @@ public interface PhysicalNetwork extends InternalIdentity {
     String getVnet();
 
     String getSpeed();
-
-    String getUuid();
 
     String getName();
 

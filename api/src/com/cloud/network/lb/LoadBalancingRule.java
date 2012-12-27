@@ -28,7 +28,7 @@ import com.cloud.network.rules.LoadBalancer;
 import com.cloud.utils.Pair;
 import org.apache.cloudstack.api.InternalIdentity;
 
-public class LoadBalancingRule implements FirewallRule, LoadBalancer, InternalIdentity {
+public class LoadBalancingRule implements FirewallRule, LoadBalancer {
     private LoadBalancer lb;
     private List<LbDestination> destinations;
     private List<LbStickinessPolicy> stickinessPolicies;

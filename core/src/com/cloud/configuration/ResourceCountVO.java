@@ -29,7 +29,7 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name="resource_count")
-public class ResourceCountVO implements ResourceCount, InternalIdentity {
+public class ResourceCountVO implements ResourceCount {
 	
 	@Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

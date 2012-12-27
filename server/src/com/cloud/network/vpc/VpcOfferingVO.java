@@ -34,7 +34,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="vpc_offerings")
-public class VpcOfferingVO implements VpcOffering, InternalIdentity {
+public class VpcOfferingVO implements VpcOffering {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

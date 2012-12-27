@@ -18,13 +18,14 @@ package com.cloud.offering;
 
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Networks.TrafficType;
+import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * Describes network offering
  *
  */
-public interface NetworkOffering extends InternalIdentity {
+public interface NetworkOffering extends InternalIdentity, Identity {
 
     public enum Availability {
         Required,
@@ -50,11 +51,6 @@ public interface NetworkOffering extends InternalIdentity {
     public final static String DefaultSharedEIPandELBNetworkOffering = "DefaultSharedNetscalerEIPandELBNetworkOffering";
     public final static String DefaultIsolatedNetworkOfferingForVpcNetworks = "DefaultIsolatedNetworkOfferingForVpcNetworks";
     public final static String DefaultIsolatedNetworkOfferingForVpcNetworksNoLB = "DefaultIsolatedNetworkOfferingForVpcNetworksNoLB";
-
-
-    long getId();
-
-    String getUuid();
 
     /**
      * @return name for the network offering.

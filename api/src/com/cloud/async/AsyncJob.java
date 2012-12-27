@@ -51,8 +51,6 @@ public interface AsyncJob extends Identity, InternalIdentity {
         AutoScaleVmGroup
     }
 
-    long getId();
-
     long getUserId();
 
     long getAccountId();

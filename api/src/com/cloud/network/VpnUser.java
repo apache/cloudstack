@@ -17,18 +17,15 @@
 package com.cloud.network;
 
 import com.cloud.acl.ControlledEntity;
+import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
-public interface VpnUser extends ControlledEntity, InternalIdentity {
+public interface VpnUser extends ControlledEntity, InternalIdentity, Identity {
     enum State {
         Add,
         Revoke,
         Active
     }
-
-    long getId();
-
-    String getUuid();
 
     String getUsername();
 

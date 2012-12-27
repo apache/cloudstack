@@ -41,7 +41,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="vm_template")
-public class VMTemplateVO implements VirtualMachineTemplate, InternalIdentity {
+public class VMTemplateVO implements VirtualMachineTemplate {
     @Id
     @TableGenerator(name="vm_template_sq", table="sequence", pkColumnName="name", valueColumnName="value", pkColumnValue="vm_template_seq", allocationSize=1)
     @Column(name="id", nullable = false)

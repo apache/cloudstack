@@ -23,7 +23,7 @@ import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
 import org.apache.cloudstack.api.InternalIdentity;
 
-public class NetworkProfile implements Network, InternalIdentity {
+public class NetworkProfile implements Network {
     private long id;
     private String uuid;
     private long dataCenterId;

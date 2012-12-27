@@ -23,9 +23,10 @@ import com.cloud.acl.ControlledEntity;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
+import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
-public interface VirtualMachineTemplate extends ControlledEntity, InternalIdentity {
+public interface VirtualMachineTemplate extends ControlledEntity, Identity, InternalIdentity {
 
     public static enum BootloaderType {
         PyGrub, HVM, External, CD
@@ -40,13 +41,6 @@ public interface VirtualMachineTemplate extends ControlledEntity, InternalIdenti
         community, // returns templates that have been marked as public but not featured
         all // all templates (only usable by admins)
     }
-
-    /**
-     * @return id.
-     */
-    long getId();
-
-    String getUuid();
 
     boolean isFeatured();
 

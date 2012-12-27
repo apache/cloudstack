@@ -36,7 +36,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "host_pod_ref")
-public class HostPodVO implements Pod, InternalIdentity {
+public class HostPodVO implements Pod {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	long id;

@@ -19,7 +19,7 @@ package com.cloud.network.rules;
 import java.util.List;
 
 
-public class StaticNatRuleImpl implements StaticNatRule{
+public class StaticNatRuleImpl implements StaticNatRule {
     long id;
     String xid;
     String uuid;

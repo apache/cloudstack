@@ -16,7 +16,10 @@
 // under the License.
 package com.cloud.network;
 
-public interface CiscoNexusVSMDevice {
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
+
+public interface CiscoNexusVSMDevice extends InternalIdentity, Identity {
 
     // This tells us whether the VSM is currently enabled or disabled. We may
     // need this if we would like to carry out any sort of maintenance on the
@@ -38,10 +41,6 @@ public interface CiscoNexusVSMDevice {
         Primary,
         Standby
     }
-
-    long getId();
-
-    String getUuid();
 
     public String getvsmName();
 

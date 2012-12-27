@@ -28,7 +28,7 @@ import javax.persistence.Transient;
 
 @Entity
 @Table(name="ssh_keypairs")
-public class SSHKeyPairVO implements SSHKeyPair, InternalIdentity {
+public class SSHKeyPairVO implements SSHKeyPair {
 	
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)

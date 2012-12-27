@@ -31,7 +31,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name=("s2s_customer_gateway"))
-public class Site2SiteCustomerGatewayVO implements Site2SiteCustomerGateway, InternalIdentity {
+public class Site2SiteCustomerGatewayVO implements Site2SiteCustomerGateway {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")

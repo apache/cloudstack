@@ -37,7 +37,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "nics")
-public class NicVO implements Nic, Identity, InternalIdentity {
+public class NicVO implements Nic {
     protected NicVO() {
     }
 

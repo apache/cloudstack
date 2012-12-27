@@ -20,6 +20,7 @@ import java.util.Date;
 
 import com.cloud.acl.ControlledEntity;
 import com.cloud.utils.net.Ip;
+import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 /**
@@ -33,7 +34,7 @@ import org.apache.cloudstack.api.InternalIdentity;
  * - DomainId = domain of the account owner.
  * - Allocated = time it was allocated.
  */
-public interface IpAddress extends ControlledEntity, InternalIdentity {
+public interface IpAddress extends ControlledEntity, Identity, InternalIdentity {
     enum State {
         Allocating, // The IP Address is being propagated to other network elements and is not ready for use yet.
         Allocated, // The IP address is in used.
@@ -68,13 +69,6 @@ public interface IpAddress extends ControlledEntity, InternalIdentity {
 
     public Long getPhysicalNetworkId();
 
-    /**
-     * @return database id.
-     */
-    long getId();
-
-    String getUuid();
-
     void setState(IpAddress.State state);
 
     Long getAllocatedToAccountId();
@@ -92,5 +86,4 @@ public interface IpAddress extends ControlledEntity, InternalIdentity {
      * @param vpcId
      */
     void setVpcId(Long vpcId);
-
 }

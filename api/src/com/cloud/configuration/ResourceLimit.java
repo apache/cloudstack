@@ -20,8 +20,6 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 public interface ResourceLimit extends Resource, InternalIdentity {
 
-    public long getId();
-
     public Long getMax();
 
     public void setMax(Long max);

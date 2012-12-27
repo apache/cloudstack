@@ -16,7 +16,10 @@
 // under the License.
 package com.cloud.capacity;
 
-public interface Capacity {
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
+
+public interface Capacity extends InternalIdentity, Identity {
     public static final short CAPACITY_TYPE_MEMORY = 0;
     public static final short CAPACITY_TYPE_CPU = 1;
     public static final short CAPACITY_TYPE_STORAGE = 2;
@@ -27,8 +30,6 @@ public interface Capacity {
     public static final short CAPACITY_TYPE_VLAN = 7;
     public static final short CAPACITY_TYPE_DIRECT_ATTACHED_PUBLIC_IP = 8;
     public static final short CAPACITY_TYPE_LOCAL_STORAGE = 9;
-
-    public long getId();
 
     public Long getHostOrPoolId();
 
@@ -47,6 +48,4 @@ public interface Capacity {
     public long getReservedCapacity();
 
     public Float getUsedPercentage();
-
-
 }

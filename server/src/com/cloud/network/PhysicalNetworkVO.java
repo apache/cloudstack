@@ -43,7 +43,7 @@ import org.apache.cloudstack.api.InternalIdentity;
  */
 @Entity
 @Table(name="physical_network")
-public class PhysicalNetworkVO implements PhysicalNetwork, InternalIdentity {
+public class PhysicalNetworkVO implements PhysicalNetwork {
     @Id
     @TableGenerator(name="physical_networks_sq", table="sequence", pkColumnName="name", valueColumnName="value", pkColumnValue="physical_networks_seq", allocationSize=1)
     @Column(name="id")

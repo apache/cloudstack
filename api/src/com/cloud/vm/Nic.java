@@ -25,11 +25,13 @@ import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.Mode;
 import com.cloud.utils.fsm.FiniteState;
 import com.cloud.utils.fsm.StateMachine;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * Nic represents one nic on the VM.
  */
-public interface Nic {
+public interface Nic extends Identity, InternalIdentity {
     enum Event {
         ReservationRequested, ReleaseRequested, CancelRequested, OperationCompleted, OperationFailed,
     }
@@ -85,11 +87,6 @@ public interface Nic {
     public enum ReservationStrategy {
         PlaceHolder, Create, Start, Managed;
     }
-
-    /**
-     * @return id in the CloudStack database
-     */
-    long getId();
 
     /**
      * @return reservation id returned by the allocation source. This can be the String version of the database id if

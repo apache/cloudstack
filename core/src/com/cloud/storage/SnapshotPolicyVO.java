@@ -32,7 +32,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="snapshot_policy")
-public class SnapshotPolicyVO implements SnapshotPolicy, InternalIdentity {
+public class SnapshotPolicyVO implements SnapshotPolicy {
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

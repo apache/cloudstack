@@ -18,9 +18,10 @@ package com.cloud.network.vpc;
 
 import com.cloud.acl.ControlledEntity;
 import com.cloud.network.Network;
+import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
-public interface Vpc extends ControlledEntity, InternalIdentity{
+public interface Vpc extends ControlledEntity, Identity, InternalIdentity {
     public enum State {
         Enabled,
         Inactive
@@ -29,10 +30,6 @@ public interface Vpc extends ControlledEntity, InternalIdentity{
    public static final String _supportedProviders = Network.Provider.VPCVirtualRouter.getName();
 
    boolean readyToUse();
-
-   long getId();
-
-   String getUuid();
 
    String getName();
 

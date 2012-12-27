@@ -34,7 +34,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="alert")
-public class AlertVO implements Alert, Identity, InternalIdentity {
+public class AlertVO implements Alert {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")

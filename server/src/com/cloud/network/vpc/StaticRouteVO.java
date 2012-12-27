@@ -35,7 +35,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="static_routes")
-public class StaticRouteVO implements StaticRoute, InternalIdentity {
+public class StaticRouteVO implements StaticRoute {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")

@@ -36,7 +36,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="upload")
-public class UploadVO implements Upload, InternalIdentity {
+public class UploadVO implements Upload {
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
 	long id;
