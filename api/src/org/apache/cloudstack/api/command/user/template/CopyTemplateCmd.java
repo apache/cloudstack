@@ -37,7 +37,7 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@APICommand(name = "copyIso", name = "copyTemplate", description="Copies a template from one zone to another.", responseObject=TemplateResponse.class)
+@APICommand(name = "copyTemplate", description="Copies a template from one zone to another.", responseObject=TemplateResponse.class)
 public class CopyTemplateCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(CopyTemplateCmd.class.getName());
     private static final String s_name = "copytemplateresponse";
