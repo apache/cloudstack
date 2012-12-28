@@ -20,9 +20,11 @@ package com.cloud.vm.dao;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 @Component
+@Primary
 @Local(value = { UserVmDao.class })
 public class RandomlyIncreasingVMInstanceDaoImpl extends UserVmDaoImpl {
 

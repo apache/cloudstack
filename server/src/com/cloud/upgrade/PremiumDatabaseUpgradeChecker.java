@@ -18,6 +18,7 @@ package com.cloud.upgrade;
 
 import javax.ejb.Local;
 
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 import com.cloud.upgrade.dao.DbUpgrade;
@@ -46,10 +47,10 @@ import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.SystemIntegrityChecker;
 
 @Component
+@Primary
 @Local(value = { SystemIntegrityChecker.class })
 public class PremiumDatabaseUpgradeChecker extends DatabaseUpgradeChecker {
     public PremiumDatabaseUpgradeChecker() {
-        _dao = ComponentLocator.inject(VersionDaoImpl.class);
         _upgradeMap.put("2.1.7", new DbUpgrade[] { new Upgrade217to218(), new Upgrade218to22Premium(),
                 new Upgrade221to222Premium(), new UpgradeSnapshot217to224(), new Upgrade222to224Premium(),
                 new Upgrade224to225(), new Upgrade225to226(), new Upgrade227to228Premium(), new Upgrade228to229(),

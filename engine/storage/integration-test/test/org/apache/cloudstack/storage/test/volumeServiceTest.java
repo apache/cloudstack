@@ -66,7 +66,7 @@ import org.apache.cloudstack.storage.image.provider.ImageDataStoreProviderManage
 import org.apache.cloudstack.storage.image.store.ImageDataStore;
 import org.apache.cloudstack.storage.image.store.lifecycle.ImageDataStoreLifeCycle;
 import org.apache.cloudstack.storage.volume.VolumeService;
-import org.apache.cloudstack.storage.volume.db.VolumeDao;
+import org.apache.cloudstack.storage.volume.db.VolumeDao2;
 import org.apache.cloudstack.storage.volume.db.VolumeVO;
 import org.springframework.test.context.ContextConfiguration;
 import org.mockito.Mockito;
@@ -105,7 +105,7 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 	@Inject
 	ImageDataDao imageDataDao;
 	@Inject
-	VolumeDao volumeDao;
+	VolumeDao2 volumeDao;
 	@Inject 
 	HostDao hostDao;
 	@Inject

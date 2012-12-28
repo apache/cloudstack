@@ -25,7 +25,7 @@ import org.apache.cloudstack.storage.to.VolumeTO;
 import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreInfo;
 import org.apache.cloudstack.storage.volume.TemplatePrimaryDataStoreManager;
 import org.apache.cloudstack.storage.volume.VolumeObject;
-import org.apache.cloudstack.storage.volume.db.VolumeDao;
+import org.apache.cloudstack.storage.volume.db.VolumeDao2;
 import org.apache.cloudstack.storage.volume.db.VolumeVO;
 
 import org.apache.log4j.Logger;
@@ -46,7 +46,7 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
     private HypervisorType supportedHypervisor;
     private boolean isLocalStorageSupported = false;
     @Inject
-    private VolumeDao volumeDao;
+    private VolumeDao2 volumeDao;
     @Inject
     private HostDao hostDao;
     @Inject

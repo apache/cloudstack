@@ -17,6 +17,7 @@
 package com.cloud.network.dao;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -30,7 +31,7 @@ import com.cloud.utils.db.SearchCriteria;
 @Component
 @Local(value={Site2SiteVpnGatewayDao.class})
 public class Site2SiteVpnGatewayDaoImpl extends GenericDaoBase<Site2SiteVpnGatewayVO, Long> implements Site2SiteVpnGatewayDao {
-    protected final IPAddressDaoImpl _addrDao = ComponentLocator.inject(IPAddressDaoImpl.class);
+    @Inject protected IPAddressDaoImpl _addrDao;
     
     private static final Logger s_logger = Logger.getLogger(Site2SiteVpnGatewayDaoImpl.class);
     

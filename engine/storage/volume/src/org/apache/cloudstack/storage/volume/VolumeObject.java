@@ -11,7 +11,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskTyp
 import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeType;
 import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeTypeHelper;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
-import org.apache.cloudstack.storage.volume.db.VolumeDao;
+import org.apache.cloudstack.storage.volume.db.VolumeDao2;
 import org.apache.cloudstack.storage.volume.db.VolumeVO;
 
 import org.apache.log4j.Logger;
@@ -34,7 +34,7 @@ public class VolumeObject implements VolumeInfo {
     @Inject
     VolumeTypeHelper volumeTypeHelper;
     @Inject
-    VolumeDao volumeDao;
+    VolumeDao2 volumeDao;
     @Inject
     VolumeManager volumeMgr;
     private VolumeObject(PrimaryDataStore dataStore, VolumeVO volumeVO) {

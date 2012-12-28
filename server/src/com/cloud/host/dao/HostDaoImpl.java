@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.TimeZone;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.persistence.TableGenerator;
 
 import org.apache.log4j.Logger;
@@ -114,10 +115,10 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected final Attribute _msIdAttr;
     protected final Attribute _pingTimeAttr;
 
-    protected final HostDetailsDaoImpl _detailsDao = ComponentLocator.inject(HostDetailsDaoImpl.class);
-    protected final HostTagsDaoImpl _hostTagsDao = ComponentLocator.inject(HostTagsDaoImpl.class);
-    protected final HostTransferMapDaoImpl _hostTransferDao = ComponentLocator.inject(HostTransferMapDaoImpl.class);
-    protected final ClusterDaoImpl _clusterDao = ComponentLocator.inject(ClusterDaoImpl.class);
+    @Inject protected HostDetailsDaoImpl _detailsDao;
+    @Inject protected HostTagsDaoImpl _hostTagsDao;
+    @Inject protected HostTransferMapDaoImpl _hostTransferDao;
+    @Inject protected ClusterDaoImpl _clusterDao;
     
 
     public HostDaoImpl() {

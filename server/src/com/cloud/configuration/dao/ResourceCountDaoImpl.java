@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Set;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.springframework.stereotype.Component;
 
@@ -48,8 +49,11 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
 	private SearchBuilder<ResourceCountVO> AccountSearch;
     private SearchBuilder<ResourceCountVO> DomainSearch;
 	
-	protected final DomainDaoImpl _domainDao = ComponentLocator.inject(DomainDaoImpl.class);
-	protected final AccountDaoImpl _accountDao = ComponentLocator.inject(AccountDaoImpl.class);
+	//protected final DomainDaoImpl _domainDao = ComponentLocator.inject(DomainDaoImpl.class);
+	//protected final AccountDaoImpl _accountDao = ComponentLocator.inject(AccountDaoImpl.class);
+
+	@Inject protected DomainDaoImpl _domainDao;
+	@Inject protected AccountDaoImpl _accountDao;
 
 	public ResourceCountDaoImpl() {
 		TypeSearch = createSearchBuilder();

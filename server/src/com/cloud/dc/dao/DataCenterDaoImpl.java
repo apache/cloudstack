@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Random;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.TableGenerator;
 
@@ -63,16 +64,15 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     protected SearchBuilder<DataCenterVO> DisabledZonesSearch;
     protected SearchBuilder<DataCenterVO> TokenSearch;
     
-    protected final DataCenterIpAddressDaoImpl _ipAllocDao = ComponentLocator.inject(DataCenterIpAddressDaoImpl.class);
-    protected final DataCenterLinkLocalIpAddressDaoImpl _LinkLocalIpAllocDao = ComponentLocator.inject(DataCenterLinkLocalIpAddressDaoImpl.class);
-    protected final DataCenterVnetDaoImpl _vnetAllocDao = ComponentLocator.inject(DataCenterVnetDaoImpl.class);
-    protected final PodVlanDaoImpl _podVlanAllocDao = ComponentLocator.inject(PodVlanDaoImpl.class);
+    @Inject protected final DataCenterIpAddressDaoImpl _ipAllocDao;
+    @Inject protected final DataCenterLinkLocalIpAddressDaoImpl _LinkLocalIpAllocDao;
+    @Inject protected final DataCenterVnetDaoImpl _vnetAllocDao;
+    @Inject protected final PodVlanDaoImpl _podVlanAllocDao;
     protected long _prefix;
     protected Random _rand = new Random(System.currentTimeMillis());
     protected TableGenerator _tgMacAddress;
     
-    protected final DcDetailsDaoImpl _detailsDao = ComponentLocator.inject(DcDetailsDaoImpl.class);
-
+    @Inject protected final DcDetailsDaoImpl _detailsDao;
 
     @Override
     public DataCenterVO findByName(String name) {

@@ -19,6 +19,7 @@ package com.cloud.vm.dao;
 import java.util.List;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.springframework.stereotype.Component;
 
@@ -54,10 +55,10 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     protected final SearchBuilder<DomainRouterVO> HostUpSearch;
     protected final SearchBuilder<DomainRouterVO> StateNetworkTypeSearch;
     protected final SearchBuilder<DomainRouterVO> OutsidePodSearch;
-    HostDaoImpl _hostsDao = ComponentLocator.inject(HostDaoImpl.class);
-    RouterNetworkDaoImpl _routerNetworkDao = ComponentLocator.inject(RouterNetworkDaoImpl.class);
-    UserStatisticsDaoImpl _userStatsDao = ComponentLocator.inject(UserStatisticsDaoImpl.class);
-    NetworkOfferingDaoImpl _offDao = ComponentLocator.inject(NetworkOfferingDaoImpl.class);
+    @Inject HostDaoImpl _hostsDao;
+    @Inject RouterNetworkDaoImpl _routerNetworkDao;
+    @Inject UserStatisticsDaoImpl _userStatsDao;
+    @Inject NetworkOfferingDaoImpl _offDao;
     protected final SearchBuilder<DomainRouterVO> VpcSearch;
     
     protected DomainRouterDaoImpl() {

@@ -22,6 +22,7 @@ import java.util.Date;
 import java.util.List;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -57,9 +58,9 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
     protected final GenericSearchBuilder<IPAddressVO, Integer> AllocatedIpCount;
     protected final GenericSearchBuilder<IPAddressVO, Integer> AllIpCountForDashboard;    
     protected final GenericSearchBuilder<IPAddressVO, Long> AllocatedIpCountForAccount;    
-    protected final VlanDaoImpl _vlanDao = ComponentLocator.inject(VlanDaoImpl.class);
+    @Inject protected VlanDaoImpl _vlanDao;
     protected GenericSearchBuilder<IPAddressVO, Long> CountFreePublicIps;
-    ResourceTagsDaoImpl _tagsDao = ComponentLocator.inject(ResourceTagsDaoImpl.class);
+    @Inject ResourceTagsDaoImpl _tagsDao;
     
     
     // make it public for JUnit test

@@ -22,6 +22,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -40,10 +41,9 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class DatabaseIntegrityChecker implements SystemIntegrityChecker {
 	private final Logger s_logger = Logger.getLogger(DatabaseIntegrityChecker.class);
 	
-    VersionDao _dao;
+    @Inject VersionDao _dao;
     
     public DatabaseIntegrityChecker() {
-        _dao = ComponentLocator.inject(VersionDaoImpl.class);
     }
 	
 	/*

@@ -33,7 +33,7 @@ import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
 import org.apache.cloudstack.storage.datastore.manager.PrimaryDataStoreManager;
 import org.apache.cloudstack.storage.image.TemplateInfo;
 import org.apache.cloudstack.storage.image.motion.ImageMotionService;
-import org.apache.cloudstack.storage.volume.db.VolumeDao;
+import org.apache.cloudstack.storage.volume.db.VolumeDao2;
 import org.apache.cloudstack.storage.volume.db.VolumeVO;
 
 import org.springframework.stereotype.Component;
@@ -48,7 +48,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @Component
 public class VolumeServiceImpl implements VolumeService {
     @Inject
-    VolumeDao volDao;
+    VolumeDao2 volDao;
     @Inject
     PrimaryDataStoreManager dataStoreMgr;
     @Inject

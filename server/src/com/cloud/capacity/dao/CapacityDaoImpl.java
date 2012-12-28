@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -33,6 +34,7 @@ import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePoolVO;
+import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolDaoImpl;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
@@ -65,7 +67,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
 	private final SearchBuilder<CapacityVO> _hostOrPoolIdSearch;
     protected GenericSearchBuilder<CapacityVO, SummedCapacity> SummedCapacitySearch;
 	private SearchBuilder<CapacityVO> _allFieldsSearch;
-    protected final StoragePoolDaoImpl _storagePoolDao = ComponentLocator.inject(StoragePoolDaoImpl.class);
+    @Inject protected StoragePoolDao _storagePoolDao;
 
 	
     private static final String LIST_HOSTS_IN_CLUSTER_WITH_ENOUGH_CAPACITY = "SELECT a.host_id FROM (host JOIN op_host_capacity a ON host.id = a.host_id AND host.cluster_id = ? AND host.type = ? " +

@@ -84,8 +84,8 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     protected SearchBuilder<VMInstanceVO> NetworkTypeSearch;
     protected GenericSearchBuilder<VMInstanceVO, String> DistinctHostNameSearch;
     
-    ResourceTagsDaoImpl _tagsDao = ComponentLocator.inject(ResourceTagsDaoImpl.class);
-    NicDao _nicDao = ComponentLocator.inject(NicDaoImpl.class);
+    @Inject ResourceTagsDaoImpl _tagsDao;
+    @Inject NicDao _nicDao;
     
     protected final Attribute _updateTimeAttr;
     

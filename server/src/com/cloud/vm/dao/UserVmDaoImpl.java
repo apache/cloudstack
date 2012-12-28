@@ -26,7 +26,9 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
+import javax.annotation.PostConstruct;
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -58,26 +60,26 @@ import com.cloud.vm.dao.UserVmData.SecurityGroupData;
 public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements UserVmDao {
     public static final Logger s_logger = Logger.getLogger(UserVmDaoImpl.class);
     
-    protected final SearchBuilder<UserVmVO> AccountPodSearch;
-    protected final SearchBuilder<UserVmVO> AccountDataCenterSearch;
-    protected final SearchBuilder<UserVmVO> AccountSearch;
-    protected final SearchBuilder<UserVmVO> HostSearch;
-    protected final SearchBuilder<UserVmVO> LastHostSearch;
-    protected final SearchBuilder<UserVmVO> HostUpSearch;
-    protected final SearchBuilder<UserVmVO> HostRunningSearch;
-    protected final SearchBuilder<UserVmVO> StateChangeSearch;
-    protected final SearchBuilder<UserVmVO> AccountHostSearch;
+    protected SearchBuilder<UserVmVO> AccountPodSearch;
+    protected SearchBuilder<UserVmVO> AccountDataCenterSearch;
+    protected SearchBuilder<UserVmVO> AccountSearch;
+    protected SearchBuilder<UserVmVO> HostSearch;
+    protected SearchBuilder<UserVmVO> LastHostSearch;
+    protected SearchBuilder<UserVmVO> HostUpSearch;
+    protected SearchBuilder<UserVmVO> HostRunningSearch;
+    protected SearchBuilder<UserVmVO> StateChangeSearch;
+    protected SearchBuilder<UserVmVO> AccountHostSearch;
 
-    protected final SearchBuilder<UserVmVO> DestroySearch;
+    protected SearchBuilder<UserVmVO> DestroySearch;
     protected SearchBuilder<UserVmVO> AccountDataCenterVirtualSearch;
     protected GenericSearchBuilder<UserVmVO, Long> CountByAccountPod;
     protected GenericSearchBuilder<UserVmVO, Long> CountByAccount;
     protected GenericSearchBuilder<UserVmVO, Long> PodsHavingVmsForAccount;
     
     protected SearchBuilder<UserVmVO> UserVmSearch;
-    protected final Attribute _updateTimeAttr;
-    ResourceTagsDaoImpl _tagsDao = ComponentLocator.inject(ResourceTagsDaoImpl.class);
-
+    protected Attribute _updateTimeAttr;
+    // ResourceTagsDaoImpl _tagsDao = ComponentLocator.inject(ResourceTagsDaoImpl.class);
+    @Inject ResourceTagsDaoImpl _tagsDao;
    
     private static final String LIST_PODS_HAVING_VMS_FOR_ACCOUNT = "SELECT pod_id FROM cloud.vm_instance WHERE data_center_id = ? AND account_id = ? AND pod_id IS NOT NULL AND (state = 'Running' OR state = 'Stopped') " +
     		"GROUP BY pod_id HAVING count(id) > 0 ORDER BY count(id) DESC";
@@ -112,10 +114,14 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
             
     private static final int VM_DETAILS_BATCH_SIZE=100;
    
-    protected final UserVmDetailsDaoImpl _detailsDao = ComponentLocator.inject(UserVmDetailsDaoImpl.class);
-    protected final NicDaoImpl _nicDao = ComponentLocator.inject(NicDaoImpl.class);
+    @Inject protected UserVmDetailsDao _detailsDao;
+    @Inject protected NicDao _nicDao;
     
     protected UserVmDaoImpl() {
+    }
+    
+    @PostConstruct
+    void init() {
         AccountSearch = createSearchBuilder();
         AccountSearch.and("account", AccountSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         AccountSearch.done();

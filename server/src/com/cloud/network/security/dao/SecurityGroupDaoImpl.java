@@ -19,6 +19,7 @@ package com.cloud.network.security.dao;
 import java.util.List;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.springframework.stereotype.Component;
 
@@ -38,7 +39,7 @@ public class SecurityGroupDaoImpl extends GenericDaoBase<SecurityGroupVO, Long> 
     private SearchBuilder<SecurityGroupVO> AccountIdSearch;
     private SearchBuilder<SecurityGroupVO> AccountIdNameSearch;
     private SearchBuilder<SecurityGroupVO> AccountIdNamesSearch;
-    ResourceTagsDaoImpl _tagsDao = ComponentLocator.inject(ResourceTagsDaoImpl.class);
+    @Inject ResourceTagsDaoImpl _tagsDao;
 
 
     protected SecurityGroupDaoImpl() {

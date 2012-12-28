@@ -20,6 +20,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
+import javax.inject.Inject;
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorColumn;
 import javax.persistence.DiscriminatorType;
@@ -45,7 +46,7 @@ import com.cloud.utils.net.NetUtils;
 @Inheritance(strategy=InheritanceType.JOINED)
 @DiscriminatorColumn(name="purpose", discriminatorType=DiscriminatorType.STRING, length=32)
 public class FirewallRuleVO implements Identity, FirewallRule {
-    protected final FirewallRulesCidrsDaoImpl _firewallRulesCidrsDao = ComponentLocator.inject(FirewallRulesCidrsDaoImpl.class);
+    @Inject protected final FirewallRulesCidrsDaoImpl _firewallRulesCidrsDao;
     
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

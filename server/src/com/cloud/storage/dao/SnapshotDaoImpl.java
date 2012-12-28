@@ -21,6 +21,7 @@ import java.sql.ResultSet;
 import java.util.List;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -64,10 +65,10 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     private final SearchBuilder<SnapshotVO> InstanceIdSearch;
     private final SearchBuilder<SnapshotVO> StatusSearch;
     private final GenericSearchBuilder<SnapshotVO, Long> CountSnapshotsByAccount;
-    ResourceTagsDaoImpl _tagsDao = ComponentLocator.inject(ResourceTagsDaoImpl.class);
+    @Inject ResourceTagsDaoImpl _tagsDao;
     
-    protected final VMInstanceDaoImpl _instanceDao = ComponentLocator.inject(VMInstanceDaoImpl.class);
-    protected final VolumeDaoImpl _volumeDao = ComponentLocator.inject(VolumeDaoImpl.class);
+    @Inject protected VMInstanceDaoImpl _instanceDao;
+    @Inject protected VolumeDaoImpl _volumeDao;
 
     @Override
     public SnapshotVO findNextSnapshot(long snapshotId) {

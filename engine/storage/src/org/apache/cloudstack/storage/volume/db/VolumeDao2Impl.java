@@ -52,10 +52,10 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Local(value = VolumeDao.class)
+@Local(value = VolumeDao2.class)
 @Component
-public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements VolumeDao {
-    private static final Logger s_logger = Logger.getLogger(VolumeDaoImpl.class);
+public class VolumeDao2Impl extends GenericDaoBase<VolumeVO, Long> implements VolumeDao2 {
+    private static final Logger s_logger = Logger.getLogger(VolumeDao2Impl.class);
     protected final SearchBuilder<VolumeVO> DetachedAccountIdSearch;
     protected final SearchBuilder<VolumeVO> TemplateZoneSearch;
     protected final GenericSearchBuilder<VolumeVO, SumCount> TotalSizeByPoolSearch;
@@ -249,7 +249,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         }
     }
 
-    protected VolumeDaoImpl() {
+    protected VolumeDao2Impl() {
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), Op.EQ);
         AllFieldsSearch.and("accountId", AllFieldsSearch.entity().getAccountId(), Op.EQ);

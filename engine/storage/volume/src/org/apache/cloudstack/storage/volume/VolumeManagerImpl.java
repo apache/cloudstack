@@ -19,7 +19,7 @@
 package org.apache.cloudstack.storage.volume;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeProfile;
-import org.apache.cloudstack.storage.volume.db.VolumeDao;
+import org.apache.cloudstack.storage.volume.db.VolumeDao2;
 import org.apache.cloudstack.storage.volume.db.VolumeVO;
 import org.springframework.stereotype.Component;
 
@@ -33,7 +33,7 @@ import com.cloud.utils.fsm.StateMachine2;
 @Component
 public class VolumeManagerImpl implements VolumeManager {
     @Inject
-    protected VolumeDao _volumeDao;
+    protected VolumeDao2 _volumeDao;
     private final static StateMachine2<State, Event, VolumeVO> s_fsm = new StateMachine2<State, Event, VolumeVO>();
     public VolumeManagerImpl() {
         initStateMachine();

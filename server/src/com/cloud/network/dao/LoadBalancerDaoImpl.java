@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -52,7 +53,7 @@ public class LoadBalancerDaoImpl extends GenericDaoBase<LoadBalancerVO, Long> im
     private final SearchBuilder<LoadBalancerVO> AccountAndNameSearch;
     protected final SearchBuilder<LoadBalancerVO> TransitionStateSearch;
 
-    protected final FirewallRulesCidrsDaoImpl _portForwardingRulesCidrsDao = ComponentLocator.inject(FirewallRulesCidrsDaoImpl.class);
+    @Inject protected FirewallRulesCidrsDaoImpl _portForwardingRulesCidrsDao;
 
     protected LoadBalancerDaoImpl() {
         ListByIp = createSearchBuilder();
