@@ -33,7 +33,7 @@ import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.ModifyVolumePoolCmdResponse;
 import com.cloud.utils.component.ComponentLocator;
 
-@APICommand(description="Modify pool", responseObject = ModifyVolumePoolCmdResponse.class)
+@APICommand(name = "modifyPool", description="Modify pool", responseObject = ModifyVolumePoolCmdResponse.class)
 public class ModifyVolumePoolCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(ModifyVolumePoolCmd.class.getName());
     private static final String s_name = "modifypoolresponse";

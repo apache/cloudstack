@@ -35,7 +35,7 @@ import com.cloud.network.ExternalFirewallDeviceVO;
 import com.cloud.network.element.JuniperSRXFirewallElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(responseObject=SrxFirewallResponse.class, description="lists SRX firewall devices in a physical network")
+@APICommand(name = "listSrxFirewalls", responseObject=SrxFirewallResponse.class, description="lists SRX firewall devices in a physical network")
 public class ListSrxFirewallsCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListSrxFirewallsCmd.class.getName());

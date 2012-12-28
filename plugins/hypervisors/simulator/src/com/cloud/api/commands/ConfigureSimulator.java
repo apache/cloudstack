@@ -33,7 +33,7 @@ import com.cloud.server.ManagementService;
 import com.cloud.user.Account;
 import com.cloud.utils.component.ComponentLocator;
 
-@APICommand(description="configure simulator", responseObject=SuccessResponse.class)
+@APICommand(name = "configureSimulator", description="configure simulator", responseObject=SuccessResponse.class)
 public class ConfigureSimulator extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(ConfigureSimulator.class.getName());
     private static final String s_name = "configuresimulatorresponse";

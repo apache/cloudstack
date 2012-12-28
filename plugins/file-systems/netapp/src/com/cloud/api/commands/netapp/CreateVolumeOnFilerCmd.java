@@ -34,7 +34,7 @@ import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.CreateVolumeOnFilerCmdResponse;
 import com.cloud.utils.component.ComponentLocator;
 
-@APICommand(description="Create a volume", responseObject = CreateVolumeOnFilerCmdResponse.class)
+@APICommand(name = "createVolumeOnFiler", description="Create a volume", responseObject = CreateVolumeOnFilerCmdResponse.class)
 public class CreateVolumeOnFilerCmd extends BaseCmd {
     private static final String s_name = "createvolumeresponse";
 

@@ -38,7 +38,7 @@ import com.cloud.network.element.JuniperSRXFirewallElementService;
 import com.cloud.user.UserContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(responseObject=SrxFirewallResponse.class, description="Adds a SRX firewall device")
+@APICommand(name = "addSrxFirewall", responseObject=SrxFirewallResponse.class, description="Adds a SRX firewall device")
 public class AddSrxFirewallCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AddSrxFirewallCmd.class.getName());
     private static final String s_name = "addsrxfirewallresponse";

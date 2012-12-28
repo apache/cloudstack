@@ -33,7 +33,7 @@ import com.cloud.server.api.response.ExternalLoadBalancerResponse;
 import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(description="Adds F5 external load balancer appliance.", responseObject = ExternalLoadBalancerResponse.class)
+@APICommand(name = "addExternalLoadBalancer", description="Adds F5 external load balancer appliance.", responseObject = ExternalLoadBalancerResponse.class)
 @Deprecated // API supported only for backward compatibility.
 public class AddExternalLoadBalancerCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddExternalLoadBalancerCmd.class.getName());

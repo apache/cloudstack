@@ -33,7 +33,7 @@ import com.cloud.network.element.NiciraNvpElementService;
 import com.cloud.user.UserContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(responseObject=NiciraNvpDeviceResponse.class, description="Adds a Nicira NVP device")
+@APICommand(name = "addNiciraNvpDevice", responseObject=NiciraNvpDeviceResponse.class, description="Adds a Nicira NVP device")
 public class AddNiciraNvpDeviceCmd extends BaseAsyncCmd {
     private static final Logger s_logger = Logger.getLogger(AddNiciraNvpDeviceCmd.class.getName());
     private static final String s_name = "addniciranvpdeviceresponse";

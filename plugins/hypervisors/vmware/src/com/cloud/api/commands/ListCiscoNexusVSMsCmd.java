@@ -39,7 +39,7 @@ import com.cloud.user.Account;
 import java.util.ArrayList;
 import java.util.List;
 
-@APICommand(responseObject=CiscoNexusVSMResponse.class, description="Retrieves a Cisco Nexus 1000v Virtual Switch Manager device associated with a Cluster")
+@APICommand(name = "listCiscoNexusVSMs", responseObject=CiscoNexusVSMResponse.class, description="Retrieves a Cisco Nexus 1000v Virtual Switch Manager device associated with a Cluster")
 public class ListCiscoNexusVSMsCmd extends BaseListCmd {
 
 	/**

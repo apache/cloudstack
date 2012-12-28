@@ -32,7 +32,7 @@ import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.DissociateLunCmdResponse;
 import com.cloud.utils.component.ComponentLocator;
 
-@APICommand(description="Dissociate a LUN", responseObject = DissociateLunCmdResponse.class)
+@APICommand(name = "dissociateLun", description="Dissociate a LUN", responseObject = DissociateLunCmdResponse.class)
 public class DissociateLunCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(DissociateLunCmd.class.getName());
     private static final String s_name = "dissociatelunresponse";

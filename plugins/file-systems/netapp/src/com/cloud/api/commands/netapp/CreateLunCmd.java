@@ -35,7 +35,7 @@ import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.CreateLunCmdResponse;
 import com.cloud.utils.component.ComponentLocator;
 
-@APICommand(description="Create a LUN from a pool", responseObject = CreateLunCmdResponse.class)
+@APICommand(name = "createLunOnFiler", description="Create a LUN from a pool", responseObject = CreateLunCmdResponse.class)
 public class CreateLunCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(CreateLunCmd.class.getName());
     private static final String s_name = "createlunresponse";

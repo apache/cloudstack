@@ -31,7 +31,7 @@ import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.AssociateLunCmdResponse;
 import com.cloud.utils.component.ComponentLocator;
 
-@APICommand(description="Associate a LUN with a guest IQN", responseObject = AssociateLunCmdResponse.class)
+@APICommand(name = "associateLun", description="Associate a LUN with a guest IQN", responseObject = AssociateLunCmdResponse.class)
 public class AssociateLunCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(AssociateLunCmd.class.getName());
     private static final String s_name = "associatelunresponse";

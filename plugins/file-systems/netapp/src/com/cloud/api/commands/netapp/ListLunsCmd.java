@@ -38,7 +38,7 @@ import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.ListLunsCmdResponse;
 import com.cloud.utils.component.ComponentLocator;
 
-@APICommand(description="List LUN", responseObject = ListLunsCmdResponse.class)
+@APICommand(name = "listLunsOnFiler", description="List LUN", responseObject = ListLunsCmdResponse.class)
 public class ListLunsCmd extends BaseCmd 
 {
 	public static final Logger s_logger = Logger.getLogger(ListLunsCmd.class.getName());

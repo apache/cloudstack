@@ -35,7 +35,7 @@ import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.DeleteLUNCmdResponse;
 import com.cloud.utils.component.ComponentLocator;
 
-@APICommand(description="Destroy a LUN", responseObject = DeleteLUNCmdResponse.class)
+@APICommand(name = "destroyLunOnFiler", description="Destroy a LUN", responseObject = DeleteLUNCmdResponse.class)
 public class DestroyLunCmd extends BaseCmd {
     
 	public static final Logger s_logger = Logger.getLogger(DestroyLunCmd.class.getName());

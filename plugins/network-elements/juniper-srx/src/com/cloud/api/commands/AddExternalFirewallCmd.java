@@ -32,7 +32,7 @@ import com.cloud.server.api.response.ExternalFirewallResponse;
 import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(description="Adds an external firewall appliance", responseObject = ExternalFirewallResponse.class)
+@APICommand(name = "addExternalFirewall", description="Adds an external firewall appliance", responseObject = ExternalFirewallResponse.class)
 public class AddExternalFirewallCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddExternalFirewallCmd.class.getName());    
     private static final String s_name = "addexternalfirewallresponse";    

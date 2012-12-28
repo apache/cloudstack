@@ -41,7 +41,7 @@ import com.cloud.network.Network;
 import com.cloud.network.element.F5ExternalLoadBalancerElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(responseObject=NetworkResponse.class, description="lists network that are using a F5 load balancer device")
+@APICommand(name = "listF5LoadBalancerNetworks", responseObject=NetworkResponse.class, description="lists network that are using a F5 load balancer device")
 public class ListF5LoadBalancerNetworksCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListF5LoadBalancerNetworksCmd.class.getName());

@@ -37,7 +37,7 @@ import com.cloud.network.element.NiciraNvpElementService;
 import com.cloud.user.UserContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(responseObject=SuccessResponse.class, description=" delete a nicira nvp device")
+@APICommand(name = "deleteNiciraNvpDevice", responseObject=SuccessResponse.class, description=" delete a nicira nvp device")
 public class DeleteNiciraNvpDeviceCmd extends BaseAsyncCmd {
     private static final Logger s_logger = Logger.getLogger(DeleteNiciraNvpDeviceCmd.class.getName());
     private static final String s_name = "deleteniciranvpdeviceresponse";

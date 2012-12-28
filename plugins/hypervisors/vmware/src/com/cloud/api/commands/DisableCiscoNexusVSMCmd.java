@@ -36,7 +36,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.api.response.CiscoNexusVSMResponse;
 import com.cloud.network.CiscoNexusVSMDevice;
 
-@APICommand(responseObject=CiscoNexusVSMResponse.class, description="disable a Cisco Nexus VSM device")
+@APICommand(name = "disableCiscoNexusVSM", responseObject=CiscoNexusVSMResponse.class, description="disable a Cisco Nexus VSM device")
 public class DisableCiscoNexusVSMCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(DisableCiscoNexusVSMCmd.class.getName());

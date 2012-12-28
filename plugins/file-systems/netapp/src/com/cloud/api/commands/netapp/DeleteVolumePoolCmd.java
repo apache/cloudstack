@@ -35,7 +35,7 @@ import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.DeleteVolumePoolCmdResponse;
 import com.cloud.utils.component.ComponentLocator;
 
-@APICommand(description="Delete a pool", responseObject = DeleteVolumePoolCmdResponse.class)
+@APICommand(name = "deletePool", description="Delete a pool", responseObject = DeleteVolumePoolCmdResponse.class)
 public class DeleteVolumePoolCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(DeleteVolumePoolCmd.class.getName());
     private static final String s_name = "deletepoolresponse";

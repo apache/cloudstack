@@ -33,7 +33,7 @@ import com.cloud.network.element.F5ExternalLoadBalancerElementService;
 import com.cloud.user.UserContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(responseObject=F5LoadBalancerResponse.class, description="configures a F5 load balancer device")
+@APICommand(name = "configureF5LoadBalancer", responseObject=F5LoadBalancerResponse.class, description="configures a F5 load balancer device")
 public class ConfigureF5LoadBalancerCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(ConfigureF5LoadBalancerCmd.class.getName());

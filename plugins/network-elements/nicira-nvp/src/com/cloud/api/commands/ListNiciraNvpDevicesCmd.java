@@ -35,7 +35,7 @@ import com.cloud.network.NiciraNvpDeviceVO;
 import com.cloud.network.element.NiciraNvpElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(responseObject=NiciraNvpDeviceResponse.class, description="Lists Nicira NVP devices")
+@APICommand(name = "listNiciraNvpDevices", responseObject=NiciraNvpDeviceResponse.class, description="Lists Nicira NVP devices")
 public class ListNiciraNvpDevicesCmd extends BaseListCmd {
     private static final Logger s_logger = Logger.getLogger(ListNiciraNvpDevicesCmd.class.getName());
     private static final String s_name = "listniciranvpdeviceresponse";

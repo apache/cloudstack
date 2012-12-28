@@ -33,7 +33,7 @@ import com.cloud.host.Host;
 import com.cloud.network.element.JuniperSRXFirewallElementService;
 import com.cloud.server.api.response.ExternalFirewallResponse;
 
-@APICommand(description="List external firewall appliances.", responseObject = ExternalFirewallResponse.class)
+@APICommand(name = "listExternalFirewalls", description="List external firewall appliances.", responseObject = ExternalFirewallResponse.class)
 public class ListExternalFirewallsCmd extends BaseListCmd {
 	public static final Logger s_logger = Logger.getLogger(ListServiceOfferingsCmd.class.getName());
     private static final String s_name = "listexternalfirewallsresponse";

@@ -35,7 +35,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.element.CiscoNexusVSMElementService;
 import com.cloud.user.Account;
 
-@APICommand(responseObject=SuccessResponse.class, description=" delete a Cisco Nexus VSM device")
+@APICommand(name = "deleteCiscoNexusVSM", responseObject=SuccessResponse.class, description=" delete a Cisco Nexus VSM device")
 public class DeleteCiscoNexusVSMCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(DeleteCiscoNexusVSMCmd.class.getName());

@@ -35,7 +35,7 @@ import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.ListVolumesOnFilerCmdResponse;
 import com.cloud.utils.component.ComponentLocator;
 
-@APICommand(description="List Volumes", responseObject = ListVolumesOnFilerCmdResponse.class)
+@APICommand(name = "listVolumesOnFiler", description="List Volumes", responseObject = ListVolumesOnFilerCmdResponse.class)
 public class ListVolumesOnFilerCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(ListVolumesOnFilerCmd.class.getName());
     private static final String s_name = "listvolumesresponse";

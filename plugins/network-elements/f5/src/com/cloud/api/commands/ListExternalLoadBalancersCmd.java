@@ -30,7 +30,7 @@ import com.cloud.host.Host;
 import com.cloud.network.element.F5ExternalLoadBalancerElementService;
 import com.cloud.server.api.response.ExternalLoadBalancerResponse;
 
-@APICommand(description="Lists F5 external load balancer appliances added in a zone.", responseObject = HostResponse.class)
+@APICommand(name = "listExternalLoadBalancers", description="Lists F5 external load balancer appliances added in a zone.", responseObject = HostResponse.class)
 @Deprecated // API supported for backward compatibility.
 public class ListExternalLoadBalancersCmd extends BaseListCmd {
 	public static final Logger s_logger = Logger.getLogger(ListExternalLoadBalancersCmd.class.getName());

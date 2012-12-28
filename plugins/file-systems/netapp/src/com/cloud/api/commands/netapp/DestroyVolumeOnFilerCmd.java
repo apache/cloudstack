@@ -33,7 +33,7 @@ import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.DeleteVolumeOnFilerCmdResponse;
 import com.cloud.utils.component.ComponentLocator;
 
-@APICommand(description="Destroy a Volume", responseObject = DeleteVolumeOnFilerCmdResponse.class)
+@APICommand(name = "destroyVolumeOnFiler", description="Destroy a Volume", responseObject = DeleteVolumeOnFilerCmdResponse.class)
 public class DestroyVolumeOnFilerCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(DestroyVolumeOnFilerCmd.class.getName());
     private static final String s_name = "destroyvolumeresponse";

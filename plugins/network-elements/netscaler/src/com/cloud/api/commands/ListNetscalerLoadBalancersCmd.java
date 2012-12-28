@@ -39,7 +39,7 @@ import com.cloud.network.ExternalLoadBalancerDeviceVO;
 import com.cloud.network.element.NetscalerLoadBalancerElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(responseObject=NetscalerLoadBalancerResponse.class, description="lists netscaler load balancer devices")
+@APICommand(name = "listNetscalerLoadBalancers", responseObject=NetscalerLoadBalancerResponse.class, description="lists netscaler load balancer devices")
 public class ListNetscalerLoadBalancersCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListNetscalerLoadBalancersCmd.class.getName());

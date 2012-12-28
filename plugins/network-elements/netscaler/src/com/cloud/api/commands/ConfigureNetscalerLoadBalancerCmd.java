@@ -33,7 +33,7 @@ import com.cloud.network.element.NetscalerLoadBalancerElementService;
 import com.cloud.user.UserContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(responseObject=NetscalerLoadBalancerResponse.class, description="configures a netscaler load balancer device")
+@APICommand(name = "configureNetscalerLoadBalancer", responseObject=NetscalerLoadBalancerResponse.class, description="configures a netscaler load balancer device")
 public class ConfigureNetscalerLoadBalancerCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(ConfigureNetscalerLoadBalancerCmd.class.getName());

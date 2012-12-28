@@ -40,7 +40,7 @@ import com.cloud.network.Network;
 import com.cloud.network.element.NiciraNvpElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(responseObject=NetworkResponse.class, description="lists network that are using a nicira nvp device")
+@APICommand(name = "listNiciraNvpDeviceNetworks", responseObject=NetworkResponse.class, description="lists network that are using a nicira nvp device")
 public class ListNiciraNvpDeviceNetworksCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListNiciraNvpDeviceNetworksCmd.class.getName());
