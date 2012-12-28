@@ -88,8 +88,9 @@ public class NfsProtocolTransformer implements StorageProtocolTransformer {
 
     @Override
     public VolumeTO getVolumeTO(VolumeInfo volume) {
-        // TODO Auto-generated method stub
-        return null;
+        VolumeTO vol = new VolumeTO(volume);
+        vol.setDataStore(this.getDataStoreTO(volume.getDataStore()));
+        return vol;
     }
 
 }

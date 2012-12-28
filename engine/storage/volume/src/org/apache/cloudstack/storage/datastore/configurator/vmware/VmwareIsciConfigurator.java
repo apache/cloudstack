@@ -18,7 +18,7 @@
  */
 package org.apache.cloudstack.storage.datastore.configurator.vmware;
 
-import org.apache.cloudstack.storage.datastore.configurator.validator.ISCSIValiator;
+import org.apache.cloudstack.storage.datastore.configurator.validator.ISCSIProtocolTransformer;
 import org.apache.cloudstack.storage.datastore.configurator.validator.StorageProtocolTransformer;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -33,7 +33,7 @@ public class VmwareIsciConfigurator extends AbstractVmwareConfigurator {
 
     @Override
     public StorageProtocolTransformer getProtocolTransformer() {
-        return new ISCSIValiator();
+        return new ISCSIProtocolTransformer();
     }
 
     @Override

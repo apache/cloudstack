@@ -41,4 +41,5 @@ public interface VolumeInfo {
 	public Date getCreatedDate();
 	public Date getUpdatedDate();
 	public String getOwner();
+	public String getName();
 }

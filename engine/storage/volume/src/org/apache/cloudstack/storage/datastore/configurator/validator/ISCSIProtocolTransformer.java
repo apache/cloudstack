@@ -26,7 +26,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeTO;
 
-public class ISCSIValiator implements StorageProtocolTransformer {
+public class ISCSIProtocolTransformer implements StorageProtocolTransformer {
 
     @Override
     public List<String> getInputParamNames() {

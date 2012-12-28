@@ -270,8 +270,9 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 		}
 	}
 
-	private VolumeVO createVolume(long templateId) {
+	private VolumeVO createVolume(long templateId, long dataStoreId) {
 		VolumeVO volume = new VolumeVO(1000, new RootDisk().toString(), UUID.randomUUID().toString(), templateId);
+		volume.setPoolId(dataStoreId);
 		volume = volumeDao.persist(volume);
 		return volume;
 
@@ -281,12 +282,12 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 	public void createVolumeFromTemplate() {
 		TemplateEntity te = createTemplate();
 		PrimaryDataStoreInfo dataStoreInfo = createPrimaryDataStore();
-		VolumeVO volume = createVolume(te.getId());
+		VolumeVO volume = createVolume(te.getId(), dataStoreInfo.getId());
 		VolumeEntity ve = volumeService.getVolumeEntity(volume.getId());
 		ve.createVolumeFromTemplate(dataStoreInfo.getId(), new VHD(), te);
 	}
 	
-	@Test(priority=3)
+	//@Test(priority=3)
 	public void tearDown() {
 	    List<PrimaryDataStoreVO> ds = primaryStoreDao.findPoolByName(this.primaryName);
 	    for (int i = 0; i < ds.size(); i++) {

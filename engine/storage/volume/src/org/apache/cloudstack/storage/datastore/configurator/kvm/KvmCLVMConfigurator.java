@@ -18,7 +18,7 @@
  */
 package org.apache.cloudstack.storage.datastore.configurator.kvm;
 
-import org.apache.cloudstack.storage.datastore.configurator.validator.CLVMValidator;
+import org.apache.cloudstack.storage.datastore.configurator.validator.CLVMProtocolTransformer;
 import org.apache.cloudstack.storage.datastore.configurator.validator.StorageProtocolTransformer;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -34,7 +34,7 @@ public class KvmCLVMConfigurator extends AbstractKvmConfigurator {
 
     @Override
     public StorageProtocolTransformer getProtocolTransformer() {
-        return new CLVMValidator();
+        return new CLVMProtocolTransformer();
     }
 
     @Override

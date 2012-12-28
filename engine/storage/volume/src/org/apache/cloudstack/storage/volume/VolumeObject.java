@@ -153,4 +153,9 @@ public class VolumeObject implements VolumeInfo {
         // TODO Auto-generated method stub
         return null;
     }
+    
+    @Override
+    public String getName() {
+        return this.volumeVO.getName();
+    }
 }

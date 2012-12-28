@@ -42,6 +42,7 @@ import org.apache.cloudstack.storage.to.ImageOnPrimayDataStoreTO;
 import org.apache.cloudstack.storage.to.NfsPrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateTO;
+import org.apache.cloudstack.storage.to.VolumeTO;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpStatus;
@@ -97,7 +98,22 @@ public class XenServerStorageResource {
     }
     
     public Answer execute(CreateVolumeFromBaseImageCommand cmd) {
-        return new CreateVolumeAnswer(cmd, UUID.randomUUID().toString());
+        VolumeTO volume = cmd.getVolume();
+        ImageOnPrimayDataStoreTO baseImage = cmd.getImage();
+        Connection conn = hypervisorResource.getConnection();
+        
+        try {
+            VDI baseVdi = VDI.getByUuid(conn, baseImage.getPathOnPrimaryDataStore());
+            VDI newVol = baseVdi.createClone(conn, new HashMap<String, String>());
+            newVol.setNameLabel(conn, volume.getName());
+            return new CreateVolumeAnswer(cmd, newVol.getUuid(conn));
+        } catch (BadServerResponse e) {
+            return new Answer(cmd, false, e.toString());
+        } catch (XenAPIException e) {
+            return new Answer(cmd, false, e.toString());
+        } catch (XmlRpcException e) {
+            return new Answer(cmd, false, e.toString());
+        }
     }
     
     protected SR getNfsSR(Connection conn, NfsPrimaryDataStoreTO pool) {

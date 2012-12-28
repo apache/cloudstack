@@ -26,7 +26,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeTO;
 
-public class CLVMValidator implements StorageProtocolTransformer {
+public class CLVMProtocolTransformer implements StorageProtocolTransformer {
 
     @Override
     public boolean normalizeUserInput(Map<String, String> params) {

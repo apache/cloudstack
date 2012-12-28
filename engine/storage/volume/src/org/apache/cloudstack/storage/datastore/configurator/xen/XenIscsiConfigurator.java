@@ -18,7 +18,7 @@
  */
 package org.apache.cloudstack.storage.datastore.configurator.xen;
 
-import org.apache.cloudstack.storage.datastore.configurator.validator.ISCSIValiator;
+import org.apache.cloudstack.storage.datastore.configurator.validator.ISCSIProtocolTransformer;
 import org.apache.cloudstack.storage.datastore.configurator.validator.StorageProtocolTransformer;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -34,7 +34,7 @@ public class XenIscsiConfigurator extends AbstractXenConfigurator {
 
 	@Override
 	public StorageProtocolTransformer getProtocolTransformer() {
-		return new ISCSIValiator();
+		return new ISCSIProtocolTransformer();
 	}
 
     protected boolean isLocalStorageSupported() {
