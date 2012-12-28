@@ -160,7 +160,7 @@
             userValid = true;
           },
           error: function(xmlHTTP) {
-            logout(false);
+            //logout(false);
           },
           beforeSend : function(XMLHttpResponse) {					  
 						return true;

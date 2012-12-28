@@ -296,7 +296,7 @@
                 $form.show();
 
                 // Form should be slightly wider
-                $form.closest(':ui-dialog').dialog('option', { position: 'center',closeOnEscape: false });
+                $form.closest(':ui-dialog').dialog('option', { closeOnEscape: false });
               }
             }
           });
