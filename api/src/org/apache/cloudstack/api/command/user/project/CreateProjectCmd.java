@@ -29,7 +29,7 @@ import com.cloud.projects.Project;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@APICommand(description = "Creates a project", responseObject = ProjectResponse.class, since = "3.0.0")
+@APICommand(name = "createProject", description = "Creates a project", responseObject = ProjectResponse.class, since = "3.0.0")
 public class CreateProjectCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateProjectCmd.class.getName());
 

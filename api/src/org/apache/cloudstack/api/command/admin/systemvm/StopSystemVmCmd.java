@@ -29,7 +29,7 @@ import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(description="Stops a system VM.", responseObject=SystemVmResponse.class)
+@APICommand(name = "stopSystemVm", description="Stops a system VM.", responseObject=SystemVmResponse.class)
 public class StopSystemVmCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(StopSystemVmCmd.class.getName());
 

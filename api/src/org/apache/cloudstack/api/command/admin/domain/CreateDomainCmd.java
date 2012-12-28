@@ -25,7 +25,7 @@ import com.cloud.domain.Domain;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@APICommand(description="Creates a domain", responseObject=DomainResponse.class)
+@APICommand(name = "createDomain", description="Creates a domain", responseObject=DomainResponse.class)
 public class CreateDomainCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateDomainCmd.class.getName());
 

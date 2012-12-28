@@ -36,7 +36,7 @@ import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.exception.ExecutionException;
 
-@APICommand(responseObject = UserVmResponse.class, description = "Starts a virtual machine.")
+@APICommand(name = "startVirtualMachine", responseObject = UserVmResponse.class, description = "Starts a virtual machine.")
 public class StartVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(StartVMCmd.class.getName());
 

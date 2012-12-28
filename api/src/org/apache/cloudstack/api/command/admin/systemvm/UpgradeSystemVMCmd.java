@@ -29,7 +29,7 @@ import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(responseObject=SystemVmResponse.class, description="Changes the service offering for a system vm (console proxy or secondary storage). " +
+@APICommand(name = "changeServiceForSystemVm", responseObject=SystemVmResponse.class, description="Changes the service offering for a system vm (console proxy or secondary storage). " +
                                                                                             "The system vm must be in a \"Stopped\" state for " +
                                                                                             "this command to take effect.")
 public class UpgradeSystemVMCmd extends BaseCmd {

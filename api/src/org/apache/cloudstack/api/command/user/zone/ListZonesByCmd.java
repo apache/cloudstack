@@ -30,7 +30,7 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import com.cloud.dc.DataCenter;
 
-@APICommand(description="Lists zones", responseObject=ZoneResponse.class)
+@APICommand(name = "listZones", description="Lists zones", responseObject=ZoneResponse.class)
 public class ListZonesByCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListZonesByCmd.class.getName());
 

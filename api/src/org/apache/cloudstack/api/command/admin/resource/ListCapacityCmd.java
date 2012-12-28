@@ -33,7 +33,7 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import com.cloud.capacity.Capacity;
 import com.cloud.exception.InvalidParameterValueException;
 
-@APICommand(description="Lists all the system wide capacities.", responseObject=CapacityResponse.class)
+@APICommand(name = "listCapacity", description="Lists all the system wide capacities.", responseObject=CapacityResponse.class)
 public class ListCapacityCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListCapacityCmd.class.getName());

@@ -39,7 +39,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.UserContext;
 
-@APICommand(description="Registers an existing template into the CloudStack cloud. ", responseObject=TemplateResponse.class)
+@APICommand(name = "registerTemplate", description="Registers an existing template into the CloudStack cloud. ", responseObject=TemplateResponse.class)
 public class RegisterTemplateCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(RegisterTemplateCmd.class.getName());
 

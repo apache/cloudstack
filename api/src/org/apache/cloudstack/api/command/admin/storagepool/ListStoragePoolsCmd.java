@@ -34,7 +34,7 @@ import com.cloud.async.AsyncJob;
 import com.cloud.storage.StoragePool;
 import com.cloud.utils.Pair;
 
-@APICommand(description="Lists storage pools.", responseObject=StoragePoolResponse.class)
+@APICommand(name = "listStoragePools", description="Lists storage pools.", responseObject=StoragePoolResponse.class)
 public class ListStoragePoolsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListStoragePoolsCmd.class.getName());
 

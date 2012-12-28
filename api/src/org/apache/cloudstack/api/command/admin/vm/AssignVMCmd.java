@@ -32,7 +32,7 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
-@APICommand(description="Move a user VM to another user under same domain.", responseObject=UserVmResponse.class, since="3.0.0")
+@APICommand(name = "assignVirtualMachine", description="Move a user VM to another user under same domain.", responseObject=UserVmResponse.class, since="3.0.0")
 public class AssignVMCmd extends BaseCmd  {
     public static final Logger s_logger = Logger.getLogger(AssignVMCmd.class.getName());
 

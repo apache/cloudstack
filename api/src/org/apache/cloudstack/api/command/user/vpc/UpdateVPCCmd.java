@@ -29,7 +29,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.user.Account;
 
-@APICommand(description="Updates a VPC", responseObject=VpcResponse.class)
+@APICommand(name = "updateVPC", description="Updates a VPC", responseObject=VpcResponse.class)
 public class UpdateVPCCmd extends BaseAsyncCmd{
     public static final Logger s_logger = Logger.getLogger(UpdateVPCCmd.class.getName());
     private static final String _name = "updatevpcresponse";

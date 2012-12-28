@@ -33,7 +33,7 @@ import com.cloud.network.router.VirtualRouter;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@APICommand(description = "Destroys a router.", responseObject = DomainRouterResponse.class)
+@APICommand(name = "destroyRouter", description = "Destroys a router.", responseObject = DomainRouterResponse.class)
 public class DestroyRouterCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DestroyRouterCmd.class.getName());
     private static final String s_name = "destroyrouterresponse";

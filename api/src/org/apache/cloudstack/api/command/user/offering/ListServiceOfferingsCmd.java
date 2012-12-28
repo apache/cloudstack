@@ -32,7 +32,7 @@ import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import com.cloud.offering.ServiceOffering;
 
-@APICommand(description="Lists all available service offerings.", responseObject=ServiceOfferingResponse.class)
+@APICommand(name = "listServiceOfferings", description="Lists all available service offerings.", responseObject=ServiceOfferingResponse.class)
 public class ListServiceOfferingsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListServiceOfferingsCmd.class.getName());
 

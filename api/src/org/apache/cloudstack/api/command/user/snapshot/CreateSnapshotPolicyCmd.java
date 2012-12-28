@@ -29,7 +29,7 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.cloud.user.Account;
 
-@APICommand(description="Creates a snapshot policy for the account.", responseObject=SnapshotPolicyResponse.class)
+@APICommand(name = "createSnapshotPolicy", description="Creates a snapshot policy for the account.", responseObject=SnapshotPolicyResponse.class)
 public class CreateSnapshotPolicyCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateSnapshotPolicyCmd.class.getName());
 

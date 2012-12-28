@@ -32,7 +32,7 @@ import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.utils.StringUtils;
 
-@APICommand(description="Removes a virtual machine or a list of virtual machines from a load balancer rule.", responseObject=SuccessResponse.class)
+@APICommand(name = "removeFromLoadBalancerRule", description="Removes a virtual machine or a list of virtual machines from a load balancer rule.", responseObject=SuccessResponse.class)
 public class RemoveFromLoadBalancerRuleCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RemoveFromLoadBalancerRuleCmd.class.getName());
 

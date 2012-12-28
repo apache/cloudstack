@@ -35,7 +35,7 @@ import com.cloud.async.AsyncJob;
 import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(description="List system virtual machines.", responseObject=SystemVmResponse.class)
+@APICommand(name = "listSystemVms", description="List system virtual machines.", responseObject=SystemVmResponse.class)
 public class ListSystemVMsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListSystemVMsCmd.class.getName());
 

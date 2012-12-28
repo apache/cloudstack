@@ -28,7 +28,7 @@ import org.apache.cloudstack.api.response.DomainResponse;
 
 import com.cloud.user.Account;
 
-@APICommand(description="Enables an account", responseObject=AccountResponse.class)
+@APICommand(name = "enableAccount", description="Enables an account", responseObject=AccountResponse.class)
 public class EnableAccountCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(EnableAccountCmd.class.getName());
     private static final String s_name = "enableaccountresponse";

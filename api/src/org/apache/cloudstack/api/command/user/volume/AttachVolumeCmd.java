@@ -32,7 +32,7 @@ import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@APICommand(description="Attaches a disk volume to a virtual machine.", responseObject=VolumeResponse.class)
+@APICommand(name = "attachVolume", description="Attaches a disk volume to a virtual machine.", responseObject=VolumeResponse.class)
 public class AttachVolumeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AttachVolumeCmd.class.getName());
     private static final String s_name = "attachvolumeresponse";

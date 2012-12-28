@@ -28,7 +28,7 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 
 import com.cloud.user.Account;
 
-@APICommand(description="Lists project's accounts", responseObject=ProjectResponse.class, since="3.0.0")
+@APICommand(name = "listProjectAccounts", description="Lists project's accounts", responseObject=ProjectResponse.class, since="3.0.0")
 public class ListProjectAccountsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListProjectAccountsCmd.class.getName());
 

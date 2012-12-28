@@ -44,7 +44,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.storage.S3;
 
-@APICommand(description = "Adds S3", responseObject = S3Response.class, since = "4.0.0")
+@APICommand(name = "addS3", description = "Adds S3", responseObject = S3Response.class, since = "4.0.0")
 public final class AddS3Cmd extends BaseCmd {
 
     private static String COMMAND_NAME = "adds3response";

@@ -30,7 +30,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.user.Account;
 
-@APICommand(description="Updates traffic type of a physical network", responseObject=TrafficTypeResponse.class, since="3.0.0")
+@APICommand(name = "updateTrafficType", description="Updates traffic type of a physical network", responseObject=TrafficTypeResponse.class, since="3.0.0")
 public class UpdateTrafficTypeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateTrafficTypeCmd.class.getName());
 

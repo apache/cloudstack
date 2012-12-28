@@ -29,7 +29,7 @@ import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.utils.Pair;
 
-@APICommand(description="Lists all pending asynchronous jobs for the account.", responseObject=AsyncJobResponse.class)
+@APICommand(name = "listAsyncJobs", description="Lists all pending asynchronous jobs for the account.", responseObject=AsyncJobResponse.class)
 public class ListAsyncJobsCmd extends BaseListAccountResourcesCmd {
     private static final String s_name = "listasyncjobsresponse";
 

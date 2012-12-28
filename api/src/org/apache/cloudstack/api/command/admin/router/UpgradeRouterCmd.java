@@ -25,7 +25,7 @@ import org.apache.cloudstack.api.response.DomainRouterResponse;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.user.Account;
 
-@APICommand(description="Upgrades domain router to a new service offering", responseObject=DomainRouterResponse.class)
+@APICommand(name = "changeServiceForRouter", description="Upgrades domain router to a new service offering", responseObject=DomainRouterResponse.class)
 public class UpgradeRouterCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpgradeRouterCmd.class.getName());
     private static final String s_name = "changeserviceforrouterresponse";

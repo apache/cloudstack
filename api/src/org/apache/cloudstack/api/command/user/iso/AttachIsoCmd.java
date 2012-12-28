@@ -32,7 +32,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 
-@APICommand(description="Attaches an ISO to a virtual machine.", responseObject=UserVmResponse.class)
+@APICommand(name = "attachIso", description="Attaches an ISO to a virtual machine.", responseObject=UserVmResponse.class)
 public class AttachIsoCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AttachIsoCmd.class.getName());
 

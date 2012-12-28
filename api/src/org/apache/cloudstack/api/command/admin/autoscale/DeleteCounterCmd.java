@@ -32,7 +32,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.user.Account;
 
-@APICommand(description = "Deletes a counter", responseObject = SuccessResponse.class)
+@APICommand(name = "deleteCounter ", description = "Deletes a counter", responseObject = SuccessResponse.class)
 public class DeleteCounterCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteCounterCmd.class.getName());
     private static final String s_name = "deletecounterresponse";

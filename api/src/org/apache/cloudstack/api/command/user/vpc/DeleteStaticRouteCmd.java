@@ -30,7 +30,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.vpc.StaticRoute;
 import com.cloud.user.UserContext;
 
-@APICommand(description="Deletes a static route", responseObject=SuccessResponse.class)
+@APICommand(name = "deleteStaticRoute", description="Deletes a static route", responseObject=SuccessResponse.class)
 public class DeleteStaticRouteCmd extends BaseAsyncCmd{
     public static final Logger s_logger = Logger.getLogger(DeleteStaticRouteCmd.class.getName());
     private static final String s_name = "deletestaticrouteresponse";

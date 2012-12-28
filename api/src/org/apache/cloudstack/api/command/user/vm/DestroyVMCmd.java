@@ -30,7 +30,7 @@ import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 
-@APICommand(description="Destroys a virtual machine. Once destroyed, only the administrator can recover it.", responseObject=UserVmResponse.class)
+@APICommand(name = "destroyVirtualMachine", description="Destroys a virtual machine. Once destroyed, only the administrator can recover it.", responseObject=UserVmResponse.class)
 public class DestroyVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DestroyVMCmd.class.getName());
 

@@ -25,7 +25,7 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@APICommand(description="Deletes a Zone.", responseObject=SuccessResponse.class)
+@APICommand(name = "deleteZone", description="Deletes a Zone.", responseObject=SuccessResponse.class)
 public class DeleteZoneCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteZoneCmd.class.getName());
 

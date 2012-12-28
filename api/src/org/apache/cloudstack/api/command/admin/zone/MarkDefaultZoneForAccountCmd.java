@@ -33,7 +33,7 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.BaseCmd;
 
-@APICommand(description="Marks a default zone for this account", responseObject=AccountResponse.class, since="4.0")
+@APICommand(name = "markDefaultZoneForAccount", description="Marks a default zone for this account", responseObject=AccountResponse.class, since="4.0")
 public class MarkDefaultZoneForAccountCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(MarkDefaultZoneForAccountCmd.class.getName());
 

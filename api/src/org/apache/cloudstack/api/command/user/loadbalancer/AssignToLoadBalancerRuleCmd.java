@@ -36,7 +36,7 @@ import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.utils.StringUtils;
 
-@APICommand(description="Assigns virtual machine or a list of virtual machines to a load balancer rule.", responseObject=SuccessResponse.class)
+@APICommand(name = "assignToLoadBalancerRule", description="Assigns virtual machine or a list of virtual machines to a load balancer rule.", responseObject=SuccessResponse.class)
 public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AssignToLoadBalancerRuleCmd.class.getName());
 

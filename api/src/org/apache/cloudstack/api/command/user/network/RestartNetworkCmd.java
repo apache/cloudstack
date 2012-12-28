@@ -31,7 +31,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 
-@APICommand(description="Restarts the network; includes 1) restarting network elements - virtual routers, dhcp servers 2) reapplying all public ips 3) reapplying loadBalancing/portForwarding rules", responseObject=IPAddressResponse.class)
+@APICommand(name = "restartNetwork", description="Restarts the network; includes 1) restarting network elements - virtual routers, dhcp servers 2) reapplying all public ips 3) reapplying loadBalancing/portForwarding rules", responseObject=IPAddressResponse.class)
 public class RestartNetworkCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RestartNetworkCmd.class.getName());
     private static final String s_name = "restartnetworkresponse";

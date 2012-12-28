@@ -30,7 +30,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@APICommand(description = "Accepts or declines project invitation", responseObject = SuccessResponse.class, since = "3.0.0")
+@APICommand(name = "deleteProjectInvitation", description = "Accepts or declines project invitation", responseObject = SuccessResponse.class, since = "3.0.0")
 public class DeleteProjectInvitationCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteProjectInvitationCmd.class.getName());
     private static final String s_name = "deleteprojectinvitationresponse";

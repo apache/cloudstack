@@ -27,7 +27,7 @@ import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.user.Account;
 
-@APICommand(description="Deletes a cluster.", responseObject=SuccessResponse.class)
+@APICommand(name = "deleteCluster", description="Deletes a cluster.", responseObject=SuccessResponse.class)
 public class DeleteClusterCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteClusterCmd.class.getName());
 

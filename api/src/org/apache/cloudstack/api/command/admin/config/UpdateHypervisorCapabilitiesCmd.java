@@ -28,7 +28,7 @@ import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import com.cloud.hypervisor.HypervisorCapabilities;
 import com.cloud.user.Account;
 
-@APICommand(description="Updates a hypervisor capabilities.", responseObject=ServiceOfferingResponse.class, since="3.0.0")
+@APICommand(name = "updateHypervisorCapabilities", description="Updates a hypervisor capabilities.", responseObject=ServiceOfferingResponse.class, since="3.0.0")
 public class UpdateHypervisorCapabilitiesCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateHypervisorCapabilitiesCmd.class.getName());
     private static final String s_name = "updatehypervisorcapabilitiesresponse";

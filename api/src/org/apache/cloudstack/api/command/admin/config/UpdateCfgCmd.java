@@ -27,7 +27,7 @@ import org.apache.cloudstack.api.response.ConfigurationResponse;
 import com.cloud.configuration.Configuration;
 import com.cloud.user.Account;
 
-@APICommand(description="Updates a configuration.", responseObject=ConfigurationResponse.class)
+@APICommand(name = "updateConfiguration", description="Updates a configuration.", responseObject=ConfigurationResponse.class)
 public class UpdateCfgCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateCfgCmd.class.getName());
     private static final String s_name = "updateconfigurationresponse";

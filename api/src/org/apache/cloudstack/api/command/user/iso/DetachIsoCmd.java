@@ -31,7 +31,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.uservm.UserVm;
 
-@APICommand(description="Detaches any ISO file (if any) currently attached to a virtual machine.", responseObject=UserVmResponse.class)
+@APICommand(name = "detachIso", description="Detaches any ISO file (if any) currently attached to a virtual machine.", responseObject=UserVmResponse.class)
 public class DetachIsoCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DetachIsoCmd.class.getName());
 

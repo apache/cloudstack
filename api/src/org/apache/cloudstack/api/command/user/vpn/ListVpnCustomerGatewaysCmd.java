@@ -30,7 +30,7 @@ import org.apache.cloudstack.api.response.Site2SiteCustomerGatewayResponse;
 import com.cloud.network.Site2SiteCustomerGateway;
 import com.cloud.utils.Pair;
 
-@APICommand(description="Lists site to site vpn customer gateways", responseObject=Site2SiteCustomerGatewayResponse.class)
+@APICommand(name = "listVpnCustomerGateways", description="Lists site to site vpn customer gateways", responseObject=Site2SiteCustomerGatewayResponse.class)
 public class ListVpnCustomerGatewaysCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger (ListVpnCustomerGatewaysCmd.class.getName());
 

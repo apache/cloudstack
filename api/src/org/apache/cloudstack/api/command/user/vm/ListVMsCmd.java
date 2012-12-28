@@ -44,7 +44,7 @@ import com.cloud.async.AsyncJob;
 import com.cloud.exception.InvalidParameterValueException;
 
 
-@APICommand(description="List the virtual machines owned by the account.", responseObject=UserVmResponse.class)
+@APICommand(name = "listVirtualMachines", description="List the virtual machines owned by the account.", responseObject=UserVmResponse.class)
 public class ListVMsCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListVMsCmd.class.getName());
 

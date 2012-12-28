@@ -35,7 +35,7 @@ import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@APICommand(description = "Creates an instant snapshot of a volume.", responseObject = SnapshotResponse.class)
+@APICommand(name = "createSnapshot", description = "Creates an instant snapshot of a volume.", responseObject = SnapshotResponse.class)
 public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateSnapshotCmd.class.getName());
     private static final String s_name = "createsnapshotresponse";

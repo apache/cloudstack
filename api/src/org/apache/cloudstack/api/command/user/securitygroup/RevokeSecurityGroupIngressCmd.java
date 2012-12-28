@@ -31,7 +31,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.user.Account;
 
-@APICommand(responseObject = SuccessResponse.class, description = "Deletes a particular ingress rule from this security group")
+@APICommand(name = "revokeSecurityGroupIngress", responseObject = SuccessResponse.class, description = "Deletes a particular ingress rule from this security group")
 public class RevokeSecurityGroupIngressCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RevokeSecurityGroupIngressCmd.class.getName());
 

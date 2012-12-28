@@ -39,7 +39,7 @@ import com.cloud.network.Network.GuestType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.UserContext;
 
-@APICommand(description="Creates a network", responseObject=NetworkResponse.class)
+@APICommand(name = "createNetwork", description="Creates a network", responseObject=NetworkResponse.class)
 public class CreateNetworkCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateNetworkCmd.class.getName());
 

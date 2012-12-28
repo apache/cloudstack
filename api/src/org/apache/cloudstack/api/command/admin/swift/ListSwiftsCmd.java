@@ -31,7 +31,7 @@ import org.apache.cloudstack.api.response.SwiftResponse;
 import com.cloud.storage.Swift;
 import com.cloud.user.Account;
 
-@APICommand(description = "List Swift.", responseObject = HostResponse.class, since="3.0.0")
+@APICommand(name = "listSwifts", description = "List Swift.", responseObject = HostResponse.class, since="3.0.0")
 public class ListSwiftsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListSwiftsCmd.class.getName());
     private static final String s_name = "listswiftsresponse";

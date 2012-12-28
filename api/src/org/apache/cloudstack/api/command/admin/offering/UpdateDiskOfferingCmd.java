@@ -26,7 +26,7 @@ import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import com.cloud.offering.DiskOffering;
 import com.cloud.user.Account;
 
-@APICommand(description="Updates a disk offering.", responseObject=DiskOfferingResponse.class)
+@APICommand(name = "updateDiskOffering", description="Updates a disk offering.", responseObject=DiskOfferingResponse.class)
 public class UpdateDiskOfferingCmd extends BaseCmd{
     public static final Logger s_logger = Logger.getLogger(UpdateDiskOfferingCmd.class.getName());
     private static final String s_name = "updatediskofferingresponse";

@@ -29,7 +29,7 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import com.cloud.network.vpc.VpcOffering;
 
-@APICommand(description="Lists VPC offerings", responseObject=VpcOfferingResponse.class)
+@APICommand(name = "listVPCOfferings", description="Lists VPC offerings", responseObject=VpcOfferingResponse.class)
 public class ListVPCOfferingsCmd extends BaseListCmd{
     public static final Logger s_logger = Logger.getLogger(ListVPCOfferingsCmd.class.getName());
     private static final String _name = "listvpcofferingsresponse";

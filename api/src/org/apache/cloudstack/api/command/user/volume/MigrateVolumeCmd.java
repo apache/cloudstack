@@ -30,7 +30,7 @@ import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 
 
-@APICommand(description="Migrate volume", responseObject=VolumeResponse.class, since="3.0.0")
+@APICommand(name = "migrateVolume", description="Migrate volume", responseObject=VolumeResponse.class, since="3.0.0")
 public class MigrateVolumeCmd extends BaseAsyncCmd {
     private static final String s_name = "migratevolumeresponse";
 

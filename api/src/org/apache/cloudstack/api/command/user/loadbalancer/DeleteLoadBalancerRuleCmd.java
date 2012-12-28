@@ -29,7 +29,7 @@ import com.cloud.network.rules.LoadBalancer;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@APICommand(description="Deletes a load balancer rule.", responseObject=SuccessResponse.class)
+@APICommand(name = "deleteLoadBalancerRule", description="Deletes a load balancer rule.", responseObject=SuccessResponse.class)
 public class DeleteLoadBalancerRuleCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteLoadBalancerRuleCmd.class.getName());
     private static final String s_name = "deleteloadbalancerruleresponse";

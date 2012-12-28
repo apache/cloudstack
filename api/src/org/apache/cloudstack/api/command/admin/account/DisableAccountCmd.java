@@ -30,7 +30,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@APICommand(description="Disables an account", responseObject=AccountResponse.class)
+@APICommand(name = "disableAccount", description="Disables an account", responseObject=AccountResponse.class)
 public class DisableAccountCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DisableAccountCmd.class.getName());
     private static final String s_name = "disableaccountresponse";

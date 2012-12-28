@@ -34,7 +34,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.server.ResourceTag.TaggedResourceType;
-@APICommand(description = "Deleting resource tag(s)", responseObject = SuccessResponse.class, since = "Burbank")
+@APICommand(name = "deleteTags", description = "Deleting resource tag(s)", responseObject = SuccessResponse.class, since = "Burbank")
 public class DeleteTagsCmd extends BaseAsyncCmd{
     public static final Logger s_logger = Logger.getLogger(DeleteTagsCmd.class.getName());
 

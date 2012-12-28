@@ -31,7 +31,7 @@ import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import com.cloud.offering.NetworkOffering;
 
-@APICommand(description="Lists all available network offerings.", responseObject=NetworkOfferingResponse.class)
+@APICommand(name = "listNetworkOfferings", description="Lists all available network offerings.", responseObject=NetworkOfferingResponse.class)
 public class ListNetworkOfferingsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListNetworkOfferingsCmd.class.getName());
     private static final String _name = "listnetworkofferingsresponse";

@@ -31,7 +31,7 @@ import org.apache.cloudstack.api.response.DomainResponse;
 
 import com.cloud.user.Account;
 
-@APICommand(description="Updates account information for the authenticated user", responseObject=AccountResponse.class)
+@APICommand(name = "updateAccount", description="Updates account information for the authenticated user", responseObject=AccountResponse.class)
 public class UpdateAccountCmd extends BaseCmd{
     public static final Logger s_logger = Logger.getLogger(UpdateAccountCmd.class.getName());
     private static final String s_name = "updateaccountresponse";

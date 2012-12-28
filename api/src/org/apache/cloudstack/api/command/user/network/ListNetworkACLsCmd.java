@@ -32,7 +32,7 @@ import org.apache.cloudstack.api.response.NetworkResponse;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.utils.Pair;
 
-@APICommand(description="Lists all network ACLs", responseObject=NetworkACLResponse.class)
+@APICommand(name = "listNetworkACLs", description="Lists all network ACLs", responseObject=NetworkACLResponse.class)
 public class ListNetworkACLsCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListNetworkACLsCmd.class.getName());
 

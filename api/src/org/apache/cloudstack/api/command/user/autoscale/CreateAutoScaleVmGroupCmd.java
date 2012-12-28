@@ -33,7 +33,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.as.AutoScaleVmGroup;
 import com.cloud.network.rules.LoadBalancer;
 
-@APICommand(description = "Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.", responseObject = AutoScaleVmGroupResponse.class)
+@APICommand(name = "createAutoScaleVmGroup", description = "Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.", responseObject = AutoScaleVmGroupResponse.class)
 public class CreateAutoScaleVmGroupCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateAutoScaleVmGroupCmd.class.getName());
 

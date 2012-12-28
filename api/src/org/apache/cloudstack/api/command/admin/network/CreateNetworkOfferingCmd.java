@@ -36,7 +36,7 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.user.Account;
 
-@APICommand(description="Creates a network offering.", responseObject=NetworkOfferingResponse.class, since="3.0.0")
+@APICommand(name = "createNetworkOffering", description="Creates a network offering.", responseObject=NetworkOfferingResponse.class, since="3.0.0")
 public class CreateNetworkOfferingCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateNetworkOfferingCmd.class.getName());
     private static final String _name = "createnetworkofferingresponse";

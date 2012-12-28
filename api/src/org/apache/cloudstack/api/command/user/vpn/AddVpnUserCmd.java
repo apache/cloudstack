@@ -33,7 +33,7 @@ import com.cloud.network.VpnUser;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@APICommand(description="Adds vpn users", responseObject=VpnUsersResponse.class)
+@APICommand(name = "addVpnUser", description="Adds vpn users", responseObject=VpnUsersResponse.class)
 public class AddVpnUserCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(AddVpnUserCmd.class.getName());
 

@@ -31,7 +31,7 @@ import com.cloud.host.Host;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@APICommand(description="Reconnects a host.", responseObject=HostResponse.class)
+@APICommand(name = "reconnectHost", description="Reconnects a host.", responseObject=HostResponse.class)
 public class ReconnectHostCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ReconnectHostCmd.class.getName());
 

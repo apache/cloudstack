@@ -34,7 +34,7 @@ import com.cloud.network.IpAddress;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
-@APICommand(description="Enables static nat for given ip address", responseObject=SuccessResponse.class)
+@APICommand(name = "enableStaticNat", description="Enables static nat for given ip address", responseObject=SuccessResponse.class)
 public class EnableStaticNatCmd extends BaseCmd{
     public static final Logger s_logger = Logger.getLogger(CreateIpForwardingRuleCmd.class.getName());
 

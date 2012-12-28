@@ -29,7 +29,7 @@ import org.apache.cloudstack.api.response.SnapshotPolicyResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.user.Account;
 
-@APICommand(description="Deletes snapshot policies for the account.", responseObject=SuccessResponse.class)
+@APICommand(name = "deleteSnapshotPolicies", description="Deletes snapshot policies for the account.", responseObject=SuccessResponse.class)
 public class DeleteSnapshotPoliciesCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteSnapshotPoliciesCmd.class.getName());
 

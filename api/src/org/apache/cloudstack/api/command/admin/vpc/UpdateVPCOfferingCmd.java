@@ -25,7 +25,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.network.vpc.VpcOffering;
 import com.cloud.user.Account;
 
-@APICommand(description="Updates VPC offering", responseObject=VpcOfferingResponse.class)
+@APICommand(name = "updateVPCOffering", description="Updates VPC offering", responseObject=VpcOfferingResponse.class)
 public class UpdateVPCOfferingCmd extends BaseAsyncCmd{
     public static final Logger s_logger = Logger.getLogger(UpdateVPCOfferingCmd.class.getName());
     private static final String _name = "updatevpcofferingresponse";

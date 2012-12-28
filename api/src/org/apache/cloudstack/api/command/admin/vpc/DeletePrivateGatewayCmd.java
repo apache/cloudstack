@@ -35,7 +35,7 @@ import com.cloud.network.vpc.VpcGateway;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@APICommand(description="Deletes a Private gateway", responseObject=SuccessResponse.class)
+@APICommand(name = "deletePrivateGateway", description="Deletes a Private gateway", responseObject=SuccessResponse.class)
 public class DeletePrivateGatewayCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeletePrivateGatewayCmd.class.getName());
     private static final String s_name = "deleteprivategatewayresponse";

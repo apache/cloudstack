@@ -30,7 +30,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.network.Site2SiteCustomerGateway;
 import com.cloud.user.UserContext;
 
-@APICommand(description="Creates site to site vpn customer gateway", responseObject=Site2SiteCustomerGatewayResponse.class)
+@APICommand(name = "createVpnCustomerGateway", description="Creates site to site vpn customer gateway", responseObject=Site2SiteCustomerGatewayResponse.class)
 public class CreateVpnCustomerGatewayCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(CreateVpnCustomerGatewayCmd.class.getName());
 

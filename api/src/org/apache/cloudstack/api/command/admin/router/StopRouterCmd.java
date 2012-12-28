@@ -33,7 +33,7 @@ import com.cloud.network.router.VirtualRouter;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@APICommand(description = "Stops a router.", responseObject = DomainRouterResponse.class)
+@APICommand(name = "stopRouter", description = "Stops a router.", responseObject = DomainRouterResponse.class)
 public class StopRouterCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(StopRouterCmd.class.getName());
     private static final String s_name = "stoprouterresponse";

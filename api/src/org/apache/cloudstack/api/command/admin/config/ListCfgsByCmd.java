@@ -30,7 +30,7 @@ import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.configuration.Configuration;
 import com.cloud.utils.Pair;
 
-@APICommand(description = "Lists all configurations.", responseObject = ConfigurationResponse.class)
+@APICommand(name = "listConfigurations", description = "Lists all configurations.", responseObject = ConfigurationResponse.class)
 public class ListCfgsByCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListCfgsByCmd.class.getName());
 

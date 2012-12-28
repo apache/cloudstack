@@ -27,7 +27,7 @@ import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(responseObject=SystemVmResponse.class, description="Destroyes a system virtual machine.")
+@APICommand(name = "destroySystemVm", responseObject=SystemVmResponse.class, description="Destroyes a system virtual machine.")
 public class DestroySystemVmCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DestroySystemVmCmd.class.getName());
 

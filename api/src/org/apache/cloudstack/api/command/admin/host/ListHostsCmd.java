@@ -38,7 +38,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.utils.Pair;
 
-@APICommand(description="Lists hosts.", responseObject=HostResponse.class)
+@APICommand(name = "listHosts", description="Lists hosts.", responseObject=HostResponse.class)
 public class ListHostsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListHostsCmd.class.getName());
 

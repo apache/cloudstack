@@ -32,7 +32,7 @@ import com.cloud.async.AsyncJob;
 import com.cloud.storage.Snapshot;
 import com.cloud.utils.Pair;
 
-@APICommand(description="Lists all available snapshots for the account.", responseObject=SnapshotResponse.class)
+@APICommand(name = "listSnapshots", description="Lists all available snapshots for the account.", responseObject=SnapshotResponse.class)
 public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListSnapshotsCmd.class.getName());
 

@@ -27,7 +27,7 @@ import com.cloud.network.rules.LoadBalancer;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@APICommand(description="Updates load balancer", responseObject=LoadBalancerResponse.class)
+@APICommand(name = "updateLoadBalancerRule", description="Updates load balancer", responseObject=LoadBalancerResponse.class)
 public class UpdateLoadBalancerRuleCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateLoadBalancerRuleCmd.class.getName());
     private static final String s_name = "updateloadbalancerruleresponse";

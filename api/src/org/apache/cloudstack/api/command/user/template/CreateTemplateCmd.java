@@ -42,7 +42,7 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@APICommand(responseObject = StoragePoolResponse.class, description = "Creates a template of a virtual machine. " + "The virtual machine must be in a STOPPED state. "
+@APICommand(name = "createTemplate", responseObject = StoragePoolResponse.class, description = "Creates a template of a virtual machine. " + "The virtual machine must be in a STOPPED state. "
         + "A template created from this command is automatically designated as a private template visible to the account that created it.")
         public class CreateTemplateCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateTemplateCmd.class.getName());

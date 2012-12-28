@@ -31,7 +31,7 @@ import org.apache.cloudstack.api.response.Site2SiteVpnGatewayResponse;
 import com.cloud.network.Site2SiteVpnGateway;
 import com.cloud.utils.Pair;
 
-@APICommand(description="Lists site 2 site vpn gateways", responseObject=Site2SiteVpnGatewayResponse.class)
+@APICommand(name = "listVpnGateways", description="Lists site 2 site vpn gateways", responseObject=Site2SiteVpnGatewayResponse.class)
 public class ListVpnGatewaysCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger (ListVpnGatewaysCmd.class.getName());
 

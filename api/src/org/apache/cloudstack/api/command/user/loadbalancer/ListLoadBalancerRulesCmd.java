@@ -34,7 +34,7 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.utils.Pair;
 
-@APICommand(description = "Lists load balancer rules.", responseObject = LoadBalancerResponse.class)
+@APICommand(name = "listLoadBalancerRules", description = "Lists load balancer rules.", responseObject = LoadBalancerResponse.class)
 public class ListLoadBalancerRulesCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListLoadBalancerRulesCmd.class.getName());
 

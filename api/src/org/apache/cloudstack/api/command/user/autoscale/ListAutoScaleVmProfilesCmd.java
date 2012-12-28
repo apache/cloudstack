@@ -30,7 +30,7 @@ import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.network.as.AutoScaleVmProfile;
 
-@APICommand(description = "Lists autoscale vm profiles.", responseObject = AutoScaleVmProfileResponse.class)
+@APICommand(name = "listAutoScaleVmProfiles", description = "Lists autoscale vm profiles.", responseObject = AutoScaleVmProfileResponse.class)
 public class ListAutoScaleVmProfilesCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListAutoScaleVmProfilesCmd.class.getName());
 

@@ -59,7 +59,7 @@ import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 
 
-@APICommand(description="Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.", responseObject=UserVmResponse.class)
+@APICommand(name = "deployVirtualMachine", description="Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.", responseObject=UserVmResponse.class)
 public class DeployVMCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(DeployVMCmd.class.getName());
 

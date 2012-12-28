@@ -27,7 +27,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.user.Account;
 
-@APICommand(responseObject = SuccessResponse.class, description = "Deletes a particular egress rule from this security group", since="3.0.0")
+@APICommand(name = "revokeSecurityGroupEgress", responseObject = SuccessResponse.class, description = "Deletes a particular egress rule from this security group", since="3.0.0")
 public class RevokeSecurityGroupEgressCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RevokeSecurityGroupEgressCmd.class.getName());
 

@@ -36,7 +36,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@APICommand(responseObject=VirtualRouterProviderResponse.class, description="Configures a virtual router element.")
+@APICommand(name = "configureVirtualRouterElement", responseObject=VirtualRouterProviderResponse.class, description="Configures a virtual router element.")
 public class ConfigureVirtualRouterElementCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ConfigureVirtualRouterElementCmd.class.getName());
     private static final String s_name = "configurevirtualrouterelementresponse";

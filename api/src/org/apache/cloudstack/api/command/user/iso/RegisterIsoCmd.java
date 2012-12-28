@@ -32,7 +32,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.UserContext;
 
-@APICommand(responseObject=TemplateResponse.class, description="Registers an existing ISO into the CloudStack Cloud.")
+@APICommand(name = "registerIso", responseObject=TemplateResponse.class, description="Registers an existing ISO into the CloudStack Cloud.")
 public class RegisterIsoCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(RegisterIsoCmd.class.getName());
 

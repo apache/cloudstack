@@ -35,7 +35,7 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
 
-@APICommand(description="Updates a network", responseObject=NetworkResponse.class)
+@APICommand(name = "updateNetwork", description="Updates a network", responseObject=NetworkResponse.class)
 public class UpdateNetworkCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateNetworkCmd.class.getName());
 

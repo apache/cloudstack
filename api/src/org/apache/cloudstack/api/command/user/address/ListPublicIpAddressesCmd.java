@@ -36,7 +36,7 @@ import com.cloud.async.AsyncJob;
 import com.cloud.network.IpAddress;
 import com.cloud.utils.Pair;
 
-@APICommand(description="Lists all public ip addresses", responseObject=IPAddressResponse.class)
+@APICommand(name = "listPublicIpAddresses", description="Lists all public ip addresses", responseObject=IPAddressResponse.class)
 public class ListPublicIpAddressesCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListPublicIpAddressesCmd.class.getName());
 

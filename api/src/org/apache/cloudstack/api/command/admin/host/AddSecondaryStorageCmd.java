@@ -28,7 +28,7 @@ import com.cloud.exception.DiscoveryException;
 import com.cloud.host.Host;
 import com.cloud.user.Account;
 
-@APICommand(description="Adds secondary storage.", responseObject=HostResponse.class)
+@APICommand(name = "addSecondaryStorage", description="Adds secondary storage.", responseObject=HostResponse.class)
 public class AddSecondaryStorageCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddSecondaryStorageCmd.class.getName());
     private static final String s_name = "addsecondarystorageresponse";

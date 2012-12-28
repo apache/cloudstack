@@ -27,7 +27,7 @@ import org.apache.cloudstack.api.response.NetworkOfferingResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.user.Account;
 
-@APICommand(description="Deletes a network offering.", responseObject=SuccessResponse.class, since="3.0.0")
+@APICommand(name = "deleteNetworkOffering", description="Deletes a network offering.", responseObject=SuccessResponse.class, since="3.0.0")
 public class DeleteNetworkOfferingCmd extends BaseCmd{
     public static final Logger s_logger = Logger.getLogger(DeleteNetworkOfferingCmd.class.getName());
     private static final String s_name = "deletenetworkofferingresponse";

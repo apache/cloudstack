@@ -29,7 +29,7 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
 
-@APICommand(description="Creates a user for an account", responseObject=UserResponse.class)
+@APICommand(name = "deleteUser", description="Creates a user for an account", responseObject=UserResponse.class)
 public class DeleteUserCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteUserCmd.class.getName());
 

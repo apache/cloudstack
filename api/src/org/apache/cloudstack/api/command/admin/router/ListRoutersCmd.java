@@ -33,7 +33,7 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 
 import com.cloud.async.AsyncJob;
 
-@APICommand(description="List routers.", responseObject=DomainRouterResponse.class)
+@APICommand(name = "listRouters", description="List routers.", responseObject=DomainRouterResponse.class)
 public class ListRoutersCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListRoutersCmd.class.getName());
 

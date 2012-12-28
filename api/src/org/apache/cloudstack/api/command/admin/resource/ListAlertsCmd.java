@@ -30,7 +30,7 @@ import org.apache.cloudstack.api.response.AlertResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.utils.Pair;
 
-@APICommand(description = "Lists all alerts.", responseObject = AlertResponse.class)
+@APICommand(name = "listAlerts", description = "Lists all alerts.", responseObject = AlertResponse.class)
 public class ListAlertsCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListAlertsCmd.class.getName());

@@ -36,7 +36,7 @@ import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.VpcGateway;
 import com.cloud.user.UserContext;
 
-@APICommand(description="Creates a static route", responseObject=StaticRouteResponse.class)
+@APICommand(name = "createStaticRoute", description="Creates a static route", responseObject=StaticRouteResponse.class)
 public class CreateStaticRouteCmd extends BaseAsyncCreateCmd{
     private static final String s_name = "createstaticrouteresponse";
     public static final Logger s_logger = Logger.getLogger(CreateStaticRouteCmd.class.getName());

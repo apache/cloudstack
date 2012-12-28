@@ -31,7 +31,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.user.UserContext;
 
-@APICommand(description="Destroys a l2tp/ipsec remote access vpn", responseObject=SuccessResponse.class)
+@APICommand(name = "deleteRemoteAccessVpn", description="Destroys a l2tp/ipsec remote access vpn", responseObject=SuccessResponse.class)
 public class DeleteRemoteAccessVpnCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteRemoteAccessVpnCmd.class.getName());
 

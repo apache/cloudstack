@@ -28,7 +28,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.projects.Project;
 import com.cloud.user.UserContext;
 
-@APICommand(description="Suspends a project", responseObject=ProjectResponse.class, since="3.0.0")
+@APICommand(name = "suspendProject", description="Suspends a project", responseObject=ProjectResponse.class, since="3.0.0")
 public class SuspendProjectCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(SuspendProjectCmd.class.getName());
 

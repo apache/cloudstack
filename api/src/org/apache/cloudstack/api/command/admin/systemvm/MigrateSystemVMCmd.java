@@ -38,7 +38,7 @@ import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(description="Attempts Migration of a system virtual machine to the host specified.", responseObject=SystemVmInstanceResponse.class)
+@APICommand(name = "migrateSystemVm", description="Attempts Migration of a system virtual machine to the host specified.", responseObject=SystemVmInstanceResponse.class)
 public class MigrateSystemVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(MigrateSystemVMCmd.class.getName());
 

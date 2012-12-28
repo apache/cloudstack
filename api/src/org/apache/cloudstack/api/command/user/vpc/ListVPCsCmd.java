@@ -33,7 +33,7 @@ import org.apache.cloudstack.api.Parameter;
 import com.cloud.network.vpc.Vpc;
 
 
-@APICommand(description="Lists VPCs", responseObject=VpcResponse.class)
+@APICommand(name = "listVPCs", description="Lists VPCs", responseObject=VpcResponse.class)
 public class ListVPCsCmd extends BaseListTaggedResourcesCmd{
     public static final Logger s_logger = Logger.getLogger(ListVPCsCmd.class.getName());
     private static final String s_name = "listvpcsresponse";

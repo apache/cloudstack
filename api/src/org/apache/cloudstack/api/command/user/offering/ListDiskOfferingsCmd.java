@@ -30,7 +30,7 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.offering.DiskOffering;
 
-@APICommand(description="Lists all available disk offerings.", responseObject=DiskOfferingResponse.class)
+@APICommand(name = "listDiskOfferings", description="Lists all available disk offerings.", responseObject=DiskOfferingResponse.class)
 public class ListDiskOfferingsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListDiskOfferingsCmd.class.getName());
 

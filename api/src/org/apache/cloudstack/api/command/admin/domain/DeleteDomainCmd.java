@@ -27,7 +27,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@APICommand(description="Deletes a specified domain", responseObject=SuccessResponse.class)
+@APICommand(name = "deleteDomain", description="Deletes a specified domain", responseObject=SuccessResponse.class)
 public class DeleteDomainCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteDomainCmd.class.getName());
     private static final String s_name = "deletedomainresponse";

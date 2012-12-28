@@ -29,7 +29,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.network.IpAddress;
 import com.cloud.user.Account;
 
-@APICommand(responseObject=FirewallRuleResponse.class, description="Updates a port forwarding rule.  Only the private port and the virtual machine can be updated.")
+@APICommand(name = "updatePortForwardingRule", responseObject=FirewallRuleResponse.class, description="Updates a port forwarding rule.  Only the private port and the virtual machine can be updated.")
 public class UpdatePortForwardingRuleCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdatePortForwardingRuleCmd.class.getName());
     private static final String s_name = "updateportforwardingruleresponse";

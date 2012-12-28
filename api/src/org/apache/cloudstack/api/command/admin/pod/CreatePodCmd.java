@@ -26,7 +26,7 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import com.cloud.dc.Pod;
 import com.cloud.user.Account;
 
-@APICommand(description="Creates a new Pod.", responseObject=PodResponse.class)
+@APICommand(name = "createPod", description="Creates a new Pod.", responseObject=PodResponse.class)
 public class CreatePodCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreatePodCmd.class.getName());
 

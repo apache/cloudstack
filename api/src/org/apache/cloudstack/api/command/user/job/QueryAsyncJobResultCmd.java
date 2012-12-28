@@ -25,7 +25,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import com.cloud.user.Account;
 
-@APICommand(description="Retrieves the current status of asynchronous job.", responseObject=AsyncJobResponse.class)
+@APICommand(name = "queryAsyncJobResult", description="Retrieves the current status of asynchronous job.", responseObject=AsyncJobResponse.class)
 public class QueryAsyncJobResultCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(QueryAsyncJobResultCmd.class.getName());
 

@@ -32,7 +32,7 @@ import org.apache.cloudstack.api.response.CounterResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.network.as.Condition;
 
-@APICommand(description = "List Conditions for the specific user", responseObject = CounterResponse.class)
+@APICommand(name = "listConditions ", description = "List Conditions for the specific user", responseObject = CounterResponse.class)
 public class ListConditionsCmd extends BaseListAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListConditionsCmd.class.getName());
     private static final String s_name = "listconditionsresponse";

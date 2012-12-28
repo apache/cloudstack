@@ -32,7 +32,7 @@ import com.cloud.network.as.AutoScaleVmProfile;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@APICommand(description = "Updates an existing autoscale vm profile.", responseObject = AutoScaleVmProfileResponse.class)
+@APICommand(name = "updateAutoScaleVmProfile", description = "Updates an existing autoscale vm profile.", responseObject = AutoScaleVmProfileResponse.class)
 public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateAutoScaleVmProfileCmd.class.getName());
 

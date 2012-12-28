@@ -37,7 +37,7 @@ import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.utils.net.Ip;
 
-@APICommand(description = "Creates a port forwarding rule", responseObject = FirewallRuleResponse.class)
+@APICommand(name = "createPortForwardingRule", description = "Creates a port forwarding rule", responseObject = FirewallRuleResponse.class)
 public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements PortForwardingRule {
     public static final Logger s_logger = Logger.getLogger(CreatePortForwardingRuleCmd.class.getName());
 

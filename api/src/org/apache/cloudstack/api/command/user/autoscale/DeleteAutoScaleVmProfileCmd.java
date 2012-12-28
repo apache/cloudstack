@@ -32,7 +32,7 @@ import com.cloud.network.as.AutoScaleVmProfile;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@APICommand(description = "Deletes a autoscale vm profile.", responseObject = SuccessResponse.class)
+@APICommand(name = "deleteAutoScaleVmProfile", description = "Deletes a autoscale vm profile.", responseObject = SuccessResponse.class)
 public class DeleteAutoScaleVmProfileCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteAutoScaleVmProfileCmd.class.getName());
     private static final String s_name = "deleteautoscalevmprofileresponse";

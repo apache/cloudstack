@@ -30,7 +30,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.network.RemoteAccessVpn;
 
-@APICommand(description="Creates a l2tp/ipsec remote access vpn", responseObject=RemoteAccessVpnResponse.class)
+@APICommand(name = "createRemoteAccessVpn", description="Creates a l2tp/ipsec remote access vpn", responseObject=RemoteAccessVpnResponse.class)
 public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateRemoteAccessVpnCmd.class.getName());
 

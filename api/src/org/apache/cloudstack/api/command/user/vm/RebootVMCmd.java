@@ -34,7 +34,7 @@ import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 
-@APICommand(description="Reboots a virtual machine.", responseObject=UserVmResponse.class)
+@APICommand(name = "rebootVirtualMachine", description="Reboots a virtual machine.", responseObject=UserVmResponse.class)
 public class RebootVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RebootVMCmd.class.getName());
     private static final String s_name = "rebootvirtualmachineresponse";

@@ -25,7 +25,7 @@ import org.apache.cloudstack.api.response.LDAPConfigResponse;
 import org.apache.cloudstack.api.response.LDAPRemoveResponse;
 import com.cloud.user.Account;
 
-@APICommand(description="Remove the LDAP context for this site.", responseObject=LDAPConfigResponse.class, since="3.0.1")
+@APICommand(name = "ldapRemove", description="Remove the LDAP context for this site.", responseObject=LDAPConfigResponse.class, since="3.0.1")
 public class LDAPRemoveCmd extends BaseCmd  {
     public static final Logger s_logger = Logger.getLogger(LDAPRemoveCmd.class.getName());
 

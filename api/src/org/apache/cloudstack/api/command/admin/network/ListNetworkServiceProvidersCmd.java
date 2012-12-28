@@ -32,7 +32,7 @@ import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
-@APICommand(description="Lists network serviceproviders for a given physical network.", responseObject=ProviderResponse.class, since="3.0.0")
+@APICommand(name = "listNetworkServiceProviders", description="Lists network serviceproviders for a given physical network.", responseObject=ProviderResponse.class, since="3.0.0")
 public class ListNetworkServiceProvidersCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListNetworkServiceProvidersCmd.class.getName());
     private static final String _name = "listnetworkserviceprovidersresponse";

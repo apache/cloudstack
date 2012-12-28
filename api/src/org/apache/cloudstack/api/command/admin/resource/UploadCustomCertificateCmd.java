@@ -24,7 +24,7 @@ import org.apache.cloudstack.api.response.CustomCertificateResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 
-@APICommand(responseObject=CustomCertificateResponse.class, description="Uploads a custom certificate for the console proxy VMs to use for SSL. Can be used to upload a single certificate signed by a known CA. Can also be used, through multiple calls, to upload a chain of certificates from CA to the custom certificate itself.")
+@APICommand(name = "uploadCustomCertificate", responseObject=CustomCertificateResponse.class, description="Uploads a custom certificate for the console proxy VMs to use for SSL. Can be used to upload a single certificate signed by a known CA. Can also be used, through multiple calls, to upload a chain of certificates from CA to the custom certificate itself.")
 public class UploadCustomCertificateCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UploadCustomCertificateCmd.class.getName());
 

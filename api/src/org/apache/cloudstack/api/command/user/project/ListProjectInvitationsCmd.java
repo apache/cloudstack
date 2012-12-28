@@ -26,7 +26,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ProjectInvitationResponse;
 
-@APICommand(description = "Lists projects and provides detailed information for listed projects", responseObject = ProjectInvitationResponse.class, since = "3.0.0")
+@APICommand(name = "listProjectInvitations", description = "Lists projects and provides detailed information for listed projects", responseObject = ProjectInvitationResponse.class, since = "3.0.0")
 public class ListProjectInvitationsCmd extends BaseListAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListProjectInvitationsCmd.class.getName());
     private static final String s_name = "listprojectinvitationsresponse";

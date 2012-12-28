@@ -26,7 +26,7 @@ import org.apache.cloudstack.api.Parameter;
 import com.cloud.async.AsyncJob;
 
 
-@APICommand(description="Lists all volumes.", responseObject=VolumeResponse.class)
+@APICommand(name = "listVolumes", description="Lists all volumes.", responseObject=VolumeResponse.class)
 public class ListVolumesCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListVolumesCmd.class.getName());
 

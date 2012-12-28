@@ -30,7 +30,7 @@ import org.apache.cloudstack.api.response.HostResponse;
 import com.cloud.host.Host;
 import com.cloud.user.Account;
 
-@APICommand(description="Updates a host.", responseObject=HostResponse.class)
+@APICommand(name = "updateHost", description="Updates a host.", responseObject=HostResponse.class)
 public class UpdateHostCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateHostCmd.class.getName());
     private static final String s_name = "updatehostresponse";

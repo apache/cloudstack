@@ -28,7 +28,7 @@ import com.cloud.projects.Project;
 import com.cloud.user.UserContext;
 
 
-@APICommand(description="Adds acoount to a project", responseObject=SuccessResponse.class, since="3.0.0")
+@APICommand(name = "addAccountToProject", description="Adds acoount to a project", responseObject=SuccessResponse.class, since="3.0.0")
 public class AddAccountToProjectCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AddAccountToProjectCmd.class.getName());
 

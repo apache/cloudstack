@@ -28,7 +28,7 @@ import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@APICommand(description="Reset site to site vpn connection", responseObject=Site2SiteVpnConnectionResponse.class)
+@APICommand(name = "resetVpnConnection", description="Reset site to site vpn connection", responseObject=Site2SiteVpnConnectionResponse.class)
 public class ResetVpnConnectionCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ResetVpnConnectionCmd.class.getName());
 

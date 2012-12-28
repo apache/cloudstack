@@ -29,7 +29,7 @@ import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 
-@APICommand(responseObject=UserVmResponse.class, description="Changes the service offering for a virtual machine. " +
+@APICommand(name = "changeServiceForVirtualMachine", responseObject=UserVmResponse.class, description="Changes the service offering for a virtual machine. " +
                                             "The virtual machine must be in a \"Stopped\" state for " +
                                             "this command to take effect.")
 public class UpgradeVMCmd extends BaseCmd {

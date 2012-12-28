@@ -26,7 +26,7 @@ import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.user.Account;
 
-@APICommand(description = "Deletes a storage pool.", responseObject = SuccessResponse.class)
+@APICommand(name = "deleteStoragePool", description = "Deletes a storage pool.", responseObject = SuccessResponse.class)
 public class DeletePoolCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeletePoolCmd.class.getName());
     private static final String s_name = "deletestoragepoolresponse";

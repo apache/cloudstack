@@ -30,7 +30,7 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import com.cloud.uservm.UserVm;
 
-@APICommand(description="List all virtual machine instances that are assigned to a load balancer rule.", responseObject=UserVmResponse.class)
+@APICommand(name = "listLoadBalancerRuleInstances", description="List all virtual machine instances that are assigned to a load balancer rule.", responseObject=UserVmResponse.class)
 public class ListLoadBalancerRuleInstancesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger (ListLoadBalancerRuleInstancesCmd.class.getName());
 

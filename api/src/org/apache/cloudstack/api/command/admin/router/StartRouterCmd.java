@@ -30,7 +30,7 @@ import com.cloud.network.router.VirtualRouter;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@APICommand(responseObject=DomainRouterResponse.class, description="Starts a router.")
+@APICommand(name = "startRouter", responseObject=DomainRouterResponse.class, description="Starts a router.")
 public class StartRouterCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(StartRouterCmd.class.getName());
     private static final String s_name = "startrouterresponse";

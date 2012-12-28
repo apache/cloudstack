@@ -26,7 +26,7 @@ import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.user.UserContext;
 
-@APICommand(description="Updates a user account", responseObject=UserResponse.class)
+@APICommand(name = "updateUser", description="Updates a user account", responseObject=UserResponse.class)
 public class UpdateUserCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateUserCmd.class.getName());
 

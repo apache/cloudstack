@@ -32,7 +32,7 @@ import com.cloud.storage.Snapshot;
 import com.cloud.storage.Volume;
 import com.cloud.user.UserContext;
 
-@APICommand(responseObject=VolumeResponse.class, description="Creates a disk volume from a disk offering. This disk volume must still be attached to a virtual machine to make use of it.")
+@APICommand(name = "createVolume", responseObject=VolumeResponse.class, description="Creates a disk volume from a disk offering. This disk volume must still be attached to a virtual machine to make use of it.")
 public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateVolumeCmd.class.getName());
     private static final String s_name = "createvolumeresponse";

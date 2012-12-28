@@ -30,7 +30,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.user.UserContext;
 
-@APICommand(description="Deletes a firewall rule", responseObject=SuccessResponse.class)
+@APICommand(name = "deleteFirewallRule", description="Deletes a firewall rule", responseObject=SuccessResponse.class)
 public class DeleteFirewallRuleCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteFirewallRuleCmd.class.getName());
     private static final String s_name = "deletefirewallruleresponse";

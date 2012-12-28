@@ -29,7 +29,7 @@ import com.cloud.network.vpc.StaticRoute;
 import com.cloud.utils.Pair;
 import org.apache.cloudstack.api.response.VpcResponse;
 
-@APICommand(description="Lists all static routes", responseObject=StaticRouteResponse.class)
+@APICommand(name = "listStaticRoutes", description="Lists all static routes", responseObject=StaticRouteResponse.class)
 public class ListStaticRoutesCmd extends BaseListTaggedResourcesCmd {
     private static final String s_name = "liststaticroutesresponse";
 

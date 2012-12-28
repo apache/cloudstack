@@ -30,7 +30,7 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@APICommand(description="Extracts a template", responseObject=ExtractResponse.class)
+@APICommand(name = "extractTemplate", description="Extracts a template", responseObject=ExtractResponse.class)
 public class ExtractTemplateCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ExtractTemplateCmd.class.getName());
 

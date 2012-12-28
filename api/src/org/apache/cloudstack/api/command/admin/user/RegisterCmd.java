@@ -27,7 +27,7 @@ import org.apache.cloudstack.api.response.UserResponse;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 
-@APICommand(responseObject=RegisterResponse.class, description="This command allows a user to register for the developer API, returning a secret key and an API key. This request is made through the integration API port, so it is a privileged command and must be made on behalf of a user. It is up to the implementer just how the username and password are entered, and then how that translates to an integration API request. Both secret key and API key should be returned to the user")
+@APICommand(name = "registerUserKeys", responseObject=RegisterResponse.class, description="This command allows a user to register for the developer API, returning a secret key and an API key. This request is made through the integration API port, so it is a privileged command and must be made on behalf of a user. It is up to the implementer just how the username and password are entered, and then how that translates to an integration API request. Both secret key and API key should be returned to the user")
 public class RegisterCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(RegisterCmd.class.getName());
 

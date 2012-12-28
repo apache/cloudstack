@@ -31,7 +31,7 @@ import com.cloud.network.IpAddress;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@APICommand(description="Disassociates an ip address from the account.", responseObject=SuccessResponse.class)
+@APICommand(name = "disassociateIpAddress", description="Disassociates an ip address from the account.", responseObject=SuccessResponse.class)
 public class DisassociateIPAddrCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DisassociateIPAddrCmd.class.getName());
 

@@ -35,7 +35,7 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.TaggedResourceType;
-@APICommand(description = "Creates resource tag(s)", responseObject = SuccessResponse.class, since = "Burbank")
+@APICommand(name = "createTags", description = "Creates resource tag(s)", responseObject = SuccessResponse.class, since = "Burbank")
 public class CreateTagsCmd extends BaseAsyncCmd{
     public static final Logger s_logger = Logger.getLogger(CreateTagsCmd.class.getName());
 

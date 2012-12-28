@@ -30,7 +30,7 @@ import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
-@APICommand(description="Lists accounts and provides detailed account information for listed accounts", responseObject=AccountResponse.class)
+@APICommand(name = "listAccounts", description="Lists accounts and provides detailed account information for listed accounts", responseObject=AccountResponse.class)
 public class ListAccountsCmd extends BaseListDomainResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListAccountsCmd.class.getName());
     private static final String s_name = "listaccountsresponse";

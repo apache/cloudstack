@@ -32,7 +32,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.user.Account;
 
-@APICommand(description="Updates a network serviceProvider of a physical network", responseObject=ProviderResponse.class, since="3.0.0")
+@APICommand(name = "updateNetworkServiceProvider", description="Updates a network serviceProvider of a physical network", responseObject=ProviderResponse.class, since="3.0.0")
 public class UpdateNetworkServiceProviderCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateNetworkServiceProviderCmd.class.getName());
 

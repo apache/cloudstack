@@ -39,7 +39,7 @@ import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
 
-@APICommand(description = "Creates a Load Balancer stickiness policy ", responseObject = LBStickinessResponse.class, since="3.0.0")
+@APICommand(name = "createLBStickinessPolicy", description = "Creates a Load Balancer stickiness policy ", responseObject = LBStickinessResponse.class, since="3.0.0")
 @SuppressWarnings("rawtypes")
 public class CreateLBStickinessPolicyCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger

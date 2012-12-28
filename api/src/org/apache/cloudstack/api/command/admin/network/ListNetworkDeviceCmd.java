@@ -41,7 +41,7 @@ import com.cloud.server.ManagementService;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(description="List network devices", responseObject = NetworkDeviceResponse.class)
+@APICommand(name = "listNetworkDevice", description="List network devices", responseObject = NetworkDeviceResponse.class)
 public class ListNetworkDeviceCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListNetworkDeviceCmd.class);
     private static final String s_name = "listnetworkdevice";

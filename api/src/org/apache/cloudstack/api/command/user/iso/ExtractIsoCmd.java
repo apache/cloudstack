@@ -30,7 +30,7 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@APICommand(description="Extracts an ISO", responseObject=ExtractResponse.class)
+@APICommand(name = "extractIso", description="Extracts an ISO", responseObject=ExtractResponse.class)
 public class ExtractIsoCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ExtractIsoCmd.class.getName());
 

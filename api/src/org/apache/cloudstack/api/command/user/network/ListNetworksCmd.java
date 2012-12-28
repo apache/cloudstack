@@ -32,7 +32,7 @@ import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import com.cloud.network.Network;
 
-@APICommand(description="Lists all available networks.", responseObject=NetworkResponse.class)
+@APICommand(name = "listNetworks", description="Lists all available networks.", responseObject=NetworkResponse.class)
 public class ListNetworksCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListNetworksCmd.class.getName());
     private static final String _name = "listnetworksresponse";

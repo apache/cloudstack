@@ -28,7 +28,7 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@APICommand(description="Deletes a keypair by name", responseObject=SuccessResponse.class)
+@APICommand(name = "deleteSSHKeyPair", description="Deletes a keypair by name", responseObject=SuccessResponse.class)
 public class DeleteSSHKeyPairCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateSSHKeyPairCmd.class.getName());
     private static final String s_name = "deletesshkeypairresponse";

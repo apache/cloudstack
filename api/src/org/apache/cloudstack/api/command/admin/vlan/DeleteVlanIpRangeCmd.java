@@ -27,7 +27,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.user.Account;
 
-@APICommand(description="Creates a VLAN IP range.", responseObject=SuccessResponse.class)
+@APICommand(name = "deleteVlanIpRange", description="Creates a VLAN IP range.", responseObject=SuccessResponse.class)
 public class DeleteVlanIpRangeCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteVlanIpRangeCmd.class.getName());
 

@@ -30,7 +30,7 @@ import com.cloud.network.security.SecurityGroup;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@APICommand(responseObject = SecurityGroupResponse.class, description = "Creates a security group")
+@APICommand(name = "createSecurityGroup", responseObject = SecurityGroupResponse.class, description = "Creates a security group")
 public class CreateSecurityGroupCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateSecurityGroupCmd.class.getName());
 

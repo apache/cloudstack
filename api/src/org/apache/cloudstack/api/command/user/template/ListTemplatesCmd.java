@@ -37,7 +37,7 @@ import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.utils.Pair;
 
-@APICommand(description="List all public, private, and privileged templates.", responseObject=TemplateResponse.class)
+@APICommand(name = "listTemplates", description="List all public, private, and privileged templates.", responseObject=TemplateResponse.class)
 public class ListTemplatesCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListTemplatesCmd.class.getName());
 

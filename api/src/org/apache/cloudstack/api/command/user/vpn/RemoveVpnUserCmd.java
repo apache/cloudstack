@@ -31,7 +31,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@APICommand(description="Removes vpn user", responseObject=SuccessResponse.class)
+@APICommand(name = "removeVpnUser", description="Removes vpn user", responseObject=SuccessResponse.class)
 public class RemoveVpnUserCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RemoveVpnUserCmd.class.getName());
 

@@ -30,7 +30,7 @@ import org.apache.cloudstack.api.response.TemplateResponse;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 
-@APICommand(responseObject=TemplateResponse.class, description="load template into primary storage")
+@APICommand(name = "prepareTemplate", responseObject=TemplateResponse.class, description="load template into primary storage")
 public class PrepareTemplateCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(PrepareTemplateCmd.class.getName());
 

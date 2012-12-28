@@ -35,7 +35,7 @@ import com.cloud.server.ManagementService;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(description="Deletes network device.", responseObject=SuccessResponse.class)
+@APICommand(name = "deleteNetworkDevice", description="Deletes network device.", responseObject=SuccessResponse.class)
 public class DeleteNetworkDeviceCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteNetworkDeviceCmd.class);
     private static final String s_name = "deletenetworkdeviceresponse";

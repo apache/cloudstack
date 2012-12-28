@@ -32,7 +32,7 @@ import com.cloud.storage.StoragePool;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@APICommand(description="Cancels maintenance for primary storage", responseObject=StoragePoolResponse.class)
+@APICommand(name = "cancelStorageMaintenance", description="Cancels maintenance for primary storage", responseObject=StoragePoolResponse.class)
 public class CancelPrimaryStorageMaintenanceCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(CancelPrimaryStorageMaintenanceCmd.class.getName());
 

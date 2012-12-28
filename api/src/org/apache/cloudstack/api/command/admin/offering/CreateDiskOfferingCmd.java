@@ -29,7 +29,7 @@ import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.user.Account;
 
-@APICommand(description="Creates a disk offering.", responseObject=DiskOfferingResponse.class)
+@APICommand(name = "createDiskOffering", description="Creates a disk offering.", responseObject=DiskOfferingResponse.class)
 public class CreateDiskOfferingCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateDiskOfferingCmd.class.getName());
 

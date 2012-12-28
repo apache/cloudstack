@@ -42,7 +42,7 @@ import com.cloud.user.UserContext;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.net.NetUtils;
 
-@APICommand(responseObject = SecurityGroupRuleResponse.class, description = "Authorizes a particular ingress rule for this security group")
+@APICommand(name = "authorizeSecurityGroupIngress", responseObject = SecurityGroupRuleResponse.class, description = "Authorizes a particular ingress rule for this security group")
 @SuppressWarnings("rawtypes")
 public class AuthorizeSecurityGroupIngressCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AuthorizeSecurityGroupIngressCmd.class.getName());

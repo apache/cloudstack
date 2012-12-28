@@ -27,7 +27,7 @@ import org.apache.cloudstack.api.response.ProjectAccountResponse;
 import com.cloud.user.UserContext;
 import com.cloud.vm.InstanceGroup;
 
-@APICommand(description = "Creates a vm group", responseObject = InstanceGroupResponse.class)
+@APICommand(name = "createInstanceGroup", description = "Creates a vm group", responseObject = InstanceGroupResponse.class)
 public class CreateVMGroupCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateVMGroupCmd.class.getName());
 

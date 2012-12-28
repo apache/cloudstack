@@ -30,7 +30,7 @@ import com.cloud.user.Account;
 import com.cloud.user.UserAccount;
 import com.cloud.user.UserContext;
 
-@APICommand(description="Creates an account", responseObject=UserResponse.class)
+@APICommand(name = "createAccount", description="Creates an account", responseObject=UserResponse.class)
 public class CreateAccountCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateAccountCmd.class.getName());
 

@@ -28,7 +28,7 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
 
-@APICommand(description="Deletes a account, and all users associated with this account", responseObject=SuccessResponse.class)
+@APICommand(name = "deleteAccount", description="Deletes a account, and all users associated with this account", responseObject=SuccessResponse.class)
 public class DeleteAccountCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteAccountCmd.class.getName());
     private static final String s_name = "deleteaccountresponse";

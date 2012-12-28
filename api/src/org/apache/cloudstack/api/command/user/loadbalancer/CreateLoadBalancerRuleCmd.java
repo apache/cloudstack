@@ -47,7 +47,7 @@ import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.utils.net.NetUtils;
 
-@APICommand(description="Creates a load balancer rule", responseObject=LoadBalancerResponse.class)
+@APICommand(name = "createLoadBalancerRule", description="Creates a load balancer rule", responseObject=LoadBalancerResponse.class)
 public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements LoadBalancer */{
     public static final Logger s_logger = Logger.getLogger(CreateLoadBalancerRuleCmd.class.getName());
 

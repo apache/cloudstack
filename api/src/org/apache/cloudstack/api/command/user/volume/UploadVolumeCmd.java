@@ -32,7 +32,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.storage.Volume;
 import com.cloud.user.UserContext;
 
-@APICommand(description="Uploads a data disk.", responseObject=VolumeResponse.class)
+@APICommand(name = "uploadVolume", description="Uploads a data disk.", responseObject=VolumeResponse.class)
 public class UploadVolumeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UploadVolumeCmd.class.getName());
     private static final String s_name = "uploadvolumeresponse";

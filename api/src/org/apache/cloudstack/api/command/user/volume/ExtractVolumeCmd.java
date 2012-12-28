@@ -37,7 +37,7 @@ import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@APICommand(description="Extracts volume", responseObject=ExtractResponse.class)
+@APICommand(name = "extractVolume", description="Extracts volume", responseObject=ExtractResponse.class)
 public class ExtractVolumeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ExtractVolumeCmd.class.getName());
 

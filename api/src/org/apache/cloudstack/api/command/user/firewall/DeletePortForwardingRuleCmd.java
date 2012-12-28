@@ -29,7 +29,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.user.UserContext;
 
-@APICommand(description="Deletes a port forwarding rule", responseObject=SuccessResponse.class)
+@APICommand(name = "deletePortForwardingRule", description="Deletes a port forwarding rule", responseObject=SuccessResponse.class)
 public class DeletePortForwardingRuleCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeletePortForwardingRuleCmd.class.getName());
     private static final String s_name = "deleteportforwardingruleresponse";

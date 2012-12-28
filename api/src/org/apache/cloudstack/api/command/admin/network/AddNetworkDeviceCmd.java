@@ -37,7 +37,7 @@ import org.apache.cloudstack.api.response.NetworkDeviceResponse;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(description="Adds a network device of one of the following types: ExternalDhcp, ExternalFirewall, ExternalLoadBalancer, PxeServer", responseObject = NetworkDeviceResponse.class)
+@APICommand(name = "addNetworkDevice", description="Adds a network device of one of the following types: ExternalDhcp, ExternalFirewall, ExternalLoadBalancer, PxeServer", responseObject = NetworkDeviceResponse.class)
 public class AddNetworkDeviceCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddNetworkDeviceCmd.class);
     private static final String s_name = "addnetworkdeviceresponse";

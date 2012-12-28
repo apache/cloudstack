@@ -31,7 +31,7 @@ import org.apache.cloudstack.api.response.RemoteAccessVpnResponse;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.utils.Pair;
 
-@APICommand(description="Lists remote access vpns", responseObject=RemoteAccessVpnResponse.class)
+@APICommand(name = "listRemoteAccessVpns", description="Lists remote access vpns", responseObject=RemoteAccessVpnResponse.class)
 public class ListRemoteAccessVpnsCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger (ListRemoteAccessVpnsCmd.class.getName());
 

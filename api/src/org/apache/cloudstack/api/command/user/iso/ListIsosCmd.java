@@ -35,7 +35,7 @@ import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.utils.Pair;
 
-@APICommand(description="Lists all available ISO files.", responseObject=TemplateResponse.class)
+@APICommand(name = "listIsos", description="Lists all available ISO files.", responseObject=TemplateResponse.class)
 public class ListIsosCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListIsosCmd.class.getName());
 

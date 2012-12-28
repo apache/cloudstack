@@ -49,7 +49,7 @@ import com.cloud.network.vpc.Vpc;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@APICommand(description="Acquires and associates a public IP to an account.", responseObject=IPAddressResponse.class)
+@APICommand(name = "associateIpAddress", description="Acquires and associates a public IP to an account.", responseObject=IPAddressResponse.class)
 public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(AssociateIPAddrCmd.class.getName());
     private static final String s_name = "associateipaddressresponse";

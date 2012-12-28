@@ -29,7 +29,7 @@ import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 
-@APICommand(description="Detaches a disk volume from a virtual machine.", responseObject=VolumeResponse.class)
+@APICommand(name = "detachVolume", description="Detaches a disk volume from a virtual machine.", responseObject=VolumeResponse.class)
 public class DetachVolumeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DetachVolumeCmd.class.getName());
     private static final String s_name = "detachvolumeresponse";

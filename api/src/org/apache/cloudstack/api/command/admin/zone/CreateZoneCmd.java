@@ -30,7 +30,7 @@ import com.cloud.dc.DataCenter;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@APICommand(description="Creates a Zone.", responseObject=ZoneResponse.class)
+@APICommand(name = "createZone", description="Creates a Zone.", responseObject=ZoneResponse.class)
 public class CreateZoneCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateZoneCmd.class.getName());
 

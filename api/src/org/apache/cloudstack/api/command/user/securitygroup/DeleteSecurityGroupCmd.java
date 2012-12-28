@@ -31,7 +31,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.user.UserContext;
 
-@APICommand(description="Deletes security group", responseObject=SuccessResponse.class)
+@APICommand(name = "deleteSecurityGroup", description="Deletes security group", responseObject=SuccessResponse.class)
 public class DeleteSecurityGroupCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteSecurityGroupCmd.class.getName());
     private static final String s_name = "deletesecuritygroupresponse";

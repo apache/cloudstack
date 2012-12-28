@@ -34,7 +34,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
-@APICommand(description="Creates a VLAN IP range.", responseObject=VlanIpRangeResponse.class)
+@APICommand(name = "createVlanIpRange", description="Creates a VLAN IP range.", responseObject=VlanIpRangeResponse.class)
 public class CreateVlanIpRangeCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateVlanIpRangeCmd.class.getName());
 

@@ -26,7 +26,7 @@ import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.user.UserContext;
 
-@APICommand(description="Enables a user account", responseObject=UserResponse.class)
+@APICommand(name = "enableUser", description="Enables a user account", responseObject=UserResponse.class)
 public class EnableUserCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(EnableUserCmd.class.getName());
     private static final String s_name = "enableuserresponse";

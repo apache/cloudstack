@@ -32,7 +32,7 @@ import com.cloud.network.as.AutoScalePolicy;
 import com.cloud.network.as.Condition;
 import com.cloud.user.Account;
 
-@APICommand(description = "Creates an autoscale policy for a provision or deprovision action, the action is taken when the all the conditions evaluates to true for the specified duration. The policy is in effect once it is attached to a autscale vm group.", responseObject = AutoScalePolicyResponse.class)
+@APICommand(name = "createAutoScalePolicy", description = "Creates an autoscale policy for a provision or deprovision action, the action is taken when the all the conditions evaluates to true for the specified duration. The policy is in effect once it is attached to a autscale vm group.", responseObject = AutoScalePolicyResponse.class)
 public class CreateAutoScalePolicyCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateAutoScalePolicyCmd.class.getName());
 
