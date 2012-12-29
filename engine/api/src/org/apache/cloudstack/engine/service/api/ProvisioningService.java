@@ -21,10 +21,6 @@ package org.apache.cloudstack.engine.service.api;
 import java.util.List;
 import java.util.Map;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-
 import org.apache.cloudstack.engine.datacenter.entity.api.ClusterEntity;
 import org.apache.cloudstack.engine.datacenter.entity.api.PodEntity;
 import org.apache.cloudstack.engine.datacenter.entity.api.StorageEntity;
@@ -39,8 +35,6 @@ import com.cloud.storage.StoragePool;
  * ProvisioningService registers and deregisters physical and virtual 
  * resources that the management server can use.  
  */
-@Path("/provisioning")
-@Produces({"application/json"})
 public interface ProvisioningService {
 
     StorageEntity registerStorage(String name, List<String> tags, Map<String, String> details);
@@ -67,15 +61,11 @@ public interface ProvisioningService {
 
     List<Host> listHosts();
 
-    @GET
-    @Path("/zone/{zoneid}/pods") 
     List<PodEntity> listPods();
 
     List<ZoneEntity> listZones();
 
     List<StoragePool> listStorage();
 
-    @GET
-    @Path("/{zoneid}")
     ZoneEntity getZone(String id);
 }

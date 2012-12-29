@@ -24,10 +24,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import org.springframework.stereotype.Service;
 
-
-@Service("zoneService")
 public class ZoneEntityImpl implements ZoneEntity {
     String _id;
     String _name;
