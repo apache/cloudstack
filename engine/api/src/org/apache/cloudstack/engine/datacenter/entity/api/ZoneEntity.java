@@ -22,6 +22,7 @@ import java.util.List;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
 import javax.xml.bind.annotation.XmlRootElement;
 
 import org.apache.cloudstack.engine.service.api.ProvisioningService;
@@ -32,6 +33,8 @@ import com.cloud.dc.DataCenter;
 /**
  * Describes a zone and operations that can be done in a zone. 
  */
+@Path("/zone/{zoneid}")
+@Produces({"application/json"})
 @XmlRootElement(name="zone")
 public interface ZoneEntity extends DataCenterResourceEntity, DataCenter {
     @GET
@@ -40,4 +43,8 @@ public interface ZoneEntity extends DataCenterResourceEntity, DataCenter {
 
     @Url(clazz=ProvisioningService.class, method="getPod", name="id", type=List.class)
     List<String> listPodIds();
+
+    @Override
+    @Path("/enable")
+    boolean enable();
 }

@@ -10,12 +10,15 @@
   <import resource="classpath:META-INF/cxf/cxf.xml" />
   <import resource="classpath:META-INF/cxf/cxf-servlet.xml" />
 
-  <context:component-scan base-package="org.apache.cloudstack" />
+  <context:component-scan base-package="org.apache.cloudstack.engine.rest.service" />
 
-  <jaxrs:server id="restContainer" address="/">
+  <jaxrs:server id="EngineService" address="/">
     <jaxrs:serviceBeans>
-      <ref bean="provisioningService" />
-      <ref bean="zoneService" />
+      <ref bean="ZoneRestService" />
+      <ref bean="PodRestService" />
+      <ref bean="ClusterRestService" />
+      <ref bean="VirtualMachineRestService" />
+      <ref bean="VolumeRestService" />
     </jaxrs:serviceBeans>
     <jaxrs:providers>
       <bean class="com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider" />
