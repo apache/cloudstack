@@ -38,13 +38,10 @@ public class SolidfirePrimaryDataStoreProvider extends
         DefaultPrimaryDataStore pds = DefaultPrimaryDataStore.createDataStore(dsv);
         SolidfirePrimaryDataStoreDriver driver = new SolidfirePrimaryDataStoreDriver();
         pds.setDriver(driver);
-<<<<<<< HEAD
+
         
         DefaultPrimaryDataStoreLifeCycleImpl lifeCycle = new DefaultPrimaryDataStoreLifeCycleImpl(dataStoreDao);
-=======
 
-        DefaultPrimaryDataStoreLifeCycleImpl lifeCycle = new DefaultPrimaryDataStoreLifeCycleImpl(super.dataStoreDao, pds);
->>>>>>> Getting things to compile
         pds.setLifeCycle(lifeCycle);
         return pds;
     }
