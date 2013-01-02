@@ -29,7 +29,7 @@ import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 
 @SuppressWarnings("rawtypes")
-public class AsyncCallbackDispatcher<T> implements AsyncCompletionCallback {
+public class AsyncCallbackDispatcher<T, R> implements AsyncCompletionCallback {
 	private Method _callbackMethod;
 	private T _targetObject;
 	private Object _contextObject;
@@ -41,7 +41,7 @@ public class AsyncCallbackDispatcher<T> implements AsyncCompletionCallback {
 		_targetObject = target;
 	}
 	
-	public AsyncCallbackDispatcher<T> attachDriver(AsyncCallbackDriver driver) {
+	public AsyncCallbackDispatcher<T, R> attachDriver(AsyncCallbackDriver driver) {
 		assert(driver != null);
 		_driver = driver;
 		
@@ -83,11 +83,11 @@ public class AsyncCallbackDispatcher<T> implements AsyncCompletionCallback {
 		return (T)en.create();
 	}
 
-	public AsyncCallbackDispatcher<T> setCallback(Object useless) {
+	public AsyncCallbackDispatcher<T, R> setCallback(Object useless) {
 		return this;
 	}
 	
-	public AsyncCallbackDispatcher<T> setContext(Object context) {
+	public AsyncCallbackDispatcher<T, R> setContext(Object context) {
 		_contextObject = context;
 		return this;
 	}
@@ -103,7 +103,7 @@ public class AsyncCallbackDispatcher<T> implements AsyncCompletionCallback {
 	}
 
 	@SuppressWarnings("unchecked")
-	public <R> R getResult() {
+	public R getResult() {
 		return (R)_resultObject;
 	}
 
@@ -112,8 +112,8 @@ public class AsyncCallbackDispatcher<T> implements AsyncCompletionCallback {
 		return _targetObject;
 	}
 	
-	public static <P> AsyncCallbackDispatcher<P> create(P target)  {
-		return new AsyncCallbackDispatcher<P>(target);
+	public static <P, R> AsyncCallbackDispatcher<P, R> create(P target)  {
+		return new AsyncCallbackDispatcher<P, R>(target);
 	}
 	
 	public static boolean dispatch(Object target, AsyncCallbackDispatcher callback) {

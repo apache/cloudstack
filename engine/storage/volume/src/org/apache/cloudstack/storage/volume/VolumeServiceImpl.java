@@ -175,7 +175,7 @@ public class VolumeServiceImpl implements VolumeService {
         templateOnPrimaryStoreObj.updateStatus(Status.DOWNLOAD_IN_PROGRESS);
 
         CreateBaseImageContext<VolumeInfo> context = new CreateBaseImageContext<VolumeInfo>(callback, volume, dataStore, templateOnPrimaryStoreObj);
-        AsyncCallbackDispatcher<VolumeServiceImpl> caller = AsyncCallbackDispatcher.create(this);
+        AsyncCallbackDispatcher<VolumeServiceImpl, CommandResult> caller = AsyncCallbackDispatcher.create(this);
             caller.setCallback(caller.getTarget().createBaseImageCallback(null, null))
             .setContext(context);
 
@@ -183,7 +183,7 @@ public class VolumeServiceImpl implements VolumeService {
     }
 
     @DB
-    public Object createBaseImageCallback(AsyncCallbackDispatcher<VolumeServiceImpl> callback, CreateBaseImageContext<VolumeInfo> context) {
+    public Object createBaseImageCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CommandResult> callback, CreateBaseImageContext<VolumeInfo> context) {
         CommandResult result = callback.getResult();
         TemplateOnPrimaryDataStoreObject templateOnPrimaryStoreObj = context.getTemplate();
         if (result.isSuccess()) {
@@ -222,7 +222,7 @@ public class VolumeServiceImpl implements VolumeService {
         }
 
         CreateVolumeFromBaseImageContext<VolumeInfo> context = new CreateVolumeFromBaseImageContext<VolumeInfo>(callback, vo);
-        AsyncCallbackDispatcher<VolumeServiceImpl> caller =  AsyncCallbackDispatcher.create(this);
+        AsyncCallbackDispatcher<VolumeServiceImpl, CommandResult> caller =  AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().createVolumeFromBaseImageCallback(null, null))
         .setContext(context);
 
@@ -230,7 +230,7 @@ public class VolumeServiceImpl implements VolumeService {
     }
     
     @DB
-    public Object createVolumeFromBaseImageCallback(AsyncCallbackDispatcher<VolumeServiceImpl> callback, CreateVolumeFromBaseImageContext<VolumeInfo> context) {
+    public Object createVolumeFromBaseImageCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CommandResult> callback, CreateVolumeFromBaseImageContext<VolumeInfo> context) {
         VolumeObject vo = context.getVolumeObject();
         CommandResult result = callback.getResult();
         if (result.isSuccess()) {
