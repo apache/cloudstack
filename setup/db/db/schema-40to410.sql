@@ -60,6 +60,12 @@ ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `eip_associate_public_ip` int
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network','DEFAULT','NetworkManager','network.dhcp.nondefaultnetwork.setgateway.guestos','Windows','The guest OS\'s name start with this fields would result in DHCP server response gateway information even when the network it\'s on is not default network. Names are separated by comma.');
 
+ALTER TABLE `sync_queue` ADD `queue_size` SMALLINT NOT NULL DEFAULT '0' COMMENT 'number of items being processed by the queue';
+
+ALTER TABLE `sync_queue` ADD `queue_size_limit` SMALLINT NOT NULL DEFAULT '1' COMMENT 'max number of items the queue can process concurrently';
+
+ALTER TABLE `sync_queue_item` ADD `queue_proc_time` DATETIME NOT NULL COMMENT 'when processing started for the item' AFTER `queue_proc_number`;
+
 ALTER TABLE upload ADD uuid VARCHAR(40);
 ALTER TABLE async_job modify job_cmd VARCHAR(255);
 

@@ -46,7 +46,6 @@ class cloudConnection(object):
             self.auth = False
         else:
             self.auth = True
-            
         self.retries = 5
         self.asyncTimeout = asyncTimeout
     

@@ -27,7 +27,6 @@ import static com.cloud.utils.S3Utils.checkClientOptions;
 import static com.cloud.utils.S3Utils.doesBucketExist;
 import static com.cloud.utils.StringUtils.join;
 import static com.cloud.utils.db.GlobalLock.executeWithNoWaitLock;
-import static com.cloud.utils.db.SearchCriteria.Op.EQ;
 import static java.lang.Boolean.TRUE;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
@@ -432,10 +431,6 @@ public class S3ManagerImpl implements S3Manager {
         final Filter filter = new Filter(S3VO.class, ID_COLUMN_NAME, TRUE,
                 cmd.getStartIndex(), cmd.getPageSizeVal());
         final SearchCriteria<S3VO> criteria = this.s3Dao.createSearchCriteria();
-
-        if (cmd.getId() != null) {
-            criteria.addAnd(ID_COLUMN_NAME, EQ, cmd.getId());
-        }
 
         return this.s3Dao.search(criteria, filter);
 

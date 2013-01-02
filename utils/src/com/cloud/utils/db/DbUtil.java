@@ -23,6 +23,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -280,4 +281,62 @@ public class DbUtil {
         }
         return false;
     }
+
+    public static void closeResources(final Connection connection,
+            final Statement statement, final ResultSet resultSet) {
+
+        closeResultSet(resultSet);
+        closeStatement(statement);
+        closeConnection(connection);
+
+    }
+
+    public static void closeResources(final Statement statement, final ResultSet resultSet) {
+
+        closeResources(null, statement, resultSet);
+
+    }
+    
+    public static void closeResultSet(final ResultSet resultSet) {
+
+        try {
+            
+            if (resultSet != null) {
+                resultSet.close();
+            }
+
+        } catch (Exception e) {
+            s_logger.warn("Ignored exception while closing result set.",e);
+        }
+
+    }
+
+    public static void closeStatement(final Statement statement) {
+
+        try {
+
+            if (statement != null) {
+                statement.close();
+            }
+
+        } catch (Exception e) {
+            s_logger.warn("Ignored exception while closing statement.",e);
+        }
+
+    }
+
+    public static void closeConnection(final Connection connection) {
+
+        try {
+
+            if (connection != null) {
+                connection.close();
+            }
+
+        } catch (Exception e) {
+            s_logger.warn("Ignored exception while close connection.",e);
+        }
+
+    }
+
 }

@@ -18,15 +18,11 @@
  */
 package com.cloud.api.commands;
 
-import static org.apache.cloudstack.api.ApiConstants.ID;
-import static org.apache.cloudstack.api.BaseCmd.CommandType.LONG;
-
 import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseListCmd;
-import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.api.response.S3Response;
@@ -41,9 +37,6 @@ import com.cloud.storage.S3;
 public final class ListS3sCmd extends BaseListCmd {
 
     private static final String COMMAND_NAME = "lists3sresponse";
-
-    @Parameter(name = ID, type = LONG, required = true, description = "The ID of the S3")
-    private Long id;
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException,
@@ -75,38 +68,8 @@ public final class ListS3sCmd extends BaseListCmd {
     }
 
     @Override
-    public boolean equals(final Object thatObject) {
-
-        if (this == thatObject) {
-            return true;
-        }
-
-        if (thatObject == null || getClass() != thatObject.getClass()) {
-            return false;
-        }
-
-        final ListS3sCmd thatListS3sCmd = (ListS3sCmd) thatObject;
-
-        if (this.id != null ? !this.id.equals(thatListS3sCmd.id) : thatListS3sCmd.id != null) {
-            return false;
-        }
-
-        return true;
-
-    }
-
-    @Override
-    public int hashCode() {
-        return this.id != null ? this.id.hashCode() : 0;
-    }
-
-    @Override
     public String getCommandName() {
         return COMMAND_NAME;
-    }
-
-    public Long getId() {
-        return this.id;
     }
 
 }
