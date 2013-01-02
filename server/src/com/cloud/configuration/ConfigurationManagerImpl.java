@@ -237,7 +237,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     VpcManager _vpcMgr;
 
     // FIXME - why don't we have interface for DataCenterLinkLocalIpAddressDao?
-    protected static final DataCenterLinkLocalIpAddressDaoImpl _LinkLocalIpAllocDao = ComponentLocator.inject(DataCenterLinkLocalIpAddressDaoImpl.class);
+    @Inject protected DataCenterLinkLocalIpAddressDaoImpl _LinkLocalIpAllocDao;
 
     private int _maxVolumeSizeInGb;
     private long _defaultPageSize;

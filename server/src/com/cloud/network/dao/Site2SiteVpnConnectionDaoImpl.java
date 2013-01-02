@@ -18,6 +18,7 @@ package com.cloud.network.dao;
 
 import java.util.List;
 
+import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
@@ -41,11 +42,15 @@ public class Site2SiteVpnConnectionDaoImpl extends GenericDaoBase<Site2SiteVpnCo
     @Inject protected IPAddressDaoImpl _addrDao;
     @Inject protected Site2SiteVpnGatewayDaoImpl _vpnGatewayDao;
     
-    private final SearchBuilder<Site2SiteVpnConnectionVO> AllFieldsSearch;
-    private final SearchBuilder<Site2SiteVpnConnectionVO> VpcSearch;
-    private final SearchBuilder<Site2SiteVpnGatewayVO> VpnGatewaySearch;
+    private SearchBuilder<Site2SiteVpnConnectionVO> AllFieldsSearch;
+    private SearchBuilder<Site2SiteVpnConnectionVO> VpcSearch;
+    private SearchBuilder<Site2SiteVpnGatewayVO> VpnGatewaySearch;
 
-    protected Site2SiteVpnConnectionDaoImpl() {
+    public Site2SiteVpnConnectionDaoImpl() {
+    }
+    
+    @PostConstruct
+    protected void init() {
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("customerGatewayId", AllFieldsSearch.entity().getCustomerGatewayId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("vpnGatewayId", AllFieldsSearch.entity().getVpnGatewayId(), SearchCriteria.Op.EQ);

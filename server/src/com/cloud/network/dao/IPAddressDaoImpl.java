@@ -21,6 +21,7 @@ import java.sql.ResultSet;
 import java.util.Date;
 import java.util.List;
 
+import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
@@ -52,19 +53,22 @@ import com.cloud.utils.net.Ip;
 public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implements IPAddressDao {
     private static final Logger s_logger = Logger.getLogger(IPAddressDaoImpl.class);
 
-    protected final SearchBuilder<IPAddressVO> AllFieldsSearch;
-    protected final SearchBuilder<IPAddressVO> VlanDbIdSearchUnallocated;
-    protected final GenericSearchBuilder<IPAddressVO, Integer> AllIpCount;
-    protected final GenericSearchBuilder<IPAddressVO, Integer> AllocatedIpCount;
-    protected final GenericSearchBuilder<IPAddressVO, Integer> AllIpCountForDashboard;    
-    protected final GenericSearchBuilder<IPAddressVO, Long> AllocatedIpCountForAccount;    
+    protected SearchBuilder<IPAddressVO> AllFieldsSearch;
+    protected SearchBuilder<IPAddressVO> VlanDbIdSearchUnallocated;
+    protected GenericSearchBuilder<IPAddressVO, Integer> AllIpCount;
+    protected GenericSearchBuilder<IPAddressVO, Integer> AllocatedIpCount;
+    protected GenericSearchBuilder<IPAddressVO, Integer> AllIpCountForDashboard;    
+    protected GenericSearchBuilder<IPAddressVO, Long> AllocatedIpCountForAccount;    
     @Inject protected VlanDaoImpl _vlanDao;
     protected GenericSearchBuilder<IPAddressVO, Long> CountFreePublicIps;
     @Inject ResourceTagsDaoImpl _tagsDao;
     
-    
     // make it public for JUnit test
     public IPAddressDaoImpl() {
+    }
+    
+    @PostConstruct
+    public void init() {
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("id", AllFieldsSearch.entity().getId(), Op.EQ);
         AllFieldsSearch.and("dataCenterId", AllFieldsSearch.entity().getDataCenterId(), Op.EQ);

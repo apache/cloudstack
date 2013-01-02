@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
@@ -65,20 +66,20 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
 
     public static final Logger s_logger = Logger.getLogger(VMInstanceDaoImpl.class);
 
-    protected final SearchBuilder<VMInstanceVO> VMClusterSearch;
-    protected final SearchBuilder<VMInstanceVO> LHVMClusterSearch;
-    protected final SearchBuilder<VMInstanceVO> IdStatesSearch;
-    protected final SearchBuilder<VMInstanceVO> AllFieldsSearch;
-    protected final SearchBuilder<VMInstanceVO> ZoneTemplateNonExpungedSearch;
-    protected final SearchBuilder<VMInstanceVO> NameLikeSearch;
-    protected final SearchBuilder<VMInstanceVO> StateChangeSearch;
-    protected final SearchBuilder<VMInstanceVO> TransitionSearch;
-    protected final SearchBuilder<VMInstanceVO> TypesSearch;
-    protected final SearchBuilder<VMInstanceVO> IdTypesSearch;
-    protected final SearchBuilder<VMInstanceVO> HostIdTypesSearch;
-    protected final SearchBuilder<VMInstanceVO> HostIdUpTypesSearch;
-    protected final SearchBuilder<VMInstanceVO> HostUpSearch;
-    protected final GenericSearchBuilder<VMInstanceVO, Long> CountVirtualRoutersByAccount;
+    protected SearchBuilder<VMInstanceVO> VMClusterSearch;
+    protected SearchBuilder<VMInstanceVO> LHVMClusterSearch;
+    protected SearchBuilder<VMInstanceVO> IdStatesSearch;
+    protected SearchBuilder<VMInstanceVO> AllFieldsSearch;
+    protected SearchBuilder<VMInstanceVO> ZoneTemplateNonExpungedSearch;
+    protected SearchBuilder<VMInstanceVO> NameLikeSearch;
+    protected SearchBuilder<VMInstanceVO> StateChangeSearch;
+    protected SearchBuilder<VMInstanceVO> TransitionSearch;
+    protected SearchBuilder<VMInstanceVO> TypesSearch;
+    protected SearchBuilder<VMInstanceVO> IdTypesSearch;
+    protected SearchBuilder<VMInstanceVO> HostIdTypesSearch;
+    protected SearchBuilder<VMInstanceVO> HostIdUpTypesSearch;
+    protected SearchBuilder<VMInstanceVO> HostUpSearch;
+    protected GenericSearchBuilder<VMInstanceVO, Long> CountVirtualRoutersByAccount;
     protected GenericSearchBuilder<VMInstanceVO, Long> CountRunningByHost;
     protected GenericSearchBuilder<VMInstanceVO, Long> CountRunningByAccount;
     protected SearchBuilder<VMInstanceVO> NetworkTypeSearch;
@@ -87,7 +88,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     @Inject ResourceTagsDaoImpl _tagsDao;
     @Inject NicDao _nicDao;
     
-    protected final Attribute _updateTimeAttr;
+    protected Attribute _updateTimeAttr;
     
     private static final String ORDER_CLUSTERS_NUMBER_OF_VMS_FOR_ACCOUNT_PART1 = 
             "SELECT host.cluster_id, SUM(IF(vm.state='Running' AND vm.account_id = ?, 1, 0)) FROM `cloud`.`host` host LEFT JOIN `cloud`.`vm_instance` vm ON host.id = vm.host_id WHERE ";
@@ -102,9 +103,13 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     		                                                            " AND host.pod_id = ? AND host.cluster_id = ? AND host.type = 'Routing' " +
     		                                                            " GROUP BY host.id ORDER BY 2 ASC ";
 
-    protected final HostDaoImpl _hostDao = ComponentLocator.inject(HostDaoImpl.class);
+    @Inject protected HostDaoImpl _hostDao;
     
-    protected VMInstanceDaoImpl() {
+    public VMInstanceDaoImpl() {
+    }
+    
+    @PostConstruct
+    protected void init() {
 
         IdStatesSearch = createSearchBuilder();
         IdStatesSearch.and("id", IdStatesSearch.entity().getId(), Op.EQ);

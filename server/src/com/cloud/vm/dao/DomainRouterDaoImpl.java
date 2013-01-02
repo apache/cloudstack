@@ -18,6 +18,7 @@ package com.cloud.vm.dao;
 
 import java.util.List;
 
+import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
@@ -34,7 +35,6 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDaoImpl;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.dao.UserStatisticsDaoImpl;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.JoinBuilder.JoinType;
@@ -50,18 +50,22 @@ import com.cloud.vm.VirtualMachine.State;
 @Local(value = { DomainRouterDao.class })
 public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> implements DomainRouterDao {
 
-    protected final SearchBuilder<DomainRouterVO> AllFieldsSearch;
-    protected final SearchBuilder<DomainRouterVO> IdNetworkIdStatesSearch;
-    protected final SearchBuilder<DomainRouterVO> HostUpSearch;
-    protected final SearchBuilder<DomainRouterVO> StateNetworkTypeSearch;
-    protected final SearchBuilder<DomainRouterVO> OutsidePodSearch;
+    protected SearchBuilder<DomainRouterVO> AllFieldsSearch;
+    protected SearchBuilder<DomainRouterVO> IdNetworkIdStatesSearch;
+    protected SearchBuilder<DomainRouterVO> HostUpSearch;
+    protected SearchBuilder<DomainRouterVO> StateNetworkTypeSearch;
+    protected SearchBuilder<DomainRouterVO> OutsidePodSearch;
     @Inject HostDaoImpl _hostsDao;
     @Inject RouterNetworkDaoImpl _routerNetworkDao;
     @Inject UserStatisticsDaoImpl _userStatsDao;
     @Inject NetworkOfferingDaoImpl _offDao;
-    protected final SearchBuilder<DomainRouterVO> VpcSearch;
+    protected SearchBuilder<DomainRouterVO> VpcSearch;
     
-    protected DomainRouterDaoImpl() {
+    public DomainRouterDaoImpl() {
+    }
+
+    @PostConstruct
+    protected void init() {
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("dc", AllFieldsSearch.entity().getDataCenterIdToDeployIn(), Op.EQ);
         AllFieldsSearch.and("account", AllFieldsSearch.entity().getAccountId(), Op.EQ);

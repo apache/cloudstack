@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.persistence.TableGenerator;
@@ -62,20 +63,20 @@ import com.cloud.utils.net.NetUtils;
 @Local(value = NetworkDao.class)
 @DB(txn = false)
 public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements NetworkDao {
-    final SearchBuilder<NetworkVO> AllFieldsSearch;
-    final SearchBuilder<NetworkVO> AccountSearch;
-    final SearchBuilder<NetworkVO> RelatedConfigSearch;
-    final SearchBuilder<NetworkVO> AccountNetworkSearch;
-    final SearchBuilder<NetworkVO> ZoneBroadcastUriSearch;
-    final SearchBuilder<NetworkVO> ZoneSecurityGroupSearch;
-    final GenericSearchBuilder<NetworkVO, Integer> CountBy;
-    final SearchBuilder<NetworkVO> PhysicalNetworkSearch;
-    final SearchBuilder<NetworkVO> SecurityGroupSearch;
-    final GenericSearchBuilder<NetworkVO, Long> NetworksRegularUserCanCreateSearch;
-    private final GenericSearchBuilder<NetworkVO, Integer> NetworksCount;
-    final SearchBuilder<NetworkVO> SourceNATSearch;
-    final GenericSearchBuilder<NetworkVO, Long>  CountByZoneAndURI;
-    final GenericSearchBuilder<NetworkVO, Long> VpcNetworksCount;
+    SearchBuilder<NetworkVO> AllFieldsSearch;
+    SearchBuilder<NetworkVO> AccountSearch;
+    SearchBuilder<NetworkVO> RelatedConfigSearch;
+    SearchBuilder<NetworkVO> AccountNetworkSearch;
+    SearchBuilder<NetworkVO> ZoneBroadcastUriSearch;
+    SearchBuilder<NetworkVO> ZoneSecurityGroupSearch;
+    GenericSearchBuilder<NetworkVO, Integer> CountBy;
+    SearchBuilder<NetworkVO> PhysicalNetworkSearch;
+    SearchBuilder<NetworkVO> SecurityGroupSearch;
+    GenericSearchBuilder<NetworkVO, Long> NetworksRegularUserCanCreateSearch;
+    GenericSearchBuilder<NetworkVO, Integer> NetworksCount;
+    SearchBuilder<NetworkVO> SourceNATSearch;
+    GenericSearchBuilder<NetworkVO, Long>  CountByZoneAndURI;
+    GenericSearchBuilder<NetworkVO, Long> VpcNetworksCount;
     
     
     @Inject ResourceTagsDaoImpl _tagsDao;
@@ -86,13 +87,15 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     @Inject NetworkOfferingDaoImpl _ntwkOffDao;
 
 
-    final TableGenerator _tgMacAddress;
+    TableGenerator _tgMacAddress;
     Random _rand = new Random(System.currentTimeMillis());
     long _prefix = 0x2;
 
-    protected NetworkDaoImpl() {
-        super();
-
+    public NetworkDaoImpl() {
+    }
+    
+    @PostConstruct
+    protected void init() {
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("trafficType", AllFieldsSearch.entity().getTrafficType(), Op.EQ);
         AllFieldsSearch.and("cidr", AllFieldsSearch.entity().getCidr(), Op.EQ);

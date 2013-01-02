@@ -20,6 +20,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.List;
 
+import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
@@ -55,16 +56,16 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     private static final String GET_SECHOST_ID = "SELECT sechost_id FROM snapshots where volume_id = ? AND backup_snap_id IS NOT NULL AND sechost_id IS NOT NULL LIMIT 1";
     private static final String UPDATE_SECHOST_ID = "UPDATE snapshots SET sechost_id = ? WHERE data_center_id = ?";
     
-    private final SearchBuilder<SnapshotVO> VolumeIdSearch;
-    private final SearchBuilder<SnapshotVO> VolumeIdTypeSearch;
-    private final SearchBuilder<SnapshotVO> ParentIdSearch;
-    private final SearchBuilder<SnapshotVO> backupUuidSearch;   
-    private final SearchBuilder<SnapshotVO> VolumeIdVersionSearch;
-    private final SearchBuilder<SnapshotVO> HostIdSearch;
-    private final SearchBuilder<SnapshotVO> AccountIdSearch;
-    private final SearchBuilder<SnapshotVO> InstanceIdSearch;
-    private final SearchBuilder<SnapshotVO> StatusSearch;
-    private final GenericSearchBuilder<SnapshotVO, Long> CountSnapshotsByAccount;
+    private SearchBuilder<SnapshotVO> VolumeIdSearch;
+    private SearchBuilder<SnapshotVO> VolumeIdTypeSearch;
+    private SearchBuilder<SnapshotVO> ParentIdSearch;
+    private SearchBuilder<SnapshotVO> backupUuidSearch;   
+    private SearchBuilder<SnapshotVO> VolumeIdVersionSearch;
+    private SearchBuilder<SnapshotVO> HostIdSearch;
+    private SearchBuilder<SnapshotVO> AccountIdSearch;
+    private SearchBuilder<SnapshotVO> InstanceIdSearch;
+    private SearchBuilder<SnapshotVO> StatusSearch;
+    private GenericSearchBuilder<SnapshotVO, Long> CountSnapshotsByAccount;
     @Inject ResourceTagsDaoImpl _tagsDao;
     
     @Inject protected VMInstanceDaoImpl _instanceDao;
@@ -141,7 +142,11 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         return listBy(sc, filter);
     }
 
-    protected SnapshotDaoImpl() {
+    public SnapshotDaoImpl() {
+    }
+    
+    @PostConstruct
+    protected void init() {
         VolumeIdSearch = createSearchBuilder();
         VolumeIdSearch.and("volumeId", VolumeIdSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
         VolumeIdSearch.done();

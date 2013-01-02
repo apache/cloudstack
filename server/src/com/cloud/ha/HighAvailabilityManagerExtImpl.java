@@ -24,6 +24,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 import com.cloud.alert.AlertManager;
@@ -34,6 +35,7 @@ import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.Transaction;
 
 @Component
+@Primary
 @Local(value={HighAvailabilityManager.class})
 public class HighAvailabilityManagerExtImpl extends HighAvailabilityManagerImpl {
 	
