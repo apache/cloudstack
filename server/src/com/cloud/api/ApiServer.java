@@ -119,10 +119,8 @@ import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.user.UserContext;
 import com.cloud.user.UserVO;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Adapters;
-import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
@@ -132,6 +130,8 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CSExceptionErrorCode;
 import com.cloud.uuididentity.dao.IdentityDao;
 import com.cloud.acl.APIAccessChecker;
+
+import org.reflections.Reflections;
 
 public class ApiServer implements HttpRequestHandler {
     private static final Logger s_logger = Logger.getLogger(ApiServer.class.getName());
@@ -152,6 +152,7 @@ public class ApiServer implements HttpRequestHandler {
     private static int _workerCount = 0;
     private static ApiServer s_instance = null;
     private static final DateFormat _dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+    private Map<String, Class<?>> _apiNameCmdClassMap = new HashMap<String, Class<?>>();
 
     private static ExecutorService _executor = new ThreadPoolExecutor(10, 150, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("ApiServer"));
 
@@ -197,6 +198,19 @@ public class ApiServer implements HttpRequestHandler {
             if (apiPortConfig.getValue() != null) {
                 apiPort = Integer.parseInt(apiPortConfig.getValue());
             }
+        }
+
+        // Populate api name and cmd class mappings
+        Reflections reflections = new Reflections("org.apache.cloudstack");
+        Set<Class<?>> cmdClasses = reflections.getTypesAnnotatedWith(APICommand.class);
+        reflections = new Reflections("com.cloud.api");
+        cmdClasses.addAll(reflections.getTypesAnnotatedWith(APICommand.class));
+        for(Class<?> cmdClass: cmdClasses) {
+            String apiName = cmdClass.getAnnotation(APICommand.class).name();
+            if (_apiNameCmdClassMap.containsKey(apiName)) {
+                s_logger.error("Cmd class " + cmdClass.getName() + " conflicts on apiname" + apiName);
+            }
+            _apiNameCmdClassMap.put(apiName, cmdClass);
         }
 
         encodeApiResponse = Boolean.valueOf(configDao.getValue(Config.EncodeApiResponse.key()));
@@ -322,9 +336,8 @@ public class ApiServer implements HttpRequestHandler {
                     paramMap.put(key, decodedValue);
                 }
 
-                String cmdClassName = getCmdClassName(command[0]);
-                if (cmdClassName != null) {
-                    Class<?> cmdClass = Class.forName(cmdClassName);
+                Class<?> cmdClass = getCmdClass(command[0]);
+                if (cmdClass != null) {
                     BaseCmd cmdObj = (BaseCmd) cmdClass.newInstance();
                     cmdObj.setFullUrlParams(paramMap);
                     cmdObj.setResponseType(responseType);
@@ -795,15 +808,8 @@ public class ApiServer implements HttpRequestHandler {
         return true;
     }
 
-    private String getCmdClassName(String cmdName) {
-        String cmdClassName = null;
-        for (APIAccessChecker apiChecker : _apiAccessCheckers){
-            cmdClassName = apiChecker.getApiCommands().getProperty(cmdName);
-            // Break on the first non-null value
-            if (cmdClassName != null)
-                return cmdClassName;
-        }
-        return null;
+    private Class<?> getCmdClass(String cmdName) {
+        return _apiNameCmdClassMap.get(cmdName);
     }
 
     // FIXME: rather than isError, we might was to pass in the status code to give more flexibility
@@ -939,7 +945,7 @@ public class ApiServer implements HttpRequestHandler {
 
     public String getSerializedApiError(int errorCode, String errorText, Map<String, Object[]> apiCommandParams, String responseType, Exception ex) {
         String responseName = null;
-        String cmdClassName = null;
+        Class<?> cmdClass = null;
         String responseText = null;
 
         try {
@@ -950,10 +956,9 @@ public class ApiServer implements HttpRequestHandler {
                 // cmd name can be null when "command" parameter is missing in the request
                 if (cmdObj != null) {
                     String cmdName = ((String[]) cmdObj)[0];
-                    cmdClassName = getCmdClassName(cmdName);
-                    if (cmdClassName != null) {
-                        Class<?> claz = Class.forName(cmdClassName);
-                        responseName = ((BaseCmd) claz.newInstance()).getCommandName();
+                    cmdClass = getCmdClass(cmdName);
+                    if (cmdClass != null) {
+                        responseName = ((BaseCmd) cmdClass.newInstance()).getCommandName();
                     } else {
                         responseName = "errorresponse";
                     }
