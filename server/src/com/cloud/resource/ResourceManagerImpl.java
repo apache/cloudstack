@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -204,14 +205,18 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     protected HighAvailabilityManager        _haMgr;
     @Inject 
     protected StorageService                 _storageSvr;
-    @com.cloud.utils.component.Inject(adapter = Discoverer.class)
-    protected Adapters<? extends Discoverer> _discoverers;
+    //@com.cloud.utils.component.Inject(adapter = Discoverer.class)
+    @Inject
+    protected List<? extends Discoverer> _discoverers;
     @Inject
     protected ClusterManager                 _clusterMgr;
     @Inject
     protected StoragePoolHostDao             _storagePoolHostDao;
-    @com.cloud.utils.component.Inject(adapter = PodAllocator.class)
-    protected Adapters<PodAllocator> _podAllocators = null;
+
+    // @com.cloud.utils.component.Inject(adapter = PodAllocator.class)
+    @Inject 
+    protected List<PodAllocator> _podAllocators = null;
+    
     @Inject
     protected VMTemplateDao  _templateDao;
     @Inject
@@ -226,6 +231,11 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     protected HashMap<Integer, List<ResourceListener>> _lifeCycleListeners = new HashMap<Integer, List<ResourceListener>>();
     private HypervisorType _defaultSystemVMHypervisor;
 
+    @PostConstruct
+    public void init() {
+    	// TODO initialize pod allocators here instead
+    }
+    
     private void insertListener(Integer event, ResourceListener listener) {
         List<ResourceListener> lst = _lifeCycleListeners.get(event);
         if (lst == null) {
@@ -497,13 +507,10 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 
     @Override
     public Discoverer getMatchingDiscover(Hypervisor.HypervisorType hypervisorType) {
-        Enumeration<? extends Discoverer> en = _discoverers.enumeration();
-        while (en.hasMoreElements()) {
-            Discoverer discoverer = en.nextElement();
-            if (discoverer.getHypervisorType() == hypervisorType) {
+    	for(Discoverer discoverer : _discoverers) {
+            if (discoverer.getHypervisorType() == hypervisorType)
                 return discoverer;
-            }
-        }
+    	}
         return null;
     }
 
@@ -670,10 +677,8 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 
         List<HostVO> hosts = new ArrayList<HostVO>();
         s_logger.info("Trying to add a new host at " + url + " in data center " + dcId);
-        Enumeration<? extends Discoverer> en = _discoverers.enumeration();
         boolean isHypervisorTypeSupported = false;
-        while (en.hasMoreElements()) {
-            Discoverer discoverer = en.nextElement();
+        for ( Discoverer discoverer : _discoverers) {
             if (params != null) {
                 discoverer.putParam(params);
             }
@@ -2161,9 +2166,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 
     @Override
     public Pair<HostPodVO, Long> findPod(VirtualMachineTemplate template, ServiceOfferingVO offering, DataCenterVO dc, long accountId, Set<Long> avoids) {
-        final Enumeration en = _podAllocators.enumeration();
-        while (en.hasMoreElements()) {
-            final PodAllocator allocator = (PodAllocator) en.nextElement();
+    	for(PodAllocator allocator : _podAllocators) {
             final Pair<HostPodVO, Long> pod = allocator.allocateTo(template, offering, dc, accountId, avoids);
             if (pod != null) {
                 return pod;

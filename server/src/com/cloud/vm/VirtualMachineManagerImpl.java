@@ -230,10 +230,10 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     @Inject
     protected NetworkDao _networkDao;
 
-    @com.cloud.utils.component.Inject(adapter = DeploymentPlanner.class)
-    protected Adapters<DeploymentPlanner> _planners;
+    @Inject
+    protected List<DeploymentPlanner> _planners;
 
-    @com.cloud.utils.component.Inject(adapter = HostAllocator.class)
+    @Inject
     protected Adapters<HostAllocator> _hostAllocators;
 
     @Inject

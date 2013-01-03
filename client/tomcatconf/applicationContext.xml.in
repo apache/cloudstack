@@ -19,6 +19,8 @@
   <!--
     @DB support
   -->
+  
+<!--  
   <aop:config proxy-target-class="true">
     <aop:aspect id="dbContextBuilder" ref="transactionContextBuilder">
     <aop:pointcut id="captureAnyMethod"
@@ -26,6 +28,7 @@
       <aop:around pointcut-ref="captureAnyMethod" method="AroundAnyMethod"/> 
     </aop:aspect>
   </aop:config>
+-->
 
   <bean id="transactionContextBuilder" class="com.cloud.utils.db.TransactionContextBuilder" />
 

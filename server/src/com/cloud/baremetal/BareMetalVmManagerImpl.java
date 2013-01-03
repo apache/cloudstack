@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 
+import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -112,9 +113,13 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
 	@Inject PxeServerManager _pxeMgr;
 	@Inject ResourceManager _resourceMgr;
 	
-	@com.cloud.utils.component.Inject (adapter=TemplateAdapter.class)
-    protected Adapters<TemplateAdapter> _adapters;
+	// @com.cloud.utils.component.Inject (adapter=TemplateAdapter.class)
+    @Inject protected List<TemplateAdapter> _adapters;
 
+    @PostConstruct
+    public void init() {
+    }
+    
 	@Override
 	public boolean attachISOToVM(long vmId, long isoId, boolean attach) {
 		s_logger.warn("attachISOToVM is not supported by Bare Metal, just fake a true");

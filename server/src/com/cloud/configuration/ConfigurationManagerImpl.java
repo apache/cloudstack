@@ -211,8 +211,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     ClusterDao _clusterDao;
     @Inject
     AlertManager _alertMgr;
-    @com.cloud.utils.component.Inject(adapter = SecurityChecker.class)
-    Adapters<SecurityChecker> _secChecker;
+    // @com.cloud.utils.component.Inject(adapter = SecurityChecker.class)
+    @Inject 
+    List<SecurityChecker> _secChecker;
+    
     @Inject
     CapacityDao _capacityDao;
     @Inject

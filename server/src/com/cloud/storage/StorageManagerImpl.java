@@ -329,11 +329,11 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
     protected DownloadMonitor _downloadMonitor;
     @Inject
     protected ResourceTagDao _resourceTagDao;
+    @Inject
+    protected List<StoragePoolAllocator> _storagePoolAllocators;
 
-    @com.cloud.utils.component.Inject(adapter = StoragePoolAllocator.class)
-    protected Adapters<StoragePoolAllocator> _storagePoolAllocators;
-    @com.cloud.utils.component.Inject(adapter = StoragePoolDiscoverer.class)
-    protected Adapters<StoragePoolDiscoverer> _discoverers;
+    @Inject
+    protected List<StoragePoolDiscoverer> _discoverers;
 
 
     protected SearchBuilder<VMTemplateHostVO> HostTemplateStatesSearch;
@@ -463,9 +463,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
     protected StoragePoolVO findStoragePool(DiskProfile dskCh, final DataCenterVO dc, HostPodVO pod, Long clusterId, Long hostId, VMInstanceVO vm, final Set<StoragePool> avoid) {
 
         VirtualMachineProfile<VMInstanceVO> profile = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
-        Enumeration<StoragePoolAllocator> en = _storagePoolAllocators.enumeration();
-        while (en.hasMoreElements()) {
-            final StoragePoolAllocator allocator = en.nextElement();
+        for (StoragePoolAllocator allocator : _storagePoolAllocators) {
             final List<StoragePool> poolList = allocator.allocateToPool(dskCh, profile, dc.getId(), pod.getId(), clusterId, hostId, avoid, 1);
             if (poolList != null && !poolList.isEmpty()) {
                 return (StoragePoolVO) poolList.get(0);
@@ -1354,11 +1352,10 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
                 hostPath.replaceFirst("/", "");
                 pool = new StoragePoolVO(StoragePoolType.IscsiLUN, storageHost, port, hostPath);
             } else {
-                Enumeration<StoragePoolDiscoverer> en = _discoverers.enumeration();
-                while (en.hasMoreElements()) {
+                for (StoragePoolDiscoverer discoverer : _discoverers) {
                     Map<StoragePoolVO, Map<String, String>> pools;
                     try {
-                        pools = en.nextElement().find(cmd.getZoneId(), podId, uri, details);
+                        pools = discoverer.find(cmd.getZoneId(), podId, uri, details);
                     } catch (DiscoveryException e) {
                         throw new IllegalArgumentException("Not enough information for discovery " + uri, e);
                     }

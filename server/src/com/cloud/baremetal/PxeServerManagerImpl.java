@@ -58,8 +58,9 @@ public class PxeServerManagerImpl implements PxeServerManager, ResourceStateAdap
 	@Inject AgentManager _agentMgr;
 	@Inject ExternalDhcpManager exDhcpMgr;
 	@Inject ResourceManager _resourceMgr;
-	@com.cloud.utils.component.Inject(adapter=PxeServerService.class)
-	protected Adapters<PxeServerService> _services;
+	
+	// @com.cloud.utils.component.Inject(adapter=PxeServerService.class)
+	@Inject protected List<PxeServerService> _services;
 	
 	@Override
 	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {

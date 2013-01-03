@@ -210,16 +210,16 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     ScheduledExecutorService _swiftTemplateSyncExecutor;
     
 
-    @com.cloud.utils.component.Inject (adapter=TemplateAdapter.class)
-    protected Adapters<TemplateAdapter> _adapters;
+    @Inject
+    protected List<TemplateAdapter> _adapters;
     
     private TemplateAdapter getAdapter(HypervisorType type) {
     	TemplateAdapter adapter = null;
     	if (type == HypervisorType.BareMetal) {
-    		adapter = _adapters.get(TemplateAdapterType.BareMetal.getName());
+    		adapter = Adapters.getAdapterByName(_adapters, TemplateAdapterType.BareMetal.getName());
     	} else {
     		// see HyervisorTemplateAdapter
-    		adapter =  _adapters.get(TemplateAdapterType.Hypervisor.getName());
+    		adapter =  Adapters.getAdapterByName(_adapters, TemplateAdapterType.Hypervisor.getName());
     	}
     	
     	if (adapter == null) {

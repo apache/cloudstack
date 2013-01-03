@@ -106,10 +106,11 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
     @Inject protected AccountManager _accountMgr;
     @Inject protected StorageManager _storageMgr;
 
-    @com.cloud.utils.component.Inject(adapter=StoragePoolAllocator.class)
-    protected Adapters<StoragePoolAllocator> _storagePoolAllocators;
-    @com.cloud.utils.component.Inject(adapter=HostAllocator.class)
-    protected Adapters<HostAllocator> _hostAllocators;
+    //@com.cloud.utils.component.Inject(adapter=StoragePoolAllocator.class)
+    @Inject protected List<StoragePoolAllocator> _storagePoolAllocators;
+    
+    //@com.cloud.utils.component.Inject(adapter=HostAllocator.class)
+    @Inject protected List<HostAllocator> _hostAllocators;
     protected String _allocationAlgorithm = "random";
 
 
@@ -714,17 +715,13 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 
     protected List<Host> findSuitableHosts(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo){
         List<Host> suitableHosts = new ArrayList<Host>();
-        Enumeration<HostAllocator> enHost = _hostAllocators.enumeration();
-        s_logger.debug("Calling HostAllocators to find suitable hosts");
-
-        while (enHost.hasMoreElements()) {
-            final HostAllocator allocator = enHost.nextElement();
+        for(HostAllocator allocator : _hostAllocators) {
             suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, avoid, returnUpTo);
             if (suitableHosts != null && !suitableHosts.isEmpty()) {
                 break;
             }
         }
-
+        
         if(suitableHosts.isEmpty()){
             s_logger.debug("No suitable hosts found");
         }
@@ -812,12 +809,8 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
             }
             diskProfile.setUseLocalStorage(useLocalStorage);
 
-
             boolean foundPotentialPools = false;
-
-            Enumeration<StoragePoolAllocator> enPool = _storagePoolAllocators.enumeration();
-            while (enPool.hasMoreElements()) {
-                final StoragePoolAllocator allocator = enPool.nextElement();
+            for(StoragePoolAllocator allocator : _storagePoolAllocators) {
                 final List<StoragePool> suitablePools = allocator.allocateToPool(diskProfile, vmProfile, plan, avoid, returnUpTo);
                 if (suitablePools != null && !suitablePools.isEmpty()) {
                     suitableVolumeStoragePools.put(toBeCreated, suitablePools);
@@ -825,7 +818,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
                     break;
                 }
             }
-
+            
             if(!foundPotentialPools){
                 s_logger.debug("No suitable pools found for volume: "+toBeCreated +" under cluster: "+plan.getClusterId());
                 //No suitable storage pools found under this cluster for this volume. - remove any suitable pools found for other volumes.

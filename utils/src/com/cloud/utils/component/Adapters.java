@@ -82,4 +82,12 @@ public class Adapters<T> implements Iterable<T> {
     public boolean isSet() {
         return _map.size() != 0;
     }
+    
+    public static <T extends Adapter> T getAdapterByName(List<T> adapters, String name) {
+    	for(T adapter : adapters) {
+    		if(adapter.getName().equals(name))
+    			return adapter;
+    	}
+    	return null;
+    }
 }

@@ -28,14 +28,14 @@ public class AsyncSampleEventDrivenStyleCaller {
 	@SuppressWarnings("unchecked")
 	public void MethodThatWillCallAsyncMethod() {
 		String vol = new String("Hello");
-		AsyncCallbackDispatcher<AsyncSampleEventDrivenStyleCaller> caller = AsyncCallbackDispatcher.create(this);
+		AsyncCallbackDispatcher<AsyncSampleEventDrivenStyleCaller, Object> caller = AsyncCallbackDispatcher.create(this);
 		_ds.createVolume(vol, caller
 			.setCallback(caller.getTarget().HandleVolumeCreateAsyncCallback(null, null))
 			.setContext(vol)
 		);
 	}
 
-	public Void HandleVolumeCreateAsyncCallback(AsyncCallbackDispatcher<AsyncSampleEventDrivenStyleCaller> callback, String context) {
+	public Void HandleVolumeCreateAsyncCallback(AsyncCallbackDispatcher<AsyncSampleEventDrivenStyleCaller, Object> callback, String context) {
 		Object resultVol = callback.getResult();
 		
 		return null;

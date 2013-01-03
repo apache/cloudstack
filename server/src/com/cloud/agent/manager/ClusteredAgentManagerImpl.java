@@ -116,8 +116,8 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     @Inject
     protected HostTransferMapDao _hostTransferDao;
     
-    @com.cloud.utils.component.Inject(adapter = AgentLoadBalancerPlanner.class)
-    protected Adapters<AgentLoadBalancerPlanner> _lbPlanners;
+    // @com.cloud.utils.component.Inject(adapter = AgentLoadBalancerPlanner.class)
+    @Inject protected List<AgentLoadBalancerPlanner> _lbPlanners;
     
     @Inject
     protected AgentManager _agentMgr;

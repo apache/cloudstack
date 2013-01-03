@@ -95,9 +95,9 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager{
     NetworkServiceMapDao  _ntwkSrvcDao;
     @Inject
     NetworkOfferingServiceMapDao  _ntwkOfferingSrvcDao;
-    
-    @com.cloud.utils.component.Inject(adapter = NetworkElement.class)
-    Adapters<NetworkElement> _networkElements;
+ 
+    @Inject
+    List<NetworkElement> _networkElements;
     
     private static HashMap<String, String> s_providerToNetworkElementMap = new HashMap<String, String>();
     private static final Logger s_logger = Logger.getLogger(MockNetworkManagerImpl.class);

@@ -173,8 +173,8 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     private int _mgmt_port = 8250;
 
     private String _name;
-    @com.cloud.utils.component.Inject(adapter = SecondaryStorageVmAllocator.class)
-    private Adapters<SecondaryStorageVmAllocator> _ssVmAllocators;
+    @Inject
+    private List<SecondaryStorageVmAllocator> _ssVmAllocators;
 
     @Inject
     protected SecondaryStorageVmDao _secStorageVmDao;
@@ -589,11 +589,9 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     private SecondaryStorageVmAllocator getCurrentAllocator() {
 
         // for now, only one adapter is supported
-        Enumeration<SecondaryStorageVmAllocator> it = _ssVmAllocators.enumeration();
-        if (it.hasMoreElements()) {
-            return it.nextElement();
-        }
-
+    	if(_ssVmAllocators.size() > 0)
+    		return _ssVmAllocators.get(0);
+    	
         return null;
     }
 

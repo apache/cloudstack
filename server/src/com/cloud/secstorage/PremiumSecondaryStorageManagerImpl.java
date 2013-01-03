@@ -25,6 +25,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Command;
@@ -49,6 +50,7 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 
 @Component
+@Primary
 @Local(value = { SecondaryStorageVmManager.class })
 public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerImpl {
     private static final Logger s_logger = Logger.getLogger(PremiumSecondaryStorageManagerImpl.class);
