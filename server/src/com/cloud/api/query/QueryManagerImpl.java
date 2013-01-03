@@ -34,6 +34,7 @@ import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
+import org.apache.cloudstack.api.command.user.job.ListAsyncJobsCmd;
 import org.apache.cloudstack.api.command.user.project.ListProjectInvitationsCmd;
 import org.apache.cloudstack.api.command.user.project.ListProjectsCmd;
 import org.apache.cloudstack.api.command.user.securitygroup.ListSecurityGroupsCmd;
@@ -42,6 +43,7 @@ import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
+import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.HostResponse;
@@ -62,6 +64,7 @@ import com.cloud.acl.ControlledEntity;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.dao.AccountJoinDao;
+import com.cloud.api.query.dao.AsyncJobJoinDao;
 import com.cloud.api.query.dao.DomainRouterJoinDao;
 import com.cloud.api.query.dao.HostJoinDao;
 import com.cloud.api.query.dao.InstanceGroupJoinDao;
@@ -74,6 +77,7 @@ import com.cloud.api.query.dao.UserAccountJoinDao;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.dao.VolumeJoinDao;
 import com.cloud.api.query.vo.AccountJoinVO;
+import com.cloud.api.query.vo.AsyncJobJoinVO;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.api.query.vo.EventJoinVO;
 import com.cloud.api.query.vo.HostJoinVO;
@@ -87,6 +91,7 @@ import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
 import com.cloud.async.AsyncJob;
+import com.cloud.async.AsyncJobVO;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -215,6 +220,9 @@ public class QueryManagerImpl implements QueryService, Manager {
 
     @Inject
     private AccountJoinDao _accountJoinDao;
+
+    @Inject
+    private AsyncJobJoinDao _jobJoinDao;
 
     @Inject
     private HighAvailabilityManager _haMgr;
@@ -1727,10 +1735,86 @@ public class QueryManagerImpl implements QueryService, Manager {
             }
         }
 
-        Pair<List<AccountJoinVO>, Integer> result = _accountJoinDao.searchAndCount(sc, searchFilter);
-        return new Pair<List<AccountJoinVO>, Integer>(result.first(), result.second());
+        return _accountJoinDao.searchAndCount(sc, searchFilter);
+    }
+
+    @Override
+    public ListResponse<AsyncJobResponse> searchForAsyncJobs(ListAsyncJobsCmd cmd) {
+        Pair<List<AsyncJobJoinVO>, Integer> result = searchForAsyncJobsInternal(cmd);
+        ListResponse<AsyncJobResponse> response = new ListResponse<AsyncJobResponse>();
+        List<AsyncJobResponse> jobResponses = ViewResponseHelper.createAsyncJobResponse(result.first().toArray(new AsyncJobJoinVO[result.first().size()]));
+        response.setResponses(jobResponses, result.second());
+        return response;
     }
 
 
+    public Pair<List<AsyncJobJoinVO>, Integer> searchForAsyncJobsInternal(ListAsyncJobsCmd cmd) {
+
+        Account caller = UserContext.current().getCaller();
+
+        List<Long> permittedAccounts = new ArrayList<Long>();
+
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
+                cmd.getDomainId(), cmd.isRecursive(), null);
+        _accountMgr.buildACLSearchParameters(caller, null, cmd.getAccountName(), null, permittedAccounts, domainIdRecursiveListProject,
+                cmd.listAll(), false);
+        Long domainId = domainIdRecursiveListProject.first();
+        Boolean isRecursive = domainIdRecursiveListProject.second();
+        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
+
+        Filter searchFilter = new Filter(AsyncJobJoinVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        SearchBuilder<AsyncJobJoinVO> sb = _jobJoinDao.createSearchBuilder();
+        sb.and("accountIdIN", sb.entity().getAccountId(), SearchCriteria.Op.IN);
+        SearchBuilder<AccountVO> accountSearch = null;
+        boolean accountJoinIsDone = false;
+        if (permittedAccounts.isEmpty() && domainId != null) {
+            sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
+            sb.and("path", sb.entity().getDomainPath(), SearchCriteria.Op.LIKE);
+            accountJoinIsDone = true;
+        }
+
+        if (listProjectResourcesCriteria != null) {
+
+            if (listProjectResourcesCriteria == Project.ListProjectResourcesCriteria.ListProjectResourcesOnly) {
+                sb.and("type", sb.entity().getAccountType(), SearchCriteria.Op.EQ);
+            } else if (listProjectResourcesCriteria == Project.ListProjectResourcesCriteria.SkipProjectResources) {
+                sb.and("type", sb.entity().getAccountType(), SearchCriteria.Op.NEQ);
+            }
+
+            if (!accountJoinIsDone) {
+                sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
+                sb.and("path", sb.entity().getDomainPath(), SearchCriteria.Op.LIKE);
+            }
+        }
+
+        Object keyword = cmd.getKeyword();
+        Object startDate = cmd.getStartDate();
+
+        SearchCriteria<AsyncJobJoinVO> sc = sb.create();
+        if (listProjectResourcesCriteria != null) {
+            sc.setParameters("type", Account.ACCOUNT_TYPE_PROJECT);
+        }
+
+        if (!permittedAccounts.isEmpty()) {
+            sc.setParameters("accountIdIN", permittedAccounts.toArray());
+        } else if (domainId != null) {
+            DomainVO domain = _domainDao.findById(domainId);
+            if (isRecursive) {
+                sc.setParameters("path", domain.getPath() + "%");
+            } else {
+                sc.setParameters("domainId", domainId);
+            }
+        }
+
+        if (keyword != null) {
+            sc.addAnd("cmd", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+        }
+
+        if (startDate != null) {
+            sc.addAnd("created", SearchCriteria.Op.GTEQ, startDate);
+        }
+
+        return _jobJoinDao.searchAndCount(sc, searchFilter);
+    }
 
 }

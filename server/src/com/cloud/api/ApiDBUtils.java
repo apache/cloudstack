@@ -25,6 +25,7 @@ import java.util.Set;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.response.AccountResponse;
+import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.HostResponse;
@@ -39,6 +40,7 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 
 import com.cloud.api.query.dao.AccountJoinDao;
+import com.cloud.api.query.dao.AsyncJobJoinDao;
 import com.cloud.api.query.dao.DomainRouterJoinDao;
 import com.cloud.api.query.dao.HostJoinDao;
 import com.cloud.api.query.dao.InstanceGroupJoinDao;
@@ -51,6 +53,7 @@ import com.cloud.api.query.dao.UserAccountJoinDao;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.dao.VolumeJoinDao;
 import com.cloud.api.query.vo.AccountJoinVO;
+import com.cloud.api.query.vo.AsyncJobJoinVO;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.api.query.vo.EventJoinVO;
 import com.cloud.api.query.vo.HostJoinVO;
@@ -322,6 +325,7 @@ public class ApiDBUtils {
     private static HostJoinDao _hostJoinDao;
     private static VolumeJoinDao _volJoinDao;
     private static AccountJoinDao _accountJoinDao;
+    private static AsyncJobJoinDao _jobJoinDao;
 
     private static PhysicalNetworkTrafficTypeDao _physicalNetworkTrafficTypeDao;
     private static PhysicalNetworkServiceProviderDao _physicalNetworkServiceProviderDao;
@@ -411,6 +415,7 @@ public class ApiDBUtils {
         _hostJoinDao = locator.getDao(HostJoinDao.class);
         _volJoinDao = locator.getDao(VolumeJoinDao.class);
         _accountJoinDao = locator.getDao(AccountJoinDao.class);
+        _jobJoinDao = locator.getDao(AsyncJobJoinDao.class);
 
         _physicalNetworkTrafficTypeDao = locator.getDao(PhysicalNetworkTrafficTypeDao.class);
         _physicalNetworkServiceProviderDao = locator.getDao(PhysicalNetworkServiceProviderDao.class);
@@ -1363,5 +1368,13 @@ public class ApiDBUtils {
 
    public static AccountJoinVO findAccountViewById(Long accountId) {
        return _accountJoinDao.findByIdIncludingRemoved(accountId);
+   }
+
+   public static AsyncJobResponse newAsyncJobResponse(AsyncJobJoinVO ve) {
+       return _jobJoinDao.newAsyncJobResponse(ve);
+   }
+
+   public static AsyncJobJoinVO newAsyncJobView(AsyncJob e){
+       return _jobJoinDao.newAsyncJobView(e);
    }
 }

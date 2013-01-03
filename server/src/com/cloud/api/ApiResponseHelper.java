@@ -46,6 +46,7 @@ import org.apache.cloudstack.api.response.AccountResponse;
 
 import com.cloud.api.query.ViewResponseHelper;
 import com.cloud.api.query.vo.AccountJoinVO;
+import com.cloud.api.query.vo.AsyncJobJoinVO;
 import com.cloud.api.query.vo.ControlledViewEntity;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.api.query.vo.EventJoinVO;
@@ -1803,49 +1804,8 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public AsyncJobResponse createAsyncJobResponse(AsyncJob job) {
-        AsyncJobResponse jobResponse = new AsyncJobResponse();
-        Account account = ApiDBUtils.findAccountById(job.getAccountId());
-        if (account != null) {
-            jobResponse.setAccountId(account.getUuid());
-        }
-        User user = ApiDBUtils.findUserById(job.getUserId());
-        if (user != null) {
-            jobResponse.setUserId(user.getUuid());
-        }
-        jobResponse.setCmd(job.getCmd());
-        jobResponse.setCreated(job.getCreated());
-        jobResponse.setJobId(job.getUuid());
-        jobResponse.setJobStatus(job.getStatus());
-        jobResponse.setJobProcStatus(job.getProcessStatus());
-
-        if (job.getInstanceType() != null && job.getInstanceId() != null) {
-            jobResponse.setJobInstanceType(job.getInstanceType().toString());
-            String jobInstanceId = ApiDBUtils.findJobInstanceUuid(job);
-
-            if (jobInstanceId != null) {
-                jobResponse.setJobInstanceId(jobInstanceId);
-            }
-        }
-        jobResponse.setJobResultCode(job.getResultCode());
-
-        boolean savedValue = SerializationContext.current().getUuidTranslation();
-        SerializationContext.current().setUuidTranslation(false);
-
-        Object resultObject = ApiSerializerHelper.fromSerializedString(job.getResult());
-        jobResponse.setJobResult((ResponseObject) resultObject);
-        SerializationContext.current().setUuidTranslation(savedValue);
-
-        if (resultObject != null) {
-            Class<?> clz = resultObject.getClass();
-            if (clz.isPrimitive() || clz.getSuperclass() == Number.class || clz == String.class || clz == Date.class) {
-                jobResponse.setJobResultType("text");
-            } else {
-                jobResponse.setJobResultType("object");
-            }
-        }
-
-        jobResponse.setObjectName("asyncjobs");
-        return jobResponse;
+        AsyncJobJoinVO vJob = ApiDBUtils.newAsyncJobView(job);
+        return ApiDBUtils.newAsyncJobResponse(vJob);
     }
 
     @Override

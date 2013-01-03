@@ -24,6 +24,7 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.async.AsyncJob;
@@ -59,15 +60,10 @@ public class ListAsyncJobsCmd extends BaseListAccountResourcesCmd {
 
     @Override
     public void execute(){
-        Pair<List<? extends AsyncJob>, Integer> result = _mgr.searchForAsyncJobs(this);
-        ListResponse<AsyncJobResponse> response = new ListResponse<AsyncJobResponse>();
-        List<AsyncJobResponse> jobResponses = new ArrayList<AsyncJobResponse>();
-        for (AsyncJob job : result.first()) {
-            jobResponses.add(_responseGenerator.createAsyncJobResponse(job));
-        }
 
-        response.setResponses(jobResponses, result.second());
+        ListResponse<AsyncJobResponse> response = _queryService.searchForAsyncJobs(this);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
+
     }
 }

@@ -1426,14 +1426,14 @@ public class ManagementServerImpl implements ManagementServer {
             }
         } else if (_s3Mgr.isS3Enabled()) {
             if (template == null) {
-                templateZonePairSet = _templateDao.searchSwiftTemplates(name, keyword, templateFilter, isIso, 
+                templateZonePairSet = _templateDao.searchSwiftTemplates(name, keyword, templateFilter, isIso,
                         hypers, bootable, domain, pageSize, startIndex, zoneId, hyperType, onlyReady, showDomr,
                         permittedAccounts, caller, tags);
                 Set<Pair<Long, Long>> templateZonePairSet2 = new HashSet<Pair<Long, Long>>();
-                templateZonePairSet2 = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, hypers, 
+                templateZonePairSet2 = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, hypers,
                         bootable, domain, pageSize, startIndex, zoneId, hyperType, onlyReady, showDomr,
                         permittedAccounts, caller, listProjectResourcesCriteria, tags);
-                
+
                 for (Pair<Long, Long> tmpltPair : templateZonePairSet2) {
                     if (!templateZonePairSet.contains(new Pair<Long, Long>(tmpltPair.first(), -1L))) {
                         templateZonePairSet.add(tmpltPair);
@@ -2417,84 +2417,6 @@ public class ManagementServerImpl implements ManagementServer {
         return _poolDao.searchAndCount(sc, searchFilter);
     }
 
-    @Override
-    public Pair<List<? extends AsyncJob>, Integer> searchForAsyncJobs(ListAsyncJobsCmd cmd) {
-
-        Account caller = UserContext.current().getCaller();
-
-        List<Long> permittedAccounts = new ArrayList<Long>();
-
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
-                cmd.getDomainId(), cmd.isRecursive(), null);
-        _accountMgr.buildACLSearchParameters(caller, null, cmd.getAccountName(), null, permittedAccounts, domainIdRecursiveListProject,
-                cmd.listAll(), false);
-        Long domainId = domainIdRecursiveListProject.first();
-        Boolean isRecursive = domainIdRecursiveListProject.second();
-        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
-
-        Filter searchFilter = new Filter(AsyncJobVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-        SearchBuilder<AsyncJobVO> sb = _jobDao.createSearchBuilder();
-        sb.and("accountIdIN", sb.entity().getAccountId(), SearchCriteria.Op.IN);
-        SearchBuilder<AccountVO> accountSearch = null;
-        boolean accountJoinIsDone = false;
-        if (permittedAccounts.isEmpty() && domainId != null) {
-            accountSearch = _accountDao.createSearchBuilder();
-            // if accountId isn't specified, we can do a domain match for the
-            // admin case if isRecursive is true
-            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
-            domainSearch.and("domainId", domainSearch.entity().getId(), SearchCriteria.Op.EQ);
-            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
-            sb.join("accountSearch", accountSearch, sb.entity().getAccountId(), accountSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-            accountJoinIsDone = true;
-            accountSearch.join("domainSearch", domainSearch, accountSearch.entity().getDomainId(), domainSearch.entity().getId(),
-                    JoinBuilder.JoinType.INNER);
-        }
-
-        if (listProjectResourcesCriteria != null) {
-            if (accountSearch == null) {
-                accountSearch = _accountDao.createSearchBuilder();
-            }
-            if (listProjectResourcesCriteria == Project.ListProjectResourcesCriteria.ListProjectResourcesOnly) {
-                accountSearch.and("type", accountSearch.entity().getType(), SearchCriteria.Op.EQ);
-            } else if (listProjectResourcesCriteria == Project.ListProjectResourcesCriteria.SkipProjectResources) {
-                accountSearch.and("type", accountSearch.entity().getType(), SearchCriteria.Op.NEQ);
-            }
-
-            if (!accountJoinIsDone) {
-                sb.join("accountSearch", accountSearch, sb.entity().getAccountId(), accountSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-            }
-        }
-
-        Object keyword = cmd.getKeyword();
-        Object startDate = cmd.getStartDate();
-
-        SearchCriteria<AsyncJobVO> sc = sb.create();
-        if (listProjectResourcesCriteria != null) {
-            sc.setJoinParameters("accountSearch", "type", Account.ACCOUNT_TYPE_PROJECT);
-        }
-
-        if (!permittedAccounts.isEmpty()) {
-            sc.setParameters("accountIdIN", permittedAccounts.toArray());
-        } else if (domainId != null) {
-            DomainVO domain = _domainDao.findById(domainId);
-            if (isRecursive) {
-                sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
-            } else {
-                sc.setJoinParameters("domainSearch", "domainId", domainId);
-            }
-        }
-
-        if (keyword != null) {
-            sc.addAnd("cmd", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-        }
-
-        if (startDate != null) {
-            sc.addAnd("created", SearchCriteria.Op.GTEQ, startDate);
-        }
-
-        Pair<List<AsyncJobVO>, Integer> result = _jobDao.searchAndCount(sc, searchFilter);
-        return new Pair<List<? extends AsyncJob>, Integer>(result.first(), result.second());
-    }
 
     @ActionEvent(eventType = EventTypes.EVENT_SSVM_START, eventDescription = "starting secondary storage Vm", async = true)
     public SecondaryStorageVmVO startSecondaryStorageVm(long instanceId) {

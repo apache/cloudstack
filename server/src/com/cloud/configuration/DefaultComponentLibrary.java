@@ -26,6 +26,7 @@ import com.cloud.alert.AlertManagerImpl;
 import com.cloud.alert.dao.AlertDaoImpl;
 import com.cloud.api.query.QueryManagerImpl;
 import com.cloud.api.query.dao.AccountJoinDaoImpl;
+import com.cloud.api.query.dao.AsyncJobJoinDaoImpl;
 import com.cloud.api.query.dao.DomainRouterJoinDaoImpl;
 import com.cloud.api.query.dao.InstanceGroupJoinDaoImpl;
 import com.cloud.api.query.dao.ProjectAccountJoinDaoImpl;
@@ -246,6 +247,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("HostJoinDao", HostJoinDaoImpl.class);
         addDao("VolumeJoinDao", VolumeJoinDaoImpl.class);
         addDao("AccountJoinDao", AccountJoinDaoImpl.class);
+        addDao("AsyncJobJoinDao", AsyncJobJoinDaoImpl.class);
         ComponentInfo<? extends GenericDao<?, ? extends Serializable>> info = addDao("ServiceOfferingDao", ServiceOfferingDaoImpl.class);
         info.addParameter("cache.size", "50");
         info.addParameter("cache.time.to.live", "600");

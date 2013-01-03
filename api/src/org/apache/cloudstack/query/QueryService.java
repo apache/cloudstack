@@ -16,12 +16,15 @@
 // under the License.
 package org.apache.cloudstack.query;
 
+import java.util.List;
+
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
+import org.apache.cloudstack.api.command.user.job.ListAsyncJobsCmd;
 import org.apache.cloudstack.api.command.user.project.ListProjectInvitationsCmd;
 import org.apache.cloudstack.api.command.user.project.ListProjectsCmd;
 import org.apache.cloudstack.api.command.user.securitygroup.ListSecurityGroupsCmd;
@@ -30,6 +33,7 @@ import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
+import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.HostResponse;
@@ -46,7 +50,9 @@ import org.apache.cloudstack.api.response.VolumeResponse;
 
 
 
+import com.cloud.async.AsyncJob;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.utils.Pair;
 
 /**
  * Service used for list api query.
@@ -80,4 +86,6 @@ public interface QueryService {
     public ListResponse<VolumeResponse> searchForVolumes(ListVolumesCmd cmd);
 
     public ListResponse<AccountResponse> searchForAccounts(ListAccountsCmd cmd);
+
+    public ListResponse<AsyncJobResponse>  searchForAsyncJobs(ListAsyncJobsCmd cmd);
 }
