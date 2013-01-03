@@ -21,10 +21,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -60,7 +57,6 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
     private static List<String> s_adminCommands = null;
     private static List<String> s_resourceDomainAdminCommands = null;
     private static List<String> s_allCommands = null;
-    private static List<String> s_pluggableServiceCommands = null;
     private Properties _apiCommands = null;
 
     protected @Inject AccountManager _accountMgr;
@@ -72,7 +68,6 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
         s_resellerCommands = new ArrayList<String>();
         s_adminCommands = new ArrayList<String>();
         s_resourceDomainAdminCommands = new ArrayList<String>();
-        s_pluggableServiceCommands = new ArrayList<String>();
     }
 
     @Override
@@ -119,88 +114,70 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
 
-        //load command.properties to build the static map per role.
+        // Read command properties files to build the static map per role.
         ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
-        String[] apiConfig = ((ManagementServer) ComponentLocator.getComponent(ManagementServer.Name)).getApiConfig();
+        List<PluggableService> services = locator.getAllPluggableServices();
+        services.add((PluggableService) ComponentLocator.getComponent(ManagementServer.Name));
 
-        processConfigFiles(apiConfig, false);
+        List<String> configFiles = new ArrayList<String>();
+        for (PluggableService service : services) {
+            configFiles.addAll(Arrays.asList(service.getPropertiesFiles()));
+        }
 
-        // get commands for all pluggable services
-        String[] pluggableServicesApiConfigs = getPluggableServicesApiConfigs();
-        processConfigFiles(pluggableServicesApiConfigs, true);
-
+        processConfigFiles(configFiles);
         return true;
     }
 
-
-    private String[] getPluggableServicesApiConfigs() {
-        List<String> pluggableServicesApiConfigs = new ArrayList<String>();
-
-        ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
-        List<PluggableService> services = locator.getAllPluggableServices();
-        for (PluggableService service : services) {
-            pluggableServicesApiConfigs.add(service.getPropertiesFile());
-        }
-        return pluggableServicesApiConfigs.toArray(new String[0]);
-    }
-
-    private void processConfigFiles(String[] apiConfig, boolean pluggableServicesConfig) {
+    private void processConfigFiles(List<String> configFiles) {
         try {
             if (_apiCommands == null)
                 _apiCommands = new Properties();
 
             Properties preProcessedCommands = new Properties();
-            if (apiConfig != null) {
-                for (String configFile : apiConfig) {
-                    File commandsFile = PropertiesUtil.findConfigFile(configFile);
-                    if (commandsFile != null) {
-                        try {
-                            preProcessedCommands.load(new FileInputStream(commandsFile));
-                        } catch (FileNotFoundException fnfex) {
-                            // in case of a file within a jar in classpath, try to open stream using url
-                            InputStream stream = PropertiesUtil.openStreamFromURL(configFile);
-                            if (stream != null) {
-                                preProcessedCommands.load(stream);
-                            } else {
-                                s_logger.error("Unable to find properites file", fnfex);
-                            }
+            for (String configFile : configFiles) {
+                File commandsFile = PropertiesUtil.findConfigFile(configFile);
+                if (commandsFile != null) {
+                    try {
+                        preProcessedCommands.load(new FileInputStream(commandsFile));
+                    } catch (FileNotFoundException fnfex) {
+                        // in case of a file within a jar in classpath, try to open stream using url
+                        InputStream stream = PropertiesUtil.openStreamFromURL(configFile);
+                        if (stream != null) {
+                            preProcessedCommands.load(stream);
+                        } else {
+                            s_logger.error("Unable to find properites file", fnfex);
                         }
                     }
                 }
-                for (Object key : preProcessedCommands.keySet()) {
-                    String preProcessedCommand = preProcessedCommands.getProperty((String) key);
-                    String[] commandParts = preProcessedCommand.split(";");
-                    _apiCommands.setProperty(key.toString(), commandParts[0]);
+            }
+            for (Object key : preProcessedCommands.keySet()) {
+                String preProcessedCommand = preProcessedCommands.getProperty((String) key);
+                String[] commandParts = preProcessedCommand.split(";");
+                _apiCommands.setProperty(key.toString(), commandParts[0]);
 
-                    if (pluggableServicesConfig) {
-                        s_pluggableServiceCommands.add(commandParts[0]);
-                    }
-
-                    if (commandParts.length > 1) {
-                        try {
-                            short cmdPermissions = Short.parseShort(commandParts[1]);
-                            if ((cmdPermissions & ADMIN_COMMAND) != 0) {
-                                s_adminCommands.add((String) key);
-                            }
-                            if ((cmdPermissions & RESOURCE_DOMAIN_ADMIN_COMMAND) != 0) {
-                                s_resourceDomainAdminCommands.add((String) key);
-                            }
-                            if ((cmdPermissions & DOMAIN_ADMIN_COMMAND) != 0) {
-                                s_resellerCommands.add((String) key);
-                            }
-                            if ((cmdPermissions & USER_COMMAND) != 0) {
-                                s_userCommands.add((String) key);
-                            }
-                            s_allCommands.addAll(s_adminCommands);
-                            s_allCommands.addAll(s_resourceDomainAdminCommands);
-                            s_allCommands.addAll(s_userCommands);
-                            s_allCommands.addAll(s_resellerCommands);
-                        } catch (NumberFormatException nfe) {
-                            s_logger.info("Malformed command.properties permissions value, key = " + key + ", value = " + preProcessedCommand);
+                if (commandParts.length > 1) {
+                    try {
+                        short cmdPermissions = Short.parseShort(commandParts[1]);
+                        if ((cmdPermissions & ADMIN_COMMAND) != 0) {
+                            s_adminCommands.add((String) key);
                         }
+                        if ((cmdPermissions & RESOURCE_DOMAIN_ADMIN_COMMAND) != 0) {
+                            s_resourceDomainAdminCommands.add((String) key);
+                        }
+                        if ((cmdPermissions & DOMAIN_ADMIN_COMMAND) != 0) {
+                            s_resellerCommands.add((String) key);
+                        }
+                        if ((cmdPermissions & USER_COMMAND) != 0) {
+                            s_userCommands.add((String) key);
+                        }
+                        s_allCommands.addAll(s_adminCommands);
+                        s_allCommands.addAll(s_resourceDomainAdminCommands);
+                        s_allCommands.addAll(s_userCommands);
+                        s_allCommands.addAll(s_resellerCommands);
+                    } catch (NumberFormatException nfe) {
+                        s_logger.info("Malformed command.properties permissions value, key = " + key + ", value = " + preProcessedCommand);
                     }
                 }
-
             }
         } catch (FileNotFoundException fnfex) {
             s_logger.error("Unable to find properties file", fnfex);

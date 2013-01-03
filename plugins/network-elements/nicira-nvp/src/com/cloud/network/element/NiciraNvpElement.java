@@ -540,8 +540,8 @@ public class NiciraNvpElement extends AdapterBase implements
 	}
 
 	@Override
-	public String getPropertiesFile() {
-		return "nicira-nvp_commands.properties";
+	public String[] getPropertiesFiles() {
+		return new String[] { "nicira-nvp_commands.properties" };
 	}
 
 	@Override

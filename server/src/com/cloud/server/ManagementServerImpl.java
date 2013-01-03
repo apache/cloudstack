@@ -2309,7 +2309,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public String[] getApiConfig() {
+    public String[] getPropertiesFiles() {
         return new String[] { "commands.properties" };
     }
 

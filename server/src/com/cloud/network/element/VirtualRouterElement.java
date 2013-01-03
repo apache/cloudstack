@@ -680,8 +680,8 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     }
 
     @Override
-    public String getPropertiesFile() {
-        return "virtualrouter_commands.properties";
+    public String[] getPropertiesFiles() {
+        return new String[] { "virtualrouter_commands.properties" };
     }
 
     @Override

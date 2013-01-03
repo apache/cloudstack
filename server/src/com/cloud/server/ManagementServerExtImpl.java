@@ -206,7 +206,7 @@ public class ManagementServerExtImpl extends ManagementServerImpl implements Man
     }
 
     @Override
-    public String[] getApiConfig() {
+    public String[] getPropertiesFiles() {
         return new String[] { "commands.properties", "commands-ext.properties" };
     }
 
