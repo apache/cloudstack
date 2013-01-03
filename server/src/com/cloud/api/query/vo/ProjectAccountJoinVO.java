@@ -20,6 +20,7 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.projects.ProjectAccount.Role;
@@ -29,6 +30,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 @Table(name="project_account_view")
 public class ProjectAccountJoinVO extends BaseViewVO implements InternalIdentity {
 
+    @Id
     @Column(name="id", updatable=false, nullable = false)
     private long id;
 

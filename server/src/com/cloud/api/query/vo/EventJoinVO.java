@@ -22,6 +22,7 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.utils.db.GenericDao;
@@ -31,6 +32,7 @@ import com.cloud.event.Event.State;
 @Table(name="event_view")
 public class EventJoinVO extends BaseViewVO implements ControlledViewEntity {
 
+    @Id
     @Column(name="id", updatable=false, nullable = false)
     private long id;
 

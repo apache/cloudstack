@@ -20,6 +20,7 @@ import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.utils.db.Encrypt;
@@ -32,6 +33,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 @Table(name="user_view")
 public class UserAccountJoinVO extends BaseViewVO implements InternalIdentity, Identity {
 
+    @Id
     @Column(name="id", updatable=false, nullable = false)
     private long id;
 

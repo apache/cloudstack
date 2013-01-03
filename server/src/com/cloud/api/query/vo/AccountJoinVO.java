@@ -21,6 +21,7 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.Id;
 import javax.persistence.Table;
 import com.cloud.user.Account.State;
 import com.cloud.utils.db.GenericDao;
@@ -31,6 +32,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 @Table(name="account_view")
 public class AccountJoinVO extends BaseViewVO implements InternalIdentity, Identity {
 
+    @Id
     @Column(name="id")
     private long id;
 

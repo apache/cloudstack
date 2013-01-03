@@ -24,6 +24,7 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
@@ -42,6 +43,7 @@ import com.cloud.vm.VirtualMachine.State;
 @Table(name="user_vm_view")
 public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
 
+    @Id
     @Column(name="id", updatable=false, nullable = false)
     private long id;
 

@@ -20,6 +20,7 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.network.security.SecurityRule.SecurityRuleType;
@@ -29,6 +30,7 @@ import com.cloud.server.ResourceTag.TaggedResourceType;
 @Table(name="security_group_view")
 public class SecurityGroupJoinVO extends BaseViewVO implements ControlledViewEntity{
 
+    @Id
     @Column(name="id", updatable=false, nullable = false)
     private long id;
 

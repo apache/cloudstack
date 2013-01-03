@@ -22,6 +22,7 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.server.ResourceTag.TaggedResourceType;
@@ -35,6 +36,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 @Table(name="project_view")
 public class ProjectJoinVO extends BaseViewVO implements InternalIdentity, Identity {
 
+    @Id
     @Column(name="id", updatable=false, nullable = false)
     private long id;
 

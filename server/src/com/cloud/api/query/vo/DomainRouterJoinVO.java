@@ -23,6 +23,7 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.network.Network.GuestType;
@@ -35,6 +36,7 @@ import com.cloud.vm.VirtualMachine.State;
 @Table(name="domain_router_view")
 public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEntity {
 
+    @Id
     @Column(name="id", updatable=false, nullable = false)
     private long id;
 
