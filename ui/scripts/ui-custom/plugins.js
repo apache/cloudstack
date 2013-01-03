@@ -22,12 +22,21 @@
 
       $(plugins).each(function() {
         var plugin = this;
-
-        elems.pluginItem({
+        var $plugin = elems.pluginItem({
           id: plugin.id,
           title: plugin.title,
           desc: plugin.desc
-        }).appendTo($plugins);
+        });
+        var $browser = $('#browser .container');
+
+        $plugin.click(function() {
+          $browser.cloudBrowser('addPanel', {
+            title: plugin.title,
+            $parent: $('.panel:first')
+          });
+        });
+
+        $plugin.appendTo($plugins);
       });
 
       $pluginsListing.append($plugins);

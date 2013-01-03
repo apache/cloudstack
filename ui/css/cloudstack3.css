@@ -10955,6 +10955,15 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   width: 98%;
   height: 66px;
   margin: 9px auto 12px;
+  cursor: pointer;
+}
+
+.plugins-listing ul li:hover {
+  /*+box-shadow:inset 0px 2px 4px #B9B9B9;*/
+  -moz-box-shadow: inset 0px 2px 4px #B9B9B9;
+  -webkit-box-shadow: inset 0px 2px 4px #B9B9B9;
+  -o-box-shadow: inset 0px 2px 4px #B9B9B9;
+  box-shadow: inset 0px 2px 4px #B9B9B9;
 }
 
 .plugins-listing ul li .title {
