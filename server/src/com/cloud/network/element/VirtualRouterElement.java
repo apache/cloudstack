@@ -88,7 +88,10 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.google.gson.Gson;
 
-@Local(value = NetworkElement.class)
+@Local(value = {NetworkElement.class, FirewallServiceProvider.class, 
+		        DhcpServiceProvider.class, UserDataServiceProvider.class, 
+		        StaticNatServiceProvider.class, LoadBalancingServiceProvider.class,
+		        PortForwardingServiceProvider.class, IpDeployer.class, RemoteAccessVPNServiceProvider.class} )
 public class VirtualRouterElement extends AdapterBase implements VirtualRouterElementService, DhcpServiceProvider, 
     UserDataServiceProvider, SourceNatServiceProvider, StaticNatServiceProvider, FirewallServiceProvider,
         LoadBalancingServiceProvider, PortForwardingServiceProvider, RemoteAccessVPNServiceProvider, IpDeployer {

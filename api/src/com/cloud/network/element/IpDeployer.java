@@ -23,8 +23,9 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Service;
 import com.cloud.network.PublicIpAddress;
+import com.cloud.utils.component.Adapter;
 
-public interface IpDeployer {
+public interface IpDeployer extends Adapter{
     /**
      * Apply ip addresses to this network
      * @param network

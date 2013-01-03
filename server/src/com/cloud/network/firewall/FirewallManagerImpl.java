@@ -49,6 +49,8 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.dao.FirewallRulesCidrsDao;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.element.FirewallServiceProvider;
+import com.cloud.network.element.NetworkElement;
 import com.cloud.network.rules.FirewallManager;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.FirewallRuleType;
@@ -69,6 +71,7 @@ import com.cloud.user.UserContext;
 import com.cloud.utils.IdentityProxy;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
@@ -116,6 +119,8 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
     ResourceTagDao _resourceTagDao;
     @Inject
     VpcManager _vpcMgr;
+    @Inject(adapter = FirewallServiceProvider.class)
+    Adapters<FirewallServiceProvider> _firewallElements;
 
     private boolean _elbEnabled = false;
 
@@ -139,6 +144,7 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
         _name = name;
         String elbEnabledString = _configDao.getValue(Config.ElasticLoadBalancerEnabled.key());
         _elbEnabled = Boolean.parseBoolean(elbEnabledString);
+        s_logger.info("Firewall provider list is " + _firewallElements.iterator().next());
         return true;
     }
 

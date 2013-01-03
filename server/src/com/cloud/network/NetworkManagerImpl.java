@@ -185,6 +185,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     Adapters<NetworkGuru> _networkGurus;
     @Inject(adapter = NetworkElement.class)
     Adapters<NetworkElement> _networkElements;
+    @Inject(adapter = IpDeployer.class)
+    Adapters<IpDeployer> _ipDeployers;
     @Inject
     NetworkDomainDao _networkDomainDao;
     @Inject
