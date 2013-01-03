@@ -36,19 +36,19 @@
       <groupId>com.cloud.com.vmware</groupId>
       <artifactId>vmware-vim25</artifactId>
       <version>${cs.vmware.api.version}</version>
-      <scope>provided</scope>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.cloud.com.vmware</groupId>
       <artifactId>vmware-vim</artifactId>
       <version>${cs.vmware.api.version}</version>
-      <scope>provided</scope>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.cloud.com.vmware</groupId>
       <artifactId>vmware-apputils</artifactId>
       <version>${cs.vmware.api.version}</version>
-      <scope>provided</scope>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.axis</groupId>

@@ -84,7 +84,7 @@ public class NiciraNvpApi {
     protected HttpMethod createMethod(String type, String uri) throws NiciraNvpApiException {
     	String url;
         try {
-            url = new URL(_protocol, _host, "/ws.v1/login").toString();
+            url = new URL(_protocol, _host, uri).toString();
         } catch (MalformedURLException e) {
             s_logger.error("Unable to build Nicira API URL", e);
             throw new NiciraNvpApiException("Unable to build Nicira API URL", e);
