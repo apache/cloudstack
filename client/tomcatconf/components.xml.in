@@ -54,7 +54,7 @@ under the License.
              <param name="premium">true</param>
         </dao>
         <adapters key="com.cloud.acl.APIAccessChecker">
-            <adapter name="StaticRoleBasedAPIAccessChecker" class="com.cloud.acl.StaticRoleBasedAPIAccessChecker"/>
+            <adapter name="StaticRoleBasedAPIAccessChecker" class="org.apache.cloudstack.acl.StaticRoleBasedAPIAccessChecker"/>
         </adapters>
         <adapters key="com.cloud.agent.manager.allocator.HostAllocator">
             <adapter name="FirstFitRouting" class="com.cloud.agent.manager.allocator.impl.FirstFitRoutingAllocator"/>

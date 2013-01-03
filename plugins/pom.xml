@@ -32,6 +32,7 @@
     <testSourceDirectory>test</testSourceDirectory>
   </build>
   <modules>
+    <module>acl/static-role-based</module>
     <module>deployment-planners/user-concentrated-pod</module>
     <module>deployment-planners/user-dispersing</module>
     <module>host-allocators/random</module>
