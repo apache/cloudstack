@@ -173,7 +173,7 @@ public class NiciraNvpElement extends AdapterBase implements
 		return Provider.NiciraNvp;
 	}
 
-	private boolean canHandle(Network network, Service service) {
+	protected boolean canHandle(Network network, Service service) {
 		s_logger.debug("Checking if NiciraNvpElement can handle service "
 				+ service.getName() + " on network " + network.getDisplayText());
 		if (network.getBroadcastDomainType() != BroadcastDomainType.Lswitch) {
@@ -845,6 +845,7 @@ public class NiciraNvpElement extends AdapterBase implements
 			ConfigurePublicIpsOnLogicalRouterCommand cmd = new ConfigurePublicIpsOnLogicalRouterCommand(routermapping.getLogicalRouterUuid(), 
 					niciraNvpHost.getDetail("l3gatewayserviceuuid"), cidrs);
 			ConfigurePublicIpsOnLogicalRouterAnswer answer = (ConfigurePublicIpsOnLogicalRouterAnswer) _agentMgr.easySend(niciraNvpHost.getId(), cmd);
+			//FIXME answer can be null if the host is down
 			return answer.getResult();
 		}
 		else {
