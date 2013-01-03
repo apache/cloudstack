@@ -60,7 +60,7 @@ public interface VolumeService {
      * @return
      * @throws ConcurrentOperationException
      */
-    boolean deleteVolume(VolumeInfo volume);
+    void deleteVolumeAsync(VolumeInfo volume, AsyncCompletionCallback<VolumeApiResult> callback);
 
     /**
      * 
@@ -87,5 +87,5 @@ public interface VolumeService {
     VolumeEntity getVolumeEntity(long volumeId);
 
     void createVolumeFromTemplateAsync(VolumeInfo volume, long dataStoreId, VolumeDiskType diskType, TemplateInfo template, 
-            AsyncCompletionCallback<VolumeInfo> callback);
+            AsyncCompletionCallback<VolumeApiResult> callback);
 }

@@ -177,7 +177,7 @@ public class VolumeEntityImpl implements VolumeEntity {
 
     @Override
     public void destroy() {
-        vs.deleteVolume(volumeInfo);
+        //vs.deleteVolume(volumeInfo);
     }
 
     @Override
