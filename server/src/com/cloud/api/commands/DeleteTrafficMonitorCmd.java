@@ -31,7 +31,7 @@ import com.cloud.server.ManagementService;
 import com.cloud.user.Account;
 import com.cloud.utils.component.ComponentLocator;
 
-@APICommand(description="Deletes an traffic monitor host.", responseObject = SuccessResponse.class)
+@APICommand(name = "deleteTrafficMonitor", description="Deletes an traffic monitor host.", responseObject = SuccessResponse.class)
 public class DeleteTrafficMonitorCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(DeleteTrafficMonitorCmd.class.getName());	
 	private static final String s_name = "deletetrafficmonitorresponse";	

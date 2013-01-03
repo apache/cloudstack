@@ -48,7 +48,7 @@ import com.cloud.uuididentity.dao.IdentityDao;
 import com.cloud.uuididentity.dao.IdentityDaoImpl;
 import com.cloud.vm.VMInstanceVO;
 
-@APICommand(description="Lists usage records for accounts", responseObject=UsageRecordResponse.class)
+@APICommand(name = "listUsageRecords", description="Lists usage records for accounts", responseObject=UsageRecordResponse.class)
 public class GetUsageRecordsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(GetUsageRecordsCmd.class.getName());
 

@@ -27,7 +27,7 @@ import com.cloud.server.ManagementServerExt;
 import com.cloud.server.api.response.UsageTypeResponse;
 import com.cloud.user.Account;
 
-@APICommand(description = "List Usage Types", responseObject = UsageTypeResponse.class)
+@APICommand(name = "listUsageTypes", description = "List Usage Types", responseObject = UsageTypeResponse.class)
 public class ListUsageTypesCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(ListUsageTypesCmd.class.getName());
     private static final String s_name = "listusagetypesresponse";

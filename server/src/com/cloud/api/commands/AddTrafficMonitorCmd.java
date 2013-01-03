@@ -31,7 +31,7 @@ import com.cloud.user.Account;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(description="Adds Traffic Monitor Host for Direct Network Usage", responseObject = ExternalFirewallResponse.class)
+@APICommand(name = "addTrafficMonitor", description="Adds Traffic Monitor Host for Direct Network Usage", responseObject = ExternalFirewallResponse.class)
 public class AddTrafficMonitorCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(AddTrafficMonitorCmd.class.getName());	
 	private static final String s_name = "addtrafficmonitorresponse";	
