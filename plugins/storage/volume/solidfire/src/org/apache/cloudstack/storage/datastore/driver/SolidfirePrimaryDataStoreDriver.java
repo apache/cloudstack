@@ -12,12 +12,6 @@ import org.apache.cloudstack.storage.volume.VolumeObject;
 public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
 	@Override
-	public boolean createVolumeAsync(VolumeObject vol) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
 	public boolean deleteVolume(VolumeObject vo) {
 		// TODO Auto-generated method stub
 		return false;
@@ -73,6 +67,12 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     @Override
     public void createVolumeFromBaseImageAsync(VolumeObject volume, TemplateOnPrimaryDataStoreInfo template, AsyncCompletionCallback<CommandResult> callback) {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void createVolumeAsync(VolumeObject vol, AsyncCompletionCallback<CommandResult> callback) {
         // TODO Auto-generated method stub
         
     }

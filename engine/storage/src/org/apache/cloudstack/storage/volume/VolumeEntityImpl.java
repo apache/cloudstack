@@ -204,7 +204,7 @@ public class VolumeEntityImpl implements VolumeEntity {
     public boolean createVolumeFromTemplate(long dataStoreId, VolumeDiskType diskType, TemplateEntity template) {
         TemplateInfo ti = ((TemplateEntityImpl)template).getTemplateInfo();
         
-        AsyncCallbackDispatcher<VolumeEntityImpl> caller = AsyncCallbackDispatcher.create(this);
+        AsyncCallbackDispatcher<VolumeEntityImpl, VolumeInfo> caller = AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().createVolumeFromTemplateAsyncCallback(null, null));
           
         vs.createVolumeFromTemplateAsync(volumeInfo, dataStoreId, diskType, ti, caller);
@@ -219,7 +219,7 @@ public class VolumeEntityImpl implements VolumeEntity {
     }
     
    
-    private Void createVolumeFromTemplateAsyncCallback(AsyncCompletionCallback<VolumeInfo> callback, Object context) {
+    private Void createVolumeFromTemplateAsyncCallback(AsyncCallbackDispatcher<VolumeEntityImpl, VolumeInfo> callback, Object context) {
         synchronized (volumeInfo) {
             volumeInfo.notify();
         }
@@ -228,7 +228,7 @@ public class VolumeEntityImpl implements VolumeEntity {
 
     @Override
     public boolean createVolume(long dataStoreId, VolumeDiskType diskType) {
-        AsyncCallbackDispatcher<VolumeEntityImpl> caller = AsyncCallbackDispatcher.create(this);
+        AsyncCallbackDispatcher<VolumeEntityImpl, VolumeApiResult> caller = AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().createVolumeCallback(null, null));
         vs.createVolumeAsync(volumeInfo, dataStoreId, diskType, caller);
         try {
@@ -245,7 +245,7 @@ public class VolumeEntityImpl implements VolumeEntity {
         }
     }
     
-    private Void createVolumeCallback(AsyncCallbackDispatcher<VolumeApiResult> callback, Object context) {
+    private Void createVolumeCallback(AsyncCallbackDispatcher<VolumeApiResult, VolumeApiResult> callback, Object context) {
         synchronized (volumeInfo) {
             this.result = callback.getResult();
             volumeInfo.notify();

@@ -91,7 +91,7 @@ public class HypervsiorHostEndPointRpcServer implements HostEndpointRpcServer {
     @Override
     public Answer sendCommand(HypervisorHostEndPoint host, Command command) {
         SendCommandContext<Answer> context = new SendCommandContext<Answer>(null);
-        AsyncCallbackDispatcher<HypervsiorHostEndPointRpcServer> caller = AsyncCallbackDispatcher.create(this);
+        AsyncCallbackDispatcher<HypervsiorHostEndPointRpcServer, Answer> caller = AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().sendCommandCallback(null, null))
         .setContext(context);
         
@@ -109,7 +109,7 @@ public class HypervsiorHostEndPointRpcServer implements HostEndpointRpcServer {
         return context.getAnswer();
     }
     
-    protected Object sendCommandCallback(AsyncCallbackDispatcher<HypervsiorHostEndPointRpcServer> callback, SendCommandContext<Answer> context) {
+    protected Object sendCommandCallback(AsyncCallbackDispatcher<HypervsiorHostEndPointRpcServer, Answer> callback, SendCommandContext<Answer> context) {
         context.setAnswer((Answer)callback.getResult());
         synchronized(context) {
             context.notify();

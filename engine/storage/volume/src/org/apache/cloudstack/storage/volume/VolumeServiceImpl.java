@@ -91,14 +91,14 @@ public class VolumeServiceImpl implements VolumeService {
         vo.stateTransit(Volume.Event.CreateRequested);
 
         CreateVolumeContext<VolumeApiResult> context = new CreateVolumeContext<VolumeApiResult>(callback, vo);
-        AsyncCallbackDispatcher<VolumeServiceImpl> caller = AsyncCallbackDispatcher.create(this);
+        AsyncCallbackDispatcher<VolumeServiceImpl, CommandResult> caller = AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().createVolumeCallback(null, null))
         .setContext(context);
         
         dataStore.createVolumeAsync(vo, diskType, caller);
     }
     
-    protected Void createVolumeCallback(AsyncCallbackDispatcher<VolumeServiceImpl> callback, CreateVolumeContext<VolumeApiResult> context) {
+    protected Void createVolumeCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CommandResult> callback, CreateVolumeContext<VolumeApiResult> context) {
         CommandResult result = callback.getResult();
         VolumeObject vo = context.getVolume();
         VolumeApiResult volResult = new VolumeApiResult(vo);

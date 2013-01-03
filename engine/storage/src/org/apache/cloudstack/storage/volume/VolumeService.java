@@ -87,5 +87,5 @@ public interface VolumeService {
     VolumeEntity getVolumeEntity(long volumeId);
 
     void createVolumeFromTemplateAsync(VolumeInfo volume, long dataStoreId, VolumeDiskType diskType, TemplateInfo template, 
-            AsyncCompletionCallback<VolumeApiResult> callback);
+            AsyncCompletionCallback<VolumeInfo> callback);
 }

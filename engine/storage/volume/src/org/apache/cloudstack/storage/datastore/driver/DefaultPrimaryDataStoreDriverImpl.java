@@ -65,14 +65,14 @@ public class DefaultPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         CreateVolumeCommand createCmd = new CreateVolumeCommand(this.dataStore.getVolumeTO(volInfo));
         
         CreateVolumeContext<CommandResult> context = new CreateVolumeContext<CommandResult>(callback, vol);
-        AsyncCallbackDispatcher<DefaultPrimaryDataStoreDriverImpl> caller = AsyncCallbackDispatcher.create(this);
+        AsyncCallbackDispatcher<DefaultPrimaryDataStoreDriverImpl, Answer> caller = AsyncCallbackDispatcher.create(this);
         caller.setContext(context)
             .setCallback(caller.getTarget().createVolumeAsyncCallback(null, null));
 
         ep.sendMessageAsync(createCmd, caller);
     }
     
-    protected Void createVolumeAsyncCallback(AsyncCallbackDispatcher<DefaultPrimaryDataStoreDriverImpl> callback, CreateVolumeContext<CommandResult> context) {
+    protected Void createVolumeAsyncCallback(AsyncCallbackDispatcher<DefaultPrimaryDataStoreDriverImpl, Answer> callback, CreateVolumeContext<CommandResult> context) {
         CommandResult result = new CommandResult();
         CreateVolumeAnswer volAnswer = (CreateVolumeAnswer) callback.getResult();
         if (volAnswer.getResult()) {
@@ -156,7 +156,7 @@ public class DefaultPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         EndPoint ep = endPoints.get(0);
         
         CreateVolumeFromBaseImageContext<CommandResult> context = new CreateVolumeFromBaseImageContext<CommandResult>(callback, volume);
-        AsyncCallbackDispatcher<DefaultPrimaryDataStoreDriverImpl> caller = AsyncCallbackDispatcher.create(this);
+        AsyncCallbackDispatcher<DefaultPrimaryDataStoreDriverImpl, Answer> caller = AsyncCallbackDispatcher.create(this);
         caller.setContext(context)
             .setCallback(caller.getTarget().createVolumeFromBaseImageAsyncCallback(null, null));
 
@@ -165,7 +165,7 @@ public class DefaultPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
        
     }
     
-    public Object createVolumeFromBaseImageAsyncCallback(AsyncCallbackDispatcher<DefaultPrimaryDataStoreDriverImpl> callback, CreateVolumeFromBaseImageContext<CommandResult> context) {
+    public Object createVolumeFromBaseImageAsyncCallback(AsyncCallbackDispatcher<DefaultPrimaryDataStoreDriverImpl, Answer> callback, CreateVolumeFromBaseImageContext<CommandResult> context) {
         CreateVolumeAnswer answer = (CreateVolumeAnswer)callback.getResult();
         CommandResult result = new CommandResult();
         if (answer == null || answer.getDetails() != null) {
