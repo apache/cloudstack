@@ -83,4 +83,5 @@ public interface VolumeEntity extends CloudStackEntity {
     StorageEntity getDataStore();
     
     boolean createVolumeFromTemplate(long dataStoreId, VolumeDiskType diskType, TemplateEntity template);
+    boolean createVolume(long dataStoreId, VolumeDiskType diskType);
 }

@@ -12,7 +12,7 @@ import org.apache.cloudstack.storage.volume.VolumeObject;
 public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
 	@Override
-	public boolean createVolume(VolumeObject vol) {
+	public boolean createVolumeAsync(VolumeObject vol) {
 		// TODO Auto-generated method stub
 		return false;
 	}

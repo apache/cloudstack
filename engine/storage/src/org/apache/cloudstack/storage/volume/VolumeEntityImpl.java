@@ -35,12 +35,14 @@ import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStoreEntityImpl;
 import org.apache.cloudstack.storage.image.TemplateEntityImpl;
 import org.apache.cloudstack.storage.image.TemplateInfo;
+import org.apache.cloudstack.storage.volume.VolumeService.VolumeApiResult;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class VolumeEntityImpl implements VolumeEntity {
     private VolumeInfo volumeInfo;
     private final VolumeService vs;
+    private VolumeApiResult result;
     
     protected VolumeEntityImpl() {
         this.vs = null;
@@ -217,8 +219,35 @@ public class VolumeEntityImpl implements VolumeEntity {
     }
     
    
-    public Object createVolumeFromTemplateAsyncCallback(AsyncCompletionCallback<VolumeInfo> callback, Object context) {
+    private Void createVolumeFromTemplateAsyncCallback(AsyncCompletionCallback<VolumeInfo> callback, Object context) {
         synchronized (volumeInfo) {
+            volumeInfo.notify();
+        }
+        return null;
+    }
+
+    @Override
+    public boolean createVolume(long dataStoreId, VolumeDiskType diskType) {
+        AsyncCallbackDispatcher<VolumeEntityImpl> caller = AsyncCallbackDispatcher.create(this);
+        caller.setCallback(caller.getTarget().createVolumeCallback(null, null));
+        vs.createVolumeAsync(volumeInfo, dataStoreId, diskType, caller);
+        try {
+            synchronized (volumeInfo) {
+                volumeInfo.wait();
+            }
+            if (result.isSuccess()) {
+                return true;
+            } else {
+                throw new CloudRuntimeException("Failed to create volume:" + result.getResult());
+            }
+        } catch (InterruptedException e) {
+           throw new CloudRuntimeException("wait volume info failed", e);
+        }
+    }
+    
+    private Void createVolumeCallback(AsyncCallbackDispatcher<VolumeApiResult> callback, Object context) {
+        synchronized (volumeInfo) {
+            this.result = callback.getResult();
             volumeInfo.notify();
         }
         return null;

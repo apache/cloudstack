@@ -41,6 +41,9 @@ public class CommandResult {
     
     public void setResult(String result) {
         this.result = result;
+        if (result != null) {
+            this.success = false;
+        }
     }
 }
  

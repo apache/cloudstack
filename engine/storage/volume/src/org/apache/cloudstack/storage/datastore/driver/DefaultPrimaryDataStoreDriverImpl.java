@@ -41,18 +41,49 @@ public class DefaultPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         this.dataStore = dataStore;
     }
     
+    private class CreateVolumeContext<T> extends AsyncRpcConext<T> {
+        private final VolumeObject volume;
+        /**
+         * @param callback
+         */
+        public CreateVolumeContext(AsyncCompletionCallback<T> callback, VolumeObject volume) {
+            super(callback);
+            this.volume = volume;
+        }
+        
+        public VolumeObject getVolume() {
+            return this.volume;
+        }
+        
+    }
+    
     @Override
-    public boolean createVolume(VolumeObject vol) {
-        // The default driver will send createvolume command to one of hosts
-        // which can access its datastore
+    public void createVolumeAsync(VolumeObject vol, AsyncCompletionCallback<CommandResult> callback) {
         List<EndPoint> endPoints = vol.getDataStore().getEndPoints();
+        EndPoint ep = endPoints.get(0);
         VolumeInfo volInfo = vol;
         CreateVolumeCommand createCmd = new CreateVolumeCommand(this.dataStore.getVolumeTO(volInfo));
-        Answer answer = sendOutCommand(createCmd, endPoints);
+        
+        CreateVolumeContext<CommandResult> context = new CreateVolumeContext<CommandResult>(callback, vol);
+        AsyncCallbackDispatcher<DefaultPrimaryDataStoreDriverImpl> caller = AsyncCallbackDispatcher.create(this);
+        caller.setContext(context)
+            .setCallback(caller.getTarget().createVolumeAsyncCallback(null, null));
 
-        CreateVolumeAnswer volAnswer = (CreateVolumeAnswer) answer;
-        vol.setPath(volAnswer.getVolumeUuid());
-        return true;
+        ep.sendMessageAsync(createCmd, caller);
+    }
+    
+    protected Void createVolumeAsyncCallback(AsyncCallbackDispatcher<DefaultPrimaryDataStoreDriverImpl> callback, CreateVolumeContext<CommandResult> context) {
+        CommandResult result = new CommandResult();
+        CreateVolumeAnswer volAnswer = (CreateVolumeAnswer) callback.getResult();
+        if (volAnswer.getResult()) {
+            VolumeObject volume = context.getVolume();
+            volume.setPath(volAnswer.getVolumeUuid());
+        } else {
+            result.setResult(volAnswer.getDetails());
+        }
+        
+        context.getParentCallback().complete(result);
+        return null;
     }
 
     @Override

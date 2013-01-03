@@ -22,7 +22,7 @@ import org.apache.cloudstack.storage.to.VolumeTO;
 
 import com.cloud.agent.api.Command;
 
-public class CreateVolumeCommand extends Command {
+public class CreateVolumeCommand extends Command implements StorageSubSystemCommand {
     protected VolumeTO volumeInfo;
 
     public CreateVolumeCommand(VolumeTO volumeInfo) {

@@ -38,7 +38,7 @@ public interface PrimaryDataStore extends PrimaryDataStoreInfo {
 
     boolean deleteVolume(VolumeInfo volume);
 
-    VolumeInfo createVolume(VolumeInfo vo, VolumeDiskType diskType);
+    void createVolumeAsync(VolumeInfo vo, VolumeDiskType diskType, AsyncCompletionCallback<CommandResult> callback);
 
     VolumeInfo createVoluemFromBaseImage(VolumeInfo volume, TemplateOnPrimaryDataStoreInfo templateStore);
     

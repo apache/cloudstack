@@ -59,28 +59,58 @@ public class VolumeServiceImpl implements VolumeService {
     public VolumeServiceImpl() {
     }
     
+    private class CreateVolumeContext<T> extends AsyncRpcConext<T> {
+
+        private VolumeObject volume;
+        /**
+         * @param callback
+         */
+        public CreateVolumeContext(AsyncCompletionCallback<T> callback, VolumeObject volume) {
+            super(callback);
+            this.volume = volume;
+        }
+        
+        public VolumeObject getVolume() {
+            return this.volume;
+        }
+        
+    }
+    
     @Override
-    public VolumeInfo createVolume(VolumeInfo volume, long dataStoreId, VolumeDiskType diskType) {
+    public void createVolumeAsync(VolumeInfo volume, long dataStoreId, VolumeDiskType diskType, AsyncCompletionCallback<VolumeApiResult> callback) {
         PrimaryDataStore dataStore = dataStoreMgr.getPrimaryDataStore(dataStoreId);
         if (dataStore == null) {
             throw new CloudRuntimeException("Can't find dataStoreId: " + dataStoreId);
         }
 
         if (dataStore.exists(volume)) {
-            return volume;
+            throw new CloudRuntimeException("Volume: " + volume.getId() + " already exists on primary data store: " + dataStoreId);
         }
 
         VolumeObject vo = (VolumeObject) volume;
         vo.stateTransit(Volume.Event.CreateRequested);
 
-        try {
-            VolumeInfo vi = dataStore.createVolume(vo, diskType);
+        CreateVolumeContext<VolumeApiResult> context = new CreateVolumeContext<VolumeApiResult>(callback, vo);
+        AsyncCallbackDispatcher<VolumeServiceImpl> caller = AsyncCallbackDispatcher.create(this);
+        caller.setCallback(caller.getTarget().createVolumeCallback(null, null))
+        .setContext(context);
+        
+        dataStore.createVolumeAsync(vo, diskType, caller);
+    }
+    
+    protected Void createVolumeCallback(AsyncCallbackDispatcher<VolumeServiceImpl> callback, CreateVolumeContext<VolumeApiResult> context) {
+        CommandResult result = callback.getResult();
+        VolumeObject vo = context.getVolume();
+        VolumeApiResult volResult = new VolumeApiResult(vo);
+        if (result.isSuccess()) {
             vo.stateTransit(Volume.Event.OperationSucceeded);
-            return vi;
-        } catch (Exception e) {
+        } else {
             vo.stateTransit(Volume.Event.OperationFailed);
-            throw new CloudRuntimeException(e.toString());
+            volResult.setResult(result.getResult());
         }
+        
+        context.getParentCallback().complete(volResult);
+        return null;
     }
 
     @DB
@@ -240,7 +270,6 @@ public class VolumeServiceImpl implements VolumeService {
         }
         
         AsyncCompletionCallback<VolumeInfo> parentCall = context.getParentCallback();
-        parentCall.complete(vo);
         return null;
     }
 

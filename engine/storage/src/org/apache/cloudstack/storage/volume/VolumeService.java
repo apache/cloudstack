@@ -24,9 +24,21 @@ import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskTyp
 import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeType;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.EndPoint;
+import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.image.TemplateInfo;
 
 public interface VolumeService {
+    
+    public class VolumeApiResult extends CommandResult {
+        private final VolumeInfo volume;
+        public VolumeApiResult(VolumeInfo volume) {
+            this.volume = volume;
+        }
+        
+        public VolumeInfo getVolume() {
+            return this.volume;
+        }
+    }
     /**
 	 * 
 	 */
@@ -39,7 +51,7 @@ public interface VolumeService {
      * 
      * @return the volume object
      */
-    VolumeInfo createVolume(VolumeInfo volume, long dataStoreId, VolumeDiskType diskType);
+    void createVolumeAsync(VolumeInfo volume, long dataStoreId, VolumeDiskType diskType, AsyncCompletionCallback<VolumeApiResult> callback);
 
     /**
      * Delete volume
@@ -75,5 +87,5 @@ public interface VolumeService {
     VolumeEntity getVolumeEntity(long volumeId);
 
     void createVolumeFromTemplateAsync(VolumeInfo volume, long dataStoreId, VolumeDiskType diskType, TemplateInfo template, 
-            AsyncCompletionCallback<VolumeInfo> callback);
+            AsyncCompletionCallback<VolumeApiResult> callback);
 }

@@ -34,6 +34,8 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.component.ComponentInject;
+import com.cloud.utils.exception.CloudRuntimeException;
+
 import edu.emory.mathcs.backport.java.util.Collections;
 
 public class DefaultPrimaryDataStore implements PrimaryDataStore {
@@ -155,8 +157,7 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
 
     @Override
     public boolean isVolumeDiskTypeSupported(VolumeDiskType diskType) {
-        // TODO Auto-generated method stub
-        return false;
+        return true;
     }
 
     @Override
@@ -170,14 +171,13 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
     }
 
     @Override
-    public VolumeObject createVolume(VolumeInfo vi, VolumeDiskType diskType) {
+    public void createVolumeAsync(VolumeInfo vi, VolumeDiskType diskType, AsyncCompletionCallback<CommandResult> callback) {
         if (!isVolumeDiskTypeSupported(diskType)) {
-            return null;
+            throw new CloudRuntimeException("disk type " + diskType + " is not supported");
         }
         VolumeObject vo = (VolumeObject) vi;
         vo.setVolumeDiskType(diskType);
-        this.driver.createVolume(vo);
-        return vo;
+        this.driver.createVolumeAsync(vo, callback);
     }
 
     @Override
