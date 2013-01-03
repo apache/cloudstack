@@ -3173,7 +3173,7 @@ CREATE VIEW free_ip_view AS
 select count(user_ip_address.id) free_ip
 from user_ip_address
 inner join vlan on vlan.id = user_ip_address.vlan_db_id and vlan.vlan_type = "VirtualNetwork"
-where state = "Free"
+where state = "Free";
 
 DROP VIEW IF EXISTS `cloud`.`account_view`;
 CREATE VIEW account_view AS
