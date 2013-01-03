@@ -99,4 +99,6 @@ public interface DataCenterResourceEntity extends CloudStackEntity, StateObject<
 
     
     public void persist();
+    
+    String getName();
 }

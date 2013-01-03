@@ -12,10 +12,12 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.datacenter.entity.api.ClusterEntity;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State;
+import org.apache.cloudstack.engine.datacenter.entity.api.HostEntity;
 import org.apache.cloudstack.engine.datacenter.entity.api.PodEntity;
 import org.apache.cloudstack.engine.datacenter.entity.api.ZoneEntity;
 import org.apache.cloudstack.engine.datacenter.entity.api.db.dao.ClusterDao;
 import org.apache.cloudstack.engine.datacenter.entity.api.db.dao.DataCenterDao;
+import org.apache.cloudstack.engine.datacenter.entity.api.db.dao.HostDao;
 import org.apache.cloudstack.engine.datacenter.entity.api.db.dao.HostPodDao;
 import org.apache.cloudstack.engine.service.api.ProvisioningService;
 import org.junit.Before;
@@ -28,6 +30,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.apache.cloudstack.engine.datacenter.entity.api.db.ClusterVO;
 import org.apache.cloudstack.engine.datacenter.entity.api.db.DataCenterVO;
 import org.apache.cloudstack.engine.datacenter.entity.api.db.HostPodVO;
+import org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO;
 
 import com.cloud.dc.DataCenter.NetworkType;
 
@@ -49,6 +52,8 @@ public class ProvisioningTest extends TestCase {
 	@Inject
 	ClusterDao _clusterDao;
 
+	@Inject
+	HostDao _hostDao;
 	
     @Before
 	public void setUp() {
@@ -63,7 +68,12 @@ public class ProvisioningTest extends TestCase {
 		
     	ClusterVO cluster = new ClusterVO();
 		Mockito.when(_clusterDao.findByUUID(Mockito.anyString())).thenReturn(cluster);
-		Mockito.when(_clusterDao.persist((ClusterVO) Mockito.anyObject())).thenReturn(cluster);    	    	
+		Mockito.when(_clusterDao.persist((ClusterVO) Mockito.anyObject())).thenReturn(cluster);
+		
+		HostVO host = new HostVO("68765876598");
+		Mockito.when(_hostDao.findByUUID(Mockito.anyString())).thenReturn(host);
+		Mockito.when(_hostDao.persist((HostVO) Mockito.anyObject())).thenReturn(host);    	    	
+		
     }
 
 	private void registerAndEnableZone() {
@@ -90,12 +100,21 @@ public class ProvisioningTest extends TestCase {
 		boolean result = cluster.enable();
 		System.out.println("result:"+result);
 	}
+	
+	private void registerAndEnableHost() {
+		HostEntity host = service.registerHost("1265476542", "lab","owner", null, new HashMap<String, String>());
+		State state = host.getState();
+		System.out.println("state:"+state);
+		boolean result = host.enable();
+		System.out.println("result:"+result);
+	}
 
 	@Test
 	public void testProvisioning() {
-		registerAndEnableZone();
-		registerAndEnablePod();
-		registerAndEnableCluster();
+		//registerAndEnableZone();
+		//registerAndEnablePod();
+		//registerAndEnableCluster();
+		registerAndEnableHost();
 	}
 
 

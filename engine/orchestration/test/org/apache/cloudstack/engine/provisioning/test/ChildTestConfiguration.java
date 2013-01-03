@@ -3,6 +3,7 @@ package org.apache.cloudstack.engine.provisioning.test;
 
 import org.apache.cloudstack.engine.datacenter.entity.api.db.dao.ClusterDao;
 import org.apache.cloudstack.engine.datacenter.entity.api.db.dao.DataCenterDao;
+import org.apache.cloudstack.engine.datacenter.entity.api.db.dao.HostDao;
 import org.apache.cloudstack.engine.datacenter.entity.api.db.dao.HostPodDao;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
@@ -27,4 +28,8 @@ public class ChildTestConfiguration {
 		return Mockito.mock(ClusterDao.class);
 	}
 
+	@Bean
+	public HostDao hostDao() {
+		return Mockito.mock(HostDao.class);
+	}
 }

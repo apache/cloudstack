@@ -24,6 +24,7 @@ import java.util.Map;
 import javax.ws.rs.POST;
 
 import org.apache.cloudstack.engine.datacenter.entity.api.ClusterEntity;
+import org.apache.cloudstack.engine.datacenter.entity.api.HostEntity;
 import org.apache.cloudstack.engine.datacenter.entity.api.PodEntity;
 import org.apache.cloudstack.engine.datacenter.entity.api.StorageEntity;
 import org.apache.cloudstack.engine.datacenter.entity.api.ZoneEntity;
@@ -49,7 +50,7 @@ public interface ProvisioningService {
 
     ClusterEntity registerCluster(String clusterUuid, String name, String owner, List<String> tags, Map<String, String> details);
 
-    String registerHost(String name, List<String> tags, Map<String, String> details);
+    HostEntity registerHost(String uuid, String name, String owner, List<String> tags, Map<String, String> details);
 
     void deregisterStorage(String uuid);
 
@@ -59,7 +60,7 @@ public interface ProvisioningService {
 
     void deregisterCluster(String uuid);
 
-    void deregisterHost();
+    void deregisterHost(String uuid);
 
     void changeState(String type, String entity, Status state);
 

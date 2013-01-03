@@ -32,6 +32,8 @@ import org.apache.cloudstack.engine.datacenter.entity.api.ClusterEntity;
 import org.apache.cloudstack.engine.datacenter.entity.api.ClusterEntityImpl;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceManager;
+import org.apache.cloudstack.engine.datacenter.entity.api.HostEntity;
+import org.apache.cloudstack.engine.datacenter.entity.api.HostEntityImpl;
 import org.apache.cloudstack.engine.datacenter.entity.api.PodEntity;
 import org.apache.cloudstack.engine.datacenter.entity.api.PodEntityImpl;
 import org.apache.cloudstack.engine.datacenter.entity.api.StorageEntity;
@@ -89,9 +91,14 @@ public class ProvisioningServiceImpl implements ProvisioningService {
     }
 
     @Override
-    public String registerHost(String name, List<String> tags, Map<String, String> details) {
-        // TODO Auto-generated method stub
-        return null;
+    public HostEntity registerHost(String hostUuid, String name, String owner, List<String> tags, Map<String, String> details) {
+    	HostEntityImpl hostEntity = new HostEntityImpl(hostUuid, manager);
+    	hostEntity.setOwner(owner);
+    	hostEntity.setName(name);
+    	hostEntity.setDetails(details);
+    	
+    	hostEntity.persist();
+    	return hostEntity;
     }
 
     @Override
@@ -120,9 +127,9 @@ public class ProvisioningServiceImpl implements ProvisioningService {
     }
 
     @Override
-    public void deregisterHost() {
-        // TODO Auto-generated method stub
-
+    public void deregisterHost(String uuid) {
+    	HostEntityImpl hostEntity = new HostEntityImpl(uuid, manager);
+    	hostEntity.disable();
     }
 
     @Override

@@ -5,6 +5,7 @@ import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEnti
 import org.apache.cloudstack.engine.datacenter.entity.api.db.ClusterVO;
 import org.apache.cloudstack.engine.datacenter.entity.api.db.DataCenterVO;
 import org.apache.cloudstack.engine.datacenter.entity.api.db.HostPodVO;
+import org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO;
 
 import com.cloud.utils.fsm.NoTransitionException;
 
@@ -25,5 +26,9 @@ public interface DataCenterResourceManager {
 	HostPodVO loadPod(String uuid);
 	
 	ClusterVO loadCluster(String uuid);
+
+	HostVO loadHost(String uuid);
+
+	void saveHost(HostVO hostVO);
 
 }

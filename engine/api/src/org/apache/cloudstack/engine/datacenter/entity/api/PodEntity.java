@@ -36,8 +36,6 @@ public interface PodEntity extends DataCenterResourceEntity {
 
     long getDataCenterId();
 
-    String getName();
-
     AllocationState getAllocationState();
 
     boolean getExternalDhcp();

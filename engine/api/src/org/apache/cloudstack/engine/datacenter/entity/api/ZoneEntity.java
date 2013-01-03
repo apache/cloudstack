@@ -40,8 +40,4 @@ public interface ZoneEntity extends DataCenterResourceEntity {
 
     @Url(clazz=ProvisioningService.class, method="getPod", name="id", type=List.class)
     List<String> listPodIds();
-
-
-	String getName();
-    
 }

@@ -7,8 +7,10 @@ import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEnti
 import org.apache.cloudstack.engine.datacenter.entity.api.db.ClusterVO;
 import org.apache.cloudstack.engine.datacenter.entity.api.db.DataCenterVO;
 import org.apache.cloudstack.engine.datacenter.entity.api.db.HostPodVO;
+import org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO;
 import org.apache.cloudstack.engine.datacenter.entity.api.db.dao.ClusterDao;
 import org.apache.cloudstack.engine.datacenter.entity.api.db.dao.DataCenterDao;
+import org.apache.cloudstack.engine.datacenter.entity.api.db.dao.HostDao;
 import org.apache.cloudstack.engine.datacenter.entity.api.db.dao.HostPodDao;
 import org.springframework.stereotype.Component;
 
@@ -28,6 +30,10 @@ public class DataCenterResourceManagerImpl implements DataCenterResourceManager 
 
 	@Inject
 	ClusterDao _clusterDao;
+	
+	@Inject
+	HostDao _hostDao;
+	
 	
     protected StateMachine2<State, Event, DataCenterResourceEntity> _stateMachine = DataCenterResourceEntity.State.s_fsm;
 
@@ -49,12 +55,14 @@ public class DataCenterResourceManagerImpl implements DataCenterResourceManager 
 	@Override
 	public boolean changeState(DataCenterResourceEntity entity, Event event) throws NoTransitionException {
 		
-		if(entity  instanceof ZoneEntity){
-				return _stateMachine.transitTo((DataCenterResourceEntity)entity, event, null, _dataCenterDao);
-		}else if(entity  instanceof PodEntity){
-			return _stateMachine.transitTo((DataCenterResourceEntity)entity, event, null, _podDao);
-		}else if(entity  instanceof ClusterEntity){
-			return _stateMachine.transitTo((DataCenterResourceEntity)entity, event, null, _clusterDao);
+		if(entity instanceof ZoneEntity){
+			return _stateMachine.transitTo(entity, event, null, _dataCenterDao);
+		}else if(entity instanceof PodEntity){
+			return _stateMachine.transitTo(entity, event, null, _podDao);
+		}else if(entity instanceof ClusterEntity){
+			return _stateMachine.transitTo(entity, event, null, _clusterDao);
+		}else if(entity instanceof HostEntity){
+			return _stateMachine.transitTo(entity, event, null, _hostDao);
 		}
 
 		return false;
@@ -86,6 +94,20 @@ public class DataCenterResourceManagerImpl implements DataCenterResourceManager 
 	@Override
 	public void saveCluster(ClusterVO cluster) {
 		_clusterDao.persist(cluster);		
+	}
+
+	@Override
+	public HostVO loadHost(String uuid) {
+		HostVO host = _hostDao.findByUUID(uuid);
+    	if(host == null){
+    		throw new InvalidParameterValueException("Host does not exist");
+    	}
+		return host;
+	}
+
+	@Override
+	public void saveHost(HostVO hostVO) {
+		_hostDao.persist(hostVO);		
 	}
 
 }
