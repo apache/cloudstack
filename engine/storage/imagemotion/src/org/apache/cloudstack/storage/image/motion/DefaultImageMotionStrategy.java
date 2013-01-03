@@ -30,6 +30,8 @@ import org.apache.cloudstack.storage.to.ImageOnPrimayDataStoreTO;
 import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreInfo;
 import org.springframework.stereotype.Component;
 
+import com.cloud.agent.api.Answer;
+
 @Component
 public class DefaultImageMotionStrategy implements ImageMotionStrategy {
 
@@ -71,16 +73,16 @@ public class DefaultImageMotionStrategy implements ImageMotionStrategy {
         ImageOnPrimayDataStoreTO imageTo = new ImageOnPrimayDataStoreTO(templateStore);
         CopyTemplateToPrimaryStorageCmd copyCommand = new CopyTemplateToPrimaryStorageCmd(imageTo);
         CreateTemplateContext<CommandResult> context = new CreateTemplateContext<CommandResult>(callback, templateStore);
-        AsyncCallbackDispatcher<DefaultImageMotionStrategy> caller = AsyncCallbackDispatcher.create(this);
+        AsyncCallbackDispatcher<DefaultImageMotionStrategy, Answer> caller = AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().copyTemplateCallBack(null, null))
             .setContext(context);
              
         ep.sendMessageAsync(copyCommand, caller);
     }
     
-    public Object copyTemplateCallBack(AsyncCallbackDispatcher<DefaultImageMotionStrategy> callback, CreateTemplateContext<CommandResult> context) {
+    public Object copyTemplateCallBack(AsyncCallbackDispatcher<DefaultImageMotionStrategy, Answer> callback, CreateTemplateContext<CommandResult> context) {
         AsyncCompletionCallback<CommandResult> parentCall = context.getParentCallback();
-        CopyTemplateToPrimaryStorageAnswer answer = callback.getResult();
+        CopyTemplateToPrimaryStorageAnswer answer = (CopyTemplateToPrimaryStorageAnswer)callback.getResult();
         CommandResult result = new CommandResult();
        
         if (!answer.getResult()) {
