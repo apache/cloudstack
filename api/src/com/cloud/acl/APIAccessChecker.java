@@ -29,6 +29,4 @@ import com.cloud.utils.component.Adapter;
 public interface APIAccessChecker extends Adapter {
     // Interface for checking access to an API for a user
     boolean canAccessAPI(User user, String apiCommandName) throws PermissionDeniedException;
-    // Interface for getting API Cmd properties
-    Properties getApiCommands();
 }
