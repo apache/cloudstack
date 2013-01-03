@@ -200,8 +200,8 @@
             </connector>
           </connectors>
           <contextPath>/client</contextPath>
-          <webXml>${basedir}/WEB-INF/web.xml</webXml>
-          <webAppSourceDirectory>${basedir}/target/generated-webapp</webAppSourceDirectory>
+          <webXml>${basedir}/target/${project.artifactId}-${project.version}/WEB-INF/web.xml</webXml>
+          <webAppSourceDirectory>${basedir}/target/${project.artifactId}-${project.version}</webAppSourceDirectory>
         </configuration>
       </plugin>
       <plugin>
