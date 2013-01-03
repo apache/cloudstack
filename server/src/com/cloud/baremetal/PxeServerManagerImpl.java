@@ -87,7 +87,7 @@ public class PxeServerManagerImpl implements PxeServerManager, ResourceStateAdap
 
 	protected PxeServerService getServiceByType(String type) {
 		PxeServerService _service;
-		_service = _services.get(type);
+		_service = Adapters.getAdapterByName(_services, type);
 		if (_service == null) {
 			throw new CloudRuntimeException("Cannot find PXE service for " + type);
 		}

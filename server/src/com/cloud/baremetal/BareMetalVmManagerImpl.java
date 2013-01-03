@@ -184,7 +184,7 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
          * prepare() will check if current account has right for creating
          * template
          */
-        TemplateAdapter adapter = _adapters.get(TemplateAdapterType.BareMetal.getName());
+        TemplateAdapter adapter = Adapters.getAdapterByName(_adapters, TemplateAdapterType.BareMetal.getName());
         Long userId = UserContext.current().getCallerUserId();
         userId = (userId == null ? User.UID_SYSTEM : userId);
         AccountVO account = _accountDao.findById(vm.getAccountId());
