@@ -24,6 +24,7 @@ import java.util.Set;
 
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
+import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.HostResponse;
@@ -37,6 +38,7 @@ import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 
+import com.cloud.api.query.dao.AccountJoinDao;
 import com.cloud.api.query.dao.DomainRouterJoinDao;
 import com.cloud.api.query.dao.HostJoinDao;
 import com.cloud.api.query.dao.InstanceGroupJoinDao;
@@ -45,8 +47,10 @@ import com.cloud.api.query.dao.ProjectInvitationJoinDao;
 import com.cloud.api.query.dao.ProjectJoinDao;
 import com.cloud.api.query.dao.ResourceTagJoinDao;
 import com.cloud.api.query.dao.SecurityGroupJoinDao;
+import com.cloud.api.query.dao.UserAccountJoinDao;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.dao.VolumeJoinDao;
+import com.cloud.api.query.vo.AccountJoinVO;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.api.query.vo.EventJoinVO;
 import com.cloud.api.query.vo.HostJoinVO;
@@ -213,7 +217,6 @@ import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.SSHKeyPairDao;
-import com.cloud.user.dao.UserAccountJoinDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
@@ -318,6 +321,7 @@ public class ApiDBUtils {
     private static ProjectInvitationJoinDao _projectInvitationJoinDao;
     private static HostJoinDao _hostJoinDao;
     private static VolumeJoinDao _volJoinDao;
+    private static AccountJoinDao _accountJoinDao;
 
     private static PhysicalNetworkTrafficTypeDao _physicalNetworkTrafficTypeDao;
     private static PhysicalNetworkServiceProviderDao _physicalNetworkServiceProviderDao;
@@ -406,6 +410,7 @@ public class ApiDBUtils {
         _projectInvitationJoinDao = locator.getDao(ProjectInvitationJoinDao.class);
         _hostJoinDao = locator.getDao(HostJoinDao.class);
         _volJoinDao = locator.getDao(VolumeJoinDao.class);
+        _accountJoinDao = locator.getDao(AccountJoinDao.class);
 
         _physicalNetworkTrafficTypeDao = locator.getDao(PhysicalNetworkTrafficTypeDao.class);
         _physicalNetworkServiceProviderDao = locator.getDao(PhysicalNetworkServiceProviderDao.class);
@@ -489,6 +494,10 @@ public class ApiDBUtils {
         }
 
         return _resourceLimitMgr.findCorrectResourceLimitForAccount(account, type);
+    }
+
+    public static long findCorrectResourceLimit(Long limit, short accountType, ResourceType type) {
+        return _resourceLimitMgr.findCorrectResourceLimitForAccount(accountType, limit, type);
     }
 
     public static AsyncJobVO findInstancePendingAsyncJob(String instanceType, long instanceId) {
@@ -589,7 +598,7 @@ public class ApiDBUtils {
     public static DomainVO findDomainByIdIncludingRemoved(Long domainId) {
         return _domainDao.findByIdIncludingRemoved(domainId);
     }
-    
+
     public static boolean isChildDomain(long parentId, long childId) {
     	return _domainDao.isChildDomain(parentId, childId);
     }
@@ -1344,4 +1353,15 @@ public class ApiDBUtils {
        return _volJoinDao.newVolumeView(vr);
    }
 
+   public static AccountResponse newAccountResponse(AccountJoinVO ve) {
+       return _accountJoinDao.newAccountResponse(ve);
+   }
+
+   public static AccountJoinVO newAccountView(Account e){
+       return _accountJoinDao.newAccountView(e);
+   }
+
+   public static AccountJoinVO findAccountViewById(Long accountId) {
+       return _accountJoinDao.findByIdIncludingRemoved(accountId);
+   }
 }

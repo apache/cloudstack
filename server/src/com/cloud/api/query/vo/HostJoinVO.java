@@ -32,6 +32,8 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceState;
 import com.cloud.utils.db.GenericDao;
+
+import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 /**
@@ -41,7 +43,7 @@ import org.apache.cloudstack.api.InternalIdentity;
  */
 @Entity
 @Table(name="host_view")
-public class HostJoinVO extends BaseViewVO implements InternalIdentity {
+public class HostJoinVO extends BaseViewVO implements InternalIdentity, Identity {
 
     @Column(name="id")
     private long id;
@@ -188,6 +190,7 @@ public class HostJoinVO extends BaseViewVO implements InternalIdentity {
     }
 
 
+    @Override
     public String getUuid() {
         return uuid;
     }

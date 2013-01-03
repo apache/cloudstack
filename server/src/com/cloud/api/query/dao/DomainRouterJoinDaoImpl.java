@@ -145,6 +145,10 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
 
         routerResponse.setVpcId(router.getVpcUuid());
 
+        // set async job
+        routerResponse.setJobId(router.getJobUuid());
+        routerResponse.setJobStatus(router.getJobStatus());
+
         routerResponse.setObjectName("router");
 
         return routerResponse;

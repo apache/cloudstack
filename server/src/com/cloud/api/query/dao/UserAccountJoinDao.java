@@ -14,35 +14,27 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.query.vo;
+package com.cloud.api.query.dao;
 
-import com.cloud.acl.ControlledEntity;
+import java.util.List;
 
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.api.response.UserResponse;
 
-/**
- * This is the interface for all VO classes representing DB views created for previous ControlledEntity.
- *
- * @author minc
- *
- */
-public interface ControlledViewEntity extends ControlledEntity, InternalIdentity, Identity {
+import com.cloud.api.query.vo.UserAccountJoinVO;
+import com.cloud.user.User;
+import com.cloud.user.UserAccount;
+import com.cloud.utils.db.GenericDao;
 
-    public String getDomainPath();
+public interface UserAccountJoinDao extends GenericDao<UserAccountJoinVO, Long> {
 
-    public short getAccountType();
+    UserResponse newUserResponse(UserAccountJoinVO usr);
 
-    public String getAccountUuid();
+    UserAccountJoinVO newUserView(User usr);
 
-    public String getAccountName();
+    UserAccountJoinVO newUserView(UserAccount usr);
 
-    public String getDomainUuid();
+    List<UserAccountJoinVO> searchByIds(Long... ids);
 
-    public String getDomainName();
-
-    public String getProjectUuid();
-
-    public String getProjectName();
+    List<UserAccountJoinVO> searchByAccountId(Long accountId);
 
 }

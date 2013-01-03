@@ -46,6 +46,7 @@ import com.cloud.acl.ControlledEntity;
 import com.cloud.acl.SecurityChecker;
 import com.cloud.acl.SecurityChecker.AccessType;
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.query.dao.UserAccountJoinDao;
 import com.cloud.api.query.vo.ControlledViewEntity;
 
 
@@ -110,7 +111,6 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account.State;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserAccountDao;
-import com.cloud.user.dao.UserAccountJoinDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -2021,125 +2021,6 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         return null;
     }
 
-    @Override
-    public Pair<List<? extends Account>, Integer> searchForAccounts(ListAccountsCmd cmd) {
-        Account caller = UserContext.current().getCaller();
-        Long domainId = cmd.getDomainId();
-        Long accountId = cmd.getId();
-        String accountName = cmd.getSearchName();
-        boolean isRecursive = cmd.isRecursive();
-        boolean listAll = cmd.listAll();
-        Boolean listForDomain = false;
-
-        if (accountId != null) {
-            Account account = _accountDao.findById(accountId);
-            if (account == null || account.getId() == Account.ACCOUNT_ID_SYSTEM) {
-                throw new InvalidParameterValueException("Unable to find account by id " + accountId);
-            }
-
-            checkAccess(caller, null, true, account);
-        }
-
-        if (domainId != null) {
-            Domain domain = _domainMgr.getDomain(domainId);
-            if (domain == null) {
-                throw new InvalidParameterValueException("Domain id=" + domainId + " doesn't exist");
-            }
-
-            checkAccess(caller, domain);
-
-            if (accountName != null) {
-                Account account = _accountDao.findActiveAccount(accountName, domainId);
-                if (account == null || account.getId() == Account.ACCOUNT_ID_SYSTEM) {
-                    throw new InvalidParameterValueException("Unable to find account by name " + accountName + " in domain " + domainId);
-                }
-                checkAccess(caller, null, true, account);
-            }
-        }
-
-        if (accountId == null) {
-            if (isAdmin(caller.getType()) && listAll && domainId == null) {
-                listForDomain = true;
-                isRecursive = true;
-                if (domainId == null) {
-                    domainId = caller.getDomainId();
-                }
-            } else if (isAdmin(caller.getType()) && domainId != null) {
-                listForDomain = true;
-            } else {
-                accountId = caller.getAccountId();
-            }
-        }
-
-        Filter searchFilter = new Filter(AccountVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-
-        Object type = cmd.getAccountType();
-        Object state = cmd.getState();
-        Object isCleanupRequired = cmd.isCleanupRequired();
-        Object keyword = cmd.getKeyword();
-
-        SearchBuilder<AccountVO> sb = _accountDao.createSearchBuilder();
-        sb.and("accountName", sb.entity().getAccountName(), SearchCriteria.Op.EQ);
-        sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
-        sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
-        sb.and("needsCleanup", sb.entity().getNeedsCleanup(), SearchCriteria.Op.EQ);
-        sb.and("typeNEQ", sb.entity().getType(), SearchCriteria.Op.NEQ);
-        sb.and("idNEQ", sb.entity().getId(), SearchCriteria.Op.NEQ);
-
-        if (listForDomain && isRecursive) {
-            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
-            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
-            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-        }
-
-        SearchCriteria<AccountVO> sc = sb.create();
-
-        sc.setParameters("idNEQ", Account.ACCOUNT_ID_SYSTEM);
-
-        if (keyword != null) {
-            SearchCriteria<AccountVO> ssc = _accountDao.createSearchCriteria();
-            ssc.addOr("accountName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("state", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            sc.addAnd("accountName", SearchCriteria.Op.SC, ssc);
-        }
-
-        if (type != null) {
-            sc.setParameters("type", type);
-        }
-
-        if (state != null) {
-            sc.setParameters("state", state);
-        }
-
-        if (isCleanupRequired != null) {
-            sc.setParameters("needsCleanup", isCleanupRequired);
-        }
-
-        if (accountName != null) {
-            sc.setParameters("accountName", accountName);
-        }
-
-        // don't return account of type project to the end user
-        sc.setParameters("typeNEQ", 5);
-
-        if (accountId != null) {
-            sc.setParameters("id", accountId);
-        }
-
-        if (listForDomain) {
-            DomainVO domain = _domainDao.findById(domainId);
-            if (isRecursive) {
-                sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
-            } else {
-                sc.setParameters("domainId", domainId);
-            }
-        }
-
-        Pair<List<AccountVO>, Integer> result = _accountDao.searchAndCount(sc, searchFilter);
-        return new Pair<List<? extends Account>, Integer>(result.first(), result.second());
-    }
 
 
     @Override

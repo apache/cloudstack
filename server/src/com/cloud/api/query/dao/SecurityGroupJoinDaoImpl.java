@@ -109,6 +109,11 @@ public class SecurityGroupJoinDaoImpl extends GenericDaoBase<SecurityGroupJoinVO
                 sgResponse.addTag(ApiDBUtils.newResourceTagResponse(vtag, false));
             }
         }
+
+        // set async job
+        sgResponse.setJobId(vsg.getJobUuid());
+        sgResponse.setJobStatus(vsg.getJobStatus());
+
         sgResponse.setObjectName("securitygroup");
 
         return sgResponse;

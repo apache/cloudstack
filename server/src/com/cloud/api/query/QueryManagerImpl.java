@@ -31,6 +31,7 @@ import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
+import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.cloudstack.api.command.user.project.ListProjectInvitationsCmd;
@@ -40,6 +41,7 @@ import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
+import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.HostResponse;
@@ -56,8 +58,10 @@ import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.log4j.Logger;
 
+import com.cloud.acl.ControlledEntity;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
+import com.cloud.api.query.dao.AccountJoinDao;
 import com.cloud.api.query.dao.DomainRouterJoinDao;
 import com.cloud.api.query.dao.HostJoinDao;
 import com.cloud.api.query.dao.InstanceGroupJoinDao;
@@ -66,8 +70,10 @@ import com.cloud.api.query.dao.ProjectInvitationJoinDao;
 import com.cloud.api.query.dao.ProjectJoinDao;
 import com.cloud.api.query.dao.ResourceTagJoinDao;
 import com.cloud.api.query.dao.SecurityGroupJoinDao;
+import com.cloud.api.query.dao.UserAccountJoinDao;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.dao.VolumeJoinDao;
+import com.cloud.api.query.vo.AccountJoinVO;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.api.query.vo.EventJoinVO;
 import com.cloud.api.query.vo.HostJoinVO;
@@ -92,11 +98,13 @@ import com.cloud.host.Host;
 import com.cloud.host.HostTagVO;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.IPAddressVO;
 import com.cloud.network.security.SecurityGroupVMMapVO;
 import com.cloud.network.security.dao.SecurityGroupVMMapDao;
 import com.cloud.projects.ProjectInvitation;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.projects.Project;
+import com.cloud.projects.ProjectInvitationVO;
 import com.cloud.projects.ProjectManager;
 import com.cloud.projects.ProjectService;
 import com.cloud.projects.dao.ProjectAccountDao;
@@ -115,7 +123,7 @@ import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
 import com.cloud.user.DomainManager;
 import com.cloud.user.UserContext;
-import com.cloud.user.dao.UserAccountJoinDao;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
@@ -201,6 +209,12 @@ public class QueryManagerImpl implements QueryService, Manager {
 
     @Inject
     private VolumeJoinDao _volumeJoinDao;
+
+    @Inject
+    private AccountDao _accountDao;
+
+    @Inject
+    private AccountJoinDao _accountJoinDao;
 
     @Inject
     private HighAvailabilityManager _haMgr;
@@ -1458,8 +1472,8 @@ public class QueryManagerImpl implements QueryService, Manager {
         Pair<List<VolumeJoinVO>, Integer> result = searchForVolumesInternal(cmd);
         ListResponse<VolumeResponse> response = new ListResponse<VolumeResponse>();
 
-        List<VolumeResponse> routerResponses = ViewResponseHelper.createVolumeResponse(result.first().toArray(new VolumeJoinVO[result.first().size()]));
-        response.setResponses(routerResponses, result.second());
+        List<VolumeResponse> volumeResponses = ViewResponseHelper.createVolumeResponse(result.first().toArray(new VolumeJoinVO[result.first().size()]));
+        response.setResponses(volumeResponses, result.second());
         return response;
     }
 
@@ -1589,6 +1603,134 @@ public class QueryManagerImpl implements QueryService, Manager {
         List<VolumeJoinVO> vrs = _volumeJoinDao.searchByIds(vrIds);
         return new Pair<List<VolumeJoinVO>, Integer>(vrs, count);
     }
+
+    @Override
+    public ListResponse<AccountResponse> searchForAccounts(ListAccountsCmd cmd) {
+        Pair<List<AccountJoinVO>, Integer> result = searchForAccountsInternal(cmd);
+        ListResponse<AccountResponse> response = new ListResponse<AccountResponse>();
+        List<AccountResponse> accountResponses = ViewResponseHelper.createAccountResponse(result.first().toArray(new AccountJoinVO[result.first().size()]));
+        response.setResponses(accountResponses, result.second());
+        return response;
+    }
+
+
+    public Pair<List<AccountJoinVO>, Integer> searchForAccountsInternal(ListAccountsCmd cmd) {
+        Account caller = UserContext.current().getCaller();
+        Long domainId = cmd.getDomainId();
+        Long accountId = cmd.getId();
+        String accountName = cmd.getSearchName();
+        boolean isRecursive = cmd.isRecursive();
+        boolean listAll = cmd.listAll();
+        Boolean listForDomain = false;
+
+        if (accountId != null) {
+            Account account = _accountDao.findById(accountId);
+            if (account == null || account.getId() == Account.ACCOUNT_ID_SYSTEM) {
+                throw new InvalidParameterValueException("Unable to find account by id " + accountId);
+            }
+
+            _accountMgr.checkAccess(caller, null, true, account);
+        }
+
+        if (domainId != null) {
+            Domain domain = _domainDao.findById(domainId);
+            if (domain == null) {
+                throw new InvalidParameterValueException("Domain id=" + domainId + " doesn't exist");
+            }
+
+            _accountMgr.checkAccess(caller, domain);
+
+            if (accountName != null) {
+                Account account = _accountDao.findActiveAccount(accountName, domainId);
+                if (account == null || account.getId() == Account.ACCOUNT_ID_SYSTEM) {
+                    throw new InvalidParameterValueException("Unable to find account by name " + accountName + " in domain " + domainId);
+                }
+                _accountMgr.checkAccess(caller, null, true, account);
+            }
+        }
+
+        if (accountId == null) {
+            if (_accountMgr.isAdmin(caller.getType()) && listAll && domainId == null) {
+                listForDomain = true;
+                isRecursive = true;
+                if (domainId == null) {
+                    domainId = caller.getDomainId();
+                }
+            } else if (_accountMgr.isAdmin(caller.getType()) && domainId != null) {
+                listForDomain = true;
+            } else {
+                accountId = caller.getAccountId();
+            }
+        }
+
+        Filter searchFilter = new Filter(AccountJoinVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+
+        Object type = cmd.getAccountType();
+        Object state = cmd.getState();
+        Object isCleanupRequired = cmd.isCleanupRequired();
+        Object keyword = cmd.getKeyword();
+
+        SearchBuilder<AccountJoinVO> sb = _accountJoinDao.createSearchBuilder();
+        sb.and("accountName", sb.entity().getAccountName(), SearchCriteria.Op.EQ);
+        sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
+        sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
+        sb.and("needsCleanup", sb.entity().isNeedsCleanup(), SearchCriteria.Op.EQ);
+        sb.and("typeNEQ", sb.entity().getType(), SearchCriteria.Op.NEQ);
+        sb.and("idNEQ", sb.entity().getId(), SearchCriteria.Op.NEQ);
+
+        if (listForDomain && isRecursive) {
+            sb.and("path", sb.entity().getDomainPath(), SearchCriteria.Op.LIKE);
+        }
+
+        SearchCriteria<AccountJoinVO> sc = sb.create();
+
+        sc.setParameters("idNEQ", Account.ACCOUNT_ID_SYSTEM);
+
+        if (keyword != null) {
+            SearchCriteria<AccountJoinVO> ssc = _accountJoinDao.createSearchCriteria();
+            ssc.addOr("accountName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("state", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            sc.addAnd("accountName", SearchCriteria.Op.SC, ssc);
+        }
+
+        if (type != null) {
+            sc.setParameters("type", type);
+        }
+
+        if (state != null) {
+            sc.setParameters("state", state);
+        }
+
+        if (isCleanupRequired != null) {
+            sc.setParameters("needsCleanup", isCleanupRequired);
+        }
+
+        if (accountName != null) {
+            sc.setParameters("accountName", accountName);
+        }
+
+        // don't return account of type project to the end user
+        sc.setParameters("typeNEQ", 5);
+
+        if (accountId != null) {
+            sc.setParameters("id", accountId);
+        }
+
+        if (listForDomain) {
+            if (isRecursive) {
+                Domain domain = _domainDao.findById(domainId);
+                sc.setParameters("path", domain.getPath() + "%");
+            } else {
+                sc.setParameters("domainId", domainId);
+            }
+        }
+
+        Pair<List<AccountJoinVO>, Integer> result = _accountJoinDao.searchAndCount(sc, searchFilter);
+        return new Pair<List<AccountJoinVO>, Integer>(result.first(), result.second());
+    }
+
 
 
 }

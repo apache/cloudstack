@@ -23,11 +23,10 @@ import javax.persistence.Entity;
 import javax.persistence.Table;
 
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="instance_group_view")
-public class InstanceGroupJoinVO extends BaseViewVO implements ControlledViewEntity, InternalIdentity {
+public class InstanceGroupJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     @Column(name="id", updatable=false, nullable = false)
     private long id;
@@ -96,6 +95,7 @@ public class InstanceGroupJoinVO extends BaseViewVO implements ControlledViewEnt
 
     }
 
+    @Override
     public String getUuid() {
         return uuid;
     }

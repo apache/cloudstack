@@ -27,6 +27,8 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.UserResponse;
+
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
@@ -91,17 +93,8 @@ public class ListAccountsCmd extends BaseListDomainResourcesCmd {
 
     @Override
     public void execute(){
-        Pair<List<? extends Account>, Integer> accounts = _accountService.searchForAccounts(this);
-        ListResponse<AccountResponse> response = new ListResponse<AccountResponse>();
-        List<AccountResponse> accountResponses = new ArrayList<AccountResponse>();
-        for (Account account : accounts.first()) {
-            AccountResponse acctResponse = _responseGenerator.createAccountResponse(account);
-            acctResponse.setObjectName("account");
-            accountResponses.add(acctResponse);
-        }
-        response.setResponses(accountResponses, accounts.second());
+        ListResponse<AccountResponse> response = _queryService.searchForAccounts(this);
         response.setResponseName(getCommandName());
-
         this.setResponseObject(response);
     }
 }

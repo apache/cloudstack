@@ -51,6 +51,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.apache.cloudstack.api.*;
+import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
@@ -88,6 +89,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
+import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
 import org.apache.cloudstack.api.command.user.project.ListProjectInvitationsCmd;
 import org.apache.cloudstack.api.command.user.project.ListProjectsCmd;
 import org.apache.cloudstack.api.command.user.securitygroup.ListSecurityGroupsCmd;
@@ -466,7 +468,10 @@ public class ApiServer implements HttpRequestHandler {
                     && !(cmdObj instanceof ListProjectAccountsCmd)
                     && !(cmdObj instanceof ListProjectInvitationsCmd)
                     && !(cmdObj instanceof ListHostsCmd)
-                    && !(cmdObj instanceof ListVolumesCmd)) {
+                    && !(cmdObj instanceof ListVolumesCmd)
+                    && !(cmdObj instanceof ListUsersCmd)
+                    && !(cmdObj instanceof ListAccountsCmd)
+                    ) {
                 buildAsyncListResponse((BaseListCmd) cmdObj, caller);
             }
 

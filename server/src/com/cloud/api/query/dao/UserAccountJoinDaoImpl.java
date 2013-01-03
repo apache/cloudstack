@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.user.dao;
+package com.cloud.api.query.dao;
 
 import java.util.List;
 
@@ -88,6 +88,11 @@ public class UserAccountJoinDaoImpl extends GenericDaoBase<UserAccountJoinVO, Lo
         userResponse.setUsername(usr.getUsername());
         userResponse.setApiKey(usr.getApiKey());
         userResponse.setSecretKey(usr.getSecretKey());
+
+        // set async job
+        userResponse.setJobId(usr.getJobUuid());
+        userResponse.setJobStatus(usr.getJobStatus());
+
         userResponse.setObjectName("user");
 
         return userResponse;

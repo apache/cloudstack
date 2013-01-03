@@ -19,6 +19,7 @@ package org.apache.cloudstack.query;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
+import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.cloudstack.api.command.user.project.ListProjectInvitationsCmd;
@@ -28,6 +29,7 @@ import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
+import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.HostResponse;
@@ -76,4 +78,6 @@ public interface QueryService {
     public ListResponse<HostResponse> searchForServers(ListHostsCmd cmd);
 
     public ListResponse<VolumeResponse> searchForVolumes(ListVolumesCmd cmd);
+
+    public ListResponse<AccountResponse> searchForAccounts(ListAccountsCmd cmd);
 }

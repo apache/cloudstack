@@ -482,7 +482,7 @@ left join projects on projects.project_account_id = instance_group.account_id;
 
 DROP VIEW IF EXISTS `cloud`.`user_view`;
 CREATE VIEW user_view AS
-select
+select 
 user.id,
 user.uuid,
 user.username,
@@ -499,17 +499,23 @@ user.timezone,
 user.registration_token,
 user.is_registered,
 user.incorrect_login_attempts,
-account.id account_id,
+account.id account_id, 
 account.uuid account_uuid,
 account.account_name account_name,
 account.type account_type,
-domain.id domain_id,
+domain.id domain_id, 
 domain.uuid domain_uuid,
-domain.name domain_name,
-domain.path domain_path
-from user
+domain.name domain_name, 
+domain.path domain_path,
+async_job.id job_id,
+async_job.uuid job_uuid,
+async_job.job_status job_status,
+async_job.account_id job_account_id
+from user 
 inner join account on user.account_id = account.id
-inner join domain on account.domain_id=domain.id;
+inner join domain on account.domain_id=domain.id
+left join async_job on async_job.instance_id = user.id and async_job.instance_type = "User" and async_job.job_status = 0;
+
 
 DROP VIEW IF EXISTS `cloud`.`project_view`;
 CREATE VIEW project_view AS
@@ -727,4 +733,91 @@ left join vm_template on volumes.template_id = vm_template.id
 left join resource_tags on resource_tags.resource_id = volumes.id and resource_tags.resource_type = "Volume"
 left join async_job on async_job.instance_id = volumes.id and async_job.instance_type = "Volume" and async_job.job_status = 0;
 
+DROP VIEW IF EXISTS `cloud`.`account_netstats_view`;
+CREATE VIEW account_netstats_view AS
+SELECT account_id, 
+sum(net_bytes_received)+ sum(current_bytes_received) as bytesReceived,
+sum(net_bytes_sent)+ sum(current_bytes_sent) as bytesSent
+FROM user_statistics
+group by account_id;
 
+
+DROP VIEW IF EXISTS `cloud`.`account_vmstats_view`;
+CREATE VIEW account_vmstats_view AS
+SELECT account_id, state, count(*) as vmcount
+from vm_instance
+group by account_id, state;
+
+DROP VIEW IF EXISTS `cloud`.`free_ip_view`;
+CREATE VIEW free_ip_view AS
+select count(user_ip_address.id) free_ip
+from user_ip_address
+inner join vlan on vlan.id = user_ip_address.vlan_db_id and vlan.vlan_type = "VirtualNetwork"
+where state = "Free"
+
+DROP VIEW IF EXISTS `cloud`.`account_view`;
+CREATE VIEW account_view AS
+select 
+account.id,
+account.uuid,
+account.account_name,
+account.type,
+account.state,
+account.removed,
+account.cleanup_needed,
+account.network_domain,
+domain.id domain_id, 
+domain.uuid domain_uuid,
+domain.name domain_name, 
+domain.path domain_path,
+data_center.id data_center_id,
+data_center.uuid data_center_uuid,
+data_center.name data_center_name,
+account_netstats_view.bytesReceived,
+account_netstats_view.bytesSent,
+vmlimit.max vmLimit,
+vmcount.count vmTotal,
+runningvm.vmcount runningVms,
+stoppedvm.vmcount stoppedVms,
+iplimit.max ipLimit,
+ipcount.count ipTotal,
+free_ip_view.free_ip ipFree,
+volumelimit.max volumeLimit,
+volumecount.count volumeTotal,
+snapshotlimit.max snapshotLimit,
+snapshotcount.count snapshotTotal,
+templatelimit.max templateLimit,
+templatecount.count templateTotal,
+vpclimit.max vpcLimit,
+vpccount.count vpcTotal,
+projectlimit.max projectLimit,
+projectcount.count projectTotal,
+networklimit.max networkLimit,
+networkcount.count networkTotal,
+async_job.id job_id,
+async_job.uuid job_uuid,
+async_job.job_status job_status,
+async_job.account_id job_account_id
+from free_ip_view, account 
+inner join domain on account.domain_id=domain.id
+left join data_center on account.default_zone_id = data_center.id
+left join account_netstats_view on account.id = account_netstats_view.account_id
+left join resource_limit vmlimit on account.id = vmlimit.account_id and vmlimit.type = "user_vm"
+left join resource_count vmcount on account.id = vmcount.account_id and vmcount.type = "user_vm"
+left join account_vmstats_view runningvm on account.id = runningvm.account_id and runningvm.state = "Running"
+left join account_vmstats_view stoppedvm on account.id = stoppedvm.account_id and stoppedvm.state = "Stopped"
+left join resource_limit iplimit on account.id = iplimit.account_id and iplimit.type = "public_ip"
+left join resource_count ipcount on account.id = ipcount.account_id and ipcount.type = "public_ip"
+left join resource_limit volumelimit on account.id = volumelimit.account_id and volumelimit.type = "volume"
+left join resource_count volumecount on account.id = volumecount.account_id and volumecount.type = "volume"
+left join resource_limit snapshotlimit on account.id = snapshotlimit.account_id and snapshotlimit.type = "snapshot"
+left join resource_count snapshotcount on account.id = snapshotcount.account_id and snapshotcount.type = "snapshot"
+left join resource_limit templatelimit on account.id = templatelimit.account_id and templatelimit.type = "template"
+left join resource_count templatecount on account.id = templatecount.account_id and templatecount.type = "template"
+left join resource_limit vpclimit on account.id = vpclimit.account_id and vpclimit.type = "vpc"
+left join resource_count vpccount on account.id = vpccount.account_id and vpccount.type = "vpc"
+left join resource_limit projectlimit on account.id = projectlimit.account_id and projectlimit.type = "project"
+left join resource_count projectcount on account.id = projectcount.account_id and projectcount.type = "project"
+left join resource_limit networklimit on account.id = networklimit.account_id and networklimit.type = "network"
+left join resource_count networkcount on account.id = networkcount.account_id and networkcount.type = "network"
+left join async_job on async_job.instance_id = account.id and async_job.instance_type = "Account" and async_job.job_status = 0;

@@ -192,10 +192,6 @@ public interface AccountService {
 
     public String[] createApiKeyAndSecretKey(RegisterCmd cmd);
 
-    Pair<List<? extends Account>, Integer> searchForAccounts(ListAccountsCmd cmd);
-
-
-
     UserAccount getUserByApiKey(String apiKey);
 
     void checkAccess(Account account, Domain domain) throws PermissionDeniedException;

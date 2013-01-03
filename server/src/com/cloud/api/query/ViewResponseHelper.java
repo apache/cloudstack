@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
+import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.HostResponse;
@@ -38,6 +39,7 @@ import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.query.vo.AccountJoinVO;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.api.query.vo.EventJoinVO;
 import com.cloud.api.query.vo.HostJoinVO;
@@ -232,5 +234,13 @@ public class ViewResponseHelper {
             vrDataList.put(vr.getId(), vrData);
         }
         return new ArrayList<VolumeResponse>(vrDataList.values());
+    }
+
+    public static List<AccountResponse> createAccountResponse(AccountJoinVO... accounts) {
+        List<AccountResponse> respList = new ArrayList<AccountResponse>();
+        for (AccountJoinVO vt : accounts){
+            respList.add(ApiDBUtils.newAccountResponse(vt));
+        }
+        return respList;
     }
 }

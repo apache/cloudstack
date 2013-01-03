@@ -109,7 +109,7 @@ public class ListPerfTest extends APITest {
 
     @Test
     public void testListVolumes(){
-        // issue list Hosts calls
+        // issue list Volumes calls
         HashMap<String, String> params = new HashMap<String, String>();
         params.put("response", "json");
         params.put("listAll", "true");
@@ -118,6 +118,34 @@ public class ListPerfTest extends APITest {
         String result = this.sendRequest("listVolumes", params);
         long after = System.currentTimeMillis();
         System.out.println("Time taken to list Volumes: " + (after - before) + " ms");
+
+    }
+
+    @Test
+    public void testListAccounts(){
+        // issue list Accounts calls
+        HashMap<String, String> params = new HashMap<String, String>();
+        params.put("response", "json");
+        params.put("listAll", "true");
+        params.put("sessionkey", sessionKey);
+        long before = System.currentTimeMillis();
+        String result = this.sendRequest("listAccounts", params);
+        long after = System.currentTimeMillis();
+        System.out.println("Time taken to list Accounts: " + (after - before) + " ms");
+
+    }
+
+    @Test
+    public void testListUsers(){
+        // issue list Users calls
+        HashMap<String, String> params = new HashMap<String, String>();
+        params.put("response", "json");
+        params.put("listAll", "true");
+        params.put("sessionkey", sessionKey);
+        long before = System.currentTimeMillis();
+        String result = this.sendRequest("listUsers", params);
+        long after = System.currentTimeMillis();
+        System.out.println("Time taken to list Users: " + (after - before) + " ms");
 
     }
 }

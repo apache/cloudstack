@@ -37,11 +37,10 @@ import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="user_vm_view")
-public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity, InternalIdentity {
+public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     @Column(name="id", updatable=false, nullable = false)
     private long id;
@@ -378,6 +377,7 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity, In
     }
 
 
+    @Override
     public String getUuid() {
         return uuid;
     }

@@ -243,6 +243,36 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager {
     }
 
     @Override
+    public long findCorrectResourceLimitForAccount(short accountType, Long limit, ResourceType type) {
+
+        long max = Resource.RESOURCE_UNLIMITED; // if resource limit is not found, then we treat it as unlimited
+
+        // No limits for Root Admin accounts
+        if (_accountMgr.isRootAdmin(accountType)) {
+            return max;
+        }
+
+
+        // Check if limit is configured for account
+        if (limit != null) {
+            max = limit.longValue();
+        } else {
+            // If the account has an no limit set, then return global default account limits
+            Long value = null;
+            if (accountType == Account.ACCOUNT_TYPE_PROJECT) {
+                value = projectResourceLimitMap.get(type);
+            } else {
+                value = accountResourceLimitMap.get(type);
+            }
+            if (value != null) {
+                return value;
+            }
+        }
+
+        return max;
+    }
+
+    @Override
     public long findCorrectResourceLimitForDomain(Domain domain, ResourceType type) {
         long max = Resource.RESOURCE_UNLIMITED;
 

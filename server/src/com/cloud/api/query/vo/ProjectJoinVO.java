@@ -27,11 +27,13 @@ import javax.persistence.Table;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.VirtualMachine.State;
+
+import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="project_view")
-public class ProjectJoinVO extends BaseViewVO implements InternalIdentity {
+public class ProjectJoinVO extends BaseViewVO implements InternalIdentity, Identity {
 
     @Column(name="id", updatable=false, nullable = false)
     private long id;
@@ -120,6 +122,7 @@ public class ProjectJoinVO extends BaseViewVO implements InternalIdentity {
 
     }
 
+    @Override
     public String getUuid() {
         return uuid;
     }

@@ -81,6 +81,16 @@ public interface ResourceLimitService {
     public long findCorrectResourceLimitForAccount(Account account, ResourceType type);
 
     /**
+     * This call should be used when we have already queried resource limit for an account. This is to handle
+     * some corner cases where queried limit may be null.
+     * @param accountType
+     * @param limit
+     * @param type
+     * @return
+     */
+    public long findCorrectResourceLimitForAccount(short accountType, Long limit, ResourceType type);
+
+    /**
      * Finds the resource limit for a specified domain and type. If the domain has an infinite limit, will check
      * up the domain hierarchy
      *

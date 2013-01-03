@@ -24,11 +24,13 @@ import javax.persistence.Table;
 
 import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
+
+import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="user_view")
-public class UserAccountJoinVO extends BaseViewVO implements InternalIdentity {
+public class UserAccountJoinVO extends BaseViewVO implements InternalIdentity, Identity {
 
     @Column(name="id", updatable=false, nullable = false)
     private long id;
@@ -104,6 +106,14 @@ public class UserAccountJoinVO extends BaseViewVO implements InternalIdentity {
     @Column(name="domain_path")
     private String domainPath = null;
 
+    @Column(name="job_id")
+    private long jobId;
+
+    @Column(name="job_uuid")
+    private String jobUuid;
+
+    @Column(name="job_status")
+    private int jobStatus;
 
     public UserAccountJoinVO() {
     }
@@ -118,6 +128,7 @@ public class UserAccountJoinVO extends BaseViewVO implements InternalIdentity {
         this.id = id;
     }
 
+    @Override
     public String getUuid() {
         return uuid;
     }
@@ -306,6 +317,30 @@ public class UserAccountJoinVO extends BaseViewVO implements InternalIdentity {
 
     public void setLoginAttempts(int loginAttempts) {
         this.loginAttempts = loginAttempts;
+    }
+
+    public long getJobId() {
+        return jobId;
+    }
+
+    public void setJobId(long jobId) {
+        this.jobId = jobId;
+    }
+
+    public String getJobUuid() {
+        return jobUuid;
+    }
+
+    public void setJobUuid(String jobUuid) {
+        this.jobUuid = jobUuid;
+    }
+
+    public int getJobStatus() {
+        return jobStatus;
+    }
+
+    public void setJobStatus(int jobStatus) {
+        this.jobStatus = jobStatus;
     }
 
 

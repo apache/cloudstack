@@ -301,13 +301,6 @@ public class MockAccountManagerImpl implements Manager, AccountManager, AccountS
 		return null;
 	}
 
-    @Override
-    public Pair<List<? extends Account>, Integer> searchForAccounts(ListAccountsCmd cmd) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-
 	@Override
 	public boolean enableAccount(long accountId) {
 		// TODO Auto-generated method stub

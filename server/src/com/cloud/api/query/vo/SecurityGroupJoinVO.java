@@ -24,11 +24,10 @@ import javax.persistence.Table;
 
 import com.cloud.network.security.SecurityRule.SecurityRuleType;
 import com.cloud.server.ResourceTag.TaggedResourceType;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="security_group_view")
-public class SecurityGroupJoinVO extends BaseViewVO implements ControlledViewEntity, InternalIdentity {
+public class SecurityGroupJoinVO extends BaseViewVO implements ControlledViewEntity{
 
     @Column(name="id", updatable=false, nullable = false)
     private long id;
@@ -152,6 +151,7 @@ public class SecurityGroupJoinVO extends BaseViewVO implements ControlledViewEnt
         this.id = id;
     }
 
+    @Override
     public String getUuid() {
         return uuid;
     }
