@@ -58,7 +58,6 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
     private static List<String> s_adminCommands = null;
     private static List<String> s_resourceDomainAdminCommands = null;
     private static List<String> s_allCommands = null;
-    private Properties _apiCommands = null;
 
     protected @Inject AccountManager _accountMgr;
 
@@ -85,11 +84,6 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
         }
 
         return commandExists;
-    }
-
-    @Override
-    public Properties getApiCommands() {
-        return _apiCommands;
     }
 
     private static boolean isCommandAvailableForAccount(short accountType, String commandName) {
@@ -130,9 +124,6 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
     }
 
     private void processConfigFiles(List<String> configFiles) {
-        if (_apiCommands == null)
-            _apiCommands = new Properties();
-
         Properties preProcessedCommands = new Properties();
 
         for (String configFile : configFiles) {
@@ -160,31 +151,30 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
 
         for (Object key : preProcessedCommands.keySet()) {
             String preProcessedCommand = preProcessedCommands.getProperty((String) key);
-            String[] commandParts = preProcessedCommand.split(";");
-            _apiCommands.setProperty(key.toString(), commandParts[0]);
+            int splitIndex = preProcessedCommand.lastIndexOf(";");
+            // Backward compatible to old style, apiname=pkg;mask
+            String mask = preProcessedCommand.substring(splitIndex+1);
 
-            if (commandParts.length > 1) {
-                try {
-                    short cmdPermissions = Short.parseShort(commandParts[1]);
-                    if ((cmdPermissions & ADMIN_COMMAND) != 0) {
-                        s_adminCommands.add((String) key);
-                    }
-                    if ((cmdPermissions & RESOURCE_DOMAIN_ADMIN_COMMAND) != 0) {
-                        s_resourceDomainAdminCommands.add((String) key);
-                    }
-                    if ((cmdPermissions & DOMAIN_ADMIN_COMMAND) != 0) {
-                        s_resellerCommands.add((String) key);
-                    }
-                    if ((cmdPermissions & USER_COMMAND) != 0) {
-                        s_userCommands.add((String) key);
-                    }
-                    s_allCommands.addAll(s_adminCommands);
-                    s_allCommands.addAll(s_resourceDomainAdminCommands);
-                    s_allCommands.addAll(s_userCommands);
-                    s_allCommands.addAll(s_resellerCommands);
-                } catch (NumberFormatException nfe) {
-                    s_logger.info("Malformed command.properties permissions value, key = " + key + ", value = " + preProcessedCommand);
+            try {
+                short cmdPermissions = Short.parseShort(mask);
+                if ((cmdPermissions & ADMIN_COMMAND) != 0) {
+                    s_adminCommands.add((String) key);
                 }
+                if ((cmdPermissions & RESOURCE_DOMAIN_ADMIN_COMMAND) != 0) {
+                    s_resourceDomainAdminCommands.add((String) key);
+                }
+                if ((cmdPermissions & DOMAIN_ADMIN_COMMAND) != 0) {
+                    s_resellerCommands.add((String) key);
+                }
+                if ((cmdPermissions & USER_COMMAND) != 0) {
+                    s_userCommands.add((String) key);
+                }
+                s_allCommands.addAll(s_adminCommands);
+                s_allCommands.addAll(s_resourceDomainAdminCommands);
+                s_allCommands.addAll(s_userCommands);
+                s_allCommands.addAll(s_resellerCommands);
+            } catch (NumberFormatException nfe) {
+                s_logger.info("Malformed command.properties permissions value, key = " + key + ", value = " + preProcessedCommand);
             }
         }
     }
