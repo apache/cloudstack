@@ -582,8 +582,14 @@ public class ApiDispatcher {
             if (internalId != null)
                 break;
         }
-        if (internalId == null && s_logger.isDebugEnabled()) {
-            s_logger.debug("Object entity with uuid=" + uuid + " does not exist in the database.");
+        if (internalId == null) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Object entity with uuid=" + uuid + " does not exist in the database.");
+            }
+            if (annotation.required()) {
+                throw new InvalidParameterValueException("Invalid parameter with uuid=" + uuid
+                        + ". Entity not found, or an annotation bug.");
+            }
         }
         return internalId;
     }
