@@ -35,27 +35,27 @@
         <orderedlist>
             <listitem>
                 <para>
-                    <ulink url="http://www.apache.org/dyn/closer.cgi/dist/incubator/cloudstack/releases/4.0.0-incubating/apache-cloudstack-4.0.0-incubating-src.tar.bz2">
-                        apache-cloudstack-4.0.0-incubating-src.tar.bz2</ulink>
+                    <ulink url="http://www.apache.org/dyn/closer.cgi/dist/incubator/cloudstack/releases/4.0.1-incubating/apache-cloudstack-4.0.1-incubating-src.tar.bz2">
+                        apache-cloudstack-4.0.1-incubating-src.tar.bz2</ulink>
                         - This is the link to the release itself.
                 </para>
             </listitem>
             <listitem>
                 <para>
-                    <ulink url="http://www.apache.org/dist/incubator/cloudstack/releases/4.0.0-incubating/apache-cloudstack-4.0.0-incubating-src.tar.bz2.asc">PGP</ulink>
+                    <ulink url="http://www.apache.org/dist/incubator/cloudstack/releases/4.0.1-incubating/apache-cloudstack-4.0.1-incubating-src.tar.bz2.asc">PGP</ulink>
                         - This is a detached cryptographic signature that can be used to help
                         verify the authenticity of the release.
                 </para>
             </listitem>
             <listitem>
                 <para>
-                    <ulink url="http://www.apache.org/dist/incubator/cloudstack/releases/4.0.0-incubating/apache-cloudstack-4.0.0-incubating-src.tar.bz2.md5">MD5</ulink>
+                    <ulink url="http://www.apache.org/dist/incubator/cloudstack/releases/4.0.1-incubating/apache-cloudstack-4.0.1-incubating-src.tar.bz2.md5">MD5</ulink>
                         - An MD5 hash of the release to aid in verify the validity of the release download.
                 </para>
             </listitem>
             <listitem>
                 <para>
-                    <ulink url="http://www.apache.org/dist/incubator/cloudstack/releases/4.0.0-incubating/apache-cloudstack-4.0.0-incubating-src.tar.bz2.sha">SHA512</ulink>
+                    <ulink url="http://www.apache.org/dist/incubator/cloudstack/releases/4.0.1-incubating/apache-cloudstack-4.0.1-incubating-src.tar.bz2.sha">SHA512</ulink>
                         - A SHA512 hash of the release to aid in verify the validity of the release download.
                 </para>
             </listitem>

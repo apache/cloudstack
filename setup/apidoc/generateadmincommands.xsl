@@ -57,7 +57,7 @@ version="1.0">
 				<xsl:for-each select="command/command">
                            		<!-- Modify this line for the release version -->
                            		<span>
-									Apache CloudStack 4.0.0-incubating Root Admin API Reference
+									Apache CloudStack 4.0.1-incubating Root Admin API Reference
 								</span>
 								<p></p>
                                 <h1><xsl:value-of select="name"/></h1>

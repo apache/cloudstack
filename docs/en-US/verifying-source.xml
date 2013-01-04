@@ -45,7 +45,7 @@
         <para>
            The &PRODUCT; project provides a detached GPG signature of the release.
            To check the signature, run the following command:
-           <programlisting><prompt>$</prompt> <command>gpg</command> --verify apache-cloudstack-4.0.0-incubating-src.tar.bz2.asc</programlisting>
+           <programlisting><prompt>$</prompt> <command>gpg</command> --verify apache-cloudstack-4.0.1-incubating-src.tar.bz2.asc</programlisting>
         </para>
         <para>
            If the signature is valid you will see a line of output that contains 'Good signature'.
@@ -57,7 +57,7 @@
            In addition to the cryptographic signature, the &PRODUCT; provides a number 
            of cryptographic hashes to aid in assurance of validity of the downloaded
            release. You can verify this hash by executing the following command:
-           <programlisting><prompt>$</prompt> <command>gpg</command> --print-md MD5 apache-cloudstack-4.0.0-incubating-src.tar.bz2 | <command>diff</command> - apache-cloudstack-4.0.0-incubating-src.tar.bz2.md5</programlisting>
+           <programlisting><prompt>$</prompt> <command>gpg</command> --print-md MD5 apache-cloudstack-4.0.1-incubating-src.tar.bz2 | <command>diff</command> - apache-cloudstack-4.0.1-incubating-src.tar.bz2.md5</programlisting>
          </para>
          <para>
              If this successfully completes you should see no output. If there is any output from them,
@@ -71,7 +71,7 @@
            In addition to the MD5 hash, the &PRODUCT; project provides a SHA512
            cryptographic hash to aid in assurance of the validity of the downloaded
            release. You can verify this hash by executing the following command:
-           <programlisting><prompt>$</prompt> <command>gpg</command> --print-md SHA512 apache-cloudstack-4.0.0-incubating-src.tar.bz2 | <command>diff</command> - apache-cloudstack-4.0.0-incubating-src.tar.bz2.sha</programlisting>
+           <programlisting><prompt>$</prompt> <command>gpg</command> --print-md SHA512 apache-cloudstack-4.0.1-incubating-src.tar.bz2 | <command>diff</command> - apache-cloudstack-4.0.1-incubating-src.tar.bz2.sha</programlisting>
         </para>
         <para>
            If this command successfully completes you should see no output. If there is any output from them,

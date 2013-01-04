@@ -3,6 +3,38 @@ Apache CloudStack (Incubating) CHANGES
 
 Full release notes for each release are located in the project's documentation website:  http://incubator.apache.org/cloudstack/docs
 
+Version 4.0.1-incubating
+------------------------
+
+This is a bugfix release for Apache CloudStack 4.0.0-incubating, with no new features. 
+
+Bugs fixed in this release:
+
+CLOUDSTACK-359: PropagateResourceEventCommand fails in cluster configuration
+CLOUDSTACK-374: When running cloud-setup-databases, it auto chooses the highest priority nic (lowest number ie: eth0)
+CLOUDSTACK-389: Install Guide: Section 4.5.5 (Prepare NFS Shares): Confusing statement about iSCSI
+CLOUDSTACK-395: Primary Storage and Secondary Storage sections missing sub-sections
+CLOUDSTACK-411: Add another step during kvm agent installation on Ubuntu machine
+CLOUDSTACK-415: restartNetwork call causes VM to be unreachable when Nicira based SDN is used.
+CLOUDSTACK-422: XSL files missing license header.
+CLOUDSTACK-426: SetVPCStaticNatRules unimplemented for KVM.
+CLOUDSTACK-448: SSVM bootstrap failure on XenServer hosts with E3 CPU.
+CLOUDSTACK-465: French language file quotes are dropping javascript syntax errors.
+CLOUDSTACK-473: API Doc for uploadCustomCertificate doesn't explain how to use the optional parameters well.
+CLOUDSTACK-480: Installation Documentation error: Section 4.5.5.2 needs to mention nfs-kernel-server.
+CLOUDSTACK-498: Missing dependency in RPM of KVM Agent.
+CLOUDSTACK-502: VPC router needs to resolve its hostname.
+CLOUDSTACK-505: cloudstack logs the private key in plaintext.
+CLOUDSTACK-507: fix api docs for listSSHKeyPairs.
+CLOUDSTACK-515: NVP installation.
+CLOUDSTACK-536: remove citrix cloudpatform from 4.0 build - CloudStack is ASF project.
+CLOUDSTACK-560: Usage server doesn't work in 4.0.0 due to missing db changes.
+CLOUDSTACK-580: Packages are named with 4.0 with 4.0.1 build.
+CLOUDSTACK-591: Wrong vnet in iptables on KVM hypervisors after VM reboot.
+CLOUDSTACK-603: Upgrade from 4.0 to 4.0.1 is not enabled.
+CLOUDSTACK-622: In the add primary storage dialog in the ui the RBD fields don't disappear when changing from RBD to another protocol.
+
+
 Version 4.0.0-incubating
 ------------------------
 
