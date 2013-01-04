@@ -139,11 +139,7 @@ public interface NetworkManager extends NetworkService {
     boolean applyRules(List<? extends FirewallRule> rules, boolean continueOnError) throws ResourceUnavailableException;
 
     public boolean validateRule(FirewallRule rule);
-
-    List<? extends RemoteAccessVPNServiceProvider> getRemoteAccessVpnElements();
     
-    List<? extends Site2SiteVpnServiceProvider> getSite2SiteVpnElements();
-
     PublicIpAddress getPublicIpAddress(long ipAddressId);
 
     List<? extends Vlan> listPodVlans(long podId);

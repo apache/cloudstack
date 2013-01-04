@@ -122,7 +122,9 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
 
-@Local(value = NetworkElement.class)
+@Local(value = {NetworkElement.class, ConnectivityProvider.class, 
+		SourceNatServiceProvider.class, StaticNatServiceProvider.class, 
+		PortForwardingServiceProvider.class, IpDeployer.class} )
 public class NiciraNvpElement extends AdapterBase implements
 		ConnectivityProvider, SourceNatServiceProvider,
 		PortForwardingServiceProvider, StaticNatServiceProvider,

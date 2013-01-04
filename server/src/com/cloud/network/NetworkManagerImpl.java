@@ -67,8 +67,28 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork.BroadcastDomainRange;
 import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
 import com.cloud.network.addr.PublicIp;
-import com.cloud.network.dao.*;
-import com.cloud.network.element.*;
+import com.cloud.network.dao.FirewallRulesDao;
+import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.LoadBalancerDao;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkDomainDao;
+import com.cloud.network.dao.NetworkServiceMapDao;
+import com.cloud.network.dao.PhysicalNetworkDao;
+import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
+import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
+import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
+import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
+import com.cloud.network.element.DhcpServiceProvider;
+import com.cloud.network.element.FirewallServiceProvider;
+import com.cloud.network.element.IpDeployer;
+import com.cloud.network.element.LoadBalancingServiceProvider;
+import com.cloud.network.element.NetworkACLServiceProvider;
+import com.cloud.network.element.NetworkElement;
+import com.cloud.network.element.PortForwardingServiceProvider;
+import com.cloud.network.element.StaticNatServiceProvider;
+import com.cloud.network.element.UserDataServiceProvider;
+import com.cloud.network.element.VirtualRouterElement;
+import com.cloud.network.element.VpcVirtualRouterElement;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
@@ -110,13 +130,23 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.vm.*;
+import com.cloud.vm.Nic;
+import com.cloud.vm.NicProfile;
+import com.cloud.vm.NicVO;
+import com.cloud.vm.ReservationContext;
+import com.cloud.vm.ReservationContextImpl;
+import com.cloud.vm.SecondaryStorageVmVO;
+import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
+import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import edu.emory.mathcs.backport.java.util.Collections;
+
 import org.apache.log4j.Logger;
 
 import javax.ejb.Local;
@@ -187,6 +217,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     Adapters<NetworkElement> _networkElements;
     @Inject(adapter = IpDeployer.class)
     Adapters<IpDeployer> _ipDeployers;
+    @Inject(adapter = DhcpServiceProvider.class)
+    Adapters<DhcpServiceProvider> _dhcpProviders;
     @Inject
     NetworkDomainDao _networkDomainDao;
     @Inject
@@ -852,20 +884,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 }
                 IpDeployer deployer = null;
                 NetworkElement element = getElementImplementingProvider(provider.getName());
-                if (element instanceof SourceNatServiceProvider) {
-                    deployer = ((SourceNatServiceProvider) element).getIpDeployer(network);
-                } else if (element instanceof StaticNatServiceProvider) {
-                    deployer = ((StaticNatServiceProvider) element).getIpDeployer(network);
-                } else if (element instanceof LoadBalancingServiceProvider) {
-                    deployer = ((LoadBalancingServiceProvider) element).getIpDeployer(network);
-                } else if (element instanceof PortForwardingServiceProvider) {
-                    deployer = ((PortForwardingServiceProvider) element).getIpDeployer(network);
-                } else if (element instanceof RemoteAccessVPNServiceProvider) {
-                    deployer = ((RemoteAccessVPNServiceProvider) element).getIpDeployer(network);
-                } else if (element instanceof ConnectivityProvider) {
-                    // Nothing to do
-                    s_logger.debug("ConnectivityProvider " + element.getClass().getSimpleName() + " has no ip associations");
-                    continue;
+                if (element instanceof IpDeployer) {
+                    deployer = (IpDeployer) element;
                 } else {
                     throw new CloudRuntimeException("Fail to get ip deployer for element: " + element);
                 }
@@ -2387,31 +2407,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return _networksDao.findById(id);
     }
 
-    @Override
-    public List<? extends RemoteAccessVPNServiceProvider> getRemoteAccessVpnElements() {
-        List<RemoteAccessVPNServiceProvider> elements = new ArrayList<RemoteAccessVPNServiceProvider>();
-        for (NetworkElement element : _networkElements) {
-            if (element instanceof RemoteAccessVPNServiceProvider) {
-                RemoteAccessVPNServiceProvider e = (RemoteAccessVPNServiceProvider) element;
-                elements.add(e);
-            }
-        }
-
-        return elements;
-    }
-
-    @Override
-    public List<? extends Site2SiteVpnServiceProvider> getSite2SiteVpnElements() {
-        List<Site2SiteVpnServiceProvider> elements = new ArrayList<Site2SiteVpnServiceProvider>();
-        for (NetworkElement element : _networkElements) {
-            if (element instanceof Site2SiteVpnServiceProvider) {
-                Site2SiteVpnServiceProvider e = (Site2SiteVpnServiceProvider) element;
-                elements.add(e);
-            }
-        }
-
-        return elements;
-    }
 
     @Override
     public void cleanupNics(VirtualMachineProfile<? extends VMInstanceVO> vm) {
@@ -4542,7 +4537,18 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     public List<NetworkVO> listNetworksForAccount(long accountId, long zoneId, Network.GuestType type) {
-        List<NetworkVO> accountNetworks = _networksDao.listNetworksByAccount(accountId, zoneId, type, false);
+        List<NetworkVO> accountNetworks = new ArrayList<NetworkVO>();
+        List<NetworkVO> zoneNetworks = _networksDao.listByZone(zoneId);
+
+        for (NetworkVO network : zoneNetworks) {
+            if (!isNetworkSystem(network)) {
+                if (network.getGuestType() == Network.GuestType.Shared || !_networksDao.listBy(accountId, network.getId()).isEmpty()) {
+                    if (type == null || type == network.getGuestType()) {
+                        accountNetworks.add(network);
+                    }
+                }
+            }
+        }
         return accountNetworks;
     }
 
