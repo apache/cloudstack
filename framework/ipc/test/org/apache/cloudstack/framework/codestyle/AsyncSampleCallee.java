@@ -18,19 +18,19 @@
  */
 package org.apache.cloudstack.framework.codestyle;
 
+import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 
 public class AsyncSampleCallee {
 	AsyncSampleCallee _driver;
 
-	public void createVolume(Object realParam, AsyncCompletionCallback<String> callback) {
+	public AsyncCallFuture<String> createVolume(Object realParam, AsyncCompletionCallback<String> callback) {
 		
-		// async executed logic
-		{
-			
-		String resultObject = new String();
-		callback.complete(resultObject);
+		String result = "result object";
+		AsyncCallFuture<String> call = new AsyncCallFuture<String>(callback);
 		
-		}
+		call.inplaceComplete(result);
+		return call;
 	}
 }
+

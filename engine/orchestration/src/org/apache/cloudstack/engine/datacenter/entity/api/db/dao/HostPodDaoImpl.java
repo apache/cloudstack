@@ -27,6 +27,7 @@ import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEnti
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State.Event;
 import org.apache.cloudstack.engine.datacenter.entity.api.db.HostPodVO;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 
 import com.cloud.org.Grouping;
@@ -38,6 +39,7 @@ import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 
+@Component(value="EngineHostPodDao")
 @Local(value={HostPodDao.class})
 public class HostPodDaoImpl extends GenericDaoBase<HostPodVO, Long> implements HostPodDao {
     private static final Logger s_logger = Logger.getLogger(HostPodDaoImpl.class);

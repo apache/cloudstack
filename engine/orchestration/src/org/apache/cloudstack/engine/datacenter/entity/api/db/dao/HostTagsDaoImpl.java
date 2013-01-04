@@ -29,7 +29,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 
-@Component
+@Component(value="EngineHostTagsDao")
 @Local(value=HostTagsDao.class)
 public class HostTagsDaoImpl extends GenericDaoBase<HostTagVO, Long> implements HostTagsDao {
     protected final SearchBuilder<HostTagVO> HostSearch;

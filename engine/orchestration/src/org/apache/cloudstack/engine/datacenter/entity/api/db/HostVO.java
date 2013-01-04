@@ -720,7 +720,9 @@ public class HostVO implements Host, Identity {
     }
 
 	@Override
-	@Transient
+	
+	// TODO, I tempoerary disable it as it breaks GenericSearchBuild when @Transient is applied
+	// @Transient
 	public Status getState() {
 		return status;
 	}

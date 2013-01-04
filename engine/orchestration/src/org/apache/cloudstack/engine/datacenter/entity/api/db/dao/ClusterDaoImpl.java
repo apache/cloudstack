@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State;
@@ -29,6 +30,7 @@ import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEnti
 import org.apache.cloudstack.engine.datacenter.entity.api.db.ClusterVO;
 import org.apache.cloudstack.engine.datacenter.entity.api.db.HostPodVO;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -45,6 +47,7 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+@Component(value="EngineClusterDao")
 @Local(value=ClusterDao.class)
 public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements ClusterDao {
 	private static final Logger s_logger = Logger.getLogger(ClusterDaoImpl.class);
@@ -60,7 +63,7 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
     private static final String GET_POD_CLUSTER_MAP_PREFIX = "SELECT pod_id, id FROM cloud.cluster WHERE cluster.id IN( ";
     private static final String GET_POD_CLUSTER_MAP_SUFFIX = " )";
     
-    protected final HostPodDaoImpl _hostPodDao = ComponentLocator.inject(HostPodDaoImpl.class);
+    @Inject protected HostPodDao _hostPodDao;
     
     protected ClusterDaoImpl() {
         super();

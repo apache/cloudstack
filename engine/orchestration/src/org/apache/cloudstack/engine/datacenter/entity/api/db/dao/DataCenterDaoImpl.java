@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Random;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.TableGenerator;
 
@@ -27,6 +28,7 @@ import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEnti
 import org.apache.cloudstack.engine.datacenter.entity.api.ZoneEntity;
 import org.apache.cloudstack.engine.datacenter.entity.api.db.DataCenterVO;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.org.Grouping;
 import com.cloud.utils.NumbersUtil;
@@ -48,6 +50,7 @@ import com.cloud.utils.net.NetUtils;
  *    || mac.address.prefix | prefix to attach to all public and private mac addresses | number | 06 ||
  *  }
  **/
+@Component(value="EngineDataCenterDao")
 @Local(value={DataCenterDao.class})
 public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implements DataCenterDao {
     private static final Logger s_logger = Logger.getLogger(DataCenterDaoImpl.class);
@@ -65,7 +68,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     protected Random _rand = new Random(System.currentTimeMillis());
     protected TableGenerator _tgMacAddress;
     
-    protected final DcDetailsDaoImpl _detailsDao = ComponentLocator.inject(DcDetailsDaoImpl.class);
+    @Inject protected DcDetailsDao _detailsDao;
 
 
     @Override

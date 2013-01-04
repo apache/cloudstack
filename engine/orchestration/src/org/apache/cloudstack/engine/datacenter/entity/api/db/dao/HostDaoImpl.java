@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.TimeZone;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.persistence.TableGenerator;
 
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity;
@@ -62,7 +63,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-
+@Component(value="EngineHostDao")
 @Local(value = { HostDao.class })
 @DB(txn = false)
 @TableGenerator(name = "host_req_sq", table = "op_host", pkColumnName = "id", valueColumnName = "sequence", allocationSize = 1)
@@ -115,9 +116,9 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected final Attribute _msIdAttr;
     protected final Attribute _pingTimeAttr;
 
-    protected final HostDetailsDaoImpl _detailsDao = ComponentLocator.inject(HostDetailsDaoImpl.class);
-    protected final HostTagsDaoImpl _hostTagsDao = ComponentLocator.inject(HostTagsDaoImpl.class);
-    protected final ClusterDaoImpl _clusterDao = ComponentLocator.inject(ClusterDaoImpl.class);
+    @Inject protected HostDetailsDao _detailsDao;
+    @Inject protected HostTagsDao _hostTagsDao;
+    @Inject protected ClusterDao _clusterDao;
     
 
     public HostDaoImpl() {

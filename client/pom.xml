@@ -199,7 +199,7 @@
               <maxIdleTime>60000</maxIdleTime>
             </connector>
           </connectors>
-          <jvmArgs>-XX:MaxPermSize=256m -Xmx2g</jvmArgs>
+          <jvmArgs>-XX:MaxPermSize=512m -Xmx2g</jvmArgs>
           <contextPath>/client</contextPath>
           <webXml>${basedir}/target/${project.artifactId}-${project.version}/WEB-INF/web.xml</webXml>
           <webAppSourceDirectory>${basedir}/target/${project.artifactId}-${project.version}</webAppSourceDirectory>
