@@ -22,7 +22,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-public class AsyncCallFuture<T> implements Future<T> {
+public class AsyncCallFuture<T> implements Future<T>, AsyncCompletionCallback<T> {
 
 	Object _completed = new Object();
 	boolean _done = false;
@@ -72,6 +72,7 @@ public class AsyncCallFuture<T> implements Future<T> {
 		return _done;
 	}
 
+	@Override
 	public void complete(T resultObject) {
 		_resultObject = resultObject;
 		synchronized(_completed) {

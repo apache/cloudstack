@@ -61,6 +61,7 @@ public class AsyncCallbackDispatcher<T, R> implements AsyncCompletionCallback {
             public Object intercept(Object arg0, Method arg1, Object[] arg2,
                 MethodProxy arg3) throws Throwable {
                 _callbackMethod = arg1;
+                _callbackMethod.setAccessible(true);
                 return null;
             }
         }, 
