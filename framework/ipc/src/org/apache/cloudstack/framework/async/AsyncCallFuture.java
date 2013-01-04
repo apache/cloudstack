@@ -22,16 +22,13 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-public class AsyncCallFuture<T> implements Future<T>, AsyncCompletionCallback<T> {
-
-	AsyncCompletionCallback <T> _callback;
+public class AsyncCallFuture<T> implements Future<T> {
 
 	Object _completed = new Object();
 	boolean _done = false;
 	T _resultObject;		// we will store a copy of the result object
 	
-	public AsyncCallFuture(AsyncCompletionCallback <T> callback) {
-		_callback = callback;
+	public AsyncCallFuture() {
 	}
 	
 	@Override
@@ -75,18 +72,7 @@ public class AsyncCallFuture<T> implements Future<T>, AsyncCompletionCallback<T>
 		return _done;
 	}
 
-	@Override
 	public void complete(T resultObject) {
-		_resultObject = resultObject;
-		synchronized(_completed) {
-			_done = true;
-			_completed.notifyAll();
-		}
-		
-		_callback.complete(resultObject);
-	}
-	
-	public void inplaceComplete(T resultObject) {
 		_resultObject = resultObject;
 		synchronized(_completed) {
 			_done = true;
