@@ -582,6 +582,9 @@ public class ApiDispatcher {
             if (internalId != null)
                 break;
         }
+        if (internalId == null && s_logger.isDebugEnabled()) {
+            s_logger.debug("Object entity with uuid=" + uuid + " does not exist in the database.");
+        }
         return internalId;
     }
 
@@ -655,11 +658,6 @@ public class ApiDispatcher {
                                 if (token.isEmpty())
                                     break;
                                 Long internalId = translateUuidToInternalId(token, annotation);
-                                // If id is null, entity with the uuid was not found, throw exception
-                                if (internalId == null) {
-                                    throw new InvalidParameterValueException("No entity with " + field.getName() + "(uuid)="
-                                            + paramObj.toString() + " was found in the database.");
-                                }
                                 listParam.add(internalId);
                                 break;
                             case LONG: {
@@ -679,11 +677,6 @@ public class ApiDispatcher {
                 if (paramObj.toString().isEmpty())
                     break;
                 Long internalId = translateUuidToInternalId(paramObj.toString(), annotation);
-                // If id is null, entity with the uuid was not found, throw exception
-                if (internalId == null) {
-                    throw new InvalidParameterValueException("Object entity with " + field.getName() + "(uuid)="
-                            + paramObj.toString() + " was not found.");
-                }
                 field.set(cmdObj, internalId);
                 break;
             case LONG:
