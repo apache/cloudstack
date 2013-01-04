@@ -160,11 +160,11 @@ class CloudMonkeyShell(cmd.Cmd, object):
                     elif 'type' in arg:
                         print colored.green(arg),
                     elif 'state' in arg or 'count' in arg:
-                        print colored.yellow(arg),
-                    elif 'id =' in arg:
-                        print colored.cyan(arg),
-                    elif 'name =' in arg:
                         print colored.magenta(arg),
+                    elif 'id =' in arg:
+                        print colored.yellow(arg),
+                    elif 'name =' in arg:
+                        print colored.cyan(arg),
                     else:
                         print arg,
                 else:
@@ -203,7 +203,8 @@ class CloudMonkeyShell(cmd.Cmd, object):
                 print printer
 
         def print_result_as_dict(result, result_filter=None):
-            for key in result.keys():
+            for key in sorted(result.keys(),
+                              key=lambda x: x!='id' and x!='count' and x):
                 if not (isinstance(result[key], list) or
                         isinstance(result[key], dict)):
                     self.print_shell("%s = %s" % (key, result[key]))
@@ -268,7 +269,11 @@ class CloudMonkeyShell(cmd.Cmd, object):
             while timeout > 0:
                 response = process_json(conn.make_request_with_auth(command,
                                                                     requests))
-                result = response[response.keys()[0]]
+                responsekeys = filter(lambda x: 'response' in x,
+                                      response.keys())
+                if len(responsekeys) < 1:
+                    continue
+                result = response[responsekeys[0]]
                 jobstatus = result['jobstatus']
                 if jobstatus == 2:
                     jobresult = result["jobresult"]
@@ -346,9 +351,9 @@ class CloudMonkeyShell(cmd.Cmd, object):
         if result is None:
             return
         try:
-            # Response is in the key "apiname+response" (lowercase)
-            self.print_result(result[api_name.lower() + 'response'],
-                              field_filter)
+            responsekeys = filter(lambda x: 'response' in x, result.keys())
+            for responsekey in responsekeys:
+                self.print_result(result[responsekey], field_filter)
             print
         except Exception as e:
             self.print_shell("🙈  Error on parsing and printing", e)
