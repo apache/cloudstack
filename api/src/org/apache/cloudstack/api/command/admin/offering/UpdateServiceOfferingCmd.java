@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.offering;
 
-import com.cloud.offering.DiskOffering;
 import org.apache.cloudstack.api.*;
 import org.apache.log4j.Logger;
 
@@ -33,7 +32,7 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType= DiskOffering.class,
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=ServiceOfferingResponse.class,
             required=true, description="the ID of the service offering to be updated")
     private Long id;
 

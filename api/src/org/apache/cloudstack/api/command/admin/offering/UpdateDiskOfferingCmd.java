@@ -38,7 +38,7 @@ public class UpdateDiskOfferingCmd extends BaseCmd{
     @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="updates alternate display text of the disk offering with this value", length=4096)
     private String displayText;
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=DiskOffering.class,
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=DiskOfferingResponse.class,
             required=true, description="ID of the disk offering")
     private Long id;
 

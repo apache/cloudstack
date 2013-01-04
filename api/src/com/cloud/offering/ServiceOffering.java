@@ -16,12 +16,15 @@
 // under the License.
 package com.cloud.offering;
 
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
+
 import java.util.Date;
 
 /**
  * offered.
  */
-public interface ServiceOffering {
+public interface ServiceOffering extends InternalIdentity, Identity {
     public static final String consoleProxyDefaultOffUniqueName = "Cloud.com-ConsoleProxy";
     public static final String ssvmDefaultOffUniqueName = "Cloud.com-SecondaryStorage";
     public static final String routerDefaultOffUniqueName = "Cloud.Com-SoftwareRouter";
@@ -31,10 +34,6 @@ public interface ServiceOffering {
         local,
         shared
     }
-
-    long getId();
-
-    String getUuid();
 
     String getDisplayText();
 
