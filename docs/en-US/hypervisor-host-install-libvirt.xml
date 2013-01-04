@@ -45,6 +45,7 @@
             <programlisting>exec /usr/sbin/libvirtd -d</programlisting>
             <para>to (just add -l)</para>
             <programlisting>exec /usr/sbin/libvirtd -d -l</programlisting>
+            <para>You will also want to edit <filename>/etc/libvirt/qemu.conf</filename> and make sure that "vnc_listen = 0.0.0.0" is uncommented.</para>
         </listitem>
         <listitem>
             <para>Restart libvirt</para>
