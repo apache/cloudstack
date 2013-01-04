@@ -132,6 +132,7 @@
     <dependency>
       <groupId>mysql</groupId>
       <artifactId>mysql-connector-java</artifactId>
+      <version>${cs.mysql.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
