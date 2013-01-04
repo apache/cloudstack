@@ -18,6 +18,7 @@ package com.cloud.network.lb.dao;
 
 import java.util.List;
 
+import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
@@ -45,16 +46,20 @@ public class ElasticLbVmMapDaoImpl extends GenericDaoBase<ElasticLbVmMapVO, Long
     @Inject protected LoadBalancerDao _loadbalancerDao;
 
     
-    protected final SearchBuilder<ElasticLbVmMapVO> AllFieldsSearch;
-    protected final SearchBuilder<ElasticLbVmMapVO> UnusedVmSearch;
-    protected final SearchBuilder<ElasticLbVmMapVO> LoadBalancersForElbVmSearch;
+    protected SearchBuilder<ElasticLbVmMapVO> AllFieldsSearch;
+    protected SearchBuilder<ElasticLbVmMapVO> UnusedVmSearch;
+    protected SearchBuilder<ElasticLbVmMapVO> LoadBalancersForElbVmSearch;
 
 
-    protected final SearchBuilder<DomainRouterVO> ElbVmSearch;
+    protected SearchBuilder<DomainRouterVO> ElbVmSearch;
     
-    protected final SearchBuilder<LoadBalancerVO> LoadBalancerSearch;
+    protected SearchBuilder<LoadBalancerVO> LoadBalancerSearch;
    
-    protected ElasticLbVmMapDaoImpl() {
+    public ElasticLbVmMapDaoImpl() {
+    }
+    
+    @PostConstruct
+    protected void init() {
         AllFieldsSearch  = createSearchBuilder();
         AllFieldsSearch.and("ipId", AllFieldsSearch.entity().getIpAddressId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("lbId", AllFieldsSearch.entity().getLbId(), SearchCriteria.Op.EQ);

@@ -234,7 +234,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     protected List<DeploymentPlanner> _planners;
 
     @Inject
-    protected Adapters<HostAllocator> _hostAllocators;
+    protected List<HostAllocator> _hostAllocators;
 
     @Inject
     protected ResourceManager _resourceMgr;
@@ -1560,13 +1560,15 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
     @Override
     public boolean isVirtualMachineUpgradable(VirtualMachine vm, ServiceOffering offering) {
-        Enumeration<HostAllocator> en = _hostAllocators.enumeration();
-        boolean isMachineUpgradable = true;
-        while (isMachineUpgradable && en.hasMoreElements()) {
-            final HostAllocator allocator = en.nextElement();
-            isMachineUpgradable = allocator.isVirtualMachineUpgradable(vm, offering);
+        boolean isMachineUpgradable = true;    	
+        for(HostAllocator allocator : _hostAllocators) {
+        	isMachineUpgradable = allocator.isVirtualMachineUpgradable(vm, offering);
+        	if(isMachineUpgradable)
+        		continue;
+        	else
+        		break;
         }
-
+        
         return isMachineUpgradable;
     }
 

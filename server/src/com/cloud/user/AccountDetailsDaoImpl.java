@@ -22,6 +22,8 @@ import java.util.Map;
 
 import javax.ejb.Local;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -30,6 +32,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteriaService;
 
+@Component
 @Local(value={AccountDetailsDao.class})
 public class AccountDetailsDaoImpl extends GenericDaoBase<AccountDetailVO, Long> implements AccountDetailsDao {
 	protected final SearchBuilder<AccountDetailVO> accountSearch;

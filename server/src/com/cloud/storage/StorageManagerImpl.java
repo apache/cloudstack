@@ -332,7 +332,8 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
     @Inject
     protected List<StoragePoolAllocator> _storagePoolAllocators;
 
-    @Inject
+    // TODO : we don't have any instantiated pool discover, disable injection temporarily
+    // @Inject
     protected List<StoragePoolDiscoverer> _discoverers;
 
 

@@ -50,7 +50,7 @@ public class CloudStartupServlet extends HttpServlet implements ServletContextLi
 		
 	    // Save Configuration Values
         //ComponentLocator loc = ComponentLocator.getLocator(ConfigurationServer.Name);
-	    ConfigurationServer c = (ConfigurationServer)ComponentLocator.getComponent(ConfigurationServer.Name);
+	    ConfigurationServer c = (ConfigurationServer)ComponentContext.getCompanent(ConfigurationServer.class);
 	    //ConfigurationServer c = new ConfigurationServerImpl();
 	    try {
 	    	c.persistDefaultValues();

@@ -108,7 +108,9 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
 
     ScheduledExecutorService _executor;
     int _externalNetworkStatsInterval;
-    private final static IdentityService _identityService = (IdentityService)ComponentLocator.getLocator(ManagementServer.Name).getManager(IdentityService.class); 
+
+    // obsolete
+    // private final static IdentityService _identityService = (IdentityService)ComponentLocator.getLocator(ManagementServer.Name).getManager(IdentityService.class); 
     
     private static final org.apache.log4j.Logger s_logger = Logger.getLogger(ExternalNetworkDeviceManagerImpl.class);
     protected String _name;

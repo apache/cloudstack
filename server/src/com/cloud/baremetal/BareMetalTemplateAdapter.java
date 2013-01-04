@@ -23,6 +23,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.commands.DeleteIsoCmd;
 import com.cloud.api.commands.RegisterIsoCmd;
@@ -47,6 +48,7 @@ import com.cloud.user.Account;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+@Component
 @Local(value=TemplateAdapter.class)
 public class BareMetalTemplateAdapter extends TemplateAdapterBase implements TemplateAdapter {
 	private final static Logger s_logger = Logger.getLogger(BareMetalTemplateAdapter.class);

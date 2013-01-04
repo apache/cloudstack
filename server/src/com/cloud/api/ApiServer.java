@@ -161,7 +161,7 @@ public class ApiServer implements HttpRequestHandler {
         s_pluggableServiceCommands = new ArrayList<String>();
     }
 
-    private ApiServer() {
+    public ApiServer() {
     }
 
     public static void initApiServer(String[] apiConfig) {

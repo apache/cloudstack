@@ -41,6 +41,7 @@ import java.util.regex.Pattern;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import javax.inject.Inject;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
@@ -110,38 +111,23 @@ import com.cloud.uuididentity.dao.IdentityDao;
 public class ConfigurationServerImpl implements ConfigurationServer {
     public static final Logger s_logger = Logger.getLogger(ConfigurationServerImpl.class.getName());
 
-    private final ConfigurationDao _configDao;
-    private final DataCenterDao _zoneDao;
-    private final HostPodDao _podDao;
-    private final DiskOfferingDao _diskOfferingDao;
-    private final ServiceOfferingDao _serviceOfferingDao;
-    private final NetworkOfferingDao _networkOfferingDao;
-    private final DataCenterDao _dataCenterDao;
-    private final NetworkDao _networkDao;
-    private final VlanDao _vlanDao;    
+    @Inject private ConfigurationDao _configDao;
+    @Inject private DataCenterDao _zoneDao;
+    @Inject private HostPodDao _podDao;
+    @Inject private DiskOfferingDao _diskOfferingDao;
+    @Inject private ServiceOfferingDao _serviceOfferingDao;
+    @Inject private NetworkOfferingDao _networkOfferingDao;
+    @Inject private DataCenterDao _dataCenterDao;
+    @Inject private NetworkDao _networkDao;
+    @Inject private VlanDao _vlanDao;    
     private String _domainSuffix;
-    private final DomainDao _domainDao;
-    private final AccountDao _accountDao;
-    private final ResourceCountDao _resourceCountDao;
-    private final NetworkOfferingServiceMapDao _ntwkOfferingServiceMapDao;
-    private final IdentityDao _identityDao;
+    @Inject private DomainDao _domainDao;
+    @Inject private AccountDao _accountDao;
+    @Inject private ResourceCountDao _resourceCountDao;
+    @Inject private NetworkOfferingServiceMapDao _ntwkOfferingServiceMapDao;
+    @Inject private IdentityDao _identityDao;
 
     public ConfigurationServerImpl() {
-        ComponentLocator locator = ComponentLocator.getLocator(Name);
-        _configDao = locator.getDao(ConfigurationDao.class);
-        _zoneDao = locator.getDao(DataCenterDao.class);
-        _podDao = locator.getDao(HostPodDao.class);
-        _diskOfferingDao = locator.getDao(DiskOfferingDao.class);
-        _serviceOfferingDao = locator.getDao(ServiceOfferingDao.class);
-        _networkOfferingDao = locator.getDao(NetworkOfferingDao.class);
-        _dataCenterDao = locator.getDao(DataCenterDao.class);
-        _networkDao = locator.getDao(NetworkDao.class);
-        _vlanDao = locator.getDao(VlanDao.class);
-        _domainDao = locator.getDao(DomainDao.class);
-        _accountDao = locator.getDao(AccountDao.class);
-        _resourceCountDao = locator.getDao(ResourceCountDao.class);
-        _ntwkOfferingServiceMapDao = locator.getDao(NetworkOfferingServiceMapDao.class);
-        _identityDao = locator.getDao(IdentityDao.class);
     }
 
     @Override

@@ -24,6 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -54,6 +55,7 @@ import com.cloud.utils.time.InaccurateClock;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 
+@Component
 public class AgentMonitor extends Thread implements Listener {
     private static Logger s_logger = Logger.getLogger(AgentMonitor.class);
     private static Logger status_Logger = Logger.getLogger(Status.class);
