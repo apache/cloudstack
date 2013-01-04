@@ -266,7 +266,11 @@ class CloudMonkeyShell(cmd.Cmd, object):
             command = "queryAsyncJobResult"
             requests = {'jobid': jobId}
             timeout = int(self.timeout)
+            pollperiod = 3
             while timeout > 0:
+                progress = int((int(self.timeout) - timeout) / pollperiod ) + 1
+                print '\r' + '.' * progress,
+                sys.stdout.flush()
                 response = process_json(conn.make_request_with_auth(command,
                                                                     requests))
                 responsekeys = filter(lambda x: 'response' in x,
@@ -282,9 +286,10 @@ class CloudMonkeyShell(cmd.Cmd, object):
                                      jobresult["errortext"])
                     return
                 elif jobstatus == 1:
+                    print '\r',
                     return response
-                time.sleep(4)
-                timeout = timeout - 4
+                time.sleep(pollperiod)
+                timeout = timeout - pollperiod
                 logger.debug("job: %s to timeout in %ds" % (jobId, timeout))
             self.print_shell("Error:", "Async query timeout for jobid=", jobId)
 
