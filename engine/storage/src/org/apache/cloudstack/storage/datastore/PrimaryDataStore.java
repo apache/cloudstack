@@ -36,7 +36,7 @@ public interface PrimaryDataStore extends PrimaryDataStoreInfo {
 
     List<VolumeInfo> getVolumes();
 
-    boolean deleteVolume(VolumeInfo volume);
+    void deleteVolumeAsync(VolumeInfo volume, AsyncCompletionCallback<CommandResult> callback);
 
     void createVolumeAsync(VolumeInfo vo, VolumeDiskType diskType, AsyncCompletionCallback<CommandResult> callback);
 

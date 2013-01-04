@@ -23,7 +23,7 @@ public class CommandResult {
     private String result;
     
     public CommandResult() {
-        this.success = false;
+        this.success = true;
         this.result = "";
     }
     

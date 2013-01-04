@@ -125,6 +125,7 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 	Long podId;
 	HostVO host;
 	String primaryName = "my primary data store";
+	PrimaryDataStoreInfo primaryStore;
 	
     @Test(priority = -1)
 	public void setUp() {
@@ -270,21 +271,29 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 		}
 	}
 
-	private VolumeVO createVolume(long templateId, long dataStoreId) {
+	private VolumeVO createVolume(Long templateId, long dataStoreId) {
 		VolumeVO volume = new VolumeVO(1000, new RootDisk().toString(), UUID.randomUUID().toString(), templateId);
 		volume.setPoolId(dataStoreId);
 		volume = volumeDao.persist(volume);
 		return volume;
-
 	}
 
 	@Test(priority=2)
 	public void createVolumeFromTemplate() {
 		TemplateEntity te = createTemplate();
-		PrimaryDataStoreInfo dataStoreInfo = createPrimaryDataStore();
-		VolumeVO volume = createVolume(te.getId(), dataStoreInfo.getId());
+		primaryStore = createPrimaryDataStore();
+		VolumeVO volume = createVolume(te.getId(), primaryStore.getId());
 		VolumeEntity ve = volumeService.getVolumeEntity(volume.getId());
-		ve.createVolumeFromTemplate(dataStoreInfo.getId(), new VHD(), te);
+		ve.createVolumeFromTemplate(primaryStore.getId(), new VHD(), te);
+		ve.destroy();
+	}
+	
+	@Test(priority=3) 
+	public void createDataDisk() {
+	    VolumeVO volume = createVolume(null, primaryStore.getId());
+	    VolumeEntity ve = volumeService.getVolumeEntity(volume.getId());
+	    ve.createVolume(primaryStore.getId(), new VHD());
+	    ve.destroy();
 	}
 	
 	//@Test(priority=3)

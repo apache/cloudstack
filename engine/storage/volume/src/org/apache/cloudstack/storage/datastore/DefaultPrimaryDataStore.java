@@ -111,8 +111,13 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
     }
 
     @Override
-    public boolean deleteVolume(VolumeInfo volume) {
-        return this.driver.deleteVolume((VolumeObject)volume);
+    public void deleteVolumeAsync(VolumeInfo volume, AsyncCompletionCallback<CommandResult> callback) {
+        CommandResult result = new CommandResult();
+        if (volume.isAttachedVM()) {
+            result.setResult("Can't delete volume: " + volume.getId() + ", if it's attached to a VM");
+            callback.complete(result);
+        }
+        this.driver.deleteVolumeAsync((VolumeObject)volume, callback);
     }
 
     @Override

@@ -17,6 +17,7 @@
   <context:component-scan base-package="com.cloud.utils.component" />
   <context:component-scan base-package="com.cloud.host.dao" />
   <context:component-scan base-package="com.cloud.dc.dao" />
+  <context:component-scan base-package="com.cloud.cluster.agentlb.dao" />
  
    <context:component-scan base-package=" com.cloud.upgrade.dao" />
   <tx:annotation-driven transaction-manager="transactionManager" />

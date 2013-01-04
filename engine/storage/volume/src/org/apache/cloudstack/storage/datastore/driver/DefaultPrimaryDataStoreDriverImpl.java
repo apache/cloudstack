@@ -12,7 +12,7 @@ import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.CreateVolumeAnswer;
 import org.apache.cloudstack.storage.command.CreateVolumeCommand;
 import org.apache.cloudstack.storage.command.CreateVolumeFromBaseImageCommand;
-import org.apache.cloudstack.storage.command.DeleteVolume;
+import org.apache.cloudstack.storage.command.DeleteVolumeCommand;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
 import org.apache.cloudstack.storage.to.ImageOnPrimayDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeTO;
@@ -72,7 +72,7 @@ public class DefaultPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         ep.sendMessageAsync(createCmd, caller);
     }
     
-    protected Void createVolumeAsyncCallback(AsyncCallbackDispatcher<DefaultPrimaryDataStoreDriverImpl, Answer> callback, CreateVolumeContext<CommandResult> context) {
+    public Void createVolumeAsyncCallback(AsyncCallbackDispatcher<DefaultPrimaryDataStoreDriverImpl, Answer> callback, CreateVolumeContext<CommandResult> context) {
         CommandResult result = new CommandResult();
         CreateVolumeAnswer volAnswer = (CreateVolumeAnswer) callback.getResult();
         if (volAnswer.getResult()) {
@@ -85,14 +85,27 @@ public class DefaultPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         context.getParentCallback().complete(result);
         return null;
     }
-
+  
     @Override
-    public boolean deleteVolume(VolumeObject vo) {
-        DeleteVolume cmd = new DeleteVolume((VolumeInfo)vo);
+    public void deleteVolumeAsync(VolumeObject vo, AsyncCompletionCallback<CommandResult> callback) {
+        DeleteVolumeCommand cmd = new DeleteVolumeCommand(this.dataStore.getVolumeTO(vo));
         List<EndPoint> endPoints = vo.getDataStore().getEndPoints();
-        sendOutCommand(cmd, endPoints);
-
-        return true;
+        EndPoint ep = endPoints.get(0);
+        AsyncRpcConext<CommandResult> context = new AsyncRpcConext<CommandResult>(callback);
+        AsyncCallbackDispatcher<DefaultPrimaryDataStoreDriverImpl, Answer> caller = AsyncCallbackDispatcher.create(this);
+        caller.setCallback(caller.getTarget().deleteVolumeCallback(null, null))
+            .setContext(context);
+        ep.sendMessageAsync(cmd, caller);
+    }
+    
+    public Void deleteVolumeCallback(AsyncCallbackDispatcher<DefaultPrimaryDataStoreDriverImpl, Answer> callback, AsyncRpcConext<CommandResult> context) {
+        CommandResult result = new CommandResult();
+        Answer answer = callback.getResult();
+        if (!answer.getResult()) {
+            result.setResult(answer.getDetails());
+        }
+        context.getParentCallback().complete(result);
+        return null;
     }
 
     @Override
@@ -105,33 +118,6 @@ public class DefaultPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
     public boolean revokeAccess(VolumeObject vol, EndPoint ep) {
         // TODO Auto-generated method stub
         return true;
-    }
-
-    protected Answer sendOutCommand(Command cmd, List<EndPoint> endPoints) {
-        Answer answer = null;
-        int retries = 3;
-        int i = 0;
-        for (EndPoint ep : endPoints) {
-            answer = ep.sendMessage(cmd);
-            if (answer == null || answer.getDetails() != null) {
-                if (i < retries) {
-                    s_logger.debug("create volume failed, retrying: " + i);
-                }
-                i++;
-            } else {
-                break;
-            }
-        }
-        
-        if (answer == null || answer.getDetails() != null) {
-            if (answer == null) {
-                throw new CloudRuntimeException("Failed to created volume");
-            } else {
-                throw new CloudRuntimeException(answer.getDetails());
-            }
-        }
-        
-        return answer;
     }
     
     private class CreateVolumeFromBaseImageContext<T> extends AsyncRpcConext<T> {

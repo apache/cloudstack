@@ -158,4 +158,9 @@ public class VolumeObject implements VolumeInfo {
     public String getName() {
         return this.volumeVO.getName();
     }
+
+    @Override
+    public boolean isAttachedVM() {
+        return (this.volumeVO.getInstanceId() == null) ? false : true;
+    }
 }

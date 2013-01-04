@@ -42,4 +42,5 @@ public interface VolumeInfo {
 	public Date getUpdatedDate();
 	public String getOwner();
 	public String getName();
+	public boolean isAttachedVM();
 }

@@ -23,11 +23,11 @@ import org.apache.cloudstack.storage.to.VolumeTO;
 import com.cloud.agent.api.Command;
 
 public class CreateVolumeCommand extends Command implements StorageSubSystemCommand {
-    protected VolumeTO volumeInfo;
+    protected VolumeTO volumeTO;
 
-    public CreateVolumeCommand(VolumeTO volumeInfo) {
+    public CreateVolumeCommand(VolumeTO volumeTO) {
         super();
-        this.volumeInfo = volumeInfo;
+        this.volumeTO = volumeTO;
     }
 
     protected CreateVolumeCommand() {
@@ -38,6 +38,10 @@ public class CreateVolumeCommand extends Command implements StorageSubSystemComm
     public boolean executeInSequence() {
         // TODO Auto-generated method stub
         return false;
+    }
+    
+    public VolumeTO getVolume() {
+        return this.volumeTO;
     }
 
 }

@@ -11,6 +11,7 @@ public class VolumeTO {
     private final VolumeDiskType diskType;
     private PrimaryDataStoreTO dataStore;
     private final String name;
+    private final long size;
     public VolumeTO(VolumeInfo volume) {
         this.uuid = volume.getUuid();
         this.path = volume.getPath();
@@ -22,6 +23,7 @@ public class VolumeTO {
             this.dataStore = null;
         }
         this.name = volume.getName();
+        this.size = volume.getSize();
     }
     
     public String getUuid() {
@@ -50,5 +52,9 @@ public class VolumeTO {
     
     public String getName() {
         return this.name;
+    }
+    
+    public long getSize() {
+        return this.size;
     }
 }

@@ -54,18 +54,18 @@ public class VolumeManagerImpl implements VolumeManager {
     
     private void initStateMachine() {
             s_fsm.addTransition(Volume.State.Allocated, Event.CreateRequested, Volume.State.Creating);
-            s_fsm.addTransition(Volume.State.Allocated, Event.DestroyRequested, Volume.State.Destroy);
+            s_fsm.addTransition(Volume.State.Allocated, Event.DestroyRequested, Volume.State.Destroying);
             s_fsm.addTransition(Volume.State.Creating, Event.OperationRetry, Volume.State.Creating);
             s_fsm.addTransition(Volume.State.Creating, Event.OperationFailed, Volume.State.Allocated);
             s_fsm.addTransition(Volume.State.Creating, Event.OperationSucceeded, Volume.State.Ready);
-            s_fsm.addTransition(Volume.State.Creating, Event.DestroyRequested, Volume.State.Destroy);
+            s_fsm.addTransition(Volume.State.Creating, Event.DestroyRequested, Volume.State.Destroying);
             s_fsm.addTransition(Volume.State.Creating, Event.CreateRequested, Volume.State.Creating);            
             s_fsm.addTransition(Volume.State.Allocated, Event.UploadRequested, Volume.State.UploadOp);
             s_fsm.addTransition(Volume.State.UploadOp, Event.CopyRequested, Volume.State.Creating);// CopyRequested for volume from sec to primary storage            
             s_fsm.addTransition(Volume.State.Creating, Event.CopySucceeded, Volume.State.Ready);
             s_fsm.addTransition(Volume.State.Creating, Event.CopyFailed, Volume.State.UploadOp);// Copying volume from sec to primary failed.  
-            s_fsm.addTransition(Volume.State.UploadOp, Event.DestroyRequested, Volume.State.Destroy);
-            s_fsm.addTransition(Volume.State.Ready, Event.DestroyRequested, Volume.State.Destroy);
+            s_fsm.addTransition(Volume.State.UploadOp, Event.DestroyRequested, Volume.State.Destroying);
+            s_fsm.addTransition(Volume.State.Ready, Event.DestroyRequested, Volume.State.Destroying);
             s_fsm.addTransition(Volume.State.Destroy, Event.ExpungingRequested, Volume.State.Expunging);
             s_fsm.addTransition(Volume.State.Ready, Event.SnapshotRequested, Volume.State.Snapshotting);
             s_fsm.addTransition(Volume.State.Snapshotting, Event.OperationSucceeded, Volume.State.Ready);
@@ -74,6 +74,9 @@ public class VolumeManagerImpl implements VolumeManager {
             s_fsm.addTransition(Volume.State.Migrating, Event.OperationSucceeded, Volume.State.Ready);
             s_fsm.addTransition(Volume.State.Migrating, Event.OperationFailed, Volume.State.Ready);
             s_fsm.addTransition(Volume.State.Destroy, Event.OperationSucceeded, Volume.State.Destroy);
+            s_fsm.addTransition(Volume.State.Destroying, Event.OperationSucceeded, Volume.State.Destroy);
+            s_fsm.addTransition(Volume.State.Destroying, Event.OperationFailed, Volume.State.Destroying);
+            s_fsm.addTransition(Volume.State.Destroying, Event.DestroyRequested, Volume.State.Destroying);
     }
     
     @Override

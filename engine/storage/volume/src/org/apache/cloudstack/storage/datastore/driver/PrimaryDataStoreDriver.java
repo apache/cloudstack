@@ -14,7 +14,7 @@ public interface PrimaryDataStoreDriver {
 
     void createVolumeFromBaseImageAsync(VolumeObject volume, TemplateOnPrimaryDataStoreInfo template, AsyncCompletionCallback<CommandResult> callback);
 
-    boolean deleteVolume(VolumeObject vo);
+    void deleteVolumeAsync(VolumeObject vo, AsyncCompletionCallback<CommandResult> callback);
 
     String grantAccess(VolumeObject vol, EndPoint ep);
 

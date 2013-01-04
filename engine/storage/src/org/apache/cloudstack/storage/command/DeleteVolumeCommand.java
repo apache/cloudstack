@@ -18,23 +18,27 @@
  */
 package org.apache.cloudstack.storage.command;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.storage.to.VolumeTO;
 
 import com.cloud.agent.api.Command;
 
-public class DeleteVolume extends Command {
-
-    public DeleteVolume(VolumeInfo volume) {
-        
+public class DeleteVolumeCommand extends Command implements StorageSubSystemCommand {
+    private VolumeTO volume;
+    public DeleteVolumeCommand(VolumeTO volume) {
+        this.volume = volume;
     }
     
-    protected DeleteVolume() {
+    protected DeleteVolumeCommand() {
         
     }
     @Override
     public boolean executeInSequence() {
         // TODO Auto-generated method stub
         return false;
+    }
+    
+    public VolumeTO getVolume() {
+        return this.volume;
     }
 
 }

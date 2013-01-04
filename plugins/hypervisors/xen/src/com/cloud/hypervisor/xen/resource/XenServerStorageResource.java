@@ -34,7 +34,9 @@ import org.apache.cloudstack.storage.command.CopyTemplateToPrimaryStorageCmd;
 import org.apache.cloudstack.storage.command.CopyTemplateToPrimaryStorageAnswer;
 import org.apache.cloudstack.storage.command.CreatePrimaryDataStoreCmd;
 import org.apache.cloudstack.storage.command.CreateVolumeAnswer;
+import org.apache.cloudstack.storage.command.CreateVolumeCommand;
 import org.apache.cloudstack.storage.command.CreateVolumeFromBaseImageCommand;
+import org.apache.cloudstack.storage.command.DeleteVolumeCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.datastore.protocol.DataStoreProtocol;
 import org.apache.cloudstack.storage.to.ImageDataStoreTO;
@@ -72,6 +74,7 @@ import com.xensource.xenapi.PBD;
 import com.xensource.xenapi.Pool;
 import com.xensource.xenapi.SR;
 import com.xensource.xenapi.Types;
+import com.xensource.xenapi.VBD;
 import com.xensource.xenapi.Types.BadServerResponse;
 import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VDI;
@@ -93,11 +96,96 @@ public class XenServerStorageResource {
             return execute((CreatePrimaryDataStoreCmd) command);
         } else if (command instanceof CreateVolumeFromBaseImageCommand) {
             return execute((CreateVolumeFromBaseImageCommand)command);
+        } else if (command instanceof CreateVolumeCommand) {
+            return execute((CreateVolumeCommand) command);
+        } else if (command instanceof DeleteVolumeCommand) {
+            return execute((DeleteVolumeCommand)command);
         }
         return new Answer((Command)command, false, "not implemented yet"); 
     }
     
-    public Answer execute(CreateVolumeFromBaseImageCommand cmd) {
+    protected SR getSRByNameLabel(Connection conn, String nameLabel) throws BadServerResponse, XenAPIException, XmlRpcException {
+        Set<SR> srs = SR.getByNameLabel(conn, nameLabel);
+        if (srs.size() != 1) {
+            throw new CloudRuntimeException("storage uuid: " + nameLabel + " is not unique");
+        }
+        SR poolsr = srs.iterator().next();
+        return poolsr;
+    }
+    
+    protected VDI createVdi(Connection conn, String vdiName, SR sr, long size) throws BadServerResponse, XenAPIException, XmlRpcException {
+        VDI.Record vdir = new VDI.Record();
+        vdir.nameLabel = vdiName;
+        vdir.SR = sr;
+        vdir.type = Types.VdiType.USER;
+
+        vdir.virtualSize = size;
+        VDI vdi = VDI.create(conn, vdir);
+        return vdi;
+    }
+    
+    protected void deleteVDI(Connection conn, VDI vdi) throws BadServerResponse, XenAPIException, XmlRpcException {
+        vdi.destroy(conn);
+    }
+    
+    protected CreateVolumeAnswer execute(CreateVolumeCommand cmd) {
+        VolumeTO volume = cmd.getVolume();
+        PrimaryDataStoreTO primaryDataStore = volume.getDataStore();
+        Connection conn = hypervisorResource.getConnection();
+        VDI vdi = null;
+        boolean result = false;
+        String errorMsg = null;
+        try {
+            SR primaryDataStoreSR = getSRByNameLabel(conn, primaryDataStore.getUuid());
+            vdi = createVdi(conn, volume.getName(), primaryDataStoreSR, volume.getSize());
+            VDI.Record record = vdi.getRecord(conn);
+            result = true;
+            return new CreateVolumeAnswer(cmd, record.uuid);
+        } catch (BadServerResponse e) {
+            s_logger.debug("Failed to create volume", e);
+            errorMsg = e.toString();
+        } catch (XenAPIException e) {
+            s_logger.debug("Failed to create volume", e);
+            errorMsg = e.toString();
+        } catch (XmlRpcException e) {
+            s_logger.debug("Failed to create volume", e);
+            errorMsg = e.toString();
+        } finally {
+            if (!result && vdi != null) {
+                try {
+                    deleteVDI(conn, vdi);
+                } catch (Exception e) {
+                    s_logger.debug("Faled to delete vdi: " + vdi.toString());
+                }
+            }
+        }
+        
+        return new CreateVolumeAnswer(cmd, false, errorMsg);
+    }
+    
+    protected Answer execute(DeleteVolumeCommand cmd) {
+        VolumeTO volume = cmd.getVolume();
+        Connection conn = hypervisorResource.getConnection();
+        String errorMsg = null;
+        try {
+            VDI vdi = VDI.getByUuid(conn, volume.getUuid());
+            deleteVDI(conn, vdi);
+            return new Answer(cmd);
+        } catch (BadServerResponse e) {
+            s_logger.debug("Failed to delete volume", e);
+            errorMsg = e.toString();
+        } catch (XenAPIException e) {
+            s_logger.debug("Failed to delete volume", e);
+            errorMsg = e.toString();
+        } catch (XmlRpcException e) {
+            s_logger.debug("Failed to delete volume", e);
+            errorMsg = e.toString();
+        }
+        
+        return new Answer(cmd, false, errorMsg);
+    }
+    
+    protected Answer execute(CreateVolumeFromBaseImageCommand cmd) {
         VolumeTO volume = cmd.getVolume();
         ImageOnPrimayDataStoreTO baseImage = cmd.getImage();
         Connection conn = hypervisorResource.getConnection();

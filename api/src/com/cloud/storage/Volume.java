@@ -35,7 +35,8 @@ public interface Volume extends ControlledEntity, BasedOn, StateObject<Volume.St
         Migrating("The volume is migrating to other storage pool"),
         Snapshotting("There is a snapshot created on this volume, not backed up to secondary storage yet"),
         Expunging("The volume is being expunging"),
-        Destroy("The volume is destroyed, and can't be recovered."),        
+        Destroy("The volume is destroyed, and can't be recovered."), 
+        Destroying("The volume is destroying, and can't be recovered."),  
         UploadOp ("The volume upload operation is in progress or in short the volume is on secondary storage");            
 
         String _description;

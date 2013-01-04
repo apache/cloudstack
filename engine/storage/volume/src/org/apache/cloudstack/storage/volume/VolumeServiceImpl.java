@@ -98,7 +98,7 @@ public class VolumeServiceImpl implements VolumeService {
         dataStore.createVolumeAsync(vo, diskType, caller);
     }
     
-    protected Void createVolumeCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CommandResult> callback, CreateVolumeContext<VolumeApiResult> context) {
+    public Void createVolumeCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CommandResult> callback, CreateVolumeContext<VolumeApiResult> context) {
         CommandResult result = callback.getResult();
         VolumeObject vo = context.getVolume();
         VolumeApiResult volResult = new VolumeApiResult(vo);
@@ -112,11 +112,55 @@ public class VolumeServiceImpl implements VolumeService {
         context.getParentCallback().complete(volResult);
         return null;
     }
+    
+    private class DeleteVolumeContext<T> extends AsyncRpcConext<T> {
+        private final VolumeObject volume;
+        /**
+         * @param callback
+         */
+        public DeleteVolumeContext(AsyncCompletionCallback<T> callback, VolumeObject volume) {
+            super(callback);
+            this.volume = volume;
+        }
+        
+        public VolumeObject getVolume() {
+            return this.volume;
+        }
+    }
 
     @DB
     @Override
     public void deleteVolumeAsync(VolumeInfo volume, AsyncCompletionCallback<VolumeApiResult> callback) {
+        VolumeObject vo = (VolumeObject)volume;
+        PrimaryDataStore dataStore = vo.getDataStore();
+        vo.stateTransit(Volume.Event.DestroyRequested);
+        if (dataStore == null) {
+            vo.stateTransit(Volume.Event.OperationSucceeded);
+            volDao.remove(vo.getId());
+            return;
+        }
         
+        DeleteVolumeContext<VolumeApiResult> context = new DeleteVolumeContext<VolumeApiResult>(callback, vo);
+        AsyncCallbackDispatcher<VolumeServiceImpl, CommandResult> caller = AsyncCallbackDispatcher.create(this);
+        caller.setCallback(caller.getTarget().deleteVolumeCallback(null, null))
+            .setContext(context);
+        
+        dataStore.deleteVolumeAsync(volume, caller);
+    }
+    
+    public Void deleteVolumeCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CommandResult> callback, DeleteVolumeContext<VolumeApiResult> context) {
+        CommandResult result = callback.getResult();
+        VolumeObject vo = context.getVolume();
+        VolumeApiResult apiResult = new VolumeApiResult(vo);
+        if (result.isSuccess()) {
+            vo.stateTransit(Volume.Event.OperationSucceeded);
+            volDao.remove(vo.getId());
+        } else {
+            vo.stateTransit(Volume.Event.OperationFailed);
+            apiResult.setResult(result.getResult());
+        }
+        context.getParentCallback().complete(apiResult);
+        return null;
     }
 
     @Override

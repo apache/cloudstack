@@ -32,6 +32,10 @@ public class CreateVolumeAnswer extends Answer {
         super(cmd);
         this.volumeUuid = volumeUuid;
     }
+    
+    public CreateVolumeAnswer(Command cmd, boolean status, String result) {
+        super(cmd, status, result);
+    }
 
     public String getVolumeUuid() {
         return this.volumeUuid;
