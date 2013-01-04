@@ -201,14 +201,14 @@ public class ApiServer implements HttpRequestHandler {
         }
 
         // Populate api name and cmd class mappings
-        Reflections reflections = new Reflections("org.apache.cloudstack");
+        Reflections reflections = new Reflections("org.apache.cloudstack.api");
         Set<Class<?>> cmdClasses = reflections.getTypesAnnotatedWith(APICommand.class);
         reflections = new Reflections("com.cloud.api");
         cmdClasses.addAll(reflections.getTypesAnnotatedWith(APICommand.class));
         for(Class<?> cmdClass: cmdClasses) {
             String apiName = cmdClass.getAnnotation(APICommand.class).name();
             if (_apiNameCmdClassMap.containsKey(apiName)) {
-                s_logger.error("Cmd class " + cmdClass.getName() + " conflicts on apiname" + apiName);
+                s_logger.error("API Cmd class " + cmdClass.getName() + " has non-unique apiname" + apiName);
             }
             _apiNameCmdClassMap.put(apiName, cmdClass);
         }
