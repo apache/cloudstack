@@ -50,7 +50,7 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name=ApiConstants.HYPERVISOR, type=CommandType.STRING, description="the hypervisor for which to restrict the search")
     private String hypervisor;
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=TemplateInfo.class,
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=TemplateResponse.class,
             description="the template ID")
     private Long id;
 
