@@ -47,6 +47,12 @@
       <artifactId>axis2-webapp</artifactId>
       <type>war</type>
       <version>${cs.axis2.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>xerces</groupId>
+          <artifactId>xercesImpl</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.ws.commons.axiom</groupId>
@@ -123,6 +129,10 @@
            <groupId>org.apache.xalan</groupId>
            <artifactId>xalan</artifactId>
         </exclusion>
+        <exclusion>
+           <groupId>org.opensaml</groupId>
+          <artifactId>opensaml</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -139,6 +149,10 @@
            <groupId>org.apache.xalan</groupId>
            <artifactId>xalan</artifactId>
         </exclusion>
+        <exclusion>
+           <groupId>org.opensaml</groupId>
+          <artifactId>opensaml</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -150,6 +164,10 @@
         <exclusion>
            <groupId>org.apache.xalan</groupId>
            <artifactId>xalan</artifactId>
+        </exclusion>
+        <exclusion>
+           <groupId>org.opensaml</groupId>
+          <artifactId>opensaml</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -163,6 +181,10 @@
            <groupId>org.apache.xalan</groupId>
            <artifactId>xalan</artifactId>
         </exclusion>
+        <exclusion>
+           <groupId>org.opensaml</groupId>
+          <artifactId>opensaml</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -174,6 +196,10 @@
         <exclusion>
            <groupId>org.apache.xalan</groupId>
            <artifactId>xalan</artifactId>
+        </exclusion>
+        <exclusion>
+           <groupId>org.opensaml</groupId>
+          <artifactId>opensaml</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -240,6 +266,7 @@
     <dependency>
       <groupId>mysql</groupId>
       <artifactId>mysql-connector-java</artifactId>
+      <version>${cs.mysql.version}</version>
       <scope>runtime</scope>
     </dependency>
     <dependency>

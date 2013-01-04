@@ -153,25 +153,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
     }
 
     protected abstract boolean canHandle(NetworkOffering offering, final NetworkType networkType, PhysicalNetwork physicalNetwork);
-/*    protected boolean canHandle(NetworkOffering offering, final NetworkType networkType, final List<String> isolationMethods) {
-        // This guru handles only Guest Isolated network that supports Source nat service
-<<<<<<< HEAD
-        if (dc.getNetworkType() == NetworkType.Advanced && isMyTrafficType(offering.getTrafficType()) 
-                && offering.getGuestType() == Network.GuestType.Isolated && !offering.isSystemOnly()) {
-=======
-        if (networkType == NetworkType.Advanced 
-                && isMyTrafficType(offering.getTrafficType()) 
-                && offering.getGuestType() == Network.GuestType.Isolated
-                && isMyIsolationMethod(isolationMethods)) {
->>>>>>> master
-            return true;
-        } else {
-            s_logger.trace("We only take care of non-system Guest networks of type   " + GuestType.Isolated + " in zone of type "
-                    + NetworkType.Advanced);
-            return false;
-        }
-    }
-*/
+
     @Override
     public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
         DataCenter dc = _dcDao.findById(plan.getDataCenterId());

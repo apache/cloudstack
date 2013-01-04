@@ -582,7 +582,7 @@ class TestSnapshots(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags = ["advanced", "advancedns", "smoke"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "xen"])
     def test_03_volume_from_snapshot(self):
         """Create volumes from snapshots
         """
@@ -995,7 +995,7 @@ class TestSnapshots(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags = ["advanced", "advancedns", "smoke"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "xen"])
     def test_07_template_from_snapshot(self):
         """Create Template from snapshot
         """
@@ -1901,7 +1901,7 @@ class TestSnapshotDetachedDisk(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags = ["advanced", "advancedns"])
+    @attr(tags = ["advanced", "advancedns", "xen"])
     def test_03_snapshot_detachedDisk(self):
         """Test snapshot from detached disk
         """

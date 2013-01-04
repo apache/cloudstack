@@ -29,6 +29,7 @@ import com.cloud.agent.api.CreateLogicalSwitchAnswer;
 import com.cloud.agent.api.CreateLogicalSwitchCommand;
 import com.cloud.agent.api.DeleteLogicalSwitchAnswer;
 import com.cloud.agent.api.DeleteLogicalSwitchCommand;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
@@ -119,8 +120,9 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
             Network userSpecified, Account owner) {
         // Check of the isolation type of the related physical network is STT
         PhysicalNetworkVO physnet = _physicalNetworkDao.findById(plan.getPhysicalNetworkId());
-        if (physnet == null || physnet.getIsolationMethods() == null || !physnet.getIsolationMethods().contains("STT")) {
-            s_logger.debug("Refusing to design this network, the physical isolation type is not STT");
+        DataCenter dc = _dcDao.findById(plan.getDataCenterId());
+        if (!canHandle(offering,dc.getNetworkType(),physnet)) {
+            s_logger.debug("Refusing to design this network");
             return null;
         }
 
@@ -199,6 +201,7 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
             s_logger.info("Implemented OK, network linked to  = " + implemented.getBroadcastUri().toString());
         } catch (URISyntaxException e) {
             s_logger.error("Unable to store logical switch id in broadcast uri, uuid = " + implemented.getUuid(), e);
+            return null;
         }
         
         return implemented;
