@@ -1282,6 +1282,7 @@
     } else {
         if(isSelfOrChildDomainUser(jsonObj.username, jsonObj.accounttype, jsonObj.domainid, jsonObj.iscallerchilddomain)) {
             allowedActions.push("changePassword");
+            allowedActions.push("generateKeys");
         }
     }
     return allowedActions;
