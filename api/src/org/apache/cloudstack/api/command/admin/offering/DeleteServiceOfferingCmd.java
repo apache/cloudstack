@@ -16,8 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.offering;
 
+import com.cloud.offering.DiskOffering;
 import org.apache.cloudstack.api.*;
-import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -33,7 +33,7 @@ public class DeleteServiceOfferingCmd extends BaseCmd{
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType= DomainResponse.class,
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=DiskOffering.class,
             required=true, description="the ID of the service offering")
     private Long id;
 
