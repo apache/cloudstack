@@ -268,7 +268,7 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
 
         // Set capabilities for Firewall service
         Map<Capability, String> firewallCapabilities = new HashMap<Capability, String>();
-        firewallCapabilities.put(Capability.SupportedProtocols, "tcp,udp");
+        firewallCapabilities.put(Capability.SupportedProtocols, "tcp,udp,icmp");
         firewallCapabilities.put(Capability.MultipleIps, "true");
         firewallCapabilities.put(Capability.TrafficStatistics, "per public ip");
         capabilities.put(Service.Firewall, firewallCapabilities);

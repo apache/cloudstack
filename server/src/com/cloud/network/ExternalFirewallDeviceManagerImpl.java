@@ -34,9 +34,11 @@ import com.cloud.agent.api.StartupExternalLoadBalancerCommand;
 import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
+import com.cloud.agent.api.routing.SetFirewallRulesCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
 import com.cloud.agent.api.routing.VpnUsersCfgCommand;
+import com.cloud.agent.api.to.FirewallRuleTO;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
@@ -65,6 +67,7 @@ import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.ExternalFirewallDeviceDao;
+import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.InlineLoadBalancerNicMapDao;
 import com.cloud.network.dao.LoadBalancerDao;
@@ -78,14 +81,17 @@ import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.PortForwardingRule;
+import com.cloud.network.rules.StaticNat;
 import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.resource.ResourceManager;
+import com.cloud.resource.ResourceState;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
+import com.cloud.resource.ResourceStateAdapter.DeleteHostAnswer;
 import com.cloud.server.api.response.ExternalFirewallResponse;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -98,6 +104,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.net.UrlUtil;
 import com.cloud.vm.Nic.ReservationStrategy;
@@ -133,6 +140,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
     @Inject NetworkExternalFirewallDao _networkExternalFirewallDao;
     @Inject VpnUserDao _vpnUsersDao;
     @Inject HostDetailsDao _hostDetailDao;
+    @Inject FirewallRulesDao _fwRulesDao;
 
     private static final org.apache.log4j.Logger s_logger = Logger.getLogger(ExternalFirewallDeviceManagerImpl.class);
     private long _defaultFwCapacity;
@@ -236,14 +244,26 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
             throw new InvalidParameterValueException("Could not find an external firewall with ID: " + hostId);
         }
 
+        DetailVO fwHostDetails = _hostDetailDao.findDetail(hostId, ApiConstants.FIREWALL_DEVICE_ID);
+        long fwDeviceId = Long.parseLong(fwHostDetails.getValue());
+
+        // check if any networks are using this balancer device
+        List<NetworkExternalFirewallVO> networks = _networkExternalFirewallDao.listByFirewallDeviceId(fwDeviceId);
+        if ((networks != null) && !networks.isEmpty()) {
+            throw new CloudRuntimeException("Delete can not be done as there are networks using the firewall device ");
+        }
+
         try {
-            if (_resourceMgr.maintain(hostId) && _resourceMgr.deleteHost(hostId, false, false)) {
-                return true;
-            } else {
-                return false;
-            }
-        } catch (AgentUnavailableException e) {
-            s_logger.debug(e);
+            // put the host in maintenance state in order for it to be deleted
+            externalFirewall.setResourceState(ResourceState.Maintenance);
+            _hostDao.update(hostId, externalFirewall);
+            _resourceMgr.deleteHost(hostId, false, false);
+
+            // delete the external load balancer entry
+            _externalFirewallDeviceDao.remove(fwDeviceId);
+            return true;
+        } catch (Exception e) {
+            s_logger.debug("Failed to delete external firewall device due to " + e.getMessage());
             return false;
         }
     }
@@ -314,6 +334,32 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
         }
         throw new InsufficientNetworkCapacityException("Unable to find a firewall provider with sufficient capcity " +
                 " to implement the network", DataCenter.class, network.getDataCenterId());
+    }
+
+    @DB
+    protected boolean freeFirewallForNetwork(Network network) {
+        Transaction txn = Transaction.currentTxn();
+        GlobalLock deviceMapLock =  GlobalLock.getInternLock("NetworkFirewallDeviceMap");
+        try {
+            if (deviceMapLock.lock(120)) {
+                try {
+                    NetworkExternalFirewallVO fwDeviceForNetwork = _networkExternalFirewallDao.findByNetworkId(network.getId());
+                    if (fwDeviceForNetwork != null) {
+                        _networkExternalFirewallDao.remove(fwDeviceForNetwork.getId());
+                    }
+                } catch (Exception exception) {
+                    txn.rollback();
+                    s_logger.error("Failed to release firewall device for the network" + network.getId() + " due to " + exception.getMessage());
+                    return false;
+                } finally {
+                    deviceMapLock.unlock();
+                }
+            }
+        } finally {
+            deviceMapLock.releaseRef();
+        }
+        txn.commit();
+        return true;
     }
 
     public String getExternalNetworkResourceGuid(long physicalNetworkId, String deviceName, String ip) {
@@ -422,15 +468,21 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
         cmd.setAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG, String.valueOf(guestVlanTag));
         Answer answer = _agentMgr.easySend(externalFirewall.getId(), cmd);
 
+        List<String> reservedIpAddressesForGuestNetwork = _nicDao.listIpAddressInNetwork(network.getId());
+        
         if (answer == null || !answer.getResult()) {
             String action = add ? "implement" : "shutdown";
             String answerDetails = (answer != null) ? answer.getDetails() : "answer was null";
             String msg = "External firewall was unable to " + action + " the guest network on the external firewall in zone " + zone.getName() + " due to " + answerDetails;
             s_logger.error(msg);
+            if (!add && (!reservedIpAddressesForGuestNetwork.contains(network.getGateway()))) {
+                // If we failed the implementation as well, then just return, no complain
+                s_logger.error("Skip the shutdown of guest network on SRX because it seems we didn't implement it as well");
+                return true;
+            }
             throw new ResourceUnavailableException(msg, DataCenter.class, zoneId);
         }
 
-        List<String> reservedIpAddressesForGuestNetwork = _nicDao.listIpAddressInNetwork(network.getId());
         if (add && (!reservedIpAddressesForGuestNetwork.contains(network.getGateway()))) {
             // Insert a new NIC for this guest network to reserve the gateway address
             savePlaceholderNic(network,  network.getGateway());
@@ -447,6 +499,19 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
             }
         }
         
+        // on network shutdown, delete placeHolder nics used for the firewall device
+        if (!add) {
+            List<NicVO> guestIps = _nicDao.listByNetworkId(network.getId());
+            for (NicVO guestIp : guestIps) {
+                // only external firewall and external load balancer will create NicVO with PlaceHolder reservation strategy
+                if (guestIp.getReservationStrategy().equals(ReservationStrategy.PlaceHolder) && guestIp.getIp4Address().equals(network.getGateway())) {
+                    _nicDao.remove(guestIp.getId());
+                }
+            }
+
+            freeFirewallForNetwork(network);
+        }
+
         String action = add ? "implemented" : "shut down";
         s_logger.debug("External firewall has " + action + " the guest network for account " + account.getAccountName() + "(id = " + account.getAccountId() + ") with VLAN tag " + guestVlanTag);
 
@@ -456,6 +521,37 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
     @Override
     public boolean applyFirewallRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
         // Find the external firewall in this zone
+        long zoneId = network.getDataCenterId();
+        DataCenterVO zone = _dcDao.findById(zoneId);
+        ExternalFirewallDeviceVO fwDeviceVO = getExternalFirewallForNetwork(network);
+        // During destroy, device reference may already been clean up, then we just return true
+        if (fwDeviceVO == null) {
+            return true;
+        }
+        HostVO externalFirewall = _hostDao.findById(fwDeviceVO.getHostId());
+
+        assert(externalFirewall != null);
+
+        if (network.getState() == Network.State.Allocated) {
+            s_logger.debug("External firewall was asked to apply firewall rules for network with ID " + network.getId() + "; this network is not implemented. Skipping backend commands.");
+            return true;
+        }
+
+        List<FirewallRuleTO> rulesTO = new ArrayList<FirewallRuleTO>();
+
+        for (FirewallRule rule : rules) {
+            IpAddress sourceIp = _networkMgr.getIp(rule.getSourceIpAddressId());
+            FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, sourceIp.getAddress().addr());
+            rulesTO.add(ruleTO);
+        }
+
+        //Firewall rules configured for staticNAT/PF
+        sendFirewallRules(rulesTO, zone, externalFirewall.getId());
+
+        return true;
+    }
+    
+    public boolean applyStaticNatRules(Network network, List<? extends StaticNat> rules) throws ResourceUnavailableException {
         long zoneId = network.getDataCenterId();
         DataCenterVO zone = _dcDao.findById(zoneId);
         ExternalFirewallDeviceVO fwDeviceVO = getExternalFirewallForNetwork(network);
@@ -469,32 +565,34 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
         }
 
         List<StaticNatRuleTO> staticNatRules = new ArrayList<StaticNatRuleTO>();
-        List<PortForwardingRuleTO> portForwardingRules = new ArrayList<PortForwardingRuleTO>();
-
-        for (FirewallRule rule : rules) {
+        
+        for (StaticNat rule : rules) {
             IpAddress sourceIp = _networkMgr.getIp(rule.getSourceIpAddressId());
             Vlan vlan = _vlanDao.findById(sourceIp.getVlanId());
 
-            if (rule.getPurpose() == Purpose.StaticNat) {
-                StaticNatRule staticNatRule = (StaticNatRule) rule;
-                StaticNatRuleTO ruleTO = new StaticNatRuleTO(staticNatRule, vlan.getVlanTag(), sourceIp.getAddress().addr(), staticNatRule.getDestIpAddress());
-                staticNatRules.add(ruleTO);
-            } else if (rule.getPurpose() == Purpose.PortForwarding) {
-                PortForwardingRuleTO ruleTO = new PortForwardingRuleTO((PortForwardingRule) rule, vlan.getVlanTag(), sourceIp.getAddress().addr());
-                portForwardingRules.add(ruleTO);
-            }
+            StaticNatRuleTO ruleTO = new StaticNatRuleTO(0,vlan.getVlanTag(), sourceIp.getAddress().addr(), -1, -1, rule.getDestIpAddress(), -1, -1, "any", rule.isForRevoke(), false);
+            staticNatRules.add(ruleTO);
         }
-
-        // Apply static nat rules
-        applyStaticNatRules(staticNatRules, zone, externalFirewall.getId());
-
-        // apply port forwarding rules
-        applyPortForwardingRules(portForwardingRules, zone, externalFirewall.getId());
-
+        
+        sendStaticNatRules(staticNatRules, zone, externalFirewall.getId());
+        
         return true;
     }
+    
+    protected void sendFirewallRules(List<FirewallRuleTO> firewallRules, DataCenter zone, long externalFirewallId) throws ResourceUnavailableException {
+        if (!firewallRules.isEmpty()) {
+        	SetFirewallRulesCommand cmd = new SetFirewallRulesCommand(firewallRules);
+            Answer answer = _agentMgr.easySend(externalFirewallId, cmd);
+            if (answer == null || !answer.getResult()) {
+                String details = (answer != null) ? answer.getDetails() : "details unavailable";
+                String msg = "External firewall was unable to apply static nat rules to the SRX appliance in zone " + zone.getName() + " due to: " + details + ".";
+                s_logger.error(msg);
+                throw new ResourceUnavailableException(msg, DataCenter.class, zone.getId());
+            }
+        }
+    }
 
-    protected void applyStaticNatRules(List<StaticNatRuleTO> staticNatRules, DataCenter zone, long externalFirewallId) throws ResourceUnavailableException {
+    protected void sendStaticNatRules(List<StaticNatRuleTO> staticNatRules, DataCenter zone, long externalFirewallId) throws ResourceUnavailableException {
         if (!staticNatRules.isEmpty()) {
             SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(staticNatRules, null);
             Answer answer = _agentMgr.easySend(externalFirewallId, cmd);
@@ -507,7 +605,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
         }
     }
 
-    protected void applyPortForwardingRules(List<PortForwardingRuleTO> portForwardingRules, DataCenter zone, long externalFirewallId) throws ResourceUnavailableException {
+    protected void sendPortForwardingRules(List<PortForwardingRuleTO> portForwardingRules, DataCenter zone, long externalFirewallId) throws ResourceUnavailableException {
         if (!portForwardingRules.isEmpty()) {
             SetPortForwardingRulesCommand cmd = new SetPortForwardingRulesCommand(portForwardingRules);
             Answer answer = _agentMgr.easySend(externalFirewallId, cmd);
@@ -648,7 +746,38 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
 
     @Override
     public DeleteHostAnswer deleteHost(HostVO host, boolean isForced, boolean isForceDeleteStorage) throws UnableDeleteHostException {
-        // TODO Auto-generated method stub
-        return null;
+        if (host.getType() != com.cloud.host.Host.Type.ExternalFirewall) {
+            return null;
+        }
+        return new DeleteHostAnswer(true);
+    }
+    
+    @Override
+    public boolean applyPortForwardingRules(Network network, List<? extends PortForwardingRule> rules) throws ResourceUnavailableException {
+        // Find the external firewall in this zone
+        long zoneId = network.getDataCenterId();
+        DataCenterVO zone = _dcDao.findById(zoneId);
+        ExternalFirewallDeviceVO fwDeviceVO = getExternalFirewallForNetwork(network);
+        HostVO externalFirewall = _hostDao.findById(fwDeviceVO.getHostId());
+
+        assert(externalFirewall != null);
+
+        if (network.getState() == Network.State.Allocated) {
+            s_logger.debug("External firewall was asked to apply firewall rules for network with ID " + network.getId() + "; this network is not implemented. Skipping backend commands.");
+            return true;
+        }
+
+        List<PortForwardingRuleTO> pfRules = new ArrayList<PortForwardingRuleTO>();
+
+        for (PortForwardingRule rule : rules) {
+            IpAddress sourceIp = _networkMgr.getIp(rule.getSourceIpAddressId());
+            Vlan vlan = _vlanDao.findById(sourceIp.getVlanId());
+
+            PortForwardingRuleTO ruleTO = new PortForwardingRuleTO(rule, vlan.getVlanTag(), sourceIp.getAddress().addr());
+            pfRules.add(ruleTO);
+        }
+        
+        sendPortForwardingRules(pfRules, zone, externalFirewall.getId());
+        return true;
     }
 }
