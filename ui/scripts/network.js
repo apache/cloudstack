@@ -867,9 +867,9 @@
                 hiddenTabs.push("addloadBalancer");
               }
 
-              if (isVPC || isAdvancedSGZone || hasSRXFirewall) {
+             // if (isVPC || isAdvancedSGZone || hasSRXFirewall) {
                 hiddenTabs.push('egressRules');
-              }
+             // }
               
               return hiddenTabs;
             },
