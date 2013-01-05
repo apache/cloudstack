@@ -68,6 +68,7 @@ import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkRuleApplier;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.as.AutoScalePolicy;
 import com.cloud.network.as.AutoScalePolicyConditionMapVO;
@@ -92,6 +93,7 @@ import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkServiceMapDao;
+import com.cloud.network.element.LoadBalancingServiceProvider;
 import com.cloud.network.lb.LoadBalancingRule.LbAutoScalePolicy;
 import com.cloud.network.lb.LoadBalancingRule.LbAutoScaleVmGroup;
 import com.cloud.network.lb.LoadBalancingRule.LbAutoScaleVmProfile;
@@ -125,9 +127,9 @@ import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
@@ -147,7 +149,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 @Local(value = { LoadBalancingRulesManager.class, LoadBalancingRulesService.class })
-public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesManager, LoadBalancingRulesService, Manager {
+public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesManager, LoadBalancingRulesService, NetworkRuleApplier, Manager {
     private static final Logger s_logger = Logger.getLogger(LoadBalancingRulesManagerImpl.class);
 
     String _name;
@@ -226,7 +228,8 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
     DataCenterDao _dcDao = null;
     @Inject
     UserDao _userDao;
-
+    @Inject(adapter = LoadBalancingServiceProvider.class)
+    Adapters<LoadBalancingServiceProvider> _lbProviders;
 
     // Will return a string. For LB Stickiness this will be a json, for autoscale this will be "," separated values
     @Override
@@ -324,7 +327,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
 
         List<LoadBalancingRule> rules = Arrays.asList(rule);
 
-        if (!_networkMgr.applyRules(rules, false)) {
+        if (!_networkMgr.applyRules(rules, FirewallRule.Purpose.LoadBalancing, this, false)) {
             s_logger.debug("LB rules' autoscale config are not completely applied");
             return false;
         }
@@ -1119,6 +1122,19 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
             return true;
         }
     }
+    
+    @Override
+    public boolean applyRules(Network network, Purpose purpose, List<? extends FirewallRule> rules) 
+            throws ResourceUnavailableException {
+        assert(purpose == Purpose.LoadBalancing): "LB Manager asked to handle non-LB rules";
+        boolean handled = false;
+        for (LoadBalancingServiceProvider lbElement: _lbProviders) {
+           handled = lbElement.applyLBRules(network, (List<LoadBalancingRule>) rules);
+           if (handled)
+               break;
+        }
+        return handled;
+    }
 
     @DB
     protected boolean applyLoadBalancerRules(List<LoadBalancerVO> lbs, boolean updateRulesInDB) throws ResourceUnavailableException {
@@ -1132,7 +1148,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
             rules.add(loadBalancing);
         }
 
-        if (!_networkMgr.applyRules(rules, false)) {
+        if (!_networkMgr.applyRules(rules, FirewallRule.Purpose.LoadBalancing, this, false)) {
             s_logger.debug("LB rules are not completely applied");
             return false;
         }
@@ -1569,4 +1585,6 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         //remove the rule
         _lbDao.remove(rule.getId());
     }
+	
+ 
 }

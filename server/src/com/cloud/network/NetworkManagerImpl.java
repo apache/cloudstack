@@ -3741,6 +3741,49 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
+    public boolean applyRules(List<? extends FirewallRule> rules, FirewallRule.Purpose purpose,
+            NetworkRuleApplier applier, boolean continueOnError) throws ResourceUnavailableException {
+    	if (rules == null || rules.size() == 0) {
+    		s_logger.debug("There are no rules to forward to the network elements");
+    		return true;
+    	}
+
+    	boolean success = true;
+    	Network network = _networksDao.findById(rules.get(0).getNetworkId());
+
+    	// get the list of public ip's owned by the network
+    	List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedNetwork(network.getId(), null);
+    	List<PublicIp> publicIps = new ArrayList<PublicIp>();
+    	if (userIps != null && !userIps.isEmpty()) {
+    		for (IPAddressVO userIp : userIps) {
+    			PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
+    			publicIps.add(publicIp);
+    		}
+    	}
+
+    	// rules can not programmed unless IP is associated with network service provider, so run IP assoication for
+    	// the network so as to ensure IP is associated before applying rules (in add state)
+    	applyIpAssociations(network, false, continueOnError, publicIps);
+    	
+    	try {
+    		applier.applyRules(network, purpose, rules);
+    	} catch (ResourceUnavailableException e) {
+    		if (!continueOnError) {
+    			throw e;
+    		}
+    		s_logger.warn("Problems with applying " + purpose + " rules but pushing on", e);
+    		success = false;
+    	}
+    	
+    	// if all the rules configured on public IP are revoked then dis-associate IP with network service provider
+    	applyIpAssociations(network, true, continueOnError, publicIps);
+
+    	return success;
+    }
+        
+    
+
+    @Override
     /* The rules here is only the same kind of rule, e.g. all load balancing rules or all port forwarding rules */
     public boolean applyRules(List<? extends FirewallRule> rules, boolean continueOnError) throws ResourceUnavailableException {
         if (rules == null || rules.size() == 0) {

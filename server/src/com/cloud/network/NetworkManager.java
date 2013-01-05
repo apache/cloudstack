@@ -41,8 +41,6 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.element.NetworkElement;
-import com.cloud.network.element.RemoteAccessVPNServiceProvider;
-import com.cloud.network.element.Site2SiteVpnServiceProvider;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.rules.FirewallRule;
@@ -50,7 +48,6 @@ import com.cloud.network.rules.StaticNat;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.user.Account;
-import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
@@ -137,6 +134,8 @@ public interface NetworkManager extends NetworkService {
     String getNextAvailableMacAddressInNetwork(long networkConfigurationId) throws InsufficientAddressCapacityException;
 
     boolean applyRules(List<? extends FirewallRule> rules, boolean continueOnError) throws ResourceUnavailableException;
+    
+    boolean applyRules(List<? extends FirewallRule> rules, FirewallRule.Purpose purpose, NetworkRuleApplier applier, boolean continueOnError) throws ResourceUnavailableException;
 
     public boolean validateRule(FirewallRule rule);
     
