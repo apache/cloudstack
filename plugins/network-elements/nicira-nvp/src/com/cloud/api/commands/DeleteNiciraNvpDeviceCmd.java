@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.api.commands;
 
+import com.cloud.api.response.NiciraNvpDeviceResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -47,8 +48,8 @@ public class DeleteNiciraNvpDeviceCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="external_nicira_nvp_devices")
-    @Parameter(name=ApiConstants.NICIRA_NVP_DEVICE_ID, type=CommandType.LONG, required=true, description="Nicira device ID")
+    @Parameter(name=ApiConstants.NICIRA_NVP_DEVICE_ID, type=CommandType.UUID, entityType = NiciraNvpDeviceResponse.class,
+            required=true, description="Nicira device ID")
     private Long niciraNvpDeviceId;
 
     /////////////////////////////////////////////////////
