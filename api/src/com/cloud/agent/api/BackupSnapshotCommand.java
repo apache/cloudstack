@@ -111,7 +111,4 @@ public class BackupSnapshotCommand extends SnapshotCommand {
         return snapshotId;
     }
 
-    public StorageFilerTO getPool() {
-        return pool;
-    }
 }
