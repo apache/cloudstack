@@ -50,8 +50,8 @@ public class ListF5LoadBalancersCmd extends BaseListCmd {
             description="the Physical Network ID")
     private Long physicalNetworkId;
 
-    @IdentityMapper(entityTableName="external_load_balancer_devices")
-    @Parameter(name=ApiConstants.LOAD_BALANCER_DEVICE_ID, type=CommandType.LONG,  description="f5 load balancer device ID")
+    @Parameter(name=ApiConstants.LOAD_BALANCER_DEVICE_ID, type=CommandType.UUID, entityType = F5LoadBalancerResponse.class,
+            description="f5 load balancer device ID")
     private Long lbDeviceId;
 
     /////////////////////////////////////////////////////

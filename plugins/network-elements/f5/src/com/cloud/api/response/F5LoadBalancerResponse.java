@@ -16,11 +16,14 @@
 // under the License.
 package com.cloud.api.response;
 
+import org.apache.cloudstack.api.EntityReference;
 import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
+import com.cloud.network.ExternalLoadBalancerDeviceVO;
 
+@EntityReference(value=ExternalLoadBalancerDeviceVO.class)
 public class F5LoadBalancerResponse extends BaseResponse {
     @SerializedName(ApiConstants.LOAD_BALANCER_DEVICE_ID) @Param(description="device id of the F5 load balancer")
     private String id;
