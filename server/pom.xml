@@ -109,6 +109,7 @@
             <exclude>com/cloud/storage/dao/*</exclude>
             <exclude>com/cloud/vm/dao/*</exclude>
             <exclude>com/cloud/vpc/*</exclude>
+            <exclude>com/cloud/api/ListPerfTest.java</exclude>
           </excludes>
         </configuration>
       </plugin>
