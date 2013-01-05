@@ -22,6 +22,7 @@ import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
 import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeType;
+import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.EndPoint;
 import org.apache.cloudstack.storage.command.CommandResult;
@@ -51,7 +52,7 @@ public interface VolumeService {
      * 
      * @return the volume object
      */
-    void createVolumeAsync(VolumeInfo volume, long dataStoreId, VolumeDiskType diskType, AsyncCompletionCallback<VolumeApiResult> callback);
+    AsyncCallFuture<VolumeApiResult> createVolumeAsync(VolumeInfo volume, long dataStoreId, VolumeDiskType diskType);
 
     /**
      * Delete volume
@@ -60,7 +61,7 @@ public interface VolumeService {
      * @return
      * @throws ConcurrentOperationException
      */
-    void deleteVolumeAsync(VolumeInfo volume, AsyncCompletionCallback<VolumeApiResult> callback);
+    AsyncCallFuture<VolumeApiResult> deleteVolumeAsync(VolumeInfo volume);
 
     /**
      * 
@@ -86,6 +87,5 @@ public interface VolumeService {
 
     VolumeEntity getVolumeEntity(long volumeId);
 
-    void createVolumeFromTemplateAsync(VolumeInfo volume, long dataStoreId, VolumeDiskType diskType, TemplateInfo template, 
-            AsyncCompletionCallback<VolumeApiResult> callback);
+    AsyncCallFuture<VolumeApiResult> createVolumeFromTemplateAsync(VolumeInfo volume, long dataStoreId, VolumeDiskType diskType, TemplateInfo template);
 }

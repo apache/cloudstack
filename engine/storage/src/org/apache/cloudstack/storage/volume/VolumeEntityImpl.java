@@ -22,6 +22,7 @@ import java.lang.reflect.Method;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import org.apache.cloudstack.engine.cloud.entity.api.SnapshotEntity;
 import org.apache.cloudstack.engine.cloud.entity.api.TemplateEntity;
@@ -30,6 +31,7 @@ import org.apache.cloudstack.engine.datacenter.entity.api.StorageEntity;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
 import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeType;
+import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStoreEntityImpl;
@@ -170,80 +172,51 @@ public class VolumeEntityImpl implements VolumeEntity {
     @Override
     public boolean createVolumeFromTemplate(long dataStoreId, VolumeDiskType diskType, TemplateEntity template) {
         TemplateInfo ti = ((TemplateEntityImpl)template).getTemplateInfo();
-        
-        AsyncCallbackDispatcher<VolumeEntityImpl, VolumeInfo> caller = AsyncCallbackDispatcher.create(this);
-        caller.setCallback(caller.getTarget().createVolumeFromTemplateAsyncCallback(null, null));
           
-        vs.createVolumeFromTemplateAsync(volumeInfo, dataStoreId, diskType, ti, caller);
+        AsyncCallFuture<VolumeApiResult> future = vs.createVolumeFromTemplateAsync(volumeInfo, dataStoreId, diskType, ti);
         try {
-            synchronized (volumeInfo) {
-                volumeInfo.wait();
+            result = future.get();
+            if (!result.isSuccess()) {
+                throw new CloudRuntimeException("create volume from template failed: " + result.getResult()); 
             }
+            return true;
         } catch (InterruptedException e) {
-           throw new CloudRuntimeException("wait volume info failed", e);
+           throw new CloudRuntimeException("wait result failed", e);
+        } catch (ExecutionException e) {
+            throw new CloudRuntimeException("wait result failed", e);
         }
-        return true;
-    }
-    
-   
-    public Object createVolumeFromTemplateAsyncCallback(AsyncCallbackDispatcher<VolumeEntityImpl, VolumeInfo> callback, Object context) {
-        synchronized (volumeInfo) {
-            volumeInfo.notify();
-        }
-        return null;
     }
 
     @Override
     public boolean createVolume(long dataStoreId, VolumeDiskType diskType) {
-        AsyncCallbackDispatcher<VolumeEntityImpl, VolumeApiResult> caller = AsyncCallbackDispatcher.create(this);
-        caller.setCallback(caller.getTarget().createVolumeCallback(null, null));
-        vs.createVolumeAsync(volumeInfo, dataStoreId, diskType, caller);
+        AsyncCallFuture<VolumeApiResult> future = vs.createVolumeAsync(volumeInfo, dataStoreId, diskType);
         try {
-            synchronized (volumeInfo) {
-                volumeInfo.wait();
-            }
+            result = future.get();
             if (result.isSuccess()) {
                 return true;
             } else {
                 throw new CloudRuntimeException("Failed to create volume:" + result.getResult());
             }
         } catch (InterruptedException e) {
-           throw new CloudRuntimeException("wait volume info failed", e);
+            throw new CloudRuntimeException("wait volume info failed", e);
+        } catch (ExecutionException e) {
+            throw new CloudRuntimeException("wait volume failed", e);
         }
     }
     
-    public Void createVolumeCallback(AsyncCallbackDispatcher<VolumeApiResult, VolumeApiResult> callback, Object context) {
-        synchronized (volumeInfo) {
-            this.result = callback.getResult();
-            volumeInfo.notify();
-        }
-        return null;
-    }
-    
-
     @Override
     public void destroy() {
-        AsyncCallbackDispatcher<VolumeEntityImpl, VolumeApiResult> caller = AsyncCallbackDispatcher.create(this);
-        caller.setCallback(caller.getTarget().destroyCallback(null, null));
-        vs.deleteVolumeAsync(volumeInfo, caller);
+        AsyncCallFuture<VolumeApiResult> future = vs.deleteVolumeAsync(volumeInfo);
         try {
-            synchronized (volumeInfo) {
-                volumeInfo.wait();
-            }
+            result = future.get();
             if (!result.isSuccess()) {
                 throw new CloudRuntimeException("Failed to create volume:" + result.getResult());
             }
         } catch (InterruptedException e) {
-           throw new CloudRuntimeException("wait volume info failed", e);
+           throw new CloudRuntimeException("wait to delete volume info failed", e);
+        } catch (ExecutionException e) {
+            throw new CloudRuntimeException("wait to delete volume failed", e);
         }
-    }
-    
-    public Void destroyCallback(AsyncCallbackDispatcher<VolumeApiResult, VolumeApiResult> callback, Object context) {
-        synchronized (volumeInfo) {
-            this.result = callback.getResult();
-            volumeInfo.notify();
-        }
-        return null;
     }
 
 	@Override

@@ -43,7 +43,7 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations="classpath:/resource/testContext.xml")
+@ContextConfiguration(locations="classpath:/testContext.xml")
 public class ConfiguratorTest {
     @Inject
     @Qualifier("defaultProvider")

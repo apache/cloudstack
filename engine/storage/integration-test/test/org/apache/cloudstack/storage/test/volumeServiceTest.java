@@ -171,7 +171,7 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 		host.setClusterId(cluster.getId());
 
 		host = hostDao.persist(host);
-		
+		primaryStore = createPrimaryDataStore();
 	
 		//CreateVolumeAnswer createVolumeFromImageAnswer = new CreateVolumeAnswer(UUID.randomUUID().toString());
 
@@ -280,8 +280,8 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 
 	@Test(priority=2)
 	public void createVolumeFromTemplate() {
+	    primaryStore = createPrimaryDataStore();
 		TemplateEntity te = createTemplate();
-		primaryStore = createPrimaryDataStore();
 		VolumeVO volume = createVolume(te.getId(), primaryStore.getId());
 		VolumeEntity ve = volumeService.getVolumeEntity(volume.getId());
 		ve.createVolumeFromTemplate(primaryStore.getId(), new VHD(), te);
@@ -290,6 +290,7 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 	
 	@Test(priority=3) 
 	public void createDataDisk() {
+	    primaryStore = createPrimaryDataStore();
 	    VolumeVO volume = createVolume(null, primaryStore.getId());
 	    VolumeEntity ve = volumeService.getVolumeEntity(volume.getId());
 	    ve.createVolume(primaryStore.getId(), new VHD());
