@@ -2835,6 +2835,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         LoadBalancerTO[] lbs = new LoadBalancerTO[rules.size()];
         int i = 0;
+        // We don't support VR to be inline currently
+        boolean inline = false;
         for (LoadBalancingRule rule : rules) {
             boolean revoked = (rule.getState().equals(FirewallRule.State.Revoke));
             String protocol = rule.getProtocol();
@@ -2845,7 +2847,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             int srcPort = rule.getSourcePortStart();
             List<LbDestination> destinations = rule.getDestinations();
             List<LbStickinessPolicy> stickinessPolicies = rule.getStickinessPolicies();
-            LoadBalancerTO lb = new LoadBalancerTO(uuid, srcIp, srcPort, protocol, algorithm, revoked, false, destinations, stickinessPolicies);
+            LoadBalancerTO lb = new LoadBalancerTO(uuid, srcIp, srcPort, protocol, algorithm, revoked, false, false, destinations, stickinessPolicies);
             lbs[i++] = lb;
         }
         String routerPublicIp = null;

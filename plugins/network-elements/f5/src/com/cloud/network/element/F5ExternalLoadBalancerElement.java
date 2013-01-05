@@ -206,6 +206,9 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
         // Specifies that load balancing rules can only be made with public IPs that aren't source NAT IPs
         lbCapabilities.put(Capability.LoadBalancingSupportedIps, "additional");
 
+	// Support inline mode with firewall
+	lbCapabilities.put(Capability.InlineMode, "true");
+
         LbStickinessMethod method;
         List<LbStickinessMethod> methodList = new ArrayList<LbStickinessMethod>();
         method = new LbStickinessMethod(StickinessMethodType.LBCookieBased, "This is cookie based sticky method, can be used only for http");
@@ -448,7 +451,6 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
         } else {
             response.setDeviceCapacity(lbDeviceVO.getCapacity());
         }
-        response.setInlineMode(lbDeviceVO.getIsInLineMode());
         response.setDedicatedLoadBalancer(lbDeviceVO.getIsDedicatedDevice());
         response.setProvider(lbDeviceVO.getProviderName());
         response.setDeviceState(lbDeviceVO.getState().name());

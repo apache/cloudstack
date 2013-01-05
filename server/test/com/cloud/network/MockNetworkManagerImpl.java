@@ -1135,4 +1135,10 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
         // TODO Auto-generated method stub
         return 0;
     }
+
+    @Override
+    public boolean isNetworkInlineMode(Network network) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 }

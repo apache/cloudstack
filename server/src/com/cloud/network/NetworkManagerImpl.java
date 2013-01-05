@@ -7484,4 +7484,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return _networkLockTimeout;
     }
 
+    @Override
+    public boolean isNetworkInlineMode(Network network) {
+        NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+        return offering.isInline();
+    }
 }

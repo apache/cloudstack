@@ -119,7 +119,6 @@ public class F5BigIpResource implements ServerResource {
 	private String _privateInterface;
 	private Integer _numRetries; 
 	private String _guid;
-	private boolean _inline;
 
 	private Interfaces _interfaces;
 	private LocalLBVirtualServerBindingStub _virtualServerApi;
@@ -180,8 +179,6 @@ public class F5BigIpResource implements ServerResource {
                 throw new ConfigurationException("Unable to find the guid");
             }
             
-            _inline = Boolean.parseBoolean((String) params.get("inline"));
-    		    		    	
             login();
 		
     		return true;
@@ -292,45 +289,49 @@ public class F5BigIpResource implements ServerResource {
 	}	
 	
 	private synchronized Answer execute(IpAssocCommand cmd, int numRetries) {
-	    String[] results = new String[cmd.getIpAddresses().length];
-        int i = 0;
-		try {		
-			IpAddressTO[] ips = cmd.getIpAddresses();
-            for (IpAddressTO ip : ips) {
-                long guestVlanTag = Long.valueOf(ip.getVlanId());
-                String vlanSelfIp = _inline ? tagAddressWithRouteDomain(ip.getVlanGateway(), guestVlanTag) : ip.getVlanGateway();
-                String vlanNetmask = ip.getVlanNetmask();      
-                
-                // Delete any existing guest VLAN with this tag, self IP, and netmask
-                deleteGuestVlan(guestVlanTag, vlanSelfIp, vlanNetmask);
-                
-                if (ip.isAdd()) {
-                	// Add a new guest VLAN
-                    addGuestVlan(guestVlanTag, vlanSelfIp, vlanNetmask);
+            String[] results = new String[cmd.getIpAddresses().length];
+            int i = 0;
+            try {		
+                IpAddressTO[] ips = cmd.getIpAddresses();
+                for (IpAddressTO ip : ips) {
+                    long guestVlanTag = Long.valueOf(ip.getVlanId());
+                    // It's a hack, using isOneToOneNat field for indicate if it's inline or not
+                    // We'd better have an separate SetupGuestNetwork command later
+                    boolean inline = ip.isOneToOneNat();
+                    String vlanSelfIp = inline ? tagAddressWithRouteDomain(ip.getVlanGateway(), guestVlanTag) : ip.getVlanGateway();
+                    String vlanNetmask = ip.getVlanNetmask();      
+
+                    // Delete any existing guest VLAN with this tag, self IP, and netmask
+                    deleteGuestVlan(guestVlanTag, vlanSelfIp, vlanNetmask, inline);
+
+                    if (ip.isAdd()) {
+                        // Add a new guest VLAN
+                        addGuestVlan(guestVlanTag, vlanSelfIp, vlanNetmask, inline);
+                    }
+
+                    saveConfiguration();               
+                    results[i++] = ip.getPublicIp() + " - success";
                 }
-                
-                saveConfiguration();               
-                results[i++] = ip.getPublicIp() + " - success";
-            }
-                        
-		} catch (ExecutionException e) {
-			s_logger.error("Failed to execute IPAssocCommand due to " + e);				    
-		    
-		    if (shouldRetry(numRetries)) {
-		    	return retry(cmd, numRetries);
-		    } else {
-		    	results[i++] = IpAssocAnswer.errorResult;
-		    }
-		}		
-		
-		return new IpAssocAnswer(cmd, results);
-	}
+
+            } catch (ExecutionException e) {
+                s_logger.error("Failed to execute IPAssocCommand due to " + e);				    
+
+                if (shouldRetry(numRetries)) {
+                    return retry(cmd, numRetries);
+                } else {
+                    results[i++] = IpAssocAnswer.errorResult;
+                }
+            }		
+
+            return new IpAssocAnswer(cmd, results);
+        }
 	
 	private synchronized Answer execute(LoadBalancerConfigCommand cmd, int numRetries) {
 		try {			
 			long guestVlanTag = Long.parseLong(cmd.getAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG));
 			LoadBalancerTO[] loadBalancers = cmd.getLoadBalancers();
 			for (LoadBalancerTO loadBalancer : loadBalancers) {
+                            boolean inline = loadBalancer.isInline();
 				LbProtocol lbProtocol;
 				try {
 					if (loadBalancer.getProtocol() == null) {
@@ -351,7 +352,7 @@ public class F5BigIpResource implements ServerResource {
 					throw new ExecutionException("Got invalid algorithm: " + loadBalancer.getAlgorithm());
 				}		
 				
-				String srcIp = _inline ? tagAddressWithRouteDomain(loadBalancer.getSrcIp(), guestVlanTag) : loadBalancer.getSrcIp();
+				String srcIp = inline ? tagAddressWithRouteDomain(loadBalancer.getSrcIp(), guestVlanTag) : loadBalancer.getSrcIp();
 				int srcPort = loadBalancer.getSrcPort();	
 				String virtualServerName = genVirtualServerName(lbProtocol, srcIp, srcPort);
 												
@@ -371,7 +372,7 @@ public class F5BigIpResource implements ServerResource {
 					List<String> activePoolMembers = new ArrayList<String>();
 					for (DestinationTO destination : loadBalancer.getDestinations()) {
 						if (!destination.isRevoked()) {
-							String destIp = _inline ? tagAddressWithRouteDomain(destination.getDestIp(), guestVlanTag) : destination.getDestIp();
+							String destIp = inline ? tagAddressWithRouteDomain(destination.getDestIp(), guestVlanTag) : destination.getDestIp();
 							addPoolMember(virtualServerName, destIp, destination.getDestPort());
 							activePoolMembers.add(destIp + "-" + destination.getDestPort());
 						}
@@ -421,7 +422,7 @@ public class F5BigIpResource implements ServerResource {
 		}
 	}
 	
-	private void addGuestVlan(long vlanTag, String vlanSelfIp, String vlanNetmask) throws ExecutionException {
+	private void addGuestVlan(long vlanTag, String vlanSelfIp, String vlanNetmask, boolean inline) throws ExecutionException {
 		try {
 			String vlanName = genVlanName(vlanTag);	
 			List<String> allVlans = getVlans();
@@ -444,7 +445,7 @@ public class F5BigIpResource implements ServerResource {
 				}
 			}
 			
-			if (_inline) {
+			if (inline) {
 				List<Long> allRouteDomains = getRouteDomains();
 				if (!allRouteDomains.contains(vlanTag)) {
 					long[] routeDomainIds = genLongArray(vlanTag);
@@ -481,7 +482,7 @@ public class F5BigIpResource implements ServerResource {
 			
 	}
 	
-	private void deleteGuestVlan(long vlanTag, String vlanSelfIp, String vlanNetmask) throws ExecutionException {
+	private void deleteGuestVlan(long vlanTag, String vlanSelfIp, String vlanNetmask, boolean inline) throws ExecutionException {
 		try {
 			// Delete all virtual servers and pools that use this guest VLAN
 			deleteVirtualServersInGuestVlan(vlanSelfIp, vlanNetmask);
@@ -496,7 +497,7 @@ public class F5BigIpResource implements ServerResource {
 				}
 			}
 			
-			if (_inline) {
+			if (inline) {
 				List<Long> allRouteDomains = getRouteDomains();
 				if (allRouteDomains.contains(vlanTag)) {
 					s_logger.debug("Deleting route domain " + vlanTag);
@@ -969,9 +970,7 @@ public class F5BigIpResource implements ServerResource {
 			for (LocalLBVirtualServerVirtualServerStatisticEntry entry : stats.getStatistics()) {
 				String virtualServerIp = entry.getVirtual_server().getAddress();
 				
-				if (_inline) {
-					virtualServerIp = stripRouteDomainFromAddress(virtualServerIp);
-				}
+				virtualServerIp = stripRouteDomainFromAddress(virtualServerIp);
 				
 				long[] bytesSentAndReceived = answer.ipBytes.get(virtualServerIp);
 				

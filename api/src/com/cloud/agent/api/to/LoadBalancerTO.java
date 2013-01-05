@@ -43,12 +43,13 @@ public class LoadBalancerTO {
     String algorithm;
     boolean revoked;
     boolean alreadyAdded;
+    boolean inline;
     DestinationTO[] destinations;
     private StickinessPolicyTO[] stickinessPolicies;
     private AutoScaleVmGroupTO autoScaleVmGroupTO;
     final static int MAX_STICKINESS_POLICIES = 1;
 
-    public LoadBalancerTO(String uuid, String srcIp, int srcPort, String protocol, String algorithm, boolean revoked, boolean alreadyAdded, List<LbDestination> destinations) {
+    public LoadBalancerTO(String uuid, String srcIp, int srcPort, String protocol, String algorithm, boolean revoked, boolean alreadyAdded, boolean inline, List<LbDestination> destinations) {
         if (destinations == null) { // for autoscaleconfig destinations will be null;
             destinations = new ArrayList<LbDestination>();
         }
@@ -59,6 +60,7 @@ public class LoadBalancerTO {
         this.algorithm = algorithm;
         this.revoked = revoked;
         this.alreadyAdded = alreadyAdded;
+        this.inline = inline;
         this.destinations = new DestinationTO[destinations.size()];
         this.stickinessPolicies = null;
         int i = 0;
@@ -67,8 +69,8 @@ public class LoadBalancerTO {
         }
     }
 
-    public LoadBalancerTO(String id, String srcIp, int srcPort, String protocol, String algorithm, boolean revoked, boolean alreadyAdded, List<LbDestination> arg_destinations, List<LbStickinessPolicy> stickinessPolicies) {
-        this(id, srcIp, srcPort, protocol, algorithm, revoked, alreadyAdded, arg_destinations);
+    public LoadBalancerTO(String id, String srcIp, int srcPort, String protocol, String algorithm, boolean revoked, boolean alreadyAdded, boolean inline, List<LbDestination> arg_destinations, List<LbStickinessPolicy> stickinessPolicies) {
+        this(id, srcIp, srcPort, protocol, algorithm, revoked, alreadyAdded, inline, arg_destinations);
         this.stickinessPolicies = null;
         if (stickinessPolicies != null && stickinessPolicies.size() > 0) {
             this.stickinessPolicies = new StickinessPolicyTO[MAX_STICKINESS_POLICIES];
@@ -114,6 +116,10 @@ public class LoadBalancerTO {
 
     public boolean isAlreadyAdded() {
         return alreadyAdded;
+    }
+
+    public boolean isInline() {
+        return inline;
     }
 
     public StickinessPolicyTO[] getStickinessPolicies() {

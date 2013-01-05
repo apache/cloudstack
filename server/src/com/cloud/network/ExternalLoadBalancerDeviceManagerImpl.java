@@ -239,7 +239,6 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
             if (host != null) {
 
                 boolean dedicatedUse = (configParams.get(ApiConstants.LOAD_BALANCER_DEVICE_DEDICATED) != null) ? Boolean.parseBoolean(configParams.get(ApiConstants.LOAD_BALANCER_DEVICE_DEDICATED)) : false;
-                boolean inline = (configParams.get(ApiConstants.INLINE) != null) ? Boolean.parseBoolean(configParams.get(ApiConstants.INLINE)) : false;
                 long capacity = NumbersUtil.parseLong(configParams.get(ApiConstants.LOAD_BALANCER_DEVICE_CAPACITY), 0);
                 if (capacity == 0) {
                     capacity = _defaultLbCapacity;
@@ -247,7 +246,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
 
                 txn.start();
                 ExternalLoadBalancerDeviceVO lbDeviceVO = new ExternalLoadBalancerDeviceVO(host.getId(), pNetwork.getId(), ntwkSvcProvider.getProviderName(),
-                        deviceName, capacity, dedicatedUse, inline);
+                        deviceName, capacity, dedicatedUse);
                 _externalLoadBalancerDeviceDao.persist(lbDeviceVO);
 
                 DetailVO hostDetail = new DetailVO(host.getId(), ApiConstants.LOAD_BALANCER_DEVICE_ID, String.valueOf(lbDeviceVO.getId()));
@@ -708,11 +707,6 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         return fwHost;
     }
 
-    private boolean externalLoadBalancerIsInline(HostVO externalLoadBalancer) {
-        DetailVO detail = _hostDetailDao.findDetail(externalLoadBalancer.getId(), "inline");
-        return (detail != null && detail.getValue().equals("true"));
-    }
-
     private NicVO savePlaceholderNic(Network network, String ipAddress) {
         NicVO nic = new NicVO(null, null, network.getId(), null);
         nic.setIp4Address(ipAddress);
@@ -786,7 +780,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
 
         HostVO externalLoadBalancer = _hostDao.findById(lbDeviceVO.getHostId());
 
-        boolean externalLoadBalancerIsInline = externalLoadBalancerIsInline(externalLoadBalancer);
+        boolean externalLoadBalancerIsInline = _networkMgr.isNetworkInlineMode(network);
 
         if (network.getState() == Network.State.Allocated) {
             s_logger.debug("External load balancer was asked to apply LB rules for network with ID " + network.getId() + "; this network is not implemented. Skipping backend commands.");
@@ -867,7 +861,8 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
             }
 
             if ((destinations != null && !destinations.isEmpty()) || rule.isAutoScaleConfig()) {
-                LoadBalancerTO loadBalancer = new LoadBalancerTO(uuid, srcIp, srcPort, protocol, algorithm, revoked, false, destinations, rule.getStickinessPolicies());
+                boolean inline = _networkMgr.isNetworkInlineMode(network);
+                LoadBalancerTO loadBalancer = new LoadBalancerTO(uuid, srcIp, srcPort, protocol, algorithm, revoked, false, inline, destinations, rule.getStickinessPolicies());
                 if(rule.isAutoScaleConfig()) {
                     loadBalancer.setAutoScaleVmGroup(rule.getAutoScaleVmGroup());
                 }
@@ -951,7 +946,9 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
             selfIp = selfipNic.getIp4Address();
         }
 
-        IpAddressTO ip = new IpAddressTO(guestConfig.getAccountId(), null, add, false, true, String.valueOf(guestVlanTag), selfIp, guestVlanNetmask, null, networkRate, false);
+        // It's a hack, using isOneToOneNat field for indicate if it's inline or not
+        boolean inline = _networkMgr.isNetworkInlineMode(guestConfig);
+        IpAddressTO ip = new IpAddressTO(guestConfig.getAccountId(), null, add, false, true, String.valueOf(guestVlanTag), selfIp, guestVlanNetmask, null, networkRate, inline);
         IpAddressTO[] ips = new IpAddressTO[1];
         ips[0] = ip;
         IpAssocCommand cmd = new IpAssocCommand(ips);

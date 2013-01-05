@@ -483,4 +483,5 @@ public interface NetworkManager extends NetworkService {
      */
     int getNetworkLockTimeout();
 
+    boolean isNetworkInlineMode(Network network);
 }

@@ -3099,8 +3099,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
     void validateLoadBalancerServiceCapabilities(Map<Capability, String> lbServiceCapabilityMap) {
         if (lbServiceCapabilityMap != null && !lbServiceCapabilityMap.isEmpty()) {
-            if (lbServiceCapabilityMap.keySet().size() > 2 || !lbServiceCapabilityMap.containsKey(Capability.SupportedLBIsolation)) {
-                throw new InvalidParameterValueException("Only " + Capability.SupportedLBIsolation.getName() + " and " + Capability.ElasticLb + " capabilities can be sepcified for LB service");
+            if (lbServiceCapabilityMap.keySet().size() > 3 || !lbServiceCapabilityMap.containsKey(Capability.SupportedLBIsolation)) {
+                throw new InvalidParameterValueException("Only " + Capability.SupportedLBIsolation.getName() + ", " + Capability.ElasticLb.getName() + ", " + Capability.InlineMode.getName() + " capabilities can be sepcified for LB service");
             }
 
             for (Capability cap : lbServiceCapabilityMap.keySet()) {
@@ -3117,8 +3117,14 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                     if (!enabled && !disabled) {
                         throw new InvalidParameterValueException("Unknown specified value for " + Capability.ElasticLb.getName());
                     }
+                } else if (cap == Capability.InlineMode) {
+                    boolean enabled = value.contains("true");
+                    boolean disabled = value.contains("false");
+                    if (!enabled && !disabled) {
+                        throw new InvalidParameterValueException("Unknown specified value for " + Capability.InlineMode.getName());
+                    }
                 } else {
-                    throw new InvalidParameterValueException("Only " + Capability.SupportedLBIsolation.getName() + " and " + Capability.ElasticLb + " capabilities can be sepcified for LB service");
+                    throw new InvalidParameterValueException("Only " + Capability.SupportedLBIsolation.getName() + ", " + Capability.ElasticLb.getName() + ", " + Capability.InlineMode.getName() + " capabilities can be sepcified for LB service");
                 }
             }
         }
@@ -3234,6 +3240,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         boolean redundantRouter = false;
         boolean elasticIp = false;
         boolean associatePublicIp = false;
+        boolean inline = false;
         if (serviceCapabilityMap != null && !serviceCapabilityMap.isEmpty()) {
             Map<Capability, String> lbServiceCapabilityMap = serviceCapabilityMap.get(Service.Lb);
             
@@ -3249,6 +3256,14 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 String param = lbServiceCapabilityMap.get(Capability.ElasticLb);
                 if (param != null) {
                     elasticLb = param.contains("true");
+                }
+                
+                String inlineMode = lbServiceCapabilityMap.get(Capability.InlineMode);
+                if (inlineMode != null) {
+                    _networkMgr.checkCapabilityForProvider(serviceProviderMap.get(Service.Lb), Service.Lb, Capability.InlineMode, inlineMode);
+                    inline = inlineMode.contains("true");
+                } else {
+                    inline = false;
                 }
             }
 
@@ -3284,7 +3299,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, systemOnly, specifyVlan, 
                 networkRate, multicastRate, isDefault, availability, tags, type, conserveMode, dedicatedLb,
-                sharedSourceNat, redundantRouter, elasticIp, elasticLb, associatePublicIp, specifyIpRanges);
+                sharedSourceNat, redundantRouter, elasticIp, elasticLb, associatePublicIp, specifyIpRanges, inline);
 
         if (serviceOfferingId != null) {
             offering.setServiceOfferingId(serviceOfferingId);

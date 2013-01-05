@@ -49,9 +49,6 @@ public class NetscalerLoadBalancerResponse extends BaseResponse {
     @SerializedName(ApiConstants.LOAD_BALANCER_DEVICE_DEDICATED) @Param(description="true if device is dedicated for an account")
     private Boolean dedicatedLoadBalancer;
 
-    @SerializedName(ApiConstants.INLINE) @Param(description="true if device is inline with firewall device")
-    private Boolean inlineLoadBalancer;
-
     @SerializedName(ApiConstants.PUBLIC_INTERFACE) @Param(description="the public interface of the load balancer")
     private String publicInterface;
     
@@ -92,10 +89,6 @@ public class NetscalerLoadBalancerResponse extends BaseResponse {
 
     public void setDeviceState(String deviceState) {
         this.deviceState = deviceState;
-    }
-
-    public void setInlineMode(boolean inline) {
-        this.inlineLoadBalancer = inline;
     }
 
     public void setPublicInterface(String publicInterface) {

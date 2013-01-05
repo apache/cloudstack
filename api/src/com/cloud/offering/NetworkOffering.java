@@ -111,4 +111,5 @@ public interface NetworkOffering {
 
     boolean getSpecifyIpRanges();
 
+    boolean isInline();
 }
