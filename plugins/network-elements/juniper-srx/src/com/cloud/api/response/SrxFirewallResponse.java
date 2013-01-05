@@ -17,10 +17,13 @@
 package com.cloud.api.response;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.EntityReference;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
+import com.cloud.network.ExternalFirewallDeviceVO;
 
+@EntityReference(value=ExternalFirewallDeviceVO.class)
 @SuppressWarnings("unused")
 public class SrxFirewallResponse extends BaseResponse {
 

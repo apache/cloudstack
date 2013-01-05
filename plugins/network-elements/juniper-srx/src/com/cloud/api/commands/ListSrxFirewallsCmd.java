@@ -50,8 +50,8 @@ public class ListSrxFirewallsCmd extends BaseListCmd {
             description="the Physical Network ID")
     private Long physicalNetworkId;
 
-    @IdentityMapper(entityTableName="external_firewall_devices")
-    @Parameter(name=ApiConstants.FIREWALL_DEVICE_ID, type=CommandType.LONG,  description="SRX firewall device ID")
+    @Parameter(name=ApiConstants.FIREWALL_DEVICE_ID, type=CommandType.UUID, entityType = SrxFirewallResponse.class,
+            description="SRX firewall device ID")
     private Long fwDeviceId;
 
     /////////////////////////////////////////////////////
