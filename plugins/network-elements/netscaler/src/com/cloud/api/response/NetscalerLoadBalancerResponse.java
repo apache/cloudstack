@@ -19,10 +19,13 @@ package com.cloud.api.response;
 import java.util.List;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.EntityReference;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
+import com.cloud.network.ExternalLoadBalancerDeviceVO;
 
+@EntityReference(value=ExternalLoadBalancerDeviceVO.class)
 @SuppressWarnings("unused")
 public class NetscalerLoadBalancerResponse extends BaseResponse {
 
