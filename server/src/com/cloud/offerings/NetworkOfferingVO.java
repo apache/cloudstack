@@ -132,6 +132,9 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Column(name = "eip_associate_public_ip")
     boolean eipAssociatePublicIp;
 
+    @Column(name = "inline")
+    boolean inline;
+
     @Override
     public String getDisplayText() {
         return displayText;
@@ -293,12 +296,13 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.elasticIp = false;
         this.elasticLb = false;
         this.eipAssociatePublicIp = true;
+        this.inline = false;
         this.specifyIpRanges = specifyIpRanges;
     }
 
     public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, boolean isDefault,
             Availability availability, String tags, Network.GuestType guestType, boolean conserveMode, boolean dedicatedLb, boolean sharedSourceNat, boolean redundantRouter, boolean elasticIp, boolean elasticLb,
-            boolean associatePublicIP, boolean specifyIpRanges) {
+            boolean associatePublicIP, boolean specifyIpRanges, boolean inline) {
         this(name, displayText, trafficType, systemOnly, specifyVlan, rateMbps, multicastRateMbps, isDefault, availability, tags, guestType, conserveMode, specifyIpRanges);
         this.dedicatedLB = dedicatedLb;
         this.sharedSourceNat = sharedSourceNat;
@@ -306,6 +310,7 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.elasticIp = elasticIp;
         this.elasticLb = elasticLb;
         this.eipAssociatePublicIp = associatePublicIP;
+        this.inline = inline;
     }
 
     public NetworkOfferingVO() {
@@ -382,4 +387,8 @@ public class NetworkOfferingVO implements NetworkOffering {
         return specifyIpRanges;
     }
 
+    @Override
+    public boolean isInline() {
+        return inline;
+    }
 }

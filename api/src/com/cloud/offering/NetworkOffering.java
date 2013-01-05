@@ -110,4 +110,5 @@ public interface NetworkOffering extends InternalIdentity, Identity {
 
     boolean getSpecifyIpRanges();
 
+    boolean isInline();
 }

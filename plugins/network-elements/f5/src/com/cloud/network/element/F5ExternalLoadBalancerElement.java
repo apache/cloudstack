@@ -174,7 +174,8 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
 
     @Override
     public boolean validateLBRule(Network network, LoadBalancingRule rule) {
-        return true;
+        String algo = rule.getAlgorithm();
+        return (algo.equals("roundrobin") || algo.equals("leastconn"));
     }
 
     @Override
@@ -207,6 +208,9 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
 
         // Specifies that load balancing rules can only be made with public IPs that aren't source NAT IPs
         lbCapabilities.put(Capability.LoadBalancingSupportedIps, "additional");
+
+	// Support inline mode with firewall
+	lbCapabilities.put(Capability.InlineMode, "true");
 
         LbStickinessMethod method;
         List<LbStickinessMethod> methodList = new ArrayList<LbStickinessMethod>();
@@ -453,7 +457,6 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
         } else {
             response.setDeviceCapacity(lbDeviceVO.getCapacity());
         }
-        response.setInlineMode(lbDeviceVO.getIsInLineMode());
         response.setDedicatedLoadBalancer(lbDeviceVO.getIsDedicatedDevice());
         response.setProvider(lbDeviceVO.getProviderName());
         response.setDeviceState(lbDeviceVO.getState().name());
@@ -474,6 +477,15 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
 
     @Override
     public IpDeployer getIpDeployer(Network network) {
+        ExternalLoadBalancerDeviceVO lbDevice = getExternalLoadBalancerForNetwork(network);
+        if (lbDevice == null) {
+            s_logger.error("Cannot find external load balanacer for network " + network.getName());
+            s_logger.error("Make F5 as dummy ip deployer, since we likely met this when clean up resource after shutdown network");
+            return this;
+        }
+        if (_networkManager.isNetworkInlineMode(network)) {
+            return getIpDeployerForInlineMode(network);
+        }
         return this;
     }
 }

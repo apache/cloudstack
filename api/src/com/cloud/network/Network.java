@@ -173,6 +173,7 @@ public interface Network extends ControlledEntity, InternalIdentity, Identity {
         public static final Capability AssociatePublicIP = new Capability("AssociatePublicIP");
         public static final Capability ElasticLb = new Capability("ElasticLb");
         public static final Capability AutoScaleCounters = new Capability("AutoScaleCounters");
+        public static final Capability InlineMode = new Capability("InlineMode");
 
         private String name;
 

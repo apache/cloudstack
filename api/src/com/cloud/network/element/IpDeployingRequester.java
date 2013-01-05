@@ -16,17 +16,13 @@
 // under the License.
 package com.cloud.network.element;
 
-import java.util.List;
-
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
-import com.cloud.network.RemoteAccessVpn;
-import com.cloud.network.VpnUser;
 
-public interface RemoteAccessVPNServiceProvider extends NetworkElement, IpDeployingRequester {
-    String[] applyVpnUsers(RemoteAccessVpn vpn, List<? extends VpnUser> users) throws ResourceUnavailableException;
-
-    boolean startVpn(Network network, RemoteAccessVpn vpn) throws ResourceUnavailableException;
-
-    boolean stopVpn(Network network, RemoteAccessVpn vpn) throws ResourceUnavailableException;
+public interface IpDeployingRequester {
+    /**
+     * Would return the IpDeployer can deploy IP for this element
+     * @param network
+     * @return IpDeployer object, or null if there is no deployer for this element
+     */
+    IpDeployer getIpDeployer(Network network);
 }
