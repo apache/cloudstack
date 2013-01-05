@@ -31,12 +31,12 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
+import org.apache.cloudstack.api.command.admin.storage.ListS3sCmd;
 import org.apache.cloudstack.api.command.admin.swift.AddSwiftCmd;
 import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
 import org.apache.cloudstack.api.command.admin.host.*;
 import org.apache.cloudstack.api.command.admin.swift.ListSwiftsCmd;
-import com.cloud.api.commands.AddS3Cmd;
-import com.cloud.api.commands.ListS3sCmd;
+import org.apache.cloudstack.api.command.admin.storage.AddS3Cmd;
 import com.cloud.storage.S3;
 import com.cloud.storage.S3VO;
 import com.cloud.storage.s3.S3Manager;

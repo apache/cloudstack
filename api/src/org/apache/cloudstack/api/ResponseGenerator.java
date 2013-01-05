@@ -92,7 +92,7 @@ import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.VpnUsersResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 
-import com.cloud.api.response.S3Response;
+import org.apache.cloudstack.api.response.S3Response;
 
 import com.cloud.async.AsyncJob;
 import com.cloud.capacity.Capacity;

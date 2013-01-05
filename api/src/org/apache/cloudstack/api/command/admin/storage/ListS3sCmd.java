@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.command.admin.storage;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,7 +25,7 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
-import com.cloud.api.response.S3Response;
+import org.apache.cloudstack.api.response.S3Response;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;

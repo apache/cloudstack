@@ -229,8 +229,8 @@ addSwift=org.apache.cloudstack.api.command.admin.swift.AddSwiftCmd;1
 listSwifts=org.apache.cloudstack.api.command.admin.swift.ListSwiftsCmd;1
 
 #### s3 commands
-addS3=com.cloud.api.commands.AddS3Cmd;1
-listS3s=com.cloud.api.commands.ListS3sCmd;1
+addS3=org.apache.cloudstack.api.command.admin.storage.AddS3Cmd;1
+listS3s=org.apache.cloudstack.api.command.admin.storage.ListS3sCmd;1
 
 #### host commands
 addHost=org.apache.cloudstack.api.command.admin.host.AddHostCmd;3

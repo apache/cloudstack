@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.command.admin.storage;
 
 import static org.apache.cloudstack.api.ApiConstants.S3_ACCESS_KEY;
 import static org.apache.cloudstack.api.ApiConstants.S3_CONNECTION_TIMEOUT;
@@ -35,7 +35,7 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import com.cloud.api.response.S3Response;
+import org.apache.cloudstack.api.response.S3Response;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InsufficientCapacityException;
