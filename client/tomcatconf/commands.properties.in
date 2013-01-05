@@ -268,13 +268,13 @@ queryAsyncJobResult=org.apache.cloudstack.api.command.user.job.QueryAsyncJobResu
 listAsyncJobs=org.apache.cloudstack.api.command.user.job.ListAsyncJobsCmd;15
 
 #### storage pools commands
-listStoragePools=org.apache.cloudstack.api.command.admin.storagepool.ListStoragePoolsCmd;3
-createStoragePool=org.apache.cloudstack.api.command.admin.storagepool.CreateStoragePoolCmd;1
-updateStoragePool=org.apache.cloudstack.api.command.admin.storagepool.UpdateStoragePoolCmd;1
-deleteStoragePool=org.apache.cloudstack.api.command.admin.storagepool.DeletePoolCmd;1
+listStoragePools=org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;3
+createStoragePool=org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;1
+updateStoragePool=org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;1
+deleteStoragePool=org.apache.cloudstack.api.command.admin.storage.DeletePoolCmd;1
 listClusters=org.apache.cloudstack.api.command.admin.cluster.ListClustersCmd;3
-enableStorageMaintenance=org.apache.cloudstack.api.command.admin.storagepool.PreparePrimaryStorageForMaintenanceCmd;1
-cancelStorageMaintenance=org.apache.cloudstack.api.command.admin.storagepool.CancelPrimaryStorageMaintenanceCmd;1
+enableStorageMaintenance=org.apache.cloudstack.api.command.admin.storage.PreparePrimaryStorageForMaintenanceCmd;1
+cancelStorageMaintenance=org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;1
 
 #### security group commands
 createSecurityGroup=org.apache.cloudstack.api.command.user.securitygroup.CreateSecurityGroupCmd;15

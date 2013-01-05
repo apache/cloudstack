@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api.command.admin.storagepool;
+package org.apache.cloudstack.api.command.admin.storage;
 
 import org.apache.log4j.Logger;
 

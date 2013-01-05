@@ -17,14 +17,11 @@
 package com.cloud.storage;
 
 import java.net.UnknownHostException;
-import java.util.List;
 
-import org.apache.cloudstack.api.command.admin.storagepool.CancelPrimaryStorageMaintenanceCmd;
-import org.apache.cloudstack.api.command.admin.storagepool.CreateStoragePoolCmd;
-import org.apache.cloudstack.api.command.admin.storagepool.DeletePoolCmd;
-import org.apache.cloudstack.api.command.admin.storagepool.UpdateStoragePoolCmd;
+import org.apache.cloudstack.api.command.admin.storage.*;
+import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
-import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
 import org.apache.cloudstack.api.command.user.volume.UploadVolumeCmd;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -33,7 +30,6 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
-import com.cloud.utils.Pair;
 
 public interface StorageService{
     /**
