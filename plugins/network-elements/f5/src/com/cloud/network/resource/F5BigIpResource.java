@@ -296,7 +296,6 @@ public class F5BigIpResource implements ServerResource {
                 for (IpAddressTO ip : ips) {
                     long guestVlanTag = Long.valueOf(ip.getVlanId());
                     // It's a hack, using isOneToOneNat field for indicate if it's inline or not
-                    // We'd better have an separate SetupGuestNetwork command later
                     boolean inline = ip.isOneToOneNat();
                     String vlanSelfIp = inline ? tagAddressWithRouteDomain(ip.getVlanGateway(), guestVlanTag) : ip.getVlanGateway();
                     String vlanNetmask = ip.getVlanNetmask();      
@@ -364,6 +363,8 @@ public class F5BigIpResource implements ServerResource {
 					}
 				}
 				
+				// Delete the virtual server with this protocol, source IP, and source port, along with its default pool and all pool members
+				deleteVirtualServerAndDefaultPool(virtualServerName);
 				if (!loadBalancer.isRevoked() && destinationsToAdd) {		
 					// Add the pool 
 					addPool(virtualServerName, lbAlgorithm);
@@ -378,14 +379,8 @@ public class F5BigIpResource implements ServerResource {
 						}
 					}			
 					
-					// Delete any pool members that aren't in the current list of destinations
-					deleteInactivePoolMembers(virtualServerName, activePoolMembers);
-					
 					// Add the virtual server 
 					addVirtualServer(virtualServerName, lbProtocol, srcIp, srcPort, loadBalancer.getStickinessPolicies());
-				} else {
-					// Delete the virtual server with this protocol, source IP, and source port, along with its default pool and all pool members
-					deleteVirtualServerAndDefaultPool(virtualServerName);			
 				}
 			}																																																		
 			

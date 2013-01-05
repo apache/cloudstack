@@ -746,12 +746,10 @@ CREATE TABLE `cloud`.`load_balancer_stickiness_policies` (
 
 CREATE TABLE `cloud`.`inline_load_balancer_nic_map` (
   `id` bigint unsigned NOT NULL auto_increment,
-  `load_balancer_id` bigint unsigned NOT NULL,
   `public_ip_address` char(40) NOT NULL,
   `nic_id` bigint unsigned NULL COMMENT 'nic id',
   PRIMARY KEY  (`id`),
   UNIQUE KEY (`nic_id`),
-  CONSTRAINT `fk_inline_load_balancer_nic_map__load_balancer_id` FOREIGN KEY(`load_balancer_id`) REFERENCES `load_balancing_rules`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_inline_load_balancer_nic_map__nic_id` FOREIGN KEY(`nic_id`) REFERENCES `nics`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

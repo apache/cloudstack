@@ -31,9 +31,6 @@ public class InlineLoadBalancerNicMapVO {
     @Column(name="id")
     private long id;
 
-    @Column(name="load_balancer_id")
-    private long loadBalancerId;
-    
     @Column(name="public_ip_address")
     private String publicIpAddress;
 
@@ -42,8 +39,7 @@ public class InlineLoadBalancerNicMapVO {
 
     public InlineLoadBalancerNicMapVO() { }
 
-    public InlineLoadBalancerNicMapVO(long loadBalancerId, String publicIpAddress, long nicId) {
-        this.loadBalancerId = loadBalancerId;
+    public InlineLoadBalancerNicMapVO(String publicIpAddress, long nicId) {
         this.publicIpAddress = publicIpAddress;
         this.nicId = nicId;
     }
@@ -52,10 +48,6 @@ public class InlineLoadBalancerNicMapVO {
         return id;
     }
 
-    public long getLoadBalancerId() {
-        return loadBalancerId;
-    }
-    
     public String getPublicIpAddress() {
     	return publicIpAddress;
     }

@@ -22,7 +22,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.rules.PortForwardingRule;
 
-public interface PortForwardingServiceProvider extends NetworkElement {
+public interface PortForwardingServiceProvider extends NetworkElement, IpDeployingRequester {
     /**
      * Apply rules
      * @param network
@@ -31,6 +31,4 @@ public interface PortForwardingServiceProvider extends NetworkElement {
      * @throws ResourceUnavailableException
      */
     boolean applyPFRules(Network network, List<PortForwardingRule> rules) throws ResourceUnavailableException;
-
-    IpDeployer getIpDeployer(Network network);
 }
