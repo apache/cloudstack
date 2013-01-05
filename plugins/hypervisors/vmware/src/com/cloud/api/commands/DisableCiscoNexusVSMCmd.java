@@ -47,8 +47,8 @@ public class DisableCiscoNexusVSMCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="virtual_supervisor_module")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="Id of the Cisco Nexus 1000v VSM device to be deleted")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = CiscoNexusVSMResponse.class,
+            required=true, description="Id of the Cisco Nexus 1000v VSM device to be deleted")
     private Long id;
 
     /////////////////////////////////////////////////////

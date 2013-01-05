@@ -20,7 +20,11 @@ import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.EntityReference;
 
+import com.cloud.network.CiscoNexusVSMDevice;
+
+@EntityReference(value=CiscoNexusVSMDevice.class)
 public class CiscoNexusVSMResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.EXTERNAL_SWITCH_MGMT_DEVICE_ID) @Param(description="device id of the Cisco N1KV VSM device")
