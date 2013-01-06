@@ -22,15 +22,12 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import com.cloud.acl.ControlledEntity;
-import com.cloud.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import com.cloud.api.query.vo.ControlledViewEntity;
-import com.cloud.api.query.vo.UserAccountJoinVO;
 
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
-import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
 import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
-import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 

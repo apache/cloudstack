@@ -16,7 +16,7 @@
 // under the License.
 package com.cloud.network;
 
-import com.cloud.acl.ControlledEntity;
+import org.apache.cloudstack.acl.ControlledEntity;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;

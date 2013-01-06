@@ -17,7 +17,7 @@
 
 package com.cloud.network.as;
 
-import com.cloud.acl.ControlledEntity;
+import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 public interface AutoScalePolicy extends ControlledEntity, InternalIdentity {

@@ -26,7 +26,7 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLsCmd;
 import org.apache.log4j.Logger;
 
-import com.cloud.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;

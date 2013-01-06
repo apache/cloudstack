@@ -25,11 +25,11 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.command.admin.autoscale.CreateCounterCmd;
 import org.apache.cloudstack.api.command.user.autoscale.*;
 import org.apache.log4j.Logger;
 
-import com.cloud.acl.ControlledEntity;
 import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiDispatcher;

@@ -16,7 +16,7 @@
 // under the License.
 package com.cloud.uservm;
 
-import com.cloud.acl.ControlledEntity;
+import org.apache.cloudstack.acl.ControlledEntity;
 import com.cloud.vm.VirtualMachine;
 
 /**

@@ -40,7 +40,7 @@ import org.apache.cloudstack.api.command.user.iso.*;
 import org.apache.cloudstack.api.command.user.template.*;
 import org.apache.log4j.Logger;
 
-import com.cloud.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.downloadTemplateFromSwiftToSecondaryStorageCommand;

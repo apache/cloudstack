@@ -14,20 +14,20 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.acl;
+package org.apache.cloudstack.acl;
 
-//metadata - consists of default dynamic roles in CS + any custom roles added by user
-public interface Role {
+import com.cloud.domain.PartOf;
+import com.cloud.user.OwnedBy;
 
-    public static final short ROOT_ADMIN = 0;
-    public static final short DOMAIN_ADMIN = 1;
-    public static final short DOMAIN_USER = 2;
-    public static final short OWNER = 3;
-    public static final short PARENT_DOMAIN_ADMIN = 4;
-    public static final short PARENT_DOMAIN_USER = 5;
-    public static final short CHILD_DOMAIN_ADMIN = 6;
-    public static final short CHILD_DOMAIN_USER = 7;
+/**
+ * ControlledEntity defines an object for which the access from an
+ * access must inherit this interface.
+ *
+ */
+public interface ControlledEntity extends OwnedBy, PartOf {
+    public enum ACLType {
+        Account,
+        Domain
+    }
 
-    public long getId();
-    public short getRoleType();
- }
+}

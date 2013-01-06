@@ -14,19 +14,20 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.acl;
+package org.apache.cloudstack.acl;
 
-import java.util.Properties;
+//metadata - consists of default dynamic roles in CS + any custom roles added by user
+public interface Role {
 
-import com.cloud.exception.PermissionDeniedException;
-import com.cloud.user.Account;
-import com.cloud.user.User;
-import com.cloud.utils.component.Adapter;
+    public static final short ROOT_ADMIN = 0;
+    public static final short DOMAIN_ADMIN = 1;
+    public static final short DOMAIN_USER = 2;
+    public static final short OWNER = 3;
+    public static final short PARENT_DOMAIN_ADMIN = 4;
+    public static final short PARENT_DOMAIN_USER = 5;
+    public static final short CHILD_DOMAIN_ADMIN = 6;
+    public static final short CHILD_DOMAIN_USER = 7;
 
-/**
- * APIAccessChecker checks the ownership and access control to API requests
- */
-public interface APIAccessChecker extends Adapter {
-    // Interface for checking access to an API for an user
-    boolean canAccessAPI(User user, String apiCommandName) throws PermissionDeniedException;
-}
+    public long getId();
+    public short getRoleType();
+ }

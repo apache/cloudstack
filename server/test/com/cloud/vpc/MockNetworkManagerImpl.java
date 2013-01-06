@@ -29,7 +29,7 @@ import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementors
 import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
 import org.apache.log4j.Logger;
 
-import com.cloud.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
 import com.cloud.dc.DataCenter;
@@ -70,11 +70,6 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.*;
 import com.cloud.vpc.dao.MockVpcVirtualRouterElement;
-import org.apache.log4j.Logger;
-
-import javax.ejb.Local;
-import javax.naming.ConfigurationException;
-import java.util.*;
 
 @Local(value = { NetworkManager.class, NetworkService.class })
 public class MockNetworkManagerImpl implements NetworkManager, Manager{
@@ -541,7 +536,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager{
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.network.NetworkManager#setupNetwork(com.cloud.user.Account, com.cloud.offerings.NetworkOfferingVO, com.cloud.network.Network, com.cloud.deploy.DeploymentPlan, java.lang.String, java.lang.String, boolean, java.lang.Long, com.cloud.acl.ControlledEntity.ACLType, java.lang.Boolean, java.lang.Long)
+     * @see com.cloud.network.NetworkManager#setupNetwork(com.cloud.user.Account, com.cloud.offerings.NetworkOfferingVO, com.cloud.network.Network, com.cloud.deploy.DeploymentPlan, java.lang.String, java.lang.String, boolean, java.lang.Long, org.apache.cloudstack.acl.ControlledEntity.ACLType, java.lang.Boolean, java.lang.Long)
      */
     @Override
     public List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan plan, String name, String displayText, boolean errorIfAlreadySetup, Long domainId, ACLType aclType,
@@ -733,7 +728,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager{
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.network.NetworkManager#createGuestNetwork(long, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, com.cloud.user.Account, java.lang.Long, com.cloud.network.PhysicalNetwork, long, com.cloud.acl.ControlledEntity.ACLType, java.lang.Boolean, java.lang.Long)
+     * @see com.cloud.network.NetworkManager#createGuestNetwork(long, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, com.cloud.user.Account, java.lang.Long, com.cloud.network.PhysicalNetwork, long, org.apache.cloudstack.acl.ControlledEntity.ACLType, java.lang.Boolean, java.lang.Long)
      */
     @Override
     public Network createGuestNetwork(long networkOfferingId, String name, String displayText, String gateway, String cidr, String vlanId, String networkDomain, Account owner, Long domainId,

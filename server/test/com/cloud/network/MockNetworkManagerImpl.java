@@ -16,7 +16,7 @@
 // under the License.
 package com.cloud.network;
 
-import com.cloud.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;

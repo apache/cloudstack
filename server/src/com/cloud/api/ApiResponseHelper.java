@@ -33,8 +33,8 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.log4j.Logger;
 
-import com.cloud.acl.ControlledEntity;
-import com.cloud.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;

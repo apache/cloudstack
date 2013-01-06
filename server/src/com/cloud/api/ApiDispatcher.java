@@ -31,11 +31,11 @@ import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 
 import com.cloud.dao.EntityManager;
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.api.*;
 import org.apache.log4j.Logger;
 
-import com.cloud.acl.ControlledEntity;
-import com.cloud.acl.Role;
 import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import com.cloud.async.AsyncCommandQueued;
@@ -396,7 +396,6 @@ public class ApiDispatcher {
         }
 
         for (Field field : fields) {
-
             PlugService plugServiceAnnotation = field.getAnnotation(PlugService.class);
             if(plugServiceAnnotation != null){
                 plugService(field, cmd);
@@ -459,7 +458,7 @@ public class ApiDispatcher {
 
                     // find the controlled entity DBid by uuid
                     if (parameterAnnotation.entityType() != null) {
-                        Class<?>[] entityList = parameterAnnotation.entityType();
+                        Class<?>[] entityList = parameterAnnotation.entityType()[0].getAnnotation(EntityReference.class).value();
                         for (Class entity : entityList){
                             if (ControlledEntity.class.isAssignableFrom(entity)) {
                                 if (s_logger.isDebugEnabled()) {
@@ -529,7 +528,7 @@ public class ApiDispatcher {
 
         }
 
-        //check access on the enstities.
+        //check access on the entities.
     }
 
     private static Long translateUuidToInternalId(String uuid, Parameter annotation)
@@ -603,9 +602,9 @@ public class ApiDispatcher {
                 field.set(cmdObj, Boolean.valueOf(paramObj.toString()));
                 break;
             case DATE:
-                // This piece of code is for maintaining backward compatibility and support both the date formats(Bug
-// 9724)
-                // Do the date massaging for ListEventsCmd only
+                // This piece of code is for maintaining backward compatibility
+                // and support both the date formats(Bug 9724)
+                // Do the date messaging for ListEventsCmd only
                 if (cmdObj instanceof ListEventsCmd) {
                     boolean isObjInNewDateFormat = isObjInNewDateFormat(paramObj.toString());
                     if (isObjInNewDateFormat) {

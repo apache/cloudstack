@@ -46,8 +46,8 @@ import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
 import org.apache.log4j.Logger;
 
-import com.cloud.acl.ControlledEntity.ACLType;
-import com.cloud.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.*;
@@ -167,19 +167,8 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import edu.emory.mathcs.backport.java.util.Collections;
-import org.apache.log4j.Logger;
 
-import javax.ejb.Local;
-import javax.naming.ConfigurationException;
-import java.net.URI;
-import java.security.InvalidParameterException;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.*;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 /**
  * NetworkManagerImpl implements NetworkManager.

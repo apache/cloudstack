@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.acl;
+package org.apache.cloudstack.acl;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.domain.Domain;

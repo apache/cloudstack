@@ -19,7 +19,7 @@ package com.cloud.template;
 import java.util.Date;
 import java.util.Map;
 
-import com.cloud.acl.ControlledEntity;
+import org.apache.cloudstack.acl.ControlledEntity;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;

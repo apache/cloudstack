@@ -40,8 +40,8 @@ import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
-import com.cloud.acl.ControlledEntity.ACLType;
-import com.cloud.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.*;
 import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
@@ -58,7 +58,6 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
 import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
 import org.apache.cloudstack.api.command.user.vm.DestroyVMCmd;
-import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.command.user.vm.RebootVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;
 import org.apache.cloudstack.api.command.user.vm.ResetVMPasswordCmd;
@@ -147,7 +146,6 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
-import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
@@ -166,15 +164,6 @@ import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.*;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
-
-import javax.ejb.Local;
-import javax.naming.ConfigurationException;
-import java.util.*;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 @Local(value = { UserVmManager.class, UserVmService.class })
 public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager {

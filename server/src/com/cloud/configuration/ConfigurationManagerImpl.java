@@ -58,7 +58,7 @@ import org.apache.cloudstack.api.command.admin.vlan.DeleteVlanIpRangeCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
 import org.apache.log4j.Logger;
 
-import com.cloud.acl.SecurityChecker;
+import org.apache.cloudstack.acl.SecurityChecker;
 import com.cloud.alert.AlertManager;
 import org.apache.cloudstack.api.ApiConstants.LDAPParams;
 import com.cloud.api.ApiDBUtils;

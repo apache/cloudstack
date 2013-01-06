@@ -18,7 +18,7 @@ package com.cloud.storage;
 
 import java.util.Date;
 
-import com.cloud.acl.ControlledEntity;
+import org.apache.cloudstack.acl.ControlledEntity;
 import com.cloud.template.BasedOn;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.fsm.StateObject;

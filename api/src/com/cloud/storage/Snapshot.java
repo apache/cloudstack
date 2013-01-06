@@ -18,7 +18,7 @@ package com.cloud.storage;
 
 import java.util.Date;
 
-import com.cloud.acl.ControlledEntity;
+import org.apache.cloudstack.acl.ControlledEntity;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;

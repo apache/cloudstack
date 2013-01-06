@@ -33,7 +33,7 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.api.command.user.vpc.ListStaticRoutesCmd;
 import org.apache.log4j.Logger;
 
-import com.cloud.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.api.command.user.vpc.ListPrivateGatewaysCmd;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;

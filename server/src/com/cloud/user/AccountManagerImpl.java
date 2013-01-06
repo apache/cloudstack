@@ -36,22 +36,20 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
-import com.cloud.acl.ControlledEntity;
-
-import com.cloud.acl.SecurityChecker;
-import com.cloud.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.dao.UserAccountJoinDao;
 import com.cloud.api.query.vo.ControlledViewEntity;
 
 
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
-import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
@@ -121,7 +119,6 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;

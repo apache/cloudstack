@@ -14,20 +14,19 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.acl;
+package org.apache.cloudstack.acl;
 
-import com.cloud.domain.PartOf;
-import com.cloud.user.OwnedBy;
+import java.util.Properties;
+
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.user.Account;
+import com.cloud.user.User;
+import com.cloud.utils.component.Adapter;
 
 /**
- * ControlledEntity defines an object for which the access from an
- * access must inherit this interface.
- *
+ * APIAccessChecker checks the ownership and access control to API requests
  */
-public interface ControlledEntity extends OwnedBy, PartOf {
-    public enum ACLType {
-        Account,
-        Domain
-    }
-
+public interface APIAccessChecker extends Adapter {
+    // Interface for checking access to an API for an user
+    boolean canAccessAPI(User user, String apiCommandName) throws PermissionDeniedException;
 }

@@ -29,15 +29,13 @@ import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 import javax.persistence.Transient;
 
-import com.cloud.acl.ControlledEntity;
-import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.acl.ControlledEntity;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.NetUtils;
-import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * NetworkConfigurationVO contains information about a specific network.

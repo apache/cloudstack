@@ -19,14 +19,13 @@ package com.cloud.user;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.acl.ControlledEntity;
-import com.cloud.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
 import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
-import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 
 import com.cloud.domain.Domain;
 import com.cloud.exception.ConcurrentOperationException;

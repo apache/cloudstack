@@ -16,7 +16,7 @@
 // under the License.
 package com.cloud.network;
 
-import com.cloud.acl.ControlledEntity;
+import org.apache.cloudstack.acl.ControlledEntity;
 
 public interface RemoteAccessVpn extends ControlledEntity {
     enum State {

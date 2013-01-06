@@ -39,6 +39,7 @@ public class StopVMCmd extends BaseAsyncCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
+    @ACL
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType=UserVmResponse.class,
             required = true, description = "The ID of the virtual machine")
     private Long id;

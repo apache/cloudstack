@@ -30,7 +30,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.Resource;

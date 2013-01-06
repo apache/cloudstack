@@ -21,7 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.acl.ControlledEntity;
+import org.apache.cloudstack.acl.ControlledEntity;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupRules;

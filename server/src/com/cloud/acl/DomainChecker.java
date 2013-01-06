@@ -18,6 +18,8 @@ package com.cloud.acl;
 
 import javax.ejb.Local;
 
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.BaseCmd;
 import com.cloud.dc.DataCenter;
 import com.cloud.domain.Domain;

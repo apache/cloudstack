@@ -26,7 +26,7 @@ import java.util.*;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import com.cloud.acl.APIAccessChecker;
+import org.apache.cloudstack.acl.APIAccessChecker;
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.PermissionDeniedException;

@@ -67,7 +67,7 @@ import org.apache.cloudstack.api.command.user.zone.ListZonesByCmd;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
-import com.cloud.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;

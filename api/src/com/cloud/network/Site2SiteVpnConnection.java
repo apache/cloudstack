@@ -18,7 +18,7 @@ package com.cloud.network;
 
 import java.util.Date;
 
-import com.cloud.acl.ControlledEntity;
+import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 public interface Site2SiteVpnConnection extends ControlledEntity, InternalIdentity {
