@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api;
 
 import java.util.List;
 
@@ -22,14 +22,10 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.exception.InvalidParameterValueException;
 
-public abstract class UpdateTemplateOrIsoPermissionsCmd extends BaseCmd {
+public abstract class BaseUpdateTemplateOrIsoPermissionsCmd extends BaseCmd {
     public Logger s_logger = getLogger();
     protected String s_name = getResponseName();
 
@@ -113,7 +109,7 @@ public abstract class UpdateTemplateOrIsoPermissionsCmd extends BaseCmd {
     }
 
     protected Logger getLogger() {
-        return Logger.getLogger(UpdateTemplateOrIsoPermissionsCmd.class.getName());
+        return Logger.getLogger(BaseUpdateTemplateOrIsoPermissionsCmd.class.getName());
     }
 
     @Override

@@ -16,7 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.template;
 
-import com.cloud.api.commands.UpdateTemplateOrIsoPermissionsCmd;
+import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoPermissionsCmd;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -29,7 +29,7 @@ import com.cloud.user.Account;
                                                                                         "A private template is visible only to the owner of the template. " +
                                                                                         "A priviledged template is a private template with account permissions added. " +
                                                                                         "Only accounts specified under the template permissions are visible to them.")
-public class UpdateTemplatePermissionsCmd extends UpdateTemplateOrIsoPermissionsCmd {
+public class UpdateTemplatePermissionsCmd extends BaseUpdateTemplateOrIsoPermissionsCmd {
     protected String getResponseName() {
         return "updatetemplatepermissionsresponse";
     }

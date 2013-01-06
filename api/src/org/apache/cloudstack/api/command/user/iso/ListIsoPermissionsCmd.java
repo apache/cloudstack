@@ -16,13 +16,16 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.iso;
 
-import com.cloud.api.commands.ListTemplateOrIsoPermissionsCmd;
+import org.apache.cloudstack.api.BaseListTemplateOrIsoPermissionsCmd;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.response.TemplatePermissionsResponse;
 import org.apache.log4j.Logger;
 
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.template.VirtualMachineTemplate;
 
-public class ListIsoPermissionsCmd extends ListTemplateOrIsoPermissionsCmd {
+@APICommand(name="listIsoPermissions", description="List iso visibility and all accounts that have permissions to view this iso.", responseObject=TemplatePermissionsResponse.class)
+public class ListIsoPermissionsCmd extends BaseListTemplateOrIsoPermissionsCmd {
     protected String getResponseName() {
         return "listisopermissionsresponse";
     }

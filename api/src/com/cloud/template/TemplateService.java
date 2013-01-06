@@ -19,15 +19,15 @@ package com.cloud.template;
 import java.net.URISyntaxException;
 import java.util.List;
 
+import org.apache.cloudstack.api.BaseListTemplateOrIsoPermissionsCmd;
+import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoPermissionsCmd;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.ExtractIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.template.*;
 import org.apache.cloudstack.api.command.user.template.CopyTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.ExtractTemplateCmd;
-import com.cloud.api.commands.ListTemplateOrIsoPermissionsCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
-import com.cloud.api.commands.UpdateTemplateOrIsoPermissionsCmd;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
@@ -83,7 +83,7 @@ public interface TemplateService {
 
     VirtualMachineTemplate getTemplate(long templateId);
 
-    List<String> listTemplatePermissions(ListTemplateOrIsoPermissionsCmd cmd);
+    List<String> listTemplatePermissions(BaseListTemplateOrIsoPermissionsCmd cmd);
 
-    boolean updateTemplateOrIsoPermissions(UpdateTemplateOrIsoPermissionsCmd cmd);
+    boolean updateTemplateOrIsoPermissions(BaseUpdateTemplateOrIsoPermissionsCmd cmd);
 }

@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api;
 
 import org.apache.cloudstack.api.command.user.iso.UpdateIsoCmd;
 import org.apache.cloudstack.api.response.GuestOSResponse;
@@ -25,7 +25,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 
-public abstract class UpdateTemplateOrIsoCmd extends BaseCmd {
+public abstract class BaseUpdateTemplateOrIsoCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateIsoCmd.class.getName());
 
     /////////////////////////////////////////////////////

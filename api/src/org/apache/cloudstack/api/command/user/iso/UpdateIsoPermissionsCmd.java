@@ -16,7 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.iso;
 
-import com.cloud.api.commands.UpdateTemplateOrIsoPermissionsCmd;
+import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoPermissionsCmd;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -25,7 +25,7 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 
 @APICommand(name = "updateIsoPermissions", description="Updates iso permissions", responseObject=SuccessResponse.class)
-public class UpdateIsoPermissionsCmd extends UpdateTemplateOrIsoPermissionsCmd {
+public class UpdateIsoPermissionsCmd extends BaseUpdateTemplateOrIsoPermissionsCmd {
     protected String getResponseName() {
         return "updateisopermissionsresponse";
     }
