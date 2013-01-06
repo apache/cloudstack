@@ -28,7 +28,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.network.element.JuniperSRXFirewallElementService;
-import com.cloud.server.api.response.ExternalFirewallResponse;
+import org.apache.cloudstack.api.response.ExternalFirewallResponse;
 import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 

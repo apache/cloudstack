@@ -29,7 +29,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.network.element.F5ExternalLoadBalancerElementService;
-import com.cloud.server.api.response.ExternalLoadBalancerResponse;
+import org.apache.cloudstack.api.response.ExternalLoadBalancerResponse;
 import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 

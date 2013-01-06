@@ -82,7 +82,7 @@ import com.cloud.network.rules.StaticNat;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.resource.ServerResource;
-import com.cloud.server.api.response.ExternalFirewallResponse;
+import org.apache.cloudstack.api.response.ExternalFirewallResponse;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;

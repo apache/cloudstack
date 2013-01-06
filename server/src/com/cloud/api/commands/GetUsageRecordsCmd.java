@@ -39,7 +39,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.projects.Project;
 import com.cloud.server.ManagementServerExt;
-import com.cloud.server.api.response.UsageRecordResponse;
+import org.apache.cloudstack.api.response.UsageRecordResponse;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.usage.UsageTypes;
 import com.cloud.usage.UsageVO;

@@ -80,7 +80,7 @@ import com.cloud.network.rules.LbStickinessMethod;
 import com.cloud.network.rules.LbStickinessMethod.StickinessMethodType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.resource.ServerResource;
-import com.cloud.server.api.response.ExternalLoadBalancerResponse;
+import org.apache.cloudstack.api.response.ExternalLoadBalancerResponse;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;

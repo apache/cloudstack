@@ -23,7 +23,7 @@ import com.cloud.api.commands.DeleteTrafficMonitorCmd;
 import com.cloud.api.commands.ListTrafficMonitorsCmd;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
-import com.cloud.server.api.response.TrafficMonitorResponse;
+import org.apache.cloudstack.api.response.TrafficMonitorResponse;
 import com.cloud.utils.component.Manager;
 
 public interface NetworkUsageManager extends Manager {

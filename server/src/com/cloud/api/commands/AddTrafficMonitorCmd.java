@@ -25,8 +25,8 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.network.NetworkUsageManager;
 import com.cloud.server.ManagementService;
-import com.cloud.server.api.response.ExternalFirewallResponse;
-import com.cloud.server.api.response.TrafficMonitorResponse;
+import org.apache.cloudstack.api.response.ExternalFirewallResponse;
+import org.apache.cloudstack.api.response.TrafficMonitorResponse;
 import com.cloud.user.Account;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -92,8 +92,8 @@ public class AddTrafficMonitorCmd extends BaseCmd {
 		try {
 		    ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
 		    NetworkUsageManager networkUsageMgr = locator.getManager(NetworkUsageManager.class);
-			Host trafficMoinitor = networkUsageMgr.addTrafficMonitor(this);
-			TrafficMonitorResponse response = networkUsageMgr.getApiResponse(trafficMoinitor);
+			Host trafficMonitor = networkUsageMgr.addTrafficMonitor(this);
+			TrafficMonitorResponse response = networkUsageMgr.getApiResponse(trafficMonitor);
 			response.setObjectName("trafficmonitor");
 			response.setResponseName(getCommandName());
 			this.setResponseObject(response);

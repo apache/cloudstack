@@ -31,8 +31,8 @@ import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.host.Host;
 import com.cloud.network.NetworkUsageManager;
 import com.cloud.server.ManagementService;
-import com.cloud.server.api.response.ExternalFirewallResponse;
-import com.cloud.server.api.response.TrafficMonitorResponse;
+import org.apache.cloudstack.api.response.ExternalFirewallResponse;
+import org.apache.cloudstack.api.response.TrafficMonitorResponse;
 import com.cloud.utils.component.ComponentLocator;
 
 @APICommand(name = "listTrafficMonitors", description="List traffic monitor Hosts.", responseObject = ExternalFirewallResponse.class)

@@ -31,7 +31,7 @@ import org.apache.cloudstack.api.PlugService;
 import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.host.Host;
 import com.cloud.network.element.JuniperSRXFirewallElementService;
-import com.cloud.server.api.response.ExternalFirewallResponse;
+import org.apache.cloudstack.api.response.ExternalFirewallResponse;
 
 @APICommand(name = "listExternalFirewalls", description="List external firewall appliances.", responseObject = ExternalFirewallResponse.class)
 public class ListExternalFirewallsCmd extends BaseListCmd {

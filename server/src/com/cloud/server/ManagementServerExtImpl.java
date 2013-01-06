@@ -29,7 +29,7 @@ import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.projects.Project;
-import com.cloud.server.api.response.UsageTypeResponse;
+import org.apache.cloudstack.api.response.UsageTypeResponse;
 import com.cloud.usage.UsageJobVO;
 import com.cloud.usage.UsageTypes;
 import com.cloud.usage.UsageVO;
