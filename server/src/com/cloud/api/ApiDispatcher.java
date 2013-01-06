@@ -396,20 +396,19 @@ public class ApiDispatcher {
         }
 
         for (Field field : fields) {
-            //plug Services
+
             PlugService plugServiceAnnotation = field.getAnnotation(PlugService.class);
             if(plugServiceAnnotation != null){
                 plugService(field, cmd);
             }
-            //APITODO: change the checking here
+
             Parameter parameterAnnotation = field.getAnnotation(Parameter.class);
             if ((parameterAnnotation == null) || !parameterAnnotation.expose()) {
                 continue;
             }
 
-            //ACL checkAccess = field.getAnnotation(ACL.class);
-
-            Validator validators = field.getAnnotation(Validator.class);
+            //TODO: Annotate @Validate on API Cmd classes, FIXME how to process Validate
+            Validate validateAnnotation = field.getAnnotation(Validate.class);
             Object paramObj = unpackedParams.get(parameterAnnotation.name());
             if (paramObj == null) {
                 if (parameterAnnotation.required()) {
@@ -530,7 +529,7 @@ public class ApiDispatcher {
 
         }
 
-        //check access on the entities.
+        //check access on the enstities.
     }
 
     private static Long translateUuidToInternalId(String uuid, Parameter annotation)

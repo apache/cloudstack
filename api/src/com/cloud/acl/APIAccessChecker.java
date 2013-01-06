@@ -27,6 +27,6 @@ import com.cloud.utils.component.Adapter;
  * APIAccessChecker checks the ownership and access control to API requests
  */
 public interface APIAccessChecker extends Adapter {
-    // Interface for checking access to an API for a user
+    // Interface for checking access to an API for an user
     boolean canAccessAPI(User user, String apiCommandName) throws PermissionDeniedException;
 }
