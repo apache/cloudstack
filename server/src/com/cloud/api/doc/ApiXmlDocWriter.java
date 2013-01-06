@@ -24,16 +24,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Properties;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -54,12 +45,14 @@ import org.apache.cloudstack.api.response.VolumeResponse;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import com.thoughtworks.xstream.XStream;
+import org.reflections.Reflections;
 
 public class ApiXmlDocWriter {
     public static final Logger s_logger = Logger.getLogger(ApiXmlDocWriter.class.getName());
 
     private static final short DOMAIN_ADMIN_COMMAND = 4;
     private static final short USER_COMMAND = 8;
+    private static Map<String, Class<?>> _apiNameCmdClassMap = new HashMap<String, Class<?>>();
     private static LinkedHashMap<Object, String> all_api_commands = new LinkedHashMap<Object, String>();
     private static LinkedHashMap<Object, String> domain_admin_api_commands = new LinkedHashMap<Object, String>();
     private static LinkedHashMap<Object, String> regular_user_api_commands = new LinkedHashMap<Object, String>();
@@ -86,6 +79,16 @@ public class ApiXmlDocWriter {
     }
 
     public static void main(String[] args) {
+        // Populate api name and cmd class mappings
+        Reflections reflections = new Reflections("org.apache.cloudstack.api");
+        Set<Class<?>> cmdClasses = reflections.getTypesAnnotatedWith(APICommand.class);
+        reflections = new Reflections("com.cloud.api");
+        cmdClasses.addAll(reflections.getTypesAnnotatedWith(APICommand.class));
+        for(Class<?> cmdClass: cmdClasses) {
+            String apiName = cmdClass.getAnnotation(APICommand.class).name();
+            _apiNameCmdClassMap.put(apiName, cmdClass);
+        }
+
         LinkedProperties preProcessedCommands = new LinkedProperties();
         String[] fileNames = null;
 
@@ -125,13 +128,19 @@ public class ApiXmlDocWriter {
         while (propertiesIterator.hasNext()) {
             String key = (String) propertiesIterator.next();
             String preProcessedCommand = preProcessedCommands.getProperty(key);
-            String[] commandParts = preProcessedCommand.split(";");
-            String commandName = commandParts[0];
+            int splitIndex = preProcessedCommand.lastIndexOf(";");
+            String commandRoleMask = preProcessedCommand.substring(splitIndex + 1);
+            Class<?> cmdClass = _apiNameCmdClassMap.get(key);
+            if (cmdClass == null) {
+                System.out.println("Check, Null Value for key: " + key + " preProcessedCommand=" + preProcessedCommand);
+                continue;
+            }
+            String commandName = cmdClass.getName();
             all_api_commands.put(key, commandName);
 
             short cmdPermissions = 1;
-            if (commandParts.length > 1 && commandParts[1] != null) {
-                cmdPermissions = Short.parseShort(commandParts[1]);
+            if (commandRoleMask != null) {
+                cmdPermissions = Short.parseShort(commandRoleMask);
             }
 
             if ((cmdPermissions & DOMAIN_ADMIN_COMMAND) != 0) {
