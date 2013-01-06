@@ -34,6 +34,8 @@ import java.util.concurrent.TimeUnit;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.BaseListTemplateOrIsoPermissionsCmd;
+import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoPermissionsCmd;
 import org.apache.cloudstack.api.command.user.iso.*;
 import org.apache.cloudstack.api.command.user.template.*;
 import org.apache.log4j.Logger;
@@ -47,10 +49,8 @@ import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.to.SwiftTO;
-import com.cloud.api.commands.ListTemplateOrIsoPermissionsCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
-import com.cloud.api.commands.UpdateTemplateOrIsoPermissionsCmd;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.configuration.Config;
@@ -1335,7 +1335,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 	}
 	
     @Override
-    public List<String> listTemplatePermissions(ListTemplateOrIsoPermissionsCmd cmd) {
+    public List<String> listTemplatePermissions(BaseListTemplateOrIsoPermissionsCmd cmd) {
         Account caller = UserContext.current().getCaller();
         Long id = cmd.getId();
 
@@ -1375,7 +1375,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     
     @DB
     @Override
-    public boolean updateTemplateOrIsoPermissions(UpdateTemplateOrIsoPermissionsCmd cmd) {
+    public boolean updateTemplateOrIsoPermissions(BaseUpdateTemplateOrIsoPermissionsCmd cmd) {
         Transaction txn = Transaction.currentTxn();
 
         // Input validation

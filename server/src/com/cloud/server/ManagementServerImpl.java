@@ -42,6 +42,7 @@ import java.util.concurrent.TimeUnit;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoCmd;
 import org.apache.cloudstack.api.command.admin.cluster.ListClustersCmd;
 import org.apache.cloudstack.api.command.admin.config.ListCfgsByCmd;
 import org.apache.cloudstack.api.command.admin.resource.ListAlertsCmd;
@@ -89,7 +90,6 @@ import org.apache.cloudstack.api.command.admin.systemvm.RebootSystemVmCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.StopSystemVmCmd;
 import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
-import com.cloud.api.commands.UpdateTemplateOrIsoCmd;
 import com.cloud.api.query.dao.DomainRouterJoinDao;
 import com.cloud.api.query.dao.InstanceGroupJoinDao;
 
@@ -1462,7 +1462,7 @@ public class ManagementServerImpl implements ManagementServer {
         return updateTemplateOrIso(cmd);
     }
 
-    private VMTemplateVO updateTemplateOrIso(UpdateTemplateOrIsoCmd cmd) {
+    private VMTemplateVO updateTemplateOrIso(BaseUpdateTemplateOrIsoCmd cmd) {
         Long id = cmd.getId();
         String name = cmd.getTemplateName();
         String displayText = cmd.getDisplayText();
