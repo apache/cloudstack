@@ -619,9 +619,9 @@ public class ApiDispatcher {
                         synchronized (format) {
                             Date date = format.parse(paramObj.toString());
                             if (field.getName().equals("startDate")) {
-                                date = massageDate(date, 0, 0, 0);
+                                date = messageDate(date, 0, 0, 0);
                             } else if (field.getName().equals("endDate")) {
-                                date = massageDate(date, 23, 59, 59);
+                                date = messageDate(date, 23, 59, 59);
                             }
                             field.set(cmdObj, date);
                         }
@@ -717,7 +717,7 @@ public class ApiDispatcher {
         return matcher.matches();
     }
 
-    private static Date massageDate(Date date, int hourOfDay, int minute, int second) {
+    private static Date messageDate(Date date, int hourOfDay, int minute, int second) {
         Calendar cal = Calendar.getInstance();
         cal.setTime(date);
         cal.set(Calendar.HOUR_OF_DAY, hourOfDay);
