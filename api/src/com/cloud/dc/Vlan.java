@@ -16,10 +16,11 @@
 // under the License.
 package com.cloud.dc;
 
+import org.apache.cloudstack.acl.InfrastructureEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
-public interface Vlan extends InternalIdentity, Identity {
+public interface Vlan extends InfrastructureEntity, InternalIdentity, Identity {
     public enum VlanType {
         DirectAttached,
         VirtualNetwork

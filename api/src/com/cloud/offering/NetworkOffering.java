@@ -18,6 +18,7 @@ package com.cloud.offering;
 
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Networks.TrafficType;
+import org.apache.cloudstack.acl.InfrastructureEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
@@ -25,7 +26,7 @@ import org.apache.cloudstack.api.InternalIdentity;
  * Describes network offering
  *
  */
-public interface NetworkOffering extends InternalIdentity, Identity {
+public interface NetworkOffering extends InfrastructureEntity, InternalIdentity, Identity {
 
     public enum Availability {
         Required,
