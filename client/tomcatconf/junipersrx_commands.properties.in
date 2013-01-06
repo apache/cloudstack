@@ -19,12 +19,12 @@
 ### Please standardize naming conventions to camel-case (even for acronyms).
 
 #### juniper srx firewall commands
-addExternalFirewall = com.cloud.api.commands.AddExternalFirewallCmd;1
-deleteExternalFirewall = com.cloud.api.commands.DeleteExternalFirewallCmd;1
-listExternalFirewalls = com.cloud.api.commands.ListExternalFirewallsCmd;1
+addExternalFirewall=1
+deleteExternalFirewall=1
+listExternalFirewalls=1
 
-addSrxFirewall = com.cloud.api.commands.AddSrxFirewallCmd;1
-deleteSrxFirewall = com.cloud.api.commands.DeleteSrxFirewallCmd;1
-configureSrxFirewall = com.cloud.api.commands.ConfigureSrxFirewallCmd;1
-listSrxFirewalls = com.cloud.api.commands.ListSrxFirewallsCmd;1
-listSrxFirewallNetworks = com.cloud.api.commands.ListSrxFirewallNetworksCmd;1
+addSrxFirewall=1
+deleteSrxFirewall=1
+configureSrxFirewall=1
+listSrxFirewalls=1
+listSrxFirewallNetworks=1

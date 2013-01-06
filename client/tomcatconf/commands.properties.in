@@ -19,408 +19,408 @@
 ### Please standardize naming conventions to camel-case (even for acronyms).
 
 ### Account commands
-createAccount=org.apache.cloudstack.api.command.admin.account.CreateAccountCmd;3
-deleteAccount=org.apache.cloudstack.api.command.admin.account.DeleteAccountCmd;3
-updateAccount=org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;3
-disableAccount=org.apache.cloudstack.api.command.admin.account.DisableAccountCmd;7
-enableAccount=org.apache.cloudstack.api.command.admin.account.EnableAccountCmd;7
-lockAccount=org.apache.cloudstack.api.command.admin.account.LockAccountCmd;7
-listAccounts=org.apache.cloudstack.api.command.user.account.ListAccountsCmd;15
-markDefaultZoneForAccount=org.apache.cloudstack.api.command.admin.zone.MarkDefaultZoneForAccountCmd;1
+createAccount=3
+deleteAccount=3
+updateAccount=3
+disableAccount=7
+enableAccount=7
+lockAccount=7
+listAccounts=15
+markDefaultZoneForAccount=1
 
 #### User commands
-createUser=org.apache.cloudstack.api.command.admin.user.CreateUserCmd;3
-deleteUser=org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;3
-updateUser=org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;15
-listUsers=org.apache.cloudstack.api.command.admin.user.ListUsersCmd;7
-lockUser=org.apache.cloudstack.api.command.admin.user.LockUserCmd;7
-disableUser=org.apache.cloudstack.api.command.admin.user.DisableUserCmd;7
-enableUser=org.apache.cloudstack.api.command.admin.user.EnableUserCmd;7
-getUser=org.apache.cloudstack.api.command.admin.user.GetUserCmd;1
+createUser=3
+deleteUser=3
+updateUser=15
+listUsers=7
+lockUser=7
+disableUser=7
+enableUser=7
+getUser=1
 
 #### Domain commands
-createDomain=org.apache.cloudstack.api.command.admin.domain.CreateDomainCmd;1
-updateDomain=org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;1
-deleteDomain=org.apache.cloudstack.api.command.admin.domain.DeleteDomainCmd;1
-listDomains=org.apache.cloudstack.api.command.admin.domain.ListDomainsCmd;7
-listDomainChildren=org.apache.cloudstack.api.command.admin.domain.ListDomainChildrenCmd;7
+createDomain=1
+updateDomain=1
+deleteDomain=1
+listDomains=7
+listDomainChildren=7
 
 ####Cloud Identifier commands
-getCloudIdentifier=org.apache.cloudstack.api.command.user.resource.GetCloudIdentifierCmd;15
+getCloudIdentifier=15
 
 #### Limit commands
-updateResourceLimit=org.apache.cloudstack.api.command.user.resource.UpdateResourceLimitCmd;7
-updateResourceCount=org.apache.cloudstack.api.command.user.resource.UpdateResourceCountCmd;7
-listResourceLimits=org.apache.cloudstack.api.command.user.resource.ListResourceLimitsCmd;15
+updateResourceLimit=7
+updateResourceCount=7
+listResourceLimits=15
 
 #### VM commands
-deployVirtualMachine=org.apache.cloudstack.api.command.user.vm.DeployVMCmd;15
-destroyVirtualMachine=org.apache.cloudstack.api.command.user.vm.DestroyVMCmd;15
-rebootVirtualMachine=org.apache.cloudstack.api.command.user.vm.RebootVMCmd;15
-startVirtualMachine=org.apache.cloudstack.api.command.user.vm.StartVMCmd;15
-stopVirtualMachine=org.apache.cloudstack.api.command.user.vm.StopVMCmd;15
-resetPasswordForVirtualMachine=org.apache.cloudstack.api.command.user.vm.ResetVMPasswordCmd;15
-updateVirtualMachine=org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;15
-listVirtualMachines=org.apache.cloudstack.api.command.user.vm.ListVMsCmd;15
-getVMPassword=org.apache.cloudstack.api.command.user.vm.GetVMPasswordCmd;15
-restoreVirtualMachine=org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;15
-changeServiceForVirtualMachine=org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;15
-assignVirtualMachine=org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;1
-migrateVirtualMachine=org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;1
-recoverVirtualMachine=org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;7
+deployVirtualMachine=15
+destroyVirtualMachine=15
+rebootVirtualMachine=15
+startVirtualMachine=15
+stopVirtualMachine=15
+resetPasswordForVirtualMachine=15
+updateVirtualMachine=15
+listVirtualMachines=15
+getVMPassword=15
+restoreVirtualMachine=15
+changeServiceForVirtualMachine=15
+assignVirtualMachine=1
+migrateVirtualMachine=1
+recoverVirtualMachine=7
 
 #### snapshot commands
-createSnapshot=org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotCmd;15
-listSnapshots=org.apache.cloudstack.api.command.user.snapshot.ListSnapshotsCmd;15
-deleteSnapshot=org.apache.cloudstack.api.command.user.snapshot.DeleteSnapshotCmd;15
-createSnapshotPolicy=org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotPolicyCmd;15
-deleteSnapshotPolicies=org.apache.cloudstack.api.command.user.snapshot.DeleteSnapshotPoliciesCmd;15
-listSnapshotPolicies=org.apache.cloudstack.api.command.user.snapshot.ListSnapshotPoliciesCmd;15
+createSnapshot=15
+listSnapshots=15
+deleteSnapshot=15
+createSnapshotPolicy=15
+deleteSnapshotPolicies=15
+listSnapshotPolicies=15
 
 
 #### template commands
-createTemplate=org.apache.cloudstack.api.command.user.template.CreateTemplateCmd;15
-registerTemplate=org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;15
-updateTemplate=org.apache.cloudstack.api.command.user.template.UpdateTemplateCmd;15
-copyTemplate=org.apache.cloudstack.api.command.user.template.CopyTemplateCmd;15
-deleteTemplate=org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;15
-listTemplates=org.apache.cloudstack.api.command.user.template.ListTemplatesCmd;15
-updateTemplatePermissions=org.apache.cloudstack.api.command.user.template.UpdateTemplatePermissionsCmd;15
-listTemplatePermissions=org.apache.cloudstack.api.command.user.template.ListTemplatePermissionsCmd;15
-extractTemplate=org.apache.cloudstack.api.command.user.template.ExtractTemplateCmd;15
-prepareTemplate=org.apache.cloudstack.api.command.admin.template.PrepareTemplateCmd;1
+createTemplate=15
+registerTemplate=15
+updateTemplate=15
+copyTemplate=15
+deleteTemplate=15
+listTemplates=15
+updateTemplatePermissions=15
+listTemplatePermissions=15
+extractTemplate=15
+prepareTemplate=1
 
 #### iso commands
-attachIso=org.apache.cloudstack.api.command.user.iso.AttachIsoCmd;15
-detachIso=org.apache.cloudstack.api.command.user.iso.DetachIsoCmd;15
-listIsos=org.apache.cloudstack.api.command.user.iso.ListIsosCmd;15
-registerIso=org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;15
-updateIso=org.apache.cloudstack.api.command.user.iso.UpdateIsoCmd;15
-deleteIso=org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;15
-copyIso=org.apache.cloudstack.api.command.user.template.CopyTemplateCmd;15
-updateIsoPermissions=org.apache.cloudstack.api.command.user.iso.UpdateIsoPermissionsCmd;15
-listIsoPermissions=org.apache.cloudstack.api.command.user.iso.ListIsoPermissionsCmd;15
-extractIso=org.apache.cloudstack.api.command.user.iso.ExtractIsoCmd;15
+attachIso=15
+detachIso=15
+listIsos=15
+registerIso=15
+updateIso=15
+deleteIso=15
+copyIso=15
+updateIsoPermissions=15
+listIsoPermissions=15
+extractIso=15
 
 #### guest OS commands
-listOsTypes=org.apache.cloudstack.api.command.user.guest.ListGuestOsCmd;15
-listOsCategories=org.apache.cloudstack.api.command.user.guest.ListGuestOsCategoriesCmd;15
+listOsTypes=15
+listOsCategories=15
 
 #### service offering commands
-createServiceOffering=org.apache.cloudstack.api.command.admin.offering.CreateServiceOfferingCmd;1
-deleteServiceOffering=org.apache.cloudstack.api.command.admin.offering.DeleteServiceOfferingCmd;1
-updateServiceOffering=org.apache.cloudstack.api.command.admin.offering.UpdateServiceOfferingCmd;1
-listServiceOfferings=org.apache.cloudstack.api.command.user.offering.ListServiceOfferingsCmd;15
+createServiceOffering=1
+deleteServiceOffering=1
+updateServiceOffering=1
+listServiceOfferings=15
 
 #### disk offering commands
-createDiskOffering=org.apache.cloudstack.api.command.admin.offering.CreateDiskOfferingCmd;1
-updateDiskOffering=org.apache.cloudstack.api.command.admin.offering.UpdateDiskOfferingCmd;1
-deleteDiskOffering=org.apache.cloudstack.api.command.admin.offering.DeleteDiskOfferingCmd;1
-listDiskOfferings=org.apache.cloudstack.api.command.user.offering.ListDiskOfferingsCmd;15
+createDiskOffering=1
+updateDiskOffering=1
+deleteDiskOffering=1
+listDiskOfferings=15
 
 #### vlan commands
-createVlanIpRange=org.apache.cloudstack.api.command.admin.vlan.CreateVlanIpRangeCmd;1
-deleteVlanIpRange=org.apache.cloudstack.api.command.admin.vlan.DeleteVlanIpRangeCmd;1
-listVlanIpRanges=org.apache.cloudstack.api.command.admin.vlan.ListVlanIpRangesCmd;1
+createVlanIpRange=1
+deleteVlanIpRange=1
+listVlanIpRanges=1
 
 #### address commands
-associateIpAddress=org.apache.cloudstack.api.command.user.address.AssociateIPAddrCmd;15
-disassociateIpAddress=org.apache.cloudstack.api.command.user.address.DisassociateIPAddrCmd;15
-listPublicIpAddresses=org.apache.cloudstack.api.command.user.address.ListPublicIpAddressesCmd;15
+associateIpAddress=15
+disassociateIpAddress=15
+listPublicIpAddresses=15
 
 #### firewall commands
-listPortForwardingRules=org.apache.cloudstack.api.command.user.firewall.ListPortForwardingRulesCmd;15
-createPortForwardingRule=org.apache.cloudstack.api.command.user.firewall.CreatePortForwardingRuleCmd;15
-deletePortForwardingRule=org.apache.cloudstack.api.command.user.firewall.DeletePortForwardingRuleCmd;15
-updatePortForwardingRule=org.apache.cloudstack.api.command.user.firewall.UpdatePortForwardingRuleCmd;15
+listPortForwardingRules=15
+createPortForwardingRule=15
+deletePortForwardingRule=15
+updatePortForwardingRule=15
 
 #### NAT commands
-enableStaticNat=org.apache.cloudstack.api.command.user.nat.EnableStaticNatCmd;15
-createIpForwardingRule=org.apache.cloudstack.api.command.user.nat.CreateIpForwardingRuleCmd;15
-deleteIpForwardingRule=org.apache.cloudstack.api.command.user.nat.DeleteIpForwardingRuleCmd;15
-listIpForwardingRules=org.apache.cloudstack.api.command.user.nat.ListIpForwardingRulesCmd;15
-disableStaticNat=org.apache.cloudstack.api.command.user.nat.DisableStaticNatCmd;15
+enableStaticNat=15
+createIpForwardingRule=15
+deleteIpForwardingRule=15
+listIpForwardingRules=15
+disableStaticNat=15
 
 #### load balancer commands
-createLoadBalancerRule=org.apache.cloudstack.api.command.user.loadbalancer.CreateLoadBalancerRuleCmd;15
-deleteLoadBalancerRule=org.apache.cloudstack.api.command.user.loadbalancer.DeleteLoadBalancerRuleCmd;15
-removeFromLoadBalancerRule=org.apache.cloudstack.api.command.user.loadbalancer.RemoveFromLoadBalancerRuleCmd;15
-assignToLoadBalancerRule=org.apache.cloudstack.api.command.user.loadbalancer.AssignToLoadBalancerRuleCmd;15
-createLBStickinessPolicy=org.apache.cloudstack.api.command.user.loadbalancer.CreateLBStickinessPolicyCmd;15
-deleteLBStickinessPolicy=org.apache.cloudstack.api.command.user.loadbalancer.DeleteLBStickinessPolicyCmd;15
-listLoadBalancerRules=org.apache.cloudstack.api.command.user.loadbalancer.ListLoadBalancerRulesCmd;15
-listLBStickinessPolicies=org.apache.cloudstack.api.command.user.loadbalancer.ListLBStickinessPoliciesCmd;15
-listLoadBalancerRuleInstances=org.apache.cloudstack.api.command.user.loadbalancer.ListLoadBalancerRuleInstancesCmd;15
-updateLoadBalancerRule=org.apache.cloudstack.api.command.user.loadbalancer.UpdateLoadBalancerRuleCmd;15
+createLoadBalancerRule=15
+deleteLoadBalancerRule=15
+removeFromLoadBalancerRule=15
+assignToLoadBalancerRule=15
+createLBStickinessPolicy=15
+deleteLBStickinessPolicy=15
+listLoadBalancerRules=15
+listLBStickinessPolicies=15
+listLoadBalancerRuleInstances=15
+updateLoadBalancerRule=15
 
 #### autoscale commands
-createCounter = org.apache.cloudstack.api.command.admin.autoscale.CreateCounterCmd;1
-createCondition = org.apache.cloudstack.api.command.user.autoscale.CreateConditionCmd;15
-createAutoScalePolicy=org.apache.cloudstack.api.command.user.autoscale.CreateAutoScalePolicyCmd;15
-createAutoScaleVmProfile=org.apache.cloudstack.api.command.user.autoscale.CreateAutoScaleVmProfileCmd;15
-createAutoScaleVmGroup=org.apache.cloudstack.api.command.user.autoscale.CreateAutoScaleVmGroupCmd;15
-deleteCounter = org.apache.cloudstack.api.command.admin.autoscale.DeleteCounterCmd;1
-deleteCondition = org.apache.cloudstack.api.command.user.autoscale.DeleteConditionCmd;15
-deleteAutoScalePolicy=org.apache.cloudstack.api.command.user.autoscale.DeleteAutoScalePolicyCmd;15
-deleteAutoScaleVmProfile=org.apache.cloudstack.api.command.user.autoscale.DeleteAutoScaleVmProfileCmd;15
-deleteAutoScaleVmGroup=org.apache.cloudstack.api.command.user.autoscale.DeleteAutoScaleVmGroupCmd;15
-listCounters = org.apache.cloudstack.api.command.user.autoscale.ListCountersCmd;15
-listConditions = org.apache.cloudstack.api.command.user.autoscale.ListConditionsCmd;15
-listAutoScalePolicies=org.apache.cloudstack.api.command.user.autoscale.ListAutoScalePoliciesCmd;15
-listAutoScaleVmProfiles=org.apache.cloudstack.api.command.user.autoscale.ListAutoScaleVmProfilesCmd;15
-listAutoScaleVmGroups=org.apache.cloudstack.api.command.user.autoscale.ListAutoScaleVmGroupsCmd;15
-enableAutoScaleVmGroup=org.apache.cloudstack.api.command.user.autoscale.EnableAutoScaleVmGroupCmd;15
-disableAutoScaleVmGroup=org.apache.cloudstack.api.command.user.autoscale.DisableAutoScaleVmGroupCmd;15
-updateAutoScalePolicy=org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScalePolicyCmd;15
-updateAutoScaleVmProfile=org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmProfileCmd;15
-updateAutoScaleVmGroup=org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmGroupCmd;15
+createCounter=1
+createCondition=15
+createAutoScalePolicy=15
+createAutoScaleVmProfile=15
+createAutoScaleVmGroup=15
+deleteCounter=1
+deleteCondition=15
+deleteAutoScalePolicy=15
+deleteAutoScaleVmProfile=15
+deleteAutoScaleVmGroup=15
+listCounters=15
+listConditions=15
+listAutoScalePolicies=15
+listAutoScaleVmProfiles=15
+listAutoScaleVmGroups=15
+enableAutoScaleVmGroup=15
+disableAutoScaleVmGroup=15
+updateAutoScalePolicy=15
+updateAutoScaleVmProfile=15
+updateAutoScaleVmGroup=15
 
 #### router commands
-startRouter=org.apache.cloudstack.api.command.admin.router.StartRouterCmd;7
-rebootRouter=org.apache.cloudstack.api.command.admin.router.RebootRouterCmd;7
-stopRouter=org.apache.cloudstack.api.command.admin.router.StopRouterCmd;7
-destroyRouter=org.apache.cloudstack.api.command.admin.router.DestroyRouterCmd;7
-changeServiceForRouter=org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;7
-listRouters=org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;7
-listVirtualRouterElements=org.apache.cloudstack.api.command.admin.router.ListVirtualRouterElementsCmd;7
-configureVirtualRouterElement=org.apache.cloudstack.api.command.admin.router.ConfigureVirtualRouterElementCmd;7
-createVirtualRouterElement=org.apache.cloudstack.api.command.admin.router.CreateVirtualRouterElementCmd;7
+startRouter=7
+rebootRouter=7
+stopRouter=7
+destroyRouter=7
+changeServiceForRouter=7
+listRouters=7
+listVirtualRouterElements=7
+configureVirtualRouterElement=7
+createVirtualRouterElement=7
 
 #### system vm commands
-startSystemVm=org.apache.cloudstack.api.command.admin.systemvm.StartSystemVMCmd;1
-rebootSystemVm=org.apache.cloudstack.api.command.admin.systemvm.RebootSystemVmCmd;1
-stopSystemVm=org.apache.cloudstack.api.command.admin.systemvm.StopSystemVmCmd;1
-destroySystemVm=org.apache.cloudstack.api.command.admin.systemvm.DestroySystemVmCmd;1
-listSystemVms=org.apache.cloudstack.api.command.admin.systemvm.ListSystemVMsCmd;3
-migrateSystemVm=org.apache.cloudstack.api.command.admin.systemvm.MigrateSystemVMCmd;1
-changeServiceForSystemVm=org.apache.cloudstack.api.command.admin.systemvm.UpgradeSystemVMCmd;1
+startSystemVm=1
+rebootSystemVm=1
+stopSystemVm=1
+destroySystemVm=1
+listSystemVms=3
+migrateSystemVm=1
+changeServiceForSystemVm=1
 
 #### configuration commands
-updateConfiguration=org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;1
-listConfigurations=org.apache.cloudstack.api.command.admin.config.ListCfgsByCmd;1
-ldapConfig=org.apache.cloudstack.api.command.admin.ldap.LDAPConfigCmd;1
-ldapRemove=org.apache.cloudstack.api.command.admin.ldap.LDAPRemoveCmd;1
-listCapabilities=org.apache.cloudstack.api.command.user.config.ListCapabilitiesCmd;15
+updateConfiguration=1
+listConfigurations=1
+ldapConfig=1
+ldapRemove=1
+listCapabilities=15
 
 #### pod commands
-createPod=org.apache.cloudstack.api.command.admin.pod.CreatePodCmd;1
-updatePod=org.apache.cloudstack.api.command.admin.pod.UpdatePodCmd;1
-deletePod=org.apache.cloudstack.api.command.admin.pod.DeletePodCmd;1
-listPods=org.apache.cloudstack.api.command.admin.pod.ListPodsByCmd;3
+createPod=1
+updatePod=1
+deletePod=1
+listPods=3
 
 #### zone commands
-createZone=org.apache.cloudstack.api.command.admin.zone.CreateZoneCmd;1
-updateZone=org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;1
-deleteZone=org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;1
-listZones=org.apache.cloudstack.api.command.user.zone.ListZonesByCmd;15
+createZone=1
+updateZone=1
+deleteZone=1
+listZones=15
 
 #### events commands
-listEvents=org.apache.cloudstack.api.command.user.event.ListEventsCmd;15
-listEventTypes=org.apache.cloudstack.api.command.user.event.ListEventTypesCmd;15
+listEvents=15
+listEventTypes=15
 
 #### alerts commands
-listAlerts=org.apache.cloudstack.api.command.admin.resource.ListAlertsCmd;3
+listAlerts=3
 
 #### system capacity commands
-listCapacity=org.apache.cloudstack.api.command.admin.resource.ListCapacityCmd;3
+listCapacity=3
 
 #### swift commands
-addSwift=org.apache.cloudstack.api.command.admin.swift.AddSwiftCmd;1
-listSwifts=org.apache.cloudstack.api.command.admin.swift.ListSwiftsCmd;1
+addSwift=1
+listSwifts=1
 
 #### s3 commands
-addS3=org.apache.cloudstack.api.command.admin.storage.AddS3Cmd;1
-listS3s=org.apache.cloudstack.api.command.admin.storage.ListS3sCmd;1
+addS3=1
+listS3s=1
 
 #### host commands
-addHost=org.apache.cloudstack.api.command.admin.host.AddHostCmd;3
-addCluster=org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;1
-deleteCluster=org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;1
-updateCluster=org.apache.cloudstack.api.command.admin.cluster.UpdateClusterCmd;1
-reconnectHost=org.apache.cloudstack.api.command.admin.host.ReconnectHostCmd;1
-updateHost=org.apache.cloudstack.api.command.admin.host.UpdateHostCmd;1
-deleteHost=org.apache.cloudstack.api.command.admin.host.DeleteHostCmd;3
-prepareHostForMaintenance=org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;1
-cancelHostMaintenance=org.apache.cloudstack.api.command.admin.host.CancelMaintenanceCmd;1
-listHosts=org.apache.cloudstack.api.command.admin.host.ListHostsCmd;3
-addSecondaryStorage=org.apache.cloudstack.api.command.admin.host.AddSecondaryStorageCmd;1
-updateHostPassword=org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;1
+addHost=3
+addCluster=1
+deleteCluster=1
+updateCluster=1
+reconnectHost=1
+updateHost=1
+deleteHost=3
+prepareHostForMaintenance=1
+cancelHostMaintenance=1
+listHosts=3
+addSecondaryStorage=1
+updateHostPassword=1
 
 #### volume commands
-attachVolume=org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;15
-uploadVolume=org.apache.cloudstack.api.command.user.volume.UploadVolumeCmd;15
-detachVolume=org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;15
-createVolume=org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;15
-deleteVolume=org.apache.cloudstack.api.command.user.volume.DeleteVolumeCmd;15
-listVolumes=org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;15
-extractVolume=org.apache.cloudstack.api.command.user.volume.ExtractVolumeCmd;15
-migrateVolume=org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;15
+attachVolume=15
+uploadVolume=15
+detachVolume=15
+createVolume=15
+deleteVolume=15
+listVolumes=15
+extractVolume=15
+migrateVolume=15
 
 #### registration command:  FIXME -- this really should be something in management server that
 ####                                 generates a new key for the user and they just have to
 ####                                 use that key...the key is stored in the db associated w/
 ####                                 the userId...every request to the developer API should be
 ####                                 checked against the key
-registerUserKeys=org.apache.cloudstack.api.command.admin.user.RegisterCmd;15
+registerUserKeys=15
 
 ### async-query command
-queryAsyncJobResult=org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;15
-listAsyncJobs=org.apache.cloudstack.api.command.user.job.ListAsyncJobsCmd;15
+queryAsyncJobResult=15
+listAsyncJobs=15
 
 #### storage pools commands
-listStoragePools=org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;3
-createStoragePool=org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;1
-updateStoragePool=org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;1
-deleteStoragePool=org.apache.cloudstack.api.command.admin.storage.DeletePoolCmd;1
-listClusters=org.apache.cloudstack.api.command.admin.cluster.ListClustersCmd;3
-enableStorageMaintenance=org.apache.cloudstack.api.command.admin.storage.PreparePrimaryStorageForMaintenanceCmd;1
-cancelStorageMaintenance=org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;1
+listStoragePools=3
+createStoragePool=1
+updateStoragePool=1
+deleteStoragePool=1
+listClusters=3
+enableStorageMaintenance=1
+cancelStorageMaintenance=1
 
 #### security group commands
-createSecurityGroup=org.apache.cloudstack.api.command.user.securitygroup.CreateSecurityGroupCmd;15
-deleteSecurityGroup=org.apache.cloudstack.api.command.user.securitygroup.DeleteSecurityGroupCmd;15
-authorizeSecurityGroupIngress=org.apache.cloudstack.api.command.user.securitygroup.AuthorizeSecurityGroupIngressCmd;15
-revokeSecurityGroupIngress=org.apache.cloudstack.api.command.user.securitygroup.RevokeSecurityGroupIngressCmd;15
-authorizeSecurityGroupEgress=org.apache.cloudstack.api.command.user.securitygroup.AuthorizeSecurityGroupEgressCmd;15
-revokeSecurityGroupEgress=org.apache.cloudstack.api.command.user.securitygroup.RevokeSecurityGroupEgressCmd;15
-listSecurityGroups=org.apache.cloudstack.api.command.user.securitygroup.ListSecurityGroupsCmd;15
+createSecurityGroup=15
+deleteSecurityGroup=15
+authorizeSecurityGroupIngress=15
+revokeSecurityGroupIngress=15
+authorizeSecurityGroupEgress=15
+revokeSecurityGroupEgress=15
+listSecurityGroups=15
 
 #### vm group commands
-createInstanceGroup=org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;15
-deleteInstanceGroup=org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;15
-updateInstanceGroup=org.apache.cloudstack.api.command.user.vmgroup.UpdateVMGroupCmd;15
-listInstanceGroups=org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;15
+createInstanceGroup=15
+deleteInstanceGroup=15
+updateInstanceGroup=15
+listInstanceGroups=15
 
 ### Certificate commands
-uploadCustomCertificate=org.apache.cloudstack.api.command.admin.resource.UploadCustomCertificateCmd;1
+uploadCustomCertificate=1
 
 ### other commands
-listHypervisors=org.apache.cloudstack.api.command.user.resource.ListHypervisorsCmd;15
+listHypervisors=15
 
 ### VPN
-createRemoteAccessVpn=org.apache.cloudstack.api.command.user.vpn.CreateRemoteAccessVpnCmd;15
-deleteRemoteAccessVpn=org.apache.cloudstack.api.command.user.vpn.DeleteRemoteAccessVpnCmd;15
-listRemoteAccessVpns=org.apache.cloudstack.api.command.user.vpn.ListRemoteAccessVpnsCmd;15
+createRemoteAccessVpn=15
+deleteRemoteAccessVpn=15
+listRemoteAccessVpns=15
 
-addVpnUser=org.apache.cloudstack.api.command.user.vpn.AddVpnUserCmd;15
-removeVpnUser=org.apache.cloudstack.api.command.user.vpn.RemoveVpnUserCmd;15
-listVpnUsers=org.apache.cloudstack.api.command.user.vpn.ListVpnUsersCmd;15
+addVpnUser=15
+removeVpnUser=15
+listVpnUsers=15
 
 #### network offering commands
-createNetworkOffering=org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;1
-updateNetworkOffering=org.apache.cloudstack.api.command.admin.network.UpdateNetworkOfferingCmd;1
-deleteNetworkOffering=org.apache.cloudstack.api.command.admin.network.DeleteNetworkOfferingCmd;1
-listNetworkOfferings=org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;15
+createNetworkOffering=1
+updateNetworkOffering=1
+deleteNetworkOffering=1
+listNetworkOfferings=15
 
 #### network commands
-createNetwork=org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;15
-deleteNetwork=org.apache.cloudstack.api.command.user.network.DeleteNetworkCmd;15
-listNetworks=org.apache.cloudstack.api.command.user.network.ListNetworksCmd;15
-restartNetwork=org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;15
-updateNetwork=org.apache.cloudstack.api.command.user.network.UpdateNetworkCmd;15
+createNetwork=15
+deleteNetwork=15
+listNetworks=15
+restartNetwork=15
+updateNetwork=15
 
 #### SSH key pair commands
-registerSSHKeyPair=org.apache.cloudstack.api.command.user.ssh.RegisterSSHKeyPairCmd;15
-createSSHKeyPair=org.apache.cloudstack.api.command.user.ssh.CreateSSHKeyPairCmd;15
-deleteSSHKeyPair=org.apache.cloudstack.api.command.user.ssh.DeleteSSHKeyPairCmd;15
-listSSHKeyPairs=org.apache.cloudstack.api.command.user.ssh.ListSSHKeyPairsCmd;15
+registerSSHKeyPair=15
+createSSHKeyPair=15
+deleteSSHKeyPair=15
+listSSHKeyPairs=15
 
 #### Projects commands
-createProject=org.apache.cloudstack.api.command.user.project.CreateProjectCmd;15
-deleteProject=org.apache.cloudstack.api.command.user.project.DeleteProjectCmd;15
-updateProject=org.apache.cloudstack.api.command.user.project.UpdateProjectCmd;15
-activateProject=org.apache.cloudstack.api.command.user.project.ActivateProjectCmd;15
-suspendProject=org.apache.cloudstack.api.command.user.project.SuspendProjectCmd;15
-listProjects=org.apache.cloudstack.api.command.user.project.ListProjectsCmd;15
-addAccountToProject=org.apache.cloudstack.api.command.user.account.AddAccountToProjectCmd;15
-deleteAccountFromProject=org.apache.cloudstack.api.command.user.account.DeleteAccountFromProjectCmd;15
-listProjectAccounts=org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;15
-listProjectInvitations=org.apache.cloudstack.api.command.user.project.ListProjectInvitationsCmd;15
-updateProjectInvitation=org.apache.cloudstack.api.command.user.project.UpdateProjectInvitationCmd;15
-deleteProjectInvitation=org.apache.cloudstack.api.command.user.project.DeleteProjectInvitationCmd;15
+createProject=15
+deleteProject=15
+updateProject=15
+activateProject=15
+suspendProject=15
+listProjects=15
+addAccountToProject=15
+deleteAccountFromProject=15
+listProjectAccounts=15
+listProjectInvitations=15
+updateProjectInvitation=15
+deleteProjectInvitation=15
 
 #### 
-createFirewallRule=org.apache.cloudstack.api.command.user.firewall.CreateFirewallRuleCmd;15
-deleteFirewallRule=org.apache.cloudstack.api.command.user.firewall.DeleteFirewallRuleCmd;15
-listFirewallRules=org.apache.cloudstack.api.command.user.firewall.ListFirewallRulesCmd;15
+createFirewallRule=15
+deleteFirewallRule=15
+listFirewallRules=15
 
 #### hypervisor capabilities commands
-updateHypervisorCapabilities=org.apache.cloudstack.api.command.admin.config.UpdateHypervisorCapabilitiesCmd;1
-listHypervisorCapabilities=org.apache.cloudstack.api.command.admin.config.ListHypervisorCapabilitiesCmd;1
+updateHypervisorCapabilities=1
+listHypervisorCapabilities=1
 
 #### Physical Network commands
-createPhysicalNetwork=org.apache.cloudstack.api.command.admin.network.CreatePhysicalNetworkCmd;1
-deletePhysicalNetwork=org.apache.cloudstack.api.command.admin.network.DeletePhysicalNetworkCmd;1
-listPhysicalNetworks=org.apache.cloudstack.api.command.admin.network.ListPhysicalNetworksCmd;1
-updatePhysicalNetwork=org.apache.cloudstack.api.command.admin.network.UpdatePhysicalNetworkCmd;1
+createPhysicalNetwork=1
+deletePhysicalNetwork=1
+listPhysicalNetworks=1
+updatePhysicalNetwork=1
 
 #### Physical Network Service Provider commands
-listSupportedNetworkServices=org.apache.cloudstack.api.command.admin.network.ListSupportedNetworkServicesCmd;1
-addNetworkServiceProvider=org.apache.cloudstack.api.command.admin.network.AddNetworkServiceProviderCmd;1
-deleteNetworkServiceProvider=org.apache.cloudstack.api.command.admin.network.DeleteNetworkServiceProviderCmd;1
-listNetworkServiceProviders=org.apache.cloudstack.api.command.admin.network.ListNetworkServiceProvidersCmd;1
-updateNetworkServiceProvider=org.apache.cloudstack.api.command.admin.network.UpdateNetworkServiceProviderCmd;1
+listSupportedNetworkServices=1
+addNetworkServiceProvider=1
+deleteNetworkServiceProvider=1
+listNetworkServiceProviders=1
+updateNetworkServiceProvider=1
 
 #### Physical Network Traffic Type commands
-addTrafficType=org.apache.cloudstack.api.command.admin.usage.AddTrafficTypeCmd;1
-deleteTrafficType=org.apache.cloudstack.api.command.admin.usage.DeleteTrafficTypeCmd;1
-listTrafficTypes=org.apache.cloudstack.api.command.admin.usage.ListTrafficTypesCmd;1
-updateTrafficType=org.apache.cloudstack.api.command.admin.usage.UpdateTrafficTypeCmd;1
-listTrafficTypeImplementors=org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;1
+addTrafficType=1
+deleteTrafficType=1
+listTrafficTypes=1
+updateTrafficType=1
+listTrafficTypeImplementors=1
 
 #### Storage Network commands
-createStorageNetworkIpRange=org.apache.cloudstack.api.command.admin.network.CreateStorageNetworkIpRangeCmd;1
-deleteStorageNetworkIpRange=org.apache.cloudstack.api.command.admin.network.DeleteStorageNetworkIpRangeCmd;1
-listStorageNetworkIpRange=org.apache.cloudstack.api.command.admin.network.ListStorageNetworkIpRangeCmd;1
-updateStorageNetworkIpRange=org.apache.cloudstack.api.command.admin.network.UpdateStorageNetworkIpRangeCmd;1
+createStorageNetworkIpRange=1
+deleteStorageNetworkIpRange=1
+listStorageNetworkIpRange=1
+updateStorageNetworkIpRange=1
 
 ### Network Devices commands
-addNetworkDevice=org.apache.cloudstack.api.command.admin.network.AddNetworkDeviceCmd;1
-listNetworkDevice=org.apache.cloudstack.api.command.admin.network.ListNetworkDeviceCmd;1
-deleteNetworkDevice=org.apache.cloudstack.api.command.admin.network.DeleteNetworkDeviceCmd;1
+addNetworkDevice=1
+listNetworkDevice=1
+deleteNetworkDevice=1
 
 ### VPC commands
-createVPC=org.apache.cloudstack.api.command.user.vpc.CreateVPCCmd;15
-listVPCs=org.apache.cloudstack.api.command.user.vpc.ListVPCsCmd;15
-deleteVPC=org.apache.cloudstack.api.command.user.vpc.DeleteVPCCmd;15
-updateVPC=org.apache.cloudstack.api.command.user.vpc.UpdateVPCCmd;15
-restartVPC=org.apache.cloudstack.api.command.user.vpc.RestartVPCCmd;15
+createVPC=15
+listVPCs=15
+deleteVPC=15
+updateVPC=15
+restartVPC=15
 
 #### VPC offering commands
-createVPCOffering=org.apache.cloudstack.api.command.admin.vpc.CreateVPCOfferingCmd;1
-updateVPCOffering=org.apache.cloudstack.api.command.admin.vpc.UpdateVPCOfferingCmd;1
-deleteVPCOffering=org.apache.cloudstack.api.command.admin.vpc.DeleteVPCOfferingCmd;1
-listVPCOfferings=org.apache.cloudstack.api.command.user.vpc.ListVPCOfferingsCmd;15
+createVPCOffering=1
+updateVPCOffering=1
+deleteVPCOffering=1
+listVPCOfferings=15
 
 #### Private gateway commands
-createPrivateGateway=org.apache.cloudstack.api.command.admin.vpc.CreatePrivateGatewayCmd;1
-listPrivateGateways=org.apache.cloudstack.api.command.user.vpc.ListPrivateGatewaysCmd;15
-deletePrivateGateway=org.apache.cloudstack.api.command.admin.vpc.DeletePrivateGatewayCmd;1
+createPrivateGateway=1
+listPrivateGateways=15
+deletePrivateGateway=1
 
 #### Network ACL commands
-createNetworkACL=org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;15
-deleteNetworkACL=org.apache.cloudstack.api.command.user.network.DeleteNetworkACLCmd;15
-listNetworkACLs=org.apache.cloudstack.api.command.user.network.ListNetworkACLsCmd;15
+createNetworkACL=15
+deleteNetworkACL=15
+listNetworkACLs=15
 
 #### Static route commands
-createStaticRoute=org.apache.cloudstack.api.command.user.vpc.CreateStaticRouteCmd;15
-deleteStaticRoute=org.apache.cloudstack.api.command.user.vpc.DeleteStaticRouteCmd;15
-listStaticRoutes=org.apache.cloudstack.api.command.user.vpc.ListStaticRoutesCmd;15
+createStaticRoute=15
+deleteStaticRoute=15
+listStaticRoutes=15
 
 #### Tags commands
-createTags=org.apache.cloudstack.api.command.user.tag.CreateTagsCmd;15
-deleteTags=org.apache.cloudstack.api.command.user.tag.DeleteTagsCmd;15
-listTags=org.apache.cloudstack.api.command.user.tag.ListTagsCmd;15
+createTags=15
+deleteTags=15
+listTags=15
 
 ### Site-to-site VPN commands
-createVpnCustomerGateway=org.apache.cloudstack.api.command.user.vpn.CreateVpnCustomerGatewayCmd;15
-createVpnGateway=org.apache.cloudstack.api.command.user.vpn.CreateVpnGatewayCmd;15
-createVpnConnection=org.apache.cloudstack.api.command.user.vpn.CreateVpnConnectionCmd;15
-deleteVpnCustomerGateway=org.apache.cloudstack.api.command.user.vpn.DeleteVpnCustomerGatewayCmd;15
-deleteVpnGateway=org.apache.cloudstack.api.command.user.vpn.DeleteVpnGatewayCmd;15
-deleteVpnConnection=org.apache.cloudstack.api.command.user.vpn.DeleteVpnConnectionCmd;15
-updateVpnCustomerGateway=org.apache.cloudstack.api.command.user.vpn.UpdateVpnCustomerGatewayCmd;15
-resetVpnConnection=org.apache.cloudstack.api.command.user.vpn.ResetVpnConnectionCmd;15
-listVpnCustomerGateways=org.apache.cloudstack.api.command.user.vpn.ListVpnCustomerGatewaysCmd;15
-listVpnGateways=org.apache.cloudstack.api.command.user.vpn.ListVpnGatewaysCmd;15
-listVpnConnections=org.apache.cloudstack.api.command.user.vpn.ListVpnConnectionsCmd;15
+createVpnCustomerGateway=15
+createVpnGateway=15
+createVpnConnection=15
+deleteVpnCustomerGateway=15
+deleteVpnGateway=15
+deleteVpnConnection=15
+updateVpnCustomerGateway=15
+resetVpnConnection=15
+listVpnCustomerGateways=15
+listVpnGateways=15
+listVpnConnections=15

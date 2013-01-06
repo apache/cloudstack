@@ -19,6 +19,6 @@
 ### Please standardize naming conventions to camel-case (even for acronyms).
 
 #### router commands
-createVirtualRouterElement=org.apache.cloudstack.api.command.admin.router.CreateVirtualRouterElementCmd;7
-configureVirtualRouterElement=org.apache.cloudstack.api.command.admin.router.ConfigureVirtualRouterElementCmd;7
-listVirtualRouterElements=org.apache.cloudstack.api.command.admin.router.ListVirtualRouterElementsCmd;7
+createVirtualRouterElement=7
+configureVirtualRouterElement=7
+listVirtualRouterElements=7
