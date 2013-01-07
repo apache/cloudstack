@@ -43,6 +43,7 @@ import com.cloud.network.element.Site2SiteVpnServiceProvider;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
@@ -62,7 +63,7 @@ import javax.naming.ConfigurationException;
 import java.util.*;
 
 @Local(value = { NetworkManager.class, NetworkService.class })
-public class MockNetworkManagerImpl implements NetworkManager, Manager{
+public class MockNetworkManagerImpl implements NetworkManager, NetworkService, Manager{
     @Inject
     NetworkServiceMapDao  _ntwkSrvcDao;
     @Inject
@@ -617,14 +618,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager{
         return null;
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.NetworkManager#applyRules(java.util.List, boolean)
-     */
-    @Override
-    public boolean applyRules(List<? extends FirewallRule> rules, boolean continueOnError) throws ResourceUnavailableException {
-        // TODO Auto-generated method stub
-        return false;
-    }
 
     /* (non-Javadoc)
      * @see com.cloud.network.NetworkManager#validateRule(com.cloud.network.rules.FirewallRule)
@@ -633,24 +626,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager{
     public boolean validateRule(FirewallRule rule) {
         // TODO Auto-generated method stub
         return false;
-    }
-
-    /* (non-Javadoc)
-     * @see com.cloud.network.NetworkManager#getRemoteAccessVpnElements()
-     */
-    @Override
-    public List<? extends RemoteAccessVPNServiceProvider> getRemoteAccessVpnElements() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    /* (non-Javadoc)
-     * @see com.cloud.network.NetworkManager#getSite2SiteVpnElements()
-     */
-    @Override
-    public List<? extends Site2SiteVpnServiceProvider> getSite2SiteVpnElements() {
-        // TODO Auto-generated method stub
-        return null;
     }
 
     /* (non-Javadoc)
@@ -1478,6 +1453,84 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager{
     public int getNetworkLockTimeout() {
         // TODO Auto-generated method stub
         return 0;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkManager#applyRules(java.util.List, com.cloud.network.rules.FirewallRule.Purpose, com.cloud.network.NetworkRuleApplier, boolean)
+     */
+    @Override
+    public boolean applyRules(List<? extends FirewallRule> rules, Purpose purpose, NetworkRuleApplier applier,
+            boolean continueOnError) throws ResourceUnavailableException {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkManager#applyIpAssociations(com.cloud.network.Network, boolean, boolean, java.util.List)
+     */
+    @Override
+    public boolean applyIpAssociations(Network network, boolean rulesRevoked, boolean continueOnError,
+            List<PublicIp> publicIps) throws ResourceUnavailableException {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkManager#cleanupIpResources(long, long, com.cloud.user.Account)
+     */
+    @Override
+    public boolean cleanupIpResources(long addrId, long userId, Account caller) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkManager#restartNetwork(java.lang.Long, com.cloud.user.Account, com.cloud.user.User, boolean)
+     */
+    @Override
+    public boolean restartNetwork(Long networkId, Account callerAccount, User callerUser, boolean cleanup)
+            throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkManager#shutdownNetworkElementsAndResources(com.cloud.vm.ReservationContext, boolean, com.cloud.network.NetworkVO)
+     */
+    @Override
+    public boolean shutdownNetworkElementsAndResources(ReservationContext context, boolean b, NetworkVO network) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkManager#implementNetworkElementsAndResources(com.cloud.deploy.DeployDestination, com.cloud.vm.ReservationContext, com.cloud.network.NetworkVO, com.cloud.offerings.NetworkOfferingVO)
+     */
+    @Override
+    public void implementNetworkElementsAndResources(DeployDestination dest, ReservationContext context,
+            NetworkVO network, NetworkOfferingVO findById) throws ConcurrentOperationException,
+            InsufficientAddressCapacityException, ResourceUnavailableException, InsufficientCapacityException {
+        // TODO Auto-generated method stub
+        
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkManager#allocateIp(com.cloud.user.Account, boolean, com.cloud.user.Account, com.cloud.dc.DataCenter)
+     */
+    @Override
+    public IpAddress allocateIp(Account ipOwner, boolean isSystem, Account caller, DataCenter zone)
+            throws ConcurrentOperationException, ResourceAllocationException, InsufficientAddressCapacityException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkManager#finalizeServicesAndProvidersForNetwork(com.cloud.offering.NetworkOffering, java.lang.Long)
+     */
+    @Override
+    public Map<String, String> finalizeServicesAndProvidersForNetwork(NetworkOffering offering, Long physicalNetworkId) {
+        // TODO Auto-generated method stub
+        return null;
     }
 
 }
