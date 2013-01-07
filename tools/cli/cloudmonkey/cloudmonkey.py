@@ -95,7 +95,7 @@ class CloudMonkeyShell(cmd.Cmd, object):
                 print "Please fix `%s` config in %s" % (key, self.config_file)
                 sys.exit()
 
-        self.prompt += " "  # Cosmetic fix for prompt
+        self.prompt = self.prompt.strip() + " "  # Cosmetic fix for prompt
         logging.basicConfig(filename=self.log_file,
                             level=logging.DEBUG, format=log_fmt)
         logger.debug("Loaded config fields:\n%s" % self.config_fields)
@@ -421,7 +421,7 @@ class CloudMonkeyShell(cmd.Cmd, object):
         args = args.strip().partition(" ")
         key, value = (args[0], args[2])
         setattr(self, key, value)  # keys and attributes should have same names
-        self.prompt += " "         # prompt fix
+        self.prompt = self.prompt.strip() + " " # prompt fix
         self.write_config()
 
     def complete_set(self, text, line, begidx, endidx):
