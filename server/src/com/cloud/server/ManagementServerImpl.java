@@ -39,12 +39,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import javax.annotation.PostConstruct;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.acl.SecurityChecker.AccessType;
 import com.cloud.agent.AgentManager;
@@ -217,6 +219,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Adapters;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.crypt.DBEncryptionUtil;
@@ -255,140 +258,89 @@ import com.cloud.vm.dao.VMInstanceDao;
 import edu.emory.mathcs.backport.java.util.Arrays;
 import edu.emory.mathcs.backport.java.util.Collections;
 
+@Component
 public class ManagementServerImpl implements ManagementServer {
     public static final Logger s_logger = Logger.getLogger(ManagementServerImpl.class.getName());
 
-    private final AccountManager _accountMgr;
-    private final AgentManager _agentMgr;
-    private final AlertManager _alertMgr;
-    private final IPAddressDao _publicIpAddressDao;
-    private final DomainRouterDao _routerDao;
-    private final ConsoleProxyDao _consoleProxyDao;
-    private final ClusterDao _clusterDao;
-    private final SecondaryStorageVmDao _secStorageVmDao;
-    private final EventDao _eventDao;
-    private final DataCenterDao _dcDao;
-    private final VlanDao _vlanDao;
-    private final AccountVlanMapDao _accountVlanMapDao;
-    private final PodVlanMapDao _podVlanMapDao;
-    private final HostDao _hostDao;
-    private final HostDetailsDao _detailsDao;
-    private final UserDao _userDao;
-    private final UserVmDao _userVmDao;
-    private final ConfigurationDao _configDao;
-    private final ConsoleProxyManager _consoleProxyMgr;
-    private final SecondaryStorageVmManager _secStorageVmMgr;
-    private final SwiftManager _swiftMgr;
-    private final ServiceOfferingDao _offeringsDao;
-    private final DiskOfferingDao _diskOfferingDao;
-    private final VMTemplateDao _templateDao;
-    private final DomainDao _domainDao;
-    private final AccountDao _accountDao;
-    private final AlertDao _alertDao;
-    private final CapacityDao _capacityDao;
-    private final GuestOSDao _guestOSDao;
-    private final GuestOSCategoryDao _guestOSCategoryDao;
-    private final StoragePoolDao _poolDao;
-    private final NicDao _nicDao;
-    private final NetworkDao _networkDao;
-    private final StorageManager _storageMgr;
-    private final VirtualMachineManager _itMgr;
-    private final HostPodDao _hostPodDao;
-    private final VMInstanceDao _vmInstanceDao;
-    private final VolumeDao _volumeDao;
-    private final AsyncJobDao _jobDao;
-    private final AsyncJobManager _asyncMgr;
-    private final int _purgeDelay;
-    private final InstanceGroupDao _vmGroupDao;
-    private final UploadMonitor _uploadMonitor;
-    private final UploadDao _uploadDao;
-    private final SSHKeyPairDao _sshKeyPairDao;
-    private final LoadBalancerDao _loadbalancerDao;
-    private final HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
+    @Inject private AccountManager _accountMgr;
+    @Inject private AgentManager _agentMgr;
+    @Inject private AlertManager _alertMgr;
+    @Inject private IPAddressDao _publicIpAddressDao;
+    @Inject private DomainRouterDao _routerDao;
+    @Inject private ConsoleProxyDao _consoleProxyDao;
+    @Inject private ClusterDao _clusterDao;
+    @Inject private SecondaryStorageVmDao _secStorageVmDao;
+    @Inject private EventDao _eventDao;
+    @Inject private DataCenterDao _dcDao;
+    @Inject private VlanDao _vlanDao;
+    @Inject private AccountVlanMapDao _accountVlanMapDao;
+    @Inject private PodVlanMapDao _podVlanMapDao;
+    @Inject private HostDao _hostDao;
+    @Inject private HostDetailsDao _detailsDao;
+    @Inject private UserDao _userDao;
+    @Inject private UserVmDao _userVmDao;
+    @Inject private ConfigurationDao _configDao;
+    @Inject private ConsoleProxyManager _consoleProxyMgr;
+    @Inject private SecondaryStorageVmManager _secStorageVmMgr;
+    @Inject private SwiftManager _swiftMgr;
+    @Inject private ServiceOfferingDao _offeringsDao;
+    @Inject private DiskOfferingDao _diskOfferingDao;
+    @Inject private VMTemplateDao _templateDao;
+    @Inject private DomainDao _domainDao;
+    @Inject private AccountDao _accountDao;
+    @Inject private AlertDao _alertDao;
+    @Inject private CapacityDao _capacityDao;
+    @Inject private GuestOSDao _guestOSDao;
+    @Inject private GuestOSCategoryDao _guestOSCategoryDao;
+    @Inject private StoragePoolDao _poolDao;
+    @Inject private NicDao _nicDao;
+    @Inject private NetworkDao _networkDao;
+    @Inject private StorageManager _storageMgr;
+    @Inject private VirtualMachineManager _itMgr;
+    @Inject private HostPodDao _hostPodDao;
+    @Inject private VMInstanceDao _vmInstanceDao;
+    @Inject private VolumeDao _volumeDao;
+    @Inject private AsyncJobDao _jobDao;
+    @Inject private AsyncJobManager _asyncMgr;
+    private int _purgeDelay;
+    @Inject private InstanceGroupDao _vmGroupDao;
+    @Inject private UploadMonitor _uploadMonitor;
+    @Inject private UploadDao _uploadDao;
+    @Inject private SSHKeyPairDao _sshKeyPairDao;
+    @Inject private LoadBalancerDao _loadbalancerDao;
+    @Inject private HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
     
-    @Inject
-    private List<HostAllocator> _hostAllocators;
-    private final ConfigurationManager _configMgr;
-    private final ResourceTagDao _resourceTagDao;
+    @Inject private List<HostAllocator> _hostAllocators;
+    @Inject private ConfigurationManager _configMgr;
+    @Inject private ResourceTagDao _resourceTagDao;
     
-    @Inject
-    ProjectManager _projectMgr;
-    private final ResourceManager _resourceMgr;
-    @Inject
-    SnapshotManager _snapshotMgr;
-    @Inject
-    HighAvailabilityManager _haMgr;
-    @Inject
-    HostTagsDao _hostTagsDao;
+    @Inject private ProjectManager _projectMgr;
+    @Inject private ResourceManager _resourceMgr;
+    @Inject private SnapshotManager _snapshotMgr;
+    @Inject private HighAvailabilityManager _haMgr;
+    @Inject private HostTagsDao _hostTagsDao;
 
-    private final KeystoreManager _ksMgr;
+    @Inject ComponentContext _placeholder;
+    
+    private KeystoreManager _ksMgr;
 
-    private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
+    private ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
 
-    private final Map<String, String> _configs;
+    private Map<String, String> _configs;
 
-    private final StatsCollector _statsCollector;
+    private StatsCollector _statsCollector;
 
-    private final Map<String, Boolean> _availableIdsMap;
+    private Map<String, Boolean> _availableIdsMap;
 
     private String _hashKey = null;
 
-    protected ManagementServerImpl() {
-        ComponentLocator locator = ComponentLocator.getLocator(Name);
-        _configDao = locator.getDao(ConfigurationDao.class);
-        _routerDao = locator.getDao(DomainRouterDao.class);
-        _eventDao = locator.getDao(EventDao.class);
-        _dcDao = locator.getDao(DataCenterDao.class);
-        _vlanDao = locator.getDao(VlanDao.class);
-        _accountVlanMapDao = locator.getDao(AccountVlanMapDao.class);
-        _podVlanMapDao = locator.getDao(PodVlanMapDao.class);
-        _hostDao = locator.getDao(HostDao.class);
-        _detailsDao = locator.getDao(HostDetailsDao.class);
-        _hostPodDao = locator.getDao(HostPodDao.class);
-        _jobDao = locator.getDao(AsyncJobDao.class);
-        _clusterDao = locator.getDao(ClusterDao.class);
-        _nicDao = locator.getDao(NicDao.class);
-        _networkDao = locator.getDao(NetworkDao.class);
-        _loadbalancerDao = locator.getDao(LoadBalancerDao.class);
-
-        _accountMgr = locator.getManager(AccountManager.class);
-        _agentMgr = locator.getManager(AgentManager.class);
-        _alertMgr = locator.getManager(AlertManager.class);
-        _consoleProxyMgr = locator.getManager(ConsoleProxyManager.class);
-        _secStorageVmMgr = locator.getManager(SecondaryStorageVmManager.class);
-        _swiftMgr = locator.getManager(SwiftManager.class);
-        _storageMgr = locator.getManager(StorageManager.class);
-        _publicIpAddressDao = locator.getDao(IPAddressDao.class);
-        _consoleProxyDao = locator.getDao(ConsoleProxyDao.class);
-        _secStorageVmDao = locator.getDao(SecondaryStorageVmDao.class);
-        _userDao = locator.getDao(UserDao.class);
-        _userVmDao = locator.getDao(UserVmDao.class);
-        _offeringsDao = locator.getDao(ServiceOfferingDao.class);
-        _diskOfferingDao = locator.getDao(DiskOfferingDao.class);
-        _templateDao = locator.getDao(VMTemplateDao.class);
-        _domainDao = locator.getDao(DomainDao.class);
-        _accountDao = locator.getDao(AccountDao.class);
-        _alertDao = locator.getDao(AlertDao.class);
-        _capacityDao = locator.getDao(CapacityDao.class);
-        _guestOSDao = locator.getDao(GuestOSDao.class);
-        _guestOSCategoryDao = locator.getDao(GuestOSCategoryDao.class);
-        _poolDao = locator.getDao(StoragePoolDao.class);
-        _vmGroupDao = locator.getDao(InstanceGroupDao.class);
-        _uploadDao = locator.getDao(UploadDao.class);
-        _configs = _configDao.getConfiguration();
-        _vmInstanceDao = locator.getDao(VMInstanceDao.class);
-        _volumeDao = locator.getDao(VolumeDao.class);
-        _asyncMgr = locator.getManager(AsyncJobManager.class);
-        _uploadMonitor = locator.getManager(UploadMonitor.class);
-        _sshKeyPairDao = locator.getDao(SSHKeyPairDao.class);
-        _itMgr = locator.getManager(VirtualMachineManager.class);
-        _ksMgr = locator.getManager(KeystoreManager.class);
-        _resourceMgr = locator.getManager(ResourceManager.class);
-        _configMgr = locator.getManager(ConfigurationManager.class);
-        _resourceTagDao = locator.getDao(ResourceTagDao.class);
-
-        _hypervisorCapabilitiesDao = locator.getDao(HypervisorCapabilitiesDao.class);
-
+    public ManagementServerImpl() {
+    }
+    
+    @PostConstruct
+    void init() {
+         _configs = _configDao.getConfiguration();
+ 
         String value = _configs.get("event.purge.interval");
         int cleanup = NumbersUtil.parseInt(value, 60 * 60 * 24); // 1 day.
 

@@ -110,6 +110,7 @@ import com.cloud.user.UserVO;
 import com.cloud.utils.IdentityProxy;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -118,7 +119,6 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CSExceptionErrorCode;
 import com.cloud.uuididentity.dao.IdentityDao;
 
-@Component
 public class ApiServer implements HttpRequestHandler {
     private static final Logger s_logger = Logger.getLogger(ApiServer.class.getName());
     private static final Logger s_accessLogger = Logger.getLogger("apiserver." + ApiServer.class.getName());
@@ -131,11 +131,12 @@ public class ApiServer implements HttpRequestHandler {
     public static String jsonContentType = "text/javascript";
     private Properties _apiCommands = null;
     private ApiDispatcher _dispatcher;
-    private AccountManager _accountMgr = null;
-    private DomainManager _domainMgr = null;
-    private AsyncJobManager _asyncMgr = null;
-    private Account _systemAccount = null;
-    private User _systemUser = null;
+    @Inject private AccountManager _accountMgr;
+    @Inject private DomainManager _domainMgr;
+    @Inject private AsyncJobManager _asyncMgr;
+    @Inject private ConfigurationDao _configDao;
+    private Account _systemAccount;
+    private User _systemUser;
     
     @Inject List<PluggableService> _pluggableServices;
 
@@ -167,6 +168,7 @@ public class ApiServer implements HttpRequestHandler {
     public static void initApiServer(String[] apiConfig) {
         if (s_instance == null) {
             s_instance = new ApiServer();
+            s_instance = ComponentContext.inject(s_instance);
             s_instance.init(apiConfig);
         }
     }
@@ -272,19 +274,15 @@ public class ApiServer implements HttpRequestHandler {
         String[] pluggableServicesApiConfigs = getPluggableServicesApiConfigs();
         processConfigFiles(pluggableServicesApiConfigs, true);
 
-        ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
-        _accountMgr = locator.getManager(AccountManager.class);
-        _asyncMgr = locator.getManager(AsyncJobManager.class);
         _systemAccount = _accountMgr.getSystemAccount();
         _systemUser = _accountMgr.getSystemUser();
         _dispatcher = ApiDispatcher.getInstance();
-        _domainMgr = locator.getManager(DomainManager.class);
-
+  
         Integer apiPort = null; // api port, null by default
-        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
-        SearchCriteria<ConfigurationVO> sc = configDao.createSearchCriteria();
+        
+        SearchCriteria<ConfigurationVO> sc = _configDao.createSearchCriteria();
         sc.addAnd("name", SearchCriteria.Op.EQ, "integration.api.port");
-        List<ConfigurationVO> values = configDao.search(sc, null);
+        List<ConfigurationVO> values = _configDao.search(sc, null);
         if ((values != null) && (values.size() > 0)) {
             ConfigurationVO apiPortConfig = values.get(0);
             if (apiPortConfig.getValue() != null) {
@@ -292,9 +290,9 @@ public class ApiServer implements HttpRequestHandler {
             }
         }
 
-        encodeApiResponse = Boolean.valueOf(configDao.getValue(Config.EncodeApiResponse.key()));
+        encodeApiResponse = Boolean.valueOf(_configDao.getValue(Config.EncodeApiResponse.key()));
 
-        String jsonType = configDao.getValue(Config.JavaScriptDefaultContentType.key());
+        String jsonType = _configDao.getValue(Config.JavaScriptDefaultContentType.key());
         if (jsonType != null) {
             jsonContentType = jsonType;
         }

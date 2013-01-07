@@ -27,6 +27,8 @@ import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 
+import javax.inject.Inject;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd.CommandType;
@@ -44,6 +46,7 @@ import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.utils.DateUtil;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.exception.CSExceptionErrorCode;
@@ -56,21 +59,21 @@ import com.cloud.uuididentity.dao.IdentityDao;
 public class ApiDispatcher {
     private static final Logger s_logger = Logger.getLogger(ApiDispatcher.class.getName());
 
-    ComponentLocator _locator;
-    AsyncJobManager _asyncMgr;
-    IdentityDao _identityDao;
+    @Inject AsyncJobManager _asyncMgr;
+    @Inject IdentityDao _identityDao;
 
     // singleton class
-    private static ApiDispatcher s_instance = new ApiDispatcher();
+    private static ApiDispatcher s_instance;
 
     public static ApiDispatcher getInstance() {
+        if(s_instance == null) {
+        	s_instance = new ApiDispatcher();
+        	s_instance = ComponentContext.inject(s_instance);
+        }
         return s_instance;
     }
 
-    private ApiDispatcher() {
-        _locator = ComponentLocator.getLocator(ManagementServer.Name);
-        _asyncMgr = _locator.getManager(AsyncJobManager.class);
-        _identityDao = _locator.getDao(IdentityDao.class);
+    public ApiDispatcher() {
     }
 
     public void dispatchCreateCmd(BaseAsyncCreateCmd cmd, Map<String, String> params) {

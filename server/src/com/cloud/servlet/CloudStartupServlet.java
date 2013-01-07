@@ -17,7 +17,6 @@
 package com.cloud.servlet;
 
 import java.util.Map;
-import java.util.Set;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
@@ -34,8 +33,6 @@ import com.cloud.utils.SerialVersionUID;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.SystemIntegrityChecker;
-import com.cloud.utils.component.LegacyComponentLocator.ComponentInfo;
-import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.GenericDaoBase;
 
 public class CloudStartupServlet extends HttpServlet implements ServletContextListener {
@@ -49,13 +46,10 @@ public class CloudStartupServlet extends HttpServlet implements ServletContextLi
     public void init() throws ServletException {
 		
 	    // Save Configuration Values
-        //ComponentLocator loc = ComponentLocator.getLocator(ConfigurationServer.Name);
-	    ConfigurationServer c = (ConfigurationServer)ComponentContext.getCompanent(ConfigurationServer.class);
-	    //ConfigurationServer c = new ConfigurationServerImpl();
+ 	    ConfigurationServer c = (ConfigurationServer)ComponentContext.getCompanent(ConfigurationServer.class);
 	    try {
 	    	c.persistDefaultValues();
-	    	s_locator = ComponentLocator.getLocator(ManagementServer.Name);
-		    ManagementServer ms = (ManagementServer)ComponentLocator.getComponent(ManagementServer.Name);
+		    ManagementServer ms = (ManagementServer)ComponentContext.getCompanent(ManagementServer.class);
 		    ApiServer.initApiServer(ms.getApiConfig());
 	    } catch (InvalidParameterValueException ipve) {
 	    	s_logger.error("Exception starting management server ", ipve);

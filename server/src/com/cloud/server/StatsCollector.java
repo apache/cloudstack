@@ -26,6 +26,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+
+import javax.inject.Inject;
+
 import com.cloud.resource.ResourceManager;
 
 import org.apache.log4j.Logger;
@@ -57,6 +60,7 @@ import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.SearchCriteria;
@@ -75,16 +79,16 @@ public class StatsCollector {
 	private static StatsCollector s_instance = null;
 
 	private ScheduledExecutorService _executor = null;
-	private final AgentManager _agentMgr;
-	private final UserVmManager _userVmMgr;
-	private final HostDao _hostDao;
-	private final UserVmDao _userVmDao;
-	private final VolumeDao _volsDao;
-	private final StoragePoolDao _storagePoolDao;
-	private final StorageManager _storageManager;
-    private final StoragePoolHostDao _storagePoolHostDao;
-    private final SecondaryStorageVmManager _ssvmMgr;
-    private final ResourceManager _resourceMgr;
+	@Inject private AgentManager _agentMgr;
+	@Inject private UserVmManager _userVmMgr;
+	@Inject private HostDao _hostDao;
+	@Inject private UserVmDao _userVmDao;
+	@Inject private VolumeDao _volsDao;
+	@Inject private StoragePoolDao _storagePoolDao;
+	@Inject private StorageManager _storageManager;
+	@Inject private StoragePoolHostDao _storagePoolHostDao;
+	@Inject private SecondaryStorageVmManager _ssvmMgr;
+	@Inject private ResourceManager _resourceMgr;
 
 	private ConcurrentHashMap<Long, HostStats> _hostStats = new ConcurrentHashMap<Long, HostStats>();
 	private final ConcurrentHashMap<Long, VmStats> _VmStats = new ConcurrentHashMap<Long, VmStats>();
@@ -104,24 +108,19 @@ public class StatsCollector {
     }
 	public static StatsCollector getInstance(Map<String, String> configs) {
 	    if (s_instance == null) {
-	        s_instance = new StatsCollector(configs);
+	    	
+	        s_instance = new StatsCollector();
+	        s_instance = ComponentContext.inject(s_instance);
+	        s_instance.init(configs);
+	        
 	    }
         return s_instance;
     }
+	
+	public StatsCollector() {
+	}
 
-	private StatsCollector(Map<String, String> configs) {
-		ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
-		_agentMgr = locator.getManager(AgentManager.class);
-		_userVmMgr = locator.getManager(UserVmManager.class);
-		_ssvmMgr = locator.getManager(SecondaryStorageVmManager.class);
-		_hostDao = locator.getDao(HostDao.class);
-		_userVmDao = locator.getDao(UserVmDao.class);
-		_volsDao = locator.getDao(VolumeDao.class);
-		_storagePoolDao = locator.getDao(StoragePoolDao.class);
-		_storageManager = locator.getManager(StorageManager.class);
-        _storagePoolHostDao  = locator.getDao(StoragePoolHostDao.class);
-        _resourceMgr = locator.getManager(ResourceManager.class);
-
+	private void init(Map<String, String> configs) {
 		_executor = Executors.newScheduledThreadPool(3, new NamedThreadFactory("StatsCollector"));
 
 		 hostStatsInterval = NumbersUtil.parseLong(configs.get("host.stats.interval"), 60000L);

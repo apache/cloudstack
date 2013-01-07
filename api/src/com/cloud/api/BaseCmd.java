@@ -64,6 +64,7 @@ import com.cloud.user.DomainService;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.IdentityProxy;
 import com.cloud.utils.Pair;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.vm.BareMetalVmService;
 import com.cloud.vm.UserVmService;
@@ -140,35 +141,46 @@ public abstract class BaseCmd {
     public static Site2SiteVpnService _s2sVpnService;
 
     static void setComponents(ResponseGenerator generator) {
-        ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
-        _mgr = (ManagementService) ComponentLocator.getComponent(ManagementService.Name);
-        _accountService = locator.getManager(AccountService.class);
-        _configService = locator.getManager(ConfigurationService.class);
-        _userVmService = locator.getManager(UserVmService.class);
-        _storageService = locator.getManager(StorageService.class);
-        _resourceService = locator.getManager(ResourceService.class);
-        _networkService = locator.getManager(NetworkService.class);
-        _templateService = locator.getManager(TemplateService.class);
-        _securityGroupService = locator.getManager(SecurityGroupService.class);
-        _snapshotService = locator.getManager(SnapshotService.class);
-        _consoleProxyService = locator.getManager(ConsoleProxyService.class);
-        _routerService = locator.getManager(VpcVirtualNetworkApplianceService.class);
-        _entityMgr = locator.getManager(EntityManager.class);
-        _rulesService = locator.getManager(RulesService.class);
-        _lbService = locator.getManager(LoadBalancingRulesService.class);
-        _ravService = locator.getManager(RemoteAccessVpnService.class);
+        _mgr = (ManagementService) ComponentContext.getCompanent(ManagementService.class);
+        _accountService = ComponentContext.getCompanent(AccountService.class);
+        _configService = ComponentContext.getCompanent(ConfigurationService.class);
+        
+        _userVmService = ComponentContext.getCompanent(UserVmService.class);
+        
+        // TODO, ugly and will change soon
+        //
+        Map<String, UserVmService> svmServices = ComponentContext.getComponentsOfType(UserVmService.class);
+        _userVmService = svmServices.get("BareMetalVmManagerImpl");
+        
+        _storageService = ComponentContext.getCompanent(StorageService.class);
+        _resourceService = ComponentContext.getCompanent(ResourceService.class);
+        _networkService = ComponentContext.getCompanent(NetworkService.class);
+        _templateService = ComponentContext.getCompanent(TemplateService.class);
+ 
+        // TODO, will change to looking for primary component
+        // ugly binding to a specific implementation
+        Map<String, SecurityGroupService> _sgServices = ComponentContext.getComponentsOfType(SecurityGroupService.class);
+        _securityGroupService = _sgServices.get("SecurityGroupManagerImpl2");
+        
+        _snapshotService = ComponentContext.getCompanent(SnapshotService.class);
+        _consoleProxyService = ComponentContext.getCompanent(ConsoleProxyService.class);
+        _routerService = ComponentContext.getCompanent(VpcVirtualNetworkApplianceService.class);
+        _entityMgr = ComponentContext.getCompanent(EntityManager.class);
+        _rulesService = ComponentContext.getCompanent(RulesService.class);
+        _lbService = ComponentContext.getCompanent(LoadBalancingRulesService.class);
+        _ravService = ComponentContext.getCompanent(RemoteAccessVpnService.class);
         _responseGenerator = generator;
-        _bareMetalVmService = locator.getManager(BareMetalVmService.class);
-        _projectService = locator.getManager(ProjectService.class);
-        _firewallService = locator.getManager(FirewallService.class);
-        _domainService = locator.getManager(DomainService.class);
-        _resourceLimitService = locator.getManager(ResourceLimitService.class);
-        _identityService = locator.getManager(IdentityService.class);
-        _storageNetworkService = locator.getManager(StorageNetworkService.class);
-        _taggedResourceService = locator.getManager(TaggedResourceService.class);
-        _vpcService = locator.getManager(VpcService.class);
-        _networkACLService = locator.getManager(NetworkACLService.class);
-        _s2sVpnService = locator.getManager(Site2SiteVpnService.class);
+        _bareMetalVmService = ComponentContext.getCompanent(BareMetalVmService.class);
+        _projectService = ComponentContext.getCompanent(ProjectService.class);
+        _firewallService = ComponentContext.getCompanent(FirewallService.class);
+        _domainService = ComponentContext.getCompanent(DomainService.class);
+        _resourceLimitService = ComponentContext.getCompanent(ResourceLimitService.class);
+        _identityService = ComponentContext.getCompanent(IdentityService.class);
+        _storageNetworkService = ComponentContext.getCompanent(StorageNetworkService.class);
+        _taggedResourceService = ComponentContext.getCompanent(TaggedResourceService.class);
+        _vpcService = ComponentContext.getCompanent(VpcService.class);
+        _networkACLService = ComponentContext.getCompanent(NetworkACLService.class);
+        _s2sVpnService = ComponentContext.getCompanent(Site2SiteVpnService.class);
     }
 
     public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException;

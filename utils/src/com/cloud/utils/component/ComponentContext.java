@@ -17,12 +17,17 @@
 
 package com.cloud.utils.component;
 
+import java.util.Map;
+
+import org.apache.log4j.Logger;
 import org.springframework.aop.Advisor;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.aop.support.DefaultPointcutAdvisor;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.TransactionContextBuilder;
@@ -35,6 +40,8 @@ import com.cloud.utils.db.TransactionContextBuilder;
  */
 @Component
 public class ComponentContext implements ApplicationContextAware {
+    private static final Logger s_logger = Logger.getLogger(ComponentContext.class);
+
 	private static ApplicationContext s_appContext;  
 
     public void setApplicationContext(ApplicationContext applicationContext) {  
@@ -52,15 +59,34 @@ public class ComponentContext implements ApplicationContextAware {
     
     public static <T> T getCompanent(Class<T> beanType) {
     	assert(s_appContext != null);
-    	return (T)s_appContext.getBean(beanType);
+    	try {
+    		return (T)s_appContext.getBean(beanType);
+    	} catch(NoSuchBeanDefinitionException e) {
+    		Map<String, T> matchedTypes = getComponentsOfType(beanType);
+    		if(matchedTypes.size() > 0) {
+	    		for(Map.Entry<String, T> entry : matchedTypes.entrySet()) {
+	    			Primary primary = entry.getClass().getAnnotation(Primary.class);
+	    			if(primary != null)
+	    				return entry.getValue();
+	    		}
+	    		
+	    		s_logger.warn("Unable to uniquely locate bean type " + beanType.getName(), e);
+	    		return (T)matchedTypes.values().toArray()[0];
+	    	}
+    	}
+    	throw new NoSuchBeanDefinitionException("Unable to resolve bean type " + beanType.getName());
     }
-
-    public static<T> T inject(Class<T> clz) {
+    
+    public static <T> Map<String, T> getComponentsOfType(Class<T> beanType) {
+    	return s_appContext.getBeansOfType(beanType);
+    }
+    
+    public static <T> T inject(Class<T> clz) {
     	T instance = s_appContext.getAutowireCapableBeanFactory().createBean(clz);
     	return inject(instance);
     }
     
-    public static<T> T inject(Object instance) {
+    public static <T> T inject(Object instance) {
     	// autowire dynamically loaded object
     	AutowireCapableBeanFactory  beanFactory = s_appContext.getAutowireCapableBeanFactory();
     	beanFactory.autowireBean(instance);
