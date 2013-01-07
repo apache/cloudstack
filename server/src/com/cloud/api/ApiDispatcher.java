@@ -32,6 +32,7 @@ import java.util.regex.Matcher;
 
 import com.cloud.dao.EntityManager;
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.InfrastructureEntity;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.api.*;
 import org.apache.log4j.Logger;
@@ -106,10 +107,7 @@ public class ApiDispatcher {
     }
 
     public void dispatchCreateCmd(BaseAsyncCreateCmd cmd, Map<String, String> params) {
-    	List<ControlledEntity> entitiesToAccess = new ArrayList<ControlledEntity>();
-    	setupParameters(cmd, params, entitiesToAccess);
-
-        doAccessChecks(cmd, entitiesToAccess);
+    	processParameters(cmd, params);
 
         try {
             UserContext ctx = UserContext.current();
@@ -150,60 +148,54 @@ public class ApiDispatcher {
         }
     }
 
-    private void doAccessChecks(BaseAsyncCreateCmd cmd, List<ControlledEntity> entitiesToAccess) {
+    private void checkACLOnCommand(BaseCmd cmd) {
+        // TODO Auto-generated method stub
+        //need to write an commandACLChecker adapter framework to check ACL on commands - default one will use the static roles by referring to commands.properties.
+        //one can write another commandACLChecker to check access via custom roles.
+    }
+
+    private List<Role> determineRole(Account caller) {
+        // TODO Auto-generated method stub
+        List<Role> effectiveRoles = new ArrayList<Role>();
+        return effectiveRoles;
+
+    }
+
+    private void doAccessChecks(BaseCmd cmd, List<Object> entitiesToAccess) {
 		//owner
 		Account caller = UserContext.current().getCaller();
 		Account owner = _accountMgr.getActiveAccountById(cmd.getEntityOwnerId());
 
-		List<Role> callerRoles = determineRole(caller);
-		List<Role> ownerRoles = determineRole(owner);
+        // REMOVE ME:
+		// List<Role> callerRoles = determineRole(caller);
+		// List<Role> ownerRoles = determineRole(owner);
+		// check permission to call this command for the caller
+		// this needs checking of static roles of the caller
+        // Role based acl is done in ApiServer before api gets to ApiDispatcher
+        // checkACLOnCommand(cmd);
 
-		//check permission to call this command for the caller
-		//this needs checking of static roles of the caller
-		checkACLOnCommand(cmd);
-
-		//check that caller can access the owner account.
-		_accountMgr.checkAccess(caller, null, true, owner);
-
-		checkACLOnEntities(caller, entitiesToAccess);
-	}
-
-
-    private void checkACLOnCommand(BaseAsyncCreateCmd cmd) {
-		// TODO Auto-generated method stub
-		//need to write an commandACLChecker adapter framework to check ACL on commands - default one will use the static roles by referring to commands.properties.
-    	//one can write another commandACLChecker to check access via custom roles.
-	}
-
-	private List<Role> determineRole(Account caller) {
-		// TODO Auto-generated method stub
-		List<Role> effectiveRoles = new ArrayList<Role>();
-		return effectiveRoles;
-
-	}
-
-	private void checkACLOnEntities(Account caller, List<ControlledEntity> entitiesToAccess){
-		//checkACLOnEntities
-    	if(!entitiesToAccess.isEmpty()){
-			for(ControlledEntity entity : entitiesToAccess)
-			    _accountMgr.checkAccess(caller, null, true, entity);
-       }
-    }
-
-	public void dispatch(BaseCmd cmd, Map<String, String> params) {
-    	List<ControlledEntity> entitiesToAccess = new ArrayList<ControlledEntity>();
-    	setupParameters(cmd, params, entitiesToAccess);
-
-        if(!entitiesToAccess.isEmpty()){
-			 //owner
-			Account caller = UserContext.current().getCaller();
-			Account owner = s_instance._accountMgr.getActiveAccountById(cmd.getEntityOwnerId());
-			s_instance._accountMgr.checkAccess(caller, null, true, owner);
-			for(ControlledEntity entity : entitiesToAccess)
-			s_instance._accountMgr.checkAccess(caller, null, true, entity);
+        if(cmd instanceof BaseAsyncCreateCmd) {
+            //check that caller can access the owner account.
+            _accountMgr.checkAccess(caller, null, true, owner);
         }
 
+        if(!entitiesToAccess.isEmpty()){
+            //check that caller can access the owner account.
+            _accountMgr.checkAccess(caller, null, true, owner);
+            for(Object entity : entitiesToAccess) {
+                if (entity instanceof ControlledEntity) {
+                    _accountMgr.checkAccess(caller, null, true, (ControlledEntity) entity);
+                }
+                else if (entity instanceof InfrastructureEntity) {
+                    //do something here:D
+                }
+            }
+        }
+	}
+
+	public void dispatch(BaseCmd cmd, Map<String, String> params) {
         try {
+            processParameters(cmd, params);
             UserContext ctx = UserContext.current();
             ctx.setAccountId(cmd.getEntityOwnerId());
             if (cmd instanceof BaseAsyncCmd) {
@@ -362,7 +354,8 @@ public class ApiDispatcher {
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
-	public static void setupParameters(BaseCmd cmd, Map<String, String> params, List<ControlledEntity> entitiesToAccess) {
+	public static void processParameters(BaseCmd cmd, Map<String, String> params) {
+        List<Object> entitiesToAccess = new ArrayList<Object>();
         Map<String, Object> unpackedParams = cmd.unpackParams(params);
 
         if (cmd instanceof BaseListCmd) {
@@ -459,58 +452,57 @@ public class ApiDispatcher {
                     // find the controlled entity DBid by uuid
                     if (parameterAnnotation.entityType() != null) {
                         Class<?>[] entityList = parameterAnnotation.entityType()[0].getAnnotation(EntityReference.class).value();
-                        for (Class entity : entityList){
-                            if (ControlledEntity.class.isAssignableFrom(entity)) {
-                                if (s_logger.isDebugEnabled()) {
-                                    s_logger.debug("entity name is:" + entity.getName());
-                                }
 
-                                if (s_instance._daoNameMap.containsKey(entity.getName())) {
-                                    Class<? extends GenericDao> daoClass = s_instance._daoNameMap.get(entity.getName());
-                                    GenericDao daoClassInstance = s_instance._locator.getDao(daoClass);
-
-                                    // Check if the parameter type is a single
-                                    // Id or list of id's/name's
-                                    switch (fieldType) {
-                                    case LIST:
-                                        CommandType listType = parameterAnnotation.collectionType();
-                                        switch (listType) {
+                        for (Class entity : entityList) {
+                            // Check if the parameter type is a single
+                            // Id or list of id's/name's
+                            switch (fieldType) {
+                                case LIST:
+                                    CommandType listType = parameterAnnotation.collectionType();
+                                    switch (listType) {
                                         case LONG:
+                                        case UUID:
                                             List<Long> listParam = new ArrayList<Long>();
                                             listParam = (List) field.get(cmd);
-
                                             for (Long entityId : listParam) {
-                                                ControlledEntity entityObj = (ControlledEntity) daoClassInstance.findById(entityId);
+                                                Object entityObj = s_instance._entityMgr.findById(entity, (Long) field.get(cmd));
                                                 entitiesToAccess.add(entityObj);
                                             }
                                             break;
-                                        /*
-                                         * case STRING: List<String> listParam =
-                                         * new ArrayList<String>(); listParam =
-                                         * (List)field.get(cmd); for(String
-                                         * entityName: listParam){
-                                         * ControlledEntity entityObj =
-                                         * (ControlledEntity
-                                         * )daoClassInstance(entityId);
-                                         * entitiesToAccess.add(entityObj); }
-                                         * break;
-                                         */
+                                    /*
+                                     * case STRING: List<String> listParam =
+                                     * new ArrayList<String>(); listParam =
+                                     * (List)field.get(cmd); for(String
+                                     * entityName: listParam){
+                                     * ControlledEntity entityObj =
+                                     * (ControlledEntity
+                                     * )daoClassInstance(entityId);
+                                     * entitiesToAccess.add(entityObj); }
+                                     * break;
+                                     */
                                         default:
                                             break;
-                                        }
-                                        break;
-                                    case LONG:
-                                    case UUID:
-                                        Long entityId = (Long) field.get(cmd);
-                                        ControlledEntity entityObj = (ControlledEntity) daoClassInstance.findById(entityId);
-                                        entitiesToAccess.add(entityObj);
-                                        break;
-                                    default:
-                                        break;
                                     }
+                                    break;
+                                case LONG:
+                                case UUID:
+                                    Object entityObj = s_instance._entityMgr.findById(entity, (Long) field.get(cmd));
+                                    entitiesToAccess.add(entityObj);
+                                    break;
+                                default:
+                                    break;
+                            }
 
+                            if (ControlledEntity.class.isAssignableFrom(entity)) {
+                                if (s_logger.isDebugEnabled()) {
+                                    s_logger.debug("ControlledEntity name is:" + entity.getName());
                                 }
+                            }
 
+                            if (InfrastructureEntity.class.isAssignableFrom(entity)) {
+                                if (s_logger.isDebugEnabled()) {
+                                    s_logger.debug("InfrastructureEntity name is:" + entity.getName());
+                                }
                             }
                         }
 
@@ -529,6 +521,8 @@ public class ApiDispatcher {
         }
 
         //check access on the entities.
+        s_instance.doAccessChecks(cmd, entitiesToAccess);
+
     }
 
     private static Long translateUuidToInternalId(String uuid, Parameter annotation)

@@ -412,15 +412,7 @@ public class ApiServer implements HttpRequestHandler {
                 objectEntityTable = createCmd.getEntityTable();
                 params.put("id", objectId.toString());
             } else {
-            	List<ControlledEntity> entitiesToAccess = new ArrayList<ControlledEntity>();
-                ApiDispatcher.setupParameters(cmdObj, params, entitiesToAccess);
-
-                if(!entitiesToAccess.isEmpty()){
-	                Account owner = s_instance._accountMgr.getActiveAccountById(cmdObj.getEntityOwnerId());
-	        		s_instance._accountMgr.checkAccess(caller, null, true, owner);
-
-	        		s_instance._accountMgr.checkAccess(caller, null, true, (ControlledEntity[])entitiesToAccess.toArray());
-                }
+                ApiDispatcher.processParameters(cmdObj, params);
             }
 
             BaseAsyncCmd asyncCmd = (BaseAsyncCmd) cmdObj;
