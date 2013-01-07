@@ -2768,7 +2768,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
         }
 
-        _accountMgr.checkAccess(caller, null, true, vm);
         UserVO user = _userDao.findById(userId);
 
         try {
