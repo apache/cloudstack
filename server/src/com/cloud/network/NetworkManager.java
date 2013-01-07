@@ -48,6 +48,7 @@ import com.cloud.network.rules.StaticNat;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.user.Account;
+import com.cloud.user.User;
 import com.cloud.utils.Pair;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
@@ -61,7 +62,7 @@ import com.cloud.vm.VirtualMachineProfileImpl;
  * NetworkManager manages the network for the different end users.
  * 
  */
-public interface NetworkManager extends NetworkService {
+public interface NetworkManager {
     /**
      * Assigns a new public ip address.
      * 
@@ -192,6 +193,8 @@ public interface NetworkManager extends NetworkService {
     Map<Capability, String> getNetworkServiceCapabilities(long networkId, Service service);
 
     boolean applyIpAssociations(Network network, boolean continueOnError) throws ResourceUnavailableException;
+    
+    boolean applyIpAssociations(Network network, boolean rulesRevoked, boolean continueOnError, List<PublicIp> publicIps) throws ResourceUnavailableException;
 
     boolean areServicesSupportedByNetworkOffering(long networkOfferingId, Service... services);
 
@@ -472,10 +475,72 @@ public interface NetworkManager extends NetworkService {
      */
     PublicIp assignDedicateIpAddress(Account owner, Long guestNtwkId, Long vpcId, long dcId, boolean isSourceNat) throws ConcurrentOperationException, InsufficientAddressCapacityException;
 
+    NetworkProfile convertNetworkToNetworkProfile(long networkId);
 
     /**
      * @return
      */
     int getNetworkLockTimeout();
+
+
+    boolean cleanupIpResources(long addrId, long userId, Account caller);
+
+
+    boolean restartNetwork(Long networkId, Account callerAccount,
+            User callerUser, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+
+
+    boolean shutdownNetworkElementsAndResources(ReservationContext context,
+            boolean b, NetworkVO network);
+
+
+	void implementNetworkElementsAndResources(DeployDestination dest,
+			ReservationContext context, NetworkVO network,
+			NetworkOfferingVO findById) throws ConcurrentOperationException, InsufficientAddressCapacityException, ResourceUnavailableException, InsufficientCapacityException;
+
+
+	Map<Service, Map<Capability, String>> getNetworkCapabilities(long networkId);
+
+
+	Network getSystemNetworkByZoneAndTrafficType(long zoneId, TrafficType trafficType);
+
+
+	Long getDedicatedNetworkDomain(long networkId);
+
+
+	Map<Service, Set<Provider>> getNetworkOfferingServiceProvidersMap(long networkOfferingId);
+
+
+	List<? extends Provider> listSupportedNetworkServiceProviders(String serviceName);
+	
+    List<? extends Network> listNetworksByVpc(long vpcId);
+    
+    boolean canUseForDeploy(Network network);
+    
+    Network getExclusiveGuestNetwork(long zoneId);
+
+    long findPhysicalNetworkId(long zoneId, String tag, TrafficType trafficType);
+    
+    Integer getNetworkRate(long networkId, Long vmId);
+
+
+    boolean isVmPartOfNetwork(long vmId, long ntwkId);
+
+    PhysicalNetwork getDefaultPhysicalNetworkByZoneAndTrafficType(long zoneId, TrafficType trafficType);
+
+
+	Network getNetwork(long networkId);
+
+
+	IpAddress getIp(long sourceIpAddressId);
+
+
+	IpAddress allocateIp(Account ipOwner, boolean isSystem, Account caller,
+			DataCenter zone) throws ConcurrentOperationException, ResourceAllocationException, InsufficientAddressCapacityException;
+
+
+	Map<String, String> finalizeServicesAndProvidersForNetwork(NetworkOffering offering,
+			Long physicalNetworkId);
+
 
 }

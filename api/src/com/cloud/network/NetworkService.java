@@ -17,8 +17,6 @@
 package com.cloud.network;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import com.cloud.api.commands.CreateNetworkCmd;
 import com.cloud.api.commands.ListNetworksCmd;
@@ -29,8 +27,6 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.Network.Capability;
-import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.user.Account;
@@ -63,22 +59,12 @@ public interface NetworkService {
 
     IpAddress getIp(long id);
 
-    NetworkProfile convertNetworkToNetworkProfile(long networkId);
-
-    Map<Service, Map<Capability, String>> getNetworkCapabilities(long networkId);
 
     boolean isNetworkAvailableInDomain(long networkId, long domainId);
-
-    Long getDedicatedNetworkDomain(long networkId);
 
     Network updateGuestNetwork(long networkId, String name, String displayText, Account callerAccount, User callerUser,
             String domainSuffix, Long networkOfferingId, Boolean changeCidr);
 
-    Integer getNetworkRate(long networkId, Long vmId);
-
-    Network getSystemNetworkByZoneAndTrafficType(long zoneId, TrafficType trafficType);
-
-    Map<Service, Set<Provider>> getNetworkOfferingServiceProvidersMap(long networkOfferingId);
 
     PhysicalNetwork createPhysicalNetwork(Long zoneId, String vnetRange, String networkSpeed, 
             List<String> isolationMethods, String broadcastDomainRange, Long domainId, List<String> tags, String name);
@@ -92,8 +78,6 @@ public interface NetworkService {
     boolean deletePhysicalNetwork(Long id);
 
     List<? extends Service> listNetworkServices(String providerName);
-
-    List<? extends Provider> listSupportedNetworkServiceProviders(String serviceName);
 
     PhysicalNetworkServiceProvider addProviderToPhysicalNetwork(Long physicalNetworkId, String providerName,
             Long destinationPhysicalNetworkId, List<String> enabledServices);
@@ -126,7 +110,6 @@ public interface NetworkService {
 
     Pair<List<? extends PhysicalNetworkTrafficType>, Integer> listTrafficTypes(Long physicalNetworkId);
 
-    PhysicalNetwork getDefaultPhysicalNetworkByZoneAndTrafficType(long zoneId, TrafficType trafficType);
 
     Network getExclusiveGuestNetwork(long zoneId);
 
@@ -134,9 +117,7 @@ public interface NetworkService {
 
     List<? extends Network> getIsolatedNetworksWithSourceNATOwnedByAccountInZone(long zoneId, Account owner);
     
-    List<? extends Network> listNetworksByVpc(long vpcId);
     
-    boolean isVmPartOfNetwork(long vmId, long ntwkId);
 
     /**
      * @param networkId
@@ -169,9 +150,5 @@ public interface NetworkService {
     Network createPrivateNetwork(String networkName, String displayText, long physicalNetworkId, String vlan,
             String startIp, String endIP, String gateway, String netmask, long networkOwnerId, Long vpcId) 
                     throws ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException;
-    /**
-     * @param network
-     * @return
-     */
-    boolean canUseForDeploy(Network network);
+ 
 }
