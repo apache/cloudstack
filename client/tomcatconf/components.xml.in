@@ -161,11 +161,6 @@ under the License.
         </adapters>
         <adapters key="com.cloud.network.element.FirewallServiceProvider">
             <adapter name="VirtualRouter" class="com.cloud.network.element.VirtualRouterElement"/>
-            <adapter name="VirtualRouter" class="com.cloud.network.element.JuniperSRXExternalFirewallElement"/>
-        </adapters>
-        <adapters key="com.cloud.network.element.FirewallServiceProvider">
-            <adapter name="VirtualRouter" class="com.cloud.network.element.VirtualRouterElement"/>
-            <adapter name="JuniperSRXExternalFirewallElement" class="com.cloud.network.element.JuniperSRXExternalFirewallElement"/>
         </adapters>
         <adapters key="com.cloud.network.element.DhcpServiceProvider">
             <adapter name="VirtualRouter" class="com.cloud.network.element.VirtualRouterElement"/>
@@ -176,14 +171,15 @@ under the License.
         </adapters>
         <adapters key="com.cloud.network.element.SourceNatServiceProvider">
             <adapter name="VirtualRouter" class="com.cloud.network.element.VirtualRouterElement"/>
-            <adapter name="JuniperSRXExternalFirewallElement" class="com.cloud.network.element.JuniperSRXExternalFirewallElement"/> 
             <adapter name="NiciraNvp" class="com.cloud.network.element.NiciraNvpElement"/>  
         </adapters>
         <adapters key="com.cloud.network.element.StaticNatServiceProvider">
             <adapter name="VirtualRouter" class="com.cloud.network.element.VirtualRouterElement"/>
+            <adapter name="NiciraNvp" class="com.cloud.network.element.NiciraNvpElement"/>
         </adapters>
         <adapters key="com.cloud.network.element.PortForwardingServiceProvider">
             <adapter name="VirtualRouter" class="com.cloud.network.element.VirtualRouterElement"/>
+            <adapter name="NiciraNvp" class="com.cloud.network.element.NiciraNvpElement"/>
         </adapters>
         <adapters key="com.cloud.network.element.LoadBalancingServiceProvider">
             <adapter name="VirtualRouter" class="com.cloud.network.element.VirtualRouterElement"/>
@@ -191,9 +187,23 @@ under the License.
         <adapters key="com.cloud.network.element.RemoteAccessVPNServiceProvider">
             <adapter name="VirtualRouter" class="com.cloud.network.element.VirtualRouterElement"/>
         </adapters>
+        <adapters key="com.cloud.network.element.Site2SiteVpnServiceProvider">
+            <adapter name="VirtualRouter" class="com.cloud.network.element.VirtualRouterElement" />
+        </adapters>
         <adapters key="com.cloud.network.element.IpDeployer">
             <adapter name="VirtualRouter" class="com.cloud.network.element.VirtualRouterElement"/>
+            <adapter name="NiciraNvp" class="com.cloud.network.element.NiciraNvpElement"/>
         </adapters>
+        <adapters key="com.cloud.network.element.ConnectivityProvider">
+            <adapter name="NiciraNvp" class="com.cloud.network.element.NiciraNvpElement"/>
+        </adapters>
+        <adapters key="com.cloud.network.element.NetworkACLServiceProvider">
+            <adapter name="VirtualRouter" class="com.cloud.network.element.VirtualRouterElement"/>
+        </adapters>
+        <adapters key="com.cloud.network.element.VpcProvider">
+            <adapter name="VirtualRouter" class="com.cloud.network.element.VirtualRouterElement"/>
+        </adapters>
+
         <adapters key="com.cloud.cluster.agentlb.AgentLoadBalancerPlanner">
             <adapter name="ClusterBasedAgentLbPlanner" class="com.cloud.cluster.agentlb.ClusterBasedAgentLoadBalancerPlanner"/>
         </adapters>
