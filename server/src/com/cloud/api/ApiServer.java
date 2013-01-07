@@ -561,15 +561,15 @@ public class ApiServer implements HttpRequestHandler {
             if (userId != null) {
             	User user = ApiDBUtils.findUserById(userId);
                 if (!isCommandAvailable(user, commandName)) {
-                    s_logger.warn("The given command:" + commandName + " does not exist");
-                    throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command does not exist");
+                    s_logger.warn("The given command:" + commandName + " does not exist or it is not available for user");
+                    throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command does not exist or it is not available for user");
                 }
                 return true;
             } else {
                 // check against every available command to see if the command exists or not
                 if (!isCommandAvailable(null, commandName) && !commandName.equals("login") && !commandName.equals("logout")) {
-                    s_logger.warn("The given command:" + commandName + " does not exist");
-                    throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command does not exist");
+                    s_logger.warn("The given command:" + commandName + " does not exist or it is not available for user");
+                    throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command does not exist or it is not available for user");
                 }
             }
 
@@ -662,8 +662,8 @@ public class ApiServer implements HttpRequestHandler {
             UserContext.updateContext(user.getId(), account, null);
 
             if (!isCommandAvailable(user, commandName)) {
-                s_logger.warn("The given command:" + commandName + " does not exist");
-                throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command:" + commandName + " does not exist");
+                s_logger.warn("The given command:" + commandName + " does not exist or it is not available for user");
+                throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command:" + commandName + " does not exist or it is not available for user");
             }
 
             // verify secret key exists
