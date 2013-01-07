@@ -25,13 +25,12 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.network.NetworkUsageManager;
 import com.cloud.server.ManagementService;
-import org.apache.cloudstack.api.response.ExternalFirewallResponse;
 import org.apache.cloudstack.api.response.TrafficMonitorResponse;
 import com.cloud.user.Account;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "addTrafficMonitor", description="Adds Traffic Monitor Host for Direct Network Usage", responseObject = ExternalFirewallResponse.class)
+@APICommand(name = "addTrafficMonitor", description="Adds Traffic Monitor Host for Direct Network Usage", responseObject = TrafficMonitorResponse.class)
 public class AddTrafficMonitorCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(AddTrafficMonitorCmd.class.getName());	
 	private static final String s_name = "addtrafficmonitorresponse";	

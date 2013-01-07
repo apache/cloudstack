@@ -3396,12 +3396,6 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
     @DB
     protected VolumeVO switchVolume(VolumeVO existingVolume, VirtualMachineProfile<? extends VirtualMachine> vm) throws StorageUnavailableException {
         Transaction txn = Transaction.currentTxn();
-        txn.start();
-        try {
-            stateTransitTo(existingVolume, Volume.Event.DestroyRequested);
-        } catch (NoTransitionException e) {
-            s_logger.debug("Unable to destroy existing volume: " + e.toString());
-        }
 
         Long templateIdToUse = null;
         Long volTemplateId = existingVolume.getTemplateId();
@@ -3412,7 +3406,19 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
             }
             templateIdToUse = vmTemplateId;
         }
+
+        txn.start();
         VolumeVO newVolume = allocateDuplicateVolume(existingVolume, templateIdToUse);
+        // In case of Vmware if vm reference is not removed then during root disk cleanup
+        // the vm also gets deleted, so remove the reference
+        if (vm.getHypervisorType() == HypervisorType.VMware) {
+            _volsDao.detachVolume(existingVolume.getId());
+        }
+        try {
+            stateTransitTo(existingVolume, Volume.Event.DestroyRequested);
+        } catch (NoTransitionException e) {
+            s_logger.debug("Unable to destroy existing volume: " + e.toString());
+        }
         txn.commit();
         return newVolume;
 

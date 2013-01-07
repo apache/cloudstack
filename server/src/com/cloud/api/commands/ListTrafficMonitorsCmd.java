@@ -31,11 +31,10 @@ import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.host.Host;
 import com.cloud.network.NetworkUsageManager;
 import com.cloud.server.ManagementService;
-import org.apache.cloudstack.api.response.ExternalFirewallResponse;
 import org.apache.cloudstack.api.response.TrafficMonitorResponse;
 import com.cloud.utils.component.ComponentLocator;
 
-@APICommand(name = "listTrafficMonitors", description="List traffic monitor Hosts.", responseObject = ExternalFirewallResponse.class)
+@APICommand(name = "listTrafficMonitors", description="List traffic monitor Hosts.", responseObject = TrafficMonitorResponse.class)
 public class ListTrafficMonitorsCmd extends BaseListCmd {
 	public static final Logger s_logger = Logger.getLogger(ListServiceOfferingsCmd.class.getName());
     private static final String s_name = "listtrafficmonitorsresponse";
