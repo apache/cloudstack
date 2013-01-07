@@ -3775,8 +3775,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         String.format("[%s] %s.vmdk", dsMo.getName(), vmdkName), dcMo.getMor(), true);
                     
                     dsMo.moveDatastoreFile(String.format("[%s] %s/%s-delta.vmdk", dsMo.getName(), vmdkName, vmdkName),
-                        	dcMo.getMor(), dsMo.getMor(), 
-                        	String.format("[%s] %s-delta.vmdk", dsMo.getName(), name), dcMo.getMor(), true);
+                            dcMo.getMor(), dsMo.getMor(),
+                            String.format("[%s] %s-delta.vmdk", dsMo.getName(), vmdkName), dcMo.getMor(), true);
 
                     s_logger.info("detach disks from volume-wrapper VM " + vmdkName);
                     vmMo.detachAllDisks();
@@ -3787,7 +3787,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     String srcFile = String.format("[%s] %s/", dsMo.getName(), vmdkName);
                     dsMo.deleteFile(srcFile, dcMo.getMor(), true);
 
-                    VolumeTO vol = new VolumeTO(cmd.getVolumeId(), dskch.getType(), pool.getType(), pool.getUuid(), dskch.getName(), pool.getPath(), name, cmd.getDiskCharacteristics().getSize(), null);
+                    VolumeTO vol = new VolumeTO(cmd.getVolumeId(), dskch.getType(), pool.getType(), pool.getUuid(), dskch.getName(), pool.getPath(), vmdkName, dskch.getSize(), null);
                     return new CreateAnswer(cmd, vol);
                 }
             } else {
