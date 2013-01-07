@@ -62,6 +62,7 @@ import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkService;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
@@ -136,6 +137,8 @@ public class VpcManagerImpl implements VpcManager, Manager{
     NetworkDao _ntwkDao;
     @Inject
     NetworkManager _ntwkMgr;
+    @Inject
+    NetworkService _ntwkSvc;
     @Inject
     IPAddressDao _ipAddressDao;
     @Inject
@@ -1255,7 +1258,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
         s_logger.debug("Creating Private gateway for VPC " + vpc);
         //1) create private network
         String networkName = "vpc-" + vpc.getName() + "-privateNetwork";
-        Network privateNtwk = _ntwkMgr.createPrivateNetwork(networkName, networkName, physicalNetworkId, 
+        Network privateNtwk = _ntwkSvc.createPrivateNetwork(networkName, networkName, physicalNetworkId, 
                 vlan, ipAddress, null, gateway, netmask, gatewayOwnerId, vpcId);
         
         //2) create gateway entry
@@ -1953,7 +1956,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
             validateNtkwOffForVpc(ntwkOffId, null, null, null, vpc, networkId, null);
         }
         
-        return _ntwkMgr.updateGuestNetwork(networkId, name, displayText, callerAccount, callerUser, domainSuffix,
+        return _ntwkSvc.updateGuestNetwork(networkId, name, displayText, callerAccount, callerUser, domainSuffix,
                 ntwkOffId, changeCidr);
     }
 
