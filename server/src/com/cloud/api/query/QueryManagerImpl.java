@@ -592,9 +592,8 @@ public class QueryManagerImpl implements QueryService, Manager {
         Boolean isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
-        // removing order by, orderBy shouold be specified in ListVMsCmd parameters
-        //Criteria c = new Criteria("id", Boolean.TRUE, cmd.getStartIndex(), cmd.getPageSizeVal());
-        Criteria c = new Criteria(null, Boolean.FALSE, cmd.getStartIndex(), cmd.getPageSizeVal());
+        Criteria c = new Criteria("id", Boolean.TRUE, cmd.getStartIndex(), cmd.getPageSizeVal());
+        //Criteria c = new Criteria(null, Boolean.FALSE, cmd.getStartIndex(), cmd.getPageSizeVal()); //version without default sorting
         c.addCriteria(Criteria.KEYWORD, cmd.getKeyword());
         c.addCriteria(Criteria.ID, cmd.getId());
         c.addCriteria(Criteria.NAME, cmd.getInstanceName());
@@ -962,10 +961,8 @@ public class QueryManagerImpl implements QueryService, Manager {
         Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
-        // no default orderBy
-        // Filter searchFilter = new Filter(DomainRouterJoinVO.class, "id",
-        // true, cmd.getStartIndex(), cmd.getPageSizeVal());
-        Filter searchFilter = new Filter(DomainRouterJoinVO.class, null, true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        Filter searchFilter = new Filter(DomainRouterJoinVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        //Filter searchFilter = new Filter(DomainRouterJoinVO.class, null, true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<DomainRouterJoinVO> sb = _routerJoinDao.createSearchBuilder();
         sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct
                                                              // ids to get
