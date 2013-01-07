@@ -47,6 +47,11 @@ public class StaticNatRuleTO extends FirewallRuleTO{
         super(id, srcIp, protocol, srcPortStart, srcPortEnd, revoked, alreadyAdded, FirewallRule.Purpose.StaticNat, null,0,0);
         this.dstIp = dstIp;
     }
+    
+    public StaticNatRuleTO(long id,String srcVlanTag, String srcIp, Integer srcPortStart, Integer srcPortEnd, String dstIp, Integer dstPortStart, Integer dstPortEnd, String protocol, boolean revoked, boolean alreadyAdded) {
+        super(id, srcVlanTag, srcIp, protocol, srcPortStart, srcPortEnd, revoked, alreadyAdded, FirewallRule.Purpose.StaticNat, null,0,0);
+        this.dstIp = dstIp;
+    }
 
     public String getDstIp() {
         return dstIp;

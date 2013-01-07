@@ -353,18 +353,17 @@ StaticNatServiceProvider {
     public ExternalLoadBalancerDeviceVO configureNetscalerLoadBalancer(ConfigureNetscalerLoadBalancerCmd cmd) {
         Long lbDeviceId = cmd.getLoadBalancerDeviceId();
         Boolean dedicatedUse = cmd.getLoadBalancerDedicated();
-        Boolean inline = cmd.getLoadBalancerInline();
         Long capacity = cmd.getLoadBalancerCapacity();
         List<Long> podIds = cmd.getPodIds();
         try {
-            return configureNetscalerLoadBalancer(lbDeviceId, capacity, inline, dedicatedUse, podIds);
+            return configureNetscalerLoadBalancer(lbDeviceId, capacity, dedicatedUse, podIds);
         } catch (Exception e) {
             throw new CloudRuntimeException("failed to configure netscaler device due to " + e.getMessage());
         }
     }
 
     @DB
-    private ExternalLoadBalancerDeviceVO configureNetscalerLoadBalancer(long lbDeviceId, Long capacity, Boolean inline, Boolean dedicatedUse, List<Long> newPodsConfig) {
+    private ExternalLoadBalancerDeviceVO configureNetscalerLoadBalancer(long lbDeviceId, Long capacity, Boolean dedicatedUse, List<Long> newPodsConfig) {
         ExternalLoadBalancerDeviceVO lbDeviceVo = _lbDeviceDao.findById(lbDeviceId);
         Map<String, String> lbDetails = _detailsDao.findDetails(lbDeviceVo.getHostId());
 
@@ -404,7 +403,7 @@ StaticNatServiceProvider {
         }
 
         String deviceName = lbDeviceVo.getDeviceName();
-        if (dedicatedUse != null || capacity != null || inline != null) {
+        if (dedicatedUse != null || capacity != null) {
             if (NetworkDevice.NetscalerSDXLoadBalancer.getName().equalsIgnoreCase(deviceName) ||
                     NetworkDevice.NetscalerMPXLoadBalancer.getName().equalsIgnoreCase(deviceName)) {
                 if (dedicatedUse != null && dedicatedUse == true) {
@@ -422,13 +421,6 @@ StaticNatServiceProvider {
                 if (dedicatedUse != null && dedicatedUse == true) {
                     throw new CloudRuntimeException("There are networks already using this netscaler device to make device dedicated");
                 }
-
-                if (inline != null) {
-                    boolean _setInline = Boolean.parseBoolean(lbDetails.get("inline"));
-                    if (inline != _setInline) {
-                        throw new CloudRuntimeException("There are networks already using this netscaler device to change the device inline or side-by-side configuration");
-                    }
-                }
             }
         }
 
@@ -442,14 +434,6 @@ StaticNatServiceProvider {
 
         if (dedicatedUse != null) {
             lbDeviceVo.setIsDedicatedDevice(dedicatedUse);
-        }
-
-        if (inline != null && inline == true) {
-            lbDeviceVo.setIsInlineMode(true);
-            lbDetails.put("inline", "true");
-        } else {
-            lbDeviceVo.setIsInlineMode(false);
-            lbDetails.put("inline", "false");
         }
 
         Transaction txn = Transaction.currentTxn();
@@ -552,7 +536,6 @@ StaticNatServiceProvider {
         } else {
             response.setDeviceCapacity(lbDeviceVO.getCapacity());
         }
-        response.setInlineMode(lbDeviceVO.getIsInLineMode());
         response.setDedicatedLoadBalancer(lbDeviceVO.getIsDedicatedDevice());
         response.setProvider(lbDeviceVO.getProviderName());
         response.setDeviceState(lbDeviceVO.getState().name());
@@ -644,6 +627,14 @@ StaticNatServiceProvider {
 
     @Override
     public IpDeployer getIpDeployer(Network network) {
+        ExternalLoadBalancerDeviceVO lbDevice = getExternalLoadBalancerForNetwork(network);
+        if (lbDevice == null) {
+            s_logger.error("Cannot find external load balanacer for network " + network.getName());
+            return null;
+        }
+        if (_networkMgr.isNetworkInlineMode(network)) {
+            return getIpDeployerForInlineMode(network);
+        }
         return this;
     }
 
@@ -690,7 +681,7 @@ StaticNatServiceProvider {
             List<LbDestination> destinations = rule.getDestinations();
 
             if ((destinations != null && !destinations.isEmpty()) || rule.isAutoScaleConfig()) {
-                LoadBalancerTO loadBalancer = new LoadBalancerTO(lbUuid, srcIp, srcPort, protocol, algorithm, revoked, false, destinations, rule.getStickinessPolicies());
+                LoadBalancerTO loadBalancer = new LoadBalancerTO(lbUuid, srcIp, srcPort, protocol, algorithm, revoked, false, false, destinations, rule.getStickinessPolicies());
                 if (rule.isAutoScaleConfig()) {
                     loadBalancer.setAutoScaleVmGroup(rule.getAutoScaleVmGroup());
                 }

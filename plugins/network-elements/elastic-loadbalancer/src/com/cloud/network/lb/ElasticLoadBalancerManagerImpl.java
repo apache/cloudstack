@@ -296,7 +296,7 @@ ElasticLoadBalancerManager, Manager,  VirtualMachineGuru<DomainRouterVO> {
             int srcPort = rule.getSourcePortStart();
             String uuid = rule.getUuid();
             List<LbDestination> destinations = rule.getDestinations();
-            LoadBalancerTO lb = new LoadBalancerTO(uuid, elbIp, srcPort, protocol, algorithm, revoked, false, destinations);
+            LoadBalancerTO lb = new LoadBalancerTO(uuid, elbIp, srcPort, protocol, algorithm, revoked, false, false, destinations);
             lbs[i++] = lb; 
         }
 

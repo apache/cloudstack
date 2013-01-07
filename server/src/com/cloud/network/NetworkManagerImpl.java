@@ -732,6 +732,18 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     public boolean canIpsUseOffering(List<PublicIp> publicIps, long offeringId) {
         Map<PublicIp, Set<Service>> ipToServices = getIpToServices(publicIps, false, true);
         Map<Service, Set<Provider>> serviceToProviders = getNetworkOfferingServiceProvidersMap(offeringId);
+        NetworkOfferingVO offering = _networkOfferingDao.findById(offeringId);
+        //For inline mode checking, using firewall provider for LB instead, because public ip would apply on firewall provider
+        if (offering.isInline()) {
+            Provider firewallProvider = null;
+            if (serviceToProviders.containsKey(Service.Firewall)) {
+                firewallProvider = (Provider)serviceToProviders.get(Service.Firewall).toArray()[0];
+            }
+            Set<Provider> p = new HashSet<Provider>();
+            p.add(firewallProvider);
+            serviceToProviders.remove(Service.Lb);
+            serviceToProviders.put(Service.Lb, p);
+        }
         for (PublicIp ip : ipToServices.keySet()) {
             Set<Service> services = ipToServices.get(ip);
             Provider provider = null;
@@ -777,8 +789,17 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             throw new InvalidParameterException("There is no new provider for IP " + publicIp.getAddress() + " of service " + service.getName() + "!");
         }
         Provider newProvider = (Provider) newProviders.toArray()[0];
-        if (!oldProvider.equals(newProvider)) {
-            throw new InvalidParameterException("There would be multiple providers for IP " + publicIp.getAddress() + "!");
+        Network network = _networksDao.findById(networkId);
+        NetworkElement oldElement = getElementImplementingProvider(oldProvider.getName());
+        NetworkElement newElement = getElementImplementingProvider(newProvider.getName());
+        if (oldElement instanceof IpDeployingRequester && newElement instanceof IpDeployingRequester) {
+        	IpDeployer oldIpDeployer = ((IpDeployingRequester)oldElement).getIpDeployer(network);
+        	IpDeployer newIpDeployer = ((IpDeployingRequester)newElement).getIpDeployer(network);
+        	if (!oldIpDeployer.getProvider().getName().equals(newIpDeployer.getProvider().getName())) {
+        		throw new InvalidParameterException("There would be multiple providers for IP " + publicIp.getAddress() + "!");
+        	}
+        } else {
+        	throw new InvalidParameterException("Ip cannot be applied for new provider!");
         }
         return true;
     }
@@ -850,21 +871,17 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 }
                 IpDeployer deployer = null;
                 NetworkElement element = getElementImplementingProvider(provider.getName());
-                if (element instanceof SourceNatServiceProvider) {
-                    deployer = ((SourceNatServiceProvider) element).getIpDeployer(network);
-                } else if (element instanceof StaticNatServiceProvider) {
-                    deployer = ((StaticNatServiceProvider) element).getIpDeployer(network);
-                } else if (element instanceof LoadBalancingServiceProvider) {
-                    deployer = ((LoadBalancingServiceProvider) element).getIpDeployer(network);
-                } else if (element instanceof PortForwardingServiceProvider) {
-                    deployer = ((PortForwardingServiceProvider) element).getIpDeployer(network);
-                } else if (element instanceof RemoteAccessVPNServiceProvider) {
-                    deployer = ((RemoteAccessVPNServiceProvider) element).getIpDeployer(network);
-                } else if (element instanceof ConnectivityProvider) {
+                if (element instanceof ConnectivityProvider) {
                     // Nothing to do
                     s_logger.debug("ConnectivityProvider " + element.getClass().getSimpleName() + " has no ip associations");
                     continue;
-                } else {
+                }
+
+                if (!(element instanceof IpDeployingRequester)) {
+                    throw new CloudRuntimeException("Element " + element + " is not a IpDeployingRequester!");
+                }
+                deployer = ((IpDeployingRequester)element).getIpDeployer(network);
+                if (deployer == null) {
                     throw new CloudRuntimeException("Fail to get ip deployer for element: " + element);
                 }
                 Set<Service> services = new HashSet<Service>();
@@ -3697,7 +3714,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     protected boolean deleteVlansInNetwork(long networkId, long userId, Account callerAccount) {
-        
+
         //cleanup Public vlans
         List<VlanVO> publicVlans = _vlanDao.listVlansByNetworkId(networkId);
         boolean result = true;
@@ -3706,8 +3723,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 s_logger.warn("Failed to delete vlan " + vlan.getId() + ");");
                 result = false;
             }
-        }      
-        
+        }
+
         //cleanup private vlans
         int privateIpAllocCount = _privateIpDao.countAllocatedByNetworkId(networkId);
         if (privateIpAllocCount > 0) {
@@ -3724,25 +3741,23 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     public boolean validateRule(FirewallRule rule) {
         Network network = _networksDao.findById(rule.getNetworkId());
         Purpose purpose = rule.getPurpose();
-        for (NetworkElement ne : _networkElements) {
-            boolean validated;
-            switch (purpose) {
-            case LoadBalancing:
-                if (!(ne instanceof LoadBalancingServiceProvider)) {
-                    continue;
-                }
-                validated = ((LoadBalancingServiceProvider) ne).validateLBRule(network, (LoadBalancingRule) rule);
-                if (!validated)
-                    return false;
-                break;
-            default:
-                s_logger.debug("Unable to validate network rules for purpose: " + purpose.toString());
-                validated = false;
+        switch (purpose) {
+        case LoadBalancing:
+            LoadBalancingServiceProvider ne = getLoadBalancingProviderForNetwork(network);
+            if (!ne.validateLBRule(network, (LoadBalancingRule) rule)) {
+                return false;
             }
+            break;
+        default:
+            s_logger.debug("Unable to validate network rules for purpose: " + purpose.toString());
         }
         return true;
     }
 
+    protected boolean applyLbRules(Network network, List<LoadBalancingRule> rules, LoadBalancingServiceProvider element) throws ResourceUnavailableException {
+        return element.applyLBRules(network, rules);
+    }
+    
     @Override
     /* The rules here is only the same kind of rule, e.g. all load balancing rules or all port forwarding rules */
     public boolean applyRules(List<? extends FirewallRule> rules, boolean continueOnError) throws ResourceUnavailableException {
@@ -3769,47 +3784,55 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         // the network so as to ensure IP is associated before applying rules (in add state)
         applyIpAssociations(network, false, continueOnError, publicIps);
 
-        for (NetworkElement ne : _networkElements) {
-            Provider provider = Network.Provider.getProvider(ne.getName());
-            if (provider == null) {
-                if (ne.getName().equalsIgnoreCase("Ovs") || ne.getName().equalsIgnoreCase("BareMetal")
-                        || ne.getName().equalsIgnoreCase("CiscoNexus1000vVSM")) {
-                    continue;
-                }
-                throw new CloudRuntimeException("Unable to identify the provider by name " + ne.getName());
+        Service service = null;
+        switch (purpose) {
+        case LoadBalancing: 
+            service = Service.Lb;
+            break;
+        case PortForwarding: 
+            service = Service.PortForwarding;
+            break;
+        case StaticNat: 
+        case Firewall: 
+            service = Service.Firewall;
+            break;
+        case NetworkACL:
+            service = Service.NetworkACL;
+            break;
+        default:
+            break;
+        }
+
+        if (service != null) {
+            List<Provider> providers = getProvidersForServiceInNetwork(network, service);
+            if (providers == null || providers.size() != 1) {
+                // FIXME: If there is a service not made available by network offering, then rule should not get created
+                // in first place. For now error out during the apply rules.
+                String msg = "Cannot find the " + service.getName() + " provider for network " + network.getId();
+                s_logger.error(msg);
+                throw new CloudRuntimeException(msg);
             }
+            NetworkElement ne = getElementImplementingProvider(providers.get(0).getName());
             try {
                 boolean handled;
                 switch (purpose) {
                 case LoadBalancing:
-                    boolean isLbProvider = isProviderSupportServiceInNetwork(network.getId(), Service.Lb, provider);
-                    if (!(ne instanceof LoadBalancingServiceProvider && isLbProvider)) {
-                        continue;
-                    }
-                    handled = ((LoadBalancingServiceProvider) ne).applyLBRules(network, (List<LoadBalancingRule>) rules);
+                    assert ne instanceof LoadBalancingServiceProvider;
+                    handled = applyLbRules(network, (List<LoadBalancingRule>)rules, (LoadBalancingServiceProvider) ne);
                     break;
                 case PortForwarding:
-                    boolean isPfProvider = isProviderSupportServiceInNetwork(network.getId(), Service.PortForwarding, provider);
-                    if (!(ne instanceof PortForwardingServiceProvider && isPfProvider)) {
-                        continue;
-                    }
+                    assert ne instanceof PortForwardingServiceProvider;
                     handled = ((PortForwardingServiceProvider) ne).applyPFRules(network, (List<PortForwardingRule>) rules);
                     break;
                 case StaticNat:
                     /* It's firewall rule for static nat, not static nat rule */
                     /* Fall through */
                 case Firewall:
-                    boolean isFirewallProvider = isProviderSupportServiceInNetwork(network.getId(), Service.Firewall, provider);
-                    if (!(ne instanceof FirewallServiceProvider && isFirewallProvider)) {
-                        continue;
-                    }
+                    assert ne instanceof FirewallServiceProvider;
                     handled = ((FirewallServiceProvider) ne).applyFWRules(network, rules);
                     break;
                 case NetworkACL:
-                    boolean isNetworkACLProvider = isProviderSupportServiceInNetwork(network.getId(), Service.NetworkACL, provider);
-                    if (!(ne instanceof NetworkACLServiceProvider && isNetworkACLProvider)) {
-                        continue;
-                    }
+                    assert ne instanceof NetworkACLServiceProvider;
                     handled = ((NetworkACLServiceProvider) ne).applyNetworkACLs(network, rules);
                     break;
                 default:
@@ -3824,6 +3847,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 s_logger.warn("Problems with " + ne.getName() + " but pushing on", e);
                 success = false;
             }
+        } else {
+            s_logger.debug("Unable to handle network rules for purpose: " + purpose.toString());
+            success = false;
         }
 
         // if all the rules configured on public IP are revoked then dis-associate IP with network service provider
@@ -4398,6 +4424,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     }
 
+
     @Override
     public UserDataServiceProvider getPasswordResetProvider(Network network) {
         String passwordProvider = _ntwkSrvcDao.getProviderForServiceInNetwork(network.getId(), Service.UserData);
@@ -4827,6 +4854,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 // log assign usage events for new offering
                 List<NicVO> nics = _nicDao.listByNetworkId(networkId);
                 for (NicVO nic : nics) {
+                    if (nic.getReservationStrategy() == Nic.ReservationStrategy.PlaceHolder) {
+                        continue;
+                    }
                     long vmId = nic.getInstanceId();
                     VMInstanceVO vm = _vmDao.findById(vmId);
                     if (vm == null) {
@@ -5043,23 +5073,15 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         applyIpAssociations(network, false, continueOnError, publicIps);
 
         // get provider
-        String staticNatProvider = _ntwkSrvcDao.getProviderForServiceInNetwork(network.getId(), Service.StaticNat);
-
-        for (NetworkElement ne : _networkElements) {
-            try {
-                if (!(ne instanceof StaticNatServiceProvider && ne.getName().equalsIgnoreCase(staticNatProvider))) {
-                    continue;
-                }
-
-                boolean handled = ((StaticNatServiceProvider) ne).applyStaticNats(network, staticNats);
-                s_logger.debug("Static Nat for network " + network.getId() + " were " + (handled ? "" : " not") + " handled by " + ne.getName());
-            } catch (ResourceUnavailableException e) {
-                if (!continueOnError) {
-                    throw e;
-                }
-                s_logger.warn("Problems with " + ne.getName() + " but pushing on", e);
-                success = false;
+        StaticNatServiceProvider element = getStaticNatProviderForNetwork(network);
+        try {
+            success = element.applyStaticNats(network, staticNats);
+        } catch (ResourceUnavailableException e) {
+            if (!continueOnError) {
+                throw e;
             }
+            s_logger.warn("Problems with " + element.getName() + " but pushing on", e);
+            success = false;
         }
 
         // For revoked static nat IP, set the vm_id to null, indicate it should be revoked
@@ -7484,4 +7506,56 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return _networkLockTimeout;
     }
 
+    @Override
+    public List<Provider> getProvidersForServiceInNetwork(Network network, Service service) {
+        Map<Service, Set<Provider>> service2ProviderMap = getServiceProvidersMap(network.getId());
+        if (service2ProviderMap.get(service) != null) {
+            List<Provider> providers = new ArrayList<Provider>(service2ProviderMap.get(service));
+            return providers;
+        }
+        return null;
+    }
+
+    protected NetworkElement getElementForServiceInNetwork(Network network, Service service) {
+        List<Provider> providers = getProvidersForServiceInNetwork(network, service);
+        //Only support one provider now
+        if (providers == null)  {
+            s_logger.error("Cannot find " + service.getName() + " provider for network " + network.getId());
+            return null;
+        }
+        if (providers.size() != 1) {
+            s_logger.error("Found " + providers.size() + " " + service.getName() + " providers for network!" + network.getId());
+            return null;
+        }
+        NetworkElement element = getElementImplementingProvider(providers.get(0).getName());
+        s_logger.info("Let " + element.getName() + " handle " + service.getName() + " in network " + network.getId());
+        return element;
+    }
+    
+    @Override
+    public StaticNatServiceProvider getStaticNatProviderForNetwork(Network network) {
+        NetworkElement element = getElementForServiceInNetwork(network, Service.StaticNat);
+        assert element instanceof StaticNatServiceProvider;
+        return (StaticNatServiceProvider)element;
+    }
+
+    @Override
+    public LoadBalancingServiceProvider getLoadBalancingProviderForNetwork(Network network) {
+        NetworkElement element = getElementForServiceInNetwork(network, Service.Lb);
+        assert element instanceof LoadBalancingServiceProvider; 
+        return ( LoadBalancingServiceProvider)element;
+    }
+    public boolean isNetworkInlineMode(Network network) {
+        NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+        return offering.isInline();
+    }
+
+    @Override
+    public int getRuleCountForIp(Long addressId, FirewallRule.Purpose purpose, FirewallRule.State state) {
+        List<FirewallRuleVO> rules = _firewallDao.listByIpAndPurposeWithState(addressId, purpose, state);
+        if (rules == null) {
+            return 0;
+        }
+        return rules.size();
+    }
 }

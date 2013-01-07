@@ -16,19 +16,13 @@
 // under the License.
 package com.cloud.network.element;
 
-import java.util.List;
-
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
-import com.cloud.network.rules.StaticNat;
 
-public interface StaticNatServiceProvider extends NetworkElement, IpDeployingRequester {
+public interface IpDeployingRequester {
     /**
-     * Creates static nat rule (public IP to private IP mapping) on the network element
-     * @param config
-     * @param rules
-     * @return
-     * @throws ResourceUnavailableException
+     * Would return the IpDeployer can deploy IP for this element
+     * @param network
+     * @return IpDeployer object, or null if there is no deployer for this element
      */
-    boolean applyStaticNats(Network config, List<? extends StaticNat> rules) throws ResourceUnavailableException;
+    IpDeployer getIpDeployer(Network network);
 }

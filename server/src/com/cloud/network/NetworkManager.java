@@ -40,12 +40,15 @@ import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.addr.PublicIp;
+import com.cloud.network.element.LoadBalancingServiceProvider;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.RemoteAccessVPNServiceProvider;
 import com.cloud.network.element.Site2SiteVpnServiceProvider;
+import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
@@ -483,4 +486,12 @@ public interface NetworkManager extends NetworkService {
      */
     int getNetworkLockTimeout();
 
+    List<Provider> getProvidersForServiceInNetwork(Network network, Service service);
+
+    StaticNatServiceProvider getStaticNatProviderForNetwork(Network network);
+    boolean isNetworkInlineMode(Network network);
+
+    int getRuleCountForIp(Long addressId, FirewallRule.Purpose purpose, FirewallRule.State state);
+
+    LoadBalancingServiceProvider getLoadBalancingProviderForNetwork(Network network);
 }

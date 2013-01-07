@@ -3006,6 +3006,11 @@ public class ApiResponseHelper implements ResponseGenerator {
                 eLb.setValue(offering.getElasticLb() ? "true" : "false");
                 lbCapResponse.add(eLb);
 
+		CapabilityResponse inline = new CapabilityResponse();
+		inline.setName(Capability.InlineMode.getName());
+		inline.setValue(offering.isInline() ? "true" : "false");
+		lbCapResponse.add(inline);
+
                 svcRsp.setCapabilities(lbCapResponse);
             } else if (Service.SourceNat == service) {
                 List<CapabilityResponse> capabilities = new ArrayList<CapabilityResponse>();

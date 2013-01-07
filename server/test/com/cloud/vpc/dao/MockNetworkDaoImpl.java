@@ -351,4 +351,10 @@ public class MockNetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implemen
         return null;
     }
 
+    @Override
+    public List<NetworkVO> listRedundantNetworks() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
 }

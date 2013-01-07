@@ -37,12 +37,16 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.NetworkServiceMapDao;
+import com.cloud.network.element.LoadBalancingServiceProvider;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.RemoteAccessVPNServiceProvider;
 import com.cloud.network.element.Site2SiteVpnServiceProvider;
+import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.FirewallRule.Purpose;
+import com.cloud.network.rules.FirewallRule.State;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
@@ -1480,4 +1484,33 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager{
         return 0;
     }
 
+    @Override
+    public boolean isNetworkInlineMode(Network network) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public List<Provider> getProvidersForServiceInNetwork(Network network, Service service) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public StaticNatServiceProvider getStaticNatProviderForNetwork(Network network) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public int getRuleCountForIp(Long addressId, Purpose purpose, State state) {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public LoadBalancingServiceProvider getLoadBalancingProviderForNetwork(Network network) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 }

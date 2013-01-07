@@ -309,4 +309,19 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
         return result;
     }
 
+    @Override
+    public List<FirewallRuleVO> listByIpAndPurposeWithState(Long ipId, Purpose purpose, State state) {
+        SearchCriteria<FirewallRuleVO> sc = AllFieldsSearch.create();
+        sc.setParameters("ipId", ipId);
+        
+        if (state != null) {
+            sc.setParameters("state", state);
+        }
+
+        if (purpose != null) {
+            sc.setParameters("purpose", purpose);
+        }
+
+        return listBy(sc);
+    }
 }

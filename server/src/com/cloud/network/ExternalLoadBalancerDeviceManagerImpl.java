@@ -64,6 +64,7 @@ import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.ExternalLoadBalancerDeviceVO.LBDeviceAllocationState;
 import com.cloud.network.ExternalLoadBalancerDeviceVO.LBDeviceState;
 import com.cloud.network.ExternalNetworkDeviceManager.NetworkDevice;
+import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.addr.PublicIp;
@@ -79,6 +80,9 @@ import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
+import com.cloud.network.element.IpDeployer;
+import com.cloud.network.element.NetworkElement;
+import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.resource.CreateLoadBalancerApplianceAnswer;
@@ -86,6 +90,8 @@ import com.cloud.network.resource.DestroyLoadBalancerApplianceAnswer;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRuleVO;
+import com.cloud.network.rules.StaticNat;
+import com.cloud.network.rules.StaticNatImpl;
 import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.rules.StaticNatRuleImpl;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
@@ -239,7 +245,6 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
             if (host != null) {
 
                 boolean dedicatedUse = (configParams.get(ApiConstants.LOAD_BALANCER_DEVICE_DEDICATED) != null) ? Boolean.parseBoolean(configParams.get(ApiConstants.LOAD_BALANCER_DEVICE_DEDICATED)) : false;
-                boolean inline = (configParams.get(ApiConstants.INLINE) != null) ? Boolean.parseBoolean(configParams.get(ApiConstants.INLINE)) : false;
                 long capacity = NumbersUtil.parseLong(configParams.get(ApiConstants.LOAD_BALANCER_DEVICE_CAPACITY), 0);
                 if (capacity == 0) {
                     capacity = _defaultLbCapacity;
@@ -247,7 +252,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
 
                 txn.start();
                 ExternalLoadBalancerDeviceVO lbDeviceVO = new ExternalLoadBalancerDeviceVO(host.getId(), pNetwork.getId(), ntwkSvcProvider.getProviderName(),
-                        deviceName, capacity, dedicatedUse, inline);
+                        deviceName, capacity, dedicatedUse);
                 _externalLoadBalancerDeviceDao.persist(lbDeviceVO);
 
                 DetailVO hostDetail = new DetailVO(host.getId(), ApiConstants.LOAD_BALANCER_DEVICE_ID, String.valueOf(lbDeviceVO.getId()));
@@ -689,30 +694,6 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         return false;
     }
 
-    HostVO getFirewallProviderForNetwork(Network network) {
-        HostVO fwHost = null;
-
-        // get the firewall provider (could be either virtual router or external firewall device) for the network
-        String fwProvider = _ntwkSrvcProviderDao.getProviderForServiceInNetwork(network.getId(), Service.Firewall);
-
-        if (fwProvider.equalsIgnoreCase("VirtualRouter")) {
-            // FIXME: use network service provider container framework support to implement on virtual router
-        } else {
-            NetworkExternalFirewallVO fwDeviceForNetwork = _networkExternalFirewallDao.findByNetworkId(network.getId());
-            assert (fwDeviceForNetwork != null) : "Why firewall provider is not ready for the network to apply static nat rules?";
-            long fwDeviceId = fwDeviceForNetwork.getExternalFirewallDeviceId();
-            ExternalFirewallDeviceVO fwDevice = _externalFirewallDeviceDao.findById(fwDeviceId);
-            fwHost = _hostDao.findById(fwDevice.getHostId());
-        }
-
-        return fwHost;
-    }
-
-    private boolean externalLoadBalancerIsInline(HostVO externalLoadBalancer) {
-        DetailVO detail = _hostDetailDao.findDetail(externalLoadBalancer.getId(), "inline");
-        return (detail != null && detail.getValue().equals("true"));
-    }
-
     private NicVO savePlaceholderNic(Network network, String ipAddress) {
         NicVO nic = new NicVO(null, null, network.getId(), null);
         nic.setIp4Address(ipAddress);
@@ -733,31 +714,115 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         return null;
     }
 
-    private void applyStaticNatRuleForInlineLBRule(DataCenterVO zone, Network network, HostVO firewallHost, boolean revoked, String publicIp, String privateIp) throws ResourceUnavailableException {
-        List<StaticNatRuleTO> staticNatRules = new ArrayList<StaticNatRuleTO>();
+    private void applyStaticNatRuleForInlineLBRule(DataCenterVO zone, Network network, boolean revoked, String publicIp, String privateIp) throws ResourceUnavailableException {
+        List<StaticNat> staticNats = new ArrayList<StaticNat>();
         IPAddressVO ipVO = _ipAddressDao.listByDcIdIpAddress(zone.getId(), publicIp).get(0);
-        VlanVO vlan = _vlanDao.findById(ipVO.getVlanId());
-        FirewallRuleVO fwRule = new FirewallRuleVO(null, ipVO.getId(), -1, -1, "any", network.getId(), network.getAccountId(), network.getDomainId(), Purpose.StaticNat, null, null, null, null, null);
-        FirewallRule.State state = !revoked ? FirewallRule.State.Add : FirewallRule.State.Revoke;
-        fwRule.setState(state);
-        StaticNatRule rule = new StaticNatRuleImpl(fwRule, privateIp);
-        StaticNatRuleTO ruleTO = new StaticNatRuleTO(rule, vlan.getVlanTag(), publicIp, privateIp);
-        staticNatRules.add(ruleTO);
-
-        applyStaticNatRules(staticNatRules, network, firewallHost.getId());
+        StaticNatImpl staticNat = new StaticNatImpl(ipVO.getAllocatedToAccountId(), ipVO.getAllocatedInDomainId(),
+                network.getId(), ipVO.getId(), privateIp, revoked);
+        staticNats.add(staticNat);
+        StaticNatServiceProvider element = _networkMgr.getStaticNatProviderForNetwork(network);
+        element.applyStaticNats(network, staticNats);
     }
 
-    protected void applyStaticNatRules(List<StaticNatRuleTO> staticNatRules, Network network, long firewallHostId) throws ResourceUnavailableException {
-        if (!staticNatRules.isEmpty()) {
-            SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(staticNatRules, null);
-            Answer answer = _agentMgr.easySend(firewallHostId, cmd);
-            if (answer == null || !answer.getResult()) {
-                String details = (answer != null) ? answer.getDetails() : "details unavailable";
-                String msg = "firewall provider for the network was unable to apply static nat rules due to: " + details + ".";
-                s_logger.error(msg);
-                throw new ResourceUnavailableException(msg, Network.class, network.getId());
+    private enum MappingState {
+        Create,
+        Remove,
+        Unchanged,
+    };
+    
+    private class MappingNic {
+        private NicVO nic;
+        private MappingState state;
+        
+        public NicVO getNic() {
+            return nic;
+        }
+        public void setNic(NicVO nic) {
+            this.nic = nic;
+        }
+        public MappingState getState() {
+            return state;
+        }
+        public void setState(MappingState state) {
+            this.state = state;
+        }
+    };
+    
+    private MappingNic getLoadBalancingIpNic(DataCenterVO zone, Network network, long sourceIpId, boolean revoked, String existedGuestIp) throws ResourceUnavailableException {
+        String srcIp = _networkMgr.getIp(sourceIpId).getAddress().addr();
+        InlineLoadBalancerNicMapVO mapping = _inlineLoadBalancerNicMapDao.findByPublicIpAddress(srcIp);
+        NicVO loadBalancingIpNic = null;
+        MappingNic nic = new MappingNic();
+        nic.setState(MappingState.Unchanged);
+        if (!revoked) {
+            if (mapping == null) {
+                // Acquire a new guest IP address and save it as the load balancing IP address
+                String loadBalancingIpAddress = existedGuestIp;
+                
+                if (loadBalancingIpAddress == null) {
+                    loadBalancingIpAddress = _networkMgr.acquireGuestIpAddress(network, null);
+                }
+
+                if (loadBalancingIpAddress == null) {
+                    String msg = "Ran out of guest IP addresses.";
+                    s_logger.error(msg);
+                    throw new ResourceUnavailableException(msg, DataCenter.class, network.getDataCenterId());
+                }
+
+                // If a NIC doesn't exist for the load balancing IP address, create one
+                loadBalancingIpNic = _nicDao.findByIp4AddressAndNetworkId(loadBalancingIpAddress, network.getId());
+                if (loadBalancingIpNic == null) {
+                    loadBalancingIpNic = savePlaceholderNic(network, loadBalancingIpAddress);
+                }
+
+                // Save a mapping between the source IP address and the load balancing IP address NIC
+                mapping = new InlineLoadBalancerNicMapVO(srcIp, loadBalancingIpNic.getId());
+                _inlineLoadBalancerNicMapDao.persist(mapping);
+
+                // On the firewall provider for the network, create a static NAT rule between the source IP
+                // address and the load balancing IP address
+                try {
+                    applyStaticNatRuleForInlineLBRule(zone, network, revoked, srcIp, loadBalancingIpNic.getIp4Address());
+                } catch (ResourceUnavailableException ex) {
+                    // Rollback db operation
+                    _inlineLoadBalancerNicMapDao.expunge(mapping.getId());
+                    _nicDao.expunge(loadBalancingIpNic.getId());
+                    throw ex;
+                }
+
+                s_logger.debug("Created static nat rule for inline load balancer");
+                nic.setState(MappingState.Create);
+            } else {
+                loadBalancingIpNic = _nicDao.findById(mapping.getNicId());
+            }
+        } else {
+            if (mapping != null) {
+                // Find the NIC that the mapping refers to
+                loadBalancingIpNic = _nicDao.findById(mapping.getNicId());
+
+                int count = _networkMgr.getRuleCountForIp(sourceIpId, Purpose.LoadBalancing, FirewallRule.State.Active);
+                if (count == 0) {
+                    // On the firewall provider for the network, delete the static NAT rule between the source IP
+                    // address and the load balancing IP address
+                    applyStaticNatRuleForInlineLBRule(zone, network, revoked, srcIp, loadBalancingIpNic.getIp4Address());
+
+                    // Delete the mapping between the source IP address and the load balancing IP address
+                    _inlineLoadBalancerNicMapDao.expunge(mapping.getId());
+
+                    // Delete the NIC
+                    _nicDao.expunge(loadBalancingIpNic.getId());
+
+                    s_logger.debug("Revoked static nat rule for inline load balancer");
+                    nic.setState(MappingState.Remove);
+                }
+            } else {
+                s_logger.debug("Revoking a rule for an inline load balancer that has not been programmed yet.");
+                return null;
             }
         }
+        
+        nic.setNic(loadBalancingIpNic);
+        return nic;
     }
 
     @Override
@@ -786,7 +851,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
 
         HostVO externalLoadBalancer = _hostDao.findById(lbDeviceVO.getHostId());
 
-        boolean externalLoadBalancerIsInline = externalLoadBalancerIsInline(externalLoadBalancer);
+        boolean externalLoadBalancerIsInline = _networkMgr.isNetworkInlineMode(network);
 
         if (network.getState() == Network.State.Allocated) {
             s_logger.debug("External load balancer was asked to apply LB rules for network with ID " + network.getId() + "; this network is not implemented. Skipping backend commands.");
@@ -794,6 +859,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         }
 
         List<LoadBalancerTO> loadBalancersToApply = new ArrayList<LoadBalancerTO>();
+        List<MappingState> mappingStates = new ArrayList<MappingState>();
         for (int i = 0; i < loadBalancingRules.size(); i++) {
             LoadBalancingRule rule = loadBalancingRules.get(i);
 
@@ -804,62 +870,13 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
             String srcIp = _networkMgr.getIp(rule.getSourceIpAddressId()).getAddress().addr();
             int srcPort = rule.getSourcePortStart();
             List<LbDestination> destinations = rule.getDestinations();
-            List<String> sourceCidrs = rule.getSourceCidrList();
 
             if (externalLoadBalancerIsInline) {
-                InlineLoadBalancerNicMapVO mapping = _inlineLoadBalancerNicMapDao.findByPublicIpAddress(srcIp);
-                NicVO loadBalancingIpNic = null;
-                HostVO firewallProviderHost = null;
-
-                if (externalLoadBalancerIsInline) {
-                    firewallProviderHost = getFirewallProviderForNetwork(network);
-                }
-
-                if (!revoked) {
-                    if (mapping == null) {
-                        // Acquire a new guest IP address and save it as the load balancing IP address
-                        String loadBalancingIpAddress = _networkMgr.acquireGuestIpAddress(network, null);
-
-                        if (loadBalancingIpAddress == null) {
-                            String msg = "Ran out of guest IP addresses.";
-                            s_logger.error(msg);
-                            throw new ResourceUnavailableException(msg, DataCenter.class, network.getDataCenterId());
-                        }
-
-                        // If a NIC doesn't exist for the load balancing IP address, create one
-                        loadBalancingIpNic = _nicDao.findByIp4AddressAndNetworkId(loadBalancingIpAddress, network.getId());
-                        if (loadBalancingIpNic == null) {
-                            loadBalancingIpNic = savePlaceholderNic(network, loadBalancingIpAddress);
-                        }
-
-                        // Save a mapping between the source IP address and the load balancing IP address NIC
-                        mapping = new InlineLoadBalancerNicMapVO(rule.getId(), srcIp, loadBalancingIpNic.getId());
-                        _inlineLoadBalancerNicMapDao.persist(mapping);
-
-                        // On the firewall provider for the network, create a static NAT rule between the source IP
-// address and the load balancing IP address
-                        applyStaticNatRuleForInlineLBRule(zone, network, firewallProviderHost, revoked, srcIp, loadBalancingIpNic.getIp4Address());
-                    } else {
-                        loadBalancingIpNic = _nicDao.findById(mapping.getNicId());
-                    }
-                } else {
-                    if (mapping != null) {
-                        // Find the NIC that the mapping refers to
-                        loadBalancingIpNic = _nicDao.findById(mapping.getNicId());
-
-                        // On the firewall provider for the network, delete the static NAT rule between the source IP
-// address and the load balancing IP address
-                        applyStaticNatRuleForInlineLBRule(zone, network, firewallProviderHost, revoked, srcIp, loadBalancingIpNic.getIp4Address());
-
-                        // Delete the mapping between the source IP address and the load balancing IP address
-                        _inlineLoadBalancerNicMapDao.expunge(mapping.getId());
-
-                        // Delete the NIC
-                        _nicDao.expunge(loadBalancingIpNic.getId());
-                    } else {
-                        s_logger.debug("Revoking a rule for an inline load balancer that has not been programmed yet.");
-                        continue;
-                    }
+                MappingNic nic = getLoadBalancingIpNic(zone, network, rule.getSourceIpAddressId(), revoked, null);
+                mappingStates.add(nic.getState());
+                NicVO loadBalancingIpNic = nic.getNic();
+                if (loadBalancingIpNic == null) {
+                    continue;
                 }
 
                 // Change the source IP address for the load balancing rule to be the load balancing IP address
@@ -867,27 +884,50 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
             }
 
             if ((destinations != null && !destinations.isEmpty()) || rule.isAutoScaleConfig()) {
-                LoadBalancerTO loadBalancer = new LoadBalancerTO(uuid, srcIp, srcPort, protocol, algorithm, revoked, false, destinations, rule.getStickinessPolicies());
-                if(rule.isAutoScaleConfig()) {
+                boolean inline = _networkMgr.isNetworkInlineMode(network);
+                LoadBalancerTO loadBalancer = new LoadBalancerTO(uuid, srcIp, srcPort, protocol, algorithm, revoked, false, inline, destinations, rule.getStickinessPolicies());
+                if (rule.isAutoScaleConfig()) {
                     loadBalancer.setAutoScaleVmGroup(rule.getAutoScaleVmGroup());
                 }
                 loadBalancersToApply.add(loadBalancer);
             }
         }
 
-        if (loadBalancersToApply.size() > 0) {
-            int numLoadBalancersForCommand = loadBalancersToApply.size();
-            LoadBalancerTO[] loadBalancersForCommand = loadBalancersToApply.toArray(new LoadBalancerTO[numLoadBalancersForCommand]);
-            LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(loadBalancersForCommand, null);
-            long guestVlanTag = Integer.parseInt(network.getBroadcastUri().getHost());
-            cmd.setAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG, String.valueOf(guestVlanTag));
-            Answer answer = _agentMgr.easySend(externalLoadBalancer.getId(), cmd);
-            if (answer == null || !answer.getResult()) {
-                String details = (answer != null) ? answer.getDetails() : "details unavailable";
-                String msg = "Unable to apply load balancer rules to the external load balancer appliance in zone " + zone.getName() + " due to: " + details + ".";
-                s_logger.error(msg);
-                throw new ResourceUnavailableException(msg, DataCenter.class, network.getDataCenterId());
+        try {
+            if (loadBalancersToApply.size() > 0) {
+                int numLoadBalancersForCommand = loadBalancersToApply.size();
+                LoadBalancerTO[] loadBalancersForCommand = loadBalancersToApply.toArray(new LoadBalancerTO[numLoadBalancersForCommand]);
+                LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(loadBalancersForCommand, null);
+                long guestVlanTag = Integer.parseInt(network.getBroadcastUri().getHost());
+                cmd.setAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG, String.valueOf(guestVlanTag));
+                Answer answer = _agentMgr.easySend(externalLoadBalancer.getId(), cmd);
+                if (answer == null || !answer.getResult()) {
+                    String details = (answer != null) ? answer.getDetails() : "details unavailable";
+                    String msg = "Unable to apply load balancer rules to the external load balancer appliance in zone " + zone.getName() + " due to: " + details + ".";
+                    s_logger.error(msg);
+                    throw new ResourceUnavailableException(msg, DataCenter.class, network.getDataCenterId());
+                }
             }
+        } catch (Exception ex) {
+            if (externalLoadBalancerIsInline) {
+                s_logger.error("Rollbacking static nat operation of inline mode load balancing due to error on applying LB rules!");
+                String existedGuestIp = loadBalancersToApply.get(0).getSrcIp();
+                // Rollback static NAT operation in current session
+                for (int i = 0; i < loadBalancingRules.size(); i++) {
+                    LoadBalancingRule rule = loadBalancingRules.get(i);
+                    MappingState state = mappingStates.get(i);
+                    boolean revoke;
+                    if (state == MappingState.Create) {
+                        revoke = true;
+                    } else if (state == MappingState.Remove) {
+                        revoke = false;
+                    } else {
+                        continue;
+                    }
+                    getLoadBalancingIpNic(zone, network, rule.getSourceIpAddressId(), revoke, existedGuestIp);
+                }
+            }
+            throw new ResourceUnavailableException(ex.getMessage(), DataCenter.class, network.getDataCenterId());
         }
 
         return true;
@@ -905,11 +945,17 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         HostVO externalLoadBalancer = null;
 
         if (add) {
-            ExternalLoadBalancerDeviceVO lbDeviceVO = allocateLoadBalancerForNetwork(guestConfig);
+            ExternalLoadBalancerDeviceVO lbDeviceVO = null;
+	        // on restart network, device could have been allocated already, skip allocation if a device is assigned
+            lbDeviceVO = getExternalLoadBalancerForNetwork(guestConfig);
             if (lbDeviceVO == null) {
-                String msg = "failed to alloacate a external load balancer for the network " + guestConfig.getId();
-                s_logger.error(msg);
-                throw new InsufficientNetworkCapacityException(msg, DataCenter.class, guestConfig.getDataCenterId());
+		    // allocate a load balancer device for the network
+	            lbDeviceVO = allocateLoadBalancerForNetwork(guestConfig);
+	            if (lbDeviceVO == null) {
+	                String msg = "failed to alloacate a external load balancer for the network " + guestConfig.getId();
+	                s_logger.error(msg);
+	                throw new InsufficientNetworkCapacityException(msg, DataCenter.class, guestConfig.getDataCenterId());
+	            }
             }
             externalLoadBalancer = _hostDao.findById(lbDeviceVO.getHostId());
             s_logger.debug("Allocated external load balancer device:" + lbDeviceVO.getId() + " for the network: " + guestConfig.getId());
@@ -933,6 +979,12 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         Integer networkRate = _networkMgr.getNetworkRate(guestConfig.getId(), null);
 
         if (add) {
+		    // on restart network, network could have already been implemented. If already implemented then return
+            NicVO selfipNic = getPlaceholderNic(guestConfig);
+            if (selfipNic != null) {
+		    return true;
+            }
+
             // Acquire a self-ip address from the guest network IP address range
             selfIp = _networkMgr.acquireGuestIpAddress(guestConfig, null);
             if (selfIp == null) {
@@ -951,7 +1003,9 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
             selfIp = selfipNic.getIp4Address();
         }
 
-        IpAddressTO ip = new IpAddressTO(guestConfig.getAccountId(), null, add, false, true, String.valueOf(guestVlanTag), selfIp, guestVlanNetmask, null, networkRate, false);
+        // It's a hack, using isOneToOneNat field for indicate if it's inline or not
+        boolean inline = _networkMgr.isNetworkInlineMode(guestConfig);
+        IpAddressTO ip = new IpAddressTO(guestConfig.getAccountId(), null, add, false, true, String.valueOf(guestVlanTag), selfIp, guestVlanNetmask, null, networkRate, inline);
         IpAddressTO[] ips = new IpAddressTO[1];
         ips[0] = ip;
         IpAssocCommand cmd = new IpAssocCommand(ips);
@@ -959,8 +1013,9 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
 
         if (answer == null || !answer.getResult()) {
             String action = add ? "implement" : "shutdown";
-            String answerDetails = (answer != null) ? answer.getDetails() : "answer was null";
-            String msg = "External load balancer was unable to " + action + " the guest network on the external load balancer in zone " + zone.getName() + " due to " + answerDetails;
+            String answerDetails = (answer != null) ? answer.getDetails() : null;
+            answerDetails = (answerDetails != null) ? " due to " + answerDetails : "";
+            String msg = "External load balancer was unable to " + action + " the guest network on the external load balancer in zone " + zone.getName() + answerDetails;
             s_logger.error(msg);
             throw new ResourceUnavailableException(msg, Network.class, guestConfig.getId());
         }
@@ -1032,4 +1087,25 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         return new DeleteHostAnswer(true);
     }
 
+    protected IpDeployer getIpDeployerForInlineMode(Network network) {
+        //We won't deploy IP, instead the firewall in front of us would do it
+        List<Provider> providers = _networkMgr.getProvidersForServiceInNetwork(network, Service.Firewall);
+        //Only support one provider now
+        if (providers == null)  {
+            s_logger.error("Cannot find firewall provider for network " + network.getId());
+            return null;
+        }
+        if (providers.size() != 1) {
+            s_logger.error("Found " + providers.size() + " firewall provider for network " + network.getId());
+            return null;
+        }
+
+        NetworkElement element = _networkMgr.getElementImplementingProvider(providers.get(0).getName());
+        if (!(element instanceof IpDeployer)) {
+            s_logger.error("The firewall provider for network " + network.getName() + " don't have ability to deploy IP address!");
+            return null;
+        }
+        s_logger.info("Let " + element.getName() + " handle ip association for " + getName() + " in network " + network.getId());
+        return (IpDeployer)element;
+    }
 }

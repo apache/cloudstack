@@ -76,6 +76,7 @@ import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.resource.JuniperSrxResource;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.PortForwardingRule;
+import com.cloud.network.rules.StaticNat;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.resource.ServerResource;
@@ -90,7 +91,7 @@ import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value = NetworkElement.class)
 public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceManagerImpl implements SourceNatServiceProvider, FirewallServiceProvider,
-        PortForwardingServiceProvider, RemoteAccessVPNServiceProvider, IpDeployer, JuniperSRXFirewallElementService {
+        PortForwardingServiceProvider, RemoteAccessVPNServiceProvider, IpDeployer, JuniperSRXFirewallElementService, StaticNatServiceProvider {
 
     private static final Logger s_logger = Logger.getLogger(JuniperSRXExternalFirewallElement.class);
 
@@ -268,7 +269,7 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
 
         // Set capabilities for Firewall service
         Map<Capability, String> firewallCapabilities = new HashMap<Capability, String>();
-        firewallCapabilities.put(Capability.SupportedProtocols, "tcp,udp");
+        firewallCapabilities.put(Capability.SupportedProtocols, "tcp,udp,icmp");
         firewallCapabilities.put(Capability.MultipleIps, "true");
         firewallCapabilities.put(Capability.TrafficStatistics, "per public ip");
         capabilities.put(Service.Firewall, firewallCapabilities);
@@ -302,7 +303,7 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
             return false;
         }
 
-        return applyFirewallRules(network, rules);
+        return applyPortForwardingRules(network, rules);
     }
 
     @Override
@@ -329,7 +330,7 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
 
     @Override
     public boolean canEnableIndividualServices() {
-        return false;
+        return true;
     }
 
     @Override
@@ -534,6 +535,10 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
 
     @Override
     public boolean verifyServicesCombination(Set<Service> services) {
+        if (!services.contains(Service.Firewall)) {
+            s_logger.warn("SRX must be used as Firewall Service Provider in the network");
+            return false;
+        }
         return true;
     }
 
@@ -546,5 +551,13 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
     public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress, Set<Service> service) throws ResourceUnavailableException {
         // return true, as IP will be associated as part of static NAT/port forwarding rule configuration
         return true;
+    }
+
+	@Override
+	public boolean applyStaticNats(Network config, List<? extends StaticNat> rules) throws ResourceUnavailableException {
+        if (!canHandle(config, Service.StaticNat)) {
+            return false;
+        }
+        return applyStaticNatRules(config, rules);
     }
 }

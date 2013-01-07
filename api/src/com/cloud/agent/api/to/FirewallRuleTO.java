@@ -58,6 +58,7 @@ public class FirewallRuleTO {
        this(id,null,srcIp,protocol,srcPortStart,srcPortEnd,revoked,alreadyAdded,purpose,sourceCidr,icmpType,icmpCode);
     } 
     public FirewallRuleTO(long id,String srcVlanTag, String srcIp, String protocol, Integer srcPortStart, Integer srcPortEnd, boolean revoked, boolean alreadyAdded, FirewallRule.Purpose purpose, List<String> sourceCidr,Integer icmpType,Integer icmpCode) {
+        this.id = id;
         this.srcVlanTag = srcVlanTag;
         this.srcIp = srcIp;
         this.protocol = protocol;
