@@ -255,8 +255,6 @@ public class NetworkManagerImpl implements NetworkManager, Manager, Listener {
     @Inject
     FirewallRulesDao _firewallDao;
     @Inject
-    PortForwardingRulesDao _portForwardingDao;
-    @Inject
     ResourceLimitService _resourceLimitMgr;
 
     @Inject
@@ -2852,94 +2850,7 @@ public class NetworkManagerImpl implements NetworkManager, Manager, Listener {
         
     
 
-    @Override
-    /* The rules here is only the same kind of rule, e.g. all load balancing rules or all port forwarding rules */
-    public boolean applyRules(List<? extends FirewallRule> rules, boolean continueOnError) throws ResourceUnavailableException {
-        if (rules == null || rules.size() == 0) {
-            s_logger.debug("There are no rules to forward to the network elements");
-            return true;
-        }
-
-        boolean success = true;
-        Network network = _networksDao.findById(rules.get(0).getNetworkId());
-        Purpose purpose = rules.get(0).getPurpose();
-
-        // get the list of public ip's owned by the network
-        List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedNetwork(network.getId(), null);
-        List<PublicIp> publicIps = new ArrayList<PublicIp>();
-        if (userIps != null && !userIps.isEmpty()) {
-            for (IPAddressVO userIp : userIps) {
-                PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
-                publicIps.add(publicIp);
-            }
-        }
-
-        // rules can not programmed unless IP is associated with network service provider, so run IP assoication for
-        // the network so as to ensure IP is associated before applying rules (in add state)
-        applyIpAssociations(network, false, continueOnError, publicIps);
-
-        for (NetworkElement ne : _networkElements) {
-            Provider provider = Network.Provider.getProvider(ne.getName());
-            if (provider == null) {
-                if (ne.getName().equalsIgnoreCase("Ovs") || ne.getName().equalsIgnoreCase("BareMetal")
-                        || ne.getName().equalsIgnoreCase("CiscoNexus1000vVSM")) {
-                    continue;
-                }
-                throw new CloudRuntimeException("Unable to identify the provider by name " + ne.getName());
-            }
-            try {
-                boolean handled;
-                switch (purpose) {
-                case LoadBalancing:
-                    boolean isLbProvider = isProviderSupportServiceInNetwork(network.getId(), Service.Lb, provider);
-                    if (!(ne instanceof LoadBalancingServiceProvider && isLbProvider)) {
-                        continue;
-                    }
-                    handled = ((LoadBalancingServiceProvider) ne).applyLBRules(network, (List<LoadBalancingRule>) rules);
-                    break;
-                case PortForwarding:
-                    boolean isPfProvider = isProviderSupportServiceInNetwork(network.getId(), Service.PortForwarding, provider);
-                    if (!(ne instanceof PortForwardingServiceProvider && isPfProvider)) {
-                        continue;
-                    }
-                    handled = ((PortForwardingServiceProvider) ne).applyPFRules(network, (List<PortForwardingRule>) rules);
-                    break;
-                case StaticNat:
-                    /* It's firewall rule for static nat, not static nat rule */
-                    /* Fall through */
-                case Firewall:
-                    boolean isFirewallProvider = isProviderSupportServiceInNetwork(network.getId(), Service.Firewall, provider);
-                    if (!(ne instanceof FirewallServiceProvider && isFirewallProvider)) {
-                        continue;
-                    }
-                    handled = ((FirewallServiceProvider) ne).applyFWRules(network, rules);
-                    break;
-                case NetworkACL:
-                    boolean isNetworkACLProvider = isProviderSupportServiceInNetwork(network.getId(), Service.NetworkACL, provider);
-                    if (!(ne instanceof NetworkACLServiceProvider && isNetworkACLProvider)) {
-                        continue;
-                    }
-                    handled = ((NetworkACLServiceProvider) ne).applyNetworkACLs(network, rules);
-                    break;
-                default:
-                    s_logger.debug("Unable to handle network rules for purpose: " + purpose.toString());
-                    handled = false;
-                }
-                s_logger.debug("Network Rules for network " + network.getId() + " were " + (handled ? "" : " not") + " handled by " + ne.getName());
-            } catch (ResourceUnavailableException e) {
-                if (!continueOnError) {
-                    throw e;
-                }
-                s_logger.warn("Problems with " + ne.getName() + " but pushing on", e);
-                success = false;
-            }
-        }
-
-        // if all the rules configured on public IP are revoked then dis-associate IP with network service provider
-        applyIpAssociations(network, true, continueOnError, publicIps);
-
-        return success;
-    }
+   
 
     public class NetworkGarbageCollector implements Runnable {
 
