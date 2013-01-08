@@ -60,24 +60,22 @@ public class AgentMonitor extends Thread implements Listener {
     private static Logger s_logger = Logger.getLogger(AgentMonitor.class);
     private static Logger status_Logger = Logger.getLogger(Status.class);
     private long _pingTimeout;
-    private HostDao _hostDao;
+    @Inject private HostDao _hostDao;
     private boolean _stop;
-    private AgentManagerImpl _agentMgr;
-    private VMInstanceDao _vmDao;
-    private DataCenterDao _dcDao = null;
-    private HostPodDao _podDao = null;
-    private AlertManager _alertMgr;
+    @Inject private AgentManagerImpl _agentMgr;
+    @Inject private VMInstanceDao _vmDao;
+    @Inject private DataCenterDao _dcDao = null;
+    @Inject private HostPodDao _podDao = null;
+    @Inject private AlertManager _alertMgr;
     private long _msId;
     private ConnectionConcierge _concierge;
-    @Inject
-    ClusterDao _clusterDao;
-    @Inject
-    ResourceManager _resourceMgr;
+    @Inject ClusterDao _clusterDao;
+    @Inject ResourceManager _resourceMgr;
     
     // private ConnectionConcierge _concierge;
     private Map<Long, Long> _pingMap;
 
-    protected AgentMonitor() {
+    public AgentMonitor() {
     }
 
     public AgentMonitor(long msId, HostDao hostDao, VMInstanceDao vmDao, DataCenterDao dcDao, HostPodDao podDao, AgentManagerImpl agentMgr, AlertManager alertMgr, long pingTimeout) {

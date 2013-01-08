@@ -113,13 +113,13 @@ public class ImageDataStoreProviderManagerImpl implements ImageDataStoreProvider
     @Override
     public boolean start() {
         // TODO Auto-generated method stub
-        return false;
+        return true;
     }
 
     @Override
     public boolean stop() {
         // TODO Auto-generated method stub
-        return false;
+        return true;
     }
 
     @Override
