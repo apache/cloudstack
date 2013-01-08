@@ -112,7 +112,19 @@ public class SnapshotCommandTest {
 
         public Long getPodId() {
             return 0L;
-        };
+        }
+
+		@Override
+		public String getStorageProvider() {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public String getStorageType() {
+			// TODO Auto-generated method stub
+			return null;
+		};
     };
 
     SnapshotCommand ssc = new SnapshotCommand(pool,
