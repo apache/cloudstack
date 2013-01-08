@@ -53,6 +53,7 @@ import com.cloud.api.query.vo.ProjectInvitationJoinVO;
 import com.cloud.api.query.vo.ProjectJoinVO;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.SecurityGroupJoinVO;
+import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
@@ -868,49 +869,12 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public StoragePoolResponse createStoragePoolResponse(StoragePool pool) {
-        StoragePoolResponse poolResponse = new StoragePoolResponse();
-        poolResponse.setId(pool.getUuid());
-        poolResponse.setName(pool.getName());
-        poolResponse.setState(pool.getStatus());
-        poolResponse.setPath(pool.getPath());
-        poolResponse.setIpAddress(pool.getHostAddress());
-        DataCenter zone = ApiDBUtils.findZoneById(pool.getDataCenterId());
-        if ( zone != null ){
-        poolResponse.setZoneId(zone.getUuid());
-        poolResponse.setZoneName(zone.getName());
-        }
-        if (pool.getPoolType() != null) {
-            poolResponse.setType(pool.getPoolType().toString());
-        }
-        if (pool.getPodId() != null) {
-            HostPodVO pod = ApiDBUtils.findPodById(pool.getPodId());
-            if (pod != null) {
-                poolResponse.setPodId(pod.getUuid());
-                poolResponse.setPodName(pod.getName());
-            }
-        }
-        if (pool.getCreated() != null) {
-            poolResponse.setCreated(pool.getCreated());
-        }
+        List<StoragePoolJoinVO> viewPools = ApiDBUtils.newStoragePoolView(pool);
+        List<StoragePoolResponse> listPools = ViewResponseHelper.createStoragePoolResponse(viewPools.toArray(new StoragePoolJoinVO[viewPools.size()]));
+        assert listPools != null && listPools.size() == 1 : "There should be one storage pool returned";
+        return listPools.get(0);
 
-        StorageStats stats = ApiDBUtils.getStoragePoolStatistics(pool.getId());
-        long allocatedSize = ApiDBUtils.getStorageCapacitybyPool(pool.getId(), Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED);
-        poolResponse.setDiskSizeTotal(pool.getCapacityBytes());
-        poolResponse.setDiskSizeAllocated(allocatedSize);
 
-        if (stats != null) {
-            Long used = stats.getByteUsed();
-            poolResponse.setDiskSizeUsed(used);
-        }
-
-        if (pool.getClusterId() != null) {
-            ClusterVO cluster = ApiDBUtils.findClusterById(pool.getClusterId());
-            poolResponse.setClusterId(cluster.getUuid());
-            poolResponse.setClusterName(cluster.getName());
-        }
-        poolResponse.setTags(ApiDBUtils.getStoragePoolTags(pool.getId()));
-        poolResponse.setObjectName("storagepool");
-        return poolResponse;
     }
 
     @Override

@@ -26,6 +26,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
+import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
@@ -50,6 +51,7 @@ import org.apache.cloudstack.api.response.ProjectInvitationResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
+import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
@@ -66,6 +68,7 @@ import com.cloud.api.query.dao.ProjectInvitationJoinDao;
 import com.cloud.api.query.dao.ProjectJoinDao;
 import com.cloud.api.query.dao.ResourceTagJoinDao;
 import com.cloud.api.query.dao.SecurityGroupJoinDao;
+import com.cloud.api.query.dao.StoragePoolJoinDao;
 import com.cloud.api.query.dao.UserAccountJoinDao;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.dao.VolumeJoinDao;
@@ -80,6 +83,7 @@ import com.cloud.api.query.vo.ProjectInvitationJoinVO;
 import com.cloud.api.query.vo.ProjectJoinVO;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.SecurityGroupJoinVO;
+import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
@@ -100,6 +104,8 @@ import com.cloud.projects.ProjectManager;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.server.Criteria;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -198,6 +204,9 @@ public class QueryManagerImpl implements QueryService, Manager {
 
     @Inject
     private AsyncJobJoinDao _jobJoinDao;
+
+    @Inject
+    private StoragePoolJoinDao _poolJoinDao;
 
     @Inject
     private HighAvailabilityManager _haMgr;
@@ -1788,5 +1797,96 @@ public class QueryManagerImpl implements QueryService, Manager {
 
         return _jobJoinDao.searchAndCount(sc, searchFilter);
     }
+
+    @Override
+    public ListResponse<StoragePoolResponse> searchForStoragePools(ListStoragePoolsCmd cmd) {
+        Pair<List<StoragePoolJoinVO>, Integer> result = searchForStoragePoolsInternal(cmd);
+        ListResponse<StoragePoolResponse> response = new ListResponse<StoragePoolResponse>();
+
+        List<StoragePoolResponse> poolResponses = ViewResponseHelper.createStoragePoolResponse(result.first().toArray(new StoragePoolJoinVO[result.first().size()]));
+        response.setResponses(poolResponses, result.second());
+        return response;
+    }
+
+    public Pair<List<StoragePoolJoinVO>, Integer> searchForStoragePoolsInternal(ListStoragePoolsCmd cmd) {
+
+        Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), cmd.getZoneId());
+        Object id = cmd.getId();
+        Object name = cmd.getStoragePoolName();
+        Object path = cmd.getPath();
+        Object pod = cmd.getPodId();
+        Object cluster = cmd.getClusterId();
+        Object address = cmd.getIpAddress();
+        Object keyword = cmd.getKeyword();
+        Long startIndex = cmd.getStartIndex();
+        Long pageSize = cmd.getPageSizeVal();
+
+
+        Filter searchFilter = new Filter(StoragePoolJoinVO.class, "id", Boolean.TRUE, startIndex, pageSize);
+
+        SearchBuilder<StoragePoolJoinVO> sb = _poolJoinDao.createSearchBuilder();
+        sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct ids
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("path", sb.entity().getPath(), SearchCriteria.Op.EQ);
+        sb.and("dataCenterId", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
+        sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
+        sb.and("clusterId", sb.entity().getClusterId(), SearchCriteria.Op.EQ);
+        sb.and("hostAddress", sb.entity().getHostAddress(), SearchCriteria.Op.EQ);
+
+
+        SearchCriteria<StoragePoolJoinVO> sc = sb.create();
+
+
+        if (keyword != null) {
+            SearchCriteria<StoragePoolJoinVO> ssc = _poolJoinDao.createSearchCriteria();
+            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("poolType", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+
+            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+        }
+
+        if (id != null) {
+            sc.setParameters("id", id);
+        }
+
+        if (name != null) {
+            sc.setParameters("name", SearchCriteria.Op.LIKE, "%" + name + "%");
+        }
+
+        if (path != null) {
+            sc.setParameters("path", SearchCriteria.Op.EQ, path);
+        }
+        if (zoneId != null) {
+            sc.setParameters("dataCenterId", SearchCriteria.Op.EQ, zoneId);
+        }
+        if (pod != null) {
+            sc.setParameters("podId", SearchCriteria.Op.EQ, pod);
+        }
+        if (address != null) {
+            sc.setParameters("hostAddress", SearchCriteria.Op.EQ, address);
+        }
+        if (cluster != null) {
+            sc.setParameters("clusterId", SearchCriteria.Op.EQ, cluster);
+        }
+
+        // search Pool details by ids
+        Pair<List<StoragePoolJoinVO>, Integer> uniquePoolPair = _poolJoinDao.searchAndCount(sc, searchFilter);
+        Integer count = uniquePoolPair.second();
+        if (count.intValue() == 0) {
+            // empty result
+            return uniquePoolPair;
+        }
+        List<StoragePoolJoinVO> uniquePools = uniquePoolPair.first();
+        Long[] vrIds = new Long[uniquePools.size()];
+        int i = 0;
+        for (StoragePoolJoinVO v : uniquePools) {
+            vrIds[i++] = v.getId();
+        }
+        List<StoragePoolJoinVO> vrs = _poolJoinDao.searchByIds(vrIds);
+        return new Pair<List<StoragePoolJoinVO>, Integer>(vrs, count);
+
+    }
+
 
 }

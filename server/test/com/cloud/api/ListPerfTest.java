@@ -148,4 +148,21 @@ public class ListPerfTest extends APITest {
         System.out.println("Time taken to list Users: " + (after - before) + " ms");
 
     }
+
+    @Test
+    public void testListStoragePools(){
+        // issue list Storage pool calls
+        HashMap<String, String> params = new HashMap<String, String>();
+        params.put("response", "json");
+        params.put("listAll", "true");
+        params.put("sessionkey", sessionKey);
+        long before = System.currentTimeMillis();
+        String result = this.sendRequest("listStoragePools", params);
+        long after = System.currentTimeMillis();
+        System.out.println("Time taken to list StoragePools: " + (after - before) + " ms");
+
+    }
+
+
+
 }

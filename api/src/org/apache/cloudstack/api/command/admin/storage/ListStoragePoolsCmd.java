@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
+import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.storage.StoragePool;
@@ -116,16 +117,7 @@ public class ListStoragePoolsCmd extends BaseListCmd {
 
     @Override
     public void execute(){
-        Pair<List<? extends StoragePool>, Integer> pools = _mgr.searchForStoragePools(this);
-        ListResponse<StoragePoolResponse> response = new ListResponse<StoragePoolResponse>();
-        List<StoragePoolResponse> poolResponses = new ArrayList<StoragePoolResponse>();
-        for (StoragePool pool : pools.first()) {
-            StoragePoolResponse poolResponse = _responseGenerator.createStoragePoolResponse(pool);
-            poolResponse.setObjectName("storagepool");
-            poolResponses.add(poolResponse);
-        }
-
-        response.setResponses(poolResponses, pools.second());
+        ListResponse<StoragePoolResponse> response = _queryService.searchForStoragePools(this);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

@@ -35,6 +35,7 @@ import org.apache.cloudstack.api.response.ProjectInvitationResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
+import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
@@ -49,6 +50,7 @@ import com.cloud.api.query.dao.ProjectInvitationJoinDao;
 import com.cloud.api.query.dao.ProjectJoinDao;
 import com.cloud.api.query.dao.ResourceTagJoinDao;
 import com.cloud.api.query.dao.SecurityGroupJoinDao;
+import com.cloud.api.query.dao.StoragePoolJoinDao;
 import com.cloud.api.query.dao.UserAccountJoinDao;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.dao.VolumeJoinDao;
@@ -63,6 +65,7 @@ import com.cloud.api.query.vo.ProjectInvitationJoinVO;
 import com.cloud.api.query.vo.ProjectJoinVO;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.SecurityGroupJoinVO;
+import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
@@ -183,6 +186,7 @@ import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
 import com.cloud.storage.UploadVO;
@@ -324,6 +328,7 @@ public class ApiDBUtils {
     private static ProjectInvitationJoinDao _projectInvitationJoinDao;
     private static HostJoinDao _hostJoinDao;
     private static VolumeJoinDao _volJoinDao;
+    private static StoragePoolJoinDao _poolJoinDao;
     private static AccountJoinDao _accountJoinDao;
     private static AsyncJobJoinDao _jobJoinDao;
 
@@ -414,6 +419,7 @@ public class ApiDBUtils {
         _projectInvitationJoinDao = locator.getDao(ProjectInvitationJoinDao.class);
         _hostJoinDao = locator.getDao(HostJoinDao.class);
         _volJoinDao = locator.getDao(VolumeJoinDao.class);
+        _poolJoinDao = locator.getDao(StoragePoolJoinDao.class);
         _accountJoinDao = locator.getDao(AccountJoinDao.class);
         _jobJoinDao = locator.getDao(AsyncJobJoinDao.class);
 
@@ -1357,6 +1363,19 @@ public class ApiDBUtils {
    public static List<VolumeJoinVO> newVolumeView(Volume vr){
        return _volJoinDao.newVolumeView(vr);
    }
+
+   public static StoragePoolResponse newStoragePoolResponse(StoragePoolJoinVO vr) {
+       return _poolJoinDao.newStoragePoolResponse(vr);
+   }
+
+   public static StoragePoolResponse fillStoragePoolDetails(StoragePoolResponse vrData, StoragePoolJoinVO vr){
+        return _poolJoinDao.setStoragePoolResponse(vrData, vr);
+   }
+
+   public static List<StoragePoolJoinVO> newStoragePoolView(StoragePool vr){
+       return _poolJoinDao.newStoragePoolView(vr);
+   }
+
 
    public static AccountResponse newAccountResponse(AccountJoinVO ve) {
        return _accountJoinDao.newAccountResponse(ve);
