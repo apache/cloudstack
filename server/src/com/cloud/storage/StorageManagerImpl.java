@@ -2208,12 +2208,6 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         StoragePool pool = _storagePoolDao.findById(volume.getPoolId());
         long currentSize = volume.getSize();
 
-        /*Xen only works offline, SR does not support VDI.resizeOnline*/
-        if(_volsDao.getHypervisorType(volume.getId()) == HypervisorType.XenServer
-           && ! userVm.getState().equals(State.Stopped)) {
-            throw new InvalidParameterValueException("VM must be stopped in order to resize with the Xen HV");
-        }
-
         /* lets make certain they (think they) know what they're doing if they 
         want to shrink, by forcing them to provide the shrinkok parameter. This will
         be checked again at the hypervisor level where we can see the actual disk size */
@@ -2234,6 +2228,12 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
                 hosts = new long[] { userVm.getHostId() };
             } else if(userVm.getLastHostId() != null) {
                 hosts = new long[] { userVm.getLastHostId() };
+            }
+
+            /*Xen only works offline, SR does not support VDI.resizeOnline*/
+            if(_volsDao.getHypervisorType(volume.getId()) == HypervisorType.XenServer
+               && ! userVm.getState().equals(State.Stopped)) {
+                throw new InvalidParameterValueException("VM must be stopped in order to resize with the Xen HV");
             }
         }
 
