@@ -25,12 +25,14 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
+import com.cloud.configuration.dao.ConfigurationDao;
 
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.NicResponse;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.user.Account;
+import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -39,6 +41,9 @@ import com.cloud.utils.db.SearchCriteria;
 @Local(value={DomainRouterJoinDao.class})
 public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, Long> implements DomainRouterJoinDao {
     public static final Logger s_logger = Logger.getLogger(DomainRouterJoinDaoImpl.class);
+
+    @Inject
+    private ConfigurationDao  _configDao;
 
     private SearchBuilder<DomainRouterJoinVO> vrSearch;
 
@@ -189,10 +194,47 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
 
 
     @Override
-    public List<DomainRouterJoinVO> searchByIds(Long... ids) {
-        SearchCriteria<DomainRouterJoinVO> sc = vrSearch.create();
-        sc.setParameters("idIN", ids);
-        return searchIncludingRemoved(sc, null, null, false);
+    public List<DomainRouterJoinVO> searchByIds(Long... vrIds) {
+        // set detail batch query size
+        int DETAILS_BATCH_SIZE = 2000;
+        String batchCfg = _configDao.getValue("detail.batch.query.size");
+        if ( batchCfg != null ){
+            DETAILS_BATCH_SIZE = Integer.parseInt(batchCfg);
+        }
+        // query details by batches
+        List<DomainRouterJoinVO> uvList = new ArrayList<DomainRouterJoinVO>();
+        // query details by batches
+        int curr_index = 0;
+        if ( vrIds.length > DETAILS_BATCH_SIZE ){
+            while ( (curr_index + DETAILS_BATCH_SIZE ) <= vrIds.length ) {
+                Long[] ids = new Long[DETAILS_BATCH_SIZE];
+                for (int k = 0, j = curr_index; j < curr_index + DETAILS_BATCH_SIZE; j++, k++) {
+                    ids[k] = vrIds[j];
+                }
+                SearchCriteria<DomainRouterJoinVO> sc = vrSearch.create();
+                sc.setParameters("idIN", ids);
+                List<DomainRouterJoinVO> vms = searchIncludingRemoved(sc, null, null, false);
+                if (vms != null) {
+                    uvList.addAll(vms);
+                }
+                curr_index += DETAILS_BATCH_SIZE;
+            }
+        }
+        if (curr_index < vrIds.length) {
+            int batch_size = (vrIds.length - curr_index);
+            // set the ids value
+            Long[] ids = new Long[batch_size];
+            for (int k = 0, j = curr_index; j < curr_index + batch_size; j++, k++) {
+                ids[k] = vrIds[j];
+            }
+            SearchCriteria<DomainRouterJoinVO> sc = vrSearch.create();
+            sc.setParameters("idIN", ids);
+            List<DomainRouterJoinVO> vms = searchIncludingRemoved(sc, null, null, false);
+            if (vms != null) {
+                uvList.addAll(vms);
+            }
+        }
+        return uvList;
     }
 
 

@@ -35,14 +35,14 @@ public class ProjectAccountJoinDaoImpl extends GenericDaoBase<ProjectAccountJoin
     public static final Logger s_logger = Logger.getLogger(ProjectAccountJoinDaoImpl.class);
 
 
-    private SearchBuilder<ProjectAccountJoinVO> vrIdSearch;
+    private SearchBuilder<ProjectAccountJoinVO> paIdSearch;
 
     protected ProjectAccountJoinDaoImpl() {
 
-        vrIdSearch = createSearchBuilder();
-        vrIdSearch.and("accountId", vrIdSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-        vrIdSearch.and("projectId", vrIdSearch.entity().getProjectId(), SearchCriteria.Op.EQ);
-        vrIdSearch.done();
+        paIdSearch = createSearchBuilder();
+        paIdSearch.and("accountId", paIdSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        paIdSearch.and("projectId", paIdSearch.entity().getProjectId(), SearchCriteria.Op.EQ);
+        paIdSearch.done();
 
         this._count = "select count(distinct id) from project_account_view WHERE ";
     }
@@ -74,7 +74,7 @@ public class ProjectAccountJoinDaoImpl extends GenericDaoBase<ProjectAccountJoin
 
     @Override
     public ProjectAccountJoinVO newProjectAccountView(ProjectAccount proj) {
-        SearchCriteria<ProjectAccountJoinVO> sc = vrIdSearch.create();
+        SearchCriteria<ProjectAccountJoinVO> sc = paIdSearch.create();
         sc.setParameters("accountId", proj.getAccountId());
         sc.setParameters("projectId", proj.getProjectId());
         List<ProjectAccountJoinVO> grps = searchIncludingRemoved(sc, null, null, false);

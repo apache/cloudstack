@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.api.query.dao;
 
-import java.util.List;
-
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
 
 import com.cloud.api.query.vo.InstanceGroupJoinVO;
@@ -30,6 +28,5 @@ public interface InstanceGroupJoinDao extends GenericDao<InstanceGroupJoinVO, Lo
 
     InstanceGroupJoinVO newInstanceGroupView(InstanceGroup group);
 
-    List<InstanceGroupJoinVO> searchByIds(Long... ids);
 
 }

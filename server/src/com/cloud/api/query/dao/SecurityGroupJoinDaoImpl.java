@@ -27,12 +27,14 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.SecurityGroupJoinVO;
+import com.cloud.configuration.dao.ConfigurationDao;
 
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.SecurityGroupRuleResponse;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityRule.SecurityRuleType;
 import com.cloud.user.Account;
+import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -40,6 +42,9 @@ import com.cloud.utils.db.SearchCriteria;
 @Local(value={SecurityGroupJoinDao.class})
 public class SecurityGroupJoinDaoImpl extends GenericDaoBase<SecurityGroupJoinVO, Long> implements SecurityGroupJoinDao {
     public static final Logger s_logger = Logger.getLogger(SecurityGroupJoinDaoImpl.class);
+
+    @Inject
+    private ConfigurationDao  _configDao;
 
     private SearchBuilder<SecurityGroupJoinVO> sgSearch;
 
@@ -175,9 +180,46 @@ public class SecurityGroupJoinDaoImpl extends GenericDaoBase<SecurityGroupJoinVO
     }
 
     @Override
-    public List<SecurityGroupJoinVO> searchByIds(Long... ids) {
-        SearchCriteria<SecurityGroupJoinVO> sc = sgSearch.create();
-        sc.setParameters("idIN", ids);
-        return searchIncludingRemoved(sc, null, null, false);
+    public List<SecurityGroupJoinVO> searchByIds(Long... sgIds) {
+        // set detail batch query size
+        int DETAILS_BATCH_SIZE = 2000;
+        String batchCfg = _configDao.getValue("detail.batch.query.size");
+        if ( batchCfg != null ){
+            DETAILS_BATCH_SIZE = Integer.parseInt(batchCfg);
+        }
+        // query details by batches
+        List<SecurityGroupJoinVO> uvList = new ArrayList<SecurityGroupJoinVO>();
+        // query details by batches
+        int curr_index = 0;
+        if ( sgIds.length > DETAILS_BATCH_SIZE ){
+            while ( (curr_index + DETAILS_BATCH_SIZE ) <= sgIds.length ) {
+                Long[] ids = new Long[DETAILS_BATCH_SIZE];
+                for (int k = 0, j = curr_index; j < curr_index + DETAILS_BATCH_SIZE; j++, k++) {
+                    ids[k] = sgIds[j];
+                }
+                SearchCriteria<SecurityGroupJoinVO> sc = sgSearch.create();
+                sc.setParameters("idIN", ids);
+                List<SecurityGroupJoinVO> vms = searchIncludingRemoved(sc, null, null, false);
+                if (vms != null) {
+                    uvList.addAll(vms);
+                }
+                curr_index += DETAILS_BATCH_SIZE;
+            }
+        }
+        if (curr_index < sgIds.length) {
+            int batch_size = (sgIds.length - curr_index);
+            // set the ids value
+            Long[] ids = new Long[batch_size];
+            for (int k = 0, j = curr_index; j < curr_index + batch_size; j++, k++) {
+                ids[k] = sgIds[j];
+            }
+            SearchCriteria<SecurityGroupJoinVO> sc = sgSearch.create();
+            sc.setParameters("idIN", ids);
+            List<SecurityGroupJoinVO> vms = searchIncludingRemoved(sc, null, null, false);
+            if (vms != null) {
+                uvList.addAll(vms);
+            }
+        }
+        return uvList;
     }
 }

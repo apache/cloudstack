@@ -43,7 +43,6 @@ import com.cloud.vm.InstanceGroup;
 public class UserAccountJoinDaoImpl extends GenericDaoBase<UserAccountJoinVO, Long> implements UserAccountJoinDao {
     public static final Logger s_logger = Logger.getLogger(UserAccountJoinDaoImpl.class);
 
-    private SearchBuilder<UserAccountJoinVO> vrSearch;
 
     private SearchBuilder<UserAccountJoinVO> vrIdSearch;
 
@@ -51,10 +50,6 @@ public class UserAccountJoinDaoImpl extends GenericDaoBase<UserAccountJoinVO, Lo
 
 
     protected UserAccountJoinDaoImpl() {
-
-        vrSearch = createSearchBuilder();
-        vrSearch.and("idIN", vrSearch.entity().getId(), SearchCriteria.Op.IN);
-        vrSearch.done();
 
         vrIdSearch = createSearchBuilder();
         vrIdSearch.and("id", vrIdSearch.entity().getId(), SearchCriteria.Op.EQ);
@@ -119,16 +114,6 @@ public class UserAccountJoinDaoImpl extends GenericDaoBase<UserAccountJoinVO, Lo
         assert users != null && users.size() == 1 : "No user found for user id " + usr.getId();
         return users.get(0);
     }
-
-
-
-    @Override
-    public List<UserAccountJoinVO> searchByIds(Long... ids) {
-        SearchCriteria<UserAccountJoinVO> sc = vrSearch.create();
-        sc.setParameters("idIN", ids);
-        return searchIncludingRemoved(sc, null, null, false);
-    }
-
 
 
     @Override

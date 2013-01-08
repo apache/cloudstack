@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Set;
 
 import javax.ejb.Local;
 
@@ -29,6 +30,7 @@ import org.apache.log4j.Logger;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
+import com.cloud.configuration.dao.ConfigurationDao;
 
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.response.NicResponse;
@@ -36,6 +38,8 @@ import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -46,7 +50,8 @@ import com.cloud.vm.VmStats;
 public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implements UserVmJoinDao {
     public static final Logger s_logger = Logger.getLogger(UserVmJoinDaoImpl.class);
 
-    private static final int VM_DETAILS_BATCH_SIZE=100;
+    @Inject
+    private ConfigurationDao  _configDao;
 
     private SearchBuilder<UserVmJoinVO> VmDetailSearch;
 
@@ -57,6 +62,8 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
         VmDetailSearch.done();
 
         this._count = "select count(distinct id) from user_vm_view WHERE ";
+
+
     }
 
     public UserVmResponse newUserVmResponse(String objectName, UserVmJoinVO userVm, EnumSet<VMDetails> details, Account caller) {
@@ -265,15 +272,50 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
 
     @Override
     public List<UserVmJoinVO> searchByIds(Long... vmIds) {
-        SearchCriteria<UserVmJoinVO> sc = VmDetailSearch.create();
-        sc.setParameters("idIN", vmIds);
-        return searchIncludingRemoved(sc, null, null, false);
+        // set detail batch query size
+        int DETAILS_BATCH_SIZE = 2000;
+        String batchCfg = _configDao.getValue("detail.batch.query.size");
+        if ( batchCfg != null ){
+            DETAILS_BATCH_SIZE = Integer.parseInt(batchCfg);
+        }
+        // query details by batches
+        List<UserVmJoinVO> uvList = new ArrayList<UserVmJoinVO>();
+        // query details by batches
+        int curr_index = 0;
+        if ( vmIds.length > DETAILS_BATCH_SIZE ){
+            while ( (curr_index + DETAILS_BATCH_SIZE ) <= vmIds.length ) {
+                Long[] ids = new Long[DETAILS_BATCH_SIZE];
+                for (int k = 0, j = curr_index; j < curr_index + DETAILS_BATCH_SIZE; j++, k++) {
+                    ids[k] = vmIds[j];
+                }
+                SearchCriteria<UserVmJoinVO> sc = VmDetailSearch.create();
+                sc.setParameters("idIN", ids);
+                List<UserVmJoinVO> vms = searchIncludingRemoved(sc, null, null, false);
+                if (vms != null) {
+                    uvList.addAll(vms);
+                }
+                curr_index += DETAILS_BATCH_SIZE;
+            }
+        }
+        if (curr_index < vmIds.length) {
+            int batch_size = (vmIds.length - curr_index);
+            // set the ids value
+            Long[] ids = new Long[batch_size];
+            for (int k = 0, j = curr_index; j < curr_index + batch_size; j++, k++) {
+                ids[k] = vmIds[j];
+            }
+            SearchCriteria<UserVmJoinVO> sc = VmDetailSearch.create();
+            sc.setParameters("idIN", ids);
+            List<UserVmJoinVO> vms = searchIncludingRemoved(sc, null, null, false);
+            if (vms != null) {
+                uvList.addAll(vms);
+            }
+        }
+        return uvList;
     }
 
     @Override
     public List<UserVmJoinVO> newUserVmView(UserVm... userVms) {
-
-        int curr_index = 0;
 
         Hashtable<Long, UserVm> userVmDataHash = new Hashtable<Long, UserVm>();
         for (UserVm vm : userVms){
@@ -282,47 +324,8 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
             }
         }
 
-        List<UserVmJoinVO> uvList = new ArrayList<UserVmJoinVO>();
-        List<Long> userVmIdList = new ArrayList(userVmDataHash.keySet());
-         if (userVmIdList.size() > VM_DETAILS_BATCH_SIZE) {
-            while ((curr_index + VM_DETAILS_BATCH_SIZE) <= userVmIdList.size()) {
-                // set current ids
-                Long[] vmIds = new Long[VM_DETAILS_BATCH_SIZE];
-                for (int k = 0, j = curr_index; j < curr_index + VM_DETAILS_BATCH_SIZE; j++, k++) {
-                    vmIds[k] = userVmIdList.get(j);
-                }
-                SearchCriteria<UserVmJoinVO> sc = VmDetailSearch.create();
-                sc.setParameters("idIN", vmIds);
-                List<UserVmJoinVO> vms = searchIncludingRemoved(sc, null, null, false);
-                if (vms != null) {
-                    for (UserVmJoinVO uvm : vms) {
-                        uvList.add(uvm);
-                    }
-                }
-                curr_index += VM_DETAILS_BATCH_SIZE;
-            }
-        }
-
-        if (curr_index < userVmIdList.size()) {
-            int batch_size = (userVmIdList.size() - curr_index);
-            // set the ids value
-            Long[] vmIds = new Long[batch_size];
-            for (int k = 0, j = curr_index; j < curr_index + batch_size; j++, k++) {
-                vmIds[k] = userVmIdList.get(j);
-            }
-            SearchCriteria<UserVmJoinVO> sc = VmDetailSearch.create();
-            sc.setParameters("idIN", vmIds);
-            List<UserVmJoinVO> vms = searchIncludingRemoved(sc, null, null, false);
-            if (vms != null) {
-                for (UserVmJoinVO uvm : vms) {
-                    UserVm vm = userVmDataHash.get(uvm.getId());
-                    assert vm != null : "We should not find details of vm not in the passed UserVm list";
-                    uvList.add(uvm);
-                }
-            }
-        }
-        return uvList;
-
+        Set<Long> vmIdSet = userVmDataHash.keySet();
+        return searchByIds(vmIdSet.toArray(new Long[vmIdSet.size()]));
     }
 
 }

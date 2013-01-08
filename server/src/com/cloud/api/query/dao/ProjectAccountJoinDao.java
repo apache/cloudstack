@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.api.query.dao;
 
-import java.util.List;
-
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
 
 import com.cloud.api.query.vo.ProjectAccountJoinVO;

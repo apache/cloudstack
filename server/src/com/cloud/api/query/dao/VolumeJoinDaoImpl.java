@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.api.query.dao;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.ejb.Local;
@@ -26,6 +27,8 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
+import com.cloud.configuration.dao.ConfigurationDao;
+
 import org.apache.cloudstack.api.response.VolumeResponse;
 
 import com.cloud.offering.ServiceOffering;
@@ -35,6 +38,7 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
+import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -43,6 +47,9 @@ import com.cloud.utils.db.SearchCriteria;
 @Local(value={VolumeJoinDao.class})
 public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implements VolumeJoinDao {
     public static final Logger s_logger = Logger.getLogger(VolumeJoinDaoImpl.class);
+
+    @Inject
+    private ConfigurationDao  _configDao;
 
     private SearchBuilder<VolumeJoinVO> volSearch;
 
@@ -224,10 +231,47 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
 
 
     @Override
-    public List<VolumeJoinVO> searchByIds(Long... ids) {
-        SearchCriteria<VolumeJoinVO> sc = volSearch.create();
-        sc.setParameters("idIN", ids);
-        return searchIncludingRemoved(sc, null, null, false);
+    public List<VolumeJoinVO> searchByIds(Long... volIds) {
+        // set detail batch query size
+        int DETAILS_BATCH_SIZE = 2000;
+        String batchCfg = _configDao.getValue("detail.batch.query.size");
+        if ( batchCfg != null ){
+            DETAILS_BATCH_SIZE = Integer.parseInt(batchCfg);
+        }
+        // query details by batches
+        List<VolumeJoinVO> uvList = new ArrayList<VolumeJoinVO>();
+        // query details by batches
+        int curr_index = 0;
+        if ( volIds.length > DETAILS_BATCH_SIZE ){
+            while ( (curr_index + DETAILS_BATCH_SIZE ) <= volIds.length ) {
+                Long[] ids = new Long[DETAILS_BATCH_SIZE];
+                for (int k = 0, j = curr_index; j < curr_index + DETAILS_BATCH_SIZE; j++, k++) {
+                    ids[k] = volIds[j];
+                }
+                SearchCriteria<VolumeJoinVO> sc = volSearch.create();
+                sc.setParameters("idIN", ids);
+                List<VolumeJoinVO> vms = searchIncludingRemoved(sc, null, null, false);
+                if (vms != null) {
+                    uvList.addAll(vms);
+                }
+                curr_index += DETAILS_BATCH_SIZE;
+            }
+        }
+        if (curr_index < volIds.length) {
+            int batch_size = (volIds.length - curr_index);
+            // set the ids value
+            Long[] ids = new Long[batch_size];
+            for (int k = 0, j = curr_index; j < curr_index + batch_size; j++, k++) {
+                ids[k] = volIds[j];
+            }
+            SearchCriteria<VolumeJoinVO> sc = volSearch.create();
+            sc.setParameters("idIN", ids);
+            List<VolumeJoinVO> vms = searchIncludingRemoved(sc, null, null, false);
+            if (vms != null) {
+                uvList.addAll(vms);
+            }
+        }
+        return uvList;
     }
 
 

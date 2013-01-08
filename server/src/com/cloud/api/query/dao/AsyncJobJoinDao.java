@@ -30,5 +30,4 @@ public interface AsyncJobJoinDao extends GenericDao<AsyncJobJoinVO, Long> {
 
     AsyncJobJoinVO newAsyncJobView(AsyncJob vol);
 
-    List<AsyncJobJoinVO> searchByIds(Long... ids);
 }

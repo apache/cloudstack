@@ -37,16 +37,10 @@ import com.cloud.vm.InstanceGroup;
 public class InstanceGroupJoinDaoImpl extends GenericDaoBase<InstanceGroupJoinVO, Long> implements InstanceGroupJoinDao {
     public static final Logger s_logger = Logger.getLogger(InstanceGroupJoinDaoImpl.class);
 
-    private SearchBuilder<InstanceGroupJoinVO> vrSearch;
-
     private SearchBuilder<InstanceGroupJoinVO> vrIdSearch;
 
 
     protected InstanceGroupJoinDaoImpl() {
-
-        vrSearch = createSearchBuilder();
-        vrSearch.and("idIN", vrSearch.entity().getId(), SearchCriteria.Op.IN);
-        vrSearch.done();
 
         vrIdSearch = createSearchBuilder();
         vrIdSearch.and("id", vrIdSearch.entity().getId(), SearchCriteria.Op.EQ);
@@ -80,15 +74,6 @@ public class InstanceGroupJoinDaoImpl extends GenericDaoBase<InstanceGroupJoinVO
         assert grps != null && grps.size() == 1 : "No vm group found for group id " + group.getId();
         return grps.get(0);
 
-    }
-
-
-
-    @Override
-    public List<InstanceGroupJoinVO> searchByIds(Long... ids) {
-        SearchCriteria<InstanceGroupJoinVO> sc = vrSearch.create();
-        sc.setParameters("idIN", ids);
-        return searchIncludingRemoved(sc, null, null, false);
     }
 
 

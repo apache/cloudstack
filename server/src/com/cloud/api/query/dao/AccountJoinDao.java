@@ -29,5 +29,4 @@ public interface AccountJoinDao extends GenericDao<AccountJoinVO, Long> {
 
     AccountJoinVO newAccountView(Account vol);
 
-    List<AccountJoinVO> searchByIds(Long... ids);
 }

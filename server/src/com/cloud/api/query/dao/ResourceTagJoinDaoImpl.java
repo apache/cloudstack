@@ -25,9 +25,11 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
+import com.cloud.configuration.dao.ConfigurationDao;
 
 import org.apache.cloudstack.api.response.ResourceTagResponse;
 import com.cloud.server.ResourceTag;
+import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -37,19 +39,22 @@ import com.cloud.utils.db.SearchCriteria;
 public class ResourceTagJoinDaoImpl extends GenericDaoBase<ResourceTagJoinVO, Long> implements ResourceTagJoinDao {
     public static final Logger s_logger = Logger.getLogger(ResourceTagJoinDaoImpl.class);
 
-    private SearchBuilder<ResourceTagJoinVO> vrSearch;
+    @Inject
+    private ConfigurationDao  _configDao;
 
-    private SearchBuilder<ResourceTagJoinVO> vrIdSearch;
+    private SearchBuilder<ResourceTagJoinVO> tagSearch;
+
+    private SearchBuilder<ResourceTagJoinVO> tagIdSearch;
 
     protected ResourceTagJoinDaoImpl() {
 
-        vrSearch = createSearchBuilder();
-        vrSearch.and("idIN", vrSearch.entity().getId(), SearchCriteria.Op.IN);
-        vrSearch.done();
+        tagSearch = createSearchBuilder();
+        tagSearch.and("idIN", tagSearch.entity().getId(), SearchCriteria.Op.IN);
+        tagSearch.done();
 
-        vrIdSearch = createSearchBuilder();
-        vrIdSearch.and("id", vrIdSearch.entity().getId(), SearchCriteria.Op.EQ);
-        vrIdSearch.done();
+        tagIdSearch = createSearchBuilder();
+        tagIdSearch.and("id", tagIdSearch.entity().getId(), SearchCriteria.Op.EQ);
+        tagIdSearch.done();
 
         this._count = "select count(distinct id) from resource_tag_view WHERE ";
     }
@@ -83,17 +88,54 @@ public class ResourceTagJoinDaoImpl extends GenericDaoBase<ResourceTagJoinVO, Lo
 
 
     @Override
-    public List<ResourceTagJoinVO> searchByIds(Long... ids) {
-        SearchCriteria<ResourceTagJoinVO> sc = vrSearch.create();
-        sc.setParameters("idIN", ids);
-        return searchIncludingRemoved(sc, null, null, false);
+    public List<ResourceTagJoinVO> searchByIds(Long... tagIds) {
+        // set detail batch query size
+        int DETAILS_BATCH_SIZE = 2000;
+        String batchCfg = _configDao.getValue("detail.batch.query.size");
+        if ( batchCfg != null ){
+            DETAILS_BATCH_SIZE = Integer.parseInt(batchCfg);
+        }
+        // query details by batches
+        List<ResourceTagJoinVO> uvList = new ArrayList<ResourceTagJoinVO>();
+        // query details by batches
+        int curr_index = 0;
+        if ( tagIds.length > DETAILS_BATCH_SIZE ){
+            while ( (curr_index + DETAILS_BATCH_SIZE ) <= tagIds.length ) {
+                Long[] ids = new Long[DETAILS_BATCH_SIZE];
+                for (int k = 0, j = curr_index; j < curr_index + DETAILS_BATCH_SIZE; j++, k++) {
+                    ids[k] = tagIds[j];
+                }
+                SearchCriteria<ResourceTagJoinVO> sc = tagSearch.create();
+                sc.setParameters("idIN", ids);
+                List<ResourceTagJoinVO> vms = searchIncludingRemoved(sc, null, null, false);
+                if (vms != null) {
+                    uvList.addAll(vms);
+                }
+                curr_index += DETAILS_BATCH_SIZE;
+            }
+        }
+        if (curr_index < tagIds.length) {
+            int batch_size = (tagIds.length - curr_index);
+            // set the ids value
+            Long[] ids = new Long[batch_size];
+            for (int k = 0, j = curr_index; j < curr_index + batch_size; j++, k++) {
+                ids[k] = tagIds[j];
+            }
+            SearchCriteria<ResourceTagJoinVO> sc = tagSearch.create();
+            sc.setParameters("idIN", ids);
+            List<ResourceTagJoinVO> vms = searchIncludingRemoved(sc, null, null, false);
+            if (vms != null) {
+                uvList.addAll(vms);
+            }
+        }
+        return uvList;
     }
 
 
     @Override
     public ResourceTagJoinVO newResourceTagView(ResourceTag vr) {
 
-        SearchCriteria<ResourceTagJoinVO> sc = vrIdSearch.create();
+        SearchCriteria<ResourceTagJoinVO> sc = tagIdSearch.create();
         sc.setParameters("id", vr.getId());
         List<ResourceTagJoinVO> vms = searchIncludingRemoved(sc, null, null, false);
         assert vms != null && vms.size() == 1 : "No tag found for tag id " + vr.getId();

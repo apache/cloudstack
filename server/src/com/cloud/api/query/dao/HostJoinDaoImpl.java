@@ -17,6 +17,7 @@
 package com.cloud.api.query.dao;
 
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.Iterator;
@@ -29,12 +30,14 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.HostJoinVO;
+import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.host.Host;
 import com.cloud.host.HostStats;
 
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.response.HostResponse;
 import com.cloud.storage.StorageStats;
+import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -44,20 +47,23 @@ import com.cloud.utils.db.SearchCriteria;
 public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements HostJoinDao {
     public static final Logger s_logger = Logger.getLogger(HostJoinDaoImpl.class);
 
-    private SearchBuilder<HostJoinVO> vrSearch;
+    @Inject
+    private ConfigurationDao  _configDao;
 
-    private SearchBuilder<HostJoinVO> vrIdSearch;
+    private SearchBuilder<HostJoinVO> hostSearch;
+
+    private SearchBuilder<HostJoinVO> hostIdSearch;
 
 
     protected HostJoinDaoImpl() {
 
-        vrSearch = createSearchBuilder();
-        vrSearch.and("idIN", vrSearch.entity().getId(), SearchCriteria.Op.IN);
-        vrSearch.done();
+        hostSearch = createSearchBuilder();
+        hostSearch.and("idIN", hostSearch.entity().getId(), SearchCriteria.Op.IN);
+        hostSearch.done();
 
-        vrIdSearch = createSearchBuilder();
-        vrIdSearch.and("id", vrIdSearch.entity().getId(), SearchCriteria.Op.EQ);
-        vrIdSearch.done();
+        hostIdSearch = createSearchBuilder();
+        hostIdSearch.and("id", hostIdSearch.entity().getId(), SearchCriteria.Op.EQ);
+        hostIdSearch.done();
 
         this._count = "select count(distinct id) from host_view WHERE ";
     }
@@ -206,7 +212,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
 
     @Override
     public List<HostJoinVO> newHostView(Host host) {
-        SearchCriteria<HostJoinVO> sc = vrIdSearch.create();
+        SearchCriteria<HostJoinVO> sc = hostIdSearch.create();
         sc.setParameters("id", host.getId());
         return searchIncludingRemoved(sc, null, null, false);
 
@@ -215,10 +221,47 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
 
 
     @Override
-    public List<HostJoinVO> searchByIds(Long... ids) {
-        SearchCriteria<HostJoinVO> sc = vrSearch.create();
-        sc.setParameters("idIN", ids);
-        return searchIncludingRemoved(sc, null, null, false);
+    public List<HostJoinVO> searchByIds(Long... hostIds) {
+        // set detail batch query size
+        int DETAILS_BATCH_SIZE = 2000;
+        String batchCfg = _configDao.getValue("detail.batch.query.size");
+        if ( batchCfg != null ){
+            DETAILS_BATCH_SIZE = Integer.parseInt(batchCfg);
+        }
+        // query details by batches
+        List<HostJoinVO> uvList = new ArrayList<HostJoinVO>();
+        // query details by batches
+        int curr_index = 0;
+        if ( hostIds.length > DETAILS_BATCH_SIZE ){
+            while ( (curr_index + DETAILS_BATCH_SIZE ) <= hostIds.length ) {
+                Long[] ids = new Long[DETAILS_BATCH_SIZE];
+                for (int k = 0, j = curr_index; j < curr_index + DETAILS_BATCH_SIZE; j++, k++) {
+                    ids[k] = hostIds[j];
+                }
+                SearchCriteria<HostJoinVO> sc = hostSearch.create();
+                sc.setParameters("idIN", ids);
+                List<HostJoinVO> vms = searchIncludingRemoved(sc, null, null, false);
+                if (vms != null) {
+                    uvList.addAll(vms);
+                }
+                curr_index += DETAILS_BATCH_SIZE;
+            }
+        }
+        if (curr_index < hostIds.length) {
+            int batch_size = (hostIds.length - curr_index);
+            // set the ids value
+            Long[] ids = new Long[batch_size];
+            for (int k = 0, j = curr_index; j < curr_index + batch_size; j++, k++) {
+                ids[k] = hostIds[j];
+            }
+            SearchCriteria<HostJoinVO> sc = hostSearch.create();
+            sc.setParameters("idIN", ids);
+            List<HostJoinVO> vms = searchIncludingRemoved(sc, null, null, false);
+            if (vms != null) {
+                uvList.addAll(vms);
+            }
+        }
+        return uvList;
     }
 
 

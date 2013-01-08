@@ -140,6 +140,7 @@ UPDATE `cloud`.`autoscale_policies` set uuid=id WHERE uuid is NULL;
 UPDATE `cloud`.`counter` set uuid=id WHERE uuid is NULL;
 UPDATE `cloud`.`conditions` set uuid=id WHERE uuid is NULL;
 
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', '"detail.batch.query.size"', '2000', 'Default entity detail batch query size for listing');
 
 --- DB views for list api ---
 DROP VIEW IF EXISTS `cloud`.`user_vm_view`;

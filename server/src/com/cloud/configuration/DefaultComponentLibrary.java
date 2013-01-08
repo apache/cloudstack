@@ -235,19 +235,6 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("HostDao", HostDaoImpl.class);
         addDao("VMInstanceDao", VMInstanceDaoImpl.class);
         addDao("UserVmDao", UserVmDaoImpl.class);
-        addDao("UserVmJoinDao", UserVmJoinDaoImpl.class);
-        addDao("DomainRouterJoinDao", DomainRouterJoinDaoImpl.class);
-        addDao("SecurityGroupJoinDao", SecurityGroupJoinDaoImpl.class);
-        addDao("ResourceTagJoinDao", ResourceTagJoinDaoImpl.class);
-        addDao("EventJoinDao", EventJoinDaoImpl.class);
-        addDao("UserAccountJoinDao", UserAccountJoinDaoImpl.class);
-        addDao("ProjectJoinDao", ProjectJoinDaoImpl.class);
-        addDao("ProjectAccountJoinDao", ProjectAccountJoinDaoImpl.class);
-        addDao("ProjectInvitationJoinDao", ProjectInvitationJoinDaoImpl.class);
-        addDao("HostJoinDao", HostJoinDaoImpl.class);
-        addDao("VolumeJoinDao", VolumeJoinDaoImpl.class);
-        addDao("AccountJoinDao", AccountJoinDaoImpl.class);
-        addDao("AsyncJobJoinDao", AsyncJobJoinDaoImpl.class);
         ComponentInfo<? extends GenericDao<?, ? extends Serializable>> info = addDao("ServiceOfferingDao", ServiceOfferingDaoImpl.class);
         info.addParameter("cache.size", "50");
         info.addParameter("cache.time.to.live", "600");
@@ -387,6 +374,20 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("Site2SiteVpnGatewayDao", Site2SiteVpnGatewayDaoImpl.class);
         addDao("Site2SiteCustomerGatewayDao", Site2SiteCustomerGatewayDaoImpl.class);
         addDao("Site2SiteVpnConnnectionDao", Site2SiteVpnConnectionDaoImpl.class);
+
+        addDao("UserVmJoinDao", UserVmJoinDaoImpl.class);
+        addDao("DomainRouterJoinDao", DomainRouterJoinDaoImpl.class);
+        addDao("SecurityGroupJoinDao", SecurityGroupJoinDaoImpl.class);
+        addDao("ResourceTagJoinDao", ResourceTagJoinDaoImpl.class);
+        addDao("EventJoinDao", EventJoinDaoImpl.class);
+        addDao("UserAccountJoinDao", UserAccountJoinDaoImpl.class);
+        addDao("ProjectJoinDao", ProjectJoinDaoImpl.class);
+        addDao("ProjectAccountJoinDao", ProjectAccountJoinDaoImpl.class);
+        addDao("ProjectInvitationJoinDao", ProjectInvitationJoinDaoImpl.class);
+        addDao("HostJoinDao", HostJoinDaoImpl.class);
+        addDao("VolumeJoinDao", VolumeJoinDaoImpl.class);
+        addDao("AccountJoinDao", AccountJoinDaoImpl.class);
+        addDao("AsyncJobJoinDao", AsyncJobJoinDaoImpl.class);
     }
 
     @Override

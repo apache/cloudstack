@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -35,15 +35,15 @@ import com.cloud.template.TemplateManager;
 import com.cloud.vm.UserVmManager;
 
 public enum Config {
-	
+
 	// Alert
-	
+
 	AlertEmailAddresses("Alert", ManagementServer.class, String.class, "alert.email.addresses", null, "Comma separated list of email addresses used for sending alerts.", null),
 	AlertEmailSender("Alert", ManagementServer.class, String.class, "alert.email.sender", null, "Sender of alert email (will be in the From header of the email).", null),
 	AlertSMTPHost("Alert", ManagementServer.class, String.class, "alert.smtp.host", null, "SMTP hostname used for sending out email alerts.", null),
 	AlertSMTPPassword("Secure", ManagementServer.class, String.class, "alert.smtp.password", null, "Password for SMTP authentication (applies only if alert.smtp.useAuth is true).", null),
 	AlertSMTPPort("Alert", ManagementServer.class, Integer.class, "alert.smtp.port", "465", "Port the SMTP server is listening on.", null),
-	AlertSMTPUseAuth("Alert", ManagementServer.class, String.class, "alert.smtp.useAuth", null, "If true, use SMTP authentication when sending emails.", null),	
+	AlertSMTPUseAuth("Alert", ManagementServer.class, String.class, "alert.smtp.useAuth", null, "If true, use SMTP authentication when sending emails.", null),
 	AlertSMTPUsername("Alert", ManagementServer.class, String.class, "alert.smtp.username", null, "Username for SMTP authentication (applies only if alert.smtp.useAuth is true).", null),
 	AlertWait("Alert", AgentManager.class, Integer.class, "alert.wait", null, "Seconds to wait before alerting on a disconnected agent", null),
 	CapacityCheckPeriod("Alert", ManagementServer.class, Integer.class, "capacity.check.period", "300000", "The interval in milliseconds between capacity checks", null),
@@ -62,9 +62,9 @@ public enum Config {
 	CPUCapacityDisableThreshold("Alert", ManagementServer.class, Float.class, "cluster.cpu.allocated.capacity.disablethreshold", "0.85", "Percentage (as a value between 0 and 1) of cpu utilization above which allocators will disable using the cluster for low cpu available. Keep the corresponding notification threshold lower than this to be notified beforehand.", null),
 	MemoryCapacityDisableThreshold("Alert", ManagementServer.class, Float.class, "cluster.memory.allocated.capacity.disablethreshold", "0.85", "Percentage (as a value between 0 and 1) of memory utilization above which allocators will disable using the cluster for low memory available. Keep the corresponding notification threshold lower than this to be notified beforehand.", null),
 
-	
+
 	// Storage
-	
+
 	StorageOverprovisioningFactor("Storage", StoragePoolAllocator.class, String.class, "storage.overprovisioning.factor", "2", "Used for storage overprovisioning calculation; available storage will be (actualStorageSize * storage.overprovisioning.factor)", null),
 	StorageStatsInterval("Storage", ManagementServer.class, String.class, "storage.stats.interval", "60000", "The interval (in milliseconds) when storage stats (per host) are retrieved from agents.", null),
 	MaxVolumeSize("Storage", ManagementServer.class, Integer.class, "storage.max.volume.size", "2000", "The maximum size for a volume (in GB).", null),
@@ -84,9 +84,9 @@ public enum Config {
 	NetworkLBHaproxyStatsVisbility("Network", ManagementServer.class, String.class, "network.loadbalancer.haproxy.stats.visibility", "global", "Load Balancer(haproxy) stats visibilty, the value can be one of the following six parameters : global,guest-network,link-local,disabled,all,default", null),
 	NetworkLBHaproxyStatsUri("Network", ManagementServer.class, String.class, "network.loadbalancer.haproxy.stats.uri","/admin?stats","Load Balancer(haproxy) uri.",null),
 	NetworkLBHaproxyStatsAuth("Secure", ManagementServer.class, String.class, "network.loadbalancer.haproxy.stats.auth","admin1:AdMiN123","Load Balancer(haproxy) authetication string in the format username:password",null),
-	NetworkLBHaproxyStatsPort("Network", ManagementServer.class, String.class, "network.loadbalancer.haproxy.stats.port","8081","Load Balancer(haproxy) stats port number.",null),		
+	NetworkLBHaproxyStatsPort("Network", ManagementServer.class, String.class, "network.loadbalancer.haproxy.stats.port","8081","Load Balancer(haproxy) stats port number.",null),
 	NetworkRouterRpFilter("Network", ManagementServer.class, Integer.class, "network.disable.rpfilter", "true", "disable rp_filter on Domain Router VM public interfaces.", null),
-    
+
 	GuestVlanBits("Network", ManagementServer.class, Integer.class, "guest.vlan.bits", "12", "The number of bits to reserve for the VLAN identifier in the guest subnet.", null),
 	//MulticastThrottlingRate("Network", ManagementServer.class, Integer.class, "multicast.throttling.rate", "10", "Default multicast rate in megabits per second allowed.", null),
 	NetworkThrottlingRate("Network", ManagementServer.class, Integer.class, "network.throttling.rate", "200", "Default data transfer rate in megabits per second allowed in network.", null),
@@ -102,18 +102,18 @@ public enum Config {
 	SecurityGroupWorkerThreads("Network", ManagementServer.class, Integer.class, "network.securitygroups.workers.pool.size", "50", "Number of worker threads processing the security group update work queue", null),
 	SecurityGroupWorkGlobalLockTimeout("Network", ManagementServer.class, Integer.class, "network.securitygroups.work.lock.timeout", "300", "Lock wait timeout (seconds) while updating the security group work queue", null),
 	SecurityGroupWorkPerAgentMaxQueueSize("Network", ManagementServer.class, Integer.class, "network.securitygroups.work.per.agent.queue.size", "100", "The number of outstanding security group work items that can be queued to a host. If exceeded, work items will get dropped to conserve memory. Security Group Sync will take care of ensuring that the host gets updated eventually", null),
-	
+
 	SecurityGroupDefaultAdding("Network", ManagementServer.class, Boolean.class, "network.securitygroups.defaultadding", "true", "If true, the user VM would be added to the default security group by default", null),
-	
+
 	GuestOSNeedGatewayOnNonDefaultNetwork("Network", NetworkManager.class, String.class, "network.dhcp.nondefaultnetwork.setgateway.guestos", "Windows", "The guest OS's name start with this fields would result in DHCP server response gateway information even when the network it's on is not default network. Names are separated by comma.", null),
-	
+
 	//VPN
 	RemoteAccessVpnPskLength("Network", AgentManager.class, Integer.class, "remote.access.vpn.psk.length", "24", "The length of the ipsec preshared key (minimum 8, maximum 256)", null),
 	RemoteAccessVpnClientIpRange("Network", AgentManager.class, String.class, "remote.access.vpn.client.iprange", "10.1.2.1-10.1.2.8", "The range of ips to be allocated to remote access vpn clients. The first ip in the range is used by the VPN server", null),
-	RemoteAccessVpnUserLimit("Network", AgentManager.class, String.class, "remote.access.vpn.user.limit", "8", "The maximum number of VPN users that can be created per account", null),	
+	RemoteAccessVpnUserLimit("Network", AgentManager.class, String.class, "remote.access.vpn.user.limit", "8", "The maximum number of VPN users that can be created per account", null),
 	Site2SiteVpnConnectionPerVpnGatewayLimit("Network", ManagementServer.class, Integer.class, "site2site.vpn.vpngateway.connection.limit", "4", "The maximum number of VPN connection per VPN gateway", null),
 	Site2SiteVpnSubnetsPerCustomerGatewayLimit("Network", ManagementServer.class, Integer.class, "site2site.vpn.customergateway.subnets.limit", "10", "The maximum number of subnets per customer gateway", null),
-	
+
 	// Console Proxy
 	ConsoleProxyCapacityStandby("Console Proxy", AgentManager.class, String.class, "consoleproxy.capacity.standby", "10", "The minimal number of console proxy viewer sessions that system is able to serve immediately(standby capacity)", null),
 	ConsoleProxyCapacityScanInterval("Console Proxy", AgentManager.class, String.class, "consoleproxy.capacityscan.interval", "30000", "The time interval(in millisecond) to scan whether or not system needs more console proxy to ensure minimal standby capacity", null),
@@ -125,11 +125,11 @@ public enum Config {
 	ConsoleProxySessionTimeout("Console Proxy", AgentManager.class, Integer.class, "consoleproxy.session.timeout", "300000", "Timeout(in milliseconds) that console proxy tries to maintain a viewer session before it times out the session for no activity", null),
 	ConsoleProxyDisableRpFilter("Console Proxy", AgentManager.class, Integer.class, "consoleproxy.disable.rpfilter", "true", "disable rp_filter on console proxy VM public interface", null),
     ConsoleProxyLaunchMax("Console Proxy", AgentManager.class, Integer.class, "consoleproxy.launch.max", "10", "maximum number of console proxy instances per zone can be launched", null),
-    ConsoleProxyManagementState("Console Proxy", AgentManager.class, String.class, "consoleproxy.management.state", com.cloud.consoleproxy.ConsoleProxyManagementState.Auto.toString(), 
+    ConsoleProxyManagementState("Console Proxy", AgentManager.class, String.class, "consoleproxy.management.state", com.cloud.consoleproxy.ConsoleProxyManagementState.Auto.toString(),
 		"console proxy service management state", null),
-    ConsoleProxyManagementLastState("Console Proxy", AgentManager.class, String.class, "consoleproxy.management.state.last", com.cloud.consoleproxy.ConsoleProxyManagementState.Auto.toString(), 
+    ConsoleProxyManagementLastState("Console Proxy", AgentManager.class, String.class, "consoleproxy.management.state.last", com.cloud.consoleproxy.ConsoleProxyManagementState.Auto.toString(),
 		"last console proxy service management state", null),
-	
+
 	// Snapshots
     SnapshotHourlyMax("Snapshots", SnapshotManager.class, Integer.class, "snapshot.max.hourly", "8", "Maximum hourly snapshots for a volume", null),
     SnapshotDailyMax("Snapshots", SnapshotManager.class, Integer.class, "snapshot.max.daily", "8", "Maximum daily snapshots for a volume", null),
@@ -137,7 +137,7 @@ public enum Config {
     SnapshotMonthlyMax("Snapshots", SnapshotManager.class, Integer.class, "snapshot.max.monthly", "8", "Maximum monthly snapshots for a volume", null),
     SnapshotPollInterval("Snapshots", SnapshotManager.class, Integer.class, "snapshot.poll.interval", "300", "The time interval in seconds when the management server polls for snapshots to be scheduled.", null),
     SnapshotDeltaMax("Snapshots", SnapshotManager.class, Integer.class, "snapshot.delta.max", "16", "max delta snapshots between two full snapshots.", null),
-    
+
 	// Advanced
     JobExpireMinutes("Advanced", ManagementServer.class, String.class, "job.expire.minutes", "1440", "Time (in minutes) for async-jobs to be kept in system", null),
     JobCancelThresholdMinutes("Advanced", ManagementServer.class, String.class, "job.cancel.threshold.minutes", "60", "Time (in minutes) for async-jobs to be forcely cancelled if it has been in process for long", null),
@@ -165,7 +165,7 @@ public enum Config {
 	RouterCpuMHz("Advanced", NetworkManager.class, Integer.class, "router.cpu.mhz", String.valueOf(VpcVirtualNetworkApplianceManager.DEFAULT_ROUTER_CPU_MHZ), "Default CPU speed (MHz) for router VM.", null),
 	RestartRetryInterval("Advanced", HighAvailabilityManager.class, Integer.class, "restart.retry.interval", "600", "Time (in seconds) between retries to restart a vm", null),
 	RouterStatsInterval("Advanced", NetworkManager.class, Integer.class, "router.stats.interval", "300", "Interval (in seconds) to report router statistics.", null),
-	ExternalNetworkStatsInterval("Advanced", NetworkManager.class, Integer.class, "external.network.stats.interval", "300", "Interval (in seconds) to report external network statistics.", null),	
+	ExternalNetworkStatsInterval("Advanced", NetworkManager.class, Integer.class, "external.network.stats.interval", "300", "Interval (in seconds) to report external network statistics.", null),
 	RouterCheckInterval("Advanced", NetworkManager.class, Integer.class, "router.check.interval", "30", "Interval (in seconds) to report redundant router status.", null),
 	RouterCheckPoolSize("Advanced", NetworkManager.class, Integer.class, "router.check.poolsize", "10", "Numbers of threads using to check redundant router status.", null),
 	RouterTemplateId("Advanced", NetworkManager.class, Long.class, "router.template.id", "1", "Default ID for template.", null),
@@ -197,23 +197,23 @@ public enum Config {
 	MaxTemplateAndIsoSize("Advanced",  ManagementServer.class, Long.class, "max.template.iso.size", "50", "The maximum size for a downloaded template or ISO (in GB).", null),
 	SecStorageAllowedInternalDownloadSites("Advanced", ManagementServer.class, String.class, "secstorage.allowed.internal.sites", null, "Comma separated list of cidrs internal to the datacenter that can host template download servers, please note 0.0.0.0 is not a valid site", null),
 	SecStorageEncryptCopy("Advanced", ManagementServer.class, Boolean.class, "secstorage.encrypt.copy", "false", "Use SSL method used to encrypt copy traffic between zones", "true,false"),
-	SecStorageSecureCopyCert("Advanced", ManagementServer.class, String.class, "secstorage.ssl.cert.domain", "realhostip.com", "SSL certificate used to encrypt copy traffic between zones", null),	
+	SecStorageSecureCopyCert("Advanced", ManagementServer.class, String.class, "secstorage.ssl.cert.domain", "realhostip.com", "SSL certificate used to encrypt copy traffic between zones", null),
 	SecStorageCapacityStandby("Advanced", AgentManager.class, Integer.class, "secstorage.capacity.standby", "10", "The minimal number of command execution sessions that system is able to serve immediately(standby capacity)", null),
 	SecStorageSessionMax("Advanced", AgentManager.class, Integer.class, "secstorage.session.max", "50", "The max number of command execution sessions that a SSVM can handle", null),
 	SecStorageCmdExecutionTimeMax("Advanced", AgentManager.class, Integer.class, "secstorage.cmd.execution.time.max", "30", "The max command execution time in minute", null),
 	SecStorageProxy("Advanced", AgentManager.class, String.class, "secstorage.proxy", null, "http proxy used by ssvm, in http://username:password@proxyserver:port format", null),
-	
+
 
 	DirectAttachNetworkEnabled("Advanced", ManagementServer.class, Boolean.class, "direct.attach.network.externalIpAllocator.enabled", "false", "Direct-attach VMs using external DHCP server", "true,false"),
 	DirectAttachNetworkExternalAPIURL("Advanced", ManagementServer.class, String.class, "direct.attach.network.externalIpAllocator.url", null, "Direct-attach VMs using external DHCP server (API url)", null),
 	CheckPodCIDRs("Advanced", ManagementServer.class, String.class, "check.pod.cidrs", "true", "If true, different pods must belong to different CIDR subnets.", "true,false"),
 	NetworkGcWait("Advanced", ManagementServer.class, Integer.class, "network.gc.wait", "600", "Time (in seconds) to wait before shutting down a network that's not in used", null),
-	NetworkGcInterval("Advanced", ManagementServer.class, Integer.class, "network.gc.interval", "600", "Seconds to wait before checking for networks to shutdown", null),	
+	NetworkGcInterval("Advanced", ManagementServer.class, Integer.class, "network.gc.interval", "600", "Seconds to wait before checking for networks to shutdown", null),
 	CapacitySkipcountingHours("Advanced", ManagementServer.class, Integer.class, "capacity.skipcounting.hours", "3600", "Time (in seconds) to wait before release VM's cpu and memory when VM in stopped state", null),
 	VmStatsInterval("Advanced", ManagementServer.class, Integer.class, "vm.stats.interval", "60000", "The interval (in milliseconds) when vm stats are retrieved from agents.", null),
 	VmTransitionWaitInterval("Advanced", ManagementServer.class, Integer.class, "vm.tranisition.wait.interval", "3600", "Time (in seconds) to wait before taking over a VM in transition state", null),
 	VmDestroyForcestop("Advanced", ManagementServer.class, Boolean.class, "vm.destroy.forcestop", "false", "On destroy, force-stop takes this value ", null),
-	
+
 	ControlCidr("Advanced", ManagementServer.class, String.class, "control.cidr", "169.254.0.0/16", "Changes the cidr for the control network traffic.  Defaults to using link local.  Must be unique within pods", null),
 	ControlGateway("Advanced", ManagementServer.class, String.class, "control.gateway", "169.254.0.1", "gateway for the control network traffic", null),
 	HostCapacityTypeToOrderClusters("Advanced", ManagementServer.class, String.class, "host.capacityType.to.order.clusters", "CPU", "The host capacity type (CPU or RAM) is used by deployment planner to order clusters during VM resource allocation", "CPU,RAM"),
@@ -236,7 +236,7 @@ public enum Config {
     OvmPublicNetwork("Hidden", ManagementServer.class, String.class, "ovm.public.network.device", null, "Specify the public bridge on host for public network", null),
     OvmPrivateNetwork("Hidden", ManagementServer.class, String.class, "ovm.private.network.device", null, "Specify the private bridge on host for private network", null),
     OvmGuestNetwork("Hidden", ManagementServer.class, String.class, "ovm.guest.network.device", null, "Specify the private bridge on host for private network", null),
-    
+
 	// XenServer
     XenPublicNetwork("Hidden", ManagementServer.class, String.class, "xen.public.network.device", null, "[ONLY IF THE PUBLIC NETWORK IS ON A DEDICATED NIC]:The network name label of the physical device dedicated to the public network on a XenServer host", null),
     XenStorageNetwork1("Hidden", ManagementServer.class, String.class, "xen.storage.network.device1", null, "Specify when there are storage networks", null),
@@ -247,7 +247,7 @@ public enum Config {
     XenBondStorageNic("Advanced", ManagementServer.class, String.class, "xen.bond.storage.nics", null, "Attempt to bond the two networks if found", null),
     XenHeartBeatInterval("Advanced", ManagementServer.class, Integer.class, "xen.heartbeat.interval", "60", "heartbeat to use when implementing XenServer Self Fencing", null),
     XenGuestNetwork("Hidden", ManagementServer.class, String.class, "xen.guest.network.device", null, "Specify for guest network name label", null),
-    
+
     // VMware
     VmwarePrivateNetworkVSwitch("Hidden", ManagementServer.class, String.class, "vmware.private.vswitch", null, "Specify the vSwitch on host for private network", null),
     VmwarePublicNetworkVSwitch("Hidden", ManagementServer.class, String.class, "vmware.public.vswitch", null, "Specify the vSwitch on host for public network", null),
@@ -264,7 +264,7 @@ public enum Config {
     VmwareRootDiskControllerType("Advanced", ManagementServer.class, String.class, "vmware.root.disk.controller", "ide", "Specify the default disk controller for root volumes, valid values are scsi, ide", null),
     VmwareSystemVmNicDeviceType("Advanced", ManagementServer.class, String.class, "vmware.systemvm.nic.device.type", "E1000", "Specify the default network device type for system VMs, valid values are E1000, PCNet32, Vmxnet2, Vmxnet3", null),
     VmwareRecycleHungWorker("Advanced", ManagementServer.class, Boolean.class, "vmware.recycle.hung.wokervm", "false", "Specify whether or not to recycle hung worker VMs", null),
-    
+
     // KVM
     KvmPublicNetwork("Hidden", ManagementServer.class, String.class, "kvm.public.network.device", null, "Specify the public bridge on host for public network", null),
     KvmPrivateNetwork("Hidden", ManagementServer.class, String.class, "kvm.private.network.device", null, "Specify the private bridge on host for private network", null),
@@ -279,7 +279,7 @@ public enum Config {
     UsageAggregationTimezone("Usage", ManagementServer.class, String.class, "usage.aggregation.timezone", "GMT", "The timezone to use for usage stats aggregation", null),
     TrafficSentinelIncludeZones("Usage", ManagementServer.class, Integer.class, "traffic.sentinel.include.zones", "EXTERNAL", "Traffic going into specified list of zones is metered. For metering all traffic leave this parameter empty", null),
     TrafficSentinelExcludeZones("Usage", ManagementServer.class, Integer.class, "traffic.sentinel.exclude.zones", "", "Traffic going into specified list of zones is not metered.", null),
-    
+
 	// Hidden
 	UseSecondaryStorageVm("Hidden", ManagementServer.class, Boolean.class, "secondary.storage.vm", "false", "Deploys a VM per zone to manage secondary storage if true, otherwise secondary storage is mounted on management server", null),
     CreatePoolsInPod("Hidden", ManagementServer.class, Boolean.class, "xen.create.pools.in.pod", "false", "Should we automatically add XenServers into pools that are inside a Pod", null),
@@ -295,12 +295,12 @@ public enum Config {
 	VmOpCleanupInterval("Advanced", ManagementServer.class, Long.class, "vm.op.cleanup.interval", "86400", "Interval to run the thread that cleans up the vm operations (in seconds)", "Seconds"),
 	VmOpCleanupWait("Advanced", ManagementServer.class, Long.class, "vm.op.cleanup.wait", "3600", "Time (in seconds) to wait before cleanuping up any vm work items", "Seconds"),
 	VmOpCancelInterval("Advanced", ManagementServer.class, Long.class, "vm.op.cancel.interval", "3600", "Time (in seconds) to wait before cancelling a operation", "Seconds"),
-	
-	
+
+
 	DefaultPageSize("Advanced", ManagementServer.class, Long.class, "default.page.size", "500", "Default page size for API list* commands", null),
-	
+
 	TaskCleanupRetryInterval("Advanced", ManagementServer.class, Integer.class, "task.cleanup.retry.interval", "600", "Time (in seconds) to wait before retrying cleanup of tasks if the cleanup failed previously.  0 means to never retry.", "Seconds"),
-	
+
 	// Account Default Limits
 	DefaultMaxAccountUserVms("Account Defaults", ManagementServer.class, Long.class, "max.account.user.vms", "20", "The default maximum number of user VMs that can be deployed for an account", null),
 	DefaultMaxAccountPublicIPs("Account Defaults", ManagementServer.class, Long.class, "max.account.public.ips", "20", "The default maximum number of public IPs that can be consumed by an account", null),
@@ -310,10 +310,10 @@ public enum Config {
 	DefaultMaxAccountNetworks("Account Defaults", ManagementServer.class, Long.class, "max.account.networks", "20", "The default maximum number of networks that can be created for an account", null),
 	DefaultMaxAccountVpcs("Account Defaults", ManagementServer.class, Long.class, "max.account.vpcs", "20", "The default maximum number of vpcs that can be created for an account", null),
 
-	
+
 	ResourceCountCheckInterval("Advanced", ManagementServer.class, Long.class, "resourcecount.check.interval", "0", "Time (in seconds) to wait before retrying resource count check task. Default is 0 which is to never run the task", "Seconds"),
 	DirectAgentLoadSize("Advanced", ManagementServer.class, Integer.class, "direct.agent.load.size", "16", "The number of direct agents to load each time", null),
-	
+
 	//disabling lb as cluster sync does not work with distributed cluster
 	AgentLbEnable("Advanced", ManagementServer.class, Boolean.class, "agent.lb.enabled", "false", "If agent load balancing enabled in cluster setup", null),
 	SubDomainNetworkAccess("Advanced", NetworkManager.class, Boolean.class, "allow.subdomain.network.access", "true", "Allow subdomains to use networks dedicated to their parent domain(s)", null),
@@ -323,9 +323,9 @@ public enum Config {
 
 	ClusterMessageTimeOutSeconds("Advanced", ManagementServer.class, Integer.class, "cluster.message.timeout.seconds", "300", "Time (in seconds) to wait before a inter-management server message post times out.", null),
 	AgentLoadThreshold("Advanced", ManagementServer.class, Float.class, "agent.load.threshold", "0.7", "Percentage (as a value between 0 and 1) of connected agents after which agent load balancing will start happening", null),
-	
+
 	JavaScriptDefaultContentType("Advanced", ManagementServer.class, String.class, "json.content.type", "text/javascript", "Http response content type for .js files (default is text/javascript)", null),
-	
+
 	DefaultMaxProjectUserVms("Project Defaults", ManagementServer.class, Long.class, "max.project.user.vms", "20", "The default maximum number of user VMs that can be deployed for a project", null),
     DefaultMaxProjectPublicIPs("Project Defaults", ManagementServer.class, Long.class, "max.project.public.ips", "20", "The default maximum number of public IPs that can be consumed by a project", null),
     DefaultMaxProjectTemplates("Project Defaults", ManagementServer.class, Long.class, "max.project.templates", "20", "The default maximum number of templates that can be deployed for a project", null),
@@ -333,11 +333,11 @@ public enum Config {
     DefaultMaxProjectVolumes("Project Defaults", ManagementServer.class, Long.class, "max.project.volumes", "20", "The default maximum number of volumes that can be created for a project", null),
     DefaultMaxProjectNetworks("Project Defaults", ManagementServer.class, Long.class, "max.project.networks", "20", "The default maximum number of networks that can be created for a project", null),
     DefaultMaxProjectVpcs("Project Defaults", ManagementServer.class, Long.class, "max.project.vpcs", "20", "The default maximum number of vpcs that can be created for a project", null),
-	
+
     ProjectInviteRequired("Project Defaults", ManagementServer.class, Boolean.class, "project.invite.required", "false", "If invitation confirmation is required when add account to project. Default value is false", null),
     ProjectInvitationExpirationTime("Project Defaults", ManagementServer.class, Long.class, "project.invite.timeout", "86400", "Invitation expiration time (in seconds). Default is 1 day - 86400 seconds", null),
     AllowUserToCreateProject("Project Defaults", ManagementServer.class, Long.class, "allow.user.create.projects", "true", "If regular user can create a project; true by default", null),
-    
+
     ProjectEmailSender("Project Defaults", ManagementServer.class, String.class, "project.email.sender", null, "Sender of project invitation email (will be in the From header of the email)", null),
     ProjectSMTPHost("Project Defaults", ManagementServer.class, String.class, "project.smtp.host", null, "SMTP hostname used for sending out email project invitations", null),
     ProjectSMTPPassword("Secure", ManagementServer.class, String.class, "project.smtp.password", null, "Password for SMTP authentication (applies only if project.smtp.useAuth is true)", null),
@@ -355,11 +355,12 @@ public enum Config {
 	HaTag("Advanced", ManagementServer.class, String.class, "ha.tag", null, "HA tag defining that the host marked with this tag can be used for HA purposes only", null),
 	VpcCleanupInterval("Advanced", ManagementServer.class, Integer.class, "vpc.cleanup.interval", "3600", "The interval (in seconds) between cleanup for Inactive VPCs", null),
     VpcMaxNetworks("Advanced", ManagementServer.class, Integer.class, "vpc.max.networks", "3", "Maximum number of networks per vpc", null),
-    
+    DetailBatchQuerySize("Advanced", ManagementServer.class, Integer.class, "detail.batch.query.size", "2000", "Default entity detail batch query size for listing", null),
+
 	ConcurrentSnapshotsThresholdPerHost("Advanced", ManagementServer.class, Long.class, "concurrent.snapshots.threshold.perhost",
 	                null, "Limits number of snapshots that can be handled by the host concurrently; default is NULL - unlimited", null);
-	
-	
+
+
 	private final String _category;
 	private final Class<?> _componentClass;
 	private final Class<?> _type;
@@ -384,7 +385,7 @@ public enum Config {
     	_configs.put("Account Defaults", new ArrayList<Config>());
     	_configs.put("Project Defaults", new ArrayList<Config>());
     	_configs.put("Secure", new ArrayList<Config>());
-    	
+
     	// Add values into HashMap
         for (Config c : Config.values()) {
         	String category = c.getCategory();
@@ -393,7 +394,7 @@ public enum Config {
         	_configs.put(category, currentConfigs);
         }
     }
-    
+
     private Config(String category, Class<?> componentClass, Class<?> type, String name, String defaultValue, String description, String range) {
     	_category = category;
     	_componentClass = componentClass;
@@ -403,15 +404,15 @@ public enum Config {
     	_description = description;
     	_range = range;
     }
-    
+
     public String getCategory() {
     	return _category;
     }
-    
+
     public String key() {
         return _name;
     }
-    
+
     public String getDescription() {
         return _description;
     }
@@ -427,7 +428,7 @@ public enum Config {
     public Class<?> getComponentClass() {
         return _componentClass;
     }
-    
+
     public String getComponent() {
     	if (_componentClass == ManagementServer.class) {
             return "management-server";
@@ -453,16 +454,16 @@ public enum Config {
     public String getRange() {
         return _range;
     }
-    
+
     @Override
 	public String toString() {
         return _name;
     }
-    
+
     public static List<Config> getConfigs(String category) {
     	return _configs.get(category);
     }
-    
+
     public static Config getConfig(String name) {
     	List<String> categories = getCategories();
     	for (String category : categories) {
@@ -473,10 +474,10 @@ public enum Config {
                 }
     		}
     	}
-    	
+
     	return null;
     }
-    
+
     public static List<String> getCategories() {
     	Object[] keys = _configs.keySet().toArray();
     	List<String> categories = new ArrayList<String>();

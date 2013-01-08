@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.api.query.dao;
 
-import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import javax.ejb.Local;
@@ -25,54 +23,25 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
-import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.ViewResponseHelper;
 import com.cloud.api.query.vo.AccountJoinVO;
-import com.cloud.api.query.vo.InstanceGroupJoinVO;
-import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
-import com.cloud.api.query.vo.UserVmJoinVO;
-import com.cloud.api.query.vo.VolumeJoinVO;
 import com.cloud.configuration.Resource.ResourceType;
-import com.cloud.dc.DataCenter;
-import com.cloud.domain.Domain;
-
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AccountResponse;
-import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UserResponse;
-import org.apache.cloudstack.api.response.VolumeResponse;
-
-import com.cloud.offering.ServiceOffering;
-import com.cloud.server.Criteria;
-import com.cloud.storage.Storage;
-import com.cloud.storage.VMTemplateHostVO;
-import com.cloud.storage.Volume;
-import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
-import com.cloud.user.UserStatisticsVO;
-import com.cloud.user.UserVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.vm.VirtualMachine.State;
 
 
 @Local(value={AccountJoinDao.class})
 public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> implements AccountJoinDao {
     public static final Logger s_logger = Logger.getLogger(AccountJoinDaoImpl.class);
 
-    private SearchBuilder<AccountJoinVO> acctSearch;
-
     private SearchBuilder<AccountJoinVO> acctIdSearch;
 
     protected AccountJoinDaoImpl() {
-
-        acctSearch = createSearchBuilder();
-        acctSearch.and("idIN", acctSearch.entity().getId(), SearchCriteria.Op.IN);
-        acctSearch.done();
 
         acctIdSearch = createSearchBuilder();
         acctIdSearch.and("id", acctIdSearch.entity().getId(), SearchCriteria.Op.EQ);
@@ -211,17 +180,6 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
         return accounts.get(0);
 
     }
-
-
-
-
-    @Override
-    public List<AccountJoinVO> searchByIds(Long... ids) {
-        SearchCriteria<AccountJoinVO> sc = acctSearch.create();
-        sc.setParameters("idIN", ids);
-        return searchIncludingRemoved(sc, null, null, false);
-    }
-
 
 
 }

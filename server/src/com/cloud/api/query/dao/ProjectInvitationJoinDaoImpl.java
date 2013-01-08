@@ -24,10 +24,8 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.response.ProjectInvitationResponse;
 
-import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.ProjectInvitationJoinVO;
 import com.cloud.projects.ProjectInvitation;
-import com.cloud.user.Account;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -37,13 +35,13 @@ public class ProjectInvitationJoinDaoImpl extends GenericDaoBase<ProjectInvitati
     public static final Logger s_logger = Logger.getLogger(ProjectInvitationJoinDaoImpl.class);
 
 
-    private SearchBuilder<ProjectInvitationJoinVO> vrIdSearch;
+    private SearchBuilder<ProjectInvitationJoinVO> piIdSearch;
 
     protected ProjectInvitationJoinDaoImpl() {
 
-        vrIdSearch = createSearchBuilder();
-        vrIdSearch.and("id", vrIdSearch.entity().getId(), SearchCriteria.Op.EQ);
-        vrIdSearch.done();
+        piIdSearch = createSearchBuilder();
+        piIdSearch.and("id", piIdSearch.entity().getId(), SearchCriteria.Op.EQ);
+        piIdSearch.done();
 
         this._count = "select count(distinct id) from project_invitation_view WHERE ";
     }
@@ -75,7 +73,7 @@ public class ProjectInvitationJoinDaoImpl extends GenericDaoBase<ProjectInvitati
 
     @Override
     public ProjectInvitationJoinVO newProjectInvitationView(ProjectInvitation proj) {
-        SearchCriteria<ProjectInvitationJoinVO> sc = vrIdSearch.create();
+        SearchCriteria<ProjectInvitationJoinVO> sc = piIdSearch.create();
         sc.setParameters("id", proj.getId());
         List<ProjectInvitationJoinVO> grps = searchIncludingRemoved(sc, null, null, false);
         assert grps != null && grps.size() == 1 : "No project invitation found for id  " + proj.getId();

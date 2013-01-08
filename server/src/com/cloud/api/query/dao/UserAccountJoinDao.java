@@ -33,8 +33,6 @@ public interface UserAccountJoinDao extends GenericDao<UserAccountJoinVO, Long> 
 
     UserAccountJoinVO newUserView(UserAccount usr);
 
-    List<UserAccountJoinVO> searchByIds(Long... ids);
-
     List<UserAccountJoinVO> searchByAccountId(Long accountId);
 
 }
