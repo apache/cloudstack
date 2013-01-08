@@ -21,7 +21,9 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.springframework.aop.Advisor;
+import org.springframework.aop.framework.Advised;
 import org.springframework.aop.framework.ProxyFactory;
+import org.springframework.aop.support.AopUtils;
 import org.springframework.aop.support.DefaultPointcutAdvisor;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
@@ -30,6 +32,7 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.TransactionContextBuilder;
 
 /**
@@ -65,7 +68,7 @@ public class ComponentContext implements ApplicationContextAware {
     		Map<String, T> matchedTypes = getComponentsOfType(beanType);
     		if(matchedTypes.size() > 0) {
 	    		for(Map.Entry<String, T> entry : matchedTypes.entrySet()) {
-	    			Primary primary = entry.getClass().getAnnotation(Primary.class);
+	    			Primary primary = getTargetClass(entry).getAnnotation(Primary.class);
 	    			if(primary != null)
 	    				return entry.getValue();
 	    		}
@@ -79,6 +82,30 @@ public class ComponentContext implements ApplicationContextAware {
     
     public static <T> Map<String, T> getComponentsOfType(Class<T> beanType) {
     	return s_appContext.getBeansOfType(beanType);
+    }
+    
+    public static <T> boolean isPrimary(Object instance, Class<T> beanType) {
+		Map<String, T> matchedTypes = ComponentContext.getComponentsOfType(beanType);
+		if(matchedTypes.size() > 1) {
+			Primary primary = getTargetClass(instance).getAnnotation(Primary.class);
+			if(primary != null)
+				return true;
+			
+			return false;
+    	}
+    	
+    	return true;
+    }
+    
+    public static Class<?> getTargetClass(Object instance) {
+	    if(instance instanceof Advised) {
+	    	try {
+	    		return ((Advised)instance).getTargetSource().getTarget().getClass();
+	    	} catch(Exception e) {
+	    		return instance.getClass();
+	    	}
+	    }
+	    return instance.getClass();
     }
     
     public static <T> T inject(Class<T> clz) {

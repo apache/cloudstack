@@ -218,7 +218,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
 
     protected int _pingInterval;
     protected long _pingTimeout;
-    @Inject protected AgentMonitor _monitor = null;
+    @Inject protected AgentMonitor _monitor;
 
     protected ExecutorService _executor;
     
@@ -400,7 +400,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             throw new CloudRuntimeException(err);
         }
     }
-
 
     private void sendToSSVM(final long dcId, final Command cmd, final Listener listener) throws AgentUnavailableException {
         List<HostVO> ssAHosts = _ssvmMgr.listUpAndConnectingSecondaryStorageVmHost(dcId);
