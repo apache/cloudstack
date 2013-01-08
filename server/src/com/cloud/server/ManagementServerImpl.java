@@ -221,10 +221,12 @@ import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.component.SystemIntegrityChecker;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.JoinBuilder.JoinType;
@@ -314,11 +316,11 @@ public class ManagementServerImpl implements ManagementServer {
     @Inject private ConfigurationManager _configMgr;
     @Inject private ResourceTagDao _resourceTagDao;
     
-    @Inject private ProjectManager _projectMgr;
-    @Inject private ResourceManager _resourceMgr;
-    @Inject private SnapshotManager _snapshotMgr;
-    @Inject private HighAvailabilityManager _haMgr;
-    @Inject private HostTagsDao _hostTagsDao;
+    @Inject ProjectManager _projectMgr;
+    @Inject ResourceManager _resourceMgr;
+    @Inject SnapshotManager _snapshotMgr;
+    @Inject HighAvailabilityManager _haMgr;
+    @Inject HostTagsDao _hostTagsDao;
 
     @Inject ComponentContext _placeholder;
     
@@ -357,7 +359,54 @@ public class ManagementServerImpl implements ManagementServer {
             _availableIdsMap.put(id, true);
         }
     }
-
+    
+    public void startup() {
+    	s_logger.info("Startup CloudStack management server...");
+    	initCloudStackComponents();
+    }
+    
+	private void initCloudStackComponents() {
+        runCheckers();
+        startDaos();    // daos should not be using managers and adapters.
+     
+/*        
+        configureManagers();
+        configureAdapters();
+        startManagers();
+        startAdapters();
+*/	
+	}
+	
+    private void runCheckers() {
+		Map<String, SystemIntegrityChecker> checkers = ComponentContext.getApplicationContext().getBeansOfType(
+			SystemIntegrityChecker.class);
+		
+		for(SystemIntegrityChecker checker : checkers.values()) {
+			try {
+				checker.check();
+			} catch (Exception e) {
+                s_logger.error("Problems with running checker:" + checker.getClass().getName(), e);
+                System.exit(1);
+			}
+		}
+    }
+	
+    private void startDaos() {
+		@SuppressWarnings("rawtypes")
+		Map<String, GenericDaoBase> daos = ComponentContext.getApplicationContext().getBeansOfType(
+				GenericDaoBase.class);
+			
+		for(GenericDaoBase dao : daos.values()) {
+			try {
+				
+				// dao.configure(dao.getClass().getSimpleName(), params);
+			} catch (Exception e) {
+                s_logger.error("Problems with running checker:" + dao.getClass().getName(), e);
+                System.exit(1);
+			}
+		}
+    }
+  
     protected Map<String, String> getConfigs() {
         return _configs;
     }

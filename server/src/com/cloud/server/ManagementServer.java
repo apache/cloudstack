@@ -38,6 +38,8 @@ public interface ManagementServer extends ManagementService {
      */
     long getId();
     
+    void startup();
+    
     /**
      * Fetches the version of cloud stack
     */

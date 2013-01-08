@@ -16,7 +16,7 @@
 // under the License.
 package com.cloud.servlet;
 
-import java.util.Map;
+import java.io.File;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
@@ -24,32 +24,32 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 
 import org.apache.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
+import org.apache.log4j.xml.DOMConfigurator;
 
 import com.cloud.api.ApiServer;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.server.ConfigurationServer;
 import com.cloud.server.ManagementServer;
+import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.SerialVersionUID;
 import com.cloud.utils.component.ComponentContext;
-import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.SystemIntegrityChecker;
-import com.cloud.utils.db.GenericDaoBase;
 
 public class CloudStartupServlet extends HttpServlet implements ServletContextListener {
 	public static final Logger s_logger = Logger.getLogger(CloudStartupServlet.class.getName());
 	
     static final long serialVersionUID = SerialVersionUID.CloudStartupServlet;
    
-    protected static ComponentLocator s_locator;
-    
 	@Override
     public void init() throws ServletException {
-		
-	    // Save Configuration Values
+    	initLog4j();
+
+    	// Save Configuration Values
  	    ConfigurationServer c = (ConfigurationServer)ComponentContext.getCompanent(ConfigurationServer.class);
 	    try {
 	    	c.persistDefaultValues();
 		    ManagementServer ms = (ManagementServer)ComponentContext.getCompanent(ManagementServer.class);
+		    ms.startup();
 		    ApiServer.initApiServer(ms.getApiConfig());
 	    } catch (InvalidParameterValueException ipve) {
 	    	s_logger.error("Exception starting management server ", ipve);
@@ -73,50 +73,18 @@ public class CloudStartupServlet extends HttpServlet implements ServletContextLi
 	@Override
 	public void contextDestroyed(ServletContextEvent sce) {
 	}
-
-	//
-	// following should be moved to CloudStackServer component later to encapsulate business logic in one place
-	//
-	private void initCloudStackComponents() {
-        runCheckers();
-        startDaos();    // daos should not be using managers and adapters.
-     
-/*        
-        configureManagers();
-        configureAdapters();
-        startManagers();
-        startAdapters();
-*/	
+	
+	private void initLog4j() {
+        File file = PropertiesUtil.findConfigFile("log4j-cloud.xml");
+        if (file != null) {
+            s_logger.info("log4j configuration found at " + file.getAbsolutePath());
+            DOMConfigurator.configureAndWatch(file.getAbsolutePath());
+        } else {
+            file = PropertiesUtil.findConfigFile("log4j-cloud.properties");
+            if (file != null) {
+                s_logger.info("log4j configuration found at " + file.getAbsolutePath());
+                PropertyConfigurator.configureAndWatch(file.getAbsolutePath());
+            }
+        }
 	}
-	
-    private void runCheckers() {
-		Map<String, SystemIntegrityChecker> checkers = ComponentContext.getApplicationContext().getBeansOfType(
-			SystemIntegrityChecker.class);
-		
-		for(SystemIntegrityChecker checker : checkers.values()) {
-			try {
-				checker.check();
-			} catch (Exception e) {
-                s_logger.error("Problems with running checker:" + checker.getClass().getName(), e);
-                System.exit(1);
-			}
-		}
-    }
-	
-    private void startDaos() {
-		@SuppressWarnings("rawtypes")
-		Map<String, GenericDaoBase> daos = ComponentContext.getApplicationContext().getBeansOfType(
-				GenericDaoBase.class);
-			
-		for(GenericDaoBase dao : daos.values()) {
-			try {
-				
-				// dao.configure(dao.getClass().getSimpleName(), params);
-			} catch (Exception e) {
-                s_logger.error("Problems with running checker:" + dao.getClass().getName(), e);
-                System.exit(1);
-			}
-		}
-    }
-	
 }

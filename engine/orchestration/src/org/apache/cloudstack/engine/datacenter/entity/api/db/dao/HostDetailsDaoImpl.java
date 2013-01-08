@@ -31,7 +31,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 
-//@Component(value="EngineHostDetailsDao")
+@Component(value="EngineHostDetailsDao")
 @Local(value=HostDetailsDao.class)
 public class HostDetailsDaoImpl extends GenericDaoBase<DetailVO, Long> implements HostDetailsDao {
     protected final SearchBuilder<DetailVO> HostSearch;

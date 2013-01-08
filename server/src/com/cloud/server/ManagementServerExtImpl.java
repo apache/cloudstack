@@ -23,6 +23,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
+
+import org.springframework.context.annotation.Primary;
+import org.springframework.stereotype.Component;
+
 import com.cloud.api.commands.GenerateUsageRecordsCmd;
 import com.cloud.api.commands.GetUsageRecordsCmd;
 import com.cloud.domain.dao.DomainDao;
@@ -39,33 +45,32 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 
+@Component
+@Primary
 public class ManagementServerExtImpl extends ManagementServerImpl implements ManagementServerExt {
-    private final AccountDao _accountDao;
-    private final DomainDao _domainDao;
-    private final UsageDao _usageDao;
-    private final UsageJobDao _usageJobDao;
-    private final TimeZone _usageTimezone;
+    @Inject private AccountDao _accountDao;
+    @Inject private DomainDao _domainDao;
+    @Inject private UsageDao _usageDao;
+    @Inject private UsageJobDao _usageJobDao;
+    private TimeZone _usageTimezone;
 
-    protected ManagementServerExtImpl() {
-        super();
-
-        ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
-        _accountDao = locator.getDao(AccountDao.class);
-        _domainDao = locator.getDao(DomainDao.class);
-        _usageDao = locator.getDao(UsageDao.class);
-        _usageJobDao = locator.getDao(UsageJobDao.class);
-
+    public ManagementServerExtImpl() {
+    }
+    
+    @PostConstruct
+    void init() {
+    	super.init();
+    	
         Map<String, String> configs = getConfigs();
-        String timeZoneStr = configs.get("usage.aggregation.timezone");
-        if (timeZoneStr == null) {
-            timeZoneStr = "GMT";
-        }
-        _usageTimezone = TimeZone.getTimeZone(timeZoneStr);
+       String timeZoneStr = configs.get("usage.aggregation.timezone");
+       if (timeZoneStr == null) {
+           timeZoneStr = "GMT";
+       }
+       _usageTimezone = TimeZone.getTimeZone(timeZoneStr);
     }
 
     @Override
