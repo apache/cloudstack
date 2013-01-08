@@ -74,6 +74,7 @@ import com.cloud.maint.UpgradeManagerImpl;
 import com.cloud.maint.dao.AgentUpgradeDaoImpl;
 import com.cloud.network.ExternalLoadBalancerUsageManagerImpl;
 import com.cloud.network.NetworkManagerImpl;
+import com.cloud.network.NetworkModelImpl;
 import com.cloud.network.NetworkServiceImpl;
 import com.cloud.network.StorageNetworkManagerImpl;
 import com.cloud.network.as.AutoScaleManagerImpl;
@@ -382,6 +383,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addManager("resource limit manager", ResourceLimitManagerImpl.class);
         addManager("network service", NetworkServiceImpl.class);
         addManager("network manager", NetworkManagerImpl.class);
+        addManager("network model", NetworkModelImpl.class);
         addManager("download manager", DownloadMonitorImpl.class);
         addManager("upload manager", UploadMonitorImpl.class);
         addManager("keystore manager", KeystoreManagerImpl.class);

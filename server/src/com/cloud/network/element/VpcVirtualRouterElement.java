@@ -60,7 +60,11 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
-@Local(value = {NetworkElement.class, Site2SiteVpnServiceProvider.class})
+@Local(value = {NetworkElement.class, FirewallServiceProvider.class, 
+        DhcpServiceProvider.class, UserDataServiceProvider.class, 
+        StaticNatServiceProvider.class, LoadBalancingServiceProvider.class,
+        PortForwardingServiceProvider.class, IpDeployer.class,
+        Site2SiteVpnServiceProvider.class, NetworkACLServiceProvider.class})
 public class VpcVirtualRouterElement extends VirtualRouterElement implements VpcProvider, Site2SiteVpnServiceProvider, NetworkACLServiceProvider{
     private static final Logger s_logger = Logger.getLogger(VpcVirtualRouterElement.class);
     @Inject

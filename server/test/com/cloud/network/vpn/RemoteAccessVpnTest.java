@@ -19,6 +19,7 @@ import com.cloud.domain.dao.DomainDaoImpl;
 import com.cloud.event.dao.UsageEventDaoImpl;
 import com.cloud.network.MockFirewallManagerImpl;
 import com.cloud.network.MockNetworkManagerImpl;
+import com.cloud.network.MockNetworkModelImpl;
 import com.cloud.network.MockRulesManagerImpl;
 import com.cloud.network.dao.FirewallRulesDaoImpl;
 import com.cloud.network.dao.IPAddressDaoImpl;
@@ -53,6 +54,7 @@ public class RemoteAccessVpnTest {
 		locator.addManager("AccountManager", MockAccountManagerImpl.class);
 		locator.addManager("DomainManager", MockDomainManagerImpl.class);
 		locator.addManager("NetworkManager", MockNetworkManagerImpl.class);
+	    locator.addManager("NetworkModel", MockNetworkModelImpl.class);
 		locator.addManager("RulesManager", MockRulesManagerImpl.class);
 		locator.addManager("FirewallManager", MockFirewallManagerImpl.class);
 	}

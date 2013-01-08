@@ -106,7 +106,6 @@ import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.NetworkDomainDao;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
@@ -145,7 +144,6 @@ import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.org.Grouping;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
-import com.cloud.user.DomainManager;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
@@ -158,7 +156,6 @@ import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
-import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -175,9 +172,9 @@ import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -275,29 +272,20 @@ public class NetworkManagerImpl implements NetworkManager, Manager, Listener {
     @Inject
     NetworkModel _networkModel;
 
-
-    private final HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
-    static Long _privateOfferingId = null;
-
     ScheduledExecutorService _executor;
 
     SearchBuilder<IPAddressVO> AssignIpAddressSearch;
     SearchBuilder<IPAddressVO> AssignIpAddressFromPodVlanSearch;
-    SearchBuilder<IPAddressVO> IpAddressSearch;
-    SearchBuilder<NicVO> NicForTrafficTypeSearch;
 
     int _networkGcWait;
     int _networkGcInterval;
     String _networkDomain;
-    boolean _allowSubdomainNetworkAccess;
     int _networkLockTimeout;
 
     private Map<String, String> _configs;
 
     HashMap<Long, Long> _lastNetworkIdsToFree = new HashMap<Long, Long>();
 
-    static HashMap<Service, List<Provider>> s_serviceToImplementedProvidersMap = new HashMap<Service, List<Provider>>();
-    static HashMap<String, String> s_providerToNetworkElementMap = new HashMap<String, String>();
 
     @Override
     public PublicIp assignPublicIpAddress(long dcId, Long podId, Account owner, VlanType type, Long networkId, String requestedIp, boolean isSystem) throws InsufficientAddressCapacityException {
@@ -891,23 +879,7 @@ public class NetworkManagerImpl implements NetworkManager, Manager, Listener {
 
         _networkLockTimeout = NumbersUtil.parseInt(_configs.get(Config.NetworkLockTimeout.key()), 600);
 
-        NetworkOfferingVO publicNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemPublicNetwork, TrafficType.Public, true);
-        publicNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(publicNetworkOffering);
-        _systemNetworks.put(NetworkOfferingVO.SystemPublicNetwork, publicNetworkOffering);
-        NetworkOfferingVO managementNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemManagementNetwork, TrafficType.Management, false);
-        managementNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(managementNetworkOffering);
-        _systemNetworks.put(NetworkOfferingVO.SystemManagementNetwork, managementNetworkOffering);
-        NetworkOfferingVO controlNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemControlNetwork, TrafficType.Control, false);
-        controlNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(controlNetworkOffering);
-        _systemNetworks.put(NetworkOfferingVO.SystemControlNetwork, controlNetworkOffering);
-        NetworkOfferingVO storageNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemStorageNetwork, TrafficType.Storage, true);
-        storageNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(storageNetworkOffering);
-        _systemNetworks.put(NetworkOfferingVO.SystemStorageNetwork, storageNetworkOffering);
-        NetworkOfferingVO privateGatewayNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemPrivateGatewayNetworkOffering,
-                GuestType.Isolated);
-        privateGatewayNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(privateGatewayNetworkOffering);
-        _systemNetworks.put(NetworkOfferingVO.SystemPrivateGatewayNetworkOffering, privateGatewayNetworkOffering);
-        _privateOfferingId = privateGatewayNetworkOffering.getId();
+        
 
 
         // populate providers
@@ -1086,26 +1058,7 @@ public class NetworkManagerImpl implements NetworkManager, Manager, Listener {
         AssignIpAddressFromPodVlanSearch.join("vlan", podVlanSearch, podVlanSearch.entity().getId(), AssignIpAddressFromPodVlanSearch.entity().getVlanId(), JoinType.INNER);
         AssignIpAddressFromPodVlanSearch.done();
 
-        IpAddressSearch = _ipAddressDao.createSearchBuilder();
-        IpAddressSearch.and("accountId", IpAddressSearch.entity().getAllocatedToAccountId(), Op.EQ);
-        IpAddressSearch.and("dataCenterId", IpAddressSearch.entity().getDataCenterId(), Op.EQ);
-        IpAddressSearch.and("vpcId", IpAddressSearch.entity().getVpcId(), Op.EQ);
-        IpAddressSearch.and("associatedWithNetworkId", IpAddressSearch.entity().getAssociatedWithNetworkId(), Op.EQ);
-        SearchBuilder<VlanVO> virtualNetworkVlanSB = _vlanDao.createSearchBuilder();
-        virtualNetworkVlanSB.and("vlanType", virtualNetworkVlanSB.entity().getVlanType(), Op.EQ);
-        IpAddressSearch.join("virtualNetworkVlanSB", virtualNetworkVlanSB, IpAddressSearch.entity().getVlanId(), virtualNetworkVlanSB.entity().getId(), JoinBuilder.JoinType.INNER);
-        IpAddressSearch.done();
-
-        NicForTrafficTypeSearch = _nicDao.createSearchBuilder();
-        SearchBuilder<NetworkVO> networkSearch = _networksDao.createSearchBuilder();
-        NicForTrafficTypeSearch.join("network", networkSearch, networkSearch.entity().getId(), NicForTrafficTypeSearch.entity().getNetworkId(), JoinType.INNER);
-        NicForTrafficTypeSearch.and("instance", NicForTrafficTypeSearch.entity().getInstanceId(), Op.EQ);
-        networkSearch.and("traffictype", networkSearch.entity().getTrafficType(), Op.EQ);
-        NicForTrafficTypeSearch.done();
-
         _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Network-Scavenger"));
-
-        _allowSubdomainNetworkAccess = Boolean.valueOf(_configs.get(Config.SubDomainNetworkAccess.key()));
 
         _agentMgr.registerForHostEvents(this, true, false, true);
 
@@ -1121,33 +1074,6 @@ public class NetworkManagerImpl implements NetworkManager, Manager, Listener {
 
     @Override
     public boolean start() {
-
-        // populate s_serviceToImplementedProvidersMap & s_providerToNetworkElementMap with current _networkElements
-        // Need to do this in start() since _networkElements are not completely configured until then.
-        for (NetworkElement element : _networkElements) {
-            Map<Service, Map<Capability, String>> capabilities = element.getCapabilities();
-            Provider implementedProvider = element.getProvider();
-            if (implementedProvider != null) {
-                if (s_providerToNetworkElementMap.containsKey(implementedProvider.getName())) {
-                    s_logger.error("Cannot start NetworkManager: Provider <-> NetworkElement must be a one-to-one map, " +
-                            "multiple NetworkElements found for Provider: " + implementedProvider.getName());
-                    return false;
-                }
-                s_providerToNetworkElementMap.put(implementedProvider.getName(), element.getName());
-            }
-            if (capabilities != null && implementedProvider != null) {
-                for (Service service : capabilities.keySet()) {
-                    if (s_serviceToImplementedProvidersMap.containsKey(service)) {
-                        List<Provider> providers = s_serviceToImplementedProvidersMap.get(service);
-                        providers.add(implementedProvider);
-                    } else {
-                        List<Provider> providers = new ArrayList<Provider>();
-                        providers.add(implementedProvider);
-                        s_serviceToImplementedProvidersMap.put(service, providers);
-                    }
-                }
-            }
-        }
 
         _executor.scheduleWithFixedDelay(new NetworkGarbageCollector(), _networkGcInterval, _networkGcInterval, TimeUnit.SECONDS);
         return true;

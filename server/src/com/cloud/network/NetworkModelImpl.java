@@ -27,6 +27,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import javax.ejb.Local;
+import javax.naming.ConfigurationException;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
@@ -81,9 +84,13 @@ import com.cloud.user.DomainManager;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.Inject;
+import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.JoinBuilder.JoinType;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic;
@@ -95,8 +102,8 @@ import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
-
-public class NetworkModelImpl  implements NetworkModel{
+@Local(value = { NetworkModel.class})
+public class NetworkModelImpl  implements NetworkModel, Manager{
     static final Logger s_logger = Logger.getLogger(NetworkModelImpl.class);
 
     String _name;
@@ -164,8 +171,8 @@ public class NetworkModelImpl  implements NetworkModel{
     SearchBuilder<NicVO> NicForTrafficTypeSearch;
 
    
-    String _networkDomain;
-    boolean _allowSubdomainNetworkAccess;
+    private String _networkDomain;
+    private boolean _allowSubdomainNetworkAccess;
 
     private Map<String, String> _configs;
 
@@ -1730,5 +1737,99 @@ public class NetworkModelImpl  implements NetworkModel{
         } else {
             return false;
         }
+    }
+
+
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        _name = name;
+        _configs = _configDao.getConfiguration("Network", params);
+        _networkDomain = _configs.get(Config.GuestDomainSuffix.key());
+        _allowSubdomainNetworkAccess = Boolean.valueOf(_configs.get(Config.SubDomainNetworkAccess.key()));
+
+        NetworkOfferingVO publicNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemPublicNetwork, TrafficType.Public, true);
+        publicNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(publicNetworkOffering);
+        _systemNetworks.put(NetworkOfferingVO.SystemPublicNetwork, publicNetworkOffering);
+        NetworkOfferingVO managementNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemManagementNetwork, TrafficType.Management, false);
+        managementNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(managementNetworkOffering);
+        _systemNetworks.put(NetworkOfferingVO.SystemManagementNetwork, managementNetworkOffering);
+        NetworkOfferingVO controlNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemControlNetwork, TrafficType.Control, false);
+        controlNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(controlNetworkOffering);
+        _systemNetworks.put(NetworkOfferingVO.SystemControlNetwork, controlNetworkOffering);
+        NetworkOfferingVO storageNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemStorageNetwork, TrafficType.Storage, true);
+        storageNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(storageNetworkOffering);
+        _systemNetworks.put(NetworkOfferingVO.SystemStorageNetwork, storageNetworkOffering);
+        NetworkOfferingVO privateGatewayNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemPrivateGatewayNetworkOffering,
+                GuestType.Isolated);
+        privateGatewayNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(privateGatewayNetworkOffering);
+        _systemNetworks.put(NetworkOfferingVO.SystemPrivateGatewayNetworkOffering, privateGatewayNetworkOffering);
+        _privateOfferingId = privateGatewayNetworkOffering.getId();
+        
+        
+        IpAddressSearch = _ipAddressDao.createSearchBuilder();
+        IpAddressSearch.and("accountId", IpAddressSearch.entity().getAllocatedToAccountId(), Op.EQ);
+        IpAddressSearch.and("dataCenterId", IpAddressSearch.entity().getDataCenterId(), Op.EQ);
+        IpAddressSearch.and("vpcId", IpAddressSearch.entity().getVpcId(), Op.EQ);
+        IpAddressSearch.and("associatedWithNetworkId", IpAddressSearch.entity().getAssociatedWithNetworkId(), Op.EQ);
+        SearchBuilder<VlanVO> virtualNetworkVlanSB = _vlanDao.createSearchBuilder();
+        virtualNetworkVlanSB.and("vlanType", virtualNetworkVlanSB.entity().getVlanType(), Op.EQ);
+        IpAddressSearch.join("virtualNetworkVlanSB", virtualNetworkVlanSB, IpAddressSearch.entity().getVlanId(), virtualNetworkVlanSB.entity().getId(), JoinBuilder.JoinType.INNER);
+        IpAddressSearch.done();
+        
+        NicForTrafficTypeSearch = _nicDao.createSearchBuilder();
+        SearchBuilder<NetworkVO> networkSearch = _networksDao.createSearchBuilder();
+        NicForTrafficTypeSearch.join("network", networkSearch, networkSearch.entity().getId(), NicForTrafficTypeSearch.entity().getNetworkId(), JoinType.INNER);
+        NicForTrafficTypeSearch.and("instance", NicForTrafficTypeSearch.entity().getInstanceId(), Op.EQ);
+        networkSearch.and("traffictype", networkSearch.entity().getTrafficType(), Op.EQ);
+        NicForTrafficTypeSearch.done();
+        
+        s_logger.info("Network Model is configured.");
+
+        return true;
+    }
+
+ 
+    @Override
+    public boolean start() {
+        // populate s_serviceToImplementedProvidersMap & s_providerToNetworkElementMap with current _networkElements
+        // Need to do this in start() since _networkElements are not completely configured until then.
+        for (NetworkElement element : _networkElements) {
+            Map<Service, Map<Capability, String>> capabilities = element.getCapabilities();
+            Provider implementedProvider = element.getProvider();
+            if (implementedProvider != null) {
+                if (s_providerToNetworkElementMap.containsKey(implementedProvider.getName())) {
+                    s_logger.error("Cannot start NetworkModel: Provider <-> NetworkElement must be a one-to-one map, " +
+                            "multiple NetworkElements found for Provider: " + implementedProvider.getName());
+                    return false;
+                }
+                s_providerToNetworkElementMap.put(implementedProvider.getName(), element.getName());
+            }
+            if (capabilities != null && implementedProvider != null) {
+                for (Service service : capabilities.keySet()) {
+                    if (s_serviceToImplementedProvidersMap.containsKey(service)) {
+                        List<Provider> providers = s_serviceToImplementedProvidersMap.get(service);
+                        providers.add(implementedProvider);
+                    } else {
+                        List<Provider> providers = new ArrayList<Provider>();
+                        providers.add(implementedProvider);
+                        s_serviceToImplementedProvidersMap.put(service, providers);
+                    }
+                }
+            }
+        }
+        s_logger.info("Started Network Model");
+        return true;
+    }
+
+   
+    @Override
+    public boolean stop() {
+        return true;
+    }
+
+
+    @Override
+    public String getName() {
+        return _name;
     }
 }
