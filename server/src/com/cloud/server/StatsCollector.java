@@ -32,6 +32,7 @@ import javax.inject.Inject;
 import com.cloud.resource.ResourceManager;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.AgentManager.OnError;
@@ -60,8 +61,6 @@ import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.component.ComponentContext;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.UserVmManager;
@@ -73,6 +72,7 @@ import com.cloud.vm.dao.UserVmDao;
  * Provides real time stats for various agent resources up to x seconds
  *
  */
+@Component
 public class StatsCollector {
 	public static final Logger s_logger = Logger.getLogger(StatsCollector.class.getName());
 
@@ -106,18 +106,13 @@ public class StatsCollector {
     public static StatsCollector getInstance() {
         return s_instance;
     }
+    
 	public static StatsCollector getInstance(Map<String, String> configs) {
-	    if (s_instance == null) {
-	    	
-	        s_instance = new StatsCollector();
-	        s_instance = ComponentContext.inject(s_instance);
-	        s_instance.init(configs);
-	        
-	    }
         return s_instance;
     }
 	
 	public StatsCollector() {
+		s_instance = this;
 	}
 
 	private void init(Map<String, String> configs) {

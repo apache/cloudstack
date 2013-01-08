@@ -70,7 +70,7 @@ public class ComponentContext implements ApplicationContextAware {
 	    				return entry.getValue();
 	    		}
 	    		
-	    		s_logger.warn("Unable to uniquely locate bean type " + beanType.getName(), e);
+	    		s_logger.warn("Unable to uniquely locate bean type " + beanType.getName());
 	    		return (T)matchedTypes.values().toArray()[0];
 	    	}
     	}
