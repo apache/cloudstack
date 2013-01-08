@@ -26,6 +26,7 @@ import com.cloud.api.commands.DeletePoolCmd;
 import com.cloud.api.commands.ListVolumesCmd;
 import com.cloud.api.commands.UpdateStoragePoolCmd;
 import com.cloud.api.commands.UploadVolumeCmd;
+import com.cloud.api.commands.ResizeVolumeCmd;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.PermissionDeniedException;
@@ -73,6 +74,15 @@ public interface StorageService{
      */
     Volume createVolume(CreateVolumeCmd cmd);
 
+
+    /**
+     * Resizes the volume based on the given criteria
+     * 
+     * @param cmd
+     *            the API command wrapping the criteria
+     * @return the volume object
+     */
+    Volume resizeVolume(ResizeVolumeCmd cmd);
 
     /**
      * Delete the storage pool

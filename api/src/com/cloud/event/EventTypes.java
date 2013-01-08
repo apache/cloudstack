@@ -108,6 +108,7 @@ public class EventTypes {
     public static final String EVENT_VOLUME_EXTRACT = "VOLUME.EXTRACT";
     public static final String EVENT_VOLUME_UPLOAD = "VOLUME.UPLOAD";
     public static final String EVENT_VOLUME_MIGRATE = "VOLUME.MIGRATE";
+    public static final String EVENT_VOLUME_RESIZE = "VOLUME.RESIZE";
 
     // Domains
     public static final String EVENT_DOMAIN_CREATE = "DOMAIN.CREATE";

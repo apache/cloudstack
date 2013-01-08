@@ -34,6 +34,7 @@ public interface Volume extends ControlledEntity, BasedOn, StateObject<Volume.St
         Ready("The volume is ready to be used."),
         Migrating("The volume is migrating to other storage pool"),
         Snapshotting("There is a snapshot created on this volume, not backed up to secondary storage yet"),
+        Resizing("The volume is being resized"),
         Expunging("The volume is being expunging"),
         Destroy("The volume is destroyed, and can't be recovered."),        
         UploadOp ("The volume upload operation is in progress or in short the volume is on secondary storage");            
@@ -60,7 +61,10 @@ public interface Volume extends ControlledEntity, BasedOn, StateObject<Volume.St
             s_fsm.addTransition(Creating, Event.OperationFailed, Allocated);
             s_fsm.addTransition(Creating, Event.OperationSucceeded, Ready);
             s_fsm.addTransition(Creating, Event.DestroyRequested, Destroy);
-            s_fsm.addTransition(Creating, Event.CreateRequested, Creating);            
+            s_fsm.addTransition(Creating, Event.CreateRequested, Creating);  
+            s_fsm.addTransition(Ready, Event.ResizeRequested, Resizing);
+            s_fsm.addTransition(Resizing, Event.OperationSucceeded, Ready);
+            s_fsm.addTransition(Resizing, Event.OperationFailed, Ready);          
             s_fsm.addTransition(Allocated, Event.UploadRequested, UploadOp);
             s_fsm.addTransition(UploadOp, Event.CopyRequested, Creating);// CopyRequested for volume from sec to primary storage            
             s_fsm.addTransition(Creating, Event.CopySucceeded, Ready);
@@ -90,7 +94,8 @@ public interface Volume extends ControlledEntity, BasedOn, StateObject<Volume.St
         MigrationRequested,
         SnapshotRequested,
         DestroyRequested,
-        ExpungingRequested;
+        ExpungingRequested,
+        ResizeRequested;
     }
 
     long getId();
