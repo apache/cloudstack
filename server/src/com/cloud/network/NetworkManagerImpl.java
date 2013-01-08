@@ -548,15 +548,15 @@ public class NetworkManagerImpl implements NetworkManager, Manager, Listener {
 
     @Override
     public boolean applyIpAssociations(Network network, boolean rulesRevoked, boolean continueOnError, 
-            List<PublicIp> publicIps) throws ResourceUnavailableException {
+            List<? extends PublicIpAddress> publicIps) throws ResourceUnavailableException {
         boolean success = true;
 
-        Map<PublicIp, Set<Service>> ipToServices = _networkModel.getIpToServices(publicIps, rulesRevoked, true);
-        Map<Provider, ArrayList<PublicIp>> providerToIpList = _networkModel.getProviderToIpList(network, ipToServices);
+        Map<PublicIpAddress, Set<Service>> ipToServices = _networkModel.getIpToServices(publicIps, rulesRevoked, true);
+        Map<Provider, ArrayList<PublicIpAddress>> providerToIpList = _networkModel.getProviderToIpList(network, ipToServices);
 
         for (Provider provider : providerToIpList.keySet()) {
             try {
-                ArrayList<PublicIp> ips = providerToIpList.get(provider);
+                ArrayList<PublicIpAddress> ips = providerToIpList.get(provider);
                 if (ips == null || ips.isEmpty()) {
                     continue;
                 }
@@ -568,7 +568,7 @@ public class NetworkManagerImpl implements NetworkManager, Manager, Listener {
                     throw new CloudRuntimeException("Fail to get ip deployer for element: " + element);
                 }
                 Set<Service> services = new HashSet<Service>();
-                for (PublicIp ip : ips) {
+                for (PublicIpAddress ip : ips) {
                     if (!ipToServices.containsKey(ip)) {
                         continue;
                     }
@@ -680,16 +680,16 @@ public class NetworkManagerImpl implements NetworkManager, Manager, Listener {
 
     protected IPAddressVO getExistingSourceNatInNetwork(long ownerId, Long networkId) {
         
-        List<IPAddressVO> addrs = _networkModel.listPublicIpsAssignedToGuestNtwk(ownerId, networkId, true);
+        List<? extends IpAddress> addrs = _networkModel.listPublicIpsAssignedToGuestNtwk(ownerId, networkId, true);
     
         IPAddressVO sourceNatIp = null;
         if (addrs.isEmpty()) {
             return null;
         } else {
             // Account already has ip addresses
-            for (IPAddressVO addr : addrs) {
+            for (IpAddress addr : addrs) {
                 if (addr.isSourceNat()) {
-                    sourceNatIp = addr;
+                    sourceNatIp = _ipAddressDao.findById(addr.getId());
                     return sourceNatIp;
                 }
             }
@@ -1088,7 +1088,7 @@ public class NetworkManagerImpl implements NetworkManager, Manager, Listener {
     }
 
     @Override
-    public List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, DeploymentPlan plan, String name, 
+    public List<NetworkVO> setupNetwork(Account owner, NetworkOffering offering, DeploymentPlan plan, String name, 
             String displayText, boolean isDefault)
             throws ConcurrentOperationException {
         return setupNetwork(owner, offering, null, plan, name, displayText, false, null, null, null, null);
@@ -1096,7 +1096,7 @@ public class NetworkManagerImpl implements NetworkManager, Manager, Listener {
 
     @Override
     @DB
-    public List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan 
+    public List<NetworkVO> setupNetwork(Account owner, NetworkOffering offering, Network predefined, DeploymentPlan 
             plan, String name, String displayText, boolean errorIfAlreadySetup, Long domainId,
             ACLType aclType, Boolean subdomainAccess, Long vpcId) throws ConcurrentOperationException {
         

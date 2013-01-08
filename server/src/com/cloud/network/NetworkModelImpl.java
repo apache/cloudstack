@@ -212,7 +212,7 @@ public class NetworkModelImpl  implements NetworkModel, Manager{
         return element.canEnableIndividualServices();
     }
     
-    Set<Purpose> getPublicIpPurposeInRules(PublicIp ip, boolean includeRevoked, boolean includingFirewall) {
+    Set<Purpose> getPublicIpPurposeInRules(PublicIpAddress ip, boolean includeRevoked, boolean includingFirewall) {
         Set<Purpose> result = new HashSet<Purpose>();
         List<FirewallRuleVO> rules = null;
         if (includeRevoked) {
@@ -235,12 +235,12 @@ public class NetworkModelImpl  implements NetworkModel, Manager{
     }
 
     @Override
-    public Map<PublicIp, Set<Service>> getIpToServices(List<PublicIp> publicIps, boolean rulesRevoked, boolean includingFirewall) {
-            Map<PublicIp, Set<Service>> ipToServices = new HashMap<PublicIp, Set<Service>>();
+    public Map<PublicIpAddress, Set<Service>> getIpToServices(List<? extends PublicIpAddress> publicIps, boolean rulesRevoked, boolean includingFirewall) {
+            Map<PublicIpAddress, Set<Service>> ipToServices = new HashMap<PublicIpAddress, Set<Service>>();
     
             if (publicIps != null && !publicIps.isEmpty()) {
                 Set<Long> networkSNAT = new HashSet<Long>();
-                for (PublicIp ip : publicIps) {
+                for (PublicIpAddress ip : publicIps) {
                     Set<Service> services = ipToServices.get(ip);
                     if (services == null) {
                         services = new HashSet<Service>();
@@ -328,9 +328,9 @@ public class NetworkModelImpl  implements NetworkModel, Manager{
 
     public boolean canIpUsedForNonConserveService(PublicIp ip, Service service) {
         // If it's non-conserve mode, then the new ip should not be used by any other services
-        List<PublicIp> ipList = new ArrayList<PublicIp>();
+        List<PublicIpAddress> ipList = new ArrayList<PublicIpAddress>();
         ipList.add(ip);
-        Map<PublicIp, Set<Service>> ipToServices = getIpToServices(ipList, false, false);
+        Map<PublicIpAddress, Set<Service>> ipToServices = getIpToServices(ipList, false, false);
         Set<Service> services = ipToServices.get(ip);
         // Not used currently, safe
         if (services == null || services.isEmpty()) {
@@ -361,9 +361,9 @@ public class NetworkModelImpl  implements NetworkModel, Manager{
     }
 
     public boolean canIpUsedForService(PublicIp publicIp, Service service, Long networkId) {
-        List<PublicIp> ipList = new ArrayList<PublicIp>();
+        List<PublicIpAddress> ipList = new ArrayList<PublicIpAddress>();
         ipList.add(publicIp);
-        Map<PublicIp, Set<Service>> ipToServices = getIpToServices(ipList, false, true);
+        Map<PublicIpAddress, Set<Service>> ipToServices = getIpToServices(ipList, false, true);
         Set<Service> services = ipToServices.get(publicIp);
         if (services == null || services.isEmpty()) {
             return true;
@@ -404,10 +404,10 @@ public class NetworkModelImpl  implements NetworkModel, Manager{
     }
 
     @Override
-    public Map<Provider, ArrayList<PublicIp>> getProviderToIpList(Network network, Map<PublicIp, Set<Service>> ipToServices) {
+    public Map<Provider, ArrayList<PublicIpAddress>> getProviderToIpList(Network network, Map<PublicIpAddress, Set<Service>> ipToServices) {
         NetworkOffering offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
         if (!offering.isConserveMode()) {
-            for (PublicIp ip : ipToServices.keySet()) {
+            for (PublicIpAddress ip : ipToServices.keySet()) {
                 Set<Service> services = new HashSet<Service>() ;
                 services.addAll(ipToServices.get(ip));
                 if (services != null && services.contains(Service.Firewall)) {
@@ -418,12 +418,12 @@ public class NetworkModelImpl  implements NetworkModel, Manager{
                 }
             }
         }
-        Map<Service, Set<PublicIp>> serviceToIps = new HashMap<Service, Set<PublicIp>>();
-        for (PublicIp ip : ipToServices.keySet()) {
+        Map<Service, Set<PublicIpAddress>> serviceToIps = new HashMap<Service, Set<PublicIpAddress>>();
+        for (PublicIpAddress ip : ipToServices.keySet()) {
             for (Service service : ipToServices.get(ip)) {
-                Set<PublicIp> ips = serviceToIps.get(service);
+                Set<PublicIpAddress> ips = serviceToIps.get(service);
                 if (ips == null) {
-                    ips = new HashSet<PublicIp>();
+                    ips = new HashSet<PublicIpAddress>();
                 }
                 ips.add(ip);
                 serviceToIps.put(service, ips);
@@ -431,19 +431,19 @@ public class NetworkModelImpl  implements NetworkModel, Manager{
         }
         // TODO Check different provider for same IP
         Map<Provider, Set<Service>> providerToServices = getProviderServicesMap(network.getId());
-        Map<Provider, ArrayList<PublicIp>> providerToIpList = new HashMap<Provider, ArrayList<PublicIp>>();
+        Map<Provider, ArrayList<PublicIpAddress>> providerToIpList = new HashMap<Provider, ArrayList<PublicIpAddress>>();
         for (Provider provider : providerToServices.keySet()) {
             Set<Service> services = providerToServices.get(provider);
-            ArrayList<PublicIp> ipList = new ArrayList<PublicIp>();
-            Set<PublicIp> ipSet = new HashSet<PublicIp>();
+            ArrayList<PublicIpAddress> ipList = new ArrayList<PublicIpAddress>();
+            Set<PublicIpAddress> ipSet = new HashSet<PublicIpAddress>();
             for (Service service : services) {
-                Set<PublicIp> serviceIps = serviceToIps.get(service);
+                Set<PublicIpAddress> serviceIps = serviceToIps.get(service);
                 if (serviceIps == null || serviceIps.isEmpty()) {
                     continue;
                 }
                 ipSet.addAll(serviceIps);
             }
-            Set<PublicIp> sourceNatIps = serviceToIps.get(Service.SourceNat);
+            Set<PublicIpAddress> sourceNatIps = serviceToIps.get(Service.SourceNat);
             if (sourceNatIps != null && !sourceNatIps.isEmpty()) {
                 ipList.addAll(0, sourceNatIps);
                 ipSet.removeAll(sourceNatIps);
@@ -1361,7 +1361,7 @@ public class NetworkModelImpl  implements NetworkModel, Manager{
     }
 
     @Override
-    public boolean checkIpForService(IPAddressVO userIp, Service service, Long networkId) {
+    public boolean checkIpForService(IpAddress userIp, Service service, Long networkId) {
         if (networkId == null) {
             networkId = userIp.getAssociatedWithNetworkId();
         }
@@ -1371,7 +1371,8 @@ public class NetworkModelImpl  implements NetworkModel, Manager{
         if (offering.getGuestType() != GuestType.Isolated) {
             return true;
         }
-        PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
+        IPAddressVO ipVO = _ipAddressDao.findById(userIp.getId());
+        PublicIp publicIp = new PublicIp(ipVO, _vlanDao.findById(userIp.getVlanId()), NetUtils.createSequenceBasedMacAddress(ipVO.getMacAddress()));
         if (!canIpUsedForService(publicIp, service, networkId)) {
             return false;
         }

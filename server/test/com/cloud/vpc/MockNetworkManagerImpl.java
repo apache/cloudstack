@@ -655,7 +655,7 @@ public class MockNetworkManagerImpl implements NetworkManager, NetworkService, M
      * @see com.cloud.network.NetworkManager#setupNetwork(com.cloud.user.Account, com.cloud.offerings.NetworkOfferingVO, com.cloud.deploy.DeploymentPlan, java.lang.String, java.lang.String, boolean)
      */
     @Override
-    public List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, DeploymentPlan plan, String name,
+    public List<NetworkVO> setupNetwork(Account owner, NetworkOffering offering, DeploymentPlan plan, String name,
             String displayText, boolean isDefault) throws ConcurrentOperationException {
         // TODO Auto-generated method stub
         return null;
@@ -669,7 +669,7 @@ public class MockNetworkManagerImpl implements NetworkManager, NetworkService, M
      * @see com.cloud.network.NetworkManager#setupNetwork(com.cloud.user.Account, com.cloud.offerings.NetworkOfferingVO, com.cloud.network.Network, com.cloud.deploy.DeploymentPlan, java.lang.String, java.lang.String, boolean, java.lang.Long, com.cloud.acl.ControlledEntity.ACLType, java.lang.Boolean, java.lang.Long)
      */
     @Override
-    public List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, Network predefined,
+    public List<NetworkVO> setupNetwork(Account owner, NetworkOffering offering, Network predefined,
             DeploymentPlan plan, String name, String displayText, boolean errorIfAlreadySetup, Long domainId,
             ACLType aclType, Boolean subdomainAccess, Long vpcId) throws ConcurrentOperationException {
         // TODO Auto-generated method stub
@@ -892,7 +892,7 @@ public class MockNetworkManagerImpl implements NetworkManager, NetworkService, M
      */
     @Override
     public boolean applyIpAssociations(Network network, boolean rulesRevoked, boolean continueOnError,
-            List<PublicIp> publicIps) throws ResourceUnavailableException {
+            List<? extends PublicIpAddress> publicIps) throws ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
     }

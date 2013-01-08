@@ -17,7 +17,6 @@
 
 package com.cloud.network.router;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -67,7 +66,6 @@ import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.SetFirewallRulesCommand;
-import com.cloud.agent.api.routing.SetNetworkACLCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesVpcCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
@@ -76,7 +74,6 @@ import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.api.to.FirewallRuleTO;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.LoadBalancerTO;
-import com.cloud.agent.api.to.NetworkACLTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
@@ -175,8 +172,8 @@ import com.cloud.network.rules.StaticNatImpl;
 import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.vpn.Site2SiteVpnManager;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.service.ServiceOfferingVO;
@@ -1633,8 +1630,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         //2) Control network
         s_logger.debug("Adding nic for Virtual Router in Control network ");
-        List<NetworkOfferingVO> offerings = _networkModel.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemControlNetwork);
-        NetworkOfferingVO controlOffering = offerings.get(0);
+        List<? extends NetworkOffering> offerings = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemControlNetwork);
+        NetworkOffering controlOffering = offerings.get(0);
         NetworkVO controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false).get(0);
         networks.add(new Pair<NetworkVO, NicProfile>(controlConfig, null));
         
@@ -1656,7 +1653,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             if (hasGuestNetwork) {
                 defaultNic.setDeviceId(2);
             }
-            NetworkOfferingVO publicOffering = _networkModel.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemPublicNetwork).get(0);
+            NetworkOffering publicOffering = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemPublicNetwork).get(0);
             List<NetworkVO> publicNetworks = _networkMgr.setupNetwork(_systemAcct, publicOffering, plan, null, null, false);
             networks.add(new Pair<NetworkVO, NicProfile>(publicNetworks.get(0), defaultNic));
         }
@@ -2257,11 +2254,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     protected ArrayList<? extends PublicIpAddress> getPublicIpsToApply(VirtualRouter router, Provider provider, 
             Long guestNetworkId, com.cloud.network.IpAddress.State... skipInStates) {
         long ownerId = router.getAccountId();
-        final List<IPAddressVO> userIps = _networkModel.listPublicIpsAssignedToGuestNtwk(ownerId, guestNetworkId, null);
+        final List<? extends IpAddress> userIps = _networkModel.listPublicIpsAssignedToGuestNtwk(ownerId, guestNetworkId, null);
         List<PublicIp> allPublicIps = new ArrayList<PublicIp>();
         if (userIps != null && !userIps.isEmpty()) {
             boolean addIp = true;
-            for (IPAddressVO userIp : userIps) {
+            for (IpAddress userIp : userIps) {
                 if (skipInStates != null) {
                     for (IpAddress.State stateToSkip : skipInStates) {
                         if (userIp.getState() == stateToSkip) {
@@ -2273,8 +2270,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 }
                 
                 if (addIp) {
-                    PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), 
-                            NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
+                    IPAddressVO ipVO = _ipAddressDao.findById(userIp.getId());
+                    PublicIp publicIp = new PublicIp(ipVO, _vlanDao.findById(userIp.getVlanId()), 
+                            NetUtils.createSequenceBasedMacAddress(ipVO.getMacAddress()));
                     allPublicIps.add(publicIp);
                 }
             }
@@ -2282,11 +2280,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         
         //Get public Ips that should be handled by router
         Network network = _networkDao.findById(guestNetworkId);
-        Map<PublicIp, Set<Service>> ipToServices = _networkModel.getIpToServices(allPublicIps, false, true);
-        Map<Provider, ArrayList<PublicIp>> providerToIpList = _networkModel.getProviderToIpList(network, ipToServices);
+        Map<PublicIpAddress, Set<Service>> ipToServices = _networkModel.getIpToServices(allPublicIps, false, true);
+        Map<Provider, ArrayList<PublicIpAddress>> providerToIpList = _networkModel.getProviderToIpList(network, ipToServices);
         // Only cover virtual router for now, if ELB use it this need to be modified
       
-        ArrayList<PublicIp> publicIps = providerToIpList.get(provider);
+        ArrayList<PublicIpAddress> publicIps = providerToIpList.get(provider);
         return publicIps;
     }
 
@@ -2520,7 +2518,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             return null;
         }
         
-        NetworkOfferingVO offering = _networkOfferingDao.findById(_networkDao.findById(defaultNic.getNetworkId()).getNetworkOfferingId());
+        NetworkOffering offering = _networkOfferingDao.findById(_networkDao.findById(defaultNic.getNetworkId()).getNetworkOfferingId());
         if (offering.getRedundantRouter()) {
             return findGatewayIp(userVmId);
         }

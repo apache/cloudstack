@@ -29,21 +29,16 @@ import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.addr.PublicIp;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.user.Account;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachine;
 
-/**
- * @author chiradeep
- *
- */
+
 public interface NetworkModel {
 
     /**
@@ -57,9 +52,9 @@ public interface NetworkModel {
      *            - (optional) true if the IP address should be a source NAT address
      * @return - list of IP addresses
      */
-    List<IPAddressVO> listPublicIpsAssignedToGuestNtwk(long accountId, long associatedNetworkId, Boolean sourceNat);
+    List<? extends IpAddress> listPublicIpsAssignedToGuestNtwk(long accountId, long associatedNetworkId, Boolean sourceNat);
 
-    List<NetworkOfferingVO> getSystemAccountNetworkOfferings(String... offeringNames);
+    List<? extends NetworkOffering> getSystemAccountNetworkOfferings(String... offeringNames);
 
     List<? extends Nic> getNics(long vmId);
 
@@ -71,7 +66,7 @@ public interface NetworkModel {
 
     List<? extends Vlan> listPodVlans(long podId);
 
-    List<NetworkVO> listNetworksUsedByVm(long vmId, boolean isSystem);
+    List<? extends Network> listNetworksUsedByVm(long vmId, boolean isSystem);
 
     Nic getNicInNetwork(long vmId, long networkId);
 
@@ -89,13 +84,13 @@ public interface NetworkModel {
 
     boolean areServicesSupportedByNetworkOffering(long networkOfferingId, Service... services);
 
-    NetworkVO getNetworkWithSecurityGroupEnabled(Long zoneId);
+    Network getNetworkWithSecurityGroupEnabled(Long zoneId);
 
     String getIpOfNetworkElementInVirtualNetwork(long accountId, long dataCenterId);
 
-    List<NetworkVO> listNetworksForAccount(long accountId, long zoneId, Network.GuestType type);
+    List<? extends Network> listNetworksForAccount(long accountId, long zoneId, Network.GuestType type);
 
-    List<NetworkVO> listAllNetworksInAllZonesByType(Network.GuestType type);
+    List<? extends Network> listAllNetworksInAllZonesByType(Network.GuestType type);
 
     String getGlobalGuestDomainSuffix();
 
@@ -145,12 +140,12 @@ public interface NetworkModel {
 
     boolean areServicesEnabledInZone(long zoneId, NetworkOffering offering, List<Service> services);
 
-    Map<PublicIp, Set<Service>> getIpToServices(List<PublicIp> publicIps, boolean rulesRevoked,
+    Map<PublicIpAddress, Set<Service>> getIpToServices(List<? extends PublicIpAddress> publicIps, boolean rulesRevoked,
             boolean includingFirewall);
 
-    Map<Provider, ArrayList<PublicIp>> getProviderToIpList(Network network, Map<PublicIp, Set<Service>> ipToServices);
+    Map<Provider, ArrayList<PublicIpAddress>> getProviderToIpList(Network network, Map<PublicIpAddress, Set<Service>> ipToServices);
 
-    boolean checkIpForService(IPAddressVO ip, Service service, Long networkId);
+    boolean checkIpForService(IpAddress ip, Service service, Long networkId);
 
     void checkCapabilityForProvider(Set<Provider> providers, Service service, Capability cap, String capValue);
 
@@ -196,7 +191,7 @@ public interface NetworkModel {
      * @param sourceNat
      * @return
      */
-    List<IPAddressVO> listPublicIpsAssignedToAccount(long accountId, long dcId, Boolean sourceNat);
+    List<? extends IpAddress> listPublicIpsAssignedToAccount(long accountId, long dcId, Boolean sourceNat);
 
     /**
      * @param zoneId

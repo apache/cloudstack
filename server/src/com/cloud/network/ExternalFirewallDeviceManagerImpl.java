@@ -384,7 +384,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
         IPAddressVO sourceNatIp = null;
         if (!sharedSourceNat) {
             // Get the source NAT IP address for this account          
-            List<IPAddressVO> sourceNatIps = _networkMgr.listPublicIpsAssignedToAccount(network.getAccountId(), 
+            List<? extends IpAddress> sourceNatIps = _networkMgr.listPublicIpsAssignedToAccount(network.getAccountId(), 
                     zoneId, true);
 
             if (sourceNatIps.size() != 1) {
@@ -393,7 +393,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
                 s_logger.error(errorMsg);
                 return true;
             } else {
-                sourceNatIp = sourceNatIps.get(0);
+                sourceNatIp = _ipAddressDao.findById(sourceNatIps.get(0).getId());
             }
         }
 

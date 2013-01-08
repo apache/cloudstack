@@ -98,8 +98,8 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.rules.RulesManager;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
@@ -239,9 +239,9 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
     private ServiceOfferingVO _serviceOffering;
 
-    NetworkOfferingVO _publicNetworkOffering;
-    NetworkOfferingVO _managementNetworkOffering;
-    NetworkOfferingVO _linkLocalNetworkOffering;
+    NetworkOffering _publicNetworkOffering;
+    NetworkOffering _managementNetworkOffering;
+    NetworkOffering _linkLocalNetworkOffering;
 
     @Inject
     private VirtualMachineManager _itMgr;
@@ -769,7 +769,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
         NetworkVO defaultNetwork = defaultNetworks.get(0);
 
-        List<NetworkOfferingVO> offerings = _networkModel.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemControlNetwork, NetworkOfferingVO.SystemManagementNetwork);
+        List<? extends NetworkOffering> offerings = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemControlNetwork, NetworkOffering.SystemManagementNetwork);
         List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(offerings.size() + 1);
         NicProfile defaultNic = new NicProfile();
         defaultNic.setDefaultNic(true);
@@ -777,7 +777,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
         networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetwork(systemAcct, _networkOfferingDao.findById(defaultNetwork.getNetworkOfferingId()), plan, null, null, false).get(0), defaultNic));
 
-        for (NetworkOfferingVO offering : offerings) {
+        for (NetworkOffering offering : offerings) {
             networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetwork(systemAcct, offering, plan, null, null, false).get(0), null));
         }
 

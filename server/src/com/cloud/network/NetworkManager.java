@@ -87,10 +87,10 @@ public interface NetworkManager  {
      */
     public boolean disassociatePublicIpAddress(long id, long userId, Account caller);
 
-    List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, DeploymentPlan plan, String name, String displayText, boolean isDefault)
+    List<NetworkVO> setupNetwork(Account owner, NetworkOffering offering, DeploymentPlan plan, String name, String displayText, boolean isDefault)
             throws ConcurrentOperationException;
 
-    List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan plan, String name, String displayText, boolean errorIfAlreadySetup, Long domainId,
+    List<NetworkVO> setupNetwork(Account owner, NetworkOffering offering, Network predefined, DeploymentPlan plan, String name, String displayText, boolean errorIfAlreadySetup, Long domainId,
             ACLType aclType, Boolean subdomainAccess, Long vpcId) throws ConcurrentOperationException;
 
     void allocate(VirtualMachineProfile<? extends VMInstanceVO> vm, List<Pair<NetworkVO, NicProfile>> networks) throws InsufficientCapacityException, ConcurrentOperationException;
@@ -143,7 +143,7 @@ public interface NetworkManager  {
 
     boolean applyIpAssociations(Network network, boolean continueOnError) throws ResourceUnavailableException;
     
-    boolean applyIpAssociations(Network network, boolean rulesRevoked, boolean continueOnError, List<PublicIp> publicIps) throws ResourceUnavailableException;
+    boolean applyIpAssociations(Network network, boolean rulesRevoked, boolean continueOnError, List<? extends PublicIpAddress> publicIps) throws ResourceUnavailableException;
 
     boolean startNetwork(long networkId, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 

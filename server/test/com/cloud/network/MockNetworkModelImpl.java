@@ -479,30 +479,10 @@ public class MockNetworkModelImpl implements NetworkModel, Manager {
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.network.NetworkModel#getIpToServices(java.util.List, boolean, boolean)
-     */
-    @Override
-    public Map<PublicIp, Set<Service>> getIpToServices(List<PublicIp> publicIps, boolean rulesRevoked,
-            boolean includingFirewall) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    /* (non-Javadoc)
-     * @see com.cloud.network.NetworkModel#getProviderToIpList(com.cloud.network.Network, java.util.Map)
-     */
-    @Override
-    public Map<Provider, ArrayList<PublicIp>> getProviderToIpList(Network network,
-            Map<PublicIp, Set<Service>> ipToServices) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    /* (non-Javadoc)
      * @see com.cloud.network.NetworkModel#checkIpForService(com.cloud.network.IPAddressVO, com.cloud.network.Network.Service, java.lang.Long)
      */
     @Override
-    public boolean checkIpForService(IPAddressVO ip, Service service, Long networkId) {
+    public boolean checkIpForService(IpAddress ip, Service service, Long networkId) {
         // TODO Auto-generated method stub
         return false;
     }
@@ -791,6 +771,26 @@ public class MockNetworkModelImpl implements NetworkModel, Manager {
      */
     @Override
     public String getDomainNetworkDomain(long domainId, long zoneId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkModel#getIpToServices(java.util.List, boolean, boolean)
+     */
+    @Override
+    public Map<PublicIpAddress, Set<Service>> getIpToServices(List<? extends PublicIpAddress> publicIps, boolean rulesRevoked,
+            boolean includingFirewall) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkModel#getProviderToIpList(com.cloud.network.Network, java.util.Map)
+     */
+    @Override
+    public Map<Provider, ArrayList<PublicIpAddress>> getProviderToIpList(Network network,
+            Map<PublicIpAddress, Set<Service>> ipToServices) {
         // TODO Auto-generated method stub
         return null;
     }

@@ -30,7 +30,6 @@ import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager.OnError;
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.GetDomRVersionCmd;
 import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.PlugNicAnswer;
 import com.cloud.agent.api.PlugNicCommand;
@@ -105,7 +104,7 @@ import com.cloud.network.vpc.dao.StaticRouteDao;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.network.vpn.Site2SiteVpnManager;
-import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.utils.Pair;
@@ -1235,7 +1234,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 publicNic.setBroadcastType(BroadcastDomainType.Vlan);
                 publicNic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(publicIp.getVlanTag()));
                 publicNic.setIsolationUri(IsolationType.Vlan.toUri(publicIp.getVlanTag()));
-                NetworkOfferingVO publicOffering = _networkModel.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemPublicNetwork).get(0);
+                NetworkOffering publicOffering = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemPublicNetwork).get(0);
                 List<NetworkVO> publicNetworks = _networkMgr.setupNetwork(_systemAcct, publicOffering, plan, null, null, false);
                 networks.add(new Pair<NetworkVO, NicProfile>(publicNetworks.get(0), publicNic));
                 publicVlans.add(publicIp.getVlanTag());

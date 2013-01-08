@@ -2048,12 +2048,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         // If no network is specified, find system security group enabled network
         if (networkIdList == null || networkIdList.isEmpty()) {
-            NetworkVO networkWithSecurityGroup = _networkModel.getNetworkWithSecurityGroupEnabled(zone.getId());
+            Network networkWithSecurityGroup = _networkModel.getNetworkWithSecurityGroupEnabled(zone.getId());
             if (networkWithSecurityGroup == null) {
                 throw new InvalidParameterValueException("No network with security enabled is found in zone id=" + zone.getId());
             }
 
-            networkList.add(networkWithSecurityGroup);
+            networkList.add(_networkDao.findById(networkWithSecurityGroup.getId()));
             isSecurityGroupEnabledNetworkUsed = true;
 
         } else if (securityGroupIdList != null && !securityGroupIdList.isEmpty()) {
@@ -2165,7 +2165,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
             if (requiredOfferings.get(0).getState() == NetworkOffering.State.Enabled) {
                 // get Virtual networks
-                List<NetworkVO> virtualNetworks = _networkModel.listNetworksForAccount(owner.getId(), zone.getId(), Network.GuestType.Isolated);
+                List<? extends Network> virtualNetworks = _networkModel.listNetworksForAccount(owner.getId(), zone.getId(), Network.GuestType.Isolated);
                 if (virtualNetworks.isEmpty()) {
                     long physicalNetworkId = _networkModel.findPhysicalNetworkId(zone.getId(), requiredOfferings.get(0).getTags(), requiredOfferings.get(0).getTrafficType());
                     // Validate physical network
@@ -3603,7 +3603,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                     }
                     if (requiredOfferings.get(0).getState() == NetworkOffering.State.Enabled) {
                         // get Virtual networks
-                        List<NetworkVO> virtualNetworks = _networkModel.listNetworksForAccount(newAccount.getId(), zone.getId(), Network.GuestType.Isolated);
+                        List<? extends Network> virtualNetworks = _networkModel.listNetworksForAccount(newAccount.getId(), zone.getId(), Network.GuestType.Isolated);
                         if (virtualNetworks.isEmpty()) {
                             long physicalNetworkId = _networkModel.findPhysicalNetworkId(zone.getId(), requiredOfferings.get(0).getTags(), requiredOfferings.get(0).getTrafficType());
                             // Validate physical network
