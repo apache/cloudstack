@@ -35,7 +35,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Component
+
 @Local(value={SyncQueueManager.class})
 public class SyncQueueManagerImpl implements SyncQueueManager {
     public static final Logger s_logger = Logger.getLogger(SyncQueueManagerImpl.class.getName());
@@ -47,7 +47,7 @@ public class SyncQueueManagerImpl implements SyncQueueManager {
 
     @Override
     @DB
-    public SyncQueueVO queue(String syncObjType, long syncObjId, String itemType, long itemId) {
+    public SyncQueueVO queue(String syncObjType, long syncObjId, String itemType, long itemId, long queueSizeLimit) {
         Transaction txn = Transaction.currentTxn();
     	try {
     		txn.start();
@@ -57,6 +57,8 @@ public class SyncQueueManagerImpl implements SyncQueueManager {
     		if(queueVO == null)
     			throw new CloudRuntimeException("Unable to queue item into DB, DB is full?");
 
+    		queueVO.setQueueSizeLimit(queueSizeLimit);
+    		_syncQueueDao.update(queueVO.getId(), queueVO);
     		
 			Date dt = DateUtil.currentGMTTime();
     		SyncQueueItemVO item = new SyncQueueItemVO();
@@ -90,7 +92,7 @@ public class SyncQueueManagerImpl implements SyncQueueManager {
     			return null;
     		}
     		
-    		if(queueVO.getLastProcessTime() == null) {
+    		if(queueReadyToProcess(queueVO)) {
     			SyncQueueItemVO itemVO = _syncQueueItemDao.getNextQueueItem(queueVO.getId());
     			if(itemVO != null) {
 	    			Long processNumber = queueVO.getLastProcessNumber();
@@ -99,14 +101,14 @@ public class SyncQueueManagerImpl implements SyncQueueManager {
 	    			else
 	    				processNumber = processNumber + 1;
 	    			Date dt = DateUtil.currentGMTTime();
-	    			queueVO.setLastProcessMsid(msid);
 	    			queueVO.setLastProcessNumber(processNumber);
-	    			queueVO.setLastProcessTime(dt);
 	    			queueVO.setLastUpdated(dt);
+	    			queueVO.setQueueSize(queueVO.getQueueSize() + 1);
 	    			_syncQueueDao.update(queueVO.getId(), queueVO);
 	    			
 	    			itemVO.setLastProcessMsid(msid);
 	    			itemVO.setLastProcessNumber(processNumber);
+	    			itemVO.setLastProcessTime(dt);
 	    			_syncQueueItemDao.update(itemVO.getId(), itemVO);
 	    			
 	        		txt.commit();
@@ -142,7 +144,7 @@ public class SyncQueueManagerImpl implements SyncQueueManager {
     			for(SyncQueueItemVO item : l) {
     				SyncQueueVO queueVO = _syncQueueDao.lockRow(item.getQueueId(), true);
 	    			SyncQueueItemVO itemVO = _syncQueueItemDao.lockRow(item.getId(), true);
-    				if(queueVO.getLastProcessTime() == null && itemVO.getLastProcessNumber() == null) {
+    				if(queueReadyToProcess(queueVO) && itemVO.getLastProcessNumber() == null) {
 		    			Long processNumber = queueVO.getLastProcessNumber();
 		    			if(processNumber == null)
 		    				processNumber = new Long(1);
@@ -150,14 +152,14 @@ public class SyncQueueManagerImpl implements SyncQueueManager {
 		    				processNumber = processNumber + 1;
 		    			
 		    			Date dt = DateUtil.currentGMTTime();
-		    			queueVO.setLastProcessMsid(msid);
 		    			queueVO.setLastProcessNumber(processNumber);
-		    			queueVO.setLastProcessTime(dt);
 		    			queueVO.setLastUpdated(dt);
+	                    queueVO.setQueueSize(queueVO.getQueueSize() + 1);
 		    			_syncQueueDao.update(queueVO.getId(), queueVO);
 		    			
 		    			itemVO.setLastProcessMsid(msid);
 		    			itemVO.setLastProcessNumber(processNumber);
+		    			itemVO.setLastProcessTime(dt);
 		    			_syncQueueItemDao.update(item.getId(), itemVO);
 		    			
 		    			resultList.add(item);
@@ -186,9 +188,14 @@ public class SyncQueueManagerImpl implements SyncQueueManager {
 				
 				_syncQueueItemDao.expunge(itemVO.getId());
 				
-				queueVO.setLastProcessTime(null);
+				//if item is active, reset queue information
+				if (itemVO.getLastProcessMsid() != null) {
 				queueVO.setLastUpdated(DateUtil.currentGMTTime());
+	                //decrement the count
+	                assert (queueVO.getQueueSize() > 0) : "Count reduce happens when it's already <= 0!";
+	                queueVO.setQueueSize(queueVO.getQueueSize() - 1);
 				_syncQueueDao.update(queueVO.getId(), queueVO);
+			}
 			}
     		txt.commit();
     	} catch(Exception e) {
@@ -210,9 +217,9 @@ public class SyncQueueManagerImpl implements SyncQueueManager {
 			
 				itemVO.setLastProcessMsid(null);
 				itemVO.setLastProcessNumber(null);
+				itemVO.setLastProcessTime(null);
 				_syncQueueItemDao.update(queueItemId, itemVO);
 				
-				queueVO.setLastProcessTime(null);
 				queueVO.setLastUpdated(DateUtil.currentGMTTime());
 				_syncQueueDao.update(queueVO.getId(), queueVO);
 			}
@@ -231,11 +238,6 @@ public class SyncQueueManagerImpl implements SyncQueueManager {
     @Override
     public List<SyncQueueItemVO> getBlockedQueueItems(long thresholdMs, boolean exclusive) {
         return _syncQueueItemDao.getBlockedQueueItems(thresholdMs, exclusive);
-    }
-    
-    @Override
-	public void resetQueueProcess(long msid) {
-    	_syncQueueDao.resetQueueProcessing(msid);
     }
     
     @Override
@@ -272,5 +274,16 @@ public class SyncQueueManagerImpl implements SyncQueueManager {
     public String getName() {
     	return _name;
     }
-}
 
+    private boolean queueReadyToProcess(SyncQueueVO queueVO) {
+        return queueVO.getQueueSize() < queueVO.getQueueSizeLimit();
+    }
+    
+    @Override
+    public void purgeAsyncJobQueueItemId(long asyncJobId) {
+        Long itemId = _syncQueueItemDao.getQueueItemIdByContentIdAndType(asyncJobId, SyncQueueItem.AsyncJobContentType);
+        if (itemId != null) {
+            purgeItem(itemId);
+        }
+    }
+}

@@ -30,10 +30,11 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="mshost")
-public class ManagementServerHostVO implements ManagementServerHost{
+public class ManagementServerHostVO implements ManagementServerHost {
 
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)

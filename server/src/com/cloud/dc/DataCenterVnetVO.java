@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.dc;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import java.util.Date;
 
 import javax.persistence.Column;
@@ -29,7 +31,7 @@ import javax.persistence.TemporalType;
 
 @Entity
 @Table(name="op_dc_vnet_alloc")
-public class DataCenterVnetVO {
+public class DataCenterVnetVO implements InternalIdentity {
     
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

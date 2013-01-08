@@ -116,7 +116,7 @@ public class ExternalDhcpElement extends AdapterBase implements NetworkElement, 
     }
 
     @Override
-    public boolean destroy(Network network) throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean destroy(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
         return true;
     }
 

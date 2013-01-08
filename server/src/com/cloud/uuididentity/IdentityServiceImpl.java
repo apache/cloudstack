@@ -22,10 +22,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.springframework.stereotype.Component;
-
-import com.cloud.api.IdentityMapper;
-import com.cloud.api.IdentityService;
+import org.apache.cloudstack.api.IdentityService;
+import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.uuididentity.dao.IdentityDao;
 
@@ -35,10 +33,6 @@ public class IdentityServiceImpl implements Manager, IdentityService {
     private String _name;
 	
 	@Inject	private IdentityDao _identityDao;
-	
-	public Long getIdentityId(IdentityMapper mapper, String identityString) {
-		return _identityDao.getIdentityId(mapper, identityString);
-	}
 	
     public Long getIdentityId(String tableName, String identityString) {
 		return _identityDao.getIdentityId(tableName, identityString);

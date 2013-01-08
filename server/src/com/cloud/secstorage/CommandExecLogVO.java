@@ -28,10 +28,11 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 import com.cloud.utils.DateUtil;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="cmd_exec_log")
-public class CommandExecLogVO {
+public class CommandExecLogVO implements InternalIdentity {
 	
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

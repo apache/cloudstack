@@ -30,7 +30,7 @@ import com.cloud.api.response.F5LoadBalancerResponse;
 import com.cloud.host.Host;
 import com.cloud.network.ExternalLoadBalancerDeviceVO;
 import com.cloud.network.Network;
-import com.cloud.server.api.response.ExternalLoadBalancerResponse;
+import org.apache.cloudstack.api.response.ExternalLoadBalancerResponse;
 import com.cloud.utils.component.PluggableService;
 
 @SuppressWarnings("deprecation")

@@ -32,25 +32,25 @@ import com.cloud.offering.ServiceOffering;
 public class ServiceOffering21VO extends DiskOffering21VO implements ServiceOffering {
     @Column(name="cpu")
 	private int cpu;
-    
+
     @Column(name="speed")
     private int speed;
-    
+
     @Column(name="ram_size")
 	private int ramSize;
-    
+
     @Column(name="nw_rate")
     private Integer rateMbps;
-    
+
     @Column(name="mc_rate")
     private Integer multicastRateMbps;
-    
+
     @Column(name="ha_enabled")
     private boolean offerHA;
-    
+
     @Column(name="host_tag")
-    private String hostTag;    
-    
+    private String hostTag;
+
     protected ServiceOffering21VO() {
         super();
     }
@@ -64,19 +64,19 @@ public class ServiceOffering21VO extends DiskOffering21VO implements ServiceOffe
         this.multicastRateMbps = multicastRateMbps;
         this.offerHA = offerHA;
     }
-    
+
     public ServiceOffering21VO(String name, int cpu, int ramSize, int speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA, String displayText, boolean useLocalStorage, boolean recreatable, String tags, String hostTag) {
     	this(name, cpu, ramSize, speed, rateMbps, multicastRateMbps, offerHA, displayText, useLocalStorage, recreatable, tags);
        	this.hostTag = hostTag;
     }
-    
+
 
 	@Override
 	public boolean getOfferHA() {
 	    return offerHA;
 	}
 
-	@Override	
+	@Override
 	public boolean getLimitCpuUse() {
 	    return false;
 	}
@@ -84,7 +84,7 @@ public class ServiceOffering21VO extends DiskOffering21VO implements ServiceOffe
 	public void setOfferHA(boolean offerHA) {
 		this.offerHA = offerHA;
 	}
-	
+
 	@Override
     @Transient
 	public String[] getTagsArray() {
@@ -92,15 +92,15 @@ public class ServiceOffering21VO extends DiskOffering21VO implements ServiceOffe
 	    if (tags == null || tags.length() == 0) {
 	        return new String[0];
 	    }
-	    
+
 	    return tags.split(",");
 	}
-	
+
 	@Override
 	public int getCpu() {
 	    return cpu;
 	}
-	
+
 	public void setCpu(int cpu) {
 		this.cpu = cpu;
 	}
@@ -112,17 +112,17 @@ public class ServiceOffering21VO extends DiskOffering21VO implements ServiceOffe
 	public void setRamSize(int ramSize) {
 		this.ramSize = ramSize;
 	}
-	
+
 	@Override
 	public int getSpeed() {
 	    return speed;
 	}
-	
+
 	@Override
 	public int getRamSize() {
 	    return ramSize;
 	}
-	
+
 	public void setRateMbps(Integer rateMbps) {
 		this.rateMbps = rateMbps;
 	}
@@ -135,7 +135,7 @@ public class ServiceOffering21VO extends DiskOffering21VO implements ServiceOffe
 	public void setMulticastRateMbps(Integer multicastRateMbps) {
 		this.multicastRateMbps = multicastRateMbps;
 	}
-	
+
 	@Override
     public Integer getMulticastRateMbps() {
 		return multicastRateMbps;
@@ -147,8 +147,8 @@ public class ServiceOffering21VO extends DiskOffering21VO implements ServiceOffe
 
 	public void setHostTag(String hostTag) {
 		this.hostTag = hostTag;
-	}	
-	
+	}
+
 	public String getHostTag() {
 		return hostTag;
 	}
@@ -156,10 +156,18 @@ public class ServiceOffering21VO extends DiskOffering21VO implements ServiceOffe
     @Override
     public boolean getDefaultUse() {
         return false;
-    }	
-    
+    }
+
     @Override
     public String getSystemVmType() {
         return null;
-    }   
+    }
+
+    @Override
+    public String getUuid() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+
 }

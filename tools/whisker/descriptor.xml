@@ -2250,7 +2250,17 @@ The Apache Software Foundation (http://www.apache.org/).
 
 Please read the different LICENSE files present in the lib directory of
 this distribution.
-           </notice>
+   		</notice>
+        <notice id='wss4j.notice'>
+Apache WebServices - WSS4J
+Copyright 2004-2011 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+This product includes software Copyright University of Southampton IT
+Innovation Centre, 2006 (http://www.it-innovation.soton.ac.uk).
+        </notice>
     </notices>
     <organisations>
         <organisation 
@@ -2494,6 +2504,14 @@ Copyright (c) 2009, John Resig
         </with-license>
     </within>
     <within dir='ui/lib'>
+        <with-license id='ApacheLicenseVersion2'>
+            <copyright-notice>
+Copyright (c) 2006 Google Inc.
+            </copyright-notice>
+            <by-organisation id='google.com'>
+                <resource name='excanvas.js' source='http://code.google.com/p/explorercanvas/' />
+            </by-organisation>
+        </with-license>
         <with-license id='MIT'>
             <copyright-notice>
 Copyright (c) 2011, John Resig
@@ -2616,6 +2634,29 @@ Copyright (c) 2004 Clinton Begin
             </by-organisation>
         </with-license>
     </within>
+    <within dir='scripts/storage/secondary'>
+    	<with-license id='ApacheLicenseVersion2'>
+    		<copyright-notice>
+Copyright (c) 2010-2011 OpenStack, LLC.
+			</copyright-notice>
+			<by-organisation id='openstack.org'>
+				<resource name='swift' />
+			</by-organisation>
+		</with-license>
+	</within>
+    <within dir='scripts/vm/hypervisor/xenserver'>
+    	<with-license id='ApacheLicenseVersion2'>
+    		<copyright-notice>
+Copyright (c) 2010-2011 OpenStack, LLC.
+			</copyright-notice>
+			<by-organisation id='openstack.org'>
+				<resource name='swift' />
+			</by-organisation>
+		</with-license>
+	</within>
+
+<!-- Resources below this line are binary dependencies that are only pulled in during the build process.  -->
+
     <within dir='target/jar'>
         <with-license id='MIT'>
             <copyright-notice>
@@ -2771,26 +2812,6 @@ All rights reserved.
             </by-organisation>
         </public-domain>
     </within>
-    <within dir='scripts/storage/secondary'>
-        <with-license id='ApacheLicenseVersion2'>
-            <copyright-notice>
-Copyright (c) 2010-2011 OpenStack, LLC.
-            </copyright-notice>
-            <by-organisation id='openstack.org'>
-                <resource name='swift' />
-            </by-organisation>
-        </with-license>
-    </within>
-    <within dir='scripts/vm/hypervisor/xenserver'>
-        <with-license id='ApacheLicenseVersion2'>
-            <copyright-notice>
-Copyright (c) 2010-2011 OpenStack, LLC.
-            </copyright-notice>
-            <by-organisation id='openstack.org'>
-                <resource name='swift' />
-            </by-organisation>
-        </with-license>
-    </within>
     <within dir='deps/awsapi-lib'>
         <with-license id='ApacheLicenseVersion2'>
             <copyright-notice>
@@ -2824,6 +2845,7 @@ Copyright (c) 2004-2012 The Apache Software Foundation
                 <resource name="axiom-api-1.2.8.jar" source="http://ws.apache.org/axiom/source-repository.html" notice="axiom.notice" />
                 <resource name="axiom-impl-1.2.8.jar" source="http://ws.apache.org/axiom/source-repository.html" notice="axiom.notice" />
                 <resource name="axis2-1.5.1.jar" source="http://axis.apache.org/axis/" notice='axis2.notice' />
+                <resource name="axis2-codegen-1.4.1.jar" source="http://axis.apache.org/axis/" notice='axis2.notice' />
                 <resource name="axis2-adb-1.5.1.jar" source="http://axis.apache.org/axis/" notice='axis2.notice' />
                 <resource name="axis2-ant-plugin-1.5.1.jar" source="http://axis.apache.org/axis/" notice='axis2.notice' />
                 <resource name="axis2-jaxbri-1.5.1.jar" source="http://axis.apache.org/axis/" notice='axis2.notice' />
@@ -2848,6 +2870,7 @@ Copyright (c) 2004-2012 The Apache Software Foundation
                 <resource name="woden-impl-dom-1.0M8.jar" source='http://svn.apache.org/viewvc/webservices/woden/tags/1.0M8_20080423/' notice='woden.notice' />
                 <resource name='xercesImpl.jar' source='http://xerces.apache.org/xerces2-j/source-repository.html' notice='xerces.notice' />
                 <resource name='xml-apis.jar' source='http://repo1.maven.org/maven2/xml-apis/xml-apis/1.3.04/xml-apis-1.3.04-sources.jar' notice='xml-apis.notice' />
+                <resource name='wss4j-1.5.8.jar' source='http://ws.apache.org/wss4j/source-repository.html' notice='wss4j.notice' />
             </by-organisation>
         </with-license>
         <with-license id='ApacheLicenseVersion2'>

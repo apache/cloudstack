@@ -26,6 +26,9 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.command.admin.swift.ListSwiftsCmd;
+import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
+import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -33,10 +36,7 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.DeleteObjectFromSwiftCommand;
 import com.cloud.agent.api.to.SwiftTO;
-import com.cloud.api.commands.AddSwiftCmd;
-import com.cloud.api.commands.DeleteIsoCmd;
-import com.cloud.api.commands.DeleteTemplateCmd;
-import com.cloud.api.commands.ListSwiftsCmd;
+import org.apache.cloudstack.api.command.admin.swift.AddSwiftCmd;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;

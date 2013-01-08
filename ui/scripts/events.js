@@ -175,20 +175,12 @@
             sent: { label: 'label.date', converter: cloudStack.converters.toLocalDate }
           },
           dataProvider: function(args) {
-					  var array1 = [];  
-						if(args.filterBy != null) {          
-							if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
-								switch(args.filterBy.search.by) {
-								case "name":
-									if(args.filterBy.search.value.length > 0)
-										array1.push("&keyword=" + args.filterBy.search.value);
-									break;
-								}
-							}
-						}
+					  var data = {};
+						listViewDataProvider(args, data);		
+					
             $.ajax({
-              url: createURL("listAlerts&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
-              dataType: "json",
+              url: createURL('listAlerts'),
+              data: data,
               async: true,
               success: function(json) {
                 var items = json.listalertsresponse.alert;

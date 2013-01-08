@@ -45,6 +45,9 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.command.admin.storage.*;
+import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.UploadVolumeCmd;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -73,13 +76,7 @@ import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
-import com.cloud.api.commands.CancelPrimaryStorageMaintenanceCmd;
-import com.cloud.api.commands.CreateStoragePoolCmd;
-import com.cloud.api.commands.CreateVolumeCmd;
-import com.cloud.api.commands.DeletePoolCmd;
-import com.cloud.api.commands.ListVolumesCmd;
-import com.cloud.api.commands.UpdateStoragePoolCmd;
-import com.cloud.api.commands.UploadVolumeCmd;
+import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityManager;
@@ -131,11 +128,9 @@ import com.cloud.network.NetworkManager;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Grouping;
 import com.cloud.org.Grouping.AllocationState;
-import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.server.ManagementServer;
-import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.server.StatsCollector;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -153,15 +148,16 @@ import com.cloud.storage.dao.StoragePoolWorkDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
+import com.cloud.storage.dao.VMTemplateS3Dao;
 import com.cloud.storage.dao.VMTemplateSwiftDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeHostDao;
 import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.storage.listener.StoragePoolMonitor;
+import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.storage.snapshot.SnapshotScheduler;
-import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
@@ -175,14 +171,12 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.Ternary;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.JoinBuilder;
@@ -263,6 +257,10 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
     protected VMTemplatePoolDao _vmTemplatePoolDao = null;
     @Inject
     protected VMTemplateSwiftDao _vmTemplateSwiftDao = null;
+    @Inject
+    protected VMTemplateS3Dao _vmTemplateS3Dao;
+    @Inject
+    protected S3Manager _s3Mgr;
     @Inject
     protected VMTemplateDao _vmTemplateDao = null;
     @Inject
@@ -434,8 +432,8 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
     }
 
     @Override
-    public boolean isLocalStorageActiveOnHost(Host host) {
-        List<StoragePoolHostVO> storagePoolHostRefs = _storagePoolHostDao.listByHostId(host.getId());
+    public boolean isLocalStorageActiveOnHost(Long hostId) {
+        List<StoragePoolHostVO> storagePoolHostRefs = _storagePoolHostDao.listByHostId(hostId);
         for (StoragePoolHostVO storagePoolHostRef : storagePoolHostRefs) {
             StoragePoolVO storagePool = _storagePoolDao.findById(storagePoolHostRef.getPoolId());
             if (storagePool.getPoolType() == StoragePoolType.LVM || storagePool.getPoolType() == StoragePoolType.EXT) {
@@ -664,7 +662,6 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         String vdiUUID = null;
         Long snapshotId = snapshot.getId();
         Long volumeId = snapshot.getVolumeId();
-        String primaryStoragePoolNameLabel = pool.getUuid(); // pool's uuid is actually the namelabel.
         Long dcId = snapshot.getDataCenterId();
         String secondaryStoragePoolUrl = _snapMgr.getSecondaryStorageURL(snapshot);
         long accountId = snapshot.getAccountId();
@@ -708,8 +705,10 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         try {
             if (snapshot.getSwiftId() != null && snapshot.getSwiftId() != 0) {
                 _snapshotMgr.downloadSnapshotsFromSwift(snapshot);
+            } else if (snapshot.getS3Id() != null && snapshot.getS3Id() != 0) {
+                _snapshotMgr.downloadSnapshotsFromS3(snapshot);
             }
-            CreateVolumeFromSnapshotCommand createVolumeFromSnapshotCommand = new CreateVolumeFromSnapshotCommand(primaryStoragePoolNameLabel, secondaryStoragePoolUrl, dcId, accountId, volumeId,
+            CreateVolumeFromSnapshotCommand createVolumeFromSnapshotCommand = new CreateVolumeFromSnapshotCommand(pool, secondaryStoragePoolUrl, dcId, accountId, volumeId,
                     backedUpSnapshotUuid, snapshot.getName(), _createVolumeFromSnapshotWait);
             CreateVolumeFromSnapshotAnswer answer;
             if (!_snapshotDao.lockInLockTable(snapshotId.toString(), 10)) {
@@ -836,11 +835,23 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
 
             for (int i = 0; i < 2; i++) {
                 if (volume.getVolumeType() == Type.ROOT && Storage.ImageFormat.ISO != template.getFormat()) {
+                    if (pool.getPoolType() == StoragePoolType.CLVM) {
+                        //prepareISOForCreate does what we need, which is to tell us where the template is
+                        VMTemplateHostVO tmpltHostOn = _tmpltMgr.prepareISOForCreate(template, pool);
+                        if (tmpltHostOn == null) {
+                            continue;
+                        }
+                        HostVO secondaryStorageHost = _hostDao.findById(tmpltHostOn.getHostId());
+                        String tmpltHostUrl = secondaryStorageHost.getStorageUrl();
+                        String fullTmpltUrl = tmpltHostUrl + "/" + tmpltHostOn.getInstallPath();
+                        cmd = new CreateCommand(dskCh, fullTmpltUrl, new StorageFilerTO(pool));
+                    } else {
                     tmpltStoredOn = _tmpltMgr.prepareTemplateForCreate(template, pool);
                     if (tmpltStoredOn == null) {
                         continue;
                     }
                     cmd = new CreateCommand(dskCh, tmpltStoredOn.getLocalDownloadPath(), new StorageFilerTO(pool));
+                    }
                 } else {
                     if (volume.getVolumeType() == Type.ROOT && Storage.ImageFormat.ISO == template.getFormat()) {
                         VMTemplateHostVO tmpltHostOn = _tmpltMgr.prepareISOForCreate(template, pool);
@@ -1270,7 +1281,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         }
         URI uri = null;
         try {
-            uri = new URI(cmd.getUrl());
+            uri = new URI(UriUtils.encodeURIComponent(cmd.getUrl()));
             if (uri.getScheme() == null) {
                 throw new InvalidParameterValueException("scheme is null " + cmd.getUrl() + ", add nfs:// as a prefix");
             } else if (uri.getScheme().equalsIgnoreCase("nfs")) {
@@ -2864,15 +2875,10 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         }
     }
 
-    private boolean isAdmin(short accountType) {
-        return ((accountType == Account.ACCOUNT_TYPE_ADMIN) || (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) || (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
-    }
-
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_DELETE, eventDescription = "deleting volume")
-    public boolean deleteVolume(long volumeId) throws ConcurrentOperationException {
-        Account caller = UserContext.current().getCaller();
+    public boolean deleteVolume(long volumeId, Account caller) throws ConcurrentOperationException {
 
         // Check that the volume ID is valid
         VolumeVO volume = _volsDao.findById(volumeId);
@@ -2976,6 +2982,14 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         if (tsvs != null && tsvs.size() > 0) {
             size = tsvs.get(0).getSize();
         }
+
+        if (size == null && _s3Mgr.isS3Enabled()) {
+            VMTemplateS3VO vmTemplateS3VO = _vmTemplateS3Dao.findOneByTemplateId(template.getId());
+            if (vmTemplateS3VO != null) {
+                size = vmTemplateS3VO.getSize();
+            }
+        }
+
         if (size == null) {
             List<VMTemplateHostVO> sss = _vmTemplateHostDao.search(sc, null);
             if (sss == null || sss.size() == 0) {
@@ -3382,12 +3396,6 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
     @DB
     protected VolumeVO switchVolume(VolumeVO existingVolume, VirtualMachineProfile<? extends VirtualMachine> vm) throws StorageUnavailableException {
         Transaction txn = Transaction.currentTxn();
-        txn.start();
-        try {
-            stateTransitTo(existingVolume, Volume.Event.DestroyRequested);
-        } catch (NoTransitionException e) {
-            s_logger.debug("Unable to destroy existing volume: " + e.toString());
-        }
 
         Long templateIdToUse = null;
         Long volTemplateId = existingVolume.getTemplateId();
@@ -3398,7 +3406,19 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
             }
             templateIdToUse = vmTemplateId;
         }
+
+        txn.start();
         VolumeVO newVolume = allocateDuplicateVolume(existingVolume, templateIdToUse);
+        // In case of Vmware if vm reference is not removed then during root disk cleanup
+        // the vm also gets deleted, so remove the reference
+        if (vm.getHypervisorType() == HypervisorType.VMware) {
+            _volsDao.detachVolume(existingVolume.getId());
+        }
+        try {
+            stateTransitTo(existingVolume, Volume.Event.DestroyRequested);
+        } catch (NoTransitionException e) {
+            s_logger.debug("Unable to destroy existing volume: " + e.toString());
+        }
         txn.commit();
         return newVolume;
 
@@ -3439,12 +3459,25 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
 
             for (int i = 0; i < 2; i++) {
                 if (template != null && template.getFormat() != Storage.ImageFormat.ISO) {
+                    if (pool.getPoolType() == StoragePoolType.CLVM) {
+                        //prepareISOForCreate does what we need, which is to tell us where the template is
+                        VMTemplateHostVO tmpltHostOn = _tmpltMgr.prepareISOForCreate(template, pool);
+                        if (tmpltHostOn == null) {
+                            s_logger.debug("cannot find template " + template.getId() + " " + template.getName());
+                            return null;
+                        }
+                        HostVO secondaryStorageHost = _hostDao.findById(tmpltHostOn.getHostId());
+                        String tmpltHostUrl = secondaryStorageHost.getStorageUrl();
+                        String fullTmpltUrl = tmpltHostUrl + "/" + tmpltHostOn.getInstallPath();
+                        cmd = new CreateCommand(diskProfile, fullTmpltUrl, new StorageFilerTO(pool));
+                    } else {
                     tmpltStoredOn = _tmpltMgr.prepareTemplateForCreate(template, pool);
                     if (tmpltStoredOn == null) {
                         s_logger.debug("Cannot use this pool " + pool + " because we can't propagate template " + template);
                         return null;
                     }
                     cmd = new CreateCommand(diskProfile, tmpltStoredOn.getLocalDownloadPath(), new StorageFilerTO(pool));
+                    }
                 } else {
                     if (template != null && Storage.ImageFormat.ISO == template.getFormat()) {
                         VMTemplateHostVO tmpltHostOn = _tmpltMgr.prepareISOForCreate(template, pool);
@@ -3824,122 +3857,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         return secHost;
     }
 
-    @Override
-    public List<VolumeVO> searchForVolumes(ListVolumesCmd cmd) {
-        Account caller = UserContext.current().getCaller();
-        List<Long> permittedAccounts = new ArrayList<Long>();
 
-        Long id = cmd.getId();
-        Long vmInstanceId = cmd.getVirtualMachineId();
-        String name = cmd.getVolumeName();
-        String keyword = cmd.getKeyword();
-        String type = cmd.getType();
-        Map<String, String> tags = cmd.getTags();
-
-        Long zoneId = cmd.getZoneId();
-        Long podId = null;
-        // Object host = null; TODO
-        if (_accountMgr.isAdmin(caller.getType())) {
-            podId = cmd.getPodId();
-            // host = cmd.getHostId(); TODO
-        }
-
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
-        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
-        Long domainId = domainIdRecursiveListProject.first();
-        Boolean isRecursive = domainIdRecursiveListProject.second();
-        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
-        Filter searchFilter = new Filter(VolumeVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
-
-        // hack for now, this should be done better but due to needing a join I opted to
-        // do this quickly and worry about making it pretty later
-        SearchBuilder<VolumeVO> sb = _volumeDao.createSearchBuilder();
-        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
-
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("volumeType", sb.entity().getVolumeType(), SearchCriteria.Op.LIKE);
-        sb.and("instanceId", sb.entity().getInstanceId(), SearchCriteria.Op.EQ);
-        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-        sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
-        // Only return volumes that are not destroyed
-        sb.and("state", sb.entity().getState(), SearchCriteria.Op.NEQ);
-
-        SearchBuilder<DiskOfferingVO> diskOfferingSearch = _diskOfferingDao.createSearchBuilder();
-        diskOfferingSearch.and("systemUse", diskOfferingSearch.entity().getSystemUse(), SearchCriteria.Op.NEQ);
-        sb.join("diskOfferingSearch", diskOfferingSearch, sb.entity().getDiskOfferingId(), diskOfferingSearch.entity().getId(), JoinBuilder.JoinType.LEFTOUTER);
-
-        // display UserVM volumes only
-        SearchBuilder<VMInstanceVO> vmSearch = _vmInstanceDao.createSearchBuilder();
-        vmSearch.and("type", vmSearch.entity().getType(), SearchCriteria.Op.NIN);
-        vmSearch.or("nulltype", vmSearch.entity().getType(), SearchCriteria.Op.NULL);
-        sb.join("vmSearch", vmSearch, sb.entity().getInstanceId(), vmSearch.entity().getId(), JoinBuilder.JoinType.LEFTOUTER);
-        
-        if (tags != null && !tags.isEmpty()) {
-            SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
-            for (int count=0; count < tags.size(); count++) {
-                tagSearch.or().op("key" + String.valueOf(count), tagSearch.entity().getKey(), SearchCriteria.Op.EQ);
-                tagSearch.and("value" + String.valueOf(count), tagSearch.entity().getValue(), SearchCriteria.Op.EQ);
-                tagSearch.cp();
-            }
-            tagSearch.and("resourceType", tagSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
-            sb.groupBy(sb.entity().getId());
-            sb.join("tagSearch", tagSearch, sb.entity().getId(), tagSearch.entity().getResourceId(), JoinBuilder.JoinType.INNER);
-        }
-
-        // now set the SC criteria...
-        SearchCriteria<VolumeVO> sc = sb.create();
-        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
-
-        if (keyword != null) {
-            SearchCriteria<VolumeVO> ssc = _volumeDao.createSearchCriteria();
-            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("volumeType", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-
-            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
-        }
-
-        if (name != null) {
-            sc.setParameters("name", "%" + name + "%");
-        }
-
-        sc.setJoinParameters("diskOfferingSearch", "systemUse", 1);
-        
-        if (tags != null && !tags.isEmpty()) {
-            int count = 0;
-            sc.setJoinParameters("tagSearch", "resourceType", TaggedResourceType.Volume.toString());
-            for (String key : tags.keySet()) {
-                sc.setJoinParameters("tagSearch", "key" + String.valueOf(count), key);
-                sc.setJoinParameters("tagSearch", "value" + String.valueOf(count), tags.get(key));
-                count++;
-            }
-        }
-
-        if (id != null) {
-            sc.setParameters("id", id);
-        }
-
-        if (type != null) {
-            sc.setParameters("volumeType", "%" + type + "%");
-        }
-        if (vmInstanceId != null) {
-            sc.setParameters("instanceId", vmInstanceId);
-        }
-        if (zoneId != null) {
-            sc.setParameters("dataCenterId", zoneId);
-        }
-        if (podId != null) {
-            sc.setParameters("podId", podId);
-        }
-
-        // Don't return DomR and ConsoleProxy volumes
-        sc.setJoinParameters("vmSearch", "type", VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm, VirtualMachine.Type.DomainRouter);
-
-        // Only return volumes that are not destroyed
-        sc.setParameters("state", Volume.State.Destroy);
-
-        return _volumeDao.search(sc, searchFilter);
-    }
 
     @Override
     public String getSupportedImageFormatForCluster(Long clusterId) {

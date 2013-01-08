@@ -24,6 +24,7 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
@@ -80,10 +81,10 @@ public class PhysicalNetworkTrafficTypeDaoImpl extends GenericDaoBase<PhysicalNe
     }
 
     @Override
-    public List<PhysicalNetworkTrafficTypeVO> listBy(long physicalNetworkId) {
+    public Pair<List<PhysicalNetworkTrafficTypeVO>, Integer> listAndCountBy(long physicalNetworkId) {
         SearchCriteria<PhysicalNetworkTrafficTypeVO> sc = physicalNetworkSearch.create();
         sc.setParameters("physicalNetworkId", physicalNetworkId);
-        return search(sc, null);
+        return searchAndCount(sc, null);
     }
 
     @Override

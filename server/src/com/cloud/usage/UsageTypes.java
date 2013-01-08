@@ -19,7 +19,7 @@ package com.cloud.usage;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.cloud.server.api.response.UsageTypeResponse;
+import org.apache.cloudstack.api.response.UsageTypeResponse;
 
 public class UsageTypes {
     public static final int RUNNING_VM = 1;

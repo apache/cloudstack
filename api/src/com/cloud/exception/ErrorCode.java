@@ -23,30 +23,30 @@ import java.util.HashSet;
 public class ErrorCode {
     String code;
     private static HashSet<ErrorCode> s_codes = new HashSet<ErrorCode>();
-    
+
     public ErrorCode(String code) {
         this.code = code;
         assert !s_codes.contains(this) : "There is already an error code registered for this code: " + code;
         s_codes.add(this);
     }
-    
+
     public String getCode() {
         return code;
     }
-    
+
     @Override
     public int hashCode() {
         return code.hashCode();
     }
-    
+
     @Override
     public boolean equals(Object that) {
         if (!(that instanceof ErrorCode)) {
             return false;
         }
-        
+
         return this.code.equals(((ErrorCode)that).code);
     }
-    
+
     public final static ErrorCode UnableToReachResource = new ErrorCode("resource.unavailable");
 }

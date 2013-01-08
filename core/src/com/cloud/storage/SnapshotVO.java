@@ -28,14 +28,15 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.api.Identity;
+import org.apache.cloudstack.api.Identity;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.db.GenericDao;
 import com.google.gson.annotations.Expose;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="snapshots")
-public class SnapshotVO implements Snapshot, Identity {
+public class SnapshotVO implements Snapshot {
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -90,6 +91,9 @@ public class SnapshotVO implements Snapshot, Identity {
 
     @Column(name="swift_id")
     Long swiftId;
+
+    @Column(name="s3_id")
+    Long s3Id;
 
     @Column(name="sechost_id")
     Long secHostId;
@@ -291,4 +295,13 @@ public class SnapshotVO implements Snapshot, Identity {
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
+
+    public Long getS3Id() {
+        return s3Id;
+    }
+
+    public void setS3Id(Long s3Id) {
+        this.s3Id = s3Id;
+    }
+
 }

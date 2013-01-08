@@ -569,13 +569,18 @@
     // Project listing data provider
     dataProvider: function(args) {
       var user = args.context.users[0];
+      var data = {
+        accountId: user.userid,
+        listAll: true
+      };
+
+      if (args.projectName) {
+        data.keyword = args.projectName;
+      }
 
       $.ajax({
         url: createURL('listProjects', { ignoreProject: true }),
-        data: {
-          accountId: user.userid,
-          listAll: true
-        },
+        data: data,
         dataType: 'json',
         async: true,
         success: function(data) {
@@ -623,31 +628,9 @@
           },
 
 					advSearchFields: {
-					  name: { label: 'Name' },
-						zoneid: { 
-						  label: 'Zone',							
-              select: function(args) {							  					
-								$.ajax({
-									url: createURL('listZones'),
-									data: {
-									  listAll: true
-									},
-									success: function(json) {									  
-										var zones = json.listzonesresponse.zone;
-
-										args.response.success({
-											data: $.map(zones, function(zone) {
-												return {
-													id: zone.id,
-													description: zone.name
-												};
-											})
-										});
-									}
-								});
-							}						
-						},	
-            
+					  name: { label: 'label.name' },						
+            displaytext: { label: 'label.display.text' },
+						
 						domainid: {					
 							label: 'Domain',					
 							select: function(args) {
@@ -694,9 +677,7 @@
 								else
 									return true;
 							}			
-						},						
-						tagKey: { label: 'Tag Key' },
-						tagValue: { label: 'Tag Value' }						
+						}			
 					},
 					
           dataProvider: function(args) {
@@ -1045,8 +1026,8 @@
               createForm: {
                 desc: 'message.enter.token',
                 fields: {
-                  projectid: { label: 'label.project.id', validation: { required: true }},
-                  token: { label: 'label.token', validation: { required: true }}
+                  projectid: { label: 'label.project.id', validation: { required: true, docID: 'helpEnterTokenProjectID' }},
+                  token: { label: 'label.token', docID: 'helpEnterTokenToken', validation: { required: true }}
                 }
               },
               action: function(args) {

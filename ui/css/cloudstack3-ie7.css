@@ -32,12 +32,13 @@ div.toolbar div.text-search div.search-bar input {
   float: left;
   border: none;
   margin-top: -1px;
-  margin-right:0px;
-  margin-bottom:0px;
-  margin-left:-12px;
+  margin-right: 0px;
+  margin-bottom: 0px;
+  margin-left: -12px;
   width: 97%;
   height: 67%;
 }
+
 div.panel div.list-view div.fixed-header {
   top: expression(this.offsetParent.scrollTop + 30);
 }
@@ -162,3 +163,47 @@ table th {
   top: 5px;
 }
 
+.quick-view-tooltip div.title > span.title {
+}
+
+.quick-view-tooltip div.title .icon {
+  top: -15px;
+}
+
+.quick-view-tooltip table {
+}
+
+.quick-view-tooltip .main-groups {
+  float: left;
+  left: 0px;
+  margin-top: 7px;
+}
+
+.quick-view-tooltip .actions {
+  width: 426px !important;
+  float: left;
+}
+
+.quick-view-tooltip .action {
+  float: left !important;
+  width: 54px !important;
+  margin-left: 7px !important;
+}
+
+.quick-view-tooltip .action .label {
+  float: left;
+  max-width: 20px;
+}
+
+.quick-view-tooltip .action .icon {
+  float: left;
+  height: 7px;
+  left: 0px;
+}
+
+.list-view td.quick-view {
+}
+
+.quick-view-tooltip .detail-view .detail-group.actions .action.text {
+  filter:alpha(opacity=100);
+}

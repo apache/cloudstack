@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.netapp;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -25,7 +27,7 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name="netapp_lun")
-public class LunVO {
+public class LunVO implements InternalIdentity {
 		
 	@Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -85,7 +87,7 @@ public class LunVO {
 		this.targetIqn = targetIqn;
 	}
 
-	public Long getId() {
+	public long getId() {
 		return id;
 	}
 

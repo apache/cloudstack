@@ -29,6 +29,7 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="op_host_capacity")
@@ -102,7 +103,7 @@ public class CapacityVO implements Capacity {
     public long getId() {
         return id;
     }
-    
+
     @Override
     public Long getHostOrPoolId() {
         return hostOrPoolId;
@@ -194,5 +195,10 @@ public class CapacityVO implements Capacity {
 
     public void setUsedPercentage(float usedPercentage) {
         this.usedPercentage = usedPercentage;
+    }
+
+    @Override
+    public String getUuid() {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 }

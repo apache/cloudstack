@@ -19,17 +19,18 @@ package com.cloud.vm;
 import java.util.Date;
 import java.util.Map;
 
-import com.cloud.acl.ControlledEntity;
-import com.cloud.api.Identity;
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.Identity;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.fsm.StateObject;
+import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * VirtualMachine describes the properties held by a virtual machine
  * 
  */
-public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, StateObject<VirtualMachine.State> {
+public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, InternalIdentity, StateObject<VirtualMachine.State> {
 
     public enum State {
         Starting(true, "VM is being started.  At this state, you should find host id filled which means it's being started on that host."),
@@ -205,11 +206,6 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, S
      *         guarantees uniqueness for things related to the VM.
      */
     public String getInstanceName();
-
-    /**
-     * @return the id of this virtual machine. null means the id has not been set.
-     */
-    public long getId();
 
     /**
      * @return the host name of the virtual machine. If the user did not

@@ -1,18 +1,19 @@
-/* Copyright (c) Citrix Systems, Inc.
+/*
+ * Copyright (c) Citrix Systems, Inc.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  *   1) Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
- * 
+ *
  *   2) Redistributions in binary form must reproduce the above
  *      copyright notice, this list of conditions and the following
  *      disclaimer in the documentation and/or other materials
  *      provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -26,6 +27,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 
 package com.xensource.xenapi;
 
@@ -44,14 +46,14 @@ import java.util.Set;
 import org.apache.xmlrpc.XmlRpcException;
 
 /**
- * 
+ *
  *
  * @author Citrix Systems, Inc.
  */
 public class Bond extends XenAPIObject {
 
     /**
-     * The XenAPI reference to this object.
+     * The XenAPI reference (OpaqueRef) to this object.
      */
     protected final String ref;
 
@@ -62,6 +64,9 @@ public class Bond extends XenAPIObject {
        this.ref = ref;
     }
 
+    /**
+     * @return The XenAPI reference (OpaqueRef) to this object.
+     */
     public String toWireString() {
        return this.ref;
     }
@@ -99,6 +104,10 @@ public class Bond extends XenAPIObject {
             print.printf("%1$20s: %2$s\n", "master", this.master);
             print.printf("%1$20s: %2$s\n", "slaves", this.slaves);
             print.printf("%1$20s: %2$s\n", "otherConfig", this.otherConfig);
+            print.printf("%1$20s: %2$s\n", "primarySlave", this.primarySlave);
+            print.printf("%1$20s: %2$s\n", "mode", this.mode);
+            print.printf("%1$20s: %2$s\n", "properties", this.properties);
+            print.printf("%1$20s: %2$s\n", "linksUp", this.linksUp);
             return writer.toString();
         }
 
@@ -111,6 +120,10 @@ public class Bond extends XenAPIObject {
             map.put("master", this.master == null ? new PIF("OpaqueRef:NULL") : this.master);
             map.put("slaves", this.slaves == null ? new LinkedHashSet<PIF>() : this.slaves);
             map.put("other_config", this.otherConfig == null ? new HashMap<String, String>() : this.otherConfig);
+            map.put("primary_slave", this.primarySlave == null ? new PIF("OpaqueRef:NULL") : this.primarySlave);
+            map.put("mode", this.mode == null ? Types.BondMode.UNRECOGNIZED : this.mode);
+            map.put("properties", this.properties == null ? new HashMap<String, String>() : this.properties);
+            map.put("links_up", this.linksUp == null ? 0 : this.linksUp);
             return map;
         }
 
@@ -130,6 +143,22 @@ public class Bond extends XenAPIObject {
          * additional configuration
          */
         public Map<String, String> otherConfig;
+        /**
+         * The PIF of which the IP configuration and MAC were copied to the bond, and which will receive all configuration/VLANs/VIFs on the bond if the bond is destroyed
+         */
+        public PIF primarySlave;
+        /**
+         * The algorithm used to distribute traffic among the bonded NICs
+         */
+        public Types.BondMode mode;
+        /**
+         * Additional configuration properties specific to the bond mode.
+         */
+        public Map<String, String> properties;
+        /**
+         * Number of links up in this bond
+         */
+        public Long linksUp;
     }
 
     /**
@@ -236,6 +265,74 @@ public class Bond extends XenAPIObject {
     }
 
     /**
+     * Get the primary_slave field of the given Bond.
+     *
+     * @return value of the field
+     */
+    public PIF getPrimarySlave(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "Bond.get_primary_slave";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toPIF(result);
+    }
+
+    /**
+     * Get the mode field of the given Bond.
+     *
+     * @return value of the field
+     */
+    public Types.BondMode getMode(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "Bond.get_mode";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toBondMode(result);
+    }
+
+    /**
+     * Get the properties field of the given Bond.
+     *
+     * @return value of the field
+     */
+    public Map<String, String> getProperties(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "Bond.get_properties";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toMapOfStringString(result);
+    }
+
+    /**
+     * Get the links_up field of the given Bond.
+     *
+     * @return value of the field
+     */
+    public Long getLinksUp(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "Bond.get_links_up";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toLong(result);
+    }
+
+    /**
      * Set the other_config field of the given Bond.
      *
      * @param otherConfig New value to set
@@ -289,16 +386,18 @@ public class Bond extends XenAPIObject {
      *
      * @param network Network to add the bonded PIF to
      * @param members PIFs to add to this bond
-     * @param MAC The MAC address to use on the bond itself. If this parameter is the empty string then the bond will inherit its MAC address from the first of the specified 'members'
+     * @param MAC The MAC address to use on the bond itself. If this parameter is the empty string then the bond will inherit its MAC address from the primary slave.
+     * @param mode Bonding mode to use for the new bond
+     * @param properties Additional configuration parameters specific to the bond mode
      * @return Task
      */
-    public static Task createAsync(Connection c, Network network, Set<PIF> members, String MAC) throws
+    public static Task createAsync(Connection c, Network network, Set<PIF> members, String MAC, Types.BondMode mode, Map<String, String> properties) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
         String method_call = "Async.Bond.create";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(network), Marshalling.toXMLRPC(members), Marshalling.toXMLRPC(MAC)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(network), Marshalling.toXMLRPC(members), Marshalling.toXMLRPC(MAC), Marshalling.toXMLRPC(mode), Marshalling.toXMLRPC(properties)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
         return Types.toTask(result);
@@ -309,16 +408,18 @@ public class Bond extends XenAPIObject {
      *
      * @param network Network to add the bonded PIF to
      * @param members PIFs to add to this bond
-     * @param MAC The MAC address to use on the bond itself. If this parameter is the empty string then the bond will inherit its MAC address from the first of the specified 'members'
+     * @param MAC The MAC address to use on the bond itself. If this parameter is the empty string then the bond will inherit its MAC address from the primary slave.
+     * @param mode Bonding mode to use for the new bond
+     * @param properties Additional configuration parameters specific to the bond mode
      * @return The reference of the created Bond object
      */
-    public static Bond create(Connection c, Network network, Set<PIF> members, String MAC) throws
+    public static Bond create(Connection c, Network network, Set<PIF> members, String MAC, Types.BondMode mode, Map<String, String> properties) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
         String method_call = "Bond.create";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(network), Marshalling.toXMLRPC(members), Marshalling.toXMLRPC(MAC)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(network), Marshalling.toXMLRPC(members), Marshalling.toXMLRPC(MAC), Marshalling.toXMLRPC(mode), Marshalling.toXMLRPC(properties)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
             return Types.toBond(result);
@@ -352,6 +453,76 @@ public class Bond extends XenAPIObject {
         String method_call = "Bond.destroy";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        return;
+    }
+
+    /**
+     * Change the bond mode
+     *
+     * @param value The new bond mode
+     * @return Task
+     */
+    public Task setModeAsync(Connection c, Types.BondMode value) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "Async.Bond.set_mode";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+        return Types.toTask(result);
+    }
+
+    /**
+     * Change the bond mode
+     *
+     * @param value The new bond mode
+     */
+    public void setMode(Connection c, Types.BondMode value) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "Bond.set_mode";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
+        Map response = c.dispatch(method_call, method_params);
+        return;
+    }
+
+    /**
+     * Set the value of a property of the bond
+     *
+     * @param name The property name
+     * @param value The property value
+     * @return Task
+     */
+    public Task setPropertyAsync(Connection c, String name, String value) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "Async.Bond.set_property";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(name), Marshalling.toXMLRPC(value)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+        return Types.toTask(result);
+    }
+
+    /**
+     * Set the value of a property of the bond
+     *
+     * @param name The property name
+     * @param value The property value
+     */
+    public void setProperty(Connection c, String name, String value) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "Bond.set_property";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(name), Marshalling.toXMLRPC(value)};
         Map response = c.dispatch(method_call, method_params);
         return;
     }

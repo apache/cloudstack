@@ -18,13 +18,10 @@ package com.cloud.api.commands.netapp;
 
 import java.rmi.ServerException;
 
+import org.apache.cloudstack.api.*;
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseCmd;
-import com.cloud.api.Implementation;
-import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
+import org.apache.cloudstack.api.APICommand;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -36,7 +33,7 @@ import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.DeleteVolumeOnFilerCmdResponse;
 import com.cloud.utils.component.ComponentLocator;
 
-@Implementation(description="Destroy a Volume", responseObject = DeleteVolumeOnFilerCmdResponse.class)
+@APICommand(name = "destroyVolumeOnFiler", description="Destroy a Volume", responseObject = DeleteVolumeOnFilerCmdResponse.class)
 public class DestroyVolumeOnFilerCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(DestroyVolumeOnFilerCmd.class.getName());
     private static final String s_name = "destroyvolumeresponse";

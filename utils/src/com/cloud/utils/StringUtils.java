@@ -16,9 +16,12 @@
 // under the License.
 package com.cloud.utils;
 
+import static java.util.Arrays.*;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.regex.Pattern;
 
 // StringUtils exists in Apache Commons Lang, but rather than import the entire JAR to our system, for now
 // just implement the method needed
@@ -43,6 +46,10 @@ public class StringUtils {
         return sb.toString();
     }
 
+    public static String join(final String delimiter,
+            final Object... components) {
+        return join(asList(components), delimiter);
+    }
 
     /**
      * @param tags
@@ -129,17 +136,19 @@ public class StringUtils {
         return sb.toString();
     }
 
-    public static int formatForOutput(String text, int start, int columns, char separator) {
-        if (start >= text.length()) {
-            return -1;
-        }
+    // removes a password request param and it's value
+    private static final Pattern REGEX_PASSWORD_QUERYSTRING = Pattern.compile("&?password=.*?(?=[&'\"])");
 
-        int end = start + columns;
-        if (end > text.length()) {
-            end = text.length();
-        }
-        String searchable = text.substring(start, end);
-        int found = searchable.lastIndexOf(separator);
-        return found > 0 ? found :  end - start;
+    // removes a password property from a response json object
+    private static final Pattern REGEX_PASSWORD_JSON = Pattern.compile("\"password\":\".*?\",?");
+
+    // Responsible for stripping sensitive content from request and response strings
+    public static String cleanString(String stringToClean){
+        String cleanResult = "";
+        cleanResult = REGEX_PASSWORD_QUERYSTRING.matcher(stringToClean).replaceAll("");
+        cleanResult = REGEX_PASSWORD_JSON.matcher(cleanResult).replaceAll("");
+        return cleanResult;
     }
+
+
 }

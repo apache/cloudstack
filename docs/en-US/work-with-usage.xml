@@ -21,6 +21,7 @@
     specific language governing permissions and limitations
     under the License.
 -->
+
 <chapter id="work-with-usage">
     <title>Working with Usage</title>
     <para>The Usage Server is an optional, separately-installed part of &PRODUCT; that provides aggregated usage records which you can use to create billing integration for &PRODUCT;. The Usage Server works by taking data from the events log and creating summary usage records that you can access using the listUsageRecords API call. </para>

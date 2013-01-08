@@ -26,16 +26,17 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.log4j.Logger;
 
-import com.cloud.api.Identity;
+import org.apache.cloudstack.api.Identity;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="domain")
-public class DomainVO implements Domain, Identity {
+public class DomainVO implements Domain {
 	public static final Logger s_logger = Logger.getLogger(DomainVO.class.getName());
-	
+
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
@@ -49,10 +50,10 @@ public class DomainVO implements Domain, Identity {
 
     @Column(name="owner")
     private long accountId;
-    
+
     @Column(name="path")
     private String path = null;
-    
+
     @Column(name="level")
     private int level;
 
@@ -64,18 +65,18 @@ public class DomainVO implements Domain, Identity {
 
     @Column(name="next_child_seq")
     private long nextChildSeq = 1L;
-    
+
     @Column(name="state")
     private Domain.State state;
-    
+
     @Column(name="network_domain")
     private String networkDomain;
-    
+
     @Column(name="uuid")
     private String uuid;
-    
+
     public DomainVO() {}
-    
+
     public DomainVO(long id, String name, long owner, Long parentId, String networkDomain) {
         this(name, owner, parentId, networkDomain);
         this.id = id;
@@ -102,7 +103,7 @@ public class DomainVO implements Domain, Identity {
     public Long getParent() {
         return parent;
     }
-    
+
     @Override
     public void setParent(Long parent) {
     	if(parent == null) {
@@ -119,7 +120,7 @@ public class DomainVO implements Domain, Identity {
     public String getName() {
         return name;
     }
-    
+
     @Override
     public void setName(String name) {
         this.name = name;
@@ -129,59 +130,59 @@ public class DomainVO implements Domain, Identity {
     public long getAccountId() {
         return accountId;
     }
-    
+
     @Override
     public Date getRemoved() {
         return removed;
     }
-    
+
     @Override
     public String getPath() {
     	return path;
     }
-    
+
     @Override
     public void setPath(String path) {
     	this.path = path;
     }
-    
+
     @Override
     public int getLevel() {
-    	return level; 
+    	return level;
     }
-    
+
     public void setLevel(int level) {
     	this.level = level;
     }
-    
+
     @Override
     public int getChildCount() {
-    	return childCount; 
+    	return childCount;
     }
-    
+
     public void setChildCount(int count) {
     	childCount = count;
     }
-    
+
     @Override
     public long getNextChildSeq() {
     	return nextChildSeq;
     }
-    
+
     public void setNextChildSeq(long seq) {
     	nextChildSeq = seq;
     }
-    
-    @Override 
+
+    @Override
     public Domain.State getState() {
         return state;
     }
-    
+
     @Override
     public void setState(Domain.State state) {
         this.state = state;
     }
-    
+
     @Override
     public String toString() {
         return new StringBuilder("Domain:").append(id).append(path).toString();
@@ -195,12 +196,12 @@ public class DomainVO implements Domain, Identity {
     public void setNetworkDomain(String domainSuffix) {
         this.networkDomain = domainSuffix;
     }
-    
+
     @Override
     public String getUuid() {
     	return this.uuid;
     }
-    
+
     public void setUuid(String uuid) {
     	this.uuid = uuid;
     }

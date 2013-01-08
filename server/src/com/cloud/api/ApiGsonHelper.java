@@ -18,6 +18,8 @@ package com.cloud.api;
 
 import com.google.gson.GsonBuilder;
 import com.cloud.utils.IdentityProxy;
+import org.apache.cloudstack.api.ResponseObject;
+
 import java.util.Map;
 
 public class ApiGsonHelper {

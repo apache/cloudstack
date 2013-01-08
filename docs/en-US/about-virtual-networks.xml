@@ -27,4 +27,4 @@
     <xi:include href="isolated-networks.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="shared-networks.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="runtime-allocation-virtual-network-resources.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    </section>
+</section>

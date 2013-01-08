@@ -17,7 +17,6 @@
 package com.cloud.projects;
 
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -42,12 +41,14 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import com.cloud.api.query.dao.ProjectAccountJoinDao;
+import com.cloud.api.query.dao.ProjectInvitationJoinDao;
+import com.cloud.api.query.dao.ProjectJoinDao;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
@@ -56,33 +57,26 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.projects.Project.State;
 import com.cloud.projects.ProjectAccount.Role;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.projects.dao.ProjectInvitationDao;
-import com.cloud.server.ResourceTag.TaggedResourceType;
-import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.DomainManager;
 import com.cloud.user.ResourceLimitService;
+import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.Ternary;
+import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Filter;
-import com.cloud.utils.db.JoinBuilder;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.sun.mail.smtp.SMTPMessage;
@@ -101,6 +95,8 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
     @Inject
     private ProjectDao _projectDao;
     @Inject
+    private ProjectJoinDao _projectJoinDao;
+    @Inject
     AccountManager _accountMgr;
     @Inject
     DomainManager _domainMgr;
@@ -111,11 +107,15 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
     @Inject
     private ProjectAccountDao _projectAccountDao;
     @Inject
+    private ProjectAccountJoinDao _projectAccountJoinDao;
+    @Inject
     private AccountDao _accountDao;
     @Inject
     private ConfigurationDao _configDao;
     @Inject
     private ProjectInvitationDao _projectInvitationDao;
+    @Inject
+    private ProjectInvitationJoinDao _projectInvitationJoinDao;
     @Inject
     protected ResourceTagDao _resourceTagDao;
     
@@ -285,7 +285,8 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         txn.commit();
         
         if (updateResult) {
-            if (!cleanupProject(project, _accountDao.findById(caller.getId()), callerUserId)) {
+            //pass system caller when clenaup projects account
+            if (!cleanupProject(project, _accountDao.findById(Account.ACCOUNT_ID_SYSTEM), User.UID_SYSTEM)) {
                 s_logger.warn("Failed to cleanup project's id=" + project.getId() + " resources, not removing the project yet");
                 return false;
             } else {
@@ -353,126 +354,12 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         return _projectDao.findById(projectId);
     }
     
+        
     @Override
-    public List<? extends Project> listProjects(Long id, String name, String displayText, String state, 
-            String accountName, Long domainId, String keyword, Long startIndex, Long pageSize, boolean listAll, 
-            boolean isRecursive, Map<String, String> tags) {
-        Account caller = UserContext.current().getCaller();
-        Long accountId = null;
-        String path = null;
-        
-        Filter searchFilter = new Filter(ProjectVO.class, "id", false, startIndex, pageSize);
-        SearchBuilder<ProjectVO> sb = _projectDao.createSearchBuilder();
-        
-        if (_accountMgr.isAdmin(caller.getType())) {
-            if (domainId != null) {
-                DomainVO domain = _domainDao.findById(domainId);
-                if (domain == null) {
-                    throw new InvalidParameterValueException("Domain id=" + domainId + " doesn't exist in the system");
-                }
-
-                _accountMgr.checkAccess(caller, domain);
-
-                if (accountName != null) {
-                    Account owner = _accountMgr.getActiveAccountByName(accountName, domainId);
-                    if (owner == null) {
-                        throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
-                    }
-                    accountId = owner.getId();
-                }
-            }
-        } else {
-            if (accountName != null && !accountName.equals(caller.getAccountName())) {
-                throw new PermissionDeniedException("Can't list account " + accountName + " projects; unauthorized");
-            }
-            
-            if (domainId != null && domainId.equals(caller.getDomainId())) {
-                throw new PermissionDeniedException("Can't list domain id= " + domainId + " projects; unauthorized");
-            }
-            
-            accountId = caller.getId();
+    public long getInvitationTimeout() {
+        return _invitationTimeOut;
         }
         
-    	if (domainId == null && accountId == null && (caller.getType() == Account.ACCOUNT_TYPE_NORMAL || !listAll)) {
-    		accountId = caller.getId();
-    	} else if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || (isRecursive && !listAll)) {
-            DomainVO domain = _domainDao.findById(caller.getDomainId());
-            path = domain.getPath();
-        }
-        
-        if (path != null) {
-            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
-            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
-            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-        }
-        
-        if (accountId != null) {
-            SearchBuilder<ProjectAccountVO> projectAccountSearch = _projectAccountDao.createSearchBuilder();
-            projectAccountSearch.and("accountId", projectAccountSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-            sb.join("projectAccountSearch", projectAccountSearch, sb.entity().getId(), projectAccountSearch.entity().getProjectId(), JoinBuilder.JoinType.INNER);
-        }
-        
-        if (tags != null && !tags.isEmpty()) {
-            SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
-                for (int count=0; count < tags.size(); count++) {
-                    tagSearch.or().op("key" + String.valueOf(count), tagSearch.entity().getKey(), SearchCriteria.Op.EQ);
-                    tagSearch.and("value" + String.valueOf(count), tagSearch.entity().getValue(), SearchCriteria.Op.EQ);
-                    tagSearch.cp();
-                }
-                tagSearch.and("resourceType", tagSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
-                sb.groupBy(sb.entity().getId());
-                sb.join("tagSearch", tagSearch, sb.entity().getId(), tagSearch.entity().getResourceId(), JoinBuilder.JoinType.INNER);
-        }
-        
-        SearchCriteria<ProjectVO> sc = sb.create();
-        
-        if (id != null) {
-            sc.addAnd("id", Op.EQ, id);
-        }
-        
-        if (domainId != null && !isRecursive) {
-            sc.addAnd("domainId", Op.EQ, domainId);
-        }
-        
-        if (name != null) {
-            sc.addAnd("name", Op.EQ, name);
-        }
-        
-        if (displayText != null) {
-            sc.addAnd("displayText", Op.EQ, displayText);
-        }
-        
-        if (accountId != null) {
-            sc.setJoinParameters("projectAccountSearch", "accountId", accountId);
-        }
-        
-        if (state != null) {
-            sc.addAnd("state", Op.EQ, state);
-        }
-        
-        if (keyword != null) {
-            SearchCriteria<ProjectVO> ssc = _projectDao.createSearchCriteria();
-            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("displayText", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
-        }
-        
-        if (path != null) {
-            sc.setJoinParameters("domainSearch", "path", path);
-        }
-        
-        if (tags != null && !tags.isEmpty()) {
-            int count = 0;
-            sc.setJoinParameters("tagSearch", "resourceType", TaggedResourceType.Project.toString());
-            for (String key : tags.keySet()) {
-                sc.setJoinParameters("tagSearch", "key" + String.valueOf(count), key);
-                sc.setJoinParameters("tagSearch", "value" + String.valueOf(count), tags.get(key));
-                count++;
-            }
-        }
-        
-        return _projectDao.search(sc, searchFilter);
-    }
     
     @Override
     public ProjectAccount assignAccountToProject(Project project, long accountId, ProjectAccount.Role accountRole) {
@@ -741,48 +628,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
     }
     
     
-    @Override
-    public List<? extends ProjectAccount> listProjectAccounts(long projectId, String accountName, String role, Long startIndex, Long pageSizeVal) {
-        Account caller = UserContext.current().getCaller();
         
-        //check that the project exists
-        Project project = getProject(projectId);
-        
-        if (project == null) {
-            throw new InvalidParameterValueException("Unable to find the project id=" + projectId);
-        }
-        
-        //verify permissions - only accounts belonging to the project can list project's account
-        if (!_accountMgr.isAdmin(caller.getType()) && _projectAccountDao.findByProjectIdAccountId(projectId, caller.getAccountId()) == null) {
-            throw new PermissionDeniedException("Account " + caller + " is not authorized to list users of the project id=" + projectId);
-        }
-        
-        Filter searchFilter = new Filter(ProjectAccountVO.class, "id", false, startIndex, pageSizeVal);
-        SearchBuilder<ProjectAccountVO> sb = _projectAccountDao.createSearchBuilder();
-        sb.and("accountRole", sb.entity().getAccountRole(), Op.EQ);
-        sb.and("projectId", sb.entity().getProjectId(), Op.EQ);
-        
-        SearchBuilder<AccountVO> accountSearch;
-        if (accountName != null) {
-            accountSearch = _accountDao.createSearchBuilder();
-            accountSearch.and("accountName", accountSearch.entity().getAccountName(), SearchCriteria.Op.EQ);
-            sb.join("accountSearch", accountSearch, sb.entity().getAccountId(), accountSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-        }
-        
-        SearchCriteria<ProjectAccountVO> sc = sb.create();
-        
-        sc.setParameters("projectId", projectId);
-        
-        if (role != null) {
-            sc.setParameters("accountRole", role);
-        }
-        
-        if (accountName != null) {
-            sc.setJoinParameters("accountSearch", "accountName", accountName);
-        }
-        
-        return _projectAccountDao.search(sc, searchFilter);
-    }
     
     public ProjectInvitation createAccountInvitation(Project project, Long accountId) { 
         if (activeInviteExists(project, accountId, null)) {
@@ -852,49 +698,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         return _projectInvitationDao.update(invite.getId(), invite);
     }
     
-    @Override
-    public List<? extends ProjectInvitation> listProjectInvitations(Long id, Long projectId, String accountName, Long domainId, String state, boolean activeOnly, Long startIndex, Long pageSizeVal, boolean isRecursive, boolean listAll) {
-    	Account caller = UserContext.current().getCaller();
-        List<Long> permittedAccounts = new ArrayList<Long>();
-        
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(domainId, isRecursive, null);
-        _accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedAccounts, domainIdRecursiveListProject, listAll, true);
-        domainId = domainIdRecursiveListProject.first();
-        isRecursive = domainIdRecursiveListProject.second();
-        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();        
-        
-        Filter searchFilter = new Filter(ProjectInvitationVO.class, "id", true, startIndex, pageSizeVal);
-        SearchBuilder<ProjectInvitationVO> sb = _projectInvitationDao.createSearchBuilder();
-        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
-        sb.and("projectId", sb.entity().getProjectId(), SearchCriteria.Op.EQ);
-        sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
-        sb.and("created", sb.entity().getCreated(), SearchCriteria.Op.GT);
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-
-        SearchCriteria<ProjectInvitationVO> sc = sb.create();
-        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
-
-        
-        if (projectId != null){
-            sc.setParameters("projectId", projectId);
-        }
-        
-        if (state != null) {
-            sc.setParameters("state", state);
-        }
-        
-        if (id != null) {
-            sc.setParameters("id", id);
-        }
-        
-        if (activeOnly) {
-            sc.setParameters("state", ProjectInvitation.State.Pending);
-            sc.setParameters("created", new Date((DateUtil.currentGMTTime().getTime()) - _invitationTimeOut));
-        }
-        
-        return _projectInvitationDao.search(sc, searchFilter);
-    }
     
     @Override @DB
     @ActionEvent(eventType = EventTypes.EVENT_PROJECT_INVITATION_UPDATE, eventDescription = "updating project invitation", async=true)

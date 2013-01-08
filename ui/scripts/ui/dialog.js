@@ -362,10 +362,27 @@
 				else
           $input.data('validation-rules', {});
 
-          var fieldLabel = field.label;
-          var inputId = $input.attr('id') ? $input.attr('id') : fieldLabel.replace(/\./g,'_');
-          $input.attr('id', inputId);
-          $name.find('label').attr('for', inputId);
+        var fieldLabel = field.label;
+        var inputId = $input.attr('id') ? $input.attr('id') : fieldLabel.replace(/\./g,'_');
+        
+        $input.attr('id', inputId);
+        $name.find('label').attr('for', inputId);
+
+        if(field.isDisabled)
+            $input.attr("disabled","disabled");
+
+        // Tooltip
+        if (field.docID) {
+          $input.toolTip({
+            docID: field.docID,
+            tooltip:'.tooltip-box',
+            mode:'focus',
+            attachTo: '.form-item'
+          });
+        }
+        /*     $input.blur(function() {
+         console.log('tooltip remove->' + $input.attr('name'));
+         });*/
       });
      
       var getFormValues = function() {
@@ -417,6 +434,7 @@
       return $formContainer.dialog({
         dialogClass: 'create-form',
         closeOnEscape: false,
+        draggable: false,
         width: 400,
         title: _l(args.form.title),
         open: function() {
@@ -432,8 +450,11 @@
               if (!complete($formContainer)) { return false; }
 
               $('div.overlay').remove();
+              $('.tooltip-box').remove();
               $formContainer.remove();
               $(this).dialog('destroy');
+
+              $('.hovered-elem').hide();
 
               return true;
             }
@@ -443,8 +464,11 @@
             'class': 'cancel',
             click: function() {
               $('div.overlay').remove();
+              $('.tooltip-box').remove();
               $formContainer.remove();
               $(this).dialog('destroy');
+
+              $('.hovered-elem').hide();
             }
           }
         ]
@@ -513,6 +537,7 @@
               $(this).dialog('destroy');
               $('div.overlay').remove();
               if (args.cancelAction) { args.cancelAction(); }
+              $('.hovered-elem').hide();
             }
           },
           {
@@ -522,6 +547,7 @@
               args.action();
               $(this).dialog('destroy');
               $('div.overlay').remove();
+              $('.hovered-elem').hide();
             }
           }
         ]
@@ -548,6 +574,7 @@
             click: function() {
               $(this).dialog('destroy');
               if (args.clickAction) args.clickAction();
+              $('.hovered-elem').hide();
             }
           }
         ]

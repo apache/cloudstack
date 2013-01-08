@@ -404,6 +404,7 @@
     <property name="commands.file" location="${dist.dir}/client/conf/commands.properties" /> 
     <property name="commands.ext.file" location="${dist.dir}/client/conf/commands-ext.properties" />
     <property name="commands.vr.file" location="${dist.dir}/client/conf/virtualrouter_commands.properties" />
+    <property name="commands.niciranvp.file" location="${dist.dir}/client/conf/nicira-nvp_commands.properties" />
   
   <echo message="build-apidocs" />
     <exec dir="${apidoc.scripts.dir}" executable="bash" failonerror="true">
@@ -411,7 +412,7 @@
       <arg value="${target.dir}/jar" />
       <arg value="${deps.dir}" />
       <arg value="${dist.dir}" />
-      <arg value="-f ${commands.file},${commands.ext.file},${commands.vr.file}" />
+      <arg value="-f ${commands.file},${commands.ext.file},${commands.vr.file},${commands.niciranvp.file}" />
     </exec>
     <echo message="Result locates at ${dist.dir}/commands.xml" />
     

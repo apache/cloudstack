@@ -70,6 +70,13 @@ public class MockResourceLimitManagerImpl implements ResourceLimitService, Manag
         return 0;
     }
 
+
+    @Override
+    public long findCorrectResourceLimitForAccount(short accountType, Long limit, ResourceType type) {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
     /* (non-Javadoc)
      * @see com.cloud.user.ResourceLimitService#findCorrectResourceLimitForDomain(com.cloud.domain.Domain, com.cloud.configuration.Resource.ResourceType)
      */
@@ -85,7 +92,7 @@ public class MockResourceLimitManagerImpl implements ResourceLimitService, Manag
     @Override
     public void incrementResourceCount(long accountId, ResourceType type, Long... delta) {
         // TODO Auto-generated method stub
-        
+
     }
 
     /* (non-Javadoc)
@@ -94,7 +101,7 @@ public class MockResourceLimitManagerImpl implements ResourceLimitService, Manag
     @Override
     public void decrementResourceCount(long accountId, ResourceType type, Long... delta) {
         // TODO Auto-generated method stub
-        
+
     }
 
     /* (non-Javadoc)
@@ -103,7 +110,7 @@ public class MockResourceLimitManagerImpl implements ResourceLimitService, Manag
     @Override
     public void checkResourceLimit(Account account, ResourceType type, long... count) throws ResourceAllocationException {
         // TODO Auto-generated method stub
-        
+
     }
 
     /* (non-Javadoc)

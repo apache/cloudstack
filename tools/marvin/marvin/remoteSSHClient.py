@@ -18,6 +18,9 @@
 import paramiko 
 import time
 import cloudstackException
+import contextlib
+import logging
+from contextlib import closing
 
 class remoteSSHClient(object):
     def __init__(self, host, port, user, passwd, retries = 10):
@@ -27,11 +30,16 @@ class remoteSSHClient(object):
         self.passwd = passwd
         self.ssh = paramiko.SSHClient()
         self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        self.logger = logging.getLogger('sshClient')
+        ch = logging.StreamHandler()
+        ch.setLevel(logging.DEBUG)
+        self.logger.addHandler(ch)
 
         retry_count = retries
         while True:
             try:
                 self.ssh.connect(str(host),int(port), user, passwd)
+                self.logger.debug("connecting to server %s with user %s passwd %s"%(str(host), user, passwd))
             except paramiko.SSHException, sshex:
                 if retry_count == 0:
                     raise cloudstackException.InvalidParameterException(repr(sshex))
@@ -44,6 +52,7 @@ class remoteSSHClient(object):
         
     def execute(self, command):
         stdin, stdout, stderr = self.ssh.exec_command(command)
+        self.logger.debug("sending command %s to host %s"%(command, str(self.host)))
         output = stdout.readlines()
         errors = stderr.readlines()
         results = []
@@ -55,7 +64,7 @@ class remoteSSHClient(object):
         else:
             for strOut in output:
                 results.append(strOut.rstrip())
-    
+        self.logger.debug("command %s returned %s"%(command, results))
         return results
     
     def scp(self, srcFile, destPath):
@@ -67,8 +76,11 @@ class remoteSSHClient(object):
         except IOError, e:
             raise e
 
+    def close(self):
+        self.ssh.close()
+
             
 if __name__ == "__main__":
-    ssh = remoteSSHClient("192.168.137.2", 22, "root", "password")
-    print ssh.execute("ls -l")
-    print ssh.execute("rm x")
+    with contextlib.closing(remoteSSHClient("10.223.75.10", 22, "root",
+                                            "password")) as ssh:
+        print ssh.execute("ls -l")

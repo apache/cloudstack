@@ -29,11 +29,12 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.InternalIdentity;
 
 
 @Entity
 @Table(name="vpc_gateways")
-public class VpcGatewayVO implements VpcGateway{
+public class VpcGatewayVO implements VpcGateway {
     
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

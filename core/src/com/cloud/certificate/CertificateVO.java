@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.certificate;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -25,7 +27,7 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name="certificate")
-public class CertificateVO {
+public class CertificateVO implements InternalIdentity {
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -40,7 +42,7 @@ public class CertificateVO {
 
     public CertificateVO() {}
 
-    public Long getId() {
+    public long getId() {
         return id;
     }
     

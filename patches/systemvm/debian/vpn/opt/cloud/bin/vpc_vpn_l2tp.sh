@@ -40,7 +40,9 @@ iptables_() {
   sudo iptables $op FORWARD -i ppp+ -d $zcidr -j ACCEPT
   sudo iptables $op FORWARD -i ppp+ -o ppp+ -j ACCEPT 
   sudo iptables $op INPUT -i ppp+ -p udp --dport 53 -j ACCEPT
+  sudo iptables $op INPUT -i ppp+ -p tcp --dport 53 -j ACCEPT
   sudo iptables -t nat $op PREROUTING -i ppp+ -p udp --dport 53 -j DNAT --to-destination $local_ip
+  sudo iptables -t nat $op PREROUTING -i ppp+ -p tcp --dport 53 -j DNAT --to-destination $local_ip
 }
 
 ipsec_server() {

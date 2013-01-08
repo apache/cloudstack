@@ -26,7 +26,7 @@ public class CreateEntityDownloadURLCommand extends AbstractDownloadCommand {
         this.installPath = installPath;
         this.extractLinkUUID = uuid;
     }
-    
+
     public CreateEntityDownloadURLCommand(String installPath, String uuid) {
         super();
         this.parent = parent;
@@ -40,7 +40,7 @@ public class CreateEntityDownloadURLCommand extends AbstractDownloadCommand {
     private String installPath;
     private String parent;
     private String extractLinkUUID;
-    
+
     @Override
     public boolean executeInSequence() {
         return false;
@@ -53,7 +53,7 @@ public class CreateEntityDownloadURLCommand extends AbstractDownloadCommand {
     public void setInstallPath(String installPath) {
         this.installPath = installPath;
     }
-    
+
     public String getParent() {
         return parent;
     }

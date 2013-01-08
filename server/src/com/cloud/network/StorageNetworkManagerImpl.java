@@ -26,13 +26,13 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.command.admin.network.CreateStorageNetworkIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.network.ListStorageNetworkIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.network.UpdateStorageNetworkIpRangeCmd;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.api.commands.CreateStorageNetworkIpRangeCmd;
-import com.cloud.api.commands.DeleteStorageNetworkIpRangeCmd;
-import com.cloud.api.commands.UpdateStorageNetworkIpRangeCmd;
-import com.cloud.api.commands.listStorageNetworkIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.network.DeleteStorageNetworkIpRangeCmd;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.StorageNetworkIpRange;
 import com.cloud.dc.StorageNetworkIpAddressVO;
@@ -40,12 +40,10 @@ import com.cloud.dc.StorageNetworkIpRangeVO;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.StorageNetworkIpAddressDao;
 import com.cloud.dc.dao.StorageNetworkIpRangeDao;
-import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.host.HostVO;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.utils.Pair;
+import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.db.SearchCriteriaService;
@@ -56,7 +54,6 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
-import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
 @Local(value = {StorageNetworkManager.class, StorageNetworkService.class})
@@ -310,7 +307,7 @@ public class StorageNetworkManagerImpl implements StorageNetworkManager, Storage
 	}
 	
 	@Override
-    public List<StorageNetworkIpRange> listIpRange(listStorageNetworkIpRangeCmd cmd) {
+    public List<StorageNetworkIpRange> listIpRange(ListStorageNetworkIpRangeCmd cmd) {
 		Long rangeId = cmd.getRangeId();
 		Long podId = cmd.getPodId();
 		Long zoneId = cmd.getZoneId();

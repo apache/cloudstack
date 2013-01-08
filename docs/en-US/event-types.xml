@@ -21,6 +21,7 @@
 	specific language governing permissions and limitations
 	under the License.
 -->	
+
 <appendix id="event-types">
 		<title>Event Types</title>
 		<informaltable frame="all">
@@ -216,4 +217,4 @@
 				</tbody>
 				</tgroup>
 		</informaltable>
-	</appendix>
+</appendix>

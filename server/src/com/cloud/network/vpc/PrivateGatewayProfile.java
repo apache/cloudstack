@@ -17,7 +17,7 @@
 package com.cloud.network.vpc;
 
 
-public class PrivateGatewayProfile implements PrivateGateway{
+public class PrivateGatewayProfile implements PrivateGateway {
     VpcGateway vpcGateway;
     long physicalNetworkId;
     

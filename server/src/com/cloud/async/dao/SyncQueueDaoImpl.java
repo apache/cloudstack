@@ -14,6 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 package com.cloud.async.dao;
 
 import java.sql.PreparedStatement;
@@ -28,7 +29,6 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.async.SyncQueueVO;
 import com.cloud.utils.DateUtil;
-import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -44,7 +44,8 @@ public class SyncQueueDaoImpl extends GenericDaoBase<SyncQueueVO, Long> implemen
 	@Override
 	public void ensureQueue(String syncObjType, long syncObjId) {
 		Date dt = DateUtil.currentGMTTime();
-		String sql = "INSERT IGNORE INTO sync_queue(sync_objtype, sync_objid, created, last_updated) values(?, ?, ?, ?)";
+        String sql = "INSERT IGNORE INTO sync_queue(sync_objtype, sync_objid, created, last_updated)" +
+                " values(?, ?, ?, ?)";
 		
         Transaction txn = Transaction.currentTxn();
         PreparedStatement pstmt = null;
@@ -70,23 +71,6 @@ public class SyncQueueDaoImpl extends GenericDaoBase<SyncQueueVO, Long> implemen
         return findOneBy(sc);
 	}
 
-	@Override @DB
-	public void resetQueueProcessing(long msid) {
-		String sql = "UPDATE sync_queue set queue_proc_msid=NULL, queue_proc_time=NULL where queue_proc_msid=?";
-		
-        Transaction txn = Transaction.currentTxn();
-        PreparedStatement pstmt = null;
-        try {
-            pstmt = txn.prepareAutoCloseStatement(sql);
-            pstmt.setLong(1, msid);
-            pstmt.execute();
-        } catch (SQLException e) {
-        	s_logger.warn("Unable to reset sync queue for management server " + msid, e);
-        } catch (Throwable e) {
-        	s_logger.warn("Unable to reset sync queue for management server " + msid, e);
-        }
-	}
-	
 	protected SyncQueueDaoImpl() {
 	    super();
 	    TypeIdSearch = createSearchBuilder();

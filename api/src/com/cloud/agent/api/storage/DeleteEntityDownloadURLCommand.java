@@ -19,9 +19,9 @@ package com.cloud.agent.api.storage;
 import com.cloud.storage.Upload;
 
 public class DeleteEntityDownloadURLCommand extends AbstractDownloadCommand {
-    
+
     private String path;
-    private String extractUrl; 
+    private String extractUrl;
     private Upload.Type type;
     private String parentPath;
 

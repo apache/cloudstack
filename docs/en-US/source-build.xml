@@ -1,0 +1,49 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
+<section id="source-build">
+    <title>Building &PRODUCT; from Source</title>
+    <note>
+        <para>Prior to the 4.0.0 incubating release, Ant was used to build &PRODUCT;. Starting with 4.0.0 a migration to Maven is underway.</para>
+        <para>The website and the wiki contain up to date information on the build procedure at:</para>
+            <itemizedlist>
+                <listitem><para><ulink url="https://cwiki.apache.org/CLOUDSTACK/building-with-maven.html">https://cwiki.apache.org/CLOUDSTACK/building-with-maven.html</ulink></para></listitem>
+                <listitem><para><ulink url="http://incubator.apache.org/cloudstack/develop/environment.html">http://incubator.apache.org/cloudstack/develop/environment.html</ulink></para></listitem>
+            </itemizedlist>
+    </note>
+    <para>The overarching steps to build &PRODUCT; are:.</para>
+    <itemizedlist>
+        <listitem><para>Install the prerequisites and setup your environment</para></listitem>
+        <listitem><para>Understand that various Maven profiles and build targets</para></listitem>
+        <listitem><para>Deploy and test your build </para></listitem>
+        <listitem><para>If needed, learn how to build binaries</para></listitem>
+    </itemizedlist>
+
+    <note>
+        <para>Learning Maven is outside the scope of this documentation.</para>
+        <para>Go to the Maven website at <ulink url="http://maven.apache.org/guides/getting-started/index.html">http://maven.apache.org/guides/getting-started/index.html</ulink></para>
+    </note>
+
+</section>
+

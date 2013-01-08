@@ -1,18 +1,19 @@
-/* Copyright (c) Citrix Systems, Inc.
+/*
+ * Copyright (c) Citrix Systems, Inc.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  *   1) Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
- * 
+ *
  *   2) Redistributions in binary form must reproduce the above
  *      copyright notice, this list of conditions and the following
  *      disclaimer in the documentation and/or other materials
  *      provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -26,6 +27,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 
 package com.xensource.xenapi;
 
@@ -51,7 +53,7 @@ import org.apache.xmlrpc.XmlRpcException;
 public class SR extends XenAPIObject {
 
     /**
-     * The XenAPI reference to this object.
+     * The XenAPI reference (OpaqueRef) to this object.
      */
     protected final String ref;
 
@@ -62,6 +64,9 @@ public class SR extends XenAPIObject {
        this.ref = ref;
     }
 
+    /**
+     * @return The XenAPI reference (OpaqueRef) to this object.
+     */
     public String toWireString() {
        return this.ref;
     }
@@ -113,6 +118,7 @@ public class SR extends XenAPIObject {
             print.printf("%1$20s: %2$s\n", "smConfig", this.smConfig);
             print.printf("%1$20s: %2$s\n", "blobs", this.blobs);
             print.printf("%1$20s: %2$s\n", "localCacheEnabled", this.localCacheEnabled);
+            print.printf("%1$20s: %2$s\n", "introducedBy", this.introducedBy);
             return writer.toString();
         }
 
@@ -139,6 +145,7 @@ public class SR extends XenAPIObject {
             map.put("sm_config", this.smConfig == null ? new HashMap<String, String>() : this.smConfig);
             map.put("blobs", this.blobs == null ? new HashMap<String, Blob>() : this.blobs);
             map.put("local_cache_enabled", this.localCacheEnabled == null ? false : this.localCacheEnabled);
+            map.put("introduced_by", this.introducedBy == null ? new DRTask("OpaqueRef:NULL") : this.introducedBy);
             return map;
         }
 
@@ -151,7 +158,7 @@ public class SR extends XenAPIObject {
          */
         public String nameLabel;
         /**
-         * a notes field containg human-readable description
+         * a notes field containing human-readable description
          */
         public String nameDescription;
         /**
@@ -214,6 +221,10 @@ public class SR extends XenAPIObject {
          * True if this SR is assigned to be the local cache for its host
          */
         public Boolean localCacheEnabled;
+        /**
+         * The disaster recovery task which introduced this SR
+         */
+        public DRTask introducedBy;
     }
 
     /**
@@ -576,35 +587,20 @@ public class SR extends XenAPIObject {
     }
 
     /**
-     * Set the name/label field of the given SR.
+     * Get the introduced_by field of the given SR.
      *
-     * @param label New value to set
+     * @return value of the field
      */
-    public void setNameLabel(Connection c, String label) throws
+    public DRTask getIntroducedBy(Connection c) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
-        String method_call = "SR.set_name_label";
+        String method_call = "SR.get_introduced_by";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(label)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
-        return;
-    }
-
-    /**
-     * Set the name/description field of the given SR.
-     *
-     * @param description New value to set
-     */
-    public void setNameDescription(Connection c, String description) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
-        String method_call = "SR.set_name_description";
-        String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(description)};
-        Map response = c.dispatch(method_call, method_params);
-        return;
+        Object result = response.get("Value");
+            return Types.toDRTask(result);
     }
 
     /**
@@ -1323,19 +1319,88 @@ public class SR extends XenAPIObject {
     }
 
     /**
+     * Set the name label of the SR
+     *
+     * @param value The name label for the SR
+     * @return Task
+     */
+    public Task setNameLabelAsync(Connection c, String value) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "Async.SR.set_name_label";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+        return Types.toTask(result);
+    }
+
+    /**
+     * Set the name label of the SR
+     *
+     * @param value The name label for the SR
+     */
+    public void setNameLabel(Connection c, String value) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "SR.set_name_label";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
+        Map response = c.dispatch(method_call, method_params);
+        return;
+    }
+
+    /**
+     * Set the name description of the SR
+     *
+     * @param value The name description for the SR
+     * @return Task
+     */
+    public Task setNameDescriptionAsync(Connection c, String value) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "Async.SR.set_name_description";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+        return Types.toTask(result);
+    }
+
+    /**
+     * Set the name description of the SR
+     *
+     * @param value The name description for the SR
+     */
+    public void setNameDescription(Connection c, String value) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "SR.set_name_description";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
+        Map response = c.dispatch(method_call, method_params);
+        return;
+    }
+
+    /**
      * Create a placeholder for a named binary blob of data that is associated with this SR
      *
      * @param name The name associated with the blob
      * @param mimeType The mime type for the data. Empty string translates to application/octet-stream
+     * @param _public True if the blob should be publicly available
      * @return Task
      */
-    public Task createNewBlobAsync(Connection c, String name, String mimeType) throws
+    public Task createNewBlobAsync(Connection c, String name, String mimeType, Boolean _public) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
         String method_call = "Async.SR.create_new_blob";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(name), Marshalling.toXMLRPC(mimeType)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(name), Marshalling.toXMLRPC(mimeType), Marshalling.toXMLRPC(_public)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
         return Types.toTask(result);
@@ -1346,15 +1411,16 @@ public class SR extends XenAPIObject {
      *
      * @param name The name associated with the blob
      * @param mimeType The mime type for the data. Empty string translates to application/octet-stream
+     * @param _public True if the blob should be publicly available
      * @return The reference of the blob, needed for populating its data
      */
-    public Blob createNewBlob(Connection c, String name, String mimeType) throws
+    public Blob createNewBlob(Connection c, String name, String mimeType, Boolean _public) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
         String method_call = "SR.create_new_blob";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(name), Marshalling.toXMLRPC(mimeType)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(name), Marshalling.toXMLRPC(mimeType), Marshalling.toXMLRPC(_public)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
             return Types.toBlob(result);
@@ -1434,6 +1500,102 @@ public class SR extends XenAPIObject {
        XenAPIException,
        XmlRpcException {
         String method_call = "SR.assert_can_host_ha_statefile";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        return;
+    }
+
+    /**
+     * Returns successfully if the given SR supports database replication. Otherwise returns an error to explain why not.
+     *
+     * @return Task
+     */
+    public Task assertSupportsDatabaseReplicationAsync(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "Async.SR.assert_supports_database_replication";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+        return Types.toTask(result);
+    }
+
+    /**
+     * Returns successfully if the given SR supports database replication. Otherwise returns an error to explain why not.
+     *
+     */
+    public void assertSupportsDatabaseReplication(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "SR.assert_supports_database_replication";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        return;
+    }
+
+    /**
+     *
+     *
+     * @return Task
+     */
+    public Task enableDatabaseReplicationAsync(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "Async.SR.enable_database_replication";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+        return Types.toTask(result);
+    }
+
+    /**
+     *
+     *
+     */
+    public void enableDatabaseReplication(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "SR.enable_database_replication";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        return;
+    }
+
+    /**
+     *
+     *
+     * @return Task
+     */
+    public Task disableDatabaseReplicationAsync(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "Async.SR.disable_database_replication";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+        return Types.toTask(result);
+    }
+
+    /**
+     *
+     *
+     */
+    public void disableDatabaseReplication(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "SR.disable_database_replication";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);

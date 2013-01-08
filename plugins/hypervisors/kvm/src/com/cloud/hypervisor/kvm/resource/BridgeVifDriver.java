@@ -89,7 +89,7 @@ public class BridgeVifDriver extends VifDriverBase {
         if (nic.getType() == Networks.TrafficType.Guest) {
             if (nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan
                     && !vlanId.equalsIgnoreCase("untagged")) {
-                if(trafficLabel != null || !trafficLabel.isEmpty()) {
+                if(trafficLabel != null && !trafficLabel.isEmpty()) {
                     s_logger.debug("creating a vlan dev and bridge for guest traffic per traffic label " + trafficLabel);
                     String brName = createVlanBr(vlanId, _pifs.get(trafficLabel));
                     intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType));
@@ -107,7 +107,7 @@ public class BridgeVifDriver extends VifDriverBase {
         } else if (nic.getType() == Networks.TrafficType.Public) {
             if (nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan
                     && !vlanId.equalsIgnoreCase("untagged")) {
-                if(trafficLabel != null || !trafficLabel.isEmpty()){
+                if(trafficLabel != null && !trafficLabel.isEmpty()){
                     s_logger.debug("creating a vlan dev and bridge for public traffic per traffic label " + trafficLabel);
                     String brName = createVlanBr(vlanId, _pifs.get(trafficLabel));
                     intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType));

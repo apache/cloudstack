@@ -1,18 +1,18 @@
 /* Copyright (c) Citrix Systems, Inc.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  *   1) Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
- * 
+ *
  *   2) Redistributions in binary form must reproduce the above
  *      copyright notice, this list of conditions and the following
  *      disclaimer in the documentation and/or other materials
  *      provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -31,16 +31,28 @@ package com.xensource.xenapi;
 
 public enum APIVersion
 {
-    API_1_1, API_1_2, API_1_3, API_1_4, API_1_5, API_1_6, API_1_7, UNKNOWN;
+    API_1_1, API_1_2, API_1_3, API_1_4, API_1_5, API_1_6, API_1_7, API_1_8, API_1_9, API_1_10, UNKNOWN;
 
     public static APIVersion latest()
     {
-        return API_1_7;
+        return API_1_10;
     }
 
     public static APIVersion fromMajorMinor(long major, long minor)
     {
-        if (major == 1 && minor == 7)
+        if (major == 1 && minor == 10)
+        {
+            return API_1_10;
+        }
+        else if (major == 1 && minor == 9)
+        {
+            return API_1_9;
+        }
+        else if (major == 1 && minor == 8)
+        {
+            return API_1_8;
+        }
+        else if (major == 1 && minor == 7)
         {
             return API_1_7;
         }
@@ -93,6 +105,12 @@ public enum APIVersion
             return "1.6";
         case API_1_7:
             return "1.7";
+        case API_1_8:
+            return "1.8";
+        case API_1_9:
+            return "1.9";
+        case API_1_10:
+            return "1.10";
         default:
             return "Unknown";
         }

@@ -103,7 +103,7 @@ public class PxeServerManagerImpl implements PxeServerManager, ResourceStateAdap
 	@Override
 	public PxeServerResponse getApiResponse(Host pxeServer) {
 		PxeServerResponse response = new PxeServerResponse();
-		response.setId(pxeServer.getId());
+		response.setId(pxeServer.getUuid());
 		return response;
 	}
 

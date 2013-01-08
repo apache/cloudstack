@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -18,10 +18,11 @@ package com.cloud.network;
 
 import java.util.Date;
 
-import com.cloud.acl.ControlledEntity;
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-public interface Site2SiteVpnGateway extends ControlledEntity {
-    public long getId();
+public interface Site2SiteVpnGateway extends ControlledEntity, Identity, InternalIdentity {
     public long getAddrId();
     public long getVpcId();
     public Date getRemoved();

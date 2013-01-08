@@ -25,9 +25,6 @@
 <section id="secondary-storage">
     <title>Secondary Storage</title>
     <para>This section gives concepts and technical details about &PRODUCT; secondary storage. For information about how to install and configure secondary storage through the &PRODUCT; UI, see the Advanced Installation Guide.</para>
-    <xi:include href="best-practices-secondary-storage.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="changing-secondary-storage-ip.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="changing-secondary-storage-servers.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="using-swift-for-secondary-storage.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <para><xref linkend="about-secondary-storage"/></para>
 </section>
 

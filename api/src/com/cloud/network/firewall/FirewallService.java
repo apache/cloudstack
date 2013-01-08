@@ -16,22 +16,24 @@
 // under the License.
 package com.cloud.network.firewall;
 
+
 import java.util.List;
 
-import com.cloud.api.commands.ListFirewallRulesCmd;
+import org.apache.cloudstack.api.command.user.firewall.ListFirewallRulesCmd;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 
 public interface FirewallService {
     FirewallRule createFirewallRule(FirewallRule rule) throws NetworkRuleConflictException;
 
-    List<? extends FirewallRule> listFirewallRules(ListFirewallRulesCmd cmd);
+    Pair<List<? extends FirewallRule>, Integer> listFirewallRules(ListFirewallRulesCmd cmd);
 
     /**
      * Revokes a firewall rule
-     * 
+     *
      * @param ruleId
      *            the id of the rule to revoke.
      * @return

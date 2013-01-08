@@ -39,33 +39,31 @@ import javax.naming.NamingException;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 
+import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
+import org.apache.cloudstack.api.command.admin.ldap.LDAPConfigCmd;
+import org.apache.cloudstack.api.command.admin.ldap.LDAPRemoveCmd;
+import org.apache.cloudstack.api.command.admin.network.DeleteNetworkOfferingCmd;
+import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
+import org.apache.cloudstack.api.command.admin.network.UpdateNetworkOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.CreateDiskOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.*;
+import org.apache.cloudstack.api.command.admin.pod.DeletePodCmd;
+import org.apache.cloudstack.api.command.admin.pod.UpdatePodCmd;
+import org.apache.cloudstack.api.command.admin.vlan.CreateVlanIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.zone.CreateZoneCmd;
+import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
+import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
+import org.apache.cloudstack.api.command.admin.offering.CreateServiceOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.DeleteServiceOfferingCmd;
+import org.apache.cloudstack.api.command.admin.vlan.DeleteVlanIpRangeCmd;
+import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.acl.SecurityChecker;
+import org.apache.cloudstack.acl.SecurityChecker;
 import com.cloud.alert.AlertManager;
-import com.cloud.api.ApiConstants.LDAPParams;
+import org.apache.cloudstack.api.ApiConstants.LDAPParams;
 import com.cloud.api.ApiDBUtils;
-import com.cloud.api.commands.CreateDiskOfferingCmd;
-import com.cloud.api.commands.CreateNetworkOfferingCmd;
-import com.cloud.api.commands.CreateServiceOfferingCmd;
-import com.cloud.api.commands.CreateVlanIpRangeCmd;
-import com.cloud.api.commands.CreateZoneCmd;
-import com.cloud.api.commands.DeleteDiskOfferingCmd;
-import com.cloud.api.commands.DeleteNetworkOfferingCmd;
-import com.cloud.api.commands.DeletePodCmd;
-import com.cloud.api.commands.DeleteServiceOfferingCmd;
-import com.cloud.api.commands.DeleteVlanIpRangeCmd;
-import com.cloud.api.commands.DeleteZoneCmd;
-import com.cloud.api.commands.LDAPConfigCmd;
-import com.cloud.api.commands.LDAPRemoveCmd;
-import com.cloud.api.commands.ListNetworkOfferingsCmd;
-import com.cloud.api.commands.UpdateCfgCmd;
-import com.cloud.api.commands.UpdateDiskOfferingCmd;
-import com.cloud.api.commands.UpdateNetworkOfferingCmd;
-import com.cloud.api.commands.UpdatePodCmd;
-import com.cloud.api.commands.UpdateServiceOfferingCmd;
-import com.cloud.api.commands.UpdateZoneCmd;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -140,7 +138,9 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.SwiftVO;
 import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.S3Dao;
 import com.cloud.storage.dao.SwiftDao;
+import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.swift.SwiftManager;
 import com.cloud.test.IPRangeConfig;
@@ -188,6 +188,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     @Inject
     SwiftDao _swiftDao;
     @Inject
+    S3Dao _s3Dao;
+    @Inject
     ServiceOfferingDao _serviceOfferingDao;
     @Inject
     DiskOfferingDao _diskOfferingDao;
@@ -229,6 +231,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     PhysicalNetworkDao _physicalNetworkDao;
     @Inject
     SwiftManager _swiftMgr;
+    @Inject
+    S3Manager _s3Mgr;
     @Inject
     PhysicalNetworkTrafficTypeDao _trafficTypeDao;
     @Inject
@@ -490,6 +494,14 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 SwiftVO swift = _swiftDao.findById(1L);
                 if (swift != null) {
                     return " can not change " + Config.SwiftEnable.key() + " after you have added Swift";
+                }
+                if (this._s3Mgr.isS3Enabled()) {
+                    return String.format("Swift is not supported when S3 is enabled.");
+                }
+            }
+            if (Config.S3Enable.key().equals(name)) {
+                if (this._swiftMgr.isSwiftEnabled()) {
+                    return String.format("S3-backed Secondary Storage is not supported when Swift is enabled.");
                 }
             }
             return null;
@@ -1592,6 +1604,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             createDefaultSystemNetworks(zone.getId());
 
             _swiftMgr.propagateSwiftTmplteOnZone(zone.getId());
+            _s3Mgr.propagateTemplatesToZone(zone);
             txn.commit();
             return zone;
         } catch (Exception ex) {
@@ -3088,8 +3101,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
     void validateLoadBalancerServiceCapabilities(Map<Capability, String> lbServiceCapabilityMap) {
         if (lbServiceCapabilityMap != null && !lbServiceCapabilityMap.isEmpty()) {
-            if (lbServiceCapabilityMap.keySet().size() > 2 || !lbServiceCapabilityMap.containsKey(Capability.SupportedLBIsolation)) {
-                throw new InvalidParameterValueException("Only " + Capability.SupportedLBIsolation.getName() + " and " + Capability.ElasticLb + " capabilities can be sepcified for LB service");
+            if (lbServiceCapabilityMap.keySet().size() > 3 || !lbServiceCapabilityMap.containsKey(Capability.SupportedLBIsolation)) {
+                throw new InvalidParameterValueException("Only " + Capability.SupportedLBIsolation.getName() + ", " + Capability.ElasticLb.getName() + ", " + Capability.InlineMode.getName() + " capabilities can be sepcified for LB service");
             }
 
             for (Capability cap : lbServiceCapabilityMap.keySet()) {
@@ -3106,8 +3119,14 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                     if (!enabled && !disabled) {
                         throw new InvalidParameterValueException("Unknown specified value for " + Capability.ElasticLb.getName());
                     }
+                } else if (cap == Capability.InlineMode) {
+                    boolean enabled = value.contains("true");
+                    boolean disabled = value.contains("false");
+                    if (!enabled && !disabled) {
+                        throw new InvalidParameterValueException("Unknown specified value for " + Capability.InlineMode.getName());
+                    }
                 } else {
-                    throw new InvalidParameterValueException("Only " + Capability.SupportedLBIsolation.getName() + " and " + Capability.ElasticLb + " capabilities can be sepcified for LB service");
+                    throw new InvalidParameterValueException("Only " + Capability.SupportedLBIsolation.getName() + ", " + Capability.ElasticLb.getName() + ", " + Capability.InlineMode.getName() + " capabilities can be sepcified for LB service");
                 }
             }
         }
@@ -3142,20 +3161,33 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
     void validateStaticNatServiceCapablities(Map<Capability, String> staticNatServiceCapabilityMap) {
         if (staticNatServiceCapabilityMap != null && !staticNatServiceCapabilityMap.isEmpty()) {
-            if (staticNatServiceCapabilityMap.keySet().size() > 1) {
-                throw new InvalidParameterValueException("Only " + Capability.ElasticIp.getName() + " capabilitiy can be sepcified for static nat service");
+            if (staticNatServiceCapabilityMap.keySet().size() > 2) {
+                throw new InvalidParameterValueException("Only " + Capability.ElasticIp.getName() +  " and " + Capability.AssociatePublicIP.getName() +  " capabilitiy can be sepcified for static nat service");
             }
-
+            boolean eipEnabled = false;
+            boolean eipDisabled = false;
+            boolean associatePublicIP = true;
             for (Capability capability : staticNatServiceCapabilityMap.keySet()) {
                 String value = staticNatServiceCapabilityMap.get(capability);
                 if (capability == Capability.ElasticIp) {
-                    boolean enabled = value.contains("true");
-                    boolean disabled = value.contains("false");
-                    if (!enabled && !disabled) {
+                    eipEnabled = value.contains("true");
+                    eipDisabled = value.contains("false");
+                    if (!eipEnabled && !eipDisabled) {
                         throw new InvalidParameterValueException("Unknown specified value for " + Capability.ElasticIp.getName());
                     }
+                } else if (capability == Capability.AssociatePublicIP) {
+                    if (value.contains("true")) {
+                        associatePublicIP = true;
+                    } else if (value.contains("false")) {
+                        associatePublicIP = false;
+                    } else {
+                        throw new InvalidParameterValueException("Unknown specified value for " + Capability.AssociatePublicIP.getName());
+                    }
                 } else {
-                    throw new InvalidParameterValueException("Only " + Capability.ElasticIp.getName() + " capabilitiy can be sepcified for static nat service");
+                    throw new InvalidParameterValueException("Only " + Capability.ElasticIp.getName() +  " and " + Capability.AssociatePublicIP.getName() +  " capabilitiy can be sepcified for static nat service");
+                }
+                if (eipDisabled && associatePublicIP) {
+                    throw new InvalidParameterValueException("Capability " + Capability.AssociatePublicIP.getName() + " can only be set when capability " + Capability.ElasticIp.getName() + " is true");
                 }
             }
         }
@@ -3209,6 +3241,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         boolean sharedSourceNat = false;
         boolean redundantRouter = false;
         boolean elasticIp = false;
+        boolean associatePublicIp = false;
+        boolean inline = false;
         if (serviceCapabilityMap != null && !serviceCapabilityMap.isEmpty()) {
             Map<Capability, String> lbServiceCapabilityMap = serviceCapabilityMap.get(Service.Lb);
             
@@ -3224,6 +3258,14 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 String param = lbServiceCapabilityMap.get(Capability.ElasticLb);
                 if (param != null) {
                     elasticLb = param.contains("true");
+                }
+                
+                String inlineMode = lbServiceCapabilityMap.get(Capability.InlineMode);
+                if (inlineMode != null) {
+                    _networkMgr.checkCapabilityForProvider(serviceProviderMap.get(Service.Lb), Service.Lb, Capability.InlineMode, inlineMode);
+                    inline = inlineMode.contains("true");
+                } else {
+                    inline = false;
                 }
             }
 
@@ -3249,13 +3291,17 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 String param = staticNatServiceCapabilityMap.get(Capability.ElasticIp);
                 if (param != null) {
                     elasticIp = param.contains("true");
+                    String associatePublicIP = staticNatServiceCapabilityMap.get(Capability.AssociatePublicIP);
+                    if (associatePublicIP != null) {
+                        associatePublicIp = associatePublicIP.contains("true");
+                    }
                 }
             }
         }
 
         NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, systemOnly, specifyVlan, 
                 networkRate, multicastRate, isDefault, availability, tags, type, conserveMode, dedicatedLb,
-                sharedSourceNat, redundantRouter, elasticIp, elasticLb, specifyIpRanges);
+                sharedSourceNat, redundantRouter, elasticIp, elasticLb, associatePublicIp, specifyIpRanges, inline);
 
         if (serviceOfferingId != null) {
             offering.setServiceOfferingId(serviceOfferingId);

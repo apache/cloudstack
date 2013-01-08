@@ -22,7 +22,7 @@
 ]>
 <section id="configuring-projects">
     <title>Configuring Projects</title>
-    <para>Before CloudPlatform users start using projects, the CloudPlatform administrator must set
+    <para>Before &PRODUCT; users start using projects, the &PRODUCT; administrator must set
         up various systems to support them, including membership invitations, limits on project
         resources, and controls on who can create projects.</para>
     <xi:include href="set-up-invitations.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />

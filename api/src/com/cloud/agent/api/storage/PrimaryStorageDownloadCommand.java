@@ -17,7 +17,8 @@
 package com.cloud.agent.api.storage;
 
 import com.cloud.storage.Storage.ImageFormat;
-
+import com.cloud.agent.api.to.StorageFilerTO;
+import com.cloud.storage.StoragePool;
 
 /**
  *
@@ -26,52 +27,59 @@ public class PrimaryStorageDownloadCommand extends AbstractDownloadCommand {
 	String localPath;
 	String poolUuid;
 	long poolId;
-	
+
+    StorageFilerTO primaryPool;
+
 	String secondaryStorageUrl;
 	String primaryStorageUrl;
 
     protected PrimaryStorageDownloadCommand() {
 	}
 
-    public PrimaryStorageDownloadCommand(String name, String url, ImageFormat format, long accountId, long poolId, String poolUuid, int wait) {
+    public PrimaryStorageDownloadCommand(String name, String url, ImageFormat format, long accountId, StoragePool pool, int wait) {
         super(name, url, format, accountId);
-        this.poolId = poolId;
-        this.poolUuid = poolUuid;
+        this.poolId = pool.getId();
+        this.poolUuid = pool.getUuid();
+        this.primaryPool = new StorageFilerTO(pool);
         setWait(wait);
     }
-   
+
     public String getPoolUuid() {
         return poolUuid;
     }
-    
+
     public long getPoolId() {
         return poolId;
+    }
+
+    public StorageFilerTO getPool() {
+        return primaryPool;
     }
     
     public void setLocalPath(String path) {
     	this.localPath = path;
     }
-    
+
     public String getLocalPath() {
     	return localPath;
     }
-    
+
     public void setSecondaryStorageUrl(String url) {
     	secondaryStorageUrl = url;
     }
-    
+
     public String getSecondaryStorageUrl() {
     	return secondaryStorageUrl;
     }
-    
+
     public void setPrimaryStorageUrl(String url) {
     	primaryStorageUrl = url;
     }
-    
+
     public String getPrimaryStorageUrl() {
     	return primaryStorageUrl;
     }
-    
+
     @Override
     public boolean executeInSequence() {
         return true;

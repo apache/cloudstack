@@ -22,7 +22,7 @@ public class IpAssocVpcCommand extends IpAssocCommand{
     protected IpAssocVpcCommand() {
         super();
     }
-    
+
     public IpAssocVpcCommand(IpAddressTO[] ips) {
         super(ips);
     }

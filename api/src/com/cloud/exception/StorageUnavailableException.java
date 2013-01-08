@@ -20,9 +20,9 @@ import com.cloud.storage.StoragePool;
 import com.cloud.utils.SerialVersionUID;
 
 /**
- * If the cause is due to storage pool unavailable, calling 
+ * If the cause is due to storage pool unavailable, calling
  * problem with.
- * 
+ *
  */
 public class StorageUnavailableException extends ResourceUnavailableException {
     private static final long serialVersionUID = SerialVersionUID.StorageUnavailableException;
@@ -33,11 +33,11 @@ public class StorageUnavailableException extends ResourceUnavailableException {
     public StorageUnavailableException(String msg, long poolId, Throwable cause) {
         this(msg, StoragePool.class, poolId, cause);
     }
-    
+
     public StorageUnavailableException(String msg, Class<?> scope, long resourceId) {
         this(msg, scope, resourceId, null);
     }
-    
+
     public StorageUnavailableException(String msg, Class<?> scope, long resourceId, Throwable th) {
         super(msg, scope, resourceId, th);
     }

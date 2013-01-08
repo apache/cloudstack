@@ -18,7 +18,7 @@ package com.cloud.network.vpc;
 
 import java.util.List;
 
-import com.cloud.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -55,11 +55,13 @@ public interface VpcManager extends VpcService{
 
     /**
      * @param vpc
+     * @param caller TODO
+     * @param callerUserId TODO
      * @return
      * @throws ConcurrentOperationException
      * @throws ResourceUnavailableException
      */
-    boolean destroyVpc(Vpc vpc) throws ConcurrentOperationException, ResourceUnavailableException;
+    boolean destroyVpc(Vpc vpc, Account caller, Long callerUserId) throws ConcurrentOperationException, ResourceUnavailableException;
 
     /**
      * @param vpcId

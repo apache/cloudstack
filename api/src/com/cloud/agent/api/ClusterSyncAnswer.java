@@ -25,31 +25,31 @@ public class ClusterSyncAnswer extends Answer {
     private long _clusterId;
     private HashMap<String, Pair<String, State>> _newStates;
     private boolean _isExecuted=false;
- 
+
     // this is here because a cron command answer is being sent twice
     //  AgentAttache.processAnswers
     //  AgentManagerImpl.notifyAnswersToMonitors
     public boolean isExceuted(){
         return _isExecuted;
     }
-    
+
     public void setExecuted(){
         _isExecuted = true;
     }
-    
+
 
     public ClusterSyncAnswer(long clusterId, HashMap<String, Pair<String, State>> newStates){
         _clusterId = clusterId;
         _newStates = newStates;
         result = true;
     }
-    
+
     public long getClusterId() {
         return _clusterId;
     }
-    
+
     public HashMap<String, Pair<String, State>> getNewStates() {
         return _newStates;
-    }   
+    }
 
 }

@@ -32,6 +32,16 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
+import org.apache.cloudstack.api.command.admin.storage.ListS3sCmd;
+import org.apache.cloudstack.api.command.admin.swift.AddSwiftCmd;
+import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
+import org.apache.cloudstack.api.command.admin.host.*;
+import org.apache.cloudstack.api.command.admin.swift.ListSwiftsCmd;
+import org.apache.cloudstack.api.command.admin.storage.AddS3Cmd;
+import com.cloud.storage.S3;
+import com.cloud.storage.S3VO;
+import com.cloud.storage.s3.S3Manager;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -49,19 +59,12 @@ import com.cloud.agent.api.UpdateHostPasswordCommand;
 import com.cloud.agent.manager.AgentAttache;
 import com.cloud.agent.manager.allocator.PodAllocator;
 import com.cloud.agent.transport.Request;
-import com.cloud.api.ApiConstants;
+import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
-import com.cloud.api.commands.AddClusterCmd;
-import com.cloud.api.commands.AddHostCmd;
-import com.cloud.api.commands.AddSecondaryStorageCmd;
-import com.cloud.api.commands.AddSwiftCmd;
-import com.cloud.api.commands.CancelMaintenanceCmd;
-import com.cloud.api.commands.DeleteClusterCmd;
-import com.cloud.api.commands.ListSwiftsCmd;
-import com.cloud.api.commands.PrepareForMaintenanceCmd;
-import com.cloud.api.commands.ReconnectHostCmd;
-import com.cloud.api.commands.UpdateHostCmd;
-import com.cloud.api.commands.UpdateHostPasswordCmd;
+import org.apache.cloudstack.api.command.admin.host.AddHostCmd;
+import org.apache.cloudstack.api.command.admin.host.CancelMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.host.UpdateHostCmd;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
@@ -72,7 +75,6 @@ import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
-import com.cloud.dc.ClusterVSMMapVO;
 import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
@@ -133,7 +135,6 @@ import com.cloud.user.UserContext;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.UriUtils;
-import com.cloud.utils.cisco.n1kv.vsm.NetconfHelper;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
@@ -183,6 +184,8 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     protected HostDao                        _hostDao;
     @Inject
     protected SwiftManager _swiftMgr;
+    @Inject
+    protected S3Manager                      _s3Mgr;
     @Inject
     protected HostDetailsDao                 _hostDetailsDao;
     @Inject
@@ -568,6 +571,16 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     @Override
     public List<SwiftVO> listSwifts(ListSwiftsCmd cmd) {
         return _swiftMgr.listSwifts(cmd);
+    }
+
+    @Override
+    public S3 discoverS3(final AddS3Cmd cmd) throws DiscoveryException {
+        return this._s3Mgr.addS3(cmd);
+    }
+
+    @Override
+    public List<S3VO> listS3s(final ListS3sCmd cmd) {
+        return this._s3Mgr.listS3s(cmd);
     }
 
     private List<HostVO> discoverHostsFull(Long dcId, Long podId, Long clusterId, String clusterName, String url, String username, String password, String hypervisorType, List<String> hostTags,
@@ -1170,7 +1183,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             throw new InvalidParameterValueException("There are other servers in PrepareForMaintenance OR ErrorInMaintenance STATUS in cluster " + host.getClusterId());
         }
 
-        if (_storageMgr.isLocalStorageActiveOnHost(host)) {
+        if (_storageMgr.isLocalStorageActiveOnHost(host.getId())) {
             throw new InvalidParameterValueException("There are active VMs using the host's local storage pool. Please stop all VMs on this host that use local storage.");
         }
 

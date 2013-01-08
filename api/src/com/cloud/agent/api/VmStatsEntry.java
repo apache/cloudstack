@@ -19,17 +19,17 @@ package com.cloud.agent.api;
 import com.cloud.vm.VmStats;
 
 public class VmStatsEntry implements VmStats {
-	
+
 	double cpuUtilization;
 	double networkReadKBs;
 	double networkWriteKBs;
-	int numCPUs;	
+	int numCPUs;
 	String entityType;
-	    
+
     public VmStatsEntry() {
     }
-    
-    public VmStatsEntry(double cpuUtilization, double networkReadKBs, double networkWriteKBs, int numCPUs, String entityType) 
+
+    public VmStatsEntry(double cpuUtilization, double networkReadKBs, double networkWriteKBs, int numCPUs, String entityType)
     {
         this.cpuUtilization = cpuUtilization;
         this.networkReadKBs = networkReadKBs;
@@ -41,7 +41,7 @@ public class VmStatsEntry implements VmStats {
     public double getCPUUtilization() {
     	return cpuUtilization;
     }
-    
+
     public void setCPUUtilization(double cpuUtilization) {
     	this.cpuUtilization = cpuUtilization;
     }
@@ -49,23 +49,23 @@ public class VmStatsEntry implements VmStats {
     public double getNetworkReadKBs() {
     	return networkReadKBs;
     }
-    
+
     public void setNetworkReadKBs(double networkReadKBs) {
     	this.networkReadKBs = networkReadKBs;
     }
-    
+
     public double getNetworkWriteKBs() {
     	return networkWriteKBs;
     }
-    
+
     public void setNetworkWriteKBs(double networkWriteKBs) {
     	this.networkWriteKBs = networkWriteKBs;
     }
-    
+
     public int getNumCPUs() {
     	return numCPUs;
     }
-    
+
     public void setNumCPUs(int numCPUs) {
     	this.numCPUs = numCPUs;
     }
@@ -73,10 +73,10 @@ public class VmStatsEntry implements VmStats {
     public String getEntityType(){
     	return this.entityType;
     }
-    
+
     public void setEntityType(String entityType){
     	this.entityType = entityType;
     }
-    
+
 
 }

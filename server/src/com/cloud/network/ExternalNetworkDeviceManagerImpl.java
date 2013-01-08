@@ -27,28 +27,30 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.command.admin.network.AddNetworkDeviceCmd;
+import org.apache.cloudstack.api.command.admin.network.ListNetworkDeviceCmd;
+import org.apache.cloudstack.network.ExternalNetworkDeviceManager;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.api.ApiConstants;
-import com.cloud.api.IdentityService;
-import com.cloud.api.PlugService;
-import com.cloud.api.commands.AddNetworkDeviceCmd;
-import com.cloud.api.commands.DeleteNetworkDeviceCmd;
-import com.cloud.api.commands.ListNetworkDeviceCmd;
+import com.cloud.api.ApiDBUtils;
+
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.IdentityService;
+import org.apache.cloudstack.api.command.admin.network.DeleteNetworkDeviceCmd;
 import com.cloud.baremetal.ExternalDhcpManager;
 import com.cloud.baremetal.PxeServerManager;
 import com.cloud.baremetal.PxeServerProfile;
 import com.cloud.baremetal.PxeServerManager.PxeServerType;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.Pod;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
-import com.cloud.host.Host.Type;
 import com.cloud.host.dao.HostDao;
-import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.dao.ExternalFirewallDeviceDao;
 import com.cloud.network.dao.ExternalLoadBalancerDeviceDao;
 import com.cloud.network.dao.IPAddressDao;
@@ -62,9 +64,8 @@ import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.offerings.dao.NetworkOfferingDao;
-import com.cloud.resource.ServerResource;
 import com.cloud.server.ManagementServer;
-import com.cloud.server.api.response.NetworkDeviceResponse;
+import org.apache.cloudstack.api.response.NetworkDeviceResponse;
 import com.cloud.server.api.response.NwDeviceDhcpResponse;
 import com.cloud.server.api.response.PxePingResponse;
 import com.cloud.user.AccountManager;
@@ -194,8 +195,16 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
             String pxeType = host.getDetail("type");
             if (pxeType.equalsIgnoreCase(PxeServerType.PING.getName())) {
                 PxePingResponse r = new PxePingResponse();
-                r.setZoneId(host.getDataCenterId());
-                r.setPodId(host.getPodId());
+                DataCenter zone = ApiDBUtils.findZoneById(host.getDataCenterId());
+                if (zone != null) {
+                    r.setZoneId(zone.getUuid());
+                }
+                if (host.getPodId() != null) {
+                    Pod pod = ApiDBUtils.findPodById(host.getPodId());
+                    if (pod != null) {
+                        r.setPodId(pod.getUuid());
+                    }
+                }
                 r.setUrl(host.getPrivateIpAddress());
                 r.setType(pxeType);
                 r.setStorageServerIp(host.getDetail("storageServer"));
@@ -209,7 +218,7 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
             throw new CloudRuntimeException("Unsupported network device type:" + host.getType());
         }
         
-        response.setId(device.getId());
+        response.setId(device.getUuid());
         return response;
     }
 

@@ -14,6 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 package com.cloud.async.dao;
 
 import java.sql.PreparedStatement;
@@ -31,22 +32,30 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.async.SyncQueueItemVO;
-import com.cloud.async.SyncQueueVO;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.JoinBuilder;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 
 @Component
 @Local(value = { SyncQueueItemDao.class })
 public class SyncQueueItemDaoImpl extends GenericDaoBase<SyncQueueItemVO, Long> implements SyncQueueItemDao {
     private static final Logger s_logger = Logger.getLogger(SyncQueueItemDaoImpl.class);
+    final GenericSearchBuilder<SyncQueueItemVO, Long> queueIdSearch;
     
-    // private final SyncQueueDao _syncQueueDao = new SyncQueueDaoImpl();
-    @Inject private SyncQueueDao _syncQueueDao;
+    protected SyncQueueItemDaoImpl() {
+        super();
+        queueIdSearch = createSearchBuilder(Long.class);
+        queueIdSearch.and("contentId", queueIdSearch.entity().getContentId(), Op.EQ);
+        queueIdSearch.and("contentType", queueIdSearch.entity().getContentType(), Op.EQ);
+        queueIdSearch.selectField(queueIdSearch.entity().getId());
+        queueIdSearch.done();
+    }
+    
 
 	@Override
 	public SyncQueueItemVO getNextQueueItem(long queueId) {
@@ -73,7 +82,7 @@ public class SyncQueueItemDaoImpl extends GenericDaoBase<SyncQueueItemVO, Long> 
 		
 		String sql = "SELECT i.id, i.queue_id, i.content_type, i.content_id, i.created " +
 					 " FROM sync_queue AS q JOIN sync_queue_item AS i ON q.id = i.queue_id " +
-					 " WHERE q.queue_proc_time IS NULL AND i.queue_proc_number IS NULL " +
+                     " WHERE q.queue_size < q.queue_size_limit AND i.queue_proc_number IS NULL " +
 					 " GROUP BY q.id " +
 					 " ORDER BY i.id " +
 					 " LIMIT 0, ?";
@@ -118,28 +127,35 @@ public class SyncQueueItemDaoImpl extends GenericDaoBase<SyncQueueItemVO, Long> 
         return listBy(sc, filter);
 	}
 	
+
     @Override
     public List<SyncQueueItemVO> getBlockedQueueItems(long thresholdMs, boolean exclusive) {
         Date cutTime = DateUtil.currentGMTTime();
-        cutTime = new Date(cutTime.getTime() - thresholdMs);
-        
-        SearchBuilder<SyncQueueVO> sbQueue = _syncQueueDao.createSearchBuilder();
-        sbQueue.and("lastProcessTime", sbQueue.entity().getLastProcessTime(), SearchCriteria.Op.NNULL);
-        sbQueue.and("lastProcessTime2", sbQueue.entity().getLastProcessTime(), SearchCriteria.Op.LT);
         
         SearchBuilder<SyncQueueItemVO> sbItem = createSearchBuilder();
-        sbItem.join("queueItemJoinQueue", sbQueue, sbQueue.entity().getId(), sbItem.entity().getQueueId(), JoinBuilder.JoinType.INNER);
         sbItem.and("lastProcessMsid", sbItem.entity().getLastProcessMsid(), SearchCriteria.Op.NNULL);
         sbItem.and("lastProcessNumber", sbItem.entity().getLastProcessNumber(), SearchCriteria.Op.NNULL);
+        sbItem.and("lastProcessNumber", sbItem.entity().getLastProcessTime(), SearchCriteria.Op.NNULL);
+        sbItem.and("lastProcessTime2", sbItem.entity().getLastProcessTime(), SearchCriteria.Op.LT);
         
-        sbQueue.done();
         sbItem.done();
         
         SearchCriteria<SyncQueueItemVO> sc = sbItem.create();
-        sc.setJoinParameters("queueItemJoinQueue", "lastProcessTime2", cutTime);
+        sc.setParameters("lastProcessTime2", new Date(cutTime.getTime() - thresholdMs));
         
         if(exclusive)
             return lockRows(sc, null, true);
         return listBy(sc, null);
+    }
+
+
+    @Override
+    public Long getQueueItemIdByContentIdAndType(long contentId, String contentType) {
+        SearchCriteria<Long> sc = queueIdSearch.create();
+        sc.setParameters("contentId", contentId);
+        sc.setParameters("contentType", contentType);
+        List<Long> id = customSearch(sc, null);
+
+        return id.size() == 0 ? null : id.get(0);
     }
 }

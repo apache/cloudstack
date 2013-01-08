@@ -21,9 +21,9 @@ import marvin
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from marvin.remoteSSHClient import remoteSSHClient
-from integration.lib.utils import *
-from integration.lib.base import *
-from integration.lib.common import *
+from marvin.integration.lib.utils import *
+from marvin.integration.lib.base import *
+from marvin.integration.lib.common import *
 from nose.plugins.attrib import attr
 #Import System modules
 import os
@@ -31,6 +31,7 @@ import urllib
 import time
 import tempfile
 
+_multiprocess_shared_ = True
 
 class Services:
     """Test Volume Services
@@ -74,8 +75,8 @@ class Services:
                         "publicport": 22,
                         "protocol": 'TCP',
                         "diskdevice": "/dev/xvdb",
-                        "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
-                        "mode": 'advanced',
+                        "ostype": 'CentOS 5.3 (64-bit)',
+                        "mode": 'basic',
                         "sleep": 60,
                         "timeout": 10,
                     }
@@ -103,7 +104,7 @@ class TestCreateVolume(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["domainid"] = cls.domain.id
         cls.services["zoneid"] = cls.zone.id
@@ -285,7 +286,7 @@ class TestVolumes(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["domainid"] = cls.domain.id
         cls.services["zoneid"] = cls.zone.id

@@ -22,25 +22,25 @@ import com.cloud.utils.net.NetUtils;
 
 /**
  * PortForwardingRuleTO specifies one port forwarding rule.
- * 
+ *
  *
  */
 public class PortForwardingRuleTO extends FirewallRuleTO {
     String dstIp;
     int[] dstPortRange;
-    
+
     protected PortForwardingRuleTO() {
         super();
     }
-    
+
     public PortForwardingRuleTO(PortForwardingRule rule, String srcVlanTag, String srcIp) {
         super(rule, srcVlanTag, srcIp);
         this.dstIp = rule.getDestinationIpAddress().addr();
         this.dstPortRange = new int[] { rule.getDestinationPortStart(), rule.getDestinationPortEnd() };
     }
-    
-    protected PortForwardingRuleTO(long id, String srcIp, int srcPortStart, int srcPortEnd, String dstIp, int dstPortStart, int dstPortEnd, String protocol, boolean revoked, boolean brandNew) {
-        super(id, srcIp,null, protocol, srcPortStart, srcPortEnd, revoked, brandNew, FirewallRule.Purpose.PortForwarding, null,0,0);
+
+    public PortForwardingRuleTO(long id, String srcIp, int srcPortStart, int srcPortEnd, String dstIp, int dstPortStart, int dstPortEnd, String protocol, boolean revoked, boolean alreadyAdded) {
+        super(id, null, srcIp, protocol, srcPortStart, srcPortEnd, revoked, alreadyAdded, FirewallRule.Purpose.PortForwarding, null,0,0);
         this.dstIp = dstIp;
         this.dstPortRange = new int[] { dstPortStart, dstPortEnd };
     }
@@ -56,5 +56,5 @@ public class PortForwardingRuleTO extends FirewallRuleTO {
     public String getStringDstPortRange() {
         return NetUtils.portRangeToString(dstPortRange);
     }
-    
+
 }

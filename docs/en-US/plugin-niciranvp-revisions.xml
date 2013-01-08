@@ -36,7 +36,7 @@
                 </author>
                 <revdescription>
                     <simplelist>
-                        <member>Documentation created for 4.0.x version of the NVP Plugin</member>
+                        <member>Documentation created for 4.0.0-incubating version of the NVP Plugin</member>
                     </simplelist>
                 </revdescription>
             </revision>

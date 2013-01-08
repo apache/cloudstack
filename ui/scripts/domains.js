@@ -193,16 +193,20 @@
             label: 'label.add.domain',
 
             action: function(args) {
-              var array1 = [];
-              array1.push("&parentdomainid=" + args.context.domains[0].id);
-              array1.push("&name=" + todb(args.data.name));     
-              if(args.data.networkdomain != null && args.data.networkdomain.length > 0)              
-                array1.push("&networkdomain=" + todb(args.data.networkdomain));  
+              var data = {
+							  parentdomainid: args.context.domains[0].id,
+								name: args.data.name
+							};
+                 
+              if(args.data.networkdomain != null && args.data.networkdomain.length > 0) {    
+                $.extend(data, {
+                  networkdomain: args.data.networkdomain
+                });			
+							}
                 
               $.ajax({
-                url: createURL("createDomain" + array1.join("")),
-                dataType: "json",
-                async: false,
+                url: createURL('createDomain'),
+                data: data,               
                 success: function(json) {
                   var item = json.createdomainresponse.domain;
                   args.response.success({data: item});
@@ -226,10 +230,12 @@
               fields: {
                 name: {
                   label: 'label.name',
+                  docID: 'helpDomainName',
                   validation: { required: true }
                 },
                 networkdomain: {
                   label: 'label.network.domain',
+                  docID: 'helpDomainNetworkDomain',
                   validation: { required: false }
                 }
               }

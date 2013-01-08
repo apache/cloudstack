@@ -71,7 +71,6 @@ import com.cloud.utils.ssh.SSHCmdHelper;
 public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 		Listener, ResourceStateAdapter {
 	 private static final Logger s_logger = Logger.getLogger(KvmServerDiscoverer.class);
-	 private String _setupAgentPath;
 	 private ConfigurationDao _configDao;
 	 private String _hostIp;
 	 private int _waitTime = 5; /*wait for 5 minutes*/
@@ -178,9 +177,9 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 			}
 			
 			List <PhysicalNetworkSetupInfo> netInfos = _networkMgr.getPhysicalNetworkInfo(dcId, HypervisorType.KVM);
-			String kvmPrivateNic = _kvmPrivateNic;
-			String kvmPublicNic = _kvmPublicNic;
-			String kvmGuestNic = _kvmGuestNic;
+			String kvmPrivateNic = null;
+			String kvmPublicNic = null;
+			String kvmGuestNic = null;
 
 			for (PhysicalNetworkSetupInfo info : netInfos) {
 			    if (info.getPrivateNetworkName() != null) {
@@ -194,20 +193,30 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 			    }
 			}
 
-                        String parameters = " -m " + _hostIp + " -z " + dcId + " -p " + podId + " -c " + clusterId + " -g " + guid + " -a";
+			if (kvmPrivateNic == null && kvmPublicNic == null && kvmGuestNic == null) {
+				kvmPrivateNic = _kvmPrivateNic;
+				kvmPublicNic = _kvmPublicNic;
+				kvmGuestNic = _kvmGuestNic;
+			} 
 			
-			if (kvmPublicNic != null) {
-				parameters += " --pubNic=" + kvmPublicNic;
+			if (kvmPublicNic == null) {
+				kvmPublicNic = (kvmGuestNic != null) ? kvmGuestNic : kvmPrivateNic;
 			}
 			
-			if (kvmPrivateNic != null) {
-				parameters += " --prvNic=" + kvmPrivateNic;
+			if (kvmPrivateNic == null) {
+				kvmPrivateNic = (kvmPublicNic != null) ? kvmPublicNic : kvmGuestNic;
 			}
 			
-			if (kvmGuestNic != null) {
-			    parameters += " --guestNic=" + kvmGuestNic;
+			if (kvmGuestNic == null) {
+				kvmGuestNic = (kvmPublicNic != null) ? kvmPublicNic : kvmPrivateNic;
 			}
 		
+            String parameters = " -m " + _hostIp + " -z " + dcId + " -p " + podId + " -c " + clusterId + " -g " + guid + " -a";
+
+            parameters += " --pubNic=" + kvmPublicNic;
+            parameters += " --prvNic=" + kvmPrivateNic;
+            parameters += " --guestNic=" + kvmGuestNic;
+
 			SSHCmdHelper.sshExecuteCmd(sshConnection, "cloud-setup-agent " + parameters, 3);
 			
 			KvmDummyResourceBase kvmResource = new KvmDummyResourceBase();
@@ -280,7 +289,6 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
 		ComponentLocator locator = ComponentLocator.getCurrentLocator();
         _configDao = locator.getDao(ConfigurationDao.class);
-		_setupAgentPath = Script.findScript(getPatchPath(), "setup_agent.sh");
 		_kvmPrivateNic = _configDao.getValue(Config.KvmPrivateNetwork.key());
 		if (_kvmPrivateNic == null) {
 		    _kvmPrivateNic = "cloudbr0";
@@ -296,9 +304,6 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 		    _kvmGuestNic = _kvmPrivateNic;
 		}
 		
-		if (_setupAgentPath == null) {
-			throw new ConfigurationException("Can't find setup_agent.sh");
-		}
 		_hostIp = _configDao.getValue("host");
 		if (_hostIp == null) {
 			throw new ConfigurationException("Can't get host IP");

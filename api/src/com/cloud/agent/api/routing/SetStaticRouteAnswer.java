@@ -20,16 +20,16 @@ import com.cloud.agent.api.Answer;
 
 public class SetStaticRouteAnswer extends Answer{
     String[] results;
-    
+
     protected SetStaticRouteAnswer() {
     }
-    
+
     public SetStaticRouteAnswer(SetStaticRouteCommand cmd, boolean success, String[] results) {
         super(cmd, success, null);
         assert (cmd.getStaticRoutes().length == results.length) : "Static routes and their results should be the same length";
         this.results = results;
     }
-    
+
     public String[] getResults() {
         return results;
     }

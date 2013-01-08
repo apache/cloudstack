@@ -19,11 +19,11 @@ package com.cloud.api.commands.netapp;
 import java.net.UnknownHostException;
 import java.rmi.ServerException;
 
-import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseCmd;
-import com.cloud.api.Implementation;
-import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -34,7 +34,7 @@ import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.CreateVolumeOnFilerCmdResponse;
 import com.cloud.utils.component.ComponentLocator;
 
-@Implementation(description="Create a volume", responseObject = CreateVolumeOnFilerCmdResponse.class)
+@APICommand(name = "createVolumeOnFiler", description="Create a volume", responseObject = CreateVolumeOnFilerCmdResponse.class)
 public class CreateVolumeOnFilerCmd extends BaseCmd {
     private static final String s_name = "createvolumeresponse";
 

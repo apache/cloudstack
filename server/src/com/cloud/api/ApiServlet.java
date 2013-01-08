@@ -28,6 +28,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.log4j.Logger;
 
 import com.cloud.cluster.StackMaid;
@@ -36,6 +38,7 @@ import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.UserContext;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -84,8 +87,8 @@ public class ApiServlet extends HttpServlet {
             for (String param : paramsInQueryString) {
                 String[] paramTokens = param.split("=");
                 if (paramTokens != null && paramTokens.length == 2) {
-                    String name = param.split("=")[0];
-                    String value = param.split("=")[1];
+                    String name = paramTokens[0];
+                    String value = paramTokens[1];
 
                     try {
                         name = URLDecoder.decode(name, "UTF-8");
@@ -97,7 +100,7 @@ public class ApiServlet extends HttpServlet {
                     }
                     params.put(name, new String[] { value });
                 } else {
-                    s_logger.debug("Invalid paramemter in URL found. param: " + param);
+                    s_logger.debug("Invalid parameter in URL found. param: " + param);
                 }
             }
         }
@@ -113,15 +116,19 @@ public class ApiServlet extends HttpServlet {
         Map<String, Object[]> params = new HashMap<String, Object[]>();
         params.putAll(req.getParameterMap());
 
-        //
         // For HTTP GET requests, it seems that HttpServletRequest.getParameterMap() actually tries
         // to unwrap URL encoded content from ISO-9959-1.
-        //
-        // After failed in using setCharacterEncoding() to control it, end up with following hacking : for all GET requests,
-        // we will override it with our-own way of UTF-8 based URL decoding.
-        //
+        // After failed in using setCharacterEncoding() to control it, end up with following hacking:
+        // for all GET requests, we will override it with our-own way of UTF-8 based URL decoding.
         utf8Fixup(req, params);
 
+        // logging the request start and end in management log for easy debugging
+        String reqStr = "";
+        if (s_logger.isDebugEnabled()) {
+            reqStr = auditTrailSb.toString() + " " + req.getQueryString();
+            s_logger.debug("===START=== " + StringUtils.cleanString(reqStr));
+        }
+        
         try {
             HttpSession session = req.getSession(false);
             Object[] responseTypeParam = params.get("response");
@@ -256,7 +263,8 @@ public class ApiServlet extends HttpServlet {
                 }
 
                 // Do a sanity check here to make sure the user hasn't already been deleted
-                if ((userId != null) && (account != null) && (accountObj != null) && _apiServer.verifyUser(userId)) {
+                if ((userId != null) && (account != null)
+                        && (accountObj != null) && _apiServer.verifyUser(userId)) {
                     String[] command = (String[]) params.get("command");
                     if (command == null) {
                         s_logger.info("missing command, ignoring request...");
@@ -267,9 +275,8 @@ public class ApiServlet extends HttpServlet {
                     }
                     UserContext.updateContext(userId, (Account) accountObj, session.getId());
                 } else {
-                    // Invalidate the session to ensure we won't allow a request across management server restarts if the userId
-                    // was serialized to the
-                    // stored session
+                    // Invalidate the session to ensure we won't allow a request across management server
+                    // restarts if the userId was serialized to the stored session
                     try {
                         session.invalidate();
                     } catch (IllegalStateException ise) {
@@ -335,6 +342,9 @@ public class ApiServlet extends HttpServlet {
             }
         } finally {
             s_accessLogger.info(auditTrailSb.toString());
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("===END=== " + StringUtils.cleanString(reqStr));
+            }
             // cleanup user context to prevent from being peeked in other request context
             UserContext.unregisterContext();
         }
@@ -377,12 +387,11 @@ public class ApiServlet extends HttpServlet {
         StringBuffer sb = new StringBuffer();
         int inactiveInterval = session.getMaxInactiveInterval();
         
-       String user_UUID = (String)session.getAttribute("user_UUID");
-       session.removeAttribute("user_UUID");
+        String user_UUID = (String)session.getAttribute("user_UUID");
+        session.removeAttribute("user_UUID");
 
-       String domain_UUID = (String)session.getAttribute("domain_UUID");
-       session.removeAttribute("domain_UUID");       
-        
+        String domain_UUID = (String)session.getAttribute("domain_UUID");
+        session.removeAttribute("domain_UUID");
 
         if (BaseCmd.RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
             sb.append("{ \"loginresponse\" : { ");
@@ -403,10 +412,13 @@ public class ApiServlet extends HttpServlet {
                     }
                 }
             }
-            sb.append(" } }");
+            sb.append(" }");
+            sb.append(", \"cloudstack-version\": \"");
+            sb.append(ApiDBUtils.getVersion());
+            sb.append("\" }");
         } else {
             sb.append("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>");
-            sb.append("<loginresponse cloud-stack-version=\"" + ApiDBUtils.getVersion() + "\">");
+            sb.append("<loginresponse cloudstack-version=\"" + ApiDBUtils.getVersion() + "\">");
             sb.append("<timeout>" + inactiveInterval + "</timeout>");
             Enumeration attrNames = session.getAttributeNames();
             if (attrNames != null) {
@@ -433,10 +445,13 @@ public class ApiServlet extends HttpServlet {
     private String getLogoutSuccessResponse(String responseType) {
         StringBuffer sb = new StringBuffer();
         if (BaseCmd.RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
-            sb.append("{ \"logoutresponse\" : { \"description\" : \"success\" } }");
+            sb.append("{ \"logoutresponse\" : { \"description\" : \"success\" }");
+            sb.append(", \"cloudstack-version\": \"");
+            sb.append(ApiDBUtils.getVersion());
+            sb.append("\" }");
         } else {
             sb.append("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>");
-            sb.append("<logoutresponse cloud-stack-version=\"" + ApiDBUtils.getVersion() + "\">");
+            sb.append("<logoutresponse cloudstack-version=\"" + ApiDBUtils.getVersion() + "\">");
             sb.append("<description>success</description>");
             sb.append("</logoutresponse>");
         }

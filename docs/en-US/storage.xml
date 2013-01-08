@@ -30,4 +30,3 @@
     <xi:include href="working-with-volumes.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="working-with-snapshots.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
 </chapter>
-

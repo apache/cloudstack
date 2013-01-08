@@ -16,34 +16,22 @@
 // under the License.
 package com.cloud.keystore;
 
-import java.security.KeyStore;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import junit.framework.TestCase;
 
 import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 
-import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.ApiSerializerHelper;
-import com.cloud.api.response.AlertResponse;
-import com.cloud.api.response.ApiResponseSerializer;
-import com.cloud.api.response.UserVmResponse;
-import com.cloud.configuration.DefaultInterceptorLibrary;
-import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.MockComponentLocator;
-import com.cloud.utils.security.CertificateHelper;
+import org.apache.cloudstack.api.response.AlertResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
 
 public class KeystoreTest extends TestCase {
     private final static Logger s_logger = Logger.getLogger(KeystoreTest.class);
 
-	private String keyContent = 
-		"MIICdgIBADANBgkqhkiG9w0BAQEFAASCAmAwggJcAgEAAoGBALV5vGlkiWwoZX4hTRplPXP8qtST\n" + 
-		"hwZhko8noeY5vf8ECwmd+vrCTw/JvnOtkx/8oYNbg/SeUt1EfOsk6gqJdBblGFBZRMcUJlIpqE9z\n" + 
+	private String keyContent =
+		"MIICdgIBADANBgkqhkiG9w0BAQEFAASCAmAwggJcAgEAAoGBALV5vGlkiWwoZX4hTRplPXP8qtST\n" +
+		"hwZhko8noeY5vf8ECwmd+vrCTw/JvnOtkx/8oYNbg/SeUt1EfOsk6gqJdBblGFBZRMcUJlIpqE9z\n" +
 		"uv68U9G8Gfi/qvRSY336hibw0J5bZ4vn1QqmyHDB+Czea9AjFUV7AEVG15+vED7why+/AgMBAAEC\n" +
 		"gYBmFBPnNKYYMKDmUdUNA+WNWJK/ADzzWe8WlzR6TACTcbLDthl289WFC/YVG42mcHRpbxDKiEQU\n" +
 		"MnIR0rHTO34Qb/2HcuyweStU2gqR6omxBvMnFpJr90nD1HcOMJzeLHsphau0/EmKKey+gk4PyieD\n" +
@@ -54,8 +42,8 @@ public class KeystoreTest extends TestCase {
 		"/DURBUn+1l5pyCKrZnDbvaALSLATLvjmFTuGjoHszy2OeKnOZmEqExWnKKE/VYuPyhy6V7i3TwJA\n" +
 		"f8skDgtPK0OsBCa6IljPaHoWBjPc4kFkSTSS1d56hUcWSikTmiuKdLyBb85AADSZYsvHWrte4opN\n" +
 		"dhNukMJuRA==\n";
-	
-	private String certContent = 
+
+	private String certContent =
 		"-----BEGIN CERTIFICATE-----\n" +
 		"MIIE3jCCA8agAwIBAgIFAqv56tIwDQYJKoZIhvcNAQEFBQAwgcoxCzAJBgNVBAYT\n" +
 		"AlVTMRAwDgYDVQQIEwdBcml6b25hMRMwEQYDVQQHEwpTY290dHNkYWxlMRowGAYD\n" +
@@ -85,27 +73,27 @@ public class KeystoreTest extends TestCase {
 		"k0fLF4+i/pt9hVCz0QrZ28RUhXf825+EOL0Gw+Uzt+7RV2cCaJrlu4cDrDom2FRy\n" +
 		"E8I=\n" +
 		"-----END CERTIFICATE-----\n";
-    
+
     @Override
     @Before
     public void setUp() {
-/*    	
+/*
         MockComponentLocator locator = new MockComponentLocator("management-server");
         locator.addDao("keystoreDao", KeystoreDaoImpl.class);
         locator.addManager("KeystoreManager", KeystoreManagerImpl.class);
         locator.makeActive(new DefaultInterceptorLibrary());
-*/        
+*/
     }
-    
+
     @Override
     @After
     public void tearDown() throws Exception {
     }
 
-/*    
+/*
     public void testKeystoreSave() throws Exception {
     	KeystoreVO ksVo;
-    	
+
         ComponentLocator locator = ComponentLocator.getCurrentLocator();
 
         KeystoreDao ksDao = locator.getDao(KeystoreDao.class);
@@ -115,18 +103,18 @@ public class KeystoreTest extends TestCase {
         assertTrue(ksVo.getCertificate().equals("CPVMCertificate"));
         assertTrue(ksVo.getKey().equals("KeyForCertificate"));
         assertTrue(ksVo.getDomainSuffix().equals("realhostip.com"));
-        
+
         ksDao.save("CPVMCertificate", "CPVMCertificate Again", "KeyForCertificate Again", "again.realhostip.com");
-        
+
         ksVo = ksDao.findByName("CPVMCertificate");
         assertTrue(ksVo != null);
         assertTrue(ksVo.getCertificate().equals("CPVMCertificate Again"));
         assertTrue(ksVo.getKey().equals("KeyForCertificate Again"));
         assertTrue(ksVo.getDomainSuffix().equals("again.realhostip.com"));
-        
+
         ksDao.expunge(ksVo.getId());
     }
-    
+
     public void testStripeKey() throws Exception {
     	Pattern regex = Pattern.compile("(^[\\-]+[^\\-]+[\\-]+[\\n]?)([^\\-]+)([\\-]+[^\\-]+[\\-]+$)");
     	Matcher m = regex.matcher("-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEAm4bLUORp9oM65GV9XrPrbs+K563DjUR1M8mP1HaE+Y4lX5pk\nvQjC/xoEqSs5pxDDWXAkoexvxij8A4AWcsKU1Q+ep2E+GcytBoz8XINGvgb8cQNn\n/4PlVWKp7j5SDDNCfleYvmiRn8k6P4mxVJOHKzwb/IwQcKghyqAF1w==\n-----END RSA PRIVATE KEY-----");
@@ -138,19 +126,19 @@ public class KeystoreTest extends TestCase {
     		assertTrue(false);
     	}
     }
-    
+
     public void testKeystoreManager() throws Exception {
         ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        
+
         KeystoreManagerImpl ksMgr = ComponentLocator.inject(KeystoreManagerImpl.class);
         assertTrue(ksMgr.configure("TaskManager", new HashMap<String, Object>()));
         assertTrue(ksMgr.start());
-        
+
         ksMgr.saveCertificate("CPVMCertificate", certContent, keyContent, "realhostip.com");
-        
+
         byte[] ksBits = ksMgr.getKeystoreBits("CPVMCertificate", "realhostip", "vmops.com");
         assertTrue(ksBits != null);
-        
+
         try {
         	KeyStore ks = CertificateHelper.loadKeystore(ksBits, "vmops.com");
         	assertTrue(ks != null);
@@ -162,11 +150,11 @@ public class KeystoreTest extends TestCase {
         KeystoreVO ksVo = ksDao.findByName("CPVMCertificate");
         ksDao.expunge(ksVo.getId());
     }
-*/    
+*/
     public void testUuid() {
     	UserVmResponse vm = new UserVmResponse();
-    	vm.setId(3L);
-/*    	
+        vm.setId(Long.toString(3L));
+/*
     	vm.setAccountName("admin");
     	vm.setName("i-2-3-KY");
     	vm.setDisplayName("i-2-3-KY");
@@ -177,18 +165,18 @@ public class KeystoreTest extends TestCase {
     	vm.setZoneId(1L);
     	vm.setZoneName("KY");
     	vm.setHostId(1L);
-    	
+
     	vm.setObjectName("virtualmachine");
-*/    	
+*/
     	String result = ApiSerializerHelper.toSerializedStringOld(vm);
-        // String result = "com.cloud.api.response.UserVmResponse/virtualmachine/{\"id\":{\"_tableName\":\"vm_instance\",\"_value\":3},\"name\":\"i-2-3-KY\",\"displayname\":\"i-2-3-KY\",\"account\":\"admin\",\"projectid\":{\"_tableName\":\"projects\"},\"domainid\":{\"_tableName\":\"domain\",\"_value\":1},\"domain\":\"ROOT\",\"created\":\"2011-11-02T21:54:07-0700\",\"state\":\"Running\",\"haenable\":false,\"groupid\":{\"_tableName\":\"instance_group\"},\"zoneid\":{\"_tableName\":\"data_center\",\"_value\":1},\"zonename\":\"KY\",\"hostid\":{\"_tableName\":\"host\",\"_value\":1},\"hostname\":\"xenserver-basic\",\"templateid\":{\"_tableName\":\"vm_template\",\"_value\":2},\"templatename\":\"CentOS 5.3(64-bit) no GUI (XenServer)\",\"templatedisplaytext\":\"CentOS 5.3(64-bit) no GUI (XenServer)\",\"passwordenabled\":false,\"isoid\":{\"_tableName\":\"vm_template\"},\"serviceofferingid\":{\"_tableName\":\"disk_offering\",\"_value\":7},\"serviceofferingname\":\"Small Instance\",\"cpunumber\":1,\"cpuspeed\":500,\"memory\":512,\"guestosid\":{\"_tableName\":\"guest_os\",\"_value\":12},\"rootdeviceid\":0,\"rootdevicetype\":\"NetworkFilesystem\",\"securitygroup\":[],\"jobid\":{\"_tableName\":\"async_job\"},\"nic\":[{\"id\":7,\"networkid\":200,\"netmask\":\"255.255.255.0\",\"gateway\":\"10.1.1.1\",\"ipaddress\":\"10.1.1.116\",\"isolationuri\":\"vlan://1699\",\"broadcasturi\":\"vlan://1699\",\"traffictype\":\"Guest\",\"type\":\"Virtual\",\"isdefault\":true,\"macaddress\":\"02:00:39:a7:00:01\"}],\"hypervisor\":\"XenServer\"}";
+        // String result = "org.apache.cloudstack.api.response.UserVmResponse/virtualmachine/{\"id\":{\"_tableName\":\"vm_instance\",\"_value\":3},\"name\":\"i-2-3-KY\",\"displayname\":\"i-2-3-KY\",\"account\":\"admin\",\"projectid\":{\"_tableName\":\"projects\"},\"domainid\":{\"_tableName\":\"domain\",\"_value\":1},\"domain\":\"ROOT\",\"created\":\"2011-11-02T21:54:07-0700\",\"state\":\"Running\",\"haenable\":false,\"groupid\":{\"_tableName\":\"instance_group\"},\"zoneid\":{\"_tableName\":\"data_center\",\"_value\":1},\"zonename\":\"KY\",\"hostid\":{\"_tableName\":\"host\",\"_value\":1},\"hostname\":\"xenserver-basic\",\"templateid\":{\"_tableName\":\"vm_template\",\"_value\":2},\"templatename\":\"CentOS 5.3(64-bit) no GUI (XenServer)\",\"templatedisplaytext\":\"CentOS 5.3(64-bit) no GUI (XenServer)\",\"passwordenabled\":false,\"isoid\":{\"_tableName\":\"vm_template\"},\"serviceofferingid\":{\"_tableName\":\"disk_offering\",\"_value\":7},\"serviceofferingname\":\"Small Instance\",\"cpunumber\":1,\"cpuspeed\":500,\"memory\":512,\"guestosid\":{\"_tableName\":\"guest_os\",\"_value\":12},\"rootdeviceid\":0,\"rootdevicetype\":\"NetworkFilesystem\",\"securitygroup\":[],\"jobid\":{\"_tableName\":\"async_job\"},\"nic\":[{\"id\":7,\"networkid\":200,\"netmask\":\"255.255.255.0\",\"gateway\":\"10.1.1.1\",\"ipaddress\":\"10.1.1.116\",\"isolationuri\":\"vlan://1699\",\"broadcasturi\":\"vlan://1699\",\"traffictype\":\"Guest\",\"type\":\"Virtual\",\"isdefault\":true,\"macaddress\":\"02:00:39:a7:00:01\"}],\"hypervisor\":\"XenServer\"}";
     	System.out.println(result);
     	//Object obj = ApiSerializerHelper.fromSerializedString(result);
 
     	AlertResponse alert = new AlertResponse();
-    	alert.setId(100L);
+    	alert.setId("100");
     	alert.setDescription("Hello");
-    	
+
     	result = ApiSerializerHelper.toSerializedStringOld(alert);
     	System.out.println(result);
     	ApiSerializerHelper.fromSerializedString(result);

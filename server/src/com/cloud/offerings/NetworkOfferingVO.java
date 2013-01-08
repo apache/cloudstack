@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -15,6 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.offerings;
+
+import com.cloud.network.Networks;
 
 import java.util.Date;
 import java.util.UUID;
@@ -28,15 +30,20 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.api.Identity;
+import org.apache.cloudstack.api.Identity;
 import com.cloud.network.Network;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.InternalIdentity;
+
+import javax.persistence.*;
+import java.util.Date;
+import java.util.UUID;
 
 @Entity
 @Table(name = "network_offerings")
-public class NetworkOfferingVO implements NetworkOffering, Identity {
+public class NetworkOfferingVO implements NetworkOffering {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -121,6 +128,12 @@ public class NetworkOfferingVO implements NetworkOffering, Identity {
 
     @Column(name = "elastic_lb_service")
     boolean elasticLb;
+
+    @Column(name = "eip_associate_public_ip")
+    boolean eipAssociatePublicIp;
+
+    @Column(name = "inline")
+    boolean inline;
 
     @Override
     public String getDisplayText() {
@@ -282,18 +295,22 @@ public class NetworkOfferingVO implements NetworkOffering, Identity {
         this.redundantRouter = false;
         this.elasticIp = false;
         this.elasticLb = false;
+        this.eipAssociatePublicIp = true;
+        this.inline = false;
         this.specifyIpRanges = specifyIpRanges;
     }
 
     public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, boolean isDefault,
             Availability availability, String tags, Network.GuestType guestType, boolean conserveMode, boolean dedicatedLb, boolean sharedSourceNat, boolean redundantRouter, boolean elasticIp, boolean elasticLb,
-            boolean specifyIpRanges) {
+            boolean associatePublicIP, boolean specifyIpRanges, boolean inline) {
         this(name, displayText, trafficType, systemOnly, specifyVlan, rateMbps, multicastRateMbps, isDefault, availability, tags, guestType, conserveMode, specifyIpRanges);
         this.dedicatedLB = dedicatedLb;
         this.sharedSourceNat = sharedSourceNat;
         this.redundantRouter = redundantRouter;
         this.elasticIp = elasticIp;
         this.elasticLb = elasticLb;
+        this.eipAssociatePublicIp = associatePublicIP;
+        this.inline = inline;
     }
 
     public NetworkOfferingVO() {
@@ -301,7 +318,7 @@ public class NetworkOfferingVO implements NetworkOffering, Identity {
 
     /**
      * Network Offering for all system vms.
-     * 
+     *
      * @param name
      * @param trafficType
      * @param specifyIpRanges
@@ -311,9 +328,9 @@ public class NetworkOfferingVO implements NetworkOffering, Identity {
         this(name, "System Offering for " + name, trafficType, true, false, 0, 0, true, Availability.Required, null, null, true, specifyIpRanges);
         this.state = State.Enabled;
     }
-    
+
     public NetworkOfferingVO(String name, Network.GuestType guestType) {
-        this(name, "System Offering for " + name, TrafficType.Guest, true, true, 0, 0, true, Availability.Optional, 
+        this(name, "System Offering for " + name, TrafficType.Guest, true, true, 0, 0, true, Availability.Optional,
                 null, Network.GuestType.Isolated, true, false);
         this.state = State.Enabled;
     }
@@ -356,6 +373,11 @@ public class NetworkOfferingVO implements NetworkOffering, Identity {
     }
 
     @Override
+    public boolean getAssociatePublicIP() {
+        return eipAssociatePublicIp;
+    }
+
+    @Override
     public boolean getElasticLb() {
         return elasticLb;
     }
@@ -365,4 +387,8 @@ public class NetworkOfferingVO implements NetworkOffering, Identity {
         return specifyIpRanges;
     }
 
+    @Override
+    public boolean isInline() {
+        return inline;
+    }
 }

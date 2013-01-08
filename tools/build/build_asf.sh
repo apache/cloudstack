@@ -78,29 +78,24 @@ if [ -d "$outputdir" ]; then
 else
     mkdir $outputdir
 fi
-cp $sourcedir/KEYS $outputdir/KEYS
 
 cd $sourcedir
 echo 'archiving'
-git archive --format=tar.gz --prefix=apache-cloudstack-$version-incubating-src/ $branch > $outputdir/apache-cloudstack-$version-incubating-src.tar.gz
-git archive --format=zip --prefix=apache-cloudstack-$version-incubating-src/ $branch > $outputdir/apache-cloudstack-$version-incubating-src.zip
+git archive --format=tar --prefix=apache-cloudstack-$version-incubating-src/ $branch > $outputdir/apache-cloudstack-$version-incubating-src.tar
+bzip2 $outputdir/apache-cloudstack-$version-incubating-src.tar
 
 cd $outputdir
 echo 'armor'
-gpg -v $keyid --armor --output apache-cloudstack-$version-incubating-src.tar.gz.asc --detach-sig apache-cloudstack-$version-incubating-src.tar.gz
-gpg -v $keyid --armor --output apache-cloudstack-$version-incubating-src.zip.asc --detach-sig apache-cloudstack-$version-incubating-src.zip
+gpg -v $keyid --armor --output apache-cloudstack-$version-incubating-src.tar.bz2.asc --detach-sig apache-cloudstack-$version-incubating-src.tar.bz2
 
 echo 'md5'
-gpg -v --print-md MD5 apache-cloudstack-$version-incubating-src.tar.gz > apache-cloudstack-$version-incubating-src.tar.gz.md5
-gpg -v --print-md MD5 apache-cloudstack-$version-incubating-src.zip > apache-cloudstack-$version-incubating-src.zip.md5
+gpg -v --print-md MD5 apache-cloudstack-$version-incubating-src.tar.bz2 > apache-cloudstack-$version-incubating-src.tar.bz2.md5
 
 echo 'sha'
-gpg -v --print-md SHA512 apache-cloudstack-$version-incubating-src.tar.gz > apache-cloudstack-$version-incubating-src.tar.gz.sha
-gpg -v --print-md SHA512 apache-cloudstack-$version-incubating-src.zip > apache-cloudstack-$version-incubating-src.zip.sha
+gpg -v --print-md SHA512 apache-cloudstack-$version-incubating-src.tar.bz2 > apache-cloudstack-$version-incubating-src.tar.bz2.sha
 
 echo 'verify'
-gpg -v --verify apache-cloudstack-$version-incubating-src.tar.gz.asc apache-cloudstack-$version-incubating-src.tar.gz
-gpg -v --verify apache-cloudstack-$version-incubating-src.zip.asc apache-cloudstack-$version-incubating-src.zip
+gpg -v --verify apache-cloudstack-$version-incubating-src.tar.bz2.asc apache-cloudstack-$version-incubating-src.tar.bz2
 
 if [ $tag == 'yes' ]; then
   echo 'tag'

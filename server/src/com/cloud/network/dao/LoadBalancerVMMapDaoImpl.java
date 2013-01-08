@@ -24,7 +24,9 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.network.LoadBalancerVMMapVO;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Func;
 
 @Component
 @Local(value={LoadBalancerVMMapDao.class})
@@ -83,5 +85,14 @@ public class LoadBalancerVMMapDaoImpl extends GenericDaoBase<LoadBalancerVMMapVO
         return findOneBy(sc);
     }
 
-    
+    @Override
+    public boolean isVmAttachedToLoadBalancer(long loadBalancerId) {
+        GenericSearchBuilder<LoadBalancerVMMapVO, Long> CountByAccount = createSearchBuilder(Long.class);
+        CountByAccount.select(null, Func.COUNT, null);
+        CountByAccount.and("loadBalancerId", CountByAccount.entity().getLoadBalancerId(), SearchCriteria.Op.EQ);
+
+        SearchCriteria<Long> sc = CountByAccount.create();
+        sc.setParameters("loadBalancerId", loadBalancerId);
+        return customSearch(sc, null).get(0) > 0;
+    }
 }

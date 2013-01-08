@@ -26,7 +26,7 @@
     <title>Working With Hosts</title>
     <section id="adding-hosts">
         <title>Adding Hosts</title>
-        <para>Additional hosts can be added at any time to provide more capacity for guest VMs. For requirements and instructions, see the Installation Guide.</para>
+    <para>Additional hosts can be added at any time to provide more capacity for guest VMs. For requirements and instructions, see <xref linkend="host-add"/>.</para>
     </section>
     <xi:include href="scheduled-maintenance-maintenance-mode-hosts.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="disable-enable-zones-pods-clusters.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />

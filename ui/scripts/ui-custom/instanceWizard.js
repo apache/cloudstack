@@ -137,8 +137,8 @@
                   )
                   .append(
                     $('<div>').addClass('select-desc')
-                      .append($('<div>').addClass('name').html(this[fields.name]))
-                      .append($('<div>').addClass('desc').html(this[fields.desc]))
+                      .append($('<div>').addClass('name').html(_s(this[fields.name])))
+                      .append($('<div>').addClass('desc').html(_s(this[fields.desc])))
                   )
                   .data('json-obj', this);
 
@@ -464,6 +464,16 @@
           },
 
           'network': function($step, formData) {
+            var showAddNetwork = true;
+
+            var checkShowAddNetwork = function($newNetwork) {
+              if (!showAddNetwork) {
+                $newNetwork.hide();
+              } else {
+                $newNetwork.show();
+              }
+            };
+
             var originalValues = function(formData) {
               // Default networks
               $step.find('input[type=radio]').filter(function() {
@@ -523,6 +533,13 @@
             // Show relevant conditional sub-step if present
             $step.find('.wizard-step-conditional').hide();
 
+            if ($.isFunction(args.showAddNetwork)) {
+              showAddNetwork = args.showAddNetwork({
+                data: formData,
+                context: context
+              });
+            }
+
             // Filter network list by VPC ID
             var filterNetworkList = function(vpcID) {
               var $selects = $step.find('.my-networks .select-container .select');
@@ -546,6 +563,7 @@
               } else {
                 $step.find('.my-networks .select-container').removeClass('single-select');
                 $addNetworkForm.show();
+                checkShowAddNetwork($addNetworkForm);
               }
               
               $selects.find('input[type=checkbox]').attr('checked', false);
@@ -648,6 +666,7 @@
                   );
 
                   originalValues(formData);
+                  checkShowAddNetwork($newNetwork);
                 }
               }
             };
@@ -875,6 +894,12 @@
             );
           }
         });
+
+         $wizard.find('div.data-disk-offering div.custom-size input[type=text]').bind('change',function() {
+                var old =   $wizard.find('div.data-disk-offering div.custom-size input[type=text]').val();
+                $wizard.find('div.data-disk-offering span.custom-disk-size').html(_s(old));
+         });
+
 
         return $wizard.dialog({
           title: _l('label.vm.add'),

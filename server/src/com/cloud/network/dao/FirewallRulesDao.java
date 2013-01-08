@@ -56,6 +56,6 @@ public interface FirewallRulesDao extends GenericDao<FirewallRuleVO, Long> {
     long countRulesByIpId(long sourceIpId);
     
     List<FirewallRuleVO> listByNetworkPurposeTrafficTypeAndNotRevoked(long networkId, FirewallRule.Purpose purpose, FirewallRule.TrafficType trafficType);
-
-
+    
+    List<FirewallRuleVO> listByIpAndPurposeWithState(Long addressId, FirewallRule.Purpose purpose, FirewallRule.State state);
 }

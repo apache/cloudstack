@@ -42,6 +42,7 @@ import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.StateMachine;
 import com.cloud.utils.fsm.FiniteStateObject;
 import com.cloud.vm.VirtualMachine.State;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="vm_instance")

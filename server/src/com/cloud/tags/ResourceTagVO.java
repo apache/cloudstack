@@ -27,13 +27,14 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.api.Identity;
+import org.apache.cloudstack.api.Identity;
 import com.cloud.server.ResourceTag;
+import org.apache.cloudstack.api.InternalIdentity;
 
 
 @Entity
 @Table(name="resource_tags")
-public class ResourceTagVO implements Identity, ResourceTag{
+public class ResourceTagVO implements ResourceTag {
     
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

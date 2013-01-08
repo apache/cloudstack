@@ -1,18 +1,19 @@
-/* Copyright (c) Citrix Systems, Inc.
+/*
+ * Copyright (c) Citrix Systems, Inc.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  *   1) Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
- * 
+ *
  *   2) Redistributions in binary form must reproduce the above
  *      copyright notice, this list of conditions and the following
  *      disclaimer in the documentation and/or other materials
  *      provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -26,6 +27,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 
 package com.xensource.xenapi;
 
@@ -43,7 +45,7 @@ import org.apache.xmlrpc.XmlRpcException;
 
 /**
  * This class holds vital marshalling functions, enum types and exceptions.
- * 
+ *
  * @author Citrix Systems, Inc.
  */
 public class Types
@@ -143,7 +145,7 @@ public class Types
      * A call has been made which should not be made against this version of host.
      * Probably the host is out of date and cannot handle this call, or is
      * unable to comply with the details of the call. For instance SR.create
-     * on Miami (4.1) hosts takes an smConfig parameter, which must be an empty map 
+     * on Miami (4.1) hosts takes an smConfig parameter, which must be an empty map
      * when making this call on Rio (4.0) hosts.
      */
     public static class VersionException extends XenAPIException
@@ -225,6 +227,11 @@ public class Types
                 String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
                 throw new Types.VmHvmRequired(p1);
             }
+            if (ErrorDescription[0].equals("GPU_GROUP_CONTAINS_PGPU"))
+            {
+                String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
+                throw new Types.GpuGroupContainsPgpu(p1);
+            }
             if (ErrorDescription[0].equals("PIF_TUNNEL_STILL_EXISTS"))
             {
                 String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
@@ -238,6 +245,11 @@ public class Types
             {
                 String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
                 throw new Types.PifAlreadyBonded(p1);
+            }
+            if (ErrorDescription[0].equals("CANNOT_DESTROY_DISASTER_RECOVERY_TASK"))
+            {
+                String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
+                throw new Types.CannotDestroyDisasterRecoveryTask(p1);
             }
             if (ErrorDescription[0].equals("VLAN_TAG_INVALID"))
             {
@@ -287,6 +299,11 @@ public class Types
             {
                 String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
                 throw new Types.PatchPrecheckFailedVmRunning(p1);
+            }
+            if (ErrorDescription[0].equals("VM_REQUIRES_IOMMU"))
+            {
+                String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
+                throw new Types.VmRequiresIommu(p1);
             }
             if (ErrorDescription[0].equals("HA_HOST_CANNOT_SEE_PEERS"))
             {
@@ -342,6 +359,11 @@ public class Types
                 String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
                 throw new Types.VmNoSuspendSr(p1);
             }
+            if (ErrorDescription[0].equals("VM_HAS_TOO_MANY_SNAPSHOTS"))
+            {
+                String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
+                throw new Types.VmHasTooManySnapshots(p1);
+            }
             if (ErrorDescription[0].equals("PATCH_APPLY_FAILED"))
             {
                 String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
@@ -357,6 +379,12 @@ public class Types
                 String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
                 String p2 = ErrorDescription.length > 2 ? ErrorDescription[2] : "";
                 throw new Types.SrFull(p1, p2);
+            }
+            if (ErrorDescription[0].equals("VM_REQUIRES_GPU"))
+            {
+                String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
+                String p2 = ErrorDescription.length > 2 ? ErrorDescription[2] : "";
+                throw new Types.VmRequiresGpu(p1, p2);
             }
             if (ErrorDescription[0].equals("VDI_NOT_AVAILABLE"))
             {
@@ -403,6 +431,11 @@ public class Types
                 String p2 = ErrorDescription.length > 2 ? ErrorDescription[2] : "";
                 throw new Types.XenVssReqErrorProvNotLoaded(p1, p2);
             }
+            if (ErrorDescription[0].equals("FEATURE_REQUIRES_HVM"))
+            {
+                String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
+                throw new Types.FeatureRequiresHvm(p1);
+            }
             if (ErrorDescription[0].equals("SR_VDI_LOCKING_FAILED"))
             {
                 throw new Types.SrVdiLockingFailed();
@@ -440,6 +473,11 @@ public class Types
             {
                 throw new Types.WlbXenserverMalformedResponse();
             }
+            if (ErrorDescription[0].equals("GPU_GROUP_CONTAINS_VGPU"))
+            {
+                String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
+                throw new Types.GpuGroupContainsVgpu(p1);
+            }
             if (ErrorDescription[0].equals("POOL_AUTH_ENABLE_FAILED_DUPLICATE_HOSTNAME"))
             {
                 String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
@@ -471,6 +509,11 @@ public class Types
                 String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
                 throw new Types.SrHasNoPbds(p1);
             }
+            if (ErrorDescription[0].equals("CANNOT_ADD_TUNNEL_TO_BOND_SLAVE"))
+            {
+                String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
+                throw new Types.CannotAddTunnelToBondSlave(p1);
+            }
             if (ErrorDescription[0].equals("INVALID_PATCH"))
             {
                 throw new Types.InvalidPatch();
@@ -495,6 +538,16 @@ public class Types
             if (ErrorDescription[0].equals("POOL_JOINING_HOST_MUST_HAVE_PHYSICAL_MANAGEMENT_NIC"))
             {
                 throw new Types.PoolJoiningHostMustHavePhysicalManagementNic();
+            }
+            if (ErrorDescription[0].equals("PIF_HAS_NO_V6_NETWORK_CONFIGURATION"))
+            {
+                throw new Types.PifHasNoV6NetworkConfiguration();
+            }
+            if (ErrorDescription[0].equals("VM_IS_PART_OF_AN_APPLIANCE"))
+            {
+                String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
+                String p2 = ErrorDescription.length > 2 ? ErrorDescription[2] : "";
+                throw new Types.VmIsPartOfAnAppliance(p1, p2);
             }
             if (ErrorDescription[0].equals("WLB_XENSERVER_AUTHENTICATION_FAILED"))
             {
@@ -606,6 +659,17 @@ public class Types
             {
                 throw new Types.HostCannotReadMetrics();
             }
+            if (ErrorDescription[0].equals("VM_INCOMPATIBLE_WITH_THIS_HOST"))
+            {
+                String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
+                String p2 = ErrorDescription.length > 2 ? ErrorDescription[2] : "";
+                String p3 = ErrorDescription.length > 3 ? ErrorDescription[3] : "";
+                throw new Types.VmIncompatibleWithThisHost(p1, p2, p3);
+            }
+            if (ErrorDescription[0].equals("NO_MORE_REDO_LOGS_ALLOWED"))
+            {
+                throw new Types.NoMoreRedoLogsAllowed();
+            }
             if (ErrorDescription[0].equals("POOL_AUTH_ENABLE_FAILED"))
             {
                 String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
@@ -668,9 +732,20 @@ public class Types
             {
                 throw new Types.WlbDisabled();
             }
+            if (ErrorDescription[0].equals("VM_HOST_INCOMPATIBLE_VERSION"))
+            {
+                String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
+                String p2 = ErrorDescription.length > 2 ? ErrorDescription[2] : "";
+                throw new Types.VmHostIncompatibleVersion(p1, p2);
+            }
             if (ErrorDescription[0].equals("POOL_JOINING_EXTERNAL_AUTH_MISMATCH"))
             {
                 throw new Types.PoolJoiningExternalAuthMismatch();
+            }
+            if (ErrorDescription[0].equals("DISK_VBD_MUST_BE_READWRITE_FOR_HVM"))
+            {
+                String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
+                throw new Types.DiskVbdMustBeReadwriteForHvm(p1);
             }
             if (ErrorDescription[0].equals("VM_BIOS_STRINGS_ALREADY_SET"))
             {
@@ -718,6 +793,28 @@ public class Types
                 String p2 = ErrorDescription.length > 2 ? ErrorDescription[2] : "";
                 throw new Types.SrNotSharable(p1, p2);
             }
+            if (ErrorDescription[0].equals("VM_HAS_CHECKPOINT"))
+            {
+                String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
+                throw new Types.VmHasCheckpoint(p1);
+            }
+            if (ErrorDescription[0].equals("SM_PLUGIN_COMMUNICATION_FAILURE"))
+            {
+                String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
+                throw new Types.SmPluginCommunicationFailure(p1);
+            }
+            if (ErrorDescription[0].equals("VM_ASSIGNED_TO_PROTECTION_POLICY"))
+            {
+                String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
+                String p2 = ErrorDescription.length > 2 ? ErrorDescription[2] : "";
+                throw new Types.VmAssignedToProtectionPolicy(p1, p2);
+            }
+            if (ErrorDescription[0].equals("RBAC_PERMISSION_DENIED"))
+            {
+                String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
+                String p2 = ErrorDescription.length > 2 ? ErrorDescription[2] : "";
+                throw new Types.RbacPermissionDenied(p1, p2);
+            }
             if (ErrorDescription[0].equals("AUTH_DISABLE_FAILED_PERMISSION_DENIED"))
             {
                 String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
@@ -727,12 +824,6 @@ public class Types
             {
                 throw new Types.LicenseCannotDowngradeWhileInPool();
             }
-            if (ErrorDescription[0].equals("RBAC_PERMISSION_DENIED"))
-            {
-                String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
-                String p2 = ErrorDescription.length > 2 ? ErrorDescription[2] : "";
-                throw new Types.RbacPermissionDenied(p1, p2);
-            }
             if (ErrorDescription[0].equals("TOO_MANY_PENDING_TASKS"))
             {
                 throw new Types.TooManyPendingTasks();
@@ -741,6 +832,10 @@ public class Types
             {
                 String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
                 throw new Types.VmSnapshotWithQuiesceTimeout(p1);
+            }
+            if (ErrorDescription[0].equals("HA_CANNOT_CHANGE_BOND_STATUS_OF_MGMT_IFACE"))
+            {
+                throw new Types.HaCannotChangeBondStatusOfMgmtIface();
             }
             if (ErrorDescription[0].equals("PATCH_ALREADY_APPLIED"))
             {
@@ -756,6 +851,13 @@ public class Types
             {
                 String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
                 throw new Types.AuthEnableFailedDomainLookupFailed(p1);
+            }
+            if (ErrorDescription[0].equals("PATCH_PRECHECK_FAILED_WRONG_SERVER_BUILD"))
+            {
+                String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
+                String p2 = ErrorDescription.length > 2 ? ErrorDescription[2] : "";
+                String p3 = ErrorDescription.length > 3 ? ErrorDescription[3] : "";
+                throw new Types.PatchPrecheckFailedWrongServerBuild(p1, p2, p3);
             }
             if (ErrorDescription[0].equals("INVALID_FEATURE_STRING"))
             {
@@ -782,14 +884,20 @@ public class Types
                 String p2 = ErrorDescription.length > 2 ? ErrorDescription[2] : "";
                 throw new Types.VmShutdownTimeout(p1, p2);
             }
+            if (ErrorDescription[0].equals("ROLE_ALREADY_EXISTS"))
+            {
+                throw new Types.RoleAlreadyExists();
+            }
             if (ErrorDescription[0].equals("NETWORK_CONTAINS_PIF"))
             {
                 String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
                 throw new Types.NetworkContainsPif(p1);
             }
-            if (ErrorDescription[0].equals("ROLE_ALREADY_EXISTS"))
+            if (ErrorDescription[0].equals("COULD_NOT_FIND_NETWORK_INTERFACE_WITH_SPECIFIED_DEVICE_NAME_AND_MAC_ADDRESS"))
             {
-                throw new Types.RoleAlreadyExists();
+                String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
+                String p2 = ErrorDescription.length > 2 ? ErrorDescription[2] : "";
+                throw new Types.CouldNotFindNetworkInterfaceWithSpecifiedDeviceNameAndMacAddress(p1, p2);
             }
             if (ErrorDescription[0].equals("JOINING_HOST_SERVICE_FAILED"))
             {
@@ -841,6 +949,12 @@ public class Types
             if (ErrorDescription[0].equals("LICENSE_PROCESSING_ERROR"))
             {
                 throw new Types.LicenseProcessingError();
+            }
+            if (ErrorDescription[0].equals("ILLEGAL_VBD_DEVICE"))
+            {
+                String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
+                String p2 = ErrorDescription.length > 2 ? ErrorDescription[2] : "";
+                throw new Types.IllegalVbdDevice(p1, p2);
             }
             if (ErrorDescription[0].equals("CRL_DOES_NOT_EXIST"))
             {
@@ -905,6 +1019,11 @@ public class Types
             if (ErrorDescription[0].equals("PIF_CANNOT_BOND_CROSS_HOST"))
             {
                 throw new Types.PifCannotBondCrossHost();
+            }
+            if (ErrorDescription[0].equals("EVENT_FROM_TOKEN_PARSE_FAILURE"))
+            {
+                String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
+                throw new Types.EventFromTokenParseFailure(p1);
             }
             if (ErrorDescription[0].equals("SR_REQUIRES_UPGRADE"))
             {
@@ -1018,6 +1137,11 @@ public class Types
                 String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
                 throw new Types.HaHostIsArmed(p1);
             }
+            if (ErrorDescription[0].equals("EVENT_SUBSCRIPTION_PARSE_FAILURE"))
+            {
+                String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
+                throw new Types.EventSubscriptionParseFailure(p1);
+            }
             if (ErrorDescription[0].equals("LICENSE_EXPIRED"))
             {
                 throw new Types.LicenseExpired();
@@ -1034,6 +1158,10 @@ public class Types
             if (ErrorDescription[0].equals("VMPP_ARCHIVE_MORE_FREQUENT_THAN_BACKUP"))
             {
                 throw new Types.VmppArchiveMoreFrequentThanBackup();
+            }
+            if (ErrorDescription[0].equals("V6D_FAILURE"))
+            {
+                throw new Types.V6dFailure();
             }
             if (ErrorDescription[0].equals("JOINING_HOST_CANNOT_BE_MASTER_OF_OTHER_HOSTS"))
             {
@@ -1081,14 +1209,14 @@ public class Types
             {
                 throw new Types.CannotFindStatePartition();
             }
+            if (ErrorDescription[0].equals("WLB_AUTHENTICATION_FAILED"))
+            {
+                throw new Types.WlbAuthenticationFailed();
+            }
             if (ErrorDescription[0].equals("AUTH_UNKNOWN_TYPE"))
             {
                 String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
                 throw new Types.AuthUnknownType(p1);
-            }
-            if (ErrorDescription[0].equals("WLB_AUTHENTICATION_FAILED"))
-            {
-                throw new Types.WlbAuthenticationFailed();
             }
             if (ErrorDescription[0].equals("NOT_IN_EMERGENCY_MODE"))
             {
@@ -1138,6 +1266,12 @@ public class Types
             if (ErrorDescription[0].equals("FEATURE_RESTRICTED"))
             {
                 throw new Types.FeatureRestricted();
+            }
+            if (ErrorDescription[0].equals("VDI_CONTAINS_METADATA_OF_THIS_POOL"))
+            {
+                String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
+                String p2 = ErrorDescription.length > 2 ? ErrorDescription[2] : "";
+                throw new Types.VdiContainsMetadataOfThisPool(p1, p2);
             }
             if (ErrorDescription[0].equals("CRL_NAME_INVALID"))
             {
@@ -1194,17 +1328,32 @@ public class Types
                 String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
                 throw new Types.SrHasPbd(p1);
             }
-            if (ErrorDescription[0].equals("HOST_STILL_BOOTING"))
+            if (ErrorDescription[0].equals("OPERATION_PARTIALLY_FAILED"))
             {
-                throw new Types.HostStillBooting();
+                String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
+                throw new Types.OperationPartiallyFailed(p1);
             }
             if (ErrorDescription[0].equals("WLB_MALFORMED_REQUEST"))
             {
                 throw new Types.WlbMalformedRequest();
             }
+            if (ErrorDescription[0].equals("HOST_STILL_BOOTING"))
+            {
+                throw new Types.HostStillBooting();
+            }
+            if (ErrorDescription[0].equals("CANNOT_DESTROY_SYSTEM_NETWORK"))
+            {
+                String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
+                throw new Types.CannotDestroySystemNetwork(p1);
+            }
             if (ErrorDescription[0].equals("OBJECT_NOLONGER_EXISTS"))
             {
                 throw new Types.ObjectNolongerExists();
+            }
+            if (ErrorDescription[0].equals("VDI_NOT_IN_MAP"))
+            {
+                String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
+                throw new Types.VdiNotInMap(p1);
             }
             if (ErrorDescription[0].equals("HOSTS_NOT_HOMOGENEOUS"))
             {
@@ -1252,6 +1401,11 @@ public class Types
             if (ErrorDescription[0].equals("IMPORT_ERROR_PREMATURE_EOF"))
             {
                 throw new Types.ImportErrorPrematureEof();
+            }
+            if (ErrorDescription[0].equals("NOT_SYSTEM_DOMAIN"))
+            {
+                String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
+                throw new Types.NotSystemDomain(p1);
             }
             if (ErrorDescription[0].equals("VM_MEMORY_SIZE_TOO_LOW"))
             {
@@ -1348,20 +1502,30 @@ public class Types
                 String p2 = ErrorDescription.length > 2 ? ErrorDescription[2] : "";
                 throw new Types.PatchPrecheckFailedPrerequisiteMissing(p1, p2);
             }
+            if (ErrorDescription[0].equals("VM_HAS_PCI_ATTACHED"))
+            {
+                String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
+                throw new Types.VmHasPciAttached(p1);
+            }
+            if (ErrorDescription[0].equals("MIRROR_FAILED"))
+            {
+                String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
+                throw new Types.MirrorFailed(p1);
+            }
             if (ErrorDescription[0].equals("WLB_XENSERVER_TIMEOUT"))
             {
                 throw new Types.WlbXenserverTimeout();
-            }
-            if (ErrorDescription[0].equals("VM_SNAPSHOT_WITH_QUIESCE_FAILED"))
-            {
-                String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
-                throw new Types.VmSnapshotWithQuiesceFailed(p1);
             }
             if (ErrorDescription[0].equals("POOL_AUTH_DISABLE_FAILED_WRONG_CREDENTIALS"))
             {
                 String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
                 String p2 = ErrorDescription.length > 2 ? ErrorDescription[2] : "";
                 throw new Types.PoolAuthDisableFailedWrongCredentials(p1, p2);
+            }
+            if (ErrorDescription[0].equals("VM_SNAPSHOT_WITH_QUIESCE_FAILED"))
+            {
+                String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
+                throw new Types.VmSnapshotWithQuiesceFailed(p1);
             }
             if (ErrorDescription[0].equals("CERTIFICATE_CORRUPT"))
             {
@@ -1391,6 +1555,11 @@ public class Types
             if (ErrorDescription[0].equals("HOST_ITS_OWN_SLAVE"))
             {
                 throw new Types.HostItsOwnSlave();
+            }
+            if (ErrorDescription[0].equals("CANNOT_ADD_VLAN_TO_BOND_SLAVE"))
+            {
+                String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
+                throw new Types.CannotAddVlanToBondSlave(p1);
             }
             if (ErrorDescription[0].equals("REDO_LOG_IS_ENABLED"))
             {
@@ -1431,6 +1600,11 @@ public class Types
             {
                 throw new Types.VmsFailedToCooperate();
             }
+            if (ErrorDescription[0].equals("TOO_MANY_STORAGE_MIGRATES"))
+            {
+                String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
+                throw new Types.TooManyStorageMigrates(p1);
+            }
             if (ErrorDescription[0].equals("NETWORK_CONTAINS_VIF"))
             {
                 String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
@@ -1460,19 +1634,29 @@ public class Types
             {
                 throw new Types.JoiningHostConnectionFailed();
             }
+            if (ErrorDescription[0].equals("SUBJECT_CANNOT_BE_RESOLVED"))
+            {
+                throw new Types.SubjectCannotBeResolved();
+            }
             if (ErrorDescription[0].equals("XEN_VSS_REQ_ERROR_ADDING_VOLUME_TO_SNAPSET_FAILED"))
             {
                 String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
                 String p2 = ErrorDescription.length > 2 ? ErrorDescription[2] : "";
                 throw new Types.XenVssReqErrorAddingVolumeToSnapsetFailed(p1, p2);
             }
-            if (ErrorDescription[0].equals("SUBJECT_CANNOT_BE_RESOLVED"))
-            {
-                throw new Types.SubjectCannotBeResolved();
-            }
             if (ErrorDescription[0].equals("PROVISION_FAILED_OUT_OF_SPACE"))
             {
                 throw new Types.ProvisionFailedOutOfSpace();
+            }
+            if (ErrorDescription[0].equals("VDI_NEEDS_VM_FOR_MIGRATE"))
+            {
+                String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
+                throw new Types.VdiNeedsVmForMigrate(p1);
+            }
+            if (ErrorDescription[0].equals("COULD_NOT_IMPORT_DATABASE"))
+            {
+                String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
+                throw new Types.CouldNotImportDatabase(p1);
             }
             if (ErrorDescription[0].equals("VDI_IS_NOT_ISO"))
             {
@@ -1512,6 +1696,10 @@ public class Types
             if (ErrorDescription[0].equals("LICENSE_DOES_NOT_SUPPORT_XHA"))
             {
                 throw new Types.LicenseDoesNotSupportXha();
+            }
+            if (ErrorDescription[0].equals("PIF_INCOMPATIBLE_PRIMARY_ADDRESS_TYPE"))
+            {
+                throw new Types.PifIncompatiblePrimaryAddressType();
             }
             if (ErrorDescription[0].equals("DEVICE_ALREADY_DETACHED"))
             {
@@ -1598,6 +1786,18 @@ public class Types
                 String p2 = ErrorDescription.length > 2 ? ErrorDescription[2] : "";
                 String p3 = ErrorDescription.length > 3 ? ErrorDescription[3] : "";
                 throw new Types.VmDuplicateVbdDevice(p1, p2, p3);
+            }
+            if (ErrorDescription[0].equals("CANNOT_PLUG_BOND_SLAVE"))
+            {
+                String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
+                throw new Types.CannotPlugBondSlave(p1);
+            }
+            if (ErrorDescription[0].equals("VM_TO_IMPORT_IS_NOT_NEWER_VERSION"))
+            {
+                String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
+                String p2 = ErrorDescription.length > 2 ? ErrorDescription[2] : "";
+                String p3 = ErrorDescription.length > 3 ? ErrorDescription[3] : "";
+                throw new Types.VmToImportIsNotNewerVersion(p1, p2, p3);
             }
             if (ErrorDescription[0].equals("CRL_CORRUPT"))
             {
@@ -1722,6 +1922,10 @@ public class Types
                 String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
                 throw new Types.InterfaceHasNoIp(p1);
             }
+            if (ErrorDescription[0].equals("HOSTS_NOT_COMPATIBLE"))
+            {
+                throw new Types.HostsNotCompatible();
+            }
             if (ErrorDescription[0].equals("AUTH_ENABLE_FAILED_WRONG_CREDENTIALS"))
             {
                 String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
@@ -1787,7 +1991,25 @@ public class Types
         /**
          * Operations on this VDI are temporarily blocked
          */
-        BLOCKED
+        BLOCKED;
+        public String toString() {
+            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
+            if (this == SCAN) return "scan";
+            if (this == CLONE) return "clone";
+            if (this == COPY) return "copy";
+            if (this == RESIZE) return "resize";
+            if (this == RESIZE_ONLINE) return "resize_online";
+            if (this == SNAPSHOT) return "snapshot";
+            if (this == DESTROY) return "destroy";
+            if (this == FORGET) return "forget";
+            if (this == UPDATE) return "update";
+            if (this == FORCE_UNLOCK) return "force_unlock";
+            if (this == GENERATE_CONFIG) return "generate_config";
+            if (this == BLOCKED) return "blocked";
+        /* This can never be reached */
+        return "illegal enum";
+        }
+
     };
 
     public enum Cls {
@@ -1814,7 +2036,18 @@ public class Types
         /**
          * VMPP
          */
-        VMPP
+        VMPP;
+        public String toString() {
+            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
+            if (this == VM) return "VM";
+            if (this == HOST) return "Host";
+            if (this == SR) return "SR";
+            if (this == POOL) return "Pool";
+            if (this == VMPP) return "VMPP";
+        /* This can never be reached */
+        return "illegal enum";
+        }
+
     };
 
     public enum VdiType {
@@ -1853,7 +2086,21 @@ public class Types
         /**
          * a disk used for a general metadata redo-log
          */
-        REDO_LOG
+        REDO_LOG;
+        public String toString() {
+            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
+            if (this == SYSTEM) return "system";
+            if (this == USER) return "user";
+            if (this == EPHEMERAL) return "ephemeral";
+            if (this == SUSPEND) return "suspend";
+            if (this == CRASHDUMP) return "crashdump";
+            if (this == HA_STATEFILE) return "ha_statefile";
+            if (this == METADATA) return "metadata";
+            if (this == REDO_LOG) return "redo_log";
+        /* This can never be reached */
+        return "illegal enum";
+        }
+
     };
 
     public enum AfterApplyGuidance {
@@ -1876,7 +2123,17 @@ public class Types
         /**
          * This patch requires XAPI to be restarted once applied.
          */
-        RESTARTXAPI
+        RESTARTXAPI;
+        public String toString() {
+            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
+            if (this == RESTARTHVM) return "restartHVM";
+            if (this == RESTARTPV) return "restartPV";
+            if (this == RESTARTHOST) return "restartHost";
+            if (this == RESTARTXAPI) return "restartXAPI";
+        /* This can never be reached */
+        return "illegal enum";
+        }
+
     };
 
     public enum EventOperation {
@@ -1895,7 +2152,39 @@ public class Types
         /**
          * An object has been modified
          */
-        MOD
+        MOD;
+        public String toString() {
+            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
+            if (this == ADD) return "add";
+            if (this == DEL) return "del";
+            if (this == MOD) return "mod";
+        /* This can never be reached */
+        return "illegal enum";
+        }
+
+    };
+
+    public enum PrimaryAddressType {
+        /**
+         * The value does not belong to this enumeration
+         */
+        UNRECOGNIZED,
+        /**
+         * Primary address is the IPv4 address
+         */
+        IPV4,
+        /**
+         * Primary address is the IPv6 address
+         */
+        IPV6;
+        public String toString() {
+            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
+            if (this == IPV4) return "IPv4";
+            if (this == IPV6) return "IPv6";
+        /* This can never be reached */
+        return "illegal enum";
+        }
+
     };
 
     public enum TaskAllowedOperations {
@@ -1906,7 +2195,14 @@ public class Types
         /**
          * refers to the operation "cancel"
          */
-        CANCEL
+        CANCEL;
+        public String toString() {
+            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
+            if (this == CANCEL) return "cancel";
+        /* This can never be reached */
+        return "illegal enum";
+        }
+
     };
 
     public enum TaskStatusType {
@@ -1933,7 +2229,18 @@ public class Types
         /**
          * task has been cancelled
          */
-        CANCELLED
+        CANCELLED;
+        public String toString() {
+            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
+            if (this == PENDING) return "pending";
+            if (this == SUCCESS) return "success";
+            if (this == FAILURE) return "failure";
+            if (this == CANCELLING) return "cancelling";
+            if (this == CANCELLED) return "cancelled";
+        /* This can never be reached */
+        return "illegal enum";
+        }
+
     };
 
     public enum NetworkOperations {
@@ -1944,7 +2251,14 @@ public class Types
         /**
          * Indicates this network is attaching to a VIF or PIF
          */
-        ATTACHING
+        ATTACHING;
+        public String toString() {
+            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
+            if (this == ATTACHING) return "attaching";
+        /* This can never be reached */
+        return "illegal enum";
+        }
+
     };
 
     public enum ConsoleProtocol {
@@ -1963,7 +2277,16 @@ public class Types
         /**
          * Remote Desktop Protocol
          */
-        RDP
+        RDP;
+        public String toString() {
+            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
+            if (this == VT100) return "vt100";
+            if (this == RFB) return "rfb";
+            if (this == RDP) return "rdp";
+        /* This can never be reached */
+        return "illegal enum";
+        }
+
     };
 
     public enum OnCrashBehaviour {
@@ -1994,7 +2317,19 @@ public class Types
         /**
          * rename the crashed VM and start a new copy
          */
-        RENAME_RESTART
+        RENAME_RESTART;
+        public String toString() {
+            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
+            if (this == DESTROY) return "destroy";
+            if (this == COREDUMP_AND_DESTROY) return "coredump_and_destroy";
+            if (this == RESTART) return "restart";
+            if (this == COREDUMP_AND_RESTART) return "coredump_and_restart";
+            if (this == PRESERVE) return "preserve";
+            if (this == RENAME_RESTART) return "rename_restart";
+        /* This can never be reached */
+        return "illegal enum";
+        }
+
     };
 
     public enum VmppBackupType {
@@ -2009,7 +2344,15 @@ public class Types
         /**
          * The backup is a checkpoint
          */
-        CHECKPOINT
+        CHECKPOINT;
+        public String toString() {
+            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
+            if (this == SNAPSHOT) return "snapshot";
+            if (this == CHECKPOINT) return "checkpoint";
+        /* This can never be reached */
+        return "illegal enum";
+        }
+
     };
 
     public enum OnNormalExit {
@@ -2024,7 +2367,15 @@ public class Types
         /**
          * restart the VM
          */
-        RESTART
+        RESTART;
+        public String toString() {
+            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
+            if (this == DESTROY) return "destroy";
+            if (this == RESTART) return "restart";
+        /* This can never be reached */
+        return "illegal enum";
+        }
+
     };
 
     public enum VifOperations {
@@ -2043,7 +2394,16 @@ public class Types
         /**
          * Attempting to hot unplug this VIF
          */
-        UNPLUG
+        UNPLUG;
+        public String toString() {
+            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
+            if (this == ATTACH) return "attach";
+            if (this == PLUG) return "plug";
+            if (this == UNPLUG) return "unplug";
+        /* This can never be reached */
+        return "illegal enum";
+        }
+
     };
 
     public enum XenAPIObjects {
@@ -2100,6 +2460,14 @@ public class Types
          */
         VMPP,
         /**
+         * VM appliance
+         */
+        VM_APPLIANCE,
+        /**
+         * DR task
+         */
+        DR_TASK,
+        /**
          * A physical host
          */
         HOST,
@@ -2140,7 +2508,7 @@ public class Types
          */
         PIF_METRICS,
         /**
-         * 
+         *
          */
         BOND,
         /**
@@ -2206,7 +2574,74 @@ public class Types
         /**
          * A tunnel for network traffic
          */
-        TUNNEL
+        TUNNEL,
+        /**
+         * A PCI device
+         */
+        PCI,
+        /**
+         * A physical GPU (pGPU)
+         */
+        PGPU,
+        /**
+         * A group of compatible GPUs across the resource pool
+         */
+        GPU_GROUP,
+        /**
+         * A virtual GPU (vGPU)
+         */
+        VGPU;
+        public String toString() {
+            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
+            if (this == SESSION) return "session";
+            if (this == AUTH) return "auth";
+            if (this == SUBJECT) return "subject";
+            if (this == ROLE) return "role";
+            if (this == TASK) return "task";
+            if (this == EVENT) return "event";
+            if (this == POOL) return "pool";
+            if (this == POOL_PATCH) return "pool_patch";
+            if (this == VM) return "VM";
+            if (this == VM_METRICS) return "VM_metrics";
+            if (this == VM_GUEST_METRICS) return "VM_guest_metrics";
+            if (this == VMPP) return "VMPP";
+            if (this == VM_APPLIANCE) return "VM_appliance";
+            if (this == DR_TASK) return "DR_task";
+            if (this == HOST) return "host";
+            if (this == HOST_CRASHDUMP) return "host_crashdump";
+            if (this == HOST_PATCH) return "host_patch";
+            if (this == HOST_METRICS) return "host_metrics";
+            if (this == HOST_CPU) return "host_cpu";
+            if (this == NETWORK) return "network";
+            if (this == VIF) return "VIF";
+            if (this == VIF_METRICS) return "VIF_metrics";
+            if (this == PIF) return "PIF";
+            if (this == PIF_METRICS) return "PIF_metrics";
+            if (this == BOND) return "Bond";
+            if (this == VLAN) return "VLAN";
+            if (this == SM) return "SM";
+            if (this == SR) return "SR";
+            if (this == VDI) return "VDI";
+            if (this == VBD) return "VBD";
+            if (this == VBD_METRICS) return "VBD_metrics";
+            if (this == PBD) return "PBD";
+            if (this == CRASHDUMP) return "crashdump";
+            if (this == VTPM) return "VTPM";
+            if (this == CONSOLE) return "console";
+            if (this == USER) return "user";
+            if (this == DATA_SOURCE) return "data_source";
+            if (this == BLOB) return "blob";
+            if (this == MESSAGE) return "message";
+            if (this == SECRET) return "secret";
+            if (this == TUNNEL) return "tunnel";
+            if (this == PCI) return "PCI";
+            if (this == PGPU) return "PGPU";
+            if (this == GPU_GROUP) return "GPU_group";
+            if (this == VGPU) return "VGPU";
+        /* This can never be reached */
+        return "illegal enum";
+        }
+
     };
 
     public enum HostAllowedOperations {
@@ -2245,7 +2680,21 @@ public class Types
         /**
          * This host is the migration target of a VM
          */
-        VM_MIGRATE
+        VM_MIGRATE;
+        public String toString() {
+            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
+            if (this == PROVISION) return "provision";
+            if (this == EVACUATE) return "evacuate";
+            if (this == SHUTDOWN) return "shutdown";
+            if (this == REBOOT) return "reboot";
+            if (this == POWER_ON) return "power_on";
+            if (this == VM_START) return "vm_start";
+            if (this == VM_RESUME) return "vm_resume";
+            if (this == VM_MIGRATE) return "vm_migrate";
+        /* This can never be reached */
+        return "illegal enum";
+        }
+
     };
 
     public enum VmppArchiveFrequency {
@@ -2268,7 +2717,17 @@ public class Types
         /**
          * Weekly backups
          */
-        WEEKLY
+        WEEKLY;
+        public String toString() {
+            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
+            if (this == NEVER) return "never";
+            if (this == ALWAYS_AFTER_BACKUP) return "always_after_backup";
+            if (this == DAILY) return "daily";
+            if (this == WEEKLY) return "weekly";
+        /* This can never be reached */
+        return "illegal enum";
+        }
+
     };
 
     public enum VmppArchiveTargetType {
@@ -2287,7 +2746,16 @@ public class Types
         /**
          * NFS target config
          */
-        NFS
+        NFS;
+        public String toString() {
+            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
+            if (this == NONE) return "none";
+            if (this == CIFS) return "cifs";
+            if (this == NFS) return "nfs";
+        /* This can never be reached */
+        return "illegal enum";
+        }
+
     };
 
     public enum VbdMode {
@@ -2302,7 +2770,48 @@ public class Types
         /**
          * read-write access will be allowed
          */
-        RW
+        RW;
+        public String toString() {
+            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
+            if (this == RO) return "RO";
+            if (this == RW) return "RW";
+        /* This can never be reached */
+        return "illegal enum";
+        }
+
+    };
+
+    public enum Ipv6ConfigurationMode {
+        /**
+         * The value does not belong to this enumeration
+         */
+        UNRECOGNIZED,
+        /**
+         * Do not acquire an IPv6 address
+         */
+        NONE,
+        /**
+         * Acquire an IPv6 address by DHCP
+         */
+        DHCP,
+        /**
+         * Static IPv6 address configuration
+         */
+        STATIC,
+        /**
+         * Router assigned prefix delegation IPv6 allocation
+         */
+        AUTOCONF;
+        public String toString() {
+            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
+            if (this == NONE) return "None";
+            if (this == DHCP) return "DHCP";
+            if (this == STATIC) return "Static";
+            if (this == AUTOCONF) return "Autoconf";
+        /* This can never be reached */
+        return "illegal enum";
+        }
+
     };
 
     public enum VbdType {
@@ -2317,7 +2826,15 @@ public class Types
         /**
          * VBD will appear to guest as disk
          */
-        DISK
+        DISK;
+        public String toString() {
+            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
+            if (this == CD) return "CD";
+            if (this == DISK) return "Disk";
+        /* This can never be reached */
+        return "illegal enum";
+        }
+
     };
 
     public enum OnBoot {
@@ -2332,7 +2849,48 @@ public class Types
         /**
          * Standard behaviour.
          */
-        PERSIST
+        PERSIST;
+        public String toString() {
+            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
+            if (this == RESET) return "reset";
+            if (this == PERSIST) return "persist";
+        /* This can never be reached */
+        return "illegal enum";
+        }
+
+    };
+
+    public enum VmApplianceOperation {
+        /**
+         * The value does not belong to this enumeration
+         */
+        UNRECOGNIZED,
+        /**
+         * Start
+         */
+        START,
+        /**
+         * Clean shutdown
+         */
+        CLEAN_SHUTDOWN,
+        /**
+         * Hard shutdown
+         */
+        HARD_SHUTDOWN,
+        /**
+         * Shutdown
+         */
+        SHUTDOWN;
+        public String toString() {
+            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
+            if (this == START) return "start";
+            if (this == CLEAN_SHUTDOWN) return "clean_shutdown";
+            if (this == HARD_SHUTDOWN) return "hard_shutdown";
+            if (this == SHUTDOWN) return "shutdown";
+        /* This can never be reached */
+        return "illegal enum";
+        }
+
     };
 
     public enum VbdOperations {
@@ -2371,7 +2929,21 @@ public class Types
         /**
          * Attempting to unpause a block device backend
          */
-        UNPAUSE
+        UNPAUSE;
+        public String toString() {
+            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
+            if (this == ATTACH) return "attach";
+            if (this == EJECT) return "eject";
+            if (this == INSERT) return "insert";
+            if (this == PLUG) return "plug";
+            if (this == UNPLUG) return "unplug";
+            if (this == UNPLUG_FORCE) return "unplug_force";
+            if (this == PAUSE) return "pause";
+            if (this == UNPAUSE) return "unpause";
+        /* This can never be reached */
+        return "illegal enum";
+        }
+
     };
 
     public enum VmppBackupFrequency {
@@ -2390,7 +2962,39 @@ public class Types
         /**
          * Weekly backups
          */
-        WEEKLY
+        WEEKLY;
+        public String toString() {
+            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
+            if (this == HOURLY) return "hourly";
+            if (this == DAILY) return "daily";
+            if (this == WEEKLY) return "weekly";
+        /* This can never be reached */
+        return "illegal enum";
+        }
+
+    };
+
+    public enum NetworkDefaultLockingMode {
+        /**
+         * The value does not belong to this enumeration
+         */
+        UNRECOGNIZED,
+        /**
+         * Treat all VIFs on this network with locking_mode = 'default' as if they have locking_mode = 'unlocked'
+         */
+        UNLOCKED,
+        /**
+         * Treat all VIFs on this network with locking_mode = 'default' as if they have locking_mode = 'disabled'
+         */
+        DISABLED;
+        public String toString() {
+            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
+            if (this == UNLOCKED) return "unlocked";
+            if (this == DISABLED) return "disabled";
+        /* This can never be reached */
+        return "illegal enum";
+        }
+
     };
 
     public enum VmPowerState {
@@ -2413,7 +3017,17 @@ public class Types
         /**
          * VM state has been saved to disk and it is nolonger running. Note that disks remain in-use while the VM is suspended.
          */
-        SUSPENDED
+        SUSPENDED;
+        public String toString() {
+            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
+            if (this == HALTED) return "Halted";
+            if (this == PAUSED) return "Paused";
+            if (this == RUNNING) return "Running";
+            if (this == SUSPENDED) return "Suspended";
+        /* This can never be reached */
+        return "illegal enum";
+        }
+
     };
 
     public enum VmOperations {
@@ -2510,9 +3124,9 @@ public class Types
          */
         POOL_MIGRATE,
         /**
-         * refers to the operation "migrate"
+         * refers to the operation "migrate_send"
          */
-        MIGRATE,
+        MIGRATE_SEND,
         /**
          * refers to the operation "get_boot_record"
          */
@@ -2525,6 +3139,10 @@ public class Types
          * refers to the operation "send_trigger"
          */
         SEND_TRIGGER,
+        /**
+         * refers to the operation "query_services"
+         */
+        QUERY_SERVICES,
         /**
          * Changing the memory settings
          */
@@ -2546,10 +3164,6 @@ public class Types
          */
         CHANGING_MEMORY_LIMITS,
         /**
-         * Querying the co-operativeness of the VM
-         */
-        GET_COOPERATIVE,
-        /**
          * Changing the shadow memory for a halted VM.
          */
         CHANGING_SHADOW_MEMORY,
@@ -2566,7 +3180,7 @@ public class Types
          */
         CHANGING_VCPUS_LIVE,
         /**
-         * 
+         *
          */
         ASSERT_OPERATION_VALID,
         /**
@@ -2574,7 +3188,7 @@ public class Types
          */
         DATA_SOURCE_OP,
         /**
-         * 
+         *
          */
         UPDATE_ALLOWED_OPERATIONS,
         /**
@@ -2600,7 +3214,86 @@ public class Types
         /**
          * refers to the act of uninstalling the VM
          */
-        DESTROY
+        DESTROY;
+        public String toString() {
+            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
+            if (this == SNAPSHOT) return "snapshot";
+            if (this == CLONE) return "clone";
+            if (this == COPY) return "copy";
+            if (this == CREATE_TEMPLATE) return "create_template";
+            if (this == REVERT) return "revert";
+            if (this == CHECKPOINT) return "checkpoint";
+            if (this == SNAPSHOT_WITH_QUIESCE) return "snapshot_with_quiesce";
+            if (this == PROVISION) return "provision";
+            if (this == START) return "start";
+            if (this == START_ON) return "start_on";
+            if (this == PAUSE) return "pause";
+            if (this == UNPAUSE) return "unpause";
+            if (this == CLEAN_SHUTDOWN) return "clean_shutdown";
+            if (this == CLEAN_REBOOT) return "clean_reboot";
+            if (this == HARD_SHUTDOWN) return "hard_shutdown";
+            if (this == POWER_STATE_RESET) return "power_state_reset";
+            if (this == HARD_REBOOT) return "hard_reboot";
+            if (this == SUSPEND) return "suspend";
+            if (this == CSVM) return "csvm";
+            if (this == RESUME) return "resume";
+            if (this == RESUME_ON) return "resume_on";
+            if (this == POOL_MIGRATE) return "pool_migrate";
+            if (this == MIGRATE_SEND) return "migrate_send";
+            if (this == GET_BOOT_RECORD) return "get_boot_record";
+            if (this == SEND_SYSRQ) return "send_sysrq";
+            if (this == SEND_TRIGGER) return "send_trigger";
+            if (this == QUERY_SERVICES) return "query_services";
+            if (this == CHANGING_MEMORY_LIVE) return "changing_memory_live";
+            if (this == AWAITING_MEMORY_LIVE) return "awaiting_memory_live";
+            if (this == CHANGING_DYNAMIC_RANGE) return "changing_dynamic_range";
+            if (this == CHANGING_STATIC_RANGE) return "changing_static_range";
+            if (this == CHANGING_MEMORY_LIMITS) return "changing_memory_limits";
+            if (this == CHANGING_SHADOW_MEMORY) return "changing_shadow_memory";
+            if (this == CHANGING_SHADOW_MEMORY_LIVE) return "changing_shadow_memory_live";
+            if (this == CHANGING_VCPUS) return "changing_VCPUs";
+            if (this == CHANGING_VCPUS_LIVE) return "changing_VCPUs_live";
+            if (this == ASSERT_OPERATION_VALID) return "assert_operation_valid";
+            if (this == DATA_SOURCE_OP) return "data_source_op";
+            if (this == UPDATE_ALLOWED_OPERATIONS) return "update_allowed_operations";
+            if (this == MAKE_INTO_TEMPLATE) return "make_into_template";
+            if (this == IMPORT) return "import";
+            if (this == EXPORT) return "export";
+            if (this == METADATA_EXPORT) return "metadata_export";
+            if (this == REVERTING) return "reverting";
+            if (this == DESTROY) return "destroy";
+        /* This can never be reached */
+        return "illegal enum";
+        }
+
+    };
+
+    public enum BondMode {
+        /**
+         * The value does not belong to this enumeration
+         */
+        UNRECOGNIZED,
+        /**
+         * Source-level balancing
+         */
+        BALANCE_SLB,
+        /**
+         * Active/passive bonding: only one NIC is carrying traffic
+         */
+        ACTIVE_BACKUP,
+        /**
+         * Link aggregation control protocol
+         */
+        LACP;
+        public String toString() {
+            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
+            if (this == BALANCE_SLB) return "balance-slb";
+            if (this == ACTIVE_BACKUP) return "active-backup";
+            if (this == LACP) return "lacp";
+        /* This can never be reached */
+        return "illegal enum";
+        }
+
     };
 
     public enum IpConfigurationMode {
@@ -2619,7 +3312,16 @@ public class Types
         /**
          * Static IP address configuration
          */
-        STATIC
+        STATIC;
+        public String toString() {
+            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
+            if (this == NONE) return "None";
+            if (this == DHCP) return "DHCP";
+            if (this == STATIC) return "Static";
+        /* This can never be reached */
+        return "illegal enum";
+        }
+
     };
 
     public enum StorageOperations {
@@ -2674,7 +3376,68 @@ public class Types
         /**
          * Snapshotting a VDI
          */
-        VDI_SNAPSHOT
+        VDI_SNAPSHOT,
+        /**
+         * Creating a PBD for this SR
+         */
+        PBD_CREATE,
+        /**
+         * Destroying one of this SR's PBDs
+         */
+        PBD_DESTROY;
+        public String toString() {
+            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
+            if (this == SCAN) return "scan";
+            if (this == DESTROY) return "destroy";
+            if (this == FORGET) return "forget";
+            if (this == PLUG) return "plug";
+            if (this == UNPLUG) return "unplug";
+            if (this == UPDATE) return "update";
+            if (this == VDI_CREATE) return "vdi_create";
+            if (this == VDI_INTRODUCE) return "vdi_introduce";
+            if (this == VDI_DESTROY) return "vdi_destroy";
+            if (this == VDI_RESIZE) return "vdi_resize";
+            if (this == VDI_CLONE) return "vdi_clone";
+            if (this == VDI_SNAPSHOT) return "vdi_snapshot";
+            if (this == PBD_CREATE) return "pbd_create";
+            if (this == PBD_DESTROY) return "pbd_destroy";
+        /* This can never be reached */
+        return "illegal enum";
+        }
+
+    };
+
+    public enum VifLockingMode {
+        /**
+         * The value does not belong to this enumeration
+         */
+        UNRECOGNIZED,
+        /**
+         * No specific configuration set - default network policy applies
+         */
+        NETWORK_DEFAULT,
+        /**
+         * Only traffic to a specific MAC and a list of IPv4 or IPv6 addresses is permitted
+         */
+        LOCKED,
+        /**
+         * All traffic is permitted
+         */
+        UNLOCKED,
+        /**
+         * No traffic is permitted
+         */
+        DISABLED;
+        public String toString() {
+            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
+            if (this == NETWORK_DEFAULT) return "network_default";
+            if (this == LOCKED) return "locked";
+            if (this == UNLOCKED) return "unlocked";
+            if (this == DISABLED) return "disabled";
+        /* This can never be reached */
+        return "illegal enum";
+        }
+
     };
 
 
@@ -2822,6 +3585,24 @@ public class Types
     }
 
     /**
+     * The GPU group contains active PGPUs and cannot be deleted.
+     */
+    public static class GpuGroupContainsPgpu extends XenAPIException {
+        public final String pgpus;
+
+        /**
+         * Create a new GpuGroupContainsPgpu
+         *
+         * @param pgpus
+         */
+        public GpuGroupContainsPgpu(String pgpus) {
+            super("The GPU group contains active PGPUs and cannot be deleted.");
+            this.pgpus = pgpus;
+        }
+
+    }
+
+    /**
      * Operation cannot proceed while a tunnel exists on this interface.
      */
     public static class PifTunnelStillExists extends XenAPIException {
@@ -2867,6 +3648,24 @@ public class Types
         public PifAlreadyBonded(String PIF) {
             super("This operation cannot be performed because the pif is bonded.");
             this.PIF = PIF;
+        }
+
+    }
+
+    /**
+     * The disaster recovery task could not be cleanly destroyed.
+     */
+    public static class CannotDestroyDisasterRecoveryTask extends XenAPIException {
+        public final String reason;
+
+        /**
+         * Create a new CannotDestroyDisasterRecoveryTask
+         *
+         * @param reason
+         */
+        public CannotDestroyDisasterRecoveryTask(String reason) {
+            super("The disaster recovery task could not be cleanly destroyed.");
+            this.reason = reason;
         }
 
     }
@@ -3040,6 +3839,24 @@ public class Types
         public PatchPrecheckFailedVmRunning(String patch) {
             super("The patch precheck stage failed: there are one or more VMs still running on the server.  All VMs must be suspended before the patch can be applied.");
             this.patch = patch;
+        }
+
+    }
+
+    /**
+     * You attempted to run a VM on a host which doesn't have I/O virtualisation (IOMMU/VT-d) enabled, which is needed by the VM.
+     */
+    public static class VmRequiresIommu extends XenAPIException {
+        public final String host;
+
+        /**
+         * Create a new VmRequiresIommu
+         *
+         * @param host
+         */
+        public VmRequiresIommu(String host) {
+            super("You attempted to run a VM on a host which doesn't have I/O virtualisation (IOMMU/VT-d) enabled, which is needed by the VM.");
+            this.host = host;
         }
 
     }
@@ -3236,6 +4053,24 @@ public class Types
     }
 
     /**
+     * You attempted to migrate a VM with more than one snapshot.
+     */
+    public static class VmHasTooManySnapshots extends XenAPIException {
+        public final String vm;
+
+        /**
+         * Create a new VmHasTooManySnapshots
+         *
+         * @param vm
+         */
+        public VmHasTooManySnapshots(String vm) {
+            super("You attempted to migrate a VM with more than one snapshot.");
+            this.vm = vm;
+        }
+
+    }
+
+    /**
      * The patch apply failed.  Please see attached output.
      */
     public static class PatchApplyFailed extends XenAPIException {
@@ -3288,6 +4123,27 @@ public class Types
             super("The SR is full. Requested new size exceeds the maximum size");
             this.requested = requested;
             this.maximum = maximum;
+        }
+
+    }
+
+    /**
+     * You attempted to run a VM on a host which doesn't have a pGPU available in the GPU group needed by the VM. The VM has a vGPU attached to this GPU group.
+     */
+    public static class VmRequiresGpu extends XenAPIException {
+        public final String vm;
+        public final String GPUGroup;
+
+        /**
+         * Create a new VmRequiresGpu
+         *
+         * @param vm
+         * @param GPUGroup
+         */
+        public VmRequiresGpu(String vm, String GPUGroup) {
+            super("You attempted to run a VM on a host which doesn't have a pGPU available in the GPU group needed by the VM. The VM has a vGPU attached to this GPU group.");
+            this.vm = vm;
+            this.GPUGroup = GPUGroup;
         }
 
     }
@@ -3451,6 +4307,24 @@ public class Types
     }
 
     /**
+     * The VM is set up to use a feature that requires it to boot as HVM.
+     */
+    public static class FeatureRequiresHvm extends XenAPIException {
+        public final String details;
+
+        /**
+         * Create a new FeatureRequiresHvm
+         *
+         * @param details
+         */
+        public FeatureRequiresHvm(String details) {
+            super("The VM is set up to use a feature that requires it to boot as HVM.");
+            this.details = details;
+        }
+
+    }
+
+    /**
      * The operation could not proceed because necessary VDIs were already locked at the storage level.
      */
     public static class SrVdiLockingFailed extends XenAPIException {
@@ -3580,6 +4454,24 @@ public class Types
     }
 
     /**
+     * The GPU group contains active VGPUs and cannot be deleted.
+     */
+    public static class GpuGroupContainsVgpu extends XenAPIException {
+        public final String vgpus;
+
+        /**
+         * Create a new GpuGroupContainsVgpu
+         *
+         * @param vgpus
+         */
+        public GpuGroupContainsVgpu(String vgpus) {
+            super("The GPU group contains active VGPUs and cannot be deleted.");
+            this.vgpus = vgpus;
+        }
+
+    }
+
+    /**
      * The pool failed to enable external authentication.
      */
     public static class PoolAuthEnableFailedDuplicateHostname extends XenAPIException {
@@ -3690,6 +4582,24 @@ public class Types
     }
 
     /**
+     * This PIF is a bond slave and cannot have a tunnel on it.
+     */
+    public static class CannotAddTunnelToBondSlave extends XenAPIException {
+        public final String PIF;
+
+        /**
+         * Create a new CannotAddTunnelToBondSlave
+         *
+         * @param PIF
+         */
+        public CannotAddTunnelToBondSlave(String PIF) {
+            super("This PIF is a bond slave and cannot have a tunnel on it.");
+            this.PIF = PIF;
+        }
+
+    }
+
+    /**
      * The uploaded patch file is invalid
      */
     public static class InvalidPatch extends XenAPIException {
@@ -3773,6 +4683,41 @@ public class Types
          */
         public PoolJoiningHostMustHavePhysicalManagementNic() {
             super("The host joining the pool must have a physical management NIC (i.e. the management NIC must not be on a VLAN or bonded PIF).");
+        }
+
+    }
+
+    /**
+     * PIF has no IPv6 configuration (mode curently set to 'none')
+     */
+    public static class PifHasNoV6NetworkConfiguration extends XenAPIException {
+
+        /**
+         * Create a new PifHasNoV6NetworkConfiguration
+         */
+        public PifHasNoV6NetworkConfiguration() {
+            super("PIF has no IPv6 configuration (mode curently set to 'none')");
+        }
+
+    }
+
+    /**
+     * This operation is not allowed as the VM is part of an appliance.
+     */
+    public static class VmIsPartOfAnAppliance extends XenAPIException {
+        public final String vm;
+        public final String appliance;
+
+        /**
+         * Create a new VmIsPartOfAnAppliance
+         *
+         * @param vm
+         * @param appliance
+         */
+        public VmIsPartOfAnAppliance(String vm, String appliance) {
+            super("This operation is not allowed as the VM is part of an appliance.");
+            this.vm = vm;
+            this.appliance = appliance;
         }
 
     }
@@ -4168,6 +5113,44 @@ public class Types
     }
 
     /**
+     * The VM is incompatible with the CPU features of this host.
+     */
+    public static class VmIncompatibleWithThisHost extends XenAPIException {
+        public final String vm;
+        public final String host;
+        public final String reason;
+
+        /**
+         * Create a new VmIncompatibleWithThisHost
+         *
+         * @param vm
+         * @param host
+         * @param reason
+         */
+        public VmIncompatibleWithThisHost(String vm, String host, String reason) {
+            super("The VM is incompatible with the CPU features of this host.");
+            this.vm = vm;
+            this.host = host;
+            this.reason = reason;
+        }
+
+    }
+
+    /**
+     * The upper limit of active redo log instances was reached.
+     */
+    public static class NoMoreRedoLogsAllowed extends XenAPIException {
+
+        /**
+         * Create a new NoMoreRedoLogsAllowed
+         */
+        public NoMoreRedoLogsAllowed() {
+            super("The upper limit of active redo log instances was reached.");
+        }
+
+    }
+
+    /**
      * The pool failed to enable external authentication.
      */
     public static class PoolAuthEnableFailed extends XenAPIException {
@@ -4387,6 +5370,27 @@ public class Types
     }
 
     /**
+     * This VM operation cannot be performed on an older-versioned host during an upgrade.
+     */
+    public static class VmHostIncompatibleVersion extends XenAPIException {
+        public final String host;
+        public final String vm;
+
+        /**
+         * Create a new VmHostIncompatibleVersion
+         *
+         * @param host
+         * @param vm
+         */
+        public VmHostIncompatibleVersion(String host, String vm) {
+            super("This VM operation cannot be performed on an older-versioned host during an upgrade.");
+            this.host = host;
+            this.vm = vm;
+        }
+
+    }
+
+    /**
      * Cannot join pool whose external authentication configuration is different.
      */
     public static class PoolJoiningExternalAuthMismatch extends XenAPIException {
@@ -4396,6 +5400,24 @@ public class Types
          */
         public PoolJoiningExternalAuthMismatch() {
             super("Cannot join pool whose external authentication configuration is different.");
+        }
+
+    }
+
+    /**
+     * All VBDs of type 'disk' must be read/write for HVM guests
+     */
+    public static class DiskVbdMustBeReadwriteForHvm extends XenAPIException {
+        public final String vbd;
+
+        /**
+         * Create a new DiskVbdMustBeReadwriteForHvm
+         *
+         * @param vbd
+         */
+        public DiskVbdMustBeReadwriteForHvm(String vbd) {
+            super("All VBDs of type 'disk' must be read/write for HVM guests");
+            this.vbd = vbd;
         }
 
     }
@@ -4564,6 +5586,84 @@ public class Types
     }
 
     /**
+     * You attempted to migrate a VM which has a checkpoint.
+     */
+    public static class VmHasCheckpoint extends XenAPIException {
+        public final String vm;
+
+        /**
+         * Create a new VmHasCheckpoint
+         *
+         * @param vm
+         */
+        public VmHasCheckpoint(String vm) {
+            super("You attempted to migrate a VM which has a checkpoint.");
+            this.vm = vm;
+        }
+
+    }
+
+    /**
+     * The SM plugin did not respond to a query.
+     */
+    public static class SmPluginCommunicationFailure extends XenAPIException {
+        public final String sm;
+
+        /**
+         * Create a new SmPluginCommunicationFailure
+         *
+         * @param sm
+         */
+        public SmPluginCommunicationFailure(String sm) {
+            super("The SM plugin did not respond to a query.");
+            this.sm = sm;
+        }
+
+    }
+
+    /**
+     * This VM is assigned to a protection policy.
+     */
+    public static class VmAssignedToProtectionPolicy extends XenAPIException {
+        public final String vm;
+        public final String vmpp;
+
+        /**
+         * Create a new VmAssignedToProtectionPolicy
+         *
+         * @param vm
+         * @param vmpp
+         */
+        public VmAssignedToProtectionPolicy(String vm, String vmpp) {
+            super("This VM is assigned to a protection policy.");
+            this.vm = vm;
+            this.vmpp = vmpp;
+        }
+
+    }
+
+    /**
+     * RBAC permission denied.
+     */
+    public static class RbacPermissionDenied extends XenAPIException {
+        public final String permission;
+        public final String message;
+
+        /**
+         * Create a new RbacPermissionDenied
+         *
+         * @param permission
+         * @param message
+         */
+        public RbacPermissionDenied(String permission, String message) {
+            super("RBAC permission denied.");
+            this.permission = permission;
+            this.message = message;
+        }
+
+    }
+
+    /**
      * The host failed to disable external authentication.
      */
     public static class AuthDisableFailedPermissionDenied extends XenAPIException {
@@ -4596,27 +5696,6 @@ public class Types
     }
 
     /**
-     * RBAC permission denied.
-     */
-    public static class RbacPermissionDenied extends XenAPIException {
-        public final String permission;
-        public final String message;
-
-        /**
-         * Create a new RbacPermissionDenied
-         *
-         * @param permission
-         * @param message
-         */
-        public RbacPermissionDenied(String permission, String message) {
-            super("RBAC permission denied.");
-            this.permission = permission;
-            this.message = message;
-        }
-
-    }
-
-    /**
      * The request was rejected because there are too many pending tasks on the server.
      */
     public static class TooManyPendingTasks extends XenAPIException {
@@ -4644,6 +5723,20 @@ public class Types
         public VmSnapshotWithQuiesceTimeout(String vm) {
             super("The VSS plug-in has timed out");
             this.vm = vm;
+        }
+
+    }
+
+    /**
+     * This operation cannot be performed because creating or deleting a bond involving the management interface is not allowed while HA is on. In order to do that, disable HA, create or delete the bond then re-enable HA.
+     */
+    public static class HaCannotChangeBondStatusOfMgmtIface extends XenAPIException {
+
+        /**
+         * Create a new HaCannotChangeBondStatusOfMgmtIface
+         */
+        public HaCannotChangeBondStatusOfMgmtIface() {
+            super("This operation cannot be performed because creating or deleting a bond involving the management interface is not allowed while HA is on. In order to do that, disable HA, create or delete the bond then re-enable HA.");
         }
 
     }
@@ -4698,6 +5791,30 @@ public class Types
         public AuthEnableFailedDomainLookupFailed(String message) {
             super("The host failed to enable external authentication.");
             this.message = message;
+        }
+
+    }
+
+    /**
+     * The patch precheck stage failed: the server is of an incorrect build.
+     */
+    public static class PatchPrecheckFailedWrongServerBuild extends XenAPIException {
+        public final String patch;
+        public final String foundBuild;
+        public final String requiredBuild;
+
+        /**
+         * Create a new PatchPrecheckFailedWrongServerBuild
+         *
+         * @param patch
+         * @param foundBuild
+         * @param requiredBuild
+         */
+        public PatchPrecheckFailedWrongServerBuild(String patch, String foundBuild, String requiredBuild) {
+            super("The patch precheck stage failed: the server is of an incorrect build.");
+            this.patch = patch;
+            this.foundBuild = foundBuild;
+            this.requiredBuild = requiredBuild;
         }
 
     }
@@ -4791,6 +5908,20 @@ public class Types
     }
 
     /**
+     * Role already exists.
+     */
+    public static class RoleAlreadyExists extends XenAPIException {
+
+        /**
+         * Create a new RoleAlreadyExists
+         */
+        public RoleAlreadyExists() {
+            super("Role already exists.");
+        }
+
+    }
+
+    /**
      * The network contains active PIFs and cannot be deleted.
      */
     public static class NetworkContainsPif extends XenAPIException {
@@ -4809,15 +5940,22 @@ public class Types
     }
 
     /**
-     * Role already exists.
+     * Could not find a network interface with the specified device name and MAC address.
      */
-    public static class RoleAlreadyExists extends XenAPIException {
+    public static class CouldNotFindNetworkInterfaceWithSpecifiedDeviceNameAndMacAddress extends XenAPIException {
+        public final String device;
+        public final String mac;
 
         /**
-         * Create a new RoleAlreadyExists
+         * Create a new CouldNotFindNetworkInterfaceWithSpecifiedDeviceNameAndMacAddress
+         *
+         * @param device
+         * @param mac
          */
-        public RoleAlreadyExists() {
-            super("Role already exists.");
+        public CouldNotFindNetworkInterfaceWithSpecifiedDeviceNameAndMacAddress(String device, String mac) {
+            super("Could not find a network interface with the specified device name and MAC address.");
+            this.device = device;
+            this.mac = mac;
         }
 
     }
@@ -4998,6 +6136,27 @@ public class Types
          */
         public LicenseProcessingError() {
             super("There was an error processing your license.  Please contact your support representative.");
+        }
+
+    }
+
+    /**
+     * The specified VBD device is not recognised: please use a non-negative integer
+     */
+    public static class IllegalVbdDevice extends XenAPIException {
+        public final String vbd;
+        public final String device;
+
+        /**
+         * Create a new IllegalVbdDevice
+         *
+         * @param vbd
+         * @param device
+         */
+        public IllegalVbdDevice(String vbd, String device) {
+            super("The specified VBD device is not recognised: please use a non-negative integer");
+            this.vbd = vbd;
+            this.device = device;
         }
 
     }
@@ -5225,6 +6384,24 @@ public class Types
          */
         public PifCannotBondCrossHost() {
             super("You cannot bond interfaces across different hosts.");
+        }
+
+    }
+
+    /**
+     * The event.from token could not be parsed. Valid values include: '', and a value returned from a previous event.from call.
+     */
+    public static class EventFromTokenParseFailure extends XenAPIException {
+        public final String token;
+
+        /**
+         * Create a new EventFromTokenParseFailure
+         *
+         * @param token
+         */
+        public EventFromTokenParseFailure(String token) {
+            super("The event.from token could not be parsed. Valid values include: '', and a value returned from a previous event.from call.");
+            this.token = token;
         }
 
     }
@@ -5626,6 +6803,24 @@ public class Types
     }
 
     /**
+     * The server failed to parse your event subscription. Valid values include: *, class-name, class-name/object-reference.
+     */
+    public static class EventSubscriptionParseFailure extends XenAPIException {
+        public final String subscription;
+
+        /**
+         * Create a new EventSubscriptionParseFailure
+         *
+         * @param subscription
+         */
+        public EventSubscriptionParseFailure(String subscription) {
+            super("The server failed to parse your event subscription. Valid values include: *, class-name, class-name/object-reference.");
+            this.subscription = subscription;
+        }
+
+    }
+
+    /**
      * Your license has expired.  Please contact your support representative.
      */
     public static class LicenseExpired extends XenAPIException {
@@ -5681,6 +6876,20 @@ public class Types
          */
         public VmppArchiveMoreFrequentThanBackup() {
             super("Archive more frequent than backup.");
+        }
+
+    }
+
+    /**
+     * There was a problem with the license daemon (v6d). Is it running?
+     */
+    public static class V6dFailure extends XenAPIException {
+
+        /**
+         * Create a new V6dFailure
+         */
+        public V6dFailure() {
+            super("There was a problem with the license daemon (v6d). Is it running?");
         }
 
     }
@@ -5849,6 +7058,20 @@ public class Types
     }
 
     /**
+     * The WLB server rejected our configured authentication details.
+     */
+    public static class WlbAuthenticationFailed extends XenAPIException {
+
+        /**
+         * Create a new WlbAuthenticationFailed
+         */
+        public WlbAuthenticationFailed() {
+            super("The WLB server rejected our configured authentication details.");
+        }
+
+    }
+
+    /**
      * Unknown type of external authentication.
      */
     public static class AuthUnknownType extends XenAPIException {
@@ -5862,20 +7085,6 @@ public class Types
         public AuthUnknownType(String type) {
             super("Unknown type of external authentication.");
             this.type = type;
-        }
-
-    }
-
-    /**
-     * The WLB server rejected our configured authentication details.
-     */
-    public static class WlbAuthenticationFailed extends XenAPIException {
-
-        /**
-         * Create a new WlbAuthenticationFailed
-         */
-        public WlbAuthenticationFailed() {
-            super("The WLB server rejected our configured authentication details.");
         }
 
     }
@@ -6050,6 +7259,27 @@ public class Types
          */
         public FeatureRestricted() {
             super("The use of this feature is restricted.");
+        }
+
+    }
+
+    /**
+     * The VDI could not be opened for metadata recovery as it contains the current pool's metadata.
+     */
+    public static class VdiContainsMetadataOfThisPool extends XenAPIException {
+        public final String vdi;
+        public final String pool;
+
+        /**
+         * Create a new VdiContainsMetadataOfThisPool
+         *
+         * @param vdi
+         * @param pool
+         */
+        public VdiContainsMetadataOfThisPool(String vdi, String pool) {
+            super("The VDI could not be opened for metadata recovery as it contains the current pool's metadata.");
+            this.vdi = vdi;
+            this.pool = pool;
         }
 
     }
@@ -6230,7 +7460,7 @@ public class Types
     }
 
     /**
-     * The SR is still connected to a host via a PBD. It cannot be destroyed.
+     * The SR is still connected to a host via a PBD. It cannot be destroyed or forgotten.
      */
     public static class SrHasPbd extends XenAPIException {
         public final String sr;
@@ -6241,22 +7471,26 @@ public class Types
          * @param sr
          */
         public SrHasPbd(String sr) {
-            super("The SR is still connected to a host via a PBD. It cannot be destroyed.");
+            super("The SR is still connected to a host via a PBD. It cannot be destroyed or forgotten.");
             this.sr = sr;
         }
 
     }
 
     /**
-     * The host is still booting.
+     * Some VMs belonging to the appliance threw an exception while carrying out the specified operation
      */
-    public static class HostStillBooting extends XenAPIException {
+    public static class OperationPartiallyFailed extends XenAPIException {
+        public final String operation;
 
         /**
-         * Create a new HostStillBooting
+         * Create a new OperationPartiallyFailed
+         *
+         * @param operation
          */
-        public HostStillBooting() {
-            super("The host is still booting.");
+        public OperationPartiallyFailed(String operation) {
+            super("Some VMs belonging to the appliance threw an exception while carrying out the specified operation");
+            this.operation = operation;
         }
 
     }
@@ -6276,6 +7510,38 @@ public class Types
     }
 
     /**
+     * The host toolstack is still initialising. Please wait.
+     */
+    public static class HostStillBooting extends XenAPIException {
+
+        /**
+         * Create a new HostStillBooting
+         */
+        public HostStillBooting() {
+            super("The host toolstack is still initialising. Please wait.");
+        }
+
+    }
+
+    /**
+     * You tried to destroy a system network: these cannot be destroyed.
+     */
+    public static class CannotDestroySystemNetwork extends XenAPIException {
+        public final String network;
+
+        /**
+         * Create a new CannotDestroySystemNetwork
+         *
+         * @param network
+         */
+        public CannotDestroySystemNetwork(String network) {
+            super("You tried to destroy a system network: these cannot be destroyed.");
+            this.network = network;
+        }
+
+    }
+
+    /**
      * The specified object no longer exists.
      */
     public static class ObjectNolongerExists extends XenAPIException {
@@ -6285,6 +7551,24 @@ public class Types
          */
         public ObjectNolongerExists() {
             super("The specified object no longer exists.");
+        }
+
+    }
+
+    /**
+     * This VDI was not mapped to a destination SR in VM.migrate_send operation
+     */
+    public static class VdiNotInMap extends XenAPIException {
+        public final String vdi;
+
+        /**
+         * Create a new VdiNotInMap
+         *
+         * @param vdi
+         */
+        public VdiNotInMap(String vdi) {
+            super("This VDI was not mapped to a destination SR in VM.migrate_send operation");
+            this.vdi = vdi;
         }
 
     }
@@ -6390,7 +7674,7 @@ public class Types
     }
 
     /**
-     * The edition name you supplied is invalid.
+     * The edition you supplied is invalid.
      */
     public static class InvalidEdition extends XenAPIException {
         public final String edition;
@@ -6401,7 +7685,7 @@ public class Types
          * @param edition
          */
         public InvalidEdition(String edition) {
-            super("The edition name you supplied is invalid.");
+            super("The edition you supplied is invalid.");
             this.edition = edition;
         }
 
@@ -6458,6 +7742,24 @@ public class Types
     }
 
     /**
+     * The given VM is not registered as a system domain. This operation can only be performed on a registered system domain.
+     */
+    public static class NotSystemDomain extends XenAPIException {
+        public final String vm;
+
+        /**
+         * Create a new NotSystemDomain
+         *
+         * @param vm
+         */
+        public NotSystemDomain(String vm) {
+            super("The given VM is not registered as a system domain. This operation can only be performed on a registered system domain.");
+            this.vm = vm;
+        }
+
+    }
+
+    /**
      * The specified VM has too little memory to be started.
      */
     public static class VmMemorySizeTooLow extends XenAPIException {
@@ -6476,7 +7778,7 @@ public class Types
     }
 
     /**
-     * There is at least on VM assigned to this protection policy.
+     * There is at least one VM assigned to this protection policy.
      */
     public static class VmppHasVm extends XenAPIException {
 
@@ -6484,7 +7786,7 @@ public class Types
          * Create a new VmppHasVm
          */
         public VmppHasVm() {
-            super("There is at least on VM assigned to this protection policy.");
+            super("There is at least one VM assigned to this protection policy.");
         }
 
     }
@@ -6792,6 +8094,42 @@ public class Types
     }
 
     /**
+     * This operation could not be performed, because the VM has one or more PCI devices passed through.
+     */
+    public static class VmHasPciAttached extends XenAPIException {
+        public final String vm;
+
+        /**
+         * Create a new VmHasPciAttached
+         *
+         * @param vm
+         */
+        public VmHasPciAttached(String vm) {
+            super("This operation could not be performed, because the VM has one or more PCI devices passed through.");
+            this.vm = vm;
+        }
+
+    }
+
+    /**
+     * The VDI mirroring cannot be performed
+     */
+    public static class MirrorFailed extends XenAPIException {
+        public final String vdi;
+
+        /**
+         * Create a new MirrorFailed
+         *
+         * @param vdi
+         */
+        public MirrorFailed(String vdi) {
+            super("The VDI mirroring cannot be performed");
+            this.vdi = vdi;
+        }
+
+    }
+
+    /**
      * The WLB server reported that communication with XenServer timed out.
      */
     public static class WlbXenserverTimeout extends XenAPIException {
@@ -6801,24 +8139,6 @@ public class Types
          */
         public WlbXenserverTimeout() {
             super("The WLB server reported that communication with XenServer timed out.");
-        }
-
-    }
-
-    /**
-     * The quiesced-snapshot operation failed for an unexpected reason
-     */
-    public static class VmSnapshotWithQuiesceFailed extends XenAPIException {
-        public final String vm;
-
-        /**
-         * Create a new VmSnapshotWithQuiesceFailed
-         *
-         * @param vm
-         */
-        public VmSnapshotWithQuiesceFailed(String vm) {
-            super("The quiesced-snapshot operation failed for an unexpected reason");
-            this.vm = vm;
         }
 
     }
@@ -6840,6 +8160,24 @@ public class Types
             super("The pool failed to disable the external authentication of at least one host.");
             this.host = host;
             this.message = message;
+        }
+
+    }
+
+    /**
+     * The quiesced-snapshot operation failed for an unexpected reason
+     */
+    public static class VmSnapshotWithQuiesceFailed extends XenAPIException {
+        public final String vm;
+
+        /**
+         * Create a new VmSnapshotWithQuiesceFailed
+         *
+         * @param vm
+         */
+        public VmSnapshotWithQuiesceFailed(String vm) {
+            super("The quiesced-snapshot operation failed for an unexpected reason");
+            this.vm = vm;
         }
 
     }
@@ -6943,6 +8281,24 @@ public class Types
          */
         public HostItsOwnSlave() {
             super("The host is its own slave. Please use pool-emergency-transition-to-master or pool-emergency-reset-master.");
+        }
+
+    }
+
+    /**
+     * This PIF is a bond slave and cannot have a VLAN on it.
+     */
+    public static class CannotAddVlanToBondSlave extends XenAPIException {
+        public final String PIF;
+
+        /**
+         * Create a new CannotAddVlanToBondSlave
+         *
+         * @param PIF
+         */
+        public CannotAddVlanToBondSlave(String PIF) {
+            super("This PIF is a bond slave and cannot have a VLAN on it.");
+            this.PIF = PIF;
         }
 
     }
@@ -7087,6 +8443,24 @@ public class Types
     }
 
     /**
+     * You reached the maximal number of concurrently migrating VMs.
+     */
+    public static class TooManyStorageMigrates extends XenAPIException {
+        public final String number;
+
+        /**
+         * Create a new TooManyStorageMigrates
+         *
+         * @param number
+         */
+        public TooManyStorageMigrates(String number) {
+            super("You reached the maximal number of concurrently migrating VMs.");
+            this.number = number;
+        }
+
+    }
+
+    /**
      * The network contains active VIFs and cannot be deleted.
      */
     public static class NetworkContainsVif extends XenAPIException {
@@ -7190,6 +8564,20 @@ public class Types
     }
 
     /**
+     * Subject cannot be resolved by the external directory service.
+     */
+    public static class SubjectCannotBeResolved extends XenAPIException {
+
+        /**
+         * Create a new SubjectCannotBeResolved
+         */
+        public SubjectCannotBeResolved() {
+            super("Subject cannot be resolved by the external directory service.");
+        }
+
+    }
+
+    /**
      * Some volumes to be snapshot could not be added to the VSS snapshot set
      */
     public static class XenVssReqErrorAddingVolumeToSnapsetFailed extends XenAPIException {
@@ -7211,20 +8599,6 @@ public class Types
     }
 
     /**
-     * Subject cannot be resolved by the external directory service.
-     */
-    public static class SubjectCannotBeResolved extends XenAPIException {
-
-        /**
-         * Create a new SubjectCannotBeResolved
-         */
-        public SubjectCannotBeResolved() {
-            super("Subject cannot be resolved by the external directory service.");
-        }
-
-    }
-
-    /**
      * The provision call failed because it ran out of space.
      */
     public static class ProvisionFailedOutOfSpace extends XenAPIException {
@@ -7234,6 +8608,42 @@ public class Types
          */
         public ProvisionFailedOutOfSpace() {
             super("The provision call failed because it ran out of space.");
+        }
+
+    }
+
+    /**
+     * You attempted to migrate a VDI which is not attached to a runnning VM.
+     */
+    public static class VdiNeedsVmForMigrate extends XenAPIException {
+        public final String vdi;
+
+        /**
+         * Create a new VdiNeedsVmForMigrate
+         *
+         * @param vdi
+         */
+        public VdiNeedsVmForMigrate(String vdi) {
+            super("You attempted to migrate a VDI which is not attached to a runnning VM.");
+            this.vdi = vdi;
+        }
+
+    }
+
+    /**
+     * An error occurred while attempting to import a database from a metadata VDI
+     */
+    public static class CouldNotImportDatabase extends XenAPIException {
+        public final String reason;
+
+        /**
+         * Create a new CouldNotImportDatabase
+         *
+         * @param reason
+         */
+        public CouldNotImportDatabase(String reason) {
+            super("An error occurred while attempting to import a database from a metadata VDI");
+            this.reason = reason;
         }
 
     }
@@ -7373,6 +8783,20 @@ public class Types
          */
         public LicenseDoesNotSupportXha() {
             super("XHA cannot be enabled because this host's license does not allow it");
+        }
+
+    }
+
+    /**
+     * The primary address types are not compatible
+     */
+    public static class PifIncompatiblePrimaryAddressType extends XenAPIException {
+
+        /**
+         * Create a new PifIncompatiblePrimaryAddressType
+         */
+        public PifIncompatiblePrimaryAddressType() {
+            super("The primary address types are not compatible");
         }
 
     }
@@ -7677,6 +9101,48 @@ public class Types
             this.vm = vm;
             this.vbd = vbd;
             this.device = device;
+        }
+
+    }
+
+    /**
+     * This PIF is a bond slave and cannot be plugged.
+     */
+    public static class CannotPlugBondSlave extends XenAPIException {
+        public final String PIF;
+
+        /**
+         * Create a new CannotPlugBondSlave
+         *
+         * @param PIF
+         */
+        public CannotPlugBondSlave(String PIF) {
+            super("This PIF is a bond slave and cannot be plugged.");
+            this.PIF = PIF;
+        }
+
+    }
+
+    /**
+     * The VM cannot be imported unforced because it is either the same version or an older version of an existing VM.
+     */
+    public static class VmToImportIsNotNewerVersion extends XenAPIException {
+        public final String vm;
+        public final String existingVersion;
+        public final String versionToImport;
+
+        /**
+         * Create a new VmToImportIsNotNewerVersion
+         *
+         * @param vm
+         * @param existingVersion
+         * @param versionToImport
+         */
+        public VmToImportIsNotNewerVersion(String vm, String existingVersion, String versionToImport) {
+            super("The VM cannot be imported unforced because it is either the same version or an older version of an existing VM.");
+            this.vm = vm;
+            this.existingVersion = existingVersion;
+            this.versionToImport = versionToImport;
         }
 
     }
@@ -8064,7 +9530,7 @@ public class Types
     }
 
     /**
-     * This operation is not supported during an upgrade
+     * This operation is not supported during an upgrade.
      */
     public static class NotSupportedDuringUpgrade extends XenAPIException {
 
@@ -8072,7 +9538,7 @@ public class Types
          * Create a new NotSupportedDuringUpgrade
          */
         public NotSupportedDuringUpgrade() {
-            super("This operation is not supported during an upgrade");
+            super("This operation is not supported during an upgrade.");
         }
 
     }
@@ -8112,6 +9578,20 @@ public class Types
         public InterfaceHasNoIp(String iface) {
             super("The specified interface cannot be used because it has no IP address");
             this.iface = iface;
+        }
+
+    }
+
+    /**
+     * The hosts in this pool are not compatible.
+     */
+    public static class HostsNotCompatible extends XenAPIException {
+
+        /**
+         * Create a new HostsNotCompatible
+         */
+        public HostsNotCompatible() {
+            super("The hosts in this pool are not compatible.");
         }
 
     }
@@ -8170,8 +9650,8 @@ public class Types
         try {
             return (Date) object;
         } catch (ClassCastException e){
-            //Occasionally the date comes back as an ocaml float rather than 
-            //in the xmlrpc format! Catch this and convert. 
+            //Occasionally the date comes back as an ocaml float rather than
+            //in the xmlrpc format! Catch this and convert.
             return (new Date((long) (1000*Double.parseDouble((String) object))));
         }
     }
@@ -8181,7 +9661,7 @@ public class Types
             return null;
         }
         try {
-            return XenAPIObjects.valueOf(((String) object).toUpperCase());
+            return XenAPIObjects.valueOf(((String) object).toUpperCase().replace('-','_'));
         } catch (IllegalArgumentException ex) {
             return XenAPIObjects.UNRECOGNIZED;
         }
@@ -8192,9 +9672,20 @@ public class Types
             return null;
         }
         try {
-            return AfterApplyGuidance.valueOf(((String) object).toUpperCase());
+            return AfterApplyGuidance.valueOf(((String) object).toUpperCase().replace('-','_'));
         } catch (IllegalArgumentException ex) {
             return AfterApplyGuidance.UNRECOGNIZED;
+        }
+    }
+
+    public static Types.BondMode toBondMode(Object object) {
+        if (object == null) {
+            return null;
+        }
+        try {
+            return BondMode.valueOf(((String) object).toUpperCase().replace('-','_'));
+        } catch (IllegalArgumentException ex) {
+            return BondMode.UNRECOGNIZED;
         }
     }
 
@@ -8203,7 +9694,7 @@ public class Types
             return null;
         }
         try {
-            return Cls.valueOf(((String) object).toUpperCase());
+            return Cls.valueOf(((String) object).toUpperCase().replace('-','_'));
         } catch (IllegalArgumentException ex) {
             return Cls.UNRECOGNIZED;
         }
@@ -8214,7 +9705,7 @@ public class Types
             return null;
         }
         try {
-            return ConsoleProtocol.valueOf(((String) object).toUpperCase());
+            return ConsoleProtocol.valueOf(((String) object).toUpperCase().replace('-','_'));
         } catch (IllegalArgumentException ex) {
             return ConsoleProtocol.UNRECOGNIZED;
         }
@@ -8225,7 +9716,7 @@ public class Types
             return null;
         }
         try {
-            return EventOperation.valueOf(((String) object).toUpperCase());
+            return EventOperation.valueOf(((String) object).toUpperCase().replace('-','_'));
         } catch (IllegalArgumentException ex) {
             return EventOperation.UNRECOGNIZED;
         }
@@ -8236,7 +9727,7 @@ public class Types
             return null;
         }
         try {
-            return HostAllowedOperations.valueOf(((String) object).toUpperCase());
+            return HostAllowedOperations.valueOf(((String) object).toUpperCase().replace('-','_'));
         } catch (IllegalArgumentException ex) {
             return HostAllowedOperations.UNRECOGNIZED;
         }
@@ -8247,9 +9738,31 @@ public class Types
             return null;
         }
         try {
-            return IpConfigurationMode.valueOf(((String) object).toUpperCase());
+            return IpConfigurationMode.valueOf(((String) object).toUpperCase().replace('-','_'));
         } catch (IllegalArgumentException ex) {
             return IpConfigurationMode.UNRECOGNIZED;
+        }
+    }
+
+    public static Types.Ipv6ConfigurationMode toIpv6ConfigurationMode(Object object) {
+        if (object == null) {
+            return null;
+        }
+        try {
+            return Ipv6ConfigurationMode.valueOf(((String) object).toUpperCase().replace('-','_'));
+        } catch (IllegalArgumentException ex) {
+            return Ipv6ConfigurationMode.UNRECOGNIZED;
+        }
+    }
+
+    public static Types.NetworkDefaultLockingMode toNetworkDefaultLockingMode(Object object) {
+        if (object == null) {
+            return null;
+        }
+        try {
+            return NetworkDefaultLockingMode.valueOf(((String) object).toUpperCase().replace('-','_'));
+        } catch (IllegalArgumentException ex) {
+            return NetworkDefaultLockingMode.UNRECOGNIZED;
         }
     }
 
@@ -8258,7 +9771,7 @@ public class Types
             return null;
         }
         try {
-            return NetworkOperations.valueOf(((String) object).toUpperCase());
+            return NetworkOperations.valueOf(((String) object).toUpperCase().replace('-','_'));
         } catch (IllegalArgumentException ex) {
             return NetworkOperations.UNRECOGNIZED;
         }
@@ -8269,7 +9782,7 @@ public class Types
             return null;
         }
         try {
-            return OnBoot.valueOf(((String) object).toUpperCase());
+            return OnBoot.valueOf(((String) object).toUpperCase().replace('-','_'));
         } catch (IllegalArgumentException ex) {
             return OnBoot.UNRECOGNIZED;
         }
@@ -8280,7 +9793,7 @@ public class Types
             return null;
         }
         try {
-            return OnCrashBehaviour.valueOf(((String) object).toUpperCase());
+            return OnCrashBehaviour.valueOf(((String) object).toUpperCase().replace('-','_'));
         } catch (IllegalArgumentException ex) {
             return OnCrashBehaviour.UNRECOGNIZED;
         }
@@ -8291,9 +9804,20 @@ public class Types
             return null;
         }
         try {
-            return OnNormalExit.valueOf(((String) object).toUpperCase());
+            return OnNormalExit.valueOf(((String) object).toUpperCase().replace('-','_'));
         } catch (IllegalArgumentException ex) {
             return OnNormalExit.UNRECOGNIZED;
+        }
+    }
+
+    public static Types.PrimaryAddressType toPrimaryAddressType(Object object) {
+        if (object == null) {
+            return null;
+        }
+        try {
+            return PrimaryAddressType.valueOf(((String) object).toUpperCase().replace('-','_'));
+        } catch (IllegalArgumentException ex) {
+            return PrimaryAddressType.UNRECOGNIZED;
         }
     }
 
@@ -8302,7 +9826,7 @@ public class Types
             return null;
         }
         try {
-            return StorageOperations.valueOf(((String) object).toUpperCase());
+            return StorageOperations.valueOf(((String) object).toUpperCase().replace('-','_'));
         } catch (IllegalArgumentException ex) {
             return StorageOperations.UNRECOGNIZED;
         }
@@ -8313,7 +9837,7 @@ public class Types
             return null;
         }
         try {
-            return TaskAllowedOperations.valueOf(((String) object).toUpperCase());
+            return TaskAllowedOperations.valueOf(((String) object).toUpperCase().replace('-','_'));
         } catch (IllegalArgumentException ex) {
             return TaskAllowedOperations.UNRECOGNIZED;
         }
@@ -8324,7 +9848,7 @@ public class Types
             return null;
         }
         try {
-            return TaskStatusType.valueOf(((String) object).toUpperCase());
+            return TaskStatusType.valueOf(((String) object).toUpperCase().replace('-','_'));
         } catch (IllegalArgumentException ex) {
             return TaskStatusType.UNRECOGNIZED;
         }
@@ -8335,7 +9859,7 @@ public class Types
             return null;
         }
         try {
-            return VbdMode.valueOf(((String) object).toUpperCase());
+            return VbdMode.valueOf(((String) object).toUpperCase().replace('-','_'));
         } catch (IllegalArgumentException ex) {
             return VbdMode.UNRECOGNIZED;
         }
@@ -8346,7 +9870,7 @@ public class Types
             return null;
         }
         try {
-            return VbdOperations.valueOf(((String) object).toUpperCase());
+            return VbdOperations.valueOf(((String) object).toUpperCase().replace('-','_'));
         } catch (IllegalArgumentException ex) {
             return VbdOperations.UNRECOGNIZED;
         }
@@ -8357,7 +9881,7 @@ public class Types
             return null;
         }
         try {
-            return VbdType.valueOf(((String) object).toUpperCase());
+            return VbdType.valueOf(((String) object).toUpperCase().replace('-','_'));
         } catch (IllegalArgumentException ex) {
             return VbdType.UNRECOGNIZED;
         }
@@ -8368,7 +9892,7 @@ public class Types
             return null;
         }
         try {
-            return VdiOperations.valueOf(((String) object).toUpperCase());
+            return VdiOperations.valueOf(((String) object).toUpperCase().replace('-','_'));
         } catch (IllegalArgumentException ex) {
             return VdiOperations.UNRECOGNIZED;
         }
@@ -8379,9 +9903,20 @@ public class Types
             return null;
         }
         try {
-            return VdiType.valueOf(((String) object).toUpperCase());
+            return VdiType.valueOf(((String) object).toUpperCase().replace('-','_'));
         } catch (IllegalArgumentException ex) {
             return VdiType.UNRECOGNIZED;
+        }
+    }
+
+    public static Types.VifLockingMode toVifLockingMode(Object object) {
+        if (object == null) {
+            return null;
+        }
+        try {
+            return VifLockingMode.valueOf(((String) object).toUpperCase().replace('-','_'));
+        } catch (IllegalArgumentException ex) {
+            return VifLockingMode.UNRECOGNIZED;
         }
     }
 
@@ -8390,9 +9925,20 @@ public class Types
             return null;
         }
         try {
-            return VifOperations.valueOf(((String) object).toUpperCase());
+            return VifOperations.valueOf(((String) object).toUpperCase().replace('-','_'));
         } catch (IllegalArgumentException ex) {
             return VifOperations.UNRECOGNIZED;
+        }
+    }
+
+    public static Types.VmApplianceOperation toVmApplianceOperation(Object object) {
+        if (object == null) {
+            return null;
+        }
+        try {
+            return VmApplianceOperation.valueOf(((String) object).toUpperCase().replace('-','_'));
+        } catch (IllegalArgumentException ex) {
+            return VmApplianceOperation.UNRECOGNIZED;
         }
     }
 
@@ -8401,7 +9947,7 @@ public class Types
             return null;
         }
         try {
-            return VmOperations.valueOf(((String) object).toUpperCase());
+            return VmOperations.valueOf(((String) object).toUpperCase().replace('-','_'));
         } catch (IllegalArgumentException ex) {
             return VmOperations.UNRECOGNIZED;
         }
@@ -8412,7 +9958,7 @@ public class Types
             return null;
         }
         try {
-            return VmPowerState.valueOf(((String) object).toUpperCase());
+            return VmPowerState.valueOf(((String) object).toUpperCase().replace('-','_'));
         } catch (IllegalArgumentException ex) {
             return VmPowerState.UNRECOGNIZED;
         }
@@ -8423,7 +9969,7 @@ public class Types
             return null;
         }
         try {
-            return VmppArchiveFrequency.valueOf(((String) object).toUpperCase());
+            return VmppArchiveFrequency.valueOf(((String) object).toUpperCase().replace('-','_'));
         } catch (IllegalArgumentException ex) {
             return VmppArchiveFrequency.UNRECOGNIZED;
         }
@@ -8434,7 +9980,7 @@ public class Types
             return null;
         }
         try {
-            return VmppArchiveTargetType.valueOf(((String) object).toUpperCase());
+            return VmppArchiveTargetType.valueOf(((String) object).toUpperCase().replace('-','_'));
         } catch (IllegalArgumentException ex) {
             return VmppArchiveTargetType.UNRECOGNIZED;
         }
@@ -8445,7 +9991,7 @@ public class Types
             return null;
         }
         try {
-            return VmppBackupFrequency.valueOf(((String) object).toUpperCase());
+            return VmppBackupFrequency.valueOf(((String) object).toUpperCase().replace('-','_'));
         } catch (IllegalArgumentException ex) {
             return VmppBackupFrequency.UNRECOGNIZED;
         }
@@ -8456,7 +10002,7 @@ public class Types
             return null;
         }
         try {
-            return VmppBackupType.valueOf(((String) object).toUpperCase());
+            return VmppBackupType.valueOf(((String) object).toUpperCase().replace('-','_'));
         } catch (IllegalArgumentException ex) {
             return VmppBackupType.UNRECOGNIZED;
         }
@@ -8579,6 +10125,19 @@ public class Types
         return result;
     }
 
+    public static Set<Types.VmApplianceOperation> toSetOfVmApplianceOperation(Object object) {
+        if (object == null) {
+            return null;
+        }
+        Object[] items = (Object[]) object;
+        Set<Types.VmApplianceOperation> result = new LinkedHashSet<Types.VmApplianceOperation>();
+        for(Object item: items) {
+            Types.VmApplianceOperation typed = toVmApplianceOperation(item);
+            result.add(typed);
+        }
+        return result;
+    }
+
     public static Set<Types.VmOperations> toSetOfVmOperations(Object object) {
         if (object == null) {
             return null;
@@ -8605,6 +10164,32 @@ public class Types
         return result;
     }
 
+    public static Set<DRTask> toSetOfDRTask(Object object) {
+        if (object == null) {
+            return null;
+        }
+        Object[] items = (Object[]) object;
+        Set<DRTask> result = new LinkedHashSet<DRTask>();
+        for(Object item: items) {
+            DRTask typed = toDRTask(item);
+            result.add(typed);
+        }
+        return result;
+    }
+
+    public static Set<GPUGroup> toSetOfGPUGroup(Object object) {
+        if (object == null) {
+            return null;
+        }
+        Object[] items = (Object[]) object;
+        Set<GPUGroup> result = new LinkedHashSet<GPUGroup>();
+        for(Object item: items) {
+            GPUGroup typed = toGPUGroup(item);
+            result.add(typed);
+        }
+        return result;
+    }
+
     public static Set<PBD> toSetOfPBD(Object object) {
         if (object == null) {
             return null;
@@ -8613,6 +10198,32 @@ public class Types
         Set<PBD> result = new LinkedHashSet<PBD>();
         for(Object item: items) {
             PBD typed = toPBD(item);
+            result.add(typed);
+        }
+        return result;
+    }
+
+    public static Set<PCI> toSetOfPCI(Object object) {
+        if (object == null) {
+            return null;
+        }
+        Object[] items = (Object[]) object;
+        Set<PCI> result = new LinkedHashSet<PCI>();
+        for(Object item: items) {
+            PCI typed = toPCI(item);
+            result.add(typed);
+        }
+        return result;
+    }
+
+    public static Set<PGPU> toSetOfPGPU(Object object) {
+        if (object == null) {
+            return null;
+        }
+        Object[] items = (Object[]) object;
+        Set<PGPU> result = new LinkedHashSet<PGPU>();
+        for(Object item: items) {
+            PGPU typed = toPGPU(item);
             result.add(typed);
         }
         return result;
@@ -8709,6 +10320,19 @@ public class Types
         return result;
     }
 
+    public static Set<VGPU> toSetOfVGPU(Object object) {
+        if (object == null) {
+            return null;
+        }
+        Object[] items = (Object[]) object;
+        Set<VGPU> result = new LinkedHashSet<VGPU>();
+        for(Object item: items) {
+            VGPU typed = toVGPU(item);
+            result.add(typed);
+        }
+        return result;
+    }
+
     public static Set<VIF> toSetOfVIF(Object object) {
         if (object == null) {
             return null;
@@ -8769,6 +10393,19 @@ public class Types
         Set<VMPP> result = new LinkedHashSet<VMPP>();
         for(Object item: items) {
             VMPP typed = toVMPP(item);
+            result.add(typed);
+        }
+        return result;
+    }
+
+    public static Set<VMAppliance> toSetOfVMAppliance(Object object) {
+        if (object == null) {
+            return null;
+        }
+        Object[] items = (Object[]) object;
+        Set<VMAppliance> result = new LinkedHashSet<VMAppliance>();
+        for(Object item: items) {
+            VMAppliance typed = toVMAppliance(item);
             result.add(typed);
         }
         return result;
@@ -9180,6 +10817,21 @@ public class Types
         return result;
     }
 
+    public static Map<String, Types.VmApplianceOperation> toMapOfStringVmApplianceOperation(Object object) {
+        if (object == null) {
+            return null;
+        }
+        Map map = (Map) object;
+        Map<String,Types.VmApplianceOperation> result = new HashMap<String,Types.VmApplianceOperation>();
+        Set<Map.Entry> entries = map.entrySet();
+        for(Map.Entry entry: entries) {
+            String key = toString(entry.getKey());
+            Types.VmApplianceOperation value = toVmApplianceOperation(entry.getValue());
+            result.put(key, value);
+        }
+        return result;
+    }
+
     public static Map<String, Types.VmOperations> toMapOfStringVmOperations(Object object) {
         if (object == null) {
             return null;
@@ -9285,6 +10937,36 @@ public class Types
         return result;
     }
 
+    public static Map<DRTask, DRTask.Record> toMapOfDRTaskDRTaskRecord(Object object) {
+        if (object == null) {
+            return null;
+        }
+        Map map = (Map) object;
+        Map<DRTask,DRTask.Record> result = new HashMap<DRTask,DRTask.Record>();
+        Set<Map.Entry> entries = map.entrySet();
+        for(Map.Entry entry: entries) {
+            DRTask key = toDRTask(entry.getKey());
+            DRTask.Record value = toDRTaskRecord(entry.getValue());
+            result.put(key, value);
+        }
+        return result;
+    }
+
+    public static Map<GPUGroup, GPUGroup.Record> toMapOfGPUGroupGPUGroupRecord(Object object) {
+        if (object == null) {
+            return null;
+        }
+        Map map = (Map) object;
+        Map<GPUGroup,GPUGroup.Record> result = new HashMap<GPUGroup,GPUGroup.Record>();
+        Set<Map.Entry> entries = map.entrySet();
+        for(Map.Entry entry: entries) {
+            GPUGroup key = toGPUGroup(entry.getKey());
+            GPUGroup.Record value = toGPUGroupRecord(entry.getValue());
+            result.put(key, value);
+        }
+        return result;
+    }
+
     public static Map<PBD, PBD.Record> toMapOfPBDPBDRecord(Object object) {
         if (object == null) {
             return null;
@@ -9295,6 +10977,36 @@ public class Types
         for(Map.Entry entry: entries) {
             PBD key = toPBD(entry.getKey());
             PBD.Record value = toPBDRecord(entry.getValue());
+            result.put(key, value);
+        }
+        return result;
+    }
+
+    public static Map<PCI, PCI.Record> toMapOfPCIPCIRecord(Object object) {
+        if (object == null) {
+            return null;
+        }
+        Map map = (Map) object;
+        Map<PCI,PCI.Record> result = new HashMap<PCI,PCI.Record>();
+        Set<Map.Entry> entries = map.entrySet();
+        for(Map.Entry entry: entries) {
+            PCI key = toPCI(entry.getKey());
+            PCI.Record value = toPCIRecord(entry.getValue());
+            result.put(key, value);
+        }
+        return result;
+    }
+
+    public static Map<PGPU, PGPU.Record> toMapOfPGPUPGPURecord(Object object) {
+        if (object == null) {
+            return null;
+        }
+        Map map = (Map) object;
+        Map<PGPU,PGPU.Record> result = new HashMap<PGPU,PGPU.Record>();
+        Set<Map.Entry> entries = map.entrySet();
+        for(Map.Entry entry: entries) {
+            PGPU key = toPGPU(entry.getKey());
+            PGPU.Record value = toPGPURecord(entry.getValue());
             result.put(key, value);
         }
         return result;
@@ -9390,6 +11102,21 @@ public class Types
         return result;
     }
 
+    public static Map<VDI, SR> toMapOfVDISR(Object object) {
+        if (object == null) {
+            return null;
+        }
+        Map map = (Map) object;
+        Map<VDI,SR> result = new HashMap<VDI,SR>();
+        Set<Map.Entry> entries = map.entrySet();
+        for(Map.Entry entry: entries) {
+            VDI key = toVDI(entry.getKey());
+            SR value = toSR(entry.getValue());
+            result.put(key, value);
+        }
+        return result;
+    }
+
     public static Map<VDI, VDI.Record> toMapOfVDIVDIRecord(Object object) {
         if (object == null) {
             return null;
@@ -9400,6 +11127,36 @@ public class Types
         for(Map.Entry entry: entries) {
             VDI key = toVDI(entry.getKey());
             VDI.Record value = toVDIRecord(entry.getValue());
+            result.put(key, value);
+        }
+        return result;
+    }
+
+    public static Map<VGPU, VGPU.Record> toMapOfVGPUVGPURecord(Object object) {
+        if (object == null) {
+            return null;
+        }
+        Map map = (Map) object;
+        Map<VGPU,VGPU.Record> result = new HashMap<VGPU,VGPU.Record>();
+        Set<Map.Entry> entries = map.entrySet();
+        for(Map.Entry entry: entries) {
+            VGPU key = toVGPU(entry.getKey());
+            VGPU.Record value = toVGPURecord(entry.getValue());
+            result.put(key, value);
+        }
+        return result;
+    }
+
+    public static Map<VIF, Network> toMapOfVIFNetwork(Object object) {
+        if (object == null) {
+            return null;
+        }
+        Map map = (Map) object;
+        Map<VIF,Network> result = new HashMap<VIF,Network>();
+        Set<Map.Entry> entries = map.entrySet();
+        for(Map.Entry entry: entries) {
+            VIF key = toVIF(entry.getKey());
+            Network value = toNetwork(entry.getValue());
             result.put(key, value);
         }
         return result;
@@ -9520,6 +11277,21 @@ public class Types
         for(Map.Entry entry: entries) {
             VMPP key = toVMPP(entry.getKey());
             VMPP.Record value = toVMPPRecord(entry.getValue());
+            result.put(key, value);
+        }
+        return result;
+    }
+
+    public static Map<VMAppliance, VMAppliance.Record> toMapOfVMApplianceVMApplianceRecord(Object object) {
+        if (object == null) {
+            return null;
+        }
+        Map map = (Map) object;
+        Map<VMAppliance,VMAppliance.Record> result = new HashMap<VMAppliance,VMAppliance.Record>();
+        Set<Map.Entry> entries = map.entrySet();
+        for(Map.Entry entry: entries) {
+            VMAppliance key = toVMAppliance(entry.getKey());
+            VMAppliance.Record value = toVMApplianceRecord(entry.getValue());
             result.put(key, value);
         }
         return result;
@@ -9832,11 +11604,39 @@ public class Types
         return new Bond((String) object);
     }
 
+    public static DRTask toDRTask(Object object) {
+        if (object == null) {
+            return null;
+        }
+        return new DRTask((String) object);
+    }
+
+    public static GPUGroup toGPUGroup(Object object) {
+        if (object == null) {
+            return null;
+        }
+        return new GPUGroup((String) object);
+    }
+
     public static PBD toPBD(Object object) {
         if (object == null) {
             return null;
         }
         return new PBD((String) object);
+    }
+
+    public static PCI toPCI(Object object) {
+        if (object == null) {
+            return null;
+        }
+        return new PCI((String) object);
+    }
+
+    public static PGPU toPGPU(Object object) {
+        if (object == null) {
+            return null;
+        }
+        return new PGPU((String) object);
     }
 
     public static PIF toPIF(Object object) {
@@ -9888,6 +11688,13 @@ public class Types
         return new VDI((String) object);
     }
 
+    public static VGPU toVGPU(Object object) {
+        if (object == null) {
+            return null;
+        }
+        return new VGPU((String) object);
+    }
+
     public static VIF toVIF(Object object) {
         if (object == null) {
             return null;
@@ -9921,6 +11728,13 @@ public class Types
             return null;
         }
         return new VMPP((String) object);
+    }
+
+    public static VMAppliance toVMAppliance(Object object) {
+        if (object == null) {
+            return null;
+        }
+        return new VMAppliance((String) object);
     }
 
     public static VMGuestMetrics toVMGuestMetrics(Object object) {
@@ -10087,6 +11901,37 @@ public class Types
             record.master = toPIF(map.get("master"));
             record.slaves = toSetOfPIF(map.get("slaves"));
             record.otherConfig = toMapOfStringString(map.get("other_config"));
+            record.primarySlave = toPIF(map.get("primary_slave"));
+            record.mode = toBondMode(map.get("mode"));
+            record.properties = toMapOfStringString(map.get("properties"));
+            record.linksUp = toLong(map.get("links_up"));
+        return record;
+    }
+
+    public static DRTask.Record toDRTaskRecord(Object object) {
+        if (object == null) {
+            return null;
+        }
+        Map<String,Object> map = (Map<String,Object>) object;
+        DRTask.Record record = new DRTask.Record();
+            record.uuid = toString(map.get("uuid"));
+            record.introducedSRs = toSetOfSR(map.get("introduced_SRs"));
+        return record;
+    }
+
+    public static GPUGroup.Record toGPUGroupRecord(Object object) {
+        if (object == null) {
+            return null;
+        }
+        Map<String,Object> map = (Map<String,Object>) object;
+        GPUGroup.Record record = new GPUGroup.Record();
+            record.uuid = toString(map.get("uuid"));
+            record.nameLabel = toString(map.get("name_label"));
+            record.nameDescription = toString(map.get("name_description"));
+            record.PGPUs = toSetOfPGPU(map.get("PGPUs"));
+            record.VGPUs = toSetOfVGPU(map.get("VGPUs"));
+            record.GPUTypes = toSetOfString(map.get("GPU_types"));
+            record.otherConfig = toMapOfStringString(map.get("other_config"));
         return record;
     }
 
@@ -10101,6 +11946,37 @@ public class Types
             record.SR = toSR(map.get("SR"));
             record.deviceConfig = toMapOfStringString(map.get("device_config"));
             record.currentlyAttached = toBoolean(map.get("currently_attached"));
+            record.otherConfig = toMapOfStringString(map.get("other_config"));
+        return record;
+    }
+
+    public static PCI.Record toPCIRecord(Object object) {
+        if (object == null) {
+            return null;
+        }
+        Map<String,Object> map = (Map<String,Object>) object;
+        PCI.Record record = new PCI.Record();
+            record.uuid = toString(map.get("uuid"));
+            record.clazzName = toString(map.get("class_name"));
+            record.vendorName = toString(map.get("vendor_name"));
+            record.deviceName = toString(map.get("device_name"));
+            record.host = toHost(map.get("host"));
+            record.pciId = toString(map.get("pci_id"));
+            record.dependencies = toSetOfPCI(map.get("dependencies"));
+            record.otherConfig = toMapOfStringString(map.get("other_config"));
+        return record;
+    }
+
+    public static PGPU.Record toPGPURecord(Object object) {
+        if (object == null) {
+            return null;
+        }
+        Map<String,Object> map = (Map<String,Object>) object;
+        PGPU.Record record = new PGPU.Record();
+            record.uuid = toString(map.get("uuid"));
+            record.PCI = toPCI(map.get("PCI"));
+            record.GPUGroup = toGPUGroup(map.get("GPU_group"));
+            record.host = toHost(map.get("host"));
             record.otherConfig = toMapOfStringString(map.get("other_config"));
         return record;
     }
@@ -10135,6 +12011,10 @@ public class Types
             record.disallowUnplug = toBoolean(map.get("disallow_unplug"));
             record.tunnelAccessPIFOf = toSetOfTunnel(map.get("tunnel_access_PIF_of"));
             record.tunnelTransportPIFOf = toSetOfTunnel(map.get("tunnel_transport_PIF_of"));
+            record.ipv6ConfigurationMode = toIpv6ConfigurationMode(map.get("ipv6_configuration_mode"));
+            record.IPv6 = toSetOfString(map.get("IPv6"));
+            record.ipv6Gateway = toString(map.get("ipv6_gateway"));
+            record.primaryAddressType = toPrimaryAddressType(map.get("primary_address_type"));
         return record;
     }
 
@@ -10205,6 +12085,7 @@ public class Types
             record.smConfig = toMapOfStringString(map.get("sm_config"));
             record.blobs = toMapOfStringBlob(map.get("blobs"));
             record.localCacheEnabled = toBoolean(map.get("local_cache_enabled"));
+            record.introducedBy = toDRTask(map.get("introduced_by"));
         return record;
     }
 
@@ -10287,6 +12168,23 @@ public class Types
             record.tags = toSetOfString(map.get("tags"));
             record.allowCaching = toBoolean(map.get("allow_caching"));
             record.onBoot = toOnBoot(map.get("on_boot"));
+            record.metadataOfPool = toPool(map.get("metadata_of_pool"));
+            record.metadataLatest = toBoolean(map.get("metadata_latest"));
+        return record;
+    }
+
+    public static VGPU.Record toVGPURecord(Object object) {
+        if (object == null) {
+            return null;
+        }
+        Map<String,Object> map = (Map<String,Object>) object;
+        VGPU.Record record = new VGPU.Record();
+            record.uuid = toString(map.get("uuid"));
+            record.VM = toVM(map.get("VM"));
+            record.GPUGroup = toGPUGroup(map.get("GPU_group"));
+            record.device = toString(map.get("device"));
+            record.currentlyAttached = toBoolean(map.get("currently_attached"));
+            record.otherConfig = toMapOfStringString(map.get("other_config"));
         return record;
     }
 
@@ -10314,6 +12212,9 @@ public class Types
             record.qosSupportedAlgorithms = toSetOfString(map.get("qos_supported_algorithms"));
             record.metrics = toVIFMetrics(map.get("metrics"));
             record.MACAutogenerated = toBoolean(map.get("MAC_autogenerated"));
+            record.lockingMode = toVifLockingMode(map.get("locking_mode"));
+            record.ipv4Allowed = toSetOfString(map.get("ipv4_allowed"));
+            record.ipv6Allowed = toSetOfString(map.get("ipv6_allowed"));
         return record;
     }
 
@@ -10417,6 +12318,14 @@ public class Types
             record.biosStrings = toMapOfStringString(map.get("bios_strings"));
             record.protectionPolicy = toVMPP(map.get("protection_policy"));
             record.isSnapshotFromVmpp = toBoolean(map.get("is_snapshot_from_vmpp"));
+            record.appliance = toVMAppliance(map.get("appliance"));
+            record.startDelay = toLong(map.get("start_delay"));
+            record.shutdownDelay = toLong(map.get("shutdown_delay"));
+            record.order = toLong(map.get("order"));
+            record.VGPUs = toSetOfVGPU(map.get("VGPUs"));
+            record.attachedPCIs = toSetOfPCI(map.get("attached_PCIs"));
+            record.suspendSR = toSR(map.get("suspend_SR"));
+            record.version = toLong(map.get("version"));
         return record;
     }
 
@@ -10446,6 +12355,21 @@ public class Types
             record.isAlarmEnabled = toBoolean(map.get("is_alarm_enabled"));
             record.alarmConfig = toMapOfStringString(map.get("alarm_config"));
             record.recentAlerts = toSetOfString(map.get("recent_alerts"));
+        return record;
+    }
+
+    public static VMAppliance.Record toVMApplianceRecord(Object object) {
+        if (object == null) {
+            return null;
+        }
+        Map<String,Object> map = (Map<String,Object>) object;
+        VMAppliance.Record record = new VMAppliance.Record();
+            record.uuid = toString(map.get("uuid"));
+            record.nameLabel = toString(map.get("name_label"));
+            record.nameDescription = toString(map.get("name_description"));
+            record.allowedOperations = toSetOfVmApplianceOperation(map.get("allowed_operations"));
+            record.currentOperations = toMapOfStringVmApplianceOperation(map.get("current_operations"));
+            record.VMs = toSetOfVM(map.get("VMs"));
         return record;
     }
 
@@ -10512,6 +12436,7 @@ public class Types
             record.nameLabel = toString(map.get("name_label"));
             record.nameDescription = toString(map.get("name_description"));
             record.size = toLong(map.get("size"));
+            record._public = toBoolean(map.get("public"));
             record.lastUpdated = toDate(map.get("last_updated"));
             record.mimeType = toString(map.get("mime_type"));
         return record;
@@ -10590,6 +12515,8 @@ public class Types
                 case        VM_METRICS: b =         toVMMetricsRecord(a); break;
                 case  VM_GUEST_METRICS: b =    toVMGuestMetricsRecord(a); break;
                 case              VMPP: b =              toVMPPRecord(a); break;
+                case      VM_APPLIANCE: b =       toVMApplianceRecord(a); break;
+                case           DR_TASK: b =            toDRTaskRecord(a); break;
                 case              HOST: b =              toHostRecord(a); break;
                 case    HOST_CRASHDUMP: b =     toHostCrashdumpRecord(a); break;
                 case        HOST_PATCH: b =         toHostPatchRecord(a); break;
@@ -10617,6 +12544,10 @@ public class Types
                 case           MESSAGE: b =           toMessageRecord(a); break;
                 case            SECRET: b =            toSecretRecord(a); break;
                 case            TUNNEL: b =            toTunnelRecord(a); break;
+                case               PCI: b =               toPCIRecord(a); break;
+                case              PGPU: b =              toPGPURecord(a); break;
+                case         GPU_GROUP: b =          toGPUGroupRecord(a); break;
+                case              VGPU: b =              toVGPURecord(a); break;
                 default: throw new RuntimeException("Internal error in auto-generated code whilst unmarshalling event snapshot");
         }
         record.snapshot = b;
@@ -10673,6 +12604,9 @@ public class Types
             record.powerOnMode = toString(map.get("power_on_mode"));
             record.powerOnConfig = toMapOfStringString(map.get("power_on_config"));
             record.localCacheSr = toSR(map.get("local_cache_sr"));
+            record.chipsetInfo = toMapOfStringString(map.get("chipset_info"));
+            record.PCIs = toSetOfPCI(map.get("PCIs"));
+            record.PGPUs = toSetOfPGPU(map.get("PGPUs"));
         return record;
     }
 
@@ -10780,6 +12714,7 @@ public class Types
             record.bridge = toString(map.get("bridge"));
             record.blobs = toMapOfStringBlob(map.get("blobs"));
             record.tags = toSetOfString(map.get("tags"));
+            record.defaultLockingMode = toNetworkDefaultLockingMode(map.get("default_locking_mode"));
         return record;
     }
 
@@ -10815,6 +12750,7 @@ public class Types
             record.redoLogVdi = toVDI(map.get("redo_log_vdi"));
             record.vswitchController = toString(map.get("vswitch_controller"));
             record.restrictions = toMapOfStringString(map.get("restrictions"));
+            record.metadataVDIs = toSetOfVDI(map.get("metadata_VDIs"));
         return record;
     }
 
@@ -10857,6 +12793,7 @@ public class Types
         Secret.Record record = new Secret.Record();
             record.uuid = toString(map.get("uuid"));
             record.value = toString(map.get("value"));
+            record.otherConfig = toMapOfStringString(map.get("other_config"));
         return record;
     }
 
@@ -10953,8 +12890,24 @@ public class Types
                return Types.toBond(parseResult(task.getResult(connection)));
     }
 
+   public static DRTask toDRTask(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
+               return Types.toDRTask(parseResult(task.getResult(connection)));
+    }
+
+   public static GPUGroup toGPUGroup(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
+               return Types.toGPUGroup(parseResult(task.getResult(connection)));
+    }
+
    public static PBD toPBD(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
                return Types.toPBD(parseResult(task.getResult(connection)));
+    }
+
+   public static PCI toPCI(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
+               return Types.toPCI(parseResult(task.getResult(connection)));
+    }
+
+   public static PGPU toPGPU(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
+               return Types.toPGPU(parseResult(task.getResult(connection)));
     }
 
    public static PIF toPIF(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
@@ -10985,6 +12938,10 @@ public class Types
                return Types.toVDI(parseResult(task.getResult(connection)));
     }
 
+   public static VGPU toVGPU(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
+               return Types.toVGPU(parseResult(task.getResult(connection)));
+    }
+
    public static VIF toVIF(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
                return Types.toVIF(parseResult(task.getResult(connection)));
     }
@@ -11003,6 +12960,10 @@ public class Types
 
    public static VMPP toVMPP(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
                return Types.toVMPP(parseResult(task.getResult(connection)));
+    }
+
+   public static VMAppliance toVMAppliance(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
+               return Types.toVMAppliance(parseResult(task.getResult(connection)));
     }
 
    public static VMGuestMetrics toVMGuestMetrics(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{

@@ -25,11 +25,11 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.command.admin.domain.ListDomainChildrenCmd;
+import org.apache.cloudstack.api.command.admin.domain.ListDomainsCmd;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.api.commands.ListDomainChildrenCmd;
-import com.cloud.api.commands.ListDomainsCmd;
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.configuration.dao.ResourceCountDao;
 import com.cloud.domain.Domain;
@@ -49,6 +49,8 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.Pair;
+import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
@@ -351,7 +353,7 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager 
     }
 
     @Override
-    public List<DomainVO> searchForDomains(ListDomainsCmd cmd) {
+    public Pair<List<? extends Domain>, Integer> searchForDomains(ListDomainsCmd cmd) {
         Account caller = UserContext.current().getCaller();
         Long domainId = cmd.getId();
         boolean listAll = cmd.listAll();
@@ -409,11 +411,12 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager 
         // return only Active domains to the API
         sc.setParameters("state", Domain.State.Active);
 
-        return _domainDao.search(sc, searchFilter);
+        Pair<List<DomainVO>, Integer> result = _domainDao.searchAndCount(sc, searchFilter);
+        return new Pair<List<? extends Domain>, Integer>(result.first(), result.second());
     }
 
     @Override
-    public List<DomainVO> searchForDomainChildren(ListDomainChildrenCmd cmd) throws PermissionDeniedException {
+    public Pair<List<? extends Domain>, Integer> searchForDomainChildren(ListDomainChildrenCmd cmd) throws PermissionDeniedException {
         Long domainId = cmd.getId();
         String domainName = cmd.getDomainName();
         Boolean isRecursive = cmd.isRecursive();
@@ -435,12 +438,12 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager 
         }
 
         Filter searchFilter = new Filter(DomainVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-        List<DomainVO> domainList = searchForDomainChildren(searchFilter, domainId, domainName, keyword, path, true);
+        Pair<List<DomainVO>, Integer> result = searchForDomainChildren(searchFilter, domainId, domainName, keyword, path, true);
 
-        return domainList;
+        return new Pair<List<? extends Domain>, Integer>(result.first(), result.second());
     }
 
-    private List<DomainVO> searchForDomainChildren(Filter searchFilter, Long domainId, String domainName, Object keyword, String path, boolean listActiveOnly) {
+    private Pair<List<DomainVO>, Integer> searchForDomainChildren(Filter searchFilter, Long domainId, String domainName, Object keyword, String path, boolean listActiveOnly) {
         SearchCriteria<DomainVO> sc = _domainDao.createSearchCriteria();
 
         if (keyword != null) {
@@ -467,7 +470,7 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager 
             sc.addAnd("state", SearchCriteria.Op.EQ, Domain.State.Active);
         }
 
-        return _domainDao.search(sc, searchFilter);
+        return _domainDao.searchAndCount(sc, searchFilter);
     }
 
 }

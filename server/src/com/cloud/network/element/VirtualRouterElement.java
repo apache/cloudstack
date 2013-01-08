@@ -25,11 +25,11 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.command.admin.router.ConfigureVirtualRouterElementCmd;
+import org.apache.cloudstack.api.command.admin.router.ListVirtualRouterElementsCmd;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.api.commands.ConfigureVirtualRouterElementCmd;
-import com.cloud.api.commands.ListVirtualRouterElementsCmd;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
@@ -623,7 +623,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
                 if (!result) {
                     s_logger.warn("Failed to stop virtual router element " + router + ", but would try to process clean up anyway.");
                 }
-                result = (_routerMgr.destroyRouter(router.getId()) != null);
+                result = (_routerMgr.destroyRouter(router.getId(), context.getAccount(), context.getCaller().getId()) != null);
                 if (!result) {
                     s_logger.warn("Failed to clean up virtual router element " + router);
                 }
@@ -633,14 +633,14 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     }
 
     @Override
-    public boolean destroy(Network config) throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean destroy(Network config, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
         List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(config.getId(), Role.VIRTUAL_ROUTER);
         if (routers == null || routers.isEmpty()) {
             return true;
         }
         boolean result = true;
         for (DomainRouterVO router : routers) {
-            result = result && (_routerMgr.destroyRouter(router.getId()) != null);
+            result = result && (_routerMgr.destroyRouter(router.getId(), context.getAccount(), context.getCaller().getId()) != null);
         }
         return result;
     }
@@ -664,8 +664,26 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     }
 
     @Override
-    public String getPropertiesFile() {
-        return "virtualrouter_commands.properties";
+    public boolean saveUserData(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm)
+            throws ResourceUnavailableException {
+        if (!canHandle(network, null)) {
+            return false;
+        }
+        List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
+        if (routers == null || routers.isEmpty()) {
+            s_logger.debug("Can't find virtual router element in network " + network.getId());
+            return true;
+        }
+
+        @SuppressWarnings("unchecked")
+        VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>) vm;
+
+        return _routerMgr.saveUserDataToRouter(network, nic, uservm, routers);
+    }
+
+    @Override
+    public String[] getPropertiesFiles() {
+        return new String[] { "virtualrouter_commands.properties" };
     }
 
     @Override
@@ -738,7 +756,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         List<DomainRouterVO> routers = _routerDao.listByElementId(elementId);
         boolean result = true;
         for (DomainRouterVO router : routers) {
-            result = result && (_routerMgr.destroyRouter(router.getId()) != null);
+            result = result && (_routerMgr.destroyRouter(router.getId(), context.getAccount(), context.getCaller().getId()) != null);
         }
         _vrProviderDao.remove(elementId);
         

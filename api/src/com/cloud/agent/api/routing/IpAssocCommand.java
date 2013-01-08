@@ -19,12 +19,12 @@ package com.cloud.agent.api.routing;
 import com.cloud.agent.api.to.IpAddressTO;
 
 public class IpAssocCommand extends NetworkElementCommand {
-    
+
 	IpAddressTO[] ipAddresses;
 
 	protected IpAssocCommand() {
 	}
-	
+
 	public IpAssocCommand(IpAddressTO[] ips) {
 		this.ipAddresses = ips;
 	}

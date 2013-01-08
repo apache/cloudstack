@@ -37,6 +37,7 @@ import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.HttpMethodRetryHandler;
 import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.NoHttpResponseException;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.auth.AuthScope;
@@ -56,6 +57,7 @@ import com.cloud.utils.Pair;
  */
 public class HttpTemplateDownloader implements TemplateDownloader {
 	public static final Logger s_logger = Logger.getLogger(HttpTemplateDownloader.class.getName());
+    private static final MultiThreadedHttpConnectionManager s_httpClientManager = new MultiThreadedHttpConnectionManager();
 
 	private static final int CHUNK_SIZE = 1024*1024; //1M
 	private String downloadUrl;
@@ -88,7 +90,7 @@ public class HttpTemplateDownloader implements TemplateDownloader {
 		this.MAX_TEMPLATE_SIZE_IN_BYTES = maxTemplateSizeInBytes;
 		
 		this.totalBytes = 0;
-		this.client = new HttpClient();
+		this.client = new HttpClient(s_httpClientManager);
 
 		myretryhandler = new HttpMethodRetryHandler() {
 		    public boolean retryMethod(

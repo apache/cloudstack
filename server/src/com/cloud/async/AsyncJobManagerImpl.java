@@ -34,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 import org.springframework.stereotype.Component;
@@ -41,11 +42,10 @@ import org.springframework.stereotype.Component;
 import com.cloud.api.ApiDispatcher;
 import com.cloud.api.ApiGsonHelper;
 import com.cloud.api.ApiSerializerHelper;
-import com.cloud.api.BaseAsyncCmd;
-import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
-import com.cloud.api.commands.QueryAsyncJobResultCmd;
-import com.cloud.api.response.ExceptionResponse;
+import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.ExceptionResponse;
 import com.cloud.async.dao.AsyncJobDao;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.ClusterManagerListener;
@@ -94,7 +94,8 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
     private AccountDao _accountDao;
     private AsyncJobDao _jobDao;
     private long _jobExpireSeconds = 86400;						// 1 day
-    private long _jobCancelThresholdSeconds = 3600;             // 1 hour
+    private long _jobCancelThresholdSeconds = 3600;         // 1 hour (for cancelling the jobs blocking other jobs)
+    
     private ApiDispatcher _dispatcher;
 
     private final ScheduledExecutorService _heartbeatScheduler =
@@ -250,7 +251,7 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
     }
 
     @Override
-    public void syncAsyncJobExecution(AsyncJob job, String syncObjType, long syncObjId) {
+    public void syncAsyncJobExecution(AsyncJob job, String syncObjType, long syncObjId, long queueSizeLimit) {
     	// This method is re-entrant.  If an API developer wants to synchronized on an object, e.g. the router,
     	// when executing business logic, they will call this method (actually a method in BaseAsyncCmd that calls this).
     	// This method will get called every time their business logic executes.  The first time it exectues for a job
@@ -271,7 +272,7 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
 		Random random = new Random();
 
     	for(int i = 0; i < 5; i++) {
-    		queue = _queueMgr.queue(syncObjType, syncObjId, "AsyncJob", job.getId());
+            queue = _queueMgr.queue(syncObjType, syncObjId, SyncQueueItem.AsyncJobContentType, job.getId(), queueSizeLimit);
     		if(queue != null) {
                 break;
             }
@@ -613,7 +614,7 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
 				}
 			}
 			
-			private void reallyRun() {
+            public void reallyRun() {
 				try {
 					s_logger.trace("Begin cleanup expired async-jobs");
 					
@@ -624,16 +625,17 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
 					List<AsyncJobVO> l = _jobDao.getExpiredJobs(cutTime, 100);
 					if(l != null && l.size() > 0) {
 						for(AsyncJobVO job : l) {
-							_jobDao.expunge(job.getId());
+                            expungeAsyncJob(job);
 						}
 					}
 					
-					// forcely cancel blocking queue items if they've been staying there for too long
+                    // forcefully cancel blocking queue items if they've been staying there for too long
 				    List<SyncQueueItemVO> blockItems = _queueMgr.getBlockedQueueItems(_jobCancelThresholdSeconds*1000, false);
 				    if(blockItems != null && blockItems.size() > 0) {
 				        for(SyncQueueItemVO item : blockItems) {
-				            if(item.getContentType().equalsIgnoreCase("AsyncJob")) {
-                                completeAsyncJob(item.getContentId(), AsyncJobResult.STATUS_FAILED, 0, getResetResultResponse("Job is cancelled as it has been blocking others for too long"));
+                            if(item.getContentType().equalsIgnoreCase(SyncQueueItem.AsyncJobContentType)) {
+                                completeAsyncJob(item.getContentId(), AsyncJobResult.STATUS_FAILED, 0,
+                                        getResetResultResponse("Job is cancelled as it has been blocking others for too long"));
                             }
 				        
 				            // purge the item and resume queue processing
@@ -648,9 +650,21 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
 					StackMaid.current().exitCleanup();
 				}
 			}
+
+           
 		};
 	}
 	
+    @DB
+    protected void expungeAsyncJob(AsyncJobVO job) {
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        _jobDao.expunge(job.getId());
+        //purge corresponding sync queue item
+        _queueMgr.purgeAsyncJobQueueItemId(job.getId());
+        txn.commit();
+    }
+
 	private long getMsid() {
 		if(_clusterMgr != null) {
             return _clusterMgr.getManagementNodeId();
@@ -667,7 +681,7 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
                 }
 				
 				String contentType = item.getContentType();
-				if(contentType != null && contentType.equals("AsyncJob")) {
+                if(contentType != null && contentType.equalsIgnoreCase(SyncQueueItem.AsyncJobContentType)) {
 					Long jobId = item.getContentId();
 					if(jobId != null) {
 						s_logger.warn("Mark job as failed as its correspoding queue-item has been discarded. job id: " + jobId);
@@ -757,7 +771,6 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
     			txn.start();
     			List<SyncQueueItemVO> items = _queueMgr.getActiveQueueItems(msHost.getId(), true);
     			cleanupPendingJobs(items);
-        		_queueMgr.resetQueueProcess(msHost.getId());
         		_jobDao.resetJobProcess(msHost.getId(), BaseCmd.INTERNAL_ERROR, getSerializedErrorMessage("job cancelled because of management server restart"));
     			txn.commit();
     		} catch(Throwable e) {
@@ -778,7 +791,6 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
     	try {
     		List<SyncQueueItemVO> l = _queueMgr.getActiveQueueItems(getMsid(), false);
     		cleanupPendingJobs(l);
-    		_queueMgr.resetQueueProcess(getMsid());
     		_jobDao.resetJobProcess(getMsid(), BaseCmd.INTERNAL_ERROR, getSerializedErrorMessage("job cancelled because of management server restart"));
     	} catch(Throwable e) {
     		s_logger.error("Unexpected exception " + e.getMessage(), e);

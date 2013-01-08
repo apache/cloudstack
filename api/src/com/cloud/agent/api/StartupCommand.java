@@ -43,11 +43,11 @@ public class StartupCommand extends Command {
     String agentTag;
     String resourceName;
     String gatewayIpAddress;
-    
+
     public StartupCommand(Host.Type type) {
         this.type = type;
     }
-    
+
     public StartupCommand(Long id, Host.Type type, String name, String dataCenter, String pod, String guid, String version) {
         super();
         this.id = id;
@@ -58,48 +58,48 @@ public class StartupCommand extends Command {
         this.version = version;
         this.type = type;
     }
-    
+
     public StartupCommand(Long id, Host.Type type, String name, String dataCenter, String pod, String guid, String version, String gatewayIpAddress) {
 		this(id, type, name, dataCenter, pod, guid, version);
 		this.gatewayIpAddress = gatewayIpAddress;
-    }    
-    
+    }
+
     public Host.Type getHostType() {
         return type;
     }
-    
+
     public void setHostType(Host.Type type) {
     	this.type = type;
     }
-    
+
     public String getIqn() {
         return iqn;
     }
-    
+
     public void setCluster(String cluster) {
         this.cluster = cluster;
     }
-    
+
     public String getCluster() {
         return cluster;
     }
-    
+
     public void setIqn(String iqn) {
         this.iqn = iqn;
     }
-    
+
     public String getDataCenter() {
         return dataCenter;
     }
-    
+
     public String getPod() {
         return pod;
     }
-    
+
     public Long getId() {
         return id;
     }
-    
+
     public String getStorageIpAddressDeux() {
 		return storageIpAddressDeux;
 	}
@@ -131,11 +131,11 @@ public class StartupCommand extends Command {
     public String getName() {
         return name;
     }
-    
+
     public String getVersion() {
         return version;
     }
-    
+
     public void setDataCenter(String dataCenter) {
         this.dataCenter = dataCenter;
     }
@@ -147,7 +147,7 @@ public class StartupCommand extends Command {
     public void setGuid(String guid) {
         this.guid = guid;
     }
-    
+
     public void setGuid(String guid, String resourceName) {
     	this.resourceName = resourceName;
     	this.guid = guid + "-" + resourceName;
@@ -232,15 +232,15 @@ public class StartupCommand extends Command {
     public void setVersion(String version) {
         this.version = version;
     }
-    
+
     public void setPublicIpAddress(String publicIpAddress) {
         this.publicIpAddress = publicIpAddress;
     }
-    
+
     public String getAgentTag() {
     	return agentTag;
     }
-    
+
     public void setAgentTag(String tag) {
     	agentTag = tag;
     }
@@ -248,7 +248,7 @@ public class StartupCommand extends Command {
     public void setResourceName(String resourceName) {
     	this.resourceName = resourceName;
     }
-    
+
     public String getGuidWithoutResource() {
     	if (resourceName == null) {
             return guid;
@@ -265,11 +265,11 @@ public class StartupCommand extends Command {
     	  }
     	}
     }
-    
+
     public String getResourceName() {
     	return resourceName;
     }
-    
+
     public String getGatewayIpAddress() {
         return gatewayIpAddress;
     }
@@ -277,8 +277,8 @@ public class StartupCommand extends Command {
     public void setGatewayIpAddress(String gatewayIpAddress) {
         this.gatewayIpAddress = gatewayIpAddress;
     }
-  
-    
+
+
     @Override
     public boolean executeInSequence() {
         return false;

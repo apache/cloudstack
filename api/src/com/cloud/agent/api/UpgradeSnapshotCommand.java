@@ -15,22 +15,24 @@
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.agent.api;
+import com.cloud.storage.StoragePool;
+
 public class UpgradeSnapshotCommand extends SnapshotCommand {
     private String version;
     private Long templateId;
     private Long tmpltAccountId;
-    
+
     protected UpgradeSnapshotCommand() {
-        
+
     }
-    
+
     /**
      * @param primaryStoragePoolNameLabel   The UUID of the primary storage Pool
      * @param secondaryStoragePoolURL  This is what shows up in the UI when you click on Secondary storage.
      * @param snapshotUuid             The UUID of the snapshot which is going to be upgraded
-     * @param _version          version for this snapshot                                 
+     * @param _version          version for this snapshot
      */
-    public UpgradeSnapshotCommand(String primaryStoragePoolNameLabel,
+    public UpgradeSnapshotCommand(StoragePool pool,
                                  String secondaryStoragePoolURL,
                                  Long   dcId,
                                  Long   accountId,
@@ -42,7 +44,7 @@ public class UpgradeSnapshotCommand extends SnapshotCommand {
                                  String snapshotName,
                                  String version)
     {
-        super(primaryStoragePoolNameLabel, secondaryStoragePoolURL, snapshotUuid, snapshotName, dcId, accountId, volumeId);
+        super(pool, secondaryStoragePoolURL, snapshotUuid, snapshotName, dcId, accountId, volumeId);
         this.version = version;
         this.templateId = templateId;
         this.tmpltAccountId = tmpltAccountId;
@@ -58,5 +60,5 @@ public class UpgradeSnapshotCommand extends SnapshotCommand {
 
     public Long getTmpltAccountId() {
         return tmpltAccountId;
-    }   
+    }
 }

@@ -21,6 +21,8 @@ import java.util.Date;
 public interface SnapshotSchedule {
     long getId();
 
+    String getUuid();
+
     Long getVolumeId();
 
     Long getPolicyId();

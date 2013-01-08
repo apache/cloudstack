@@ -28,11 +28,12 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="project_account")
 @SuppressWarnings("unused")
-public class ProjectAccountVO implements ProjectAccount{
+public class ProjectAccountVO implements ProjectAccount, InternalIdentity {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")

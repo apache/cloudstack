@@ -16,30 +16,42 @@
 // under the License.
 package com.cloud.api.response;
 
-import com.cloud.api.ApiConstants;
+import com.cloud.network.NiciraNvpDeviceVO;
+import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.serializer.Param;
-import com.cloud.utils.IdentityProxy;
 import com.google.gson.annotations.SerializedName;
+import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.EntityReference;
 
+@EntityReference(value=NiciraNvpDeviceVO.class)
 public class NiciraNvpDeviceResponse extends BaseResponse {
     @SerializedName(ApiConstants.NICIRA_NVP_DEVICE_ID) @Param(description="device id of the Nicire Nvp")
-    private IdentityProxy id = new IdentityProxy("external_nicira_nvp_devices");
-    
+    private String id;
+
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) @Param(description="the physical network to which this Nirica Nvp belongs to")
-    private IdentityProxy physicalNetworkId = new IdentityProxy("physical_network");
-    
+    private String physicalNetworkId;
+
     @SerializedName(ApiConstants.PROVIDER) @Param(description="name of the provider")
     private String providerName;
-    
+
     @SerializedName(ApiConstants.NICIRA_NVP_DEVICE_NAME) @Param(description="device name")
     private String deviceName;
 
-    public void setId(long nvpDeviceId) {
-        this.id.setValue(nvpDeviceId);
+    @SerializedName(ApiConstants.HOST_NAME) @Param(description="the controller Ip address")
+    private String hostName;
+
+    @SerializedName(ApiConstants.NICIRA_NVP_TRANSPORT_ZONE_UUID) @Param(description="the transport zone Uuid")
+    private String transportZoneUuid;
+
+    @SerializedName(ApiConstants.NICIRA_NVP_GATEWAYSERVICE_UUID) @Param(description="this L3 gateway service Uuid")
+    private String l3GatewayServiceUuid;
+
+    public void setId(String nvpDeviceId) {
+        this.id = nvpDeviceId;
     }
 
-    public void setPhysicalNetworkId(long physicalNetworkId) {
-        this.physicalNetworkId.setValue(physicalNetworkId);
+    public void setPhysicalNetworkId(String physicalNetworkId) {
+        this.physicalNetworkId = physicalNetworkId;
     }
 
     public void setProviderName(String providerName) {
@@ -48,6 +60,20 @@ public class NiciraNvpDeviceResponse extends BaseResponse {
 
     public void setDeviceName(String deviceName) {
         this.deviceName = deviceName;
-    }     
-    
+    }
+
+
+
+	public void setHostName(String hostName) {
+		this.hostName = hostName;
+	}
+
+	public void setTransportZoneUuid(String transportZoneUuid) {
+		this.transportZoneUuid = transportZoneUuid;
+	}
+
+	public void setL3GatewayServiceUuid(String l3GatewayServiceUuid) {
+		this.l3GatewayServiceUuid = l3GatewayServiceUuid;
+	}
+
 }

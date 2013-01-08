@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -36,52 +36,52 @@ public class PublicIp implements PublicIpAddress {
         _vlan = vlan;
         this.macAddress = NetUtils.long2Mac(macAddress);
     }
-    
+
     @Override
     public Ip getAddress() {
         return _addr.getAddress();
     }
-    
+
     @Override
     public String getNetmask() {
         return _vlan.getVlanNetmask();
     }
-    
+
     @Override
     public String getGateway() {
         return _vlan.getVlanGateway();
     }
-    
+
     @Override
     public String getVlanTag() {
         return _vlan.getVlanTag();
     }
-    
+
     @Override
     public long getDataCenterId() {
         return _addr.getDataCenterId();
     }
-    
+
     @Override
     public boolean readyToUse() {
         return _addr.getAllocatedTime() != null && _addr.getState() == State.Allocated;
     }
-    
+
     @Override
     public boolean isSourceNat() {
         return _addr.isSourceNat();
     }
-    
+
     @Override
     public boolean isOneToOneNat() {
         return _addr.isOneToOneNat();
     }
-    
+
     @Override
     public Long getAssociatedWithVmId() {
         return _addr.getAssociatedWithVmId();
     }
-    
+
     @Override
     public Date getAllocatedTime() {
         return _addr.getAllocatedTime();
@@ -106,25 +106,25 @@ public class PublicIp implements PublicIpAddress {
     public State getState() {
         return _addr.getState();
     }
-    
+
     public IPAddressVO ip() {
         return _addr;
     }
-    
+
     public VlanVO vlan() {
         return _vlan;
     }
-    
+
     @Override
     public String getMacAddress() {
         return macAddress;
     }
-    
+
     @Override
     public Long getAssociatedWithNetworkId() {
         return _addr.getAssociatedWithNetworkId();
     }
-    
+
     @Override
     public Long getNetworkId() {
         return _vlan.getNetworkId();
@@ -149,12 +149,18 @@ public class PublicIp implements PublicIpAddress {
     public VlanType getVlanType() {
         return _vlan.getVlanType();
     }
-    
+
     @Override
     public long getId() {
         return _addr.getId();
     }
-    
+
+
+    @Override
+    public String getUuid() {
+        return _addr.getUuid();
+    }
+
     @Override
     public String toString() {
         return _addr.getAddress().toString();
@@ -179,7 +185,7 @@ public class PublicIp implements PublicIpAddress {
 	public Long getAllocatedInDomainId() {
 		return _addr.getAllocatedInDomainId();
 	}
-	
+
 	@Override
     public boolean getSystem() {
         return _addr.getSystem();

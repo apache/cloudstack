@@ -180,6 +180,17 @@ class secondaryStorage():
     def __init__(self):
         self.url = None
 
+class s3():
+    def __init__(self):
+        self.accesskey = None
+        self.secretkey = None
+        self.bucket = None
+        self.endpoint = None
+        self.sockettimeout = None
+        self.connectiontimeout = None
+        self.maxerrorrety = None
+        self.usehttps = None
+
 class netscaler():
     def __init__(self, hostname=None, username='nsroot', password='nsroot'):
         self.hostname = hostname

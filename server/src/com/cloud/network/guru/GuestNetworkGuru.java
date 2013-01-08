@@ -155,25 +155,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
     }
 
     protected abstract boolean canHandle(NetworkOffering offering, final NetworkType networkType, PhysicalNetwork physicalNetwork);
-/*    protected boolean canHandle(NetworkOffering offering, final NetworkType networkType, final List<String> isolationMethods) {
-        // This guru handles only Guest Isolated network that supports Source nat service
-<<<<<<< HEAD
-        if (dc.getNetworkType() == NetworkType.Advanced && isMyTrafficType(offering.getTrafficType()) 
-                && offering.getGuestType() == Network.GuestType.Isolated && !offering.isSystemOnly()) {
-=======
-        if (networkType == NetworkType.Advanced 
-                && isMyTrafficType(offering.getTrafficType()) 
-                && offering.getGuestType() == Network.GuestType.Isolated
-                && isMyIsolationMethod(isolationMethods)) {
->>>>>>> master
-            return true;
-        } else {
-            s_logger.trace("We only take care of non-system Guest networks of type   " + GuestType.Isolated + " in zone of type "
-                    + NetworkType.Advanced);
-            return false;
-        }
-    }
-*/
+
     @Override
     public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
         DataCenter dc = _dcDao.findById(plan.getDataCenterId());
@@ -444,15 +426,17 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
 
     @Override
     public void shutdown(NetworkProfile profile, NetworkOffering offering) {
+        
+        if (profile.getBroadcastDomainType() == BroadcastDomainType.Vlan && 
+        		profile.getBroadcastUri() != null && !offering.getSpecifyVlan()) {
         s_logger.debug("Releasing vnet for the network id=" + profile.getId());
-        if (profile.getBroadcastUri() != null && !offering.getSpecifyVlan()) {
             _dcDao.releaseVnet(profile.getBroadcastUri().getHost(), profile.getDataCenterId(), 
                     profile.getPhysicalNetworkId(), profile.getAccountId(), profile.getReservationId());
             EventUtils.saveEvent(UserContext.current().getCallerUserId(), profile.getAccountId(), 
                     EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VLAN_RELEASE, "Released Zone Vlan: "
                     +profile.getBroadcastUri().getHost()+" for Network: "+profile.getId(), 0);
-            profile.setBroadcastUri(null);
         }
+        profile.setBroadcastUri(null);
     }
 
     @Override

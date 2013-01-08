@@ -36,20 +36,21 @@ public interface VpcProvider extends NetworkElement{
      * @param vpc fully specified vpc configuration.
      * @throws InsufficientNetworkCapacityException TODO
      */
-    boolean implementVpc(Vpc vpc, DeployDestination dest, ReservationContext context) 
+    boolean implementVpc(Vpc vpc, DeployDestination dest, ReservationContext context)
             throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 
     /**
      * @param vpc
+     * @param context TODO
      * @return
      * @throws ConcurrentOperationException
      * @throws ResourceUnavailableException
      */
-    boolean shutdownVpc(Vpc vpc) throws ConcurrentOperationException, ResourceUnavailableException;
-    
+    boolean shutdownVpc(Vpc vpc, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException;
+
     boolean createPrivateGateway(PrivateGateway gateway) throws ConcurrentOperationException, ResourceUnavailableException;
-    
+
     boolean deletePrivateGateway(PrivateGateway privateGateway) throws ConcurrentOperationException, ResourceUnavailableException;
-    
+
     boolean applyStaticRoutes(Vpc vpc, List<StaticRouteProfile> routes) throws ResourceUnavailableException;
 }

@@ -52,7 +52,6 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.network.element.NetworkElement;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.org.Cluster;
 import com.cloud.utils.component.Manager;
@@ -112,7 +111,7 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
     }
 
     @Override
-    public boolean destroy(Network network)
+    public boolean destroy(Network network, ReservationContext context)
             throws ConcurrentOperationException, ResourceUnavailableException {
         return true;
     }
@@ -215,14 +214,14 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
     @Override
     public CiscoNexusVSMResponse createCiscoNexusVSMResponse(CiscoNexusVSMDevice vsmDeviceVO) {
             CiscoNexusVSMResponse response = new CiscoNexusVSMResponse();
-            response.setId(vsmDeviceVO.getId());            
+            response.setId(vsmDeviceVO.getUuid());
             response.setMgmtIpAddress(vsmDeviceVO.getipaddr());
             return response;
         }
     
     public CiscoNexusVSMResponse createCiscoNexusVSMDetailedResponse(CiscoNexusVSMDevice vsmDeviceVO) {
     	CiscoNexusVSMResponse response = new CiscoNexusVSMResponse();
-    	response.setId(vsmDeviceVO.getId());
+    	response.setId(vsmDeviceVO.getUuid());
     	response.setDeviceName(vsmDeviceVO.getvsmName());
     	response.setDeviceState(vsmDeviceVO.getvsmDeviceState().toString());    	
     	response.setMgmtIpAddress(vsmDeviceVO.getipaddr());

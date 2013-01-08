@@ -30,7 +30,7 @@ import com.cloud.api.response.SrxFirewallResponse;
 import com.cloud.host.Host;
 import com.cloud.network.ExternalFirewallDeviceVO;
 import com.cloud.network.Network;
-import com.cloud.server.api.response.ExternalFirewallResponse;
+import org.apache.cloudstack.api.response.ExternalFirewallResponse;
 import com.cloud.utils.component.PluggableService;
 
 public interface JuniperSRXFirewallElementService  extends PluggableService {

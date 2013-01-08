@@ -14,23 +14,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-/** Licensed to the Apache Software Foundation (ASF) under one
- *  or more contributor license agreements.  See the NOTICE file
- *  distributed with this work for additional information
- *  regarding copyright ownership.  The ASF licenses this file
- *  to you under the Apache License, Version 2.0 (the
- *  "License"); you may not use this file except in compliance
- *  with the License.  You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing,
- *  software distributed under the License is distributed on an
- *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- *  KIND, either express or implied.  See the License for the
- *  specific language governing permissions and limitations
- *  under the License.
- */
 package com.cloud.network.guru;
 
 import java.net.URI;
@@ -47,6 +30,7 @@ import com.cloud.agent.api.CreateLogicalSwitchAnswer;
 import com.cloud.agent.api.CreateLogicalSwitchCommand;
 import com.cloud.agent.api.DeleteLogicalSwitchAnswer;
 import com.cloud.agent.api.DeleteLogicalSwitchCommand;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
@@ -57,6 +41,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.Network;
+import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.NetworkVO;
@@ -68,9 +53,11 @@ import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetwork.IsolationMethod;
 import com.cloud.network.PhysicalNetworkVO;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NiciraNvpDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.user.Account;
 import com.cloud.user.dao.AccountDao;
@@ -105,6 +92,8 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
     AgentManager _agentMgr;
     @Inject
     HostDetailsDao _hostDetailsDao;
+    @Inject
+    NetworkOfferingServiceMapDao _ntwkOfferingSrvcDao;
     
     public NiciraNvpGuestNetworkGuru() {
         super();
@@ -117,7 +106,8 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
         if (networkType == NetworkType.Advanced 
                 && isMyTrafficType(offering.getTrafficType()) 
                 && offering.getGuestType() == Network.GuestType.Isolated
-                && isMyIsolationMethod(physicalNetwork)) {
+                && isMyIsolationMethod(physicalNetwork)
+                && _ntwkOfferingSrvcDao.areServicesSupportedByNetworkOffering(offering.getId(), Service.Connectivity)) {
             return true;
         } else {
             s_logger.trace("We only take care of Guest networks of type   " + GuestType.Isolated + " in zone of type " + NetworkType.Advanced);
@@ -130,8 +120,9 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
             Network userSpecified, Account owner) {
         // Check of the isolation type of the related physical network is STT
         PhysicalNetworkVO physnet = _physicalNetworkDao.findById(plan.getPhysicalNetworkId());
-        if (physnet == null || physnet.getIsolationMethods() == null || !physnet.getIsolationMethods().contains("STT")) {
-            s_logger.debug("Refusing to design this network, the physical isolation type is not STT");
+        DataCenter dc = _dcDao.findById(plan.getDataCenterId());
+        if (!canHandle(offering,dc.getNetworkType(),physnet)) {
+            s_logger.debug("Refusing to design this network");
             return null;
         }
 
@@ -210,6 +201,7 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
             s_logger.info("Implemented OK, network linked to  = " + implemented.getBroadcastUri().toString());
         } catch (URISyntaxException e) {
             s_logger.error("Unable to store logical switch id in broadcast uri, uuid = " + implemented.getUuid(), e);
+            return null;
         }
         
         return implemented;

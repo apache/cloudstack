@@ -20,10 +20,6 @@ import java.util.List;
 
 import javax.ejb.Local;
 
-import org.springframework.stereotype.Component;
-
-import com.cloud.host.HostVO;
-import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VolumeHostVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;

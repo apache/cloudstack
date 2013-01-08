@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.usage;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import java.util.Date;
 
 import javax.persistence.Column;
@@ -26,7 +28,7 @@ import javax.persistence.TemporalType;
 
 @Entity
 @Table(name="usage_load_balancer_policy")
-public class UsageLoadBalancerPolicyVO {
+public class UsageLoadBalancerPolicyVO implements InternalIdentity {
 	
 	@Column(name="zone_id")
     private long zoneId;

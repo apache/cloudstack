@@ -16,9 +16,11 @@
 // under the License.
 package com.cloud.network.vpc;
 
-import com.cloud.acl.ControlledEntity;
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-public interface StaticRoute extends ControlledEntity{
+public interface StaticRoute extends ControlledEntity, Identity, InternalIdentity {
     enum State {
         Staged, // route been created but has never got through network rule conflict detection.  Routes in this state can not be sent to VPC virtual router.
         Add,    // Add means the route has been created and has gone through network rule conflict detection.
@@ -45,11 +47,4 @@ public interface StaticRoute extends ControlledEntity{
      * @return
      */
     Long getVpcId();
-
-    /**
-     * @return
-     */
-    long getId();
-
-    
 }

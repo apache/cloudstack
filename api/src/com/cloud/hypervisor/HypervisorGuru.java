@@ -27,28 +27,28 @@ import com.cloud.vm.VirtualMachineProfile;
 
 public interface HypervisorGuru extends Adapter {
     HypervisorType getHypervisorType();
-    
+
     /**
      * Convert from a virtual machine to the
-     * virtual machine that the hypervisor expects. 
-     * @param vm 
+     * virtual machine that the hypervisor expects.
+     * @param vm
      * @return
      */
     <T extends VirtualMachine> VirtualMachineTO implement(VirtualMachineProfile<T> vm);
-    
+
     /**
      * Give hypervisor guru opportunity to decide if certain command needs to be delegated to other host, mainly to secondary storage VM host
      * @param hostId original hypervisor host
      * @param cmd command that is going to be sent, hypervisor guru usually needs to register various context objects into the command object
-     * 
+     *
      * @return delegated host id if the command will be delegated
      */
     long getCommandHostDelegation(long hostId, Command cmd);
-    
+
     /**
      *  @return true if VM can be migrated independently with CloudStack, and therefore CloudStack needs to track and reflect host change
      *  into CloudStack database, false if CloudStack enforces VM sync logic
-     *  
+     *
      */
     boolean trackVmHostChange();
 

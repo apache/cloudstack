@@ -18,7 +18,7 @@
   specific language governing permissions and limitations
   under the License.
 -->
-<section id="global-config">
+<chapter id="global-config">
   <title>Setting Global Configuration Parameters</title>
   <para>&PRODUCT; provides parameters that you can set to control many aspects of the cloud. When
     &PRODUCT; is first installed, and periodically thereafter, you might need to modify these
@@ -51,4 +51,4 @@
         must click the name of the hypervisor first to display the editing screen.</para>
     </listitem>
   </orderedlist>
-</section>
+</chapter>

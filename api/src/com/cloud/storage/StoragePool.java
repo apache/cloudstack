@@ -19,24 +19,15 @@ package com.cloud.storage;
 import java.util.Date;
 
 import com.cloud.storage.Storage.StoragePoolType;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-public interface StoragePool {
-
-    /**
-     * @return id of the pool.
-     */
-    long getId();
+public interface StoragePool extends Identity, InternalIdentity {
 
     /**
      * @return name of the pool.
      */
     String getName();
-
-    /***
-     * 
-     * @return unique identifier
-     */
-    String getUuid();
 
     /**
      * @return the type of pool.

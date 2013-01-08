@@ -169,7 +169,7 @@ public class ExternalDhcpManagerImpl implements ExternalDhcpManager, ResourceSta
 	@Override
 	public DhcpServerResponse getApiResponse(Host dhcpServer) {
 		DhcpServerResponse response = new DhcpServerResponse();
-		response.setId(dhcpServer.getId());
+		response.setId(dhcpServer.getUuid());
 		return response;
 	}
 

@@ -53,6 +53,9 @@ under the License.
         <dao name="Configuration configuration server" class="com.cloud.configuration.dao.ConfigurationDaoImpl">
              <param name="premium">true</param>
         </dao>
+        <adapters key="org.apache.cloudstack.acl.APIAccessChecker">
+            <adapter name="StaticRoleBasedAPIAccessChecker" class="org.apache.cloudstack.acl.StaticRoleBasedAPIAccessChecker"/>
+        </adapters>
         <adapters key="com.cloud.agent.manager.allocator.HostAllocator">
             <adapter name="FirstFitRouting" class="com.cloud.agent.manager.allocator.impl.FirstFitRoutingAllocator"/>
             <!--adapter name="FirstFitRouting" class="com.cloud.agent.manager.allocator.impl.RecreateHostAllocator"/-->
@@ -109,6 +112,7 @@ under the License.
             <adapter name="Basic" class="com.cloud.network.ExteralIpAddressAllocator"/>
         </adapters>
         <adapters key="com.cloud.server.auth.UserAuthenticator">
+            <!-- <adapter name="SHA256SALT" class="com.cloud.server.auth.SHA256SaltedUserAuthenticator"/> -->
             <adapter name="MD5" class="com.cloud.server.auth.MD5UserAuthenticator"/>
             <adapter name="LDAP" class="com.cloud.server.auth.LDAPUserAuthenticator"/>
         </adapters>
@@ -146,7 +150,7 @@ under the License.
             <adapter name="ConsoleProxyAlert" class="com.cloud.alert.ConsoleProxyAlertAdapter"/>
             <adapter name="SecondaryStorageVmAlert" class="com.cloud.alert.SecondaryStorageVmAlertAdapter"/>
         </adapters>
-        <adapters key="com.cloud.acl.SecurityChecker">
+        <adapters key="org.apache.cloudstack.acl.SecurityChecker">
             <adapter name="DomainChecker" class="com.cloud.acl.DomainChecker"/>
         </adapters>
         <adapters key="com.cloud.network.element.NetworkElement">
@@ -179,6 +183,7 @@ under the License.
         <dao name="OvsTunnelAccountDao" class="com.cloud.network.ovs.dao.OvsTunnelNetworkDaoImpl" singleton="false"/>
         <dao name="NiciraNvpDao" class="com.cloud.network.dao.NiciraNvpDaoImpl" singleton="false"/>
         <dao name="NiciraNvpNicMappingDao" class="com.cloud.network.dao.NiciraNvpNicMappingDaoImpl" singleton="false"/>
+        <dao name="NiciraNvpRouterMappingDao" class="com.cloud.network.dao.NiciraNvpRouterMappingDaoImpl" singleton="false"/>
         <dao name="ElasticLbVmMapDao" class="com.cloud.network.lb.dao.ElasticLbVmMapDaoImpl" singleton="false"/>
     </management-server>
 

@@ -94,7 +94,7 @@
         </listitem>
         <listitem>
           <para>Tags (optional). The comma-separated list of tags for this storage device. It should
-            be an equivalent set or superset of the tags on your disk offerings</para>
+            be an equivalent set or superset of the tags on your disk offerings.</para>
         </listitem>
       </itemizedlist>
       <para>The tag sets on primary storage across clusters in a Zone must be identical. For

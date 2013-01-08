@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.storage;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -23,7 +25,7 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name="launch_permission")
-public class LaunchPermissionVO {
+public class LaunchPermissionVO implements InternalIdentity {
     @Id
     @Column(name="id")
     private Long id;
@@ -41,7 +43,7 @@ public class LaunchPermissionVO {
         this.accountId = accountId;
     }
 
-    public Long getId() {
+    public long getId() {
         return id;
     }
 

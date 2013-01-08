@@ -28,7 +28,6 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.api.IdentityMapper;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.utils.Pair;
@@ -43,12 +42,6 @@ public class IdentityDaoImpl extends GenericDaoBase<IdentityVO, Long> implements
     
     public IdentityDaoImpl() {
     }
-    
-    @DB
-	public Long getIdentityId(IdentityMapper mapper, String identityString) {
-    	assert(mapper.entityTableName() != null);
-    	return getIdentityId(mapper.entityTableName(), identityString);
-	}
     
     @DB
     public Long getIdentityId(String tableName, String identityString) {

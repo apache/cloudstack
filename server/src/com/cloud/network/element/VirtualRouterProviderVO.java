@@ -30,6 +30,7 @@ import javax.persistence.Table;
 
 import com.cloud.network.VirtualRouterProvider;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name=("virtual_router_providers"))
