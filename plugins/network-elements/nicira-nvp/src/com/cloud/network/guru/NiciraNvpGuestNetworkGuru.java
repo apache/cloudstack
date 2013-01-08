@@ -70,8 +70,7 @@ import com.cloud.vm.VirtualMachineProfile;
 public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
     private static final Logger s_logger = Logger.getLogger(NiciraNvpGuestNetworkGuru.class);
     
-    @Inject 
-    NetworkModel _externalNetworkManager;
+   
     @Inject
     NetworkModel _networkModel;
     @Inject
