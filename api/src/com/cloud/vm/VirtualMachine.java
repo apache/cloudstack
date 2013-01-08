@@ -286,6 +286,8 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, S
     public Date getCreated();
 
     public long getServiceOfferingId();
+    
+    public long getDiskOfferingId();
 
     Type getType();
 

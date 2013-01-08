@@ -32,6 +32,8 @@ import org.apache.cloudstack.engine.cloud.entity.api.TemplateEntity;
 import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntity;
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 
+import com.cloud.deploy.DeploymentPlan;
+import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.hypervisor.Hypervisor;
 
 @Path("orchestration")
@@ -61,13 +63,16 @@ public interface OrchestrationService {
             @QueryParam("template-id") String templateId,
             @QueryParam("host-name") String hostName,
             @QueryParam("display-name") String displayName,
+            @QueryParam("hypervisor") String hypervisor,
             @QueryParam("cpu") int cpu, 
             @QueryParam("speed") int speed, 
-            @QueryParam("ram") long memory, 
+            @QueryParam("ram") long memory,
+            @QueryParam("disk-size") Long diskSize,
             @QueryParam("compute-tags") List<String> computeTags,
             @QueryParam("root-disk-tags") List<String> rootDiskTags,
-            @QueryParam("networks") List<String> networks
-            );
+            @QueryParam("networks") List<String> networks,
+            @QueryParam("deploymentplan") DeploymentPlan plan
+            ) throws InsufficientCapacityException;
 
     @POST
     VirtualMachineEntity createVirtualMachineFromScratch(
@@ -81,9 +86,12 @@ public interface OrchestrationService {
             @QueryParam("cpu") int cpu,
             @QueryParam("speed") int speed,
             @QueryParam("ram") long memory,
+            @QueryParam("disk-size") Long diskSize,
             @QueryParam("compute-tags") List<String> computeTags,
             @QueryParam("root-disk-tags") List<String> rootDiskTags,
-            @QueryParam("networks") List<String> networks);
+            @QueryParam("networks") List<String> networks,
+    		@QueryParam("deploymentplan") DeploymentPlan plan
+    		) throws InsufficientCapacityException;
 
     @POST
     NetworkEntity createNetwork(String id, String name, String domainName, String cidr, String gateway);

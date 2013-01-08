@@ -40,7 +40,7 @@ import com.cloud.vm.VirtualMachine;
 @Path("vm/{id}")
 @Produces({"application/json", "application/xml"})
 @XmlRootElement(name="vm")
-public interface VirtualMachineEntity extends VirtualMachine, CloudStackEntity {
+public interface VirtualMachineEntity extends CloudStackEntity {
 
     /**
      * @return List of uuids for volumes attached to this virtual machine.

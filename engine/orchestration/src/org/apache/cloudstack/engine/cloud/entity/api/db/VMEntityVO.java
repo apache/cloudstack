@@ -14,9 +14,10 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.vm;
+package org.apache.cloudstack.engine.cloud.entity.api.db;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
@@ -41,13 +42,14 @@ import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.StateMachine;
 import com.cloud.utils.fsm.FiniteStateObject;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 
 @Entity
 @Table(name="vm_instance")
 @Inheritance(strategy=InheritanceType.JOINED)
 @DiscriminatorColumn(name="type", discriminatorType=DiscriminatorType.STRING, length=32)
-public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, VirtualMachine.Event> {
+public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, VirtualMachine.Event> {
     @Id
     @TableGenerator(name="vm_instance_sq", table="sequence", pkColumnName="name", valueColumnName="value", pkColumnValue="vm_instance_seq", allocationSize=1)
     @Column(name="id", updatable=false, nullable = false)
@@ -157,9 +159,31 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 
     @Column(name="uuid")
     protected String uuid = UUID.randomUUID().toString();
-    ;
+    
+    //orchestration columns
+    @Column(name="owner")
+    private String owner = null;
+    
+    @Column(name="speed")
+    private int speed;
+    
+    @Transient
+    List<String> computeTags;
+    
+    @Transient
+    List<String> rootDiskTags;
+    
+    @Column(name="hostname")
+    private String hostname = null;
 
-    public VMInstanceVO(long id,
+    @Column(name="displayname")
+    private String displayname = null;
+    
+    @Transient
+    List<String> networkIds;
+    
+    
+    public VMEntityVO(long id,
             long serviceOfferingId,
             String name,
             String instanceName,
@@ -188,7 +212,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
         this.limitCpuUse = false;
     }
 
-    public VMInstanceVO(long id,
+    public VMEntityVO(long id,
             long serviceOfferingId,
             String name,
             String instanceName,
@@ -203,8 +227,10 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
         this(id, serviceOfferingId, name, instanceName, type, vmTemplateId, hypervisorType, guestOSId, domainId, accountId, haEnabled);
         this.limitCpuUse = limitResourceUse;
     }
+    
+    
 
-    protected VMInstanceVO() {
+    protected VMEntityVO() {
     }
 
     public Date getRemoved() {
@@ -464,7 +490,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
             return false;
         if (getClass() != obj.getClass())
             return false;
-        VMInstanceVO other = (VMInstanceVO) obj;
+        VMEntityVO other = (VMEntityVO) obj;
         if (id != other.id)
             return false;
         return true;
@@ -475,10 +501,60 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
         this.serviceOfferingId = serviceOfferingId;
     }
 
-	@Override
-	public long getDiskOfferingId() {
-		// TODO Auto-generated method stub
-		return 0;
+	public String getOwner() {
+		return owner;
+	}
+
+	public void setOwner(String owner) {
+		this.owner = owner;
+	}
+
+	public int getSpeed() {
+		return speed;
+	}
+
+	public void setSpeed(int speed) {
+		this.speed = speed;
+	}
+
+	public List<String> getComputeTags() {
+		return computeTags;
+	}
+
+	public void setComputeTags(List<String> computeTags) {
+		this.computeTags = computeTags;
+	}
+
+	public List<String> getRootDiskTags() {
+		return rootDiskTags;
+	}
+
+	public void setRootDiskTags(List<String> rootDiskTags) {
+		this.rootDiskTags = rootDiskTags;
+	}
+
+	public String getHostname() {
+		return hostname;
+	}
+
+	public void setHostname(String hostname) {
+		this.hostname = hostname;
+	}
+
+	public String getDisplayname() {
+		return displayname;
+	}
+
+	public void setDisplayname(String displayname) {
+		this.displayname = displayname;
+	}
+
+	public List<String> getNetworkIds() {
+		return networkIds;
+	}
+
+	public void setNetworkIds(List<String> networkIds) {
+		this.networkIds = networkIds;
 	}
 
 }

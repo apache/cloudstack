@@ -609,4 +609,10 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         txn.commit();
         return result;
     }
+
+	@Override
+	public VMInstanceVO findByUUID(String uuid) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

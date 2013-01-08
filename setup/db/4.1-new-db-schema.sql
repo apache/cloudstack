@@ -42,3 +42,25 @@ CREATE TABLE `cloud`.`image_data_store` (
   PRIMARY KEY(`id`),
   CONSTRAINT `fk_tags__image_data_store_provider_id` FOREIGN KEY(`image_provider_id`) REFERENCES `image_data_store_provider`(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`vm_compute_tags` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `vm_id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'vm id',
+  `compute_tag` varchar(255) NOT NULL COMMENT 'name of tag',
+  PRIMARY KEY(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`vm_root_disk_tags` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `vm_id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'vm id',
+  `root_disk_tag` varchar(255) NOT NULL COMMENT 'name of tag',
+  PRIMARY KEY(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+CREATE TABLE `cloud`.`vm_network_map` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `vm_id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'vm id',
+  `network_id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'network id',
+  PRIMARY KEY(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
