@@ -27,8 +27,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.db.QueryBuilderTest.TestDao;
-import com.cloud.utils.db.QueryBuilderTest.TestVO;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
@@ -43,7 +41,7 @@ public class TransactionTest {
     @BeforeClass
     public static void oneTimeSetup() {
         Connection conn = null;
-        PreparedStatement pstmt = null;
+        PreparedStatement pstmt = null; 
         try {
             conn = Transaction.getStandaloneConnection();
 
@@ -156,7 +154,7 @@ public class TransactionTest {
             }
         }
     }
-    
+
     @After
     /**
      * Delete all records after each test, but table is still kept
@@ -187,7 +185,7 @@ public class TransactionTest {
             }
         }
     }
-    
+
     @AfterClass
     public static void oneTimeTearDown() {
         Connection conn = null;

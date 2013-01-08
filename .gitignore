@@ -62,7 +62,6 @@ tools/cli/build/
 awsapi/modules/*
 !.gitignore
 .classpath
-.project
 .settings.xml
 .settings/
 db.properties.override

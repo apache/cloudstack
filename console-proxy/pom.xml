@@ -53,7 +53,6 @@
       <version>${project.version}</version>
       <type>pom</type>
     </dependency>
-    -->
   </dependencies>
   <build>
     <defaultGoal>install</defaultGoal>
