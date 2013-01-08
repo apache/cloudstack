@@ -52,7 +52,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.kvm.discoverer.KvmDummyResourceBase;
-import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.PhysicalNetworkSetupInfo;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
@@ -79,7 +79,7 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 	 @Inject ClusterDao _clusterDao;
 	 @Inject ResourceManager _resourceMgr;
 	 @Inject AgentManager _agentMgr;
-	 @Inject NetworkManager _networkMgr;
+	 @Inject NetworkModel _networkMgr;
 	 
 	@Override
 	public boolean processAnswers(long agentId, long seq, Answer[] answers) {

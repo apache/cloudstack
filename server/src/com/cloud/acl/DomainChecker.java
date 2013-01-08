@@ -25,7 +25,7 @@ import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.Network;
-import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.projects.ProjectManager;
@@ -47,7 +47,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
     @Inject LaunchPermissionDao _launchPermissionDao;
     @Inject ProjectManager _projectMgr;
     @Inject ProjectAccountDao _projecAccountDao;
-    @Inject NetworkManager _networkMgr;
+    @Inject NetworkModel _networkMgr;
     
     protected DomainChecker() {
         super();

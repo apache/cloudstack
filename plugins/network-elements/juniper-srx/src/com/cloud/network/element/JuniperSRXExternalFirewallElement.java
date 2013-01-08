@@ -61,7 +61,7 @@ import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkExternalFirewallVO;
-import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PhysicalNetworkVO;
@@ -99,7 +99,7 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
 
     @Inject
-    NetworkManager _networkManager;
+    NetworkModel _networkManager;
     @Inject
     HostDao _hostDao;
     @Inject

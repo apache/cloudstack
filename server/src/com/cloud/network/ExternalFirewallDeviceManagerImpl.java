@@ -111,7 +111,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
     @Inject HostDao _hostDao;
     @Inject NetworkServiceMapDao _ntwkSrvcProviderDao;
     @Inject DataCenterDao _dcDao;
-    @Inject NetworkManager _networkMgr;
+    @Inject NetworkModel _networkMgr;
     @Inject InlineLoadBalancerNicMapDao _inlineLoadBalancerNicMapDao;
     @Inject NicDao _nicDao;
     @Inject AgentManager _agentMgr;

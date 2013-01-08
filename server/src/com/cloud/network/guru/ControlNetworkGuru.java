@@ -35,7 +35,7 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
-import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.AddressFormat;
@@ -58,7 +58,7 @@ import com.cloud.vm.VirtualMachineProfile;
 public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGuru {
     private static final Logger s_logger = Logger.getLogger(ControlNetworkGuru.class);
     @Inject DataCenterDao _dcDao;
-    @Inject NetworkManager _networkMgr;
+    @Inject NetworkModel _networkMgr;
     String _cidr;
     String _gateway;
     

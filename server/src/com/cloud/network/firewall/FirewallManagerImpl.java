@@ -46,6 +46,7 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkRuleApplier;
 import com.cloud.network.dao.FirewallRulesCidrsDao;
 import com.cloud.network.dao.FirewallRulesDao;
@@ -111,6 +112,8 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ne
     AccountManager _accountMgr;
     @Inject
     NetworkManager _networkMgr;
+    @Inject
+    NetworkModel _networkModel;
     @Inject
     UsageEventDao _usageEventDao;
     @Inject
@@ -186,7 +189,7 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ne
                     " doesn't exist in the system");
         }
 
-        _networkMgr.checkIpForService(ipAddress, Service.Firewall, null);  
+        _networkModel.checkIpForService(ipAddress, Service.Firewall, null);  
 
         validateFirewallRule(caller, ipAddress, portStart, portEnd, protocol, Purpose.Firewall, type);
 
@@ -421,7 +424,7 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ne
             networkId = ipAddress.getAssociatedWithNetworkId();
         }
 
-        Network network = _networkMgr.getNetwork(networkId);
+        Network network = _networkModel.getNetwork(networkId);
         assert network != null : "Can't create port forwarding rule as network associated with public ip address is null?";
 
         // Verify that the network guru supports the protocol specified
@@ -429,10 +432,10 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ne
 
         if (purpose == Purpose.LoadBalancing) {
             if (!_elbEnabled) {
-                caps = _networkMgr.getNetworkServiceCapabilities(network.getId(), Service.Lb);
+                caps = _networkModel.getNetworkServiceCapabilities(network.getId(), Service.Lb);
             }
         } else if (purpose == Purpose.PortForwarding) {
-            caps = _networkMgr.getNetworkServiceCapabilities(network.getId(), Service.PortForwarding);
+            caps = _networkModel.getNetworkServiceCapabilities(network.getId(), Service.PortForwarding);
         }
 
         if (caps != null) {

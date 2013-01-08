@@ -62,6 +62,7 @@ import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkService;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -137,6 +138,8 @@ public class VpcManagerImpl implements VpcManager, Manager{
     NetworkDao _ntwkDao;
     @Inject
     NetworkManager _ntwkMgr;
+    @Inject
+    NetworkModel _ntwkModel;
     @Inject
     NetworkService _ntwkSvc;
     @Inject
@@ -547,12 +550,12 @@ public class VpcManagerImpl implements VpcManager, Manager{
         
         if (networkDomain == null) {
             // 1) Get networkDomain from the corresponding account
-            networkDomain = _ntwkMgr.getAccountNetworkDomain(owner.getId(), zoneId);
+            networkDomain = _ntwkModel.getAccountNetworkDomain(owner.getId(), zoneId);
 
 
             // 2) If null, generate networkDomain using domain suffix from the global config variables
             if (networkDomain == null) {
-                networkDomain = "cs" + Long.toHexString(owner.getId()) + _ntwkMgr.getDefaultNetworkDomain();
+                networkDomain = "cs" + Long.toHexString(owner.getId()) + _ntwkModel.getDefaultNetworkDomain();
             }
         }
         
@@ -564,7 +567,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
     {
         //the provider has to be enabled at least in one network in the zone
         for (PhysicalNetwork pNtwk : _pNtwkDao.listByZone(zoneId)) {
-            if (_ntwkMgr.isProviderEnabledInPhysicalNetwork(pNtwk.getId(), Provider.VPCVirtualRouter.getName())) {
+            if (_ntwkModel.isProviderEnabledInPhysicalNetwork(pNtwk.getId(), Provider.VPCVirtualRouter.getName())) {
                 return true;
             }
         }
@@ -961,7 +964,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
         }
 
         //2) validate network offering attributes
-        List<Service> svcs = _ntwkMgr.listNetworkOfferingServices(guestNtwkOff.getId());
+        List<Service> svcs = _ntwkModel.listNetworkOfferingServices(guestNtwkOff.getId());
         validateNtwkOffForVpc(guestNtwkOff, svcs);
 
         //3) Check services/providers against VPC providers
@@ -977,14 +980,14 @@ public class VpcManagerImpl implements VpcManager, Manager{
         }
 
         //4) Only one network in the VPC can support LB
-        if (_ntwkMgr.areServicesSupportedByNetworkOffering(guestNtwkOff.getId(), Service.Lb)) {
+        if (_ntwkModel.areServicesSupportedByNetworkOffering(guestNtwkOff.getId(), Service.Lb)) {
             List<? extends Network> networks = getVpcNetworks(vpc.getId());
             for (Network network : networks) {
                 if (networkId != null && network.getId() == networkId.longValue()) {
                     //skip my own network
                     continue;
                 } else {
-                    if (_ntwkMgr.areServicesSupportedInNetwork(network.getId(), Service.Lb)) {
+                    if (_ntwkModel.areServicesSupportedInNetwork(network.getId(), Service.Lb)) {
                         throw new InvalidParameterValueException("LB service is already supported " +
                         		"by network " + network + " in VPC " + vpc);
                     }
@@ -996,7 +999,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
     @Override
     public void validateNtwkOffForVpc(NetworkOffering guestNtwkOff, List<Service> supportedSvcs) {
         //1) in current release, only vpc provider is supported by Vpc offering
-        List<Provider> providers = _ntwkMgr.getNtwkOffDistinctProviders(guestNtwkOff.getId());
+        List<Provider> providers = _ntwkModel.getNtwkOffDistinctProviders(guestNtwkOff.getId());
         for (Provider provider : providers) {
             if (provider != Provider.VPCVirtualRouter) {
                 throw new InvalidParameterValueException("Only provider of type " + Provider.VPCVirtualRouter.getName() 
@@ -1091,7 +1094,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
 
     protected VpcProvider getVpcElement() {
         if (vpcElement == null) {
-            vpcElement = ((VpcProvider)_ntwkMgr.getElementImplementingProvider(Provider.VPCVirtualRouter.getName()));
+            vpcElement = ((VpcProvider)_ntwkModel.getElementImplementingProvider(Provider.VPCVirtualRouter.getName()));
         }
 
         if (vpcElement == null) {
@@ -1219,7 +1222,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
     }
 
     protected PrivateGateway getPrivateGatewayProfile(VpcGateway gateway) {
-        Network network = _ntwkMgr.getNetwork(gateway.getNetworkId());
+        Network network = _ntwkModel.getNetwork(gateway.getNetworkId());
         return new PrivateGatewayProfile(gateway, network.getPhysicalNetworkId());
     }
 
@@ -1246,7 +1249,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
         
         //Validate physical network
         if (physicalNetworkId == null) {
-            List<? extends PhysicalNetwork> pNtwks = _ntwkMgr.getPhysicalNtwksSupportingTrafficType(vpc.getZoneId(), TrafficType.Guest);
+            List<? extends PhysicalNetwork> pNtwks = _ntwkModel.getPhysicalNtwksSupportingTrafficType(vpc.getZoneId(), TrafficType.Guest);
             if (pNtwks.isEmpty() || pNtwks.size() != 1) {
                 throw new InvalidParameterValueException("Physical network can't be determined; pass physical network id");
             }
@@ -1770,7 +1773,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
         Account caller = UserContext.current().getCaller();
         Account owner = null;
 
-        IpAddress ipToAssoc = _ntwkMgr.getIp(ipId);
+        IpAddress ipToAssoc = _ntwkModel.getIp(ipId);
         if (ipToAssoc != null) {
             _accountMgr.checkAccess(caller, null, true, ipToAssoc);
             owner = _accountMgr.getAccount(ipToAssoc.getAllocatedToAccountId());
@@ -1829,7 +1832,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
         boolean success = false;
         try {
             //unassign ip from the VPC router
-            success = _ntwkMgr.applyIpAssociations(_ntwkMgr.getNetwork(networkId), true);
+            success = _ntwkMgr.applyIpAssociations(_ntwkModel.getNetwork(networkId), true);
         } catch (ResourceUnavailableException ex) {
             throw new CloudRuntimeException("Failed to apply ip associations for network id=" + networkId + 
                     " as a part of unassigning ip " + ipId + " from vpc", ex);

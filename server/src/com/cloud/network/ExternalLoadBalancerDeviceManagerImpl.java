@@ -127,6 +127,8 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
     @Inject
     DataCenterDao _dcDao;
     @Inject
+    NetworkModel _networkModel;
+    @Inject
     NetworkManager _networkMgr;
     @Inject
     InlineLoadBalancerNicMapDao _inlineLoadBalancerNicMapDao;
@@ -801,7 +803,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
             String protocol = rule.getProtocol();
             String algorithm = rule.getAlgorithm();
             String uuid = rule.getUuid();
-            String srcIp = _networkMgr.getIp(rule.getSourceIpAddressId()).getAddress().addr();
+            String srcIp = _networkModel.getIp(rule.getSourceIpAddressId()).getAddress().addr();
             int srcPort = rule.getSourcePortStart();
             List<LbDestination> destinations = rule.getDestinations();
             List<String> sourceCidrs = rule.getSourceCidrList();
@@ -930,7 +932,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         long guestVlanTag = Long.parseLong(guestConfig.getBroadcastUri().getHost());
         String selfIp = null;
         String guestVlanNetmask = NetUtils.cidr2Netmask(guestConfig.getCidr());
-        Integer networkRate = _networkMgr.getNetworkRate(guestConfig.getId(), null);
+        Integer networkRate = _networkModel.getNetworkRate(guestConfig.getId(), null);
 
         if (add) {
             // Acquire a self-ip address from the guest network IP address range

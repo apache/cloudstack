@@ -226,6 +226,8 @@ public class NetworkServiceImpl implements  NetworkService, Manager {
     ResourceTagDao _resourceTagDao;
     @Inject
     NetworkManager _networkMgr;
+    @Inject
+    NetworkModel _networkModel;
 
     private final HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
 
@@ -364,7 +366,7 @@ public class NetworkServiceImpl implements  NetworkService, Manager {
 
     private boolean canIpsUseOffering(List<PublicIp> publicIps, long offeringId) {
         Map<PublicIp, Set<Service>> ipToServices = getIpToServices(publicIps, false, true);
-        Map<Service, Set<Provider>> serviceToProviders = _networkMgr.getNetworkOfferingServiceProvidersMap(offeringId);
+        Map<Service, Set<Provider>> serviceToProviders = _networkModel.getNetworkOfferingServiceProvidersMap(offeringId);
         for (PublicIp ip : ipToServices.keySet()) {
             Set<Service> services = ipToServices.get(ip);
             Provider provider = null;
@@ -1146,7 +1148,7 @@ public class NetworkServiceImpl implements  NetworkService, Manager {
         if (canUseForDeploy != null) {
             List<NetworkVO> networksForDeploy = new ArrayList<NetworkVO>();
             for (NetworkVO network : networksToReturn) {
-                if (_networkMgr.canUseForDeploy(network) == canUseForDeploy) {
+                if (_networkModel.canUseForDeploy(network) == canUseForDeploy) {
                     networksForDeploy.add(network);
                 }
             }
@@ -1429,7 +1431,7 @@ public class NetworkServiceImpl implements  NetworkService, Manager {
 
         // FIXME we return the capabilities of the first provider of the service - what if we have multiple providers
         // for same Service?
-        NetworkElement element = _networkMgr.getElementImplementingProvider(provider);
+        NetworkElement element = _networkModel.getElementImplementingProvider(provider);
         if (element != null) {
             Map<Service, Map<Capability, String>> elementCapabilities = element.getCapabilities();
             ;
@@ -2301,7 +2303,7 @@ public class NetworkServiceImpl implements  NetworkService, Manager {
         }
 
         if (provider != null) {
-            NetworkElement element = _networkMgr.getElementImplementingProvider(providerName);
+            NetworkElement element = _networkModel.getElementImplementingProvider(providerName);
             if (element == null) {
                 throw new InvalidParameterValueException("Unable to find the Network Element implementing the Service Provider '" + providerName + "'");
             }
@@ -2348,7 +2350,7 @@ public class NetworkServiceImpl implements  NetworkService, Manager {
         }
 
         // check if services can be turned off
-        NetworkElement element = _networkMgr.getElementImplementingProvider(providerName);
+        NetworkElement element = _networkModel.getElementImplementingProvider(providerName);
         if (element == null) {
             throw new InvalidParameterValueException("Unable to find the Network Element implementing the Service Provider '" + providerName + "'");
         }
@@ -2441,7 +2443,7 @@ public class NetworkServiceImpl implements  NetworkService, Manager {
             throw new InvalidParameterValueException("Network Service Provider id=" + id + "doesn't exist in the system");
         }
 
-        NetworkElement element = _networkMgr.getElementImplementingProvider(provider.getProviderName());
+        NetworkElement element = _networkModel.getElementImplementingProvider(provider.getProviderName());
         if (element == null) {
             throw new InvalidParameterValueException("Unable to find the Network Element implementing the Service Provider '" + provider.getProviderName() + "'");
         }
@@ -2530,7 +2532,7 @@ public class NetworkServiceImpl implements  NetworkService, Manager {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Shutting down the service provider id=" + id + " on physical network: " + provider.getPhysicalNetworkId());
         }
-        NetworkElement element = _networkMgr.getElementImplementingProvider(provider.getProviderName());
+        NetworkElement element = _networkModel.getElementImplementingProvider(provider.getProviderName());
         if (element == null) {
             throw new InvalidParameterValueException("Unable to find the Network Element implementing the Service Provider '" + provider.getProviderName() + "'");
         }
@@ -2788,7 +2790,7 @@ public class NetworkServiceImpl implements  NetworkService, Manager {
 
         PhysicalNetworkServiceProvider nsp = addProviderToPhysicalNetwork(physicalNetworkId, Network.Provider.VirtualRouter.getName(), null, null);
         // add instance of the provider
-        VirtualRouterElement element = (VirtualRouterElement) _networkMgr.getElementImplementingProvider(Network.Provider.VirtualRouter.getName());
+        VirtualRouterElement element = (VirtualRouterElement) _networkModel.getElementImplementingProvider(Network.Provider.VirtualRouter.getName());
         if (element == null) {
             throw new CloudRuntimeException("Unable to find the Network Element implementing the VirtualRouter Provider");
         }
@@ -2802,7 +2804,7 @@ public class NetworkServiceImpl implements  NetworkService, Manager {
         PhysicalNetworkServiceProvider nsp = addProviderToPhysicalNetwork(physicalNetworkId, 
                 Network.Provider.VPCVirtualRouter.getName(), null, null);
         // add instance of the provider
-        VpcVirtualRouterElement element = (VpcVirtualRouterElement) _networkMgr.getElementImplementingProvider(Network.Provider.VPCVirtualRouter.getName());
+        VpcVirtualRouterElement element = (VpcVirtualRouterElement) _networkModel.getElementImplementingProvider(Network.Provider.VPCVirtualRouter.getName());
         if (element == null) {
             throw new CloudRuntimeException("Unable to find the Network Element implementing the VPCVirtualRouter Provider");
         }

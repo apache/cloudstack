@@ -42,7 +42,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Service;
-import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.RemoteAccessVpnVO;
@@ -94,7 +94,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
     @Inject IPAddressDao _ipAddressDao;
     @Inject AccountManager _accountMgr;
     @Inject DomainManager _domainMgr;
-    @Inject NetworkManager _networkMgr;
+    @Inject NetworkModel _networkMgr;
     @Inject RulesManager _rulesMgr;
     @Inject DomainDao _domainDao;
     @Inject FirewallRulesDao _rulesDao;

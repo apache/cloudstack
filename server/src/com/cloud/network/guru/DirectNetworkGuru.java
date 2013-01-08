@@ -36,6 +36,7 @@ import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Network.State;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -63,6 +64,8 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
     DataCenterDao _dcDao;
     @Inject
     VlanDao _vlanDao;
+    @Inject
+    NetworkModel _networkModel;
     @Inject
     NetworkManager _networkMgr;
     @Inject
@@ -132,7 +135,7 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
             }
         }
 
-        boolean isSecurityGroupEnabled = _networkMgr.areServicesSupportedByNetworkOffering(offering.getId(), Service.SecurityGroup);
+        boolean isSecurityGroupEnabled = _networkModel.areServicesSupportedByNetworkOffering(offering.getId(), Service.SecurityGroup);
         if (isSecurityGroupEnabled) {
             config.setName("SecurityGroupEnabledNetwork");
             config.setDisplayText("SecurityGroupEnabledNetwork");
