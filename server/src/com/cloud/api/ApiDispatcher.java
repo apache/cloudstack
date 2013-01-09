@@ -31,6 +31,7 @@ import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 
 import com.cloud.dao.EntityManager;
+import com.cloud.utils.ReflectUtil;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.InfrastructureEntity;
 import org.apache.cloudstack.acl.Role;
@@ -374,19 +375,8 @@ public class ApiDispatcher {
             }
         }
 
-        // Process all the fields of the cmd object using reflection to recursively process super class
-        Field[] fields = cmd.getClass().getDeclaredFields();
-        Class<?> superClass = cmd.getClass().getSuperclass();
-        while (BaseCmd.class.isAssignableFrom(superClass)) {
-            Field[] superClassFields = superClass.getDeclaredFields();
-            if (superClassFields != null) {
-                Field[] tmpFields = new Field[fields.length + superClassFields.length];
-                System.arraycopy(fields, 0, tmpFields, 0, fields.length);
-                System.arraycopy(superClassFields, 0, tmpFields, fields.length, superClassFields.length);
-                fields = tmpFields;
-            }
-            superClass = superClass.getSuperclass();
-        }
+        Field[] fields = ReflectUtil.getAllFieldsForClass(cmd.getClass(),
+                new Class<?>[] {BaseCmd.class});
 
         for (Field field : fields) {
             PlugService plugServiceAnnotation = field.getAnnotation(PlugService.class);
