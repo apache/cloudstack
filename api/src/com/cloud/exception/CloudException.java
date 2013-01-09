@@ -56,14 +56,6 @@ public class CloudException extends Exception {
 		return;
 	}
 
-    public void addProxyObject(Object voObj, Long id, String idFieldName) {
-       // Get the VO object's table name.
-       String tablename = AnnotationHelper.getTableName(voObj);
-       if (tablename != null) {
-               addProxyObject(tablename, id, idFieldName);
-       }
-       return;
-    }
 
 	public ArrayList<String> getIdProxyList() {
 		return idList;
