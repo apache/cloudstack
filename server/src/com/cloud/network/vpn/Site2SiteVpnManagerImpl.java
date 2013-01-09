@@ -108,6 +108,7 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
         Map<String, String> configs = configDao.getConfiguration(params);
         _connLimit = NumbersUtil.parseInt(configs.get(Config.Site2SiteVpnConnectionPerVpnGatewayLimit.key()), 4);
         _subnetsLimit = NumbersUtil.parseInt(configs.get(Config.Site2SiteVpnSubnetsPerCustomerGatewayLimit.key()), 10);
+        assert (_s2sProviders.enumeration().hasMoreElements()): "Did not get injected with a list of S2S providers!";
         return true;
     }
 
