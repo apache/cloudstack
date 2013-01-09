@@ -87,6 +87,7 @@
     <cs.aws.sdk.version>1.3.21.1</cs.aws.sdk.version>
     <cs.lang.version>2.6</cs.lang.version>
     <cs.commons-io.version>1.4</cs.commons-io.version>
+    <cs.reflections.version>0.9.8</cs.reflections.version>
     <skipTests>true</skipTests>
   </properties>
 

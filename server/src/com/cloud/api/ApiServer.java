@@ -52,7 +52,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.apache.cloudstack.acl.APIAccessChecker;
-import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
@@ -61,6 +60,7 @@ import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
+import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
@@ -74,6 +74,7 @@ import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
 import org.apache.cloudstack.api.response.ExceptionResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.discovery.ApiDiscoveryService;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.ConnectionClosedException;
 import org.apache.http.HttpException;
@@ -103,7 +104,6 @@ import org.apache.http.protocol.ResponseContent;
 import org.apache.http.protocol.ResponseDate;
 import org.apache.http.protocol.ResponseServer;
 import org.apache.log4j.Logger;
-import org.reflections.Reflections;
 
 import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.async.AsyncJob;
@@ -153,6 +153,8 @@ public class ApiServer implements HttpRequestHandler {
     @Inject List<PluggableService> _pluggableServices;
     @Inject IdentityDao _identityDao;
 
+    protected List<ApiDiscoveryService> _apiDiscoveryServices;
+
     private Account _systemAccount = null;
     private User _systemUser = null;
     private static int _workerCount = 0;
@@ -175,6 +177,10 @@ public class ApiServer implements HttpRequestHandler {
     }
 
     public static ApiServer getInstance() {
+        // Assumption: CloudStartupServlet would initialize ApiServer
+        if (s_instance == null) {
+            s_logger.fatal("ApiServer instance failed to initialize");
+        }
         return s_instance;
     }
 
@@ -197,17 +203,13 @@ public class ApiServer implements HttpRequestHandler {
             }
         }
 
-        // Populate api name and cmd class mappings
-        Reflections reflections = new Reflections("org.apache.cloudstack.api");
-        Set<Class<?>> cmdClasses = reflections.getTypesAnnotatedWith(APICommand.class);
-        reflections = new Reflections("com.cloud.api");
-        cmdClasses.addAll(reflections.getTypesAnnotatedWith(APICommand.class));
-        for(Class<?> cmdClass: cmdClasses) {
-            String apiName = cmdClass.getAnnotation(APICommand.class).name();
-            if (_apiNameCmdClassMap.containsKey(apiName)) {
-                s_logger.error("API Cmd class " + cmdClass.getName() + " has non-unique apiname" + apiName);
-            }
-            _apiNameCmdClassMap.put(apiName, cmdClass);
+        for (ApiDiscoveryService discoveryService: _apiDiscoveryServices) {
+            _apiNameCmdClassMap.putAll(discoveryService.getApiNameCmdClassMapping());
+        }
+
+        if (_apiNameCmdClassMap.size() == 0) {
+            s_logger.fatal("ApiServer failed to generate apiname, cmd class mappings."
+                    + "Please check and enable at least one ApiDiscovery adapter.");
         }
 
         encodeApiResponse = Boolean.valueOf(_configDao.getValue(Config.EncodeApiResponse.key()));
@@ -473,6 +475,7 @@ public class ApiServer implements HttpRequestHandler {
                     && !(cmdObj instanceof ListVolumesCmd)
                     && !(cmdObj instanceof ListUsersCmd)
                     && !(cmdObj instanceof ListAccountsCmd)
+                    && !(cmdObj instanceof ListStoragePoolsCmd)
                     ) {
                 buildAsyncListResponse((BaseListCmd) cmdObj, caller);
             }

@@ -28,6 +28,7 @@ import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import com.cloud.utils.ReflectUtil;
 import org.apache.cloudstack.api.*;
 import org.apache.log4j.Logger;
 
@@ -79,13 +80,15 @@ public class ApiXmlDocWriter {
     }
 
     public static void main(String[] args) {
-        // Populate api name and cmd class mappings
-        Reflections reflections = new Reflections("org.apache.cloudstack.api");
-        Set<Class<?>> cmdClasses = reflections.getTypesAnnotatedWith(APICommand.class);
-        reflections = new Reflections("com.cloud.api");
-        cmdClasses.addAll(reflections.getTypesAnnotatedWith(APICommand.class));
+
+        Set<Class<?>> cmdClasses = ReflectUtil.getClassesWithAnnotation(APICommand.class, new String[]{"org.apache.cloudstack.api", "com.cloud.api"});
+
         for(Class<?> cmdClass: cmdClasses) {
             String apiName = cmdClass.getAnnotation(APICommand.class).name();
+            if (_apiNameCmdClassMap.containsKey(apiName)) {
+                System.out.println("Warning, API Cmd class " + cmdClass.getName() + " has non-unique apiname" + apiName);
+                continue;
+            }
             _apiNameCmdClassMap.put(apiName, cmdClass);
         }
 
@@ -340,33 +343,15 @@ public class ApiXmlDocWriter {
             if(!impl.since().isEmpty()){
             	apiCommand.setSinceVersion(impl.since());
             }
-            
-            // Set request parameters
-            Field[] fields = clas.getDeclaredFields();
 
-            // Get fields from superclass
-            Class<?> superClass = clas.getSuperclass();
-            boolean isAsync = false;
-            while (superClass != null && superClass != Object.class) {
-                String superName = superClass.getName();
-                if (!superName.equals(BaseCmd.class.getName()) && !superName.equals(BaseAsyncCmd.class.getName()) && !superName.equals(BaseAsyncCreateCmd.class.getName())) {
-                    Field[] superClassFields = superClass.getDeclaredFields();
-                    if (superClassFields != null) {
-                        Field[] tmpFields = new Field[fields.length + superClassFields.length];
-                        System.arraycopy(fields, 0, tmpFields, 0, fields.length);
-                        System.arraycopy(superClassFields, 0, tmpFields, fields.length, superClassFields.length);
-                        fields = tmpFields;
-                    }
-                }
-                superClass = superClass.getSuperclass();
-                // Set Async information for the command
-                if (superName.equals(BaseAsyncCmd.class.getName()) || superName.equals(BaseAsyncCreateCmd.class.getName())) {
-                    isAsync = true;
-                }
-            }
-           
+            boolean isAsync = ReflectUtil.isCmdClassAsync(clas,
+                    new Class<?>[] {BaseAsyncCmd.class, BaseAsyncCreateCmd.class});
+
             apiCommand.setAsync(isAsync);
-            
+
+            Field[] fields = ReflectUtil.getAllFieldsForClass(clas,
+                    new Class<?>[] {BaseCmd.class, BaseAsyncCmd.class, BaseAsyncCreateCmd.class});
+
             request = setRequestFields(fields);
 
             // Get response parameters

@@ -34,6 +34,7 @@ import com.cloud.api.query.dao.ProjectInvitationJoinDaoImpl;
 import com.cloud.api.query.dao.ProjectJoinDaoImpl;
 import com.cloud.api.query.dao.ResourceTagJoinDaoImpl;
 import com.cloud.api.query.dao.SecurityGroupJoinDaoImpl;
+import com.cloud.api.query.dao.StoragePoolJoinDaoImpl;
 import com.cloud.api.query.dao.UserAccountJoinDaoImpl;
 import com.cloud.api.query.dao.UserVmJoinDaoImpl;
 import com.cloud.api.query.dao.HostJoinDaoImpl;
@@ -388,6 +389,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("VolumeJoinDao", VolumeJoinDaoImpl.class);
         addDao("AccountJoinDao", AccountJoinDaoImpl.class);
         addDao("AsyncJobJoinDao", AsyncJobJoinDaoImpl.class);
+        addDao("StoragePoolJoinDao", StoragePoolJoinDaoImpl.class);
     }
 
     @Override

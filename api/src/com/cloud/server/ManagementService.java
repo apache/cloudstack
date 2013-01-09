@@ -243,14 +243,6 @@ public interface ManagementService {
      */
     List<? extends DiskOffering> searchForDiskOfferings(ListDiskOfferingsCmd cmd);
 
-    /**
-     * List storage pools that match the given criteria
-     *
-     * @param cmd
-     *            the command that wraps the search criteria (zone, pod, name, IP address, path, and cluster id)
-     * @return a list of storage pools that match the given criteria
-     */
-    Pair<List<? extends StoragePool>, Integer> searchForStoragePools(ListStoragePoolsCmd cmd);
 
     /**
      * List system VMs by the given search criteria

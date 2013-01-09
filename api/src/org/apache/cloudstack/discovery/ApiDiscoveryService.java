@@ -14,34 +14,16 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.query.vo;
+package org.apache.cloudstack.discovery;
 
-public abstract class BaseViewVO {
+import com.cloud.utils.component.Adapter;
+import com.cloud.utils.component.PluggableService;
+import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 
-    public abstract long getId();
+import java.util.Map;
 
-    public abstract void setId(long id);
-
-
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + (int) (getId() ^ (getId() >>> 32));
-        return result;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        BaseViewVO other = (BaseViewVO) obj;
-        if (getId() != other.getId())
-            return false;
-        return true;
-    }
+public interface ApiDiscoveryService extends Adapter, PluggableService {
+    ListResponse<? extends BaseResponse> listApis();
+    Map<String, Class<?>> getApiNameCmdClassMapping();
 }

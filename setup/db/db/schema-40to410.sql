@@ -143,6 +143,8 @@ UPDATE `cloud`.`conditions` set uuid=id WHERE uuid is NULL;
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', '"detail.batch.query.size"', '2000', 'Default entity detail batch query size for listing');
 
 --- DB views for list api ---
+use cloud;
+
 DROP VIEW IF EXISTS `cloud`.`user_vm_view`;
 CREATE VIEW `cloud`.`user_vm_view` AS
 select
@@ -905,3 +907,41 @@ left join conditions on async_job.instance_id = conditions.id
 left join autoscale_policies on async_job.instance_id = autoscale_policies.id
 left join autoscale_vmprofiles on async_job.instance_id = autoscale_vmprofiles.id
 left join autoscale_vmgroups on async_job.instance_id = autoscale_vmgroups.id;
+
+DROP VIEW IF EXISTS `cloud`.`storage_pool_view`;
+CREATE VIEW storage_pool_view AS
+select 
+storage_pool.id,
+storage_pool.uuid,
+storage_pool.name,
+storage_pool.status,
+storage_pool.path,
+storage_pool.pool_type,
+storage_pool.host_address,
+storage_pool.created,
+storage_pool.removed,
+storage_pool.capacity_bytes,
+cluster.id cluster_id,
+cluster.uuid cluster_uuid,
+cluster.name cluster_name,
+cluster.cluster_type,
+data_center.id data_center_id, 
+data_center.uuid data_center_uuid,
+data_center.name data_center_name, 
+host_pod_ref.id pod_id, 
+host_pod_ref.uuid pod_uuid,
+host_pod_ref.name pod_name,
+storage_pool_details.name tag,
+op_host_capacity.used_capacity disk_used_capacity,
+op_host_capacity.reserved_capacity disk_reserved_capacity,
+async_job.id job_id,
+async_job.uuid job_uuid,
+async_job.job_status job_status,
+async_job.account_id job_account_id
+from storage_pool 
+left join cluster on storage_pool.cluster_id = cluster.id
+left join data_center on storage_pool.data_center_id = data_center.id
+left join host_pod_ref on storage_pool.pod_id = host_pod_ref.id
+left join storage_pool_details on storage_pool_details.pool_id = storage_pool.id and storage_pool_details.value = 'true'
+left join op_host_capacity on storage_pool.id = op_host_capacity.host_id and op_host_capacity.capacity_type = 3
+left join async_job on async_job.instance_id = storage_pool.id and async_job.instance_type = "StoragePool" and async_job.job_status = 0;

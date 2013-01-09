@@ -34,6 +34,7 @@ import org.apache.cloudstack.api.response.ProjectInvitationResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
+import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
@@ -51,6 +52,7 @@ import com.cloud.api.query.vo.ProjectInvitationJoinVO;
 import com.cloud.api.query.vo.ProjectJoinVO;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.SecurityGroupJoinVO;
+import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
@@ -237,6 +239,25 @@ public class ViewResponseHelper {
         }
         return new ArrayList<VolumeResponse>(vrDataList.values());
     }
+
+    public static List<StoragePoolResponse> createStoragePoolResponse(StoragePoolJoinVO... pools) {
+        Hashtable<Long, StoragePoolResponse> vrDataList = new Hashtable<Long, StoragePoolResponse>();
+        // Initialise the vrdatalist with the input data
+        for (StoragePoolJoinVO vr : pools) {
+            StoragePoolResponse vrData = vrDataList.get(vr.getId());
+            if ( vrData == null ){
+                // first time encountering this vm
+                vrData = ApiDBUtils.newStoragePoolResponse(vr);
+            }
+            else{
+                // update tags
+                vrData = ApiDBUtils.fillStoragePoolDetails(vrData, vr);
+            }
+            vrDataList.put(vr.getId(), vrData);
+        }
+        return new ArrayList<StoragePoolResponse>(vrDataList.values());
+    }
+
 
     public static List<AccountResponse> createAccountResponse(AccountJoinVO... accounts) {
         List<AccountResponse> respList = new ArrayList<AccountResponse>();

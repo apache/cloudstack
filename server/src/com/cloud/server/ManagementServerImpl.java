@@ -2435,23 +2435,6 @@ public class ManagementServerImpl implements ManagementServer {
         }
     }
 
-    @Override
-    public Pair<List<? extends StoragePool>, Integer> searchForStoragePools(ListStoragePoolsCmd cmd) {
-
-        Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), cmd.getZoneId());
-        Criteria c = new Criteria("id", Boolean.TRUE, cmd.getStartIndex(), cmd.getPageSizeVal());
-        c.addCriteria(Criteria.ID, cmd.getId());
-        c.addCriteria(Criteria.NAME, cmd.getStoragePoolName());
-        c.addCriteria(Criteria.CLUSTERID, cmd.getClusterId());
-        c.addCriteria(Criteria.ADDRESS, cmd.getIpAddress());
-        c.addCriteria(Criteria.KEYWORD, cmd.getKeyword());
-        c.addCriteria(Criteria.PATH, cmd.getPath());
-        c.addCriteria(Criteria.PODID, cmd.getPodId());
-        c.addCriteria(Criteria.DATACENTERID, zoneId);
-
-        Pair<List<StoragePoolVO>, Integer> result = searchForStoragePools(c);
-        return new Pair<List<? extends StoragePool>, Integer>(result.first(), result.second());
-    }
 
     @Override
     public Pair<List<StoragePoolVO>, Integer> searchForStoragePools(Criteria c) {

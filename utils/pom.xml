@@ -147,6 +147,11 @@
         <version>${cs.commons-io.version}</version>
         <scope>provided</scope>
     </dependency>
+    <dependency>
+      <groupId>org.reflections</groupId>
+      <artifactId>reflections</artifactId>
+      <version>${cs.reflections.version}</version>
+    </dependency>
   </dependencies>
   <build>
     <defaultGoal>install</defaultGoal>

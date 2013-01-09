@@ -56,6 +56,9 @@ under the License.
         <adapters key="org.apache.cloudstack.acl.APIAccessChecker">
             <adapter name="StaticRoleBasedAPIAccessChecker" class="org.apache.cloudstack.acl.StaticRoleBasedAPIAccessChecker"/>
         </adapters>
+        <adapters key="org.apache.cloudstack.discovery.ApiDiscoveryService">
+            <adapter name="ApiDiscoveryService" class="org.apache.cloudstack.discovery.ApiDiscoveryServiceImpl"/>
+        </adapters>
         <adapters key="com.cloud.agent.manager.allocator.HostAllocator">
             <adapter name="FirstFitRouting" class="com.cloud.agent.manager.allocator.impl.FirstFitRoutingAllocator"/>
             <!--adapter name="FirstFitRouting" class="com.cloud.agent.manager.allocator.impl.RecreateHostAllocator"/-->
@@ -177,6 +180,7 @@ under the License.
         </adapters>
         <manager name="OvsTunnelManager" key="com.cloud.network.ovs.OvsTunnelManager" class="com.cloud.network.ovs.OvsTunnelManagerImpl"/>
         <manager name="ElasticLoadBalancerManager" key="com.cloud.network.lb.ElasticLoadBalancerManager" class="com.cloud.network.lb.ElasticLoadBalancerManagerImpl"/>
+        <pluggableservice name="ApiDiscoveryService" key="org.apache.cloudstack.discovery.ApiDiscoveryService" class="org.apache.cloudstack.discovery.ApiDiscoveryServiceImpl"/>
         <pluggableservice name="VirtualRouterElementService" key="com.cloud.network.element.VirtualRouterElementService" class="com.cloud.network.element.VirtualRouterElement"/>
         <pluggableservice name="NiciraNvpElementService" key="com.cloud.network.element.NiciraNvpElementService" class="com.cloud.network.element.NiciraNvpElement"/>
         <dao name="OvsTunnelInterfaceDao" class="com.cloud.network.ovs.dao.OvsTunnelInterfaceDaoImpl" singleton="false"/>

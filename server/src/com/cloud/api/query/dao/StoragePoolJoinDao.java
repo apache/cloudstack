@@ -14,34 +14,24 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.query.vo;
+package com.cloud.api.query.dao;
 
-public abstract class BaseViewVO {
+import java.util.List;
 
-    public abstract long getId();
+import org.apache.cloudstack.api.response.StoragePoolResponse;
 
-    public abstract void setId(long id);
+import com.cloud.api.query.vo.StoragePoolJoinVO;
+import com.cloud.storage.StoragePool;
+import com.cloud.utils.db.GenericDao;
 
+public interface StoragePoolJoinDao extends GenericDao<StoragePoolJoinVO, Long> {
 
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + (int) (getId() ^ (getId() >>> 32));
-        return result;
-    }
+    StoragePoolResponse newStoragePoolResponse(StoragePoolJoinVO host);
 
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        BaseViewVO other = (BaseViewVO) obj;
-        if (getId() != other.getId())
-            return false;
-        return true;
-    }
+    StoragePoolResponse setStoragePoolResponse(StoragePoolResponse response, StoragePoolJoinVO host);
+
+    List<StoragePoolJoinVO> newStoragePoolView(StoragePool group);
+
+    List<StoragePoolJoinVO> searchByIds(Long... spIds);
+
 }

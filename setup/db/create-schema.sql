@@ -2541,10 +2541,10 @@ CREATE TABLE `cloud`.`autoscale_vmgroup_policy_map` (
   INDEX `i_autoscale_vmgroup_policy_map__vmgroup_id`(`vmgroup_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-INSERT INTO `cloud`.`counter` (id, source, name, value,created) VALUES (1,'snmp','Linux User CPU - percentage', '1.3.6.1.4.1.2021.11.9.0', now());
-INSERT INTO `cloud`.`counter` (id, source, name, value,created) VALUES (2,'snmp','Linux System CPU - percentage', '1.3.6.1.4.1.2021.11.10.0', now());
-INSERT INTO `cloud`.`counter` (id, source, name, value,created) VALUES (3,'snmp','Linux CPU Idle - percentage', '1.3.6.1.4.1.2021.11.11.0', now());
-INSERT INTO `cloud`.`counter` (id, source, name, value,created) VALUES (100,'netscaler','Response Time - microseconds', 'RESPTIME', now());
+INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (1, UUID(), 'snmp','Linux User CPU - percentage', '1.3.6.1.4.1.2021.11.9.0', now());
+INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (2, UUID(), 'snmp','Linux System CPU - percentage', '1.3.6.1.4.1.2021.11.10.0', now());
+INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (3, UUID(), 'snmp','Linux CPU Idle - percentage', '1.3.6.1.4.1.2021.11.11.0', now());
+INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (100, UUID(), 'netscaler','Response Time - microseconds', 'RESPTIME', now());
 
 SET foreign_key_checks = 1;
 
