@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -453,7 +452,9 @@ public class ManagementServerImpl implements ManagementServer {
 		Map<String, Object> params = new HashMap<String, Object>();
 		for(Adapter adapter : adapters.values()) {
 			try {
-				if(!ComponentContext.isPrimary(adapter, Adapter.class))
+				// we also skip Adapter class that is both a manager class and a adapter class
+				if(!ComponentContext.isPrimary(adapter, Adapter.class) || 
+					Manager.class.isAssignableFrom(ComponentContext.getTargetClass(adapter)))
 					continue;
 				
 				if(!adapter.configure(adapter.getClass().getSimpleName(), params)) {

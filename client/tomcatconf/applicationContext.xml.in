@@ -58,4 +58,6 @@
 
   <bean id="eventBus" class = "org.apache.cloudstack.framework.eventbus.EventBusBase" />
 
+  <bean id="userVmManager" class ="com.cloud.vm.UserVmManagerImpl" />
+
 </beans>

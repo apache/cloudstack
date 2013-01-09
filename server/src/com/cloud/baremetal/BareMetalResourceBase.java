@@ -23,7 +23,6 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
@@ -66,7 +65,6 @@ import com.cloud.utils.script.Script2.ParamType;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 
-@Component
 @Local(value = ServerResource.class)
 public class BareMetalResourceBase implements ServerResource {
 	private static final Logger s_logger = Logger.getLogger(BareMetalResourceBase.class);

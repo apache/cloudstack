@@ -28,8 +28,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-import org.springframework.context.annotation.Primary;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.StopAnswer;
@@ -104,8 +102,6 @@ import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfile.Param;
 
-@Component
-@Primary
 @Local(value={BareMetalVmManager.class, BareMetalVmService.class})
 public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMetalVmManager, BareMetalVmService, Manager,
 		StateListener<State, VirtualMachine.Event, VirtualMachine> {
