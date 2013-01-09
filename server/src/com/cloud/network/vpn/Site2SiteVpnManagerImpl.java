@@ -93,6 +93,7 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
     @Inject VpcDao _vpcDao;
     @Inject IPAddressDao _ipAddressDao;
     @Inject AccountDao _accountDao;
+    @Inject ConfigurationDao _configDao;
     @Inject VpcManager _vpcMgr;
     @Inject AccountManager _accountMgr;
     
@@ -104,9 +105,7 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _name = name;
         
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
-        Map<String, String> configs = configDao.getConfiguration(params);
+        Map<String, String> configs = _configDao.getConfiguration(params);
         _connLimit = NumbersUtil.parseInt(configs.get(Config.Site2SiteVpnConnectionPerVpnGatewayLimit.key()), 4);
         _subnetsLimit = NumbersUtil.parseInt(configs.get(Config.Site2SiteVpnSubnetsPerCustomerGatewayLimit.key()), 10);
         return true;

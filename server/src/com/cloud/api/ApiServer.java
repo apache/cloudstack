@@ -119,7 +119,6 @@ import com.cloud.event.EventUtils;
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
@@ -130,7 +129,7 @@ import com.cloud.user.UserVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ComponentContext;
-import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
@@ -150,6 +149,9 @@ public class ApiServer implements HttpRequestHandler {
     @Inject private final AsyncJobManager _asyncMgr = null;
     @Inject private ConfigurationDao _configDao;
     @Inject protected List<APIAccessChecker> _apiAccessCheckers;
+
+    @Inject List<PluggableService> _pluggableServices;
+    @Inject IdentityDao _identityDao;
 
     private Account _systemAccount = null;
     private User _systemUser = null;
@@ -683,10 +685,8 @@ public class ApiServer implements HttpRequestHandler {
     }
 
     public Long fetchDomainId(String domainUUID){
-        ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
-        IdentityDao identityDao = locator.getDao(IdentityDao.class);
         try{
-            Long domainId = identityDao.getIdentityId("domain", domainUUID);
+            Long domainId = _identityDao.getIdentityId("domain", domainUUID);
             return domainId;
         }catch(InvalidParameterValueException ex){
             return null;

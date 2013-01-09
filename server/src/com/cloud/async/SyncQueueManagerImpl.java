@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -42,8 +43,8 @@ public class SyncQueueManagerImpl implements SyncQueueManager {
     
     private String _name;
     
-    private SyncQueueDao _syncQueueDao;
-    private SyncQueueItemDao _syncQueueItemDao;
+    @Inject private SyncQueueDao _syncQueueDao;
+    @Inject private SyncQueueItemDao _syncQueueItemDao;
 
     @Override
     @DB
@@ -243,20 +244,6 @@ public class SyncQueueManagerImpl implements SyncQueueManager {
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
     	_name = name;
-		ComponentLocator locator = ComponentLocator.getCurrentLocator();
-		
-		_syncQueueDao = locator.getDao(SyncQueueDao.class);
-		if (_syncQueueDao == null) {
-			throw new ConfigurationException("Unable to get "
-					+ SyncQueueDao.class.getName());
-		}
-		
-		_syncQueueItemDao = locator.getDao(SyncQueueItemDao.class);
-		if (_syncQueueItemDao == null) {
-			throw new ConfigurationException("Unable to get "
-					+ SyncQueueDao.class.getName());
-		}
-    	
     	return true;
     }
     

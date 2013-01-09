@@ -33,8 +33,6 @@ import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
 import org.apache.log4j.Logger;
-import org.springframework.context.annotation.Primary;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.StopAnswer;
@@ -84,7 +82,6 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Adapters;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -105,13 +102,11 @@ import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfile.Param;
 
-@Component
-@Primary
 @Local(value={BareMetalVmManager.class, BareMetalVmService.class})
 public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMetalVmManager, BareMetalVmService, Manager,
 		StateListener<State, VirtualMachine.Event, VirtualMachine> {
 	private static final Logger s_logger = Logger.getLogger(BareMetalVmManagerImpl.class); 
-	private ConfigurationDao _configDao;
+	@Inject ConfigurationDao _configDao;
 	@Inject PxeServerManager _pxeMgr;
 	@Inject ResourceManager _resourceMgr;
 	
@@ -443,12 +438,6 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
 	@Override
 	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
 		_name = name;
-
-		ComponentLocator locator = ComponentLocator.getCurrentLocator();
-		_configDao = locator.getDao(ConfigurationDao.class);
-		if (_configDao == null) {
-			throw new ConfigurationException("Unable to get the configuration dao.");
-		}
 
 		Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
 

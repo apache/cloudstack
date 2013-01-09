@@ -24,7 +24,6 @@ import com.cloud.utils.db.GenericDao;
 
 @Component
 public class ComponentLocator {
-
     public static ComponentLocator getCurrentLocator() {
     	return ComponentContext.getCompanent(ComponentLocator.class);
     }

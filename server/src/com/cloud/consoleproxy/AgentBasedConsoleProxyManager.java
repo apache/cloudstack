@@ -87,6 +87,9 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
     VirtualMachineManager _itMgr;
     @Inject
     protected ConsoleProxyDao _cpDao;
+    
+    @Inject ConfigurationDao _configDao;
+    
     public int getVncPort(VMInstanceVO vm) {
         if (vm.getHostId() == null) {
             return -1;
@@ -104,13 +107,7 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
 
         _name = name;
 
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
-        if (configDao == null) {
-            throw new ConfigurationException("Unable to get the configuration dao.");
-        }
-
-        Map<String, String> configs = configDao.getConfiguration("management-server", params);
+        Map<String, String> configs = _configDao.getConfiguration("management-server", params);
         String value = configs.get("consoleproxy.url.port");
         if (value != null) {
             _consoleProxyUrlPort = NumbersUtil.parseInt(value, ConsoleProxyManager.DEFAULT_PROXY_URL_PORT);

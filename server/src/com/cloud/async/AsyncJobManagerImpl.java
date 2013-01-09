@@ -32,6 +32,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
@@ -87,12 +88,13 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
     
     private String _name;
     
-    private AsyncJobExecutorContext _context;
-    private SyncQueueManager _queueMgr;
-    private ClusterManager _clusterMgr;
-    private AccountManager _accountMgr;
-    private AccountDao _accountDao;
-    private AsyncJobDao _jobDao;
+    @Inject private AsyncJobExecutorContext _context;
+    @Inject private SyncQueueManager _queueMgr;
+    @Inject private ClusterManager _clusterMgr;
+    @Inject private AccountManager _accountMgr;
+    @Inject private AccountDao _accountDao;
+    @Inject private AsyncJobDao _jobDao;
+    @Inject private ConfigurationDao _configDao;
     private long _jobExpireSeconds = 86400;						// 1 day
     private long _jobCancelThresholdSeconds = 3600;         // 1 hour (for cancelling the jobs blocking other jobs)
     
@@ -697,46 +699,13 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
     	_name = name;
     
-		ComponentLocator locator = ComponentLocator.getCurrentLocator();
-		
-		ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
-		if (configDao == null) {
-			throw new ConfigurationException("Unable to get the configuration dao.");
-		}
-
 		int expireMinutes = NumbersUtil.parseInt(
-		       configDao.getValue(Config.JobExpireMinutes.key()), 24*60);
+		       _configDao.getValue(Config.JobExpireMinutes.key()), 24*60);
 		_jobExpireSeconds = (long)expireMinutes*60;
 		
 		_jobCancelThresholdSeconds = NumbersUtil.parseInt(
-		       configDao.getValue(Config.JobCancelThresholdMinutes.key()), 60);
+		       _configDao.getValue(Config.JobCancelThresholdMinutes.key()), 60);
 		_jobCancelThresholdSeconds *= 60;
-
-		_accountDao = locator.getDao(AccountDao.class);
-		if (_accountDao == null) {
-            throw new ConfigurationException("Unable to get " + AccountDao.class.getName());
-		}
-		_jobDao = locator.getDao(AsyncJobDao.class);
-		if (_jobDao == null) {
-			throw new ConfigurationException("Unable to get "
-					+ AsyncJobDao.class.getName());
-		}
-		
-		_context = 	locator.getManager(AsyncJobExecutorContext.class);
-		if (_context == null) {
-			throw new ConfigurationException("Unable to get "
-					+ AsyncJobExecutorContext.class.getName());
-		}
-		
-		_queueMgr = locator.getManager(SyncQueueManager.class);
-		if(_queueMgr == null) {
-			throw new ConfigurationException("Unable to get "
-					+ SyncQueueManager.class.getName());
-		}
-		
-		_clusterMgr = locator.getManager(ClusterManager.class);
-		
-		_accountMgr = locator.getManager(AccountManager.class);
 
 		_dispatcher = ApiDispatcher.getInstance();
 		

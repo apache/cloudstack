@@ -32,6 +32,7 @@ import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntityImpl;
 import org.apache.cloudstack.engine.cloud.entity.api.VMEntityManager;
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import org.apache.cloudstack.engine.service.api.OrchestrationService;
+import org.springframework.stereotype.Component;
 
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.InsufficientCapacityException;
@@ -49,7 +50,7 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.VMInstanceDao;
 
 
-
+@Component
 public class CloudOrchestrator implements OrchestrationService {
 
 	@Inject

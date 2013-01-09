@@ -19,6 +19,7 @@ package com.cloud.alert;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -41,11 +42,11 @@ public class ConsoleProxyAlertAdapter implements AlertAdapter {
 	
 	private static final Logger s_logger = Logger.getLogger(ConsoleProxyAlertAdapter.class);
 	
-	private AlertManager _alertMgr;
+	@Inject private AlertManager _alertMgr;
     private String _name;
     
-	private DataCenterDao _dcDao;
-	private ConsoleProxyDao _consoleProxyDao;
+	@Inject private DataCenterDao _dcDao;
+	@Inject private ConsoleProxyDao _consoleProxyDao;
     
     public void onProxyAlert(Object sender, ConsoleProxyAlertEventArgs args) {
     	if(s_logger.isDebugEnabled())
@@ -187,23 +188,6 @@ public class ConsoleProxyAlertAdapter implements AlertAdapter {
 		if (s_logger.isInfoEnabled())
 			s_logger.info("Start configuring console proxy alert manager : " + name);
 
-		ComponentLocator locator = ComponentLocator.getCurrentLocator();
-
-		_dcDao = locator.getDao(DataCenterDao.class);
-		if (_dcDao == null) {
-			throw new ConfigurationException("Unable to get " + DataCenterDao.class.getName());
-		}
-		
-		_consoleProxyDao = locator.getDao(ConsoleProxyDao.class);
-		if (_consoleProxyDao == null) {
-			throw new ConfigurationException("Unable to get " + ConsoleProxyDao.class.getName());
-		}
-		
-		_alertMgr = locator.getManager(AlertManager.class);
-		if (_alertMgr == null) {
-			throw new ConfigurationException("Unable to get " + AlertManager.class.getName());
-		}
-		
 		try {
 			SubscriptionMgr.getInstance().subscribe(ConsoleProxyManager.ALERT_SUBJECT, this, "onProxyAlert");
 		} catch (SecurityException e) {

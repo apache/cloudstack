@@ -40,6 +40,7 @@ public class StaticConsoleProxyManager extends AgentBasedConsoleProxyManager imp
     String _ip = null;
     @Inject ConsoleProxyDao _proxyDao;
     @Inject ResourceManager _resourceMgr;
+    @Inject ConfigurationDao _configDao;
     
     @Override
     protected HostVO findHost(VMInstanceVO vm) {
@@ -58,10 +59,7 @@ public class StaticConsoleProxyManager extends AgentBasedConsoleProxyManager imp
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
         
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        
-        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
-        Map<String, String> dbParams = configDao.getConfiguration("ManagementServer", params);
+        Map<String, String> dbParams = _configDao.getConfiguration("ManagementServer", params);
         
         _ip = dbParams.get("public.ip");
         if (_ip == null) {

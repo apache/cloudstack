@@ -127,10 +127,11 @@ public class ClusterManagerImpl implements ClusterManager {
     @Inject
     private List<ClusterServiceAdapter> _serviceAdapters;
 
-    private ManagementServerHostDao _mshostDao;
-    private ManagementServerHostPeerDao _mshostPeerDao;
-    private HostDao _hostDao;
-    private HostTransferMapDao _hostTransferDao;
+    @Inject private ManagementServerHostDao _mshostDao;
+    @Inject private ManagementServerHostPeerDao _mshostPeerDao;
+    @Inject private HostDao _hostDao;
+    @Inject private HostTransferMapDao _hostTransferDao;
+    @Inject private ConfigurationDao _configDao;
 
     //
     // pay attention to _mshostId and _msid
@@ -1257,38 +1258,7 @@ public class ClusterManagerImpl implements ClusterManager {
         }
         _name = name;
 
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        _agentMgr = locator.getManager(AgentManager.class);
-        if (_agentMgr == null) {
-            throw new ConfigurationException("Unable to get " + AgentManager.class.getName());
-        }
-
-        _mshostDao = locator.getDao(ManagementServerHostDao.class);
-        if (_mshostDao == null) {
-            throw new ConfigurationException("Unable to get " + ManagementServerHostDao.class.getName());
-        }
-        
-        _mshostPeerDao = locator.getDao(ManagementServerHostPeerDao.class);
-        if (_mshostPeerDao == null) {
-            throw new ConfigurationException("Unable to get " + ManagementServerHostPeerDao.class.getName());
-        }
-        
-        _hostDao = locator.getDao(HostDao.class);
-        if (_hostDao == null) {
-            throw new ConfigurationException("Unable to get " + HostDao.class.getName());
-        }
-
-        _hostTransferDao = locator.getDao(HostTransferMapDao.class);
-        if (_hostTransferDao == null) {
-            throw new ConfigurationException("Unable to get agent transfer map dao");
-        }
-
-        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
-        if (configDao == null) {
-            throw new ConfigurationException("Unable to get the configuration dao.");
-        }
-
-        Map<String, String> configs = configDao.getConfiguration("management-server", params);
+        Map<String, String> configs = _configDao.getConfiguration("management-server", params);
 
         String value = configs.get("cluster.heartbeat.interval");
         if (value != null) {
@@ -1338,7 +1308,7 @@ public class ClusterManagerImpl implements ClusterManager {
             throw new ConfigurationException("Unable to set current cluster service adapter");
         }
 
-        _agentLBEnabled = Boolean.valueOf(configDao.getValue(Config.AgentLbEnable.key()));
+        _agentLBEnabled = Boolean.valueOf(_configDao.getValue(Config.AgentLbEnable.key()));
         
         String connectedAgentsThreshold = configs.get("agent.load.threshold");
         

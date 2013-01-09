@@ -114,8 +114,7 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
     private String _instance;
 
     @Inject AgentManager _agentMgr;
-    @Inject
-    protected NetworkManager _netMgr;
+    @Inject NetworkManager _netMgr;
     @Inject HostDao _hostDao;
     @Inject ClusterDao _clusterDao;
     @Inject ClusterDetailsDao _clusterDetailsDao;
@@ -125,8 +124,8 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
     @Inject SecondaryStorageVmManager _ssvmMgr;
     @Inject CiscoNexusVSMDeviceDao _nexusDao;
     @Inject ClusterVSMMapDao _vsmMapDao;
-    
-    ConfigurationServer _configServer;
+    @Inject ConfigurationDao _configDao;
+    @Inject ConfigurationServer _configServer;
 
     String _mountParent;
     StorageLayer _storage;
@@ -174,24 +173,18 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
 
         _name = name;
 
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
-        if (configDao == null) {
-            throw new ConfigurationException("Unable to get the configuration dao.");
-        }
-
-        if(!configDao.isPremium()) {
+        if(!_configDao.isPremium()) {
             s_logger.error("Vmware component can only run under premium distribution");
             throw new ConfigurationException("Vmware component can only run under premium distribution");
         }
 
-        _instance = configDao.getValue(Config.InstanceName.key());
+        _instance = _configDao.getValue(Config.InstanceName.key());
         if (_instance == null) {
             _instance = "DEFAULT";
         }
         s_logger.info("VmwareManagerImpl config - instance.name: " + _instance);
 
-        _mountParent = configDao.getValue(Config.MountParent.key());
+        _mountParent = _configDao.getValue(Config.MountParent.key());
         if (_mountParent == null) {
             _mountParent = File.separator + "mnt";
         }
@@ -220,7 +213,7 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
             }
         }
         
-        value = configDao.getValue(Config.VmwareUseNexusVSwitch.key());
+        value = _configDao.getValue(Config.VmwareUseNexusVSwitch.key());
         if(value == null) {
         	_nexusVSwitchActive = false;
         }
@@ -229,7 +222,7 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
         	_nexusVSwitchActive = Boolean.parseBoolean(value);
         }
 
-        _privateNetworkVSwitchName = configDao.getValue(Config.VmwarePrivateNetworkVSwitch.key());
+        _privateNetworkVSwitchName = _configDao.getValue(Config.VmwarePrivateNetworkVSwitch.key());
 
         if (_privateNetworkVSwitchName == null) {
             if (_nexusVSwitchActive) {
@@ -239,7 +232,7 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
             }
         }
 
-        _publicNetworkVSwitchName = configDao.getValue(Config.VmwarePublicNetworkVSwitch.key());
+        _publicNetworkVSwitchName = _configDao.getValue(Config.VmwarePublicNetworkVSwitch.key());
 
         if (_publicNetworkVSwitchName == null) {
             if (_nexusVSwitchActive) {
@@ -249,7 +242,7 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
             }
         }
 
-        _guestNetworkVSwitchName = configDao.getValue(Config.VmwareGuestNetworkVSwitch.key());
+        _guestNetworkVSwitchName = _configDao.getValue(Config.VmwareGuestNetworkVSwitch.key());
 
         if (_guestNetworkVSwitchName == null) {
             if (_nexusVSwitchActive) {
@@ -259,69 +252,66 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
             }
         }
 
-        _serviceConsoleName = configDao.getValue(Config.VmwareServiceConsole.key());
+        _serviceConsoleName = _configDao.getValue(Config.VmwareServiceConsole.key());
         if(_serviceConsoleName == null) {
             _serviceConsoleName = "Service Console";
         }
         
-        _managemetPortGroupName = configDao.getValue(Config.VmwareManagementPortGroup.key());
+        _managemetPortGroupName = _configDao.getValue(Config.VmwareManagementPortGroup.key());
         if(_managemetPortGroupName == null) {
         	_managemetPortGroupName = "Management Network";
         }
         
-        _defaultSystemVmNicAdapterType = configDao.getValue(Config.VmwareSystemVmNicDeviceType.key());
+        _defaultSystemVmNicAdapterType = _configDao.getValue(Config.VmwareSystemVmNicDeviceType.key());
         if(_defaultSystemVmNicAdapterType == null)
             _defaultSystemVmNicAdapterType = VirtualEthernetCardType.E1000.toString();
         
-        _additionalPortRangeStart = NumbersUtil.parseInt(configDao.getValue(Config.VmwareAdditionalVncPortRangeStart.key()), 59000);
+        _additionalPortRangeStart = NumbersUtil.parseInt(_configDao.getValue(Config.VmwareAdditionalVncPortRangeStart.key()), 59000);
         if(_additionalPortRangeStart > 65535) {
         	s_logger.warn("Invalid port range start port (" + _additionalPortRangeStart + ") for additional VNC port allocation, reset it to default start port 59000");
         	_additionalPortRangeStart = 59000;
         }
         
-        _additionalPortRangeSize = NumbersUtil.parseInt(configDao.getValue(Config.VmwareAdditionalVncPortRangeSize.key()), 1000);
+        _additionalPortRangeSize = NumbersUtil.parseInt(_configDao.getValue(Config.VmwareAdditionalVncPortRangeSize.key()), 1000);
         if(_additionalPortRangeSize < 0 || _additionalPortRangeStart + _additionalPortRangeSize > 65535) {
         	s_logger.warn("Invalid port range size (" + _additionalPortRangeSize + " for range starts at " + _additionalPortRangeStart);
         	_additionalPortRangeSize = Math.min(1000, 65535 - _additionalPortRangeStart);
         }
         
-        _routerExtraPublicNics = NumbersUtil.parseInt(configDao.getValue(Config.RouterExtraPublicNics.key()), 2);
+        _routerExtraPublicNics = NumbersUtil.parseInt(_configDao.getValue(Config.RouterExtraPublicNics.key()), 2);
         
-        _maxHostsPerCluster = NumbersUtil.parseInt(configDao.getValue(Config.VmwarePerClusterHostMax.key()), VmwareManager.MAX_HOSTS_PER_CLUSTER);
-        _cpuOverprovisioningFactor = configDao.getValue(Config.CPUOverprovisioningFactor.key());
+        _maxHostsPerCluster = NumbersUtil.parseInt(_configDao.getValue(Config.VmwarePerClusterHostMax.key()), VmwareManager.MAX_HOSTS_PER_CLUSTER);
+        _cpuOverprovisioningFactor = _configDao.getValue(Config.CPUOverprovisioningFactor.key());
         if(_cpuOverprovisioningFactor == null || _cpuOverprovisioningFactor.isEmpty())
         	_cpuOverprovisioningFactor = "1";
 
-        _memOverprovisioningFactor = configDao.getValue(Config.MemOverprovisioningFactor.key());
+        _memOverprovisioningFactor = _configDao.getValue(Config.MemOverprovisioningFactor.key());
         if(_memOverprovisioningFactor == null || _memOverprovisioningFactor.isEmpty())
         	_memOverprovisioningFactor = "1";
         
-        _reserveCpu = configDao.getValue(Config.VmwareReserveCpu.key());
+        _reserveCpu = _configDao.getValue(Config.VmwareReserveCpu.key());
         if(_reserveCpu == null || _reserveCpu.isEmpty())
         	_reserveCpu = "false";
-        _reserveMem = configDao.getValue(Config.VmwareReserveMem.key());
+        _reserveMem = _configDao.getValue(Config.VmwareReserveMem.key());
         if(_reserveMem == null || _reserveMem.isEmpty())
         	_reserveMem = "false";
         
-        _recycleHungWorker = configDao.getValue(Config.VmwareRecycleHungWorker.key());
+        _recycleHungWorker = _configDao.getValue(Config.VmwareRecycleHungWorker.key());
         if(_recycleHungWorker == null || _recycleHungWorker.isEmpty())
             _recycleHungWorker = "false";
         
-        _rootDiskController = configDao.getValue(Config.VmwareRootDiskControllerType.key());
+        _rootDiskController = _configDao.getValue(Config.VmwareRootDiskControllerType.key());
         if(_rootDiskController == null || _rootDiskController.isEmpty())
         	_rootDiskController = DiskControllerType.ide.toString();
         
     	s_logger.info("Additional VNC port allocation range is settled at " + _additionalPortRangeStart + " to " + (_additionalPortRangeStart + _additionalPortRangeSize));
 
-        value = configDao.getValue("vmware.host.scan.interval");
+        value = _configDao.getValue("vmware.host.scan.interval");
         _hostScanInterval = NumbersUtil.parseLong(value, DEFAULT_HOST_SCAN_INTERVAL);
         s_logger.info("VmwareManagerImpl config - vmware.host.scan.interval: " + _hostScanInterval);
 
         ((VmwareStorageManagerImpl)_storageMgr).configure(params);
 
-        if(_configServer == null)
-            _configServer = (ConfigurationServer)ComponentLocator.getComponent(ConfigurationServer.Name);
-        
         _agentMgr.registerForHostEvents(this, true, true, true);
 
         s_logger.info("VmwareManagerImpl has been successfully configured");

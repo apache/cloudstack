@@ -122,6 +122,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     
     @Inject
     protected AgentManager _agentMgr;
+    @Inject ConfigurationDao _configDao;
 
     protected ClusteredAgentManagerImpl() {
         super();
@@ -135,8 +136,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         
         s_logger.info("Configuring ClusterAgentManagerImpl. management server node id(msid): " + _nodeId);
 
-        ConfigurationDao configDao = ComponentLocator.getCurrentLocator().getDao(ConfigurationDao.class);
-        Map<String, String> params = configDao.getConfiguration(xmlParams);
+        Map<String, String> params = _configDao.getConfiguration(xmlParams);
         String value = params.get(Config.DirectAgentLoadSize.key());
         _loadSize = NumbersUtil.parseInt(value, 16);
 

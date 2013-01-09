@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -35,7 +36,6 @@ import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.PropertiesUtil;
-import com.cloud.utils.component.ComponentLocator;
 
 @Component
 @Local(value={ClusterServiceAdapter.class})
@@ -45,11 +45,11 @@ public class ClusterServiceServletAdapter implements ClusterServiceAdapter {
     private static final int DEFAULT_SERVICE_PORT = 9090;
     private static final int DEFAULT_REQUEST_TIMEOUT = 300;			// 300 seconds
     
-    private ClusterManager _manager;
+    @Inject private ClusterManager _manager;
     
-    private ManagementServerHostDao _mshostDao;
+    @Inject private ManagementServerHostDao _mshostDao;
     
-    private ConfigurationDao _configDao;
+    @Inject private ConfigurationDao _configDao;
     
     private ClusterServiceServletContainer _servletContainer;
     
@@ -134,23 +134,6 @@ public class ClusterServiceServletAdapter implements ClusterServiceAdapter {
     	if(_mshostDao != null)
     		return;
     	
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        
-        _manager = locator.getManager(ClusterManager.class);
-        if(_manager == null) 
-            throw new ConfigurationException("Unable to get " + ClusterManager.class.getName());
-
-        _mshostDao = locator.getDao(ManagementServerHostDao.class);
-        if(_mshostDao == null)
-            throw new ConfigurationException("Unable to get " + ManagementServerHostDao.class.getName());
-
-        if(_mshostDao == null)
-            throw new ConfigurationException("Unable to get " + ManagementServerHostDao.class.getName());
-
-        _configDao = locator.getDao(ConfigurationDao.class);
-        if(_configDao == null)
-            throw new ConfigurationException("Unable to get " + ConfigurationDao.class.getName());
-
         String value = _configDao.getValue(Config.ClusterMessageTimeOutSeconds.key());
     	_clusterRequestTimeoutSeconds = NumbersUtil.parseInt(value, DEFAULT_REQUEST_TIMEOUT);
     	s_logger.info("Configure cluster request time out. timeout: " + _clusterRequestTimeoutSeconds + " seconds");

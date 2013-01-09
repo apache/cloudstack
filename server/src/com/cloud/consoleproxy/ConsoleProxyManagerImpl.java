@@ -1452,13 +1452,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
         _name = name;
 
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
-        if (configDao == null) {
-            throw new ConfigurationException("Unable to get the configuration dao.");
-        }
-
-        Map<String, String> configs = configDao.getConfiguration("management-server", params);
+        Map<String, String> configs = _configDao.getConfiguration("management-server", params);
 
         String value = configs.get(Config.ConsoleProxyCmdPort.key());
         value = configs.get("consoleproxy.sslEnabled");
@@ -1505,7 +1499,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
         prepareDefaultCertificate();
 
-        Map<String, String> agentMgrConfigs = configDao.getConfiguration("AgentManager", params);
+        Map<String, String> agentMgrConfigs = _configDao.getConfiguration("AgentManager", params);
         _mgmt_host = agentMgrConfigs.get("host");
         if (_mgmt_host == null) {
             s_logger.warn("Critical warning! Please configure your management server host address right after you have started your management server and then restart it, otherwise you won't be able to do console access");

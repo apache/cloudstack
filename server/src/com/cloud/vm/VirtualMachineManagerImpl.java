@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -141,8 +140,6 @@ import com.cloud.utils.Journal;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.component.Adapters;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
@@ -239,6 +236,9 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     @Inject
     protected ResourceManager _resourceMgr;
 
+    @Inject
+    protected ConfigurationDao _configDao;
+    
     Map<VirtualMachine.Type, VirtualMachineGuru<? extends VMInstanceVO>> _vmGurus = new HashMap<VirtualMachine.Type, VirtualMachineGuru<? extends VMInstanceVO>>();
     protected StateMachine2<State, VirtualMachine.Event, VirtualMachine> _stateMachine;
 
@@ -428,9 +428,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     public boolean configure(String name, Map<String, Object> xmlParams) throws ConfigurationException {
         _name = name;
 
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
-        Map<String, String> params = configDao.getConfiguration(xmlParams);
+        Map<String, String> params = _configDao.getConfiguration(xmlParams);
 
         _retry = NumbersUtil.parseInt(params.get(Config.StartRetry.key()), 10);
 

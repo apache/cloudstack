@@ -793,27 +793,21 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 
         _name = name;
 
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
-        if (configDao == null) {
-            throw new ConfigurationException("Unable to get the configuration dao.");
-        }
-
-        Map<String, String> configs = configDao.getConfiguration("management-server", params);
+        Map<String, String> configs = _configDao.getConfiguration("management-server", params);
         
         _secStorageVmMtuSize = NumbersUtil.parseInt(configs.get("secstorage.vm.mtu.size"), DEFAULT_SS_VM_MTUSIZE);
-        String useServiceVM = configDao.getValue("secondary.storage.vm");
+        String useServiceVM = _configDao.getValue("secondary.storage.vm");
         boolean _useServiceVM = false;
         if ("true".equalsIgnoreCase(useServiceVM)) {
             _useServiceVM = true;
         }
 
-        String sslcopy = configDao.getValue("secstorage.encrypt.copy");
+        String sslcopy = _configDao.getValue("secstorage.encrypt.copy");
         if ("true".equalsIgnoreCase(sslcopy)) {
             _useSSlCopy = true;
         }
 
-        _allowedInternalSites = configDao.getValue("secstorage.allowed.internal.sites");
+        _allowedInternalSites = _configDao.getValue("secstorage.allowed.internal.sites");
 
         String value = configs.get("secstorage.capacityscan.interval");
         _capacityScanInterval = NumbersUtil.parseLong(value, DEFAULT_CAPACITY_SCAN_INTERVAL);
@@ -823,7 +817,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
             _instance = "DEFAULT";
         }
 
-        Map<String, String> agentMgrConfigs = configDao.getConfiguration("AgentManager", params);
+        Map<String, String> agentMgrConfigs = _configDao.getConfiguration("AgentManager", params);
         _mgmt_host = agentMgrConfigs.get("host");
         if (_mgmt_host == null) {
             s_logger.warn("Critical warning! Please configure your management server host address right after you have started your management server and then restart it, otherwise you won't have access to secondary storage");

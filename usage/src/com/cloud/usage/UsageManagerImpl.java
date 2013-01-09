@@ -124,7 +124,7 @@ public class UsageManagerImpl implements UsageManager, Runnable {
     private Future m_heartbeat = null;
     private Future m_sanity = null;
 
-    protected UsageManagerImpl() {
+    public UsageManagerImpl() {
     }
 
     private void mergeConfigs(Map<String, String> dbParams, Map<String, Object> xmlParams) {

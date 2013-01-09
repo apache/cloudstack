@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -44,8 +45,8 @@ import com.cloud.vm.VirtualMachineProfile;
 public class RandomAllocator implements HostAllocator {
     private static final Logger s_logger = Logger.getLogger(RandomAllocator.class);
     private String _name;
-    private HostDao _hostDao;
-    private ResourceManager _resourceMgr;
+    @Inject private HostDao _hostDao;
+    @Inject private ResourceManager _resourceMgr;
 
     @Override
     public List<Host> allocateTo(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, Type type,
@@ -119,13 +120,6 @@ public class RandomAllocator implements HostAllocator {
 
     @Override
     public boolean configure(String name, Map<String, Object> params) {
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        _hostDao = locator.getDao(HostDao.class);
-        _resourceMgr = locator.getManager(ResourceManager.class);
-        if (_hostDao == null) {
-            s_logger.error("Unable to get host dao.");
-            return false;
-        }
         _name=name;
         
         return true;

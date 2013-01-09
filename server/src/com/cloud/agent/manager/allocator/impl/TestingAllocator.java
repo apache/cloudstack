@@ -21,10 +21,12 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.manager.allocator.HostAllocator;
+import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.host.Host;
@@ -38,7 +40,7 @@ import com.cloud.vm.VirtualMachineProfile;
 @Component
 @Local(value={HostAllocator.class})
 public class TestingAllocator implements HostAllocator {
-    HostDao _hostDao;
+    @Inject HostDao _hostDao;
     Long _computingHost;
     Long _storageHost;
     Long _routingHost;
@@ -80,9 +82,6 @@ public class TestingAllocator implements HostAllocator {
 
         value = (String)params.get(Host.Type.Storage.toString());
         _storageHost = (value != null) ? Long.parseLong(value) : null;
-        
-        ComponentLocator _locator = ComponentLocator.getCurrentLocator();
-        _hostDao = _locator.getDao(HostDao.class);
         
         _name = name;
         

@@ -162,6 +162,9 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
     @Inject
     ResourceTagDao _resourceTagDao;
     
+    @Inject
+    ManagementServer _msServer;
+    
     ScheduledExecutorService _executorPool;
     ScheduledExecutorService _cleanupExecutor;
 
@@ -861,8 +864,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         _answerListener = new SecurityGroupListener(this, _agentMgr, _workDao);
         _agentMgr.registerForHostEvents(_answerListener, true, true, true);
 
-
-        _serverId = ((ManagementServer) ComponentLocator.getComponent(ManagementServer.Name)).getId();
+        _serverId = _msServer.getId();
 
         s_logger.info("SecurityGroupManager: num worker threads=" + _numWorkerThreads + 
                        ", time between cleanups=" + _timeBetweenCleanups + " global lock timeout=" + _globalWorkLockTimeout);

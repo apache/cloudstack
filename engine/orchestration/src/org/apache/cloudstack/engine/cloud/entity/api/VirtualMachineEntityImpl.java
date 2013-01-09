@@ -5,15 +5,18 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import javax.inject.Inject;
+
 
 
 import org.apache.cloudstack.engine.cloud.entity.api.db.VMEntityVO;
+
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 
 public class VirtualMachineEntityImpl implements VirtualMachineEntity {
 	
-	private VMEntityManager manager;
+	@Inject private VMEntityManager manager;
 
 	private VMEntityVO vmEntityVO;
 	

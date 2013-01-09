@@ -248,9 +248,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             throw new ConfigurationException("Unable to find the system user using " + User.UID_SYSTEM);
         }
 
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
-        Map<String, String> configs = configDao.getConfiguration(params);
+        Map<String, String> configs = _configDao.getConfiguration(params);
 
         String loginAttempts = configs.get(Config.IncorrectLoginAttemptsAllowed.key());
         _allowedLoginAttempts = NumbersUtil.parseInt(loginAttempts, 5);

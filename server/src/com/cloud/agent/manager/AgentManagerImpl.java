@@ -231,13 +231,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         _name = name;
 
-        final ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
-        if (configDao == null) {
-            throw new ConfigurationException("Unable to get the configuration dao.");
-        }
-
-        final Map<String, String> configs = configDao.getConfiguration("AgentManager", params);
+        final Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
         _port = NumbersUtil.parseInt(configs.get("port"), 8250);
         final int workers = NumbersUtil.parseInt(configs.get("workers"), 5);
 

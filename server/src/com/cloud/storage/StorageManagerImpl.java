@@ -329,6 +329,8 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
     protected ResourceTagDao _resourceTagDao;
     @Inject
     protected List<StoragePoolAllocator> _storagePoolAllocators;
+    @Inject ConfigurationDao _configDao;
+    @Inject ManagementServer _msServer;
 
     // TODO : we don't have any instantiated pool discover, disable injection temporarily
     // @Inject
@@ -941,15 +943,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _name = name;
 
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
-
-        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
-        if (configDao == null) {
-            s_logger.error("Unable to get the configuration dao.");
-            return false;
-        }
-
-        Map<String, String> configs = configDao.getConfiguration("management-server", params);
+        Map<String, String> configs = _configDao.getConfiguration("management-server", params);
 
         String overProvisioningFactorStr = configs.get("storage.overprovisioning.factor");
         if (overProvisioningFactorStr != null) {
@@ -967,27 +961,27 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         String storageCleanupEnabled = configs.get("storage.cleanup.enabled");
         _storageCleanupEnabled = (storageCleanupEnabled == null) ? true : Boolean.parseBoolean(storageCleanupEnabled);
 
-        String value = configDao.getValue(Config.CreateVolumeFromSnapshotWait.toString());
+        String value = _configDao.getValue(Config.CreateVolumeFromSnapshotWait.toString());
         _createVolumeFromSnapshotWait = NumbersUtil.parseInt(value, Integer.parseInt(Config.CreateVolumeFromSnapshotWait.getDefaultValue()));
 
-        value = configDao.getValue(Config.CopyVolumeWait.toString());
+        value = _configDao.getValue(Config.CopyVolumeWait.toString());
         _copyvolumewait = NumbersUtil.parseInt(value, Integer.parseInt(Config.CopyVolumeWait.getDefaultValue()));
 
-        value = configDao.getValue(Config.RecreateSystemVmEnabled.key());
+        value = _configDao.getValue(Config.RecreateSystemVmEnabled.key());
         _recreateSystemVmEnabled = Boolean.parseBoolean(value);
         
-        value = configDao.getValue(Config.StorageTemplateCleanupEnabled.key());
+        value = _configDao.getValue(Config.StorageTemplateCleanupEnabled.key());
         _templateCleanupEnabled = (value == null ? true : Boolean.parseBoolean(value));
 
         String time = configs.get("storage.cleanup.interval");
         _storageCleanupInterval = NumbersUtil.parseInt(time, 86400);
 
-        String storageUsedThreshold = configDao.getValue(Config.StorageCapacityDisableThreshold.key());
+        String storageUsedThreshold = _configDao.getValue(Config.StorageCapacityDisableThreshold.key());
         if (storageUsedThreshold != null) {
             _storageUsedThreshold = Double.parseDouble(storageUsedThreshold);
         }
 
-        String storageAllocatedThreshold = configDao.getValue(Config.StorageAllocatedCapacityDisableThreshold.key());
+        String storageAllocatedThreshold = _configDao.getValue(Config.StorageAllocatedCapacityDisableThreshold.key());
         if (storageAllocatedThreshold != null) {
             _storageAllocatedThreshold = Double.parseDouble(storageAllocatedThreshold);
         }
@@ -1003,13 +997,13 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
 
         _agentMgr.registerForHostEvents(ComponentLocator.inject(LocalStoragePoolListener.class), true, false, false);
 
-        String maxVolumeSizeInGbString = configDao.getValue("storage.max.volume.size");
+        String maxVolumeSizeInGbString = _configDao.getValue("storage.max.volume.size");
         _maxVolumeSizeInGb = NumbersUtil.parseLong(maxVolumeSizeInGbString, 2000);
 
-        String _customDiskOfferingMinSizeStr = configDao.getValue(Config.CustomDiskOfferingMinSize.toString());
+        String _customDiskOfferingMinSizeStr = _configDao.getValue(Config.CustomDiskOfferingMinSize.toString());
         _customDiskOfferingMinSize = NumbersUtil.parseInt(_customDiskOfferingMinSizeStr, Integer.parseInt(Config.CustomDiskOfferingMinSize.getDefaultValue()));
 
-        String _customDiskOfferingMaxSizeStr = configDao.getValue(Config.CustomDiskOfferingMaxSize.toString());
+        String _customDiskOfferingMaxSizeStr = _configDao.getValue(Config.CustomDiskOfferingMaxSize.toString());
         _customDiskOfferingMaxSize = NumbersUtil.parseInt(_customDiskOfferingMaxSizeStr, Integer.parseInt(Config.CustomDiskOfferingMaxSize.getDefaultValue()));
 
         HostTemplateStatesSearch = _vmTemplateHostDao.createSearchBuilder();
@@ -1023,7 +1017,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         HostSearch.done();
         HostTemplateStatesSearch.done();
 
-        _serverId = ((ManagementServer) ComponentLocator.getComponent(ManagementServer.Name)).getId();
+        _serverId = _msServer.getId();
 
         UpHostsInPoolSearch = _storagePoolHostDao.createSearchBuilder(Long.class);
         UpHostsInPoolSearch.selectField(UpHostsInPoolSearch.entity().getHostId());

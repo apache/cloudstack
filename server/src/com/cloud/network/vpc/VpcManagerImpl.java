@@ -207,9 +207,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
                 
         txn.commit();
         
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
-        Map<String, String> configs = configDao.getConfiguration(params);
+        Map<String, String> configs = _configDao.getConfiguration(params);
         String value = configs.get(Config.VpcCleanupInterval.key());
         _cleanupInterval = NumbersUtil.parseInt(value, 60 * 60); // 1 hour
 
