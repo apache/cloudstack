@@ -266,7 +266,6 @@ import com.cloud.vm.dao.VMInstanceDao;
 import edu.emory.mathcs.backport.java.util.Arrays;
 import edu.emory.mathcs.backport.java.util.Collections;
 
-@Component
 public class ManagementServerImpl implements ManagementServer {
     public static final Logger s_logger = Logger.getLogger(ManagementServerImpl.class.getName());
 
@@ -463,20 +462,15 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     private void startManagers() {
-        @SuppressWarnings("rawtypes")
-        Map<String, Manager> managers = ComponentContext.getApplicationContext().getBeansOfType(
-                Manager.class);
-
-        Map<String, Object> params = new HashMap<String, Object>();
-        for (Manager manager : managers.values()) {
-            s_logger.info("Start manager: " + ComponentContext.getTargetClass(manager).getName() + "...");
-            try {
-                if (!ComponentContext.isPrimary(manager, Manager.class)) {
-                    s_logger.error("Skip manager:" + ComponentContext.getTargetClass(manager).getName() + " as there are multiple matches");
-                    continue;
-                }
-
-                if (!manager.configure(manager.getClass().getSimpleName(), params)) {
+		@SuppressWarnings("rawtypes")
+		Map<String, Manager> managers = ComponentContext.getApplicationContext().getBeansOfType(
+				Manager.class);
+			
+		Map<String, Object> params = new HashMap<String, Object>();
+		for(Manager manager : managers.values()) {
+			s_logger.info("Start manager: " + ComponentContext.getTargetClass(manager).getName() + "...");
+			try {
+				if(!manager.configure(manager.getClass().getSimpleName(), params)) {
                     throw new CloudRuntimeException("Failed to start manager: " + ComponentContext.getTargetClass(manager).getName());
                 }
 
@@ -495,17 +489,18 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     private void startAdapters() {
-        @SuppressWarnings("rawtypes")
-        Map<String, Adapter> adapters = ComponentContext.getApplicationContext().getBeansOfType(
-                Adapter.class);
-
-        Map<String, Object> params = new HashMap<String, Object>();
-        for (Adapter adapter : adapters.values()) {
-            try {
-                if (!ComponentContext.isPrimary(adapter, Adapter.class))
-                    continue;
-
-                if (!adapter.configure(adapter.getClass().getSimpleName(), params)) {
+		@SuppressWarnings("rawtypes")
+		Map<String, Adapter> adapters = ComponentContext.getApplicationContext().getBeansOfType(
+				Adapter.class);
+			
+		Map<String, Object> params = new HashMap<String, Object>();
+		for(Adapter adapter : adapters.values()) {
+			try {
+				// we also skip Adapter class that is both a manager class and a adapter class
+				if(Manager.class.isAssignableFrom(ComponentContext.getTargetClass(adapter)))
+					continue;
+				
+				if(!adapter.configure(adapter.getClass().getSimpleName(), params)) {
                     throw new CloudRuntimeException("Failed to start adapter: " + ComponentContext.getTargetClass(adapter).getName());
                 }
                 if (!adapter.start()) {

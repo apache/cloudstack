@@ -165,6 +165,7 @@ public abstract class BaseCmd {
         _autoScaleService = locator.getManager(AutoScaleService.class);
         _ravService = locator.getManager(RemoteAccessVpnService.class);
         _responseGenerator = generator;
+<<<<<<< HEAD
         _bareMetalVmService = locator.getManager(BareMetalVmService.class);
         _projectService = locator.getManager(ProjectService.class);
         _firewallService = locator.getManager(FirewallService.class);
@@ -177,6 +178,19 @@ public abstract class BaseCmd {
         _networkACLService = locator.getManager(NetworkACLService.class);
         _s2sVpnService = locator.getManager(Site2SiteVpnService.class);
         _queryService = locator.getManager(QueryService.class);
+=======
+        //_bareMetalVmService = ComponentContext.getCompanent(BareMetalVmService.class);
+        _projectService = ComponentContext.getCompanent(ProjectService.class);
+        _firewallService = ComponentContext.getCompanent(FirewallService.class);
+        _domainService = ComponentContext.getCompanent(DomainService.class);
+        _resourceLimitService = ComponentContext.getCompanent(ResourceLimitService.class);
+        _identityService = ComponentContext.getCompanent(IdentityService.class);
+        _storageNetworkService = ComponentContext.getCompanent(StorageNetworkService.class);
+        _taggedResourceService = ComponentContext.getCompanent(TaggedResourceService.class);
+        _vpcService = ComponentContext.getCompanent(VpcService.class);
+        _networkACLService = ComponentContext.getCompanent(NetworkACLService.class);
+        _s2sVpnService = ComponentContext.getCompanent(Site2SiteVpnService.class);
+>>>>>>> Seperate configurable components out and let them be loaded from Spring configuration file
     }
 
     public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException;

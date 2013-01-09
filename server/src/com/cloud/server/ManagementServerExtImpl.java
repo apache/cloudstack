@@ -26,9 +26,6 @@ import java.util.TimeZone;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import org.springframework.context.annotation.Primary;
-import org.springframework.stereotype.Component;
-
 import com.cloud.api.commands.GenerateUsageRecordsCmd;
 import com.cloud.api.commands.GetUsageRecordsCmd;
 import com.cloud.domain.dao.DomainDao;
@@ -49,8 +46,6 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 
-@Component
-@Primary
 public class ManagementServerExtImpl extends ManagementServerImpl implements ManagementServerExt {
     @Inject private AccountDao _accountDao;
     @Inject private DomainDao _domainDao;

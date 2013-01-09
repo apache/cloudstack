@@ -58,6 +58,14 @@
 
   <bean id="eventBus" class = "org.apache.cloudstack.framework.eventbus.EventBusBase" />
 
+  <!--
+    Configurable components
+  -->
+  <bean id="ManagementServerExtImpl" class ="com.cloud.server.ManagementServerExtImpl" />
   <bean id="userVmManager" class ="com.cloud.vm.UserVmManagerImpl" />
-
+  <bean id="ClusteredAgentManagerImpl" class ="com.cloud.agent.manager.ClusteredAgentManagerImpl" />
+  <bean id="ClusteredVirtualMachineManagerImpl" class ="com.cloud.vm.ClusteredVirtualMachineManagerImpl" />
+  <bean id="NetworkManagerImpl" class ="com.cloud.network.NetworkManagerImpl" />
+  <bean id="SecondaryStorageManagerImpl" class ="com.cloud.storage.secondary.SecondaryStorageManagerImpl" />
+  <bean id="HighAvailabilityManagerExtImpl" class ="com.cloud.ha.HighAvailabilityManagerExtImpl" />
 </beans>

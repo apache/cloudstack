@@ -139,7 +139,6 @@ import edu.emory.mathcs.backport.java.util.Collections;
  *         ping.interval before announcing an agent has timed out | float | 2.0x || || router.stats.interval | interval to
  *         report router statistics | seconds | 300s || * }
  **/
-@Component
 @Local(value = { AgentManager.class })
 public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     private static final Logger s_logger = Logger.getLogger(AgentManagerImpl.class);

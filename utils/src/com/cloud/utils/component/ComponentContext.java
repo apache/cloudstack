@@ -67,16 +67,22 @@ public class ComponentContext implements ApplicationContextAware {
     		Map<String, T> matchedTypes = getComponentsOfType(beanType);
     		if(matchedTypes.size() > 0) {
 	    		for(Map.Entry<String, T> entry : matchedTypes.entrySet()) {
-	    			Primary primary = getTargetClass(entry).getAnnotation(Primary.class);
+	    			Primary primary = getTargetClass(entry.getValue()).getAnnotation(Primary.class);
 	    			if(primary != null)
 	    				return entry.getValue();
 	    		}
 	    		
-	    		s_logger.warn("Unable to uniquely locate bean type " + beanType.getName());
+	    		if(matchedTypes.size() > 1) {
+		    		s_logger.warn("Unable to uniquely locate bean type " + beanType.getName());
+		    		for(Map.Entry<String, T> entry : matchedTypes.entrySet()) {
+		    			s_logger.warn("Candidate " + getTargetClass(entry.getValue()).getName());
+		    		}
+	    		}
+	    		
 	    		return (T)matchedTypes.values().toArray()[0];
 	    	}
     	}
-    	throw new NoSuchBeanDefinitionException("Unable to resolve bean type " + beanType.getName());
+    	throw new NoSuchBeanDefinitionException(beanType.getName());
     }
     
     public static <T> Map<String, T> getComponentsOfType(Class<T> beanType) {
@@ -84,13 +90,13 @@ public class ComponentContext implements ApplicationContextAware {
     }
     
     public static <T> boolean isPrimary(Object instance, Class<T> beanType) {
-    	
     	// we assume single line of interface inheritance of beanType
     	Class<?> componentType = beanType;
     	Class<?> targetClass = getTargetClass(instance);
+    	
     	Class<?> interfaces[] = targetClass.getInterfaces();
     	for(Class<?> intf : interfaces)  {
-    		if(beanType.isAssignableFrom(intf)) {
+    		if(beanType.isAssignableFrom(intf) && intf != beanType) {
     			componentType = intf;
     			break;
     		}
@@ -99,9 +105,15 @@ public class ComponentContext implements ApplicationContextAware {
 		Map<String, T> matchedTypes = (Map<String, T>)ComponentContext.getComponentsOfType(componentType);
 		if(matchedTypes.size() > 1) {
 			Primary primary = targetClass.getAnnotation(Primary.class);
-			if(primary != null)
+			if(primary != null) {
+            	s_logger.info(targetClass.getName() + " is the primary component of " + componentType.getName());
 				return true;
-			
+			}
+		
+			s_logger.warn(targetClass.getName() + " is not the primary component of " + componentType.getName() + ", there are other candidates");
+			for(T candidate : matchedTypes.values()) {
+				s_logger.warn("Candidate " + getTargetClass(candidate).getName());
+			}
 			return false;
     	}
     	

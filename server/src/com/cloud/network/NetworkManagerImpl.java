@@ -46,7 +46,6 @@ import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementors
 import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -174,7 +173,6 @@ import java.util.*;
 /**
  * NetworkManagerImpl implements NetworkManager.
  */
-@Component
 @Local(value = { NetworkManager.class, NetworkService.class })
 public class NetworkManagerImpl implements NetworkManager, NetworkService, Manager, Listener {
     private static final Logger s_logger = Logger.getLogger(NetworkManagerImpl.class);

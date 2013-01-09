@@ -18,7 +18,6 @@ package com.cloud.ha;
 
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +31,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.alert.AlertManager;
@@ -66,8 +64,6 @@ import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.component.Adapters;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
@@ -99,7 +95,6 @@ import com.cloud.vm.dao.VMInstanceDao;
  *         ha.retry.wait | time to wait before retrying the work item | seconds | 120 || || stop.retry.wait | time to wait
  *         before retrying the stop | seconds | 120 || * }
  **/
-@Component
 @Local(value = { HighAvailabilityManager.class })
 public class HighAvailabilityManagerImpl implements HighAvailabilityManager, ClusterManagerListener {
     protected static final Logger s_logger = Logger.getLogger(HighAvailabilityManagerImpl.class);
