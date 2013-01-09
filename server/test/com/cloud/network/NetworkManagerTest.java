@@ -20,11 +20,13 @@ package com.cloud.network;
 
 import junit.framework.Assert;
 
+import org.apache.log4j.Logger;
 import org.junit.Test;
 
 import com.cloud.network.element.DhcpServiceProvider;
 import com.cloud.network.element.IpDeployer;
 import com.cloud.network.firewall.FirewallManagerImpl;
+import com.cloud.network.firewall.FirewallManagerTest;
 import com.cloud.network.rules.FirewallManager;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.testcase.ComponentSetup;
@@ -32,6 +34,7 @@ import com.cloud.utils.testcase.ComponentTestCase;
 
 @ComponentSetup(managerName="management-server", setupXml="network-mgr-component.xml")
 public class NetworkManagerTest extends ComponentTestCase {
+    private static final Logger s_logger = Logger.getLogger(NetworkManagerTest.class);
 
     @Test
     public void testInjected() {
@@ -42,11 +45,16 @@ public class NetworkManagerTest extends ComponentTestCase {
         Assert.assertNotNull(networkMgr._networkModel);
         
         Assert.assertNotNull(networkMgr._ipDeployers.get("VirtualRouter"));
+        Assert.assertNotNull(networkMgr._ipDeployers.get("VpcVirtualRouter"));
+
         Assert.assertNotNull(networkMgr._dhcpProviders.get("VirtualRouter"));
+        Assert.assertNotNull(networkMgr._dhcpProviders.get("VpcVirtualRouter"));
+
         
         Assert.assertTrue(networkMgr._ipDeployers.get("VirtualRouter") instanceof IpDeployer);
         Assert.assertTrue(networkMgr._dhcpProviders.get("VirtualRouter") instanceof DhcpServiceProvider);
        
+        s_logger.info("Done testing injection of network manager's network elements");
 
     }
 

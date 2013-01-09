@@ -63,7 +63,7 @@ import com.cloud.vm.VirtualMachineProfile;
 @Local(value = {NetworkElement.class, FirewallServiceProvider.class, 
         DhcpServiceProvider.class, UserDataServiceProvider.class, 
         StaticNatServiceProvider.class, LoadBalancingServiceProvider.class,
-        PortForwardingServiceProvider.class, IpDeployer.class,
+        PortForwardingServiceProvider.class, IpDeployer.class, VpcProvider.class,
         Site2SiteVpnServiceProvider.class, NetworkACLServiceProvider.class})
 public class VpcVirtualRouterElement extends VirtualRouterElement implements VpcProvider, Site2SiteVpnServiceProvider, NetworkACLServiceProvider{
     private static final Logger s_logger = Logger.getLogger(VpcVirtualRouterElement.class);
