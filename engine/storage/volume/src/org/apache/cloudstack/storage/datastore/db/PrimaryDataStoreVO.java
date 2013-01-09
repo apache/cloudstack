@@ -19,7 +19,6 @@
 package org.apache.cloudstack.storage.datastore.db;
 
 import java.util.Date;
-import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -30,12 +29,10 @@ import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
-import javax.persistence.Transient;
 
+import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.storage.datastore.DataStoreStatus;
 
-import com.cloud.api.Identity;
-import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -98,7 +95,7 @@ public class PrimaryDataStoreVO implements Identity {
 
     @Column(name = "cluster_id")
     private Long clusterId;
-    
+
     @Column(name = "configurator_key")
     private String key;
 
@@ -118,6 +115,7 @@ public class PrimaryDataStoreVO implements Identity {
         return name;
     }
 
+    @Override
     public String getUuid() {
         return uuid;
     }
@@ -125,7 +123,7 @@ public class PrimaryDataStoreVO implements Identity {
     public String getPoolType() {
         return poolType;
     }
-    
+
     public void setPoolType(String protocol) {
         this.poolType = protocol;
     }
@@ -181,7 +179,7 @@ public class PrimaryDataStoreVO implements Identity {
     public String getHostAddress() {
         return hostAddress;
     }
-    
+
     public void setHostAddress(String host) {
         this.hostAddress = host;
     }
@@ -225,7 +223,7 @@ public class PrimaryDataStoreVO implements Identity {
     public int getPort() {
         return port;
     }
-    
+
     public void setPort(int port) {
         this.port = port;
     }
@@ -237,13 +235,13 @@ public class PrimaryDataStoreVO implements Identity {
     public void setName(String name) {
         this.name = name;
     }
-    
+
     public void setKey(String key) {
-    	this.key = key;
+        this.key = key;
     }
-    
+
     public String getKey() {
-    	return this.key;
+        return this.key;
     }
 
     @Override

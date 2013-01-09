@@ -32,11 +32,11 @@ import javax.persistence.TableGenerator;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.Unknown;
 
-import com.cloud.api.Identity;
-import com.cloud.storage.Volume;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.Volume;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.fsm.StateObject;
@@ -124,9 +124,9 @@ public class VolumeVO implements Identity, StateObject<Volume.State> {
 
     @Column(name = "update_count", updatable = true, nullable = false)
     protected long updatedCount; // This field should be updated everytime the
-                                 // state is updated. There's no set method in
-                                 // the vo object because it is done with in the
-                                 // dao code.
+    // state is updated. There's no set method in
+    // the vo object because it is done with in the
+    // dao code.
 
     @Column(name = "recreatable")
     boolean recreatable;
@@ -345,6 +345,7 @@ public class VolumeVO implements Identity, StateObject<Volume.State> {
         return updated;
     }
 
+    @Override
     public Volume.State getState() {
         return state;
     }

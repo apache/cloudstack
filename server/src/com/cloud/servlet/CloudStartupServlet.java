@@ -36,46 +36,47 @@ import com.cloud.utils.SerialVersionUID;
 import com.cloud.utils.component.ComponentContext;
 
 public class CloudStartupServlet extends HttpServlet implements ServletContextListener {
-	public static final Logger s_logger = Logger.getLogger(CloudStartupServlet.class.getName());
-	
-    static final long serialVersionUID = SerialVersionUID.CloudStartupServlet;
-   
-	@Override
-    public void init() throws ServletException {
-    	initLog4j();
+    public static final Logger s_logger = Logger.getLogger(CloudStartupServlet.class.getName());
 
-    	// Save Configuration Values
- 	    ConfigurationServer c = (ConfigurationServer)ComponentContext.getCompanent(ConfigurationServer.class);
-	    try {
-	    	c.persistDefaultValues();
-	    	s_locator = ComponentLocator.getLocator(ManagementServer.Name);
-		    ManagementServer ms = (ManagementServer)ComponentLocator.getComponent(ManagementServer.Name);
-		    ms.enableAdminUser("password");
-		    ApiServer.initApiServer(ms.getPropertiesFiles());
-	    } catch (InvalidParameterValueException ipve) {
-	    	s_logger.error("Exception starting management server ", ipve);
-	    	throw new ServletException (ipve.getMessage());
-	    } catch (Exception e) {
-	    	s_logger.error("Exception starting management server ", e);
-	    	throw new ServletException (e.getMessage());
-	    }
-	}
-	
-	@Override
-	public void contextInitialized(ServletContextEvent sce) {
-	    try {
-	        init();
-	    } catch (ServletException e) {
-	        s_logger.error("Exception starting management server ", e);
-	        throw new RuntimeException(e);
-	    }
-	}
-	
-	@Override
-	public void contextDestroyed(ServletContextEvent sce) {
-	}
-	
-	private void initLog4j() {
+    static final long serialVersionUID = SerialVersionUID.CloudStartupServlet;
+
+    @Override
+    public void init() throws ServletException {
+        initLog4j();
+
+        // Save Configuration Values
+        ConfigurationServer c = ComponentContext.getCompanent(ConfigurationServer.class);
+        try {
+            c.persistDefaultValues();
+
+            ManagementServer ms = ComponentContext.getCompanent(ManagementServer.class);
+            ms.startup();
+            ms.enableAdminUser("password");
+            ApiServer.initApiServer(ms.getPropertiesFiles());
+        } catch (InvalidParameterValueException ipve) {
+            s_logger.error("Exception starting management server ", ipve);
+            throw new ServletException (ipve.getMessage());
+        } catch (Exception e) {
+            s_logger.error("Exception starting management server ", e);
+            throw new ServletException (e.getMessage());
+        }
+    }
+
+    @Override
+    public void contextInitialized(ServletContextEvent sce) {
+        try {
+            init();
+        } catch (ServletException e) {
+            s_logger.error("Exception starting management server ", e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void contextDestroyed(ServletContextEvent sce) {
+    }
+
+    private void initLog4j() {
         File file = PropertiesUtil.findConfigFile("log4j-cloud.xml");
         if (file != null) {
             s_logger.info("log4j configuration found at " + file.getAbsolutePath());
@@ -87,5 +88,5 @@ public class CloudStartupServlet extends HttpServlet implements ServletContextLi
                 PropertyConfigurator.configureAndWatch(file.getAbsolutePath());
             }
         }
-	}
+    }
 }

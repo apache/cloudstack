@@ -20,8 +20,8 @@ import java.net.URLEncoder;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -39,20 +39,18 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
+import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
 import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
+import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.dao.UserAccountJoinDao;
 import com.cloud.api.query.vo.ControlledViewEntity;
-
-
-import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
-import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ResourceLimit;
@@ -115,7 +113,6 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -232,7 +229,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
     UserVO _systemUser;
     AccountVO _systemAccount;
-    
+
     @Inject
     List<SecurityChecker> _securityCheckers;
     int _cleanupInterval;
@@ -285,6 +282,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         return true;
     }
 
+    @Override
     public AccountVO getSystemAccount() {
         if (_systemAccount == null) {
             _systemAccount = _accountDao.findById(Account.ACCOUNT_ID_SYSTEM);
@@ -382,7 +380,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
             if (!granted) {
                 assert false : "How can all of the security checkers pass on checking this check: " + entity;
-                throw new PermissionDeniedException("There's no way to confirm " + caller + " has access to " + entity);
+            throw new PermissionDeniedException("There's no way to confirm " + caller + " has access to " + entity);
             }
         }
 
@@ -444,7 +442,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 user.setState(State.disabled.toString());
             }
             _userAccountDao.update(id, user);
-             txn.commit();
+            txn.commit();
         } catch (Exception e) {
             s_logger.error("Failed to update login attempts for user with id " + id );
         }
@@ -492,7 +490,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     @Override
     public boolean deleteAccount(AccountVO account, long callerUserId, Account caller) {
         long accountId = account.getId();
-        
+
         //delete the account record
         if (!_accountDao.remove(accountId)) {
             s_logger.error("Unable to delete account " + accountId);
@@ -510,7 +508,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     public boolean cleanupAccount(AccountVO account, long callerUserId, Account caller) {
         long accountId = account.getId();
         boolean accountCleanupNeeded = false;
-        
+
         try {
             //cleanup the users from the account
             List<UserVO> users = _userDao.listByAccount(accountId);
@@ -520,10 +518,10 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                     accountCleanupNeeded = true;
                 }
             }
-            
+
             //delete the account from project accounts
             _projectAccountDao.removeAccountFromProjects(accountId);
-            
+
             // delete all vm groups belonging to accont
             List<InstanceGroupVO> groups = _vmGroupDao.listByAccountId(accountId);
             for (InstanceGroupVO group : groups) {
@@ -601,7 +599,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 s_logger.warn("Failed to cleanup remote access vpn resources as a part of account id=" + accountId + " cleanup due to Exception: ", ex);
                 accountCleanupNeeded = true;
             }
-            
+
             // Cleanup security groups
             int numRemoved = _securityGroupDao.removeByAccountId(accountId);
             s_logger.info("deleteAccount: Deleted " + numRemoved + " network groups for account " + accountId);
@@ -624,7 +622,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                     }
                 }
             }
-            
+
             //Delete all VPCs
             boolean vpcsDeleted = true;
             s_logger.debug("Deleting vpcs for account " + account.getId());
@@ -646,8 +644,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 for (IpAddress ip : ipsToRelease) {
                     s_logger.debug("Releasing ip " + ip + " as a part of account id=" + accountId + " cleanup");
                     if (!_networkMgr.disassociatePublicIpAddress(ip.getId(), callerUserId, caller)) {
-                    s_logger.warn("Failed to release ip address " + ip + " as a part of account id=" + accountId + " clenaup");
-                    accountCleanupNeeded = true;
+                        s_logger.warn("Failed to release ip address " + ip + " as a part of account id=" + accountId + " clenaup");
+                        accountCleanupNeeded = true;
                     }
                 }
             }
@@ -776,7 +774,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         if (userName.isEmpty()) {
             throw new InvalidParameterValueException("Username is empty");
         }
-        
+
         if (firstName.isEmpty()) {
             throw new InvalidParameterValueException("Firstname is empty");
         }
@@ -905,21 +903,21 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             if (firstName.isEmpty()) {
                 throw new InvalidParameterValueException("Firstname is empty");
             }
-            
+
             user.setFirstname(firstName);
         }
         if (lastName != null) {
             if (lastName.isEmpty()) {
                 throw new InvalidParameterValueException("Lastname is empty");
             }
-            
+
             user.setLastname(lastName);
         }
         if (userName != null) {
             if (userName.isEmpty()) {
                 throw new InvalidParameterValueException("Username is empty");
             }
-            
+
             // don't allow to have same user names in the same domain
             List<UserVO> duplicatedUsers = _userDao.findUsersByName(userName);
             for (UserVO duplicatedUser : duplicatedUsers) {
@@ -933,18 +931,18 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
             user.setUsername(userName);
         }
-        
+
         if (password != null) {
             String encodedPassword = null;
-            for (Enumeration<UserAuthenticator> en = _userAuthenticators.enumeration(); en.hasMoreElements();) {
-                UserAuthenticator authenticator = en.nextElement();
+            for (Iterator<UserAuthenticator> en = _userAuthenticators.iterator(); en.hasNext();) {
+                UserAuthenticator authenticator = en.next();
                 encodedPassword = authenticator.encode(password);
                 if (encodedPassword != null) {
                     break;
                 }
             }
             if (encodedPassword == null) {
-            	throw new CloudRuntimeException("Failed to encode password");
+                throw new CloudRuntimeException("Failed to encode password");
             }
             user.setPassword(encodedPassword);
         }
@@ -1293,11 +1291,11 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         // check if the given account name is unique in this domain for updating
         Account duplicateAcccount = _accountDao.findActiveAccount(newAccountName, domainId);
         if (duplicateAcccount != null && duplicateAcccount.getId() != account.getId()) {// allow
-                                                                                        // same
-                                                                                        // account
-                                                                                        // to
-                                                                                        // update
-                                                                                        // itself
+            // same
+            // account
+            // to
+            // update
+            // itself
             throw new InvalidParameterValueException("There already exists an account with the name:" + newAccountName + " in the domain:" + domainId + " with existing account id:"
                     + duplicateAcccount.getId());
         }
@@ -1697,15 +1695,15 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         }
 
         String encodedPassword = null;
-        for (Enumeration<UserAuthenticator> en = _userAuthenticators.enumeration(); en.hasMoreElements();) {
-            UserAuthenticator authenticator = en.nextElement();
+        for (Iterator<UserAuthenticator> en = _userAuthenticators.iterator(); en.hasNext();) {
+            UserAuthenticator authenticator = en.next();
             encodedPassword = authenticator.encode(password);
             if (encodedPassword != null) {
                 break;
             }
         }
         if (encodedPassword == null) {
-        	throw new CloudRuntimeException("Failed to encode password");
+            throw new CloudRuntimeException("Failed to encode password");
         }
 
         UserVO user = _userDao.persist(new UserVO(accountId, userName, encodedPassword, firstName, lastName, email, timezone));
@@ -2088,7 +2086,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     @Override
     public void buildACLSearchParameters(Account caller, Long id, String accountName, Long projectId, List<Long> 
     permittedAccounts, Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject,
-            boolean listAll, boolean forProjectInvitation) {
+    boolean listAll, boolean forProjectInvitation) {
         Long domainId = domainIdRecursiveListProject.first();
 
         if (domainId != null) {
@@ -2166,7 +2164,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         }
     }
 
-	@Override
+    @Override
     public void buildACLViewSearchBuilder(SearchBuilder<? extends ControlledViewEntity> sb, Long domainId,
             boolean isRecursive, List<Long> permittedAccounts, ListProjectResourcesCriteria listProjectResourcesCriteria) {
 
@@ -2210,7 +2208,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     }
 
     @Override
-	public UserAccount getUserByApiKey(String apiKey) {
-		return _userAccountDao.getUserByApiKey(apiKey);
-	}
+    public UserAccount getUserByApiKey(String apiKey) {
+        return _userAccountDao.getUserByApiKey(apiKey);
+    }
 }

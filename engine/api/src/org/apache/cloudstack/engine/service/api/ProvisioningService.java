@@ -21,8 +21,6 @@ package org.apache.cloudstack.engine.service.api;
 import java.util.List;
 import java.util.Map;
 
-import javax.ws.rs.POST;
-
 import org.apache.cloudstack.engine.datacenter.entity.api.ClusterEntity;
 import org.apache.cloudstack.engine.datacenter.entity.api.HostEntity;
 import org.apache.cloudstack.engine.datacenter.entity.api.PodEntity;
@@ -42,10 +40,8 @@ public interface ProvisioningService {
 
     StorageEntity registerStorage(String name, List<String> tags, Map<String, String> details);
 
-    @POST
     ZoneEntity registerZone(String zoneUuid, String name, String owner, List<String> tags, Map<String, String> details);
 
-    @POST
     PodEntity registerPod(String podUuid, String name, String owner, String zoneUuid, List<String> tags, Map<String, String> details);
 
     ClusterEntity registerCluster(String clusterUuid, String name, String owner, List<String> tags, Map<String, String> details);

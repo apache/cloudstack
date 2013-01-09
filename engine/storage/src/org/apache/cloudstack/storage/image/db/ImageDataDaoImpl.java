@@ -29,14 +29,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.storage.image.format.ISO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.api.BaseCmd;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.DomainVO;
@@ -48,9 +46,9 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.storage.Storage;
-import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.dao.VMTemplateDaoImpl;
 import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
@@ -59,8 +57,6 @@ import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.ComponentInject;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
@@ -68,8 +64,8 @@ import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.SearchCriteria.Func;
+import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
@@ -78,10 +74,10 @@ public class ImageDataDaoImpl extends GenericDaoBase<ImageDataVO, Long> implemen
 
 
     VMTemplateZoneDao _templateZoneDao = null;
-   
+
     VMTemplateDetailsDao _templateDetailsDao = null;
 
-   
+
     ConfigurationDao _configDao = null;
 
     HostDao _hostDao = null;
@@ -674,15 +670,17 @@ public class ImageDataDaoImpl extends GenericDaoBase<ImageDataVO, Long> implemen
             }
             // for now, defaulting pageSize to a large val if null; may need to
             // revisit post 2.2RC2
-            if (isIso && templateZonePairList.size() < (pageSize != null ? pageSize : 500) && templateFilter != TemplateFilter.community
-                    && !(templateFilter == TemplateFilter.self && !BaseCmd.isRootAdmin(caller.getType()))) { // evaluates
-                                                                                                             // to
-                                                                                                             // true
-                                                                                                             // If
-                                                                                                             // root
-                                                                                                             // admin
-                                                                                                             // and
-                                                                                                             // filter=self
+            if (isIso && 
+                    templateZonePairList.size() < (pageSize != null ? pageSize : 500) && 
+                    templateFilter != TemplateFilter.community && 
+                    !(templateFilter == TemplateFilter.self) /* TODO: Fix this! && !BaseCmd.isRootAdmin(caller.getType())*/) {  // evaluates
+                // to
+                // true
+                // If
+                // root
+                // admin
+                // and
+                // filter=self
 
                 List<ImageDataVO> publicIsos = publicIsoSearch(bootable, false, tags);
                 List<ImageDataVO> userIsos = userIsoSearch(false);
@@ -855,6 +853,7 @@ public class ImageDataDaoImpl extends GenericDaoBase<ImageDataVO, Long> implemen
         }
     }
 
+    @Override
     public ImageDataVO findSystemVMTemplate(long zoneId, HypervisorType hType) {
         SearchCriteria<ImageDataVO> sc = tmpltTypeHyperSearch.create();
         sc.setParameters("templateType", Storage.TemplateType.SYSTEM);

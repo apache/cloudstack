@@ -37,10 +37,10 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
+import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State.Event;
 
-import com.cloud.api.Identity;
 import com.cloud.host.Host;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -134,20 +134,20 @@ public class HostVO implements Host, Identity {
 
     @Column(name="setup")
     private boolean setup = false;
-    
+
     @Column(name="resource_state", nullable=false)
     @Enumerated(value=EnumType.STRING)
     private ResourceState resourceState;
 
     @Column(name="hypervisor_version")
     private String hypervisorVersion;
-    
+
     @Column(name="update_count", updatable = true, nullable=false)
     protected long updated;	// This field should be updated everytime the state is updated.  There's no set method in the vo object because it is done with in the dao code.
 
     @Column(name="uuid")
     private String uuid;
-    
+
     // This is a delayed load value.  If the value is null,
     // then this field has not been loaded yet.
     // Call host dao to load it.
@@ -367,15 +367,15 @@ public class HostVO implements Host, Identity {
 
     @Column(name=GenericDao.REMOVED_COLUMN)
     private Date removed;
-    
+
     //orchestration
     @Column(name="owner")
     private String owner = null;
-    
+
     @Column(name="lastUpdated", updatable=true)
     @Temporal(value=TemporalType.TIMESTAMP)
     protected Date lastUpdated;
-    
+
     /**
      * Note that state is intentionally missing the setter.  Any updates to
      * the state machine needs to go through the DAO object because someone
@@ -719,61 +719,61 @@ public class HostVO implements Host, Identity {
         return hypervisorVersion;
     }
 
-	@Override
-	
-	// TODO, I tempoerary disable it as it breaks GenericSearchBuild when @Transient is applied
-	// @Transient
-	public Status getState() {
-		return status;
-	}
-	
+    @Override
+
+    // TODO, I tempoerary disable it as it breaks GenericSearchBuild when @Transient is applied
+    // @Transient
+    public Status getState() {
+        return status;
+    }
+
     @Override
     public ResourceState getResourceState() {
         return resourceState;
     }
-    
+
     public void setResourceState(ResourceState state) {
-    	resourceState = state;
+        resourceState = state;
     }
-    
+
     @Override
     public boolean isInMaintenanceStates() {
         return (getResourceState() == ResourceState.Maintenance || getResourceState() == ResourceState.ErrorInMaintenance
                 || getResourceState() == ResourceState.PrepareForMaintenance);
     }
-    
+
     public long getUpdated() {
-    	return updated;
+        return updated;
     }
-    
-	public long incrUpdated() {
-		updated++;
-		return updated;
-	}
-	
-	@Override
-	public String getUuid() {
-		return this.uuid;
-	}
-	
-	public void setUuid(String uuid) {
-		this.uuid = uuid;
-	}
-	
-	public String getOwner() {
-		return owner;
-	}
 
-	public void setOwner(String owner) {
-		this.owner = owner;
-	}
+    public long incrUpdated() {
+        updated++;
+        return updated;
+    }
+
+    @Override
+    public String getUuid() {
+        return this.uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
+    public String getOwner() {
+        return owner;
+    }
+
+    public void setOwner(String owner) {
+        this.owner = owner;
+    }
 
 
-	public Date getLastUpdated() {
-		return lastUpdated;
-	}
+    public Date getLastUpdated() {
+        return lastUpdated;
+    }
 
-	public State getOrchestrationState() {
-		return state;
-	}	
+    public State getOrchestrationState() {
+        return state;
+    }	
 }

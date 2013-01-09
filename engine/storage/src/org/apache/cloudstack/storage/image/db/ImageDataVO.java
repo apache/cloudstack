@@ -33,11 +33,12 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
-import com.cloud.api.Identity;
+import org.apache.cloudstack.api.Identity;
+
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -77,7 +78,7 @@ public class ImageDataVO implements Identity {
 
     @Temporal(value = TemporalType.TIMESTAMP)
     @Column(name = GenericDao.CREATED_COLUMN)
-    private Date created = null;
+    private final Date created = null;
 
     @Column(name = GenericDao.REMOVED)
     @Temporal(TemporalType.TIMESTAMP)
@@ -178,7 +179,7 @@ public class ImageDataVO implements Identity {
     public boolean requiresHvm() {
         return requiresHvm;
     }
-    
+
     public void setRequireHvm(boolean hvm) {
         this.requiresHvm = hvm;
     }
@@ -234,7 +235,7 @@ public class ImageDataVO implements Identity {
     public long getAccountId() {
         return accountId;
     }
-    
+
     public void setAccountId(long accountId) {
         this.accountId = accountId;
     }

@@ -16,7 +16,7 @@
 // under the License.
 package com.cloud.utils;
 
-import static java.util.Arrays.*;
+import static java.util.Arrays.asList;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -151,4 +151,17 @@ public class StringUtils {
     }
 
 
+    public static int formatForOutput(String text, int start, int columns, char separator) {
+        if (start >= text.length()) {
+            return -1;
+        }
+
+        int end = start + columns;
+        if (end > text.length()) {
+            end = text.length();
+        }
+        String searchable = text.substring(start, end);
+        int found = searchable.lastIndexOf(separator);
+        return found > 0 ? found :  end - start;
+    }
 }

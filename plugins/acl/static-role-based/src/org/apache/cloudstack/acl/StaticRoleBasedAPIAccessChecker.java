@@ -21,22 +21,23 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.acl.APIAccessChecker;
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.PluggableService;
 
@@ -60,6 +61,7 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
     private static List<String> s_allCommands = null;
 
     protected @Inject AccountManager _accountMgr;
+    @Inject protected List<PluggableService> _services;
 
     protected StaticRoleBasedAPIAccessChecker() {
         super();
@@ -77,10 +79,10 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
         boolean commandExists = s_allCommands.contains(apiCommandName);
 
         if(commandExists && user != null){
-                Long accountId = user.getAccountId();
-                Account userAccount = _accountMgr.getAccount(accountId);
-                short accountType = userAccount.getType();
-                return isCommandAvailableForAccount(accountType, apiCommandName);
+            Long accountId = user.getAccountId();
+            Account userAccount = _accountMgr.getAccount(accountId);
+            short accountType = userAccount.getType();
+            return isCommandAvailableForAccount(accountType, apiCommandName);
         }
 
         return commandExists;
@@ -109,13 +111,8 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
 
-        // Read command properties files to build the static map per role.
-        ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
-        List<PluggableService> services = locator.getAllPluggableServices();
-        services.add((PluggableService) ComponentLocator.getComponent(ManagementServer.Name));
-
         List<String> configFiles = new ArrayList<String>();
-        for (PluggableService service : services) {
+        for (PluggableService service : _services) {
             configFiles.addAll(Arrays.asList(service.getPropertiesFiles()));
         }
 

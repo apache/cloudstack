@@ -52,16 +52,29 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.apache.cloudstack.acl.APIAccessChecker;
-import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.api.*;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseAsyncCreateCmd;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseListCmd;
+import org.apache.cloudstack.api.ResponseObject;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
+import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
+import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
+import org.apache.cloudstack.api.command.user.project.ListProjectInvitationsCmd;
+import org.apache.cloudstack.api.command.user.project.ListProjectsCmd;
+import org.apache.cloudstack.api.command.user.securitygroup.ListSecurityGroupsCmd;
+import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
+import org.apache.cloudstack.api.response.ExceptionResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.ConnectionClosedException;
 import org.apache.http.HttpException;
 import org.apache.http.HttpRequest;
@@ -69,6 +82,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.HttpServerConnection;
 import org.apache.http.HttpStatus;
 import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.entity.BasicHttpEntity;
 import org.apache.http.impl.DefaultHttpResponseFactory;
 import org.apache.http.impl.DefaultHttpServerConnection;
@@ -89,18 +103,9 @@ import org.apache.http.protocol.ResponseContent;
 import org.apache.http.protocol.ResponseDate;
 import org.apache.http.protocol.ResponseServer;
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
+import org.reflections.Reflections;
 
-import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
-import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
-import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
-import org.apache.cloudstack.api.command.user.project.ListProjectInvitationsCmd;
-import org.apache.cloudstack.api.command.user.project.ListProjectsCmd;
-import org.apache.cloudstack.api.command.user.securitygroup.ListSecurityGroupsCmd;
-import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
 import com.cloud.api.response.ApiResponseSerializer;
-import org.apache.cloudstack.api.response.ExceptionResponse;
-import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
@@ -123,17 +128,14 @@ import com.cloud.user.UserAccount;
 import com.cloud.user.UserContext;
 import com.cloud.user.UserVO;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.Adapters;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CSExceptionErrorCode;
 import com.cloud.uuididentity.dao.IdentityDao;
-
-import org.reflections.Reflections;
 
 public class ApiServer implements HttpRequestHandler {
     private static final Logger s_logger = Logger.getLogger(ApiServer.class.getName());
@@ -143,18 +145,18 @@ public class ApiServer implements HttpRequestHandler {
     public static String jsonContentType = "text/javascript";
     private ApiDispatcher _dispatcher;
 
-    @Inject private AccountManager _accountMgr = null;
-    @Inject private DomainManager _domainMgr = null;
-    @Inject private AsyncJobManager _asyncMgr = null;
-    @Inject(adapter = APIAccessChecker.class)
-    protected Adapters<APIAccessChecker> _apiAccessCheckers;
+    @Inject private final AccountManager _accountMgr = null;
+    @Inject private final DomainManager _domainMgr = null;
+    @Inject private final AsyncJobManager _asyncMgr = null;
+    @Inject private ConfigurationDao _configDao;
+    @Inject protected List<APIAccessChecker> _apiAccessCheckers;
 
     private Account _systemAccount = null;
     private User _systemUser = null;
     private static int _workerCount = 0;
     private static ApiServer s_instance = null;
     private static final DateFormat _dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
-    private Map<String, Class<?>> _apiNameCmdClassMap = new HashMap<String, Class<?>>();
+    private final Map<String, Class<?>> _apiNameCmdClassMap = new HashMap<String, Class<?>>();
 
     private static ExecutorService _executor = new ThreadPoolExecutor(10, 150, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("ApiServer"));
 
@@ -164,20 +166,13 @@ public class ApiServer implements HttpRequestHandler {
 
     public static void initApiServer(String[] apiConfig) {
         if (s_instance == null) {
-            //Injecting will create ApiServer object with all its
-            //vars injected as well, no need to do the following:
-            //s_instance = new ApiServer();
-            s_instance = ComponentLocator.inject(ApiServer.class);
+            s_instance = new ApiServer();
+            s_instance = ComponentContext.inject(s_instance);
             s_instance.init(apiConfig);
         }
     }
 
     public static ApiServer getInstance() {
-        // Assumption: CloudStartupServlet would initialize ApiServer
-        // initApiServer(null);
-        if (s_instance == null) {
-            s_logger.fatal("ApiServer instance failed to initialize");
-        }
         return s_instance;
     }
 
@@ -188,11 +183,9 @@ public class ApiServer implements HttpRequestHandler {
         _systemAccount = _accountMgr.getSystemAccount();
         _systemUser = _accountMgr.getSystemUser();
         _dispatcher = ApiDispatcher.getInstance();
-  
+
         Integer apiPort = null; // api port, null by default
-        ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
-        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
-        SearchCriteria<ConfigurationVO> sc = configDao.createSearchCriteria();
+        SearchCriteria<ConfigurationVO> sc = _configDao.createSearchCriteria();
         sc.addAnd("name", SearchCriteria.Op.EQ, "integration.api.port");
         List<ConfigurationVO> values = _configDao.search(sc, null);
         if ((values != null) && (values.size() > 0)) {
@@ -215,8 +208,8 @@ public class ApiServer implements HttpRequestHandler {
             _apiNameCmdClassMap.put(apiName, cmdClass);
         }
 
-        encodeApiResponse = Boolean.valueOf(configDao.getValue(Config.EncodeApiResponse.key()));
-        String jsonType = configDao.getValue(Config.JavaScriptDefaultContentType.key());
+        encodeApiResponse = Boolean.valueOf(_configDao.getValue(Config.EncodeApiResponse.key()));
+        String jsonType = _configDao.getValue(Config.JavaScriptDefaultContentType.key());
         if (jsonType != null) {
             jsonContentType = jsonType;
         }
@@ -357,29 +350,29 @@ public class ApiServer implements HttpRequestHandler {
             }
         } catch (Exception ex) {
             if (ex instanceof InvalidParameterValueException) {
-            	InvalidParameterValueException ref = (InvalidParameterValueException)ex;
-            	ServerApiException e = new ServerApiException(BaseCmd.PARAM_ERROR, ex.getMessage());            	
+                InvalidParameterValueException ref = (InvalidParameterValueException)ex;
+                ServerApiException e = new ServerApiException(BaseCmd.PARAM_ERROR, ex.getMessage());            	
                 // copy over the IdentityProxy information as well and throw the serverapiexception.
                 ArrayList<String> idList = ref.getIdProxyList();
                 if (idList != null) {
-                	// Iterate through entire arraylist and copy over each proxy id.
-                	for (int i = 0 ; i < idList.size(); i++) {
-                		e.addProxyObject(idList.get(i));
-                	}
+                    // Iterate through entire arraylist and copy over each proxy id.
+                    for (int i = 0 ; i < idList.size(); i++) {
+                        e.addProxyObject(idList.get(i));
+                    }
                 }
                 // Also copy over the cserror code and the function/layer in which it was thrown.
-            	e.setCSErrorCode(ref.getCSErrorCode());
+                e.setCSErrorCode(ref.getCSErrorCode());
                 throw e;
             } else if (ex instanceof PermissionDeniedException) {
-            	PermissionDeniedException ref = (PermissionDeniedException)ex;
-            	ServerApiException e = new ServerApiException(BaseCmd.ACCOUNT_ERROR, ex.getMessage());
+                PermissionDeniedException ref = (PermissionDeniedException)ex;
+                ServerApiException e = new ServerApiException(BaseCmd.ACCOUNT_ERROR, ex.getMessage());
                 // copy over the IdentityProxy information as well and throw the serverapiexception.
-            	ArrayList<String> idList = ref.getIdProxyList();
+                ArrayList<String> idList = ref.getIdProxyList();
                 if (idList != null) {
-                	// Iterate through entire arraylist and copy over each proxy id.
-                	for (int i = 0 ; i < idList.size(); i++) {
-                		e.addProxyObject(idList.get(i));
-                	}
+                    // Iterate through entire arraylist and copy over each proxy id.
+                    for (int i = 0 ; i < idList.size(); i++) {
+                        e.addProxyObject(idList.get(i));
+                    }
                 }
                 e.setCSErrorCode(ref.getCSErrorCode());
                 throw e;
@@ -514,15 +507,15 @@ public class ApiServer implements HttpRequestHandler {
                 }
             }
 
-                for (ResponseObject response : responses) {
+            for (ResponseObject response : responses) {
                 if (response.getObjectId() != null && objectJobMap.containsKey(response.getObjectId())) {
                     AsyncJob job = objectJobMap.get(response.getObjectId());
                     response.setJobId(job.getUuid());
-                        response.setJobStatus(job.getStatus());
-                    }
+                    response.setJobStatus(job.getStatus());
                 }
             }
         }
+    }
 
     private void buildAuditTrail(StringBuffer auditTrailSb, String command, String result) {
         if (result == null) {
@@ -553,7 +546,7 @@ public class ApiServer implements HttpRequestHandler {
 
             // if userId not null, that mean that user is logged in
             if (userId != null) {
-            	User user = ApiDBUtils.findUserById(userId);
+                User user = ApiDBUtils.findUserById(userId);
                 if (!isCommandAvailable(user, commandName)) {
                     s_logger.warn("The given command:" + commandName + " does not exist or it is not available for user");
                     throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command does not exist or it is not available for user");
@@ -688,7 +681,7 @@ public class ApiServer implements HttpRequestHandler {
         }
         return false;
     }
-    
+
     public Long fetchDomainId(String domainUUID){
         ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
         IdentityDao identityDao = locator.getDao(IdentityDao.class);
@@ -739,19 +732,19 @@ public class ApiServer implements HttpRequestHandler {
             if(user.getUuid() != null){
                 session.setAttribute("user_UUID", user.getUuid());
             }
-            
+
             session.setAttribute("username", userAcct.getUsername());
             session.setAttribute("firstname", userAcct.getFirstname());
             session.setAttribute("lastname", userAcct.getLastname());
             session.setAttribute("accountobj", account);
             session.setAttribute("account", account.getAccountName());
-            
+
             session.setAttribute("domainid", account.getDomainId());
             DomainVO domain = (DomainVO) _domainMgr.getDomain(account.getDomainId());
             if(domain.getUuid() != null){
                 session.setAttribute("domain_UUID", domain.getUuid());
             }
-            
+
             session.setAttribute("type", Short.valueOf(account.getType()).toString());
             session.setAttribute("registrationtoken", userAcct.getRegistrationToken());
             session.setAttribute("registered", new Boolean(userAcct.isRegistered()).toString());
@@ -855,8 +848,8 @@ public class ApiServer implements HttpRequestHandler {
 
             _params = new BasicHttpParams();
             _params.setIntParameter(CoreConnectionPNames.SO_TIMEOUT, 30000).setIntParameter(CoreConnectionPNames.SOCKET_BUFFER_SIZE, 8 * 1024)
-                    .setBooleanParameter(CoreConnectionPNames.STALE_CONNECTION_CHECK, false).setBooleanParameter(CoreConnectionPNames.TCP_NODELAY, true)
-                    .setParameter(CoreProtocolPNames.ORIGIN_SERVER, "HttpComponents/1.1");
+            .setBooleanParameter(CoreConnectionPNames.STALE_CONNECTION_CHECK, false).setBooleanParameter(CoreConnectionPNames.TCP_NODELAY, true)
+            .setParameter(CoreProtocolPNames.ORIGIN_SERVER, "HttpComponents/1.1");
 
             // Set up the HTTP protocol processor
             BasicHttpProcessor httpproc = new BasicHttpProcessor();
@@ -968,41 +961,41 @@ public class ApiServer implements HttpRequestHandler {
             // Exception. When invoked from ApiServlet's processRequest(), this can be
             // a standard exception like NumberFormatException. We'll leave the standard ones alone.
             if (ex != null) {
-            	if (ex instanceof ServerApiException || ex instanceof PermissionDeniedException
-            			|| ex instanceof InvalidParameterValueException) {
-            		// Cast the exception appropriately and retrieve the IdentityProxy
-            		if (ex instanceof ServerApiException) {
-            			ServerApiException ref = (ServerApiException) ex;
-            			ArrayList<String> idList = ref.getIdProxyList();
-            			if (idList != null) {
-            				for (int i=0; i < idList.size(); i++) {
-            					apiResponse.addProxyObject(idList.get(i));
-            				}            				
-            			}
-            			// Also copy over the cserror code and the function/layer in which it was thrown.
-            			apiResponse.setCSErrorCode(ref.getCSErrorCode());
-            		} else if (ex instanceof PermissionDeniedException) {
-            			PermissionDeniedException ref = (PermissionDeniedException) ex;
-            			ArrayList<String> idList = ref.getIdProxyList();
-            			if (idList != null) {
-            				for (int i=0; i < idList.size(); i++) {
-            					apiResponse.addProxyObject(idList.get(i));
-            				}            				
-            			}
-            			// Also copy over the cserror code and the function/layer in which it was thrown.
-            			apiResponse.setCSErrorCode(ref.getCSErrorCode());
-            		} else if (ex instanceof InvalidParameterValueException) {
-            			InvalidParameterValueException ref = (InvalidParameterValueException) ex;
-            			ArrayList<String> idList = ref.getIdProxyList();
-            			if (idList != null) {
-            				for (int i=0; i < idList.size(); i++) {
-            					apiResponse.addProxyObject(idList.get(i));
-            				}            				
-            			}
-            			// Also copy over the cserror code and the function/layer in which it was thrown.
-            			apiResponse.setCSErrorCode(ref.getCSErrorCode());
-            		}
-            	}
+                if (ex instanceof ServerApiException || ex instanceof PermissionDeniedException
+                        || ex instanceof InvalidParameterValueException) {
+                    // Cast the exception appropriately and retrieve the IdentityProxy
+                    if (ex instanceof ServerApiException) {
+                        ServerApiException ref = (ServerApiException) ex;
+                        ArrayList<String> idList = ref.getIdProxyList();
+                        if (idList != null) {
+                            for (int i=0; i < idList.size(); i++) {
+                                apiResponse.addProxyObject(idList.get(i));
+                            }            				
+                        }
+                        // Also copy over the cserror code and the function/layer in which it was thrown.
+                        apiResponse.setCSErrorCode(ref.getCSErrorCode());
+                    } else if (ex instanceof PermissionDeniedException) {
+                        PermissionDeniedException ref = (PermissionDeniedException) ex;
+                        ArrayList<String> idList = ref.getIdProxyList();
+                        if (idList != null) {
+                            for (int i=0; i < idList.size(); i++) {
+                                apiResponse.addProxyObject(idList.get(i));
+                            }            				
+                        }
+                        // Also copy over the cserror code and the function/layer in which it was thrown.
+                        apiResponse.setCSErrorCode(ref.getCSErrorCode());
+                    } else if (ex instanceof InvalidParameterValueException) {
+                        InvalidParameterValueException ref = (InvalidParameterValueException) ex;
+                        ArrayList<String> idList = ref.getIdProxyList();
+                        if (idList != null) {
+                            for (int i=0; i < idList.size(); i++) {
+                                apiResponse.addProxyObject(idList.get(i));
+                            }            				
+                        }
+                        // Also copy over the cserror code and the function/layer in which it was thrown.
+                        apiResponse.setCSErrorCode(ref.getCSErrorCode());
+                    }
+                }
             }
             SerializationContext.current().setUuidTranslation(true);
             responseText = ApiResponseSerializer.toSerializedString(apiResponse, responseType);

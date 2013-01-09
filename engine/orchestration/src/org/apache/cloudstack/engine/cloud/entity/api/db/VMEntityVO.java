@@ -159,30 +159,30 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
 
     @Column(name="uuid")
     protected String uuid = UUID.randomUUID().toString();
-    
+
     //orchestration columns
     @Column(name="owner")
     private String owner = null;
-    
+
     @Column(name="speed")
     private int speed;
-    
+
     @Transient
     List<String> computeTags;
-    
+
     @Transient
     List<String> rootDiskTags;
-    
+
     @Column(name="hostname")
     private String hostname = null;
 
     @Column(name="displayname")
     private String displayname = null;
-    
+
     @Transient
     List<String> networkIds;
-    
-    
+
+
     public VMEntityVO(long id,
             long serviceOfferingId,
             String name,
@@ -227,8 +227,8 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
         this(id, serviceOfferingId, name, instanceName, type, vmTemplateId, hypervisorType, guestOSId, domainId, accountId, haEnabled);
         this.limitCpuUse = limitResourceUse;
     }
-    
-    
+
+
 
     protected VMEntityVO() {
     }
@@ -501,60 +501,66 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
         this.serviceOfferingId = serviceOfferingId;
     }
 
-	public String getOwner() {
-		return owner;
-	}
+    public String getOwner() {
+        return owner;
+    }
 
-	public void setOwner(String owner) {
-		this.owner = owner;
-	}
+    public void setOwner(String owner) {
+        this.owner = owner;
+    }
 
-	public int getSpeed() {
-		return speed;
-	}
+    public int getSpeed() {
+        return speed;
+    }
 
-	public void setSpeed(int speed) {
-		this.speed = speed;
-	}
+    public void setSpeed(int speed) {
+        this.speed = speed;
+    }
 
-	public List<String> getComputeTags() {
-		return computeTags;
-	}
+    public List<String> getComputeTags() {
+        return computeTags;
+    }
 
-	public void setComputeTags(List<String> computeTags) {
-		this.computeTags = computeTags;
-	}
+    public void setComputeTags(List<String> computeTags) {
+        this.computeTags = computeTags;
+    }
 
-	public List<String> getRootDiskTags() {
-		return rootDiskTags;
-	}
+    public List<String> getRootDiskTags() {
+        return rootDiskTags;
+    }
 
-	public void setRootDiskTags(List<String> rootDiskTags) {
-		this.rootDiskTags = rootDiskTags;
-	}
+    public void setRootDiskTags(List<String> rootDiskTags) {
+        this.rootDiskTags = rootDiskTags;
+    }
 
-	public String getHostname() {
-		return hostname;
-	}
+    public String getHostname() {
+        return hostname;
+    }
 
-	public void setHostname(String hostname) {
-		this.hostname = hostname;
-	}
+    public void setHostname(String hostname) {
+        this.hostname = hostname;
+    }
 
-	public String getDisplayname() {
-		return displayname;
-	}
+    public String getDisplayname() {
+        return displayname;
+    }
 
-	public void setDisplayname(String displayname) {
-		this.displayname = displayname;
-	}
+    public void setDisplayname(String displayname) {
+        this.displayname = displayname;
+    }
 
-	public List<String> getNetworkIds() {
-		return networkIds;
-	}
+    public List<String> getNetworkIds() {
+        return networkIds;
+    }
 
-	public void setNetworkIds(List<String> networkIds) {
-		this.networkIds = networkIds;
-	}
+    public void setNetworkIds(List<String> networkIds) {
+        this.networkIds = networkIds;
+    }
+
+    @Override
+    public long getDiskOfferingId() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
 
 }

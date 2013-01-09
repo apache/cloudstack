@@ -29,10 +29,10 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
+import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State.Event;
 
-import com.cloud.api.Identity;
 import com.cloud.dc.DataCenter;
 import com.cloud.network.Network.Provider;
 import com.cloud.org.Grouping;
@@ -43,107 +43,107 @@ import com.cloud.utils.db.StateMachine;
 @Entity
 @Table(name="data_center")
 public class DataCenterVO implements DataCenter, Identity {
-    
+
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
     private long id;
-    
-	@Column(name="name")
-	private String name = null;
-    
+
+    @Column(name="name")
+    private String name = null;
+
     @Column(name="description")
     private String description = null;
-    
+
     @Column(name="dns1")
     private String dns1 = null;
-    
+
     @Column(name="dns2")
     private String dns2 = null;
-    
+
     @Column(name="internal_dns1")
     private String internalDns1 = null;
-    
+
     @Column(name="internal_dns2")
     private String internalDns2 = null;
-    
+
     @Column(name="router_mac_address", updatable = false, nullable=false)
     private String routerMacAddress = "02:00:00:00:00:01";
-    
+
     @Column(name="guest_network_cidr")
     private String guestNetworkCidr = null;
-    
+
     @Column(name="domain_id")
     private Long domainId = null;
 
     @Column(name="domain")
     private String domain;
-    
+
     @Column(name="networktype")
     @Enumerated(EnumType.STRING) 
     NetworkType networkType;
-    
+
     @Column(name="dns_provider")
     private String dnsProvider;
-    
+
     @Column(name="dhcp_provider")
     private String dhcpProvider;
-    
+
     @Column(name="gateway_provider")
     private String gatewayProvider;
-    
+
     @Column(name="vpn_provider")
     private String vpnProvider;
-    
+
     @Column(name="userdata_provider")
     private String userDataProvider;
-    
+
     @Column(name="lb_provider")
     private String loadBalancerProvider;
-    
+
     @Column(name="firewall_provider")
     private String firewallProvider;
-    
+
     @Column(name="mac_address", nullable=false)
     @TableGenerator(name="mac_address_sq", table="data_center", pkColumnName="id", valueColumnName="mac_address", allocationSize=1)
     private long macAddress = 1;
-    
-	@Column(name="zone_token")
-	private String zoneToken;    
-	
+
+    @Column(name="zone_token")
+    private String zoneToken;    
+
     @Column(name=GenericDao.REMOVED_COLUMN)
     private Date removed;
-    
+
     // This is a delayed load value.  If the value is null,
     // then this field has not been loaded yet.
     // Call the dao to load it.
     @Transient
     Map<String, String> details;
-    
+
     @Column(name="allocation_state")
     @Enumerated(value=EnumType.STRING)
     AllocationState allocationState;
 
-	@Column(name="uuid")
-	private String uuid;    
-    
+    @Column(name="uuid")
+    private String uuid;    
+
     @Column(name="is_security_group_enabled")
     boolean securityGroupEnabled;
-    
+
     @Column(name="is_local_storage_enabled")
     boolean localStorageEnabled;
-    
+
     //orchestration
     @Column(name="owner")
     private String owner = null;
-    
+
     @Column(name=GenericDao.CREATED_COLUMN)
     protected Date created;
 
     @Column(name="lastUpdated", updatable=true)
     @Temporal(value=TemporalType.TIMESTAMP)
     protected Date lastUpdated;
-    
+
     /**
      * Note that state is intentionally missing the setter.  Any updates to
      * the state machine needs to go through the DAO object because someone
@@ -199,13 +199,13 @@ public class DataCenterVO implements DataCenter, Identity {
     public void setFirewallProvider(String firewallProvider) {
         this.firewallProvider = firewallProvider;
     }
-    
+
     public DataCenterVO(long id, String name, String description, String dns1, String dns2, String dns3, String dns4, String guestCidr, String domain, Long domainId, NetworkType zoneType, String zoneToken, String domainSuffix) {
         this(name, description, dns1, dns2, dns3, dns4, guestCidr, domain, domainId, zoneType, zoneToken, domainSuffix, false, false);
         this.id = id;
         this.allocationState = Grouping.AllocationState.Enabled;
         this.uuid = UUID.randomUUID().toString();
-	}
+    }
 
     public DataCenterVO(String name, String description, String dns1, String dns2, String dns3, String dns4, String guestCidr, String domain, Long domainId, NetworkType zoneType, String zoneToken, String domainSuffix, boolean securityGroupEnabled, boolean localStorageEnabled) {
         this.name = name;
@@ -221,7 +221,7 @@ public class DataCenterVO implements DataCenter, Identity {
         this.allocationState = Grouping.AllocationState.Enabled;
         this.securityGroupEnabled = securityGroupEnabled;
         this.localStorageEnabled = localStorageEnabled;
-        
+
         if (zoneType == NetworkType.Advanced) {
             loadBalancerProvider = Provider.VirtualRouter.getName();
             firewallProvider = Provider.VirtualRouter.getName();
@@ -242,7 +242,7 @@ public class DataCenterVO implements DataCenter, Identity {
         this.uuid = UUID.randomUUID().toString();
         this.state = State.Disabled;
     }
-    
+
     @Override
     public String getVpnProvider() {
         return vpnProvider;
@@ -260,27 +260,27 @@ public class DataCenterVO implements DataCenter, Identity {
     public void setUserDataProvider(String userDataProvider) {
         this.userDataProvider = userDataProvider;
     }
-    
+
     @Override
     public String getGuestNetworkCidr()
     {
-    	return guestNetworkCidr;
+        return guestNetworkCidr;
     }
-    
+
     public void setGuestNetworkCidr(String guestNetworkCidr)
     {
-    	this.guestNetworkCidr = guestNetworkCidr;
+        this.guestNetworkCidr = guestNetworkCidr;
     }
 
     @Override
     public Long getDomainId() {
-		return domainId;
-	}
+        return domainId;
+    }
 
-	public void setDomainId(Long domainId) {
-		this.domainId = domainId;
-	}
-    
+    public void setDomainId(Long domainId) {
+        this.domainId = domainId;
+    }
+
     @Override
     public String getDescription() {
         return description;
@@ -289,12 +289,12 @@ public class DataCenterVO implements DataCenter, Identity {
     public String getRouterMacAddress() {
         return routerMacAddress;
     }
-    
+
     @Override
     public String getDns1() {
         return dns1;
     }
-    
+
     @Override
     public String getDns2() {
         return dns2;
@@ -310,43 +310,43 @@ public class DataCenterVO implements DataCenter, Identity {
         return internalDns2;
     }
 
-	protected DataCenterVO() {
+    protected DataCenterVO() {
     }
 
-	@Override
+    @Override
     public long getId() {
-		return id;
-	}
-	
-	@Override
+        return id;
+    }
+
+    @Override
     public String getName() {
-	    return name;
-	}
-	
-	public void setName(String name) {
-		this.name = name;
-	}
-	
-	public void setDns1(String dns1) {
-		this.dns1 = dns1;
-	}
-	
-	public void setDns2(String dns2) {
-		this.dns2 = dns2;
-	}
-	
-	public void setInternalDns1(String dns3) {
-		this.internalDns1 = dns3;
-	}
-	
-	public void setInternalDns2(String dns4) {
-		this.internalDns2 = dns4;
-	}
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setDns1(String dns1) {
+        this.dns1 = dns1;
+    }
+
+    public void setDns2(String dns2) {
+        this.dns2 = dns2;
+    }
+
+    public void setInternalDns1(String dns3) {
+        this.internalDns1 = dns3;
+    }
+
+    public void setInternalDns2(String dns4) {
+        this.internalDns2 = dns4;
+    }
 
     public void setRouterMacAddress(String routerMacAddress) {
         this.routerMacAddress = routerMacAddress;
     }
-    
+
     @Override
     public String getDomain() {
         return domain;
@@ -355,7 +355,7 @@ public class DataCenterVO implements DataCenter, Identity {
     public void setDomain(String domain) {
         this.domain = domain;
     }
-    
+
     public void setNetworkType(NetworkType zoneNetworkType) {
         this.networkType = zoneNetworkType;
     }
@@ -364,16 +364,16 @@ public class DataCenterVO implements DataCenter, Identity {
     public NetworkType getNetworkType() {
         return networkType;
     }
-    
+
     @Override 
     public boolean isSecurityGroupEnabled() {
         return securityGroupEnabled;
     }
-    
+
     public void setSecurityGroupEnabled(boolean enabled) {
         this.securityGroupEnabled = enabled;
     }
-    
+
     @Override
     public boolean isLocalStorageEnabled() {
         return localStorageEnabled;
@@ -392,32 +392,33 @@ public class DataCenterVO implements DataCenter, Identity {
     public void setDetails(Map<String, String> details2) {
         details = details2;        
     }
-    
+
     public String getDetail(String name) {
         assert (details != null) : "Did you forget to load the details?";
-        
+
         return details != null ? details.get(name) : null;
     }
-    
+
     public void setDetail(String name, String value) {
         assert (details != null) : "Did you forget to load the details?";
-        
+
         details.put(name, value);
     }
-    
+
+    @Override
     public AllocationState getAllocationState() {
-    	return allocationState;
+        return allocationState;
     }
-    
+
     public void setAllocationState(AllocationState allocationState) {
-		this.allocationState = allocationState;
+        this.allocationState = allocationState;
     }
-    
+
     @Override
     public int hashCode() {
         return NumbersUtil.hash(id);
     }
-    
+
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof DataCenterVO)) {
@@ -429,25 +430,25 @@ public class DataCenterVO implements DataCenter, Identity {
 
     @Override
     public String getZoneToken() {
- 	    return zoneToken;
- 	}
- 	
- 	public void setZoneToken(String zoneToken) {
- 		this.zoneToken = zoneToken;
- 	}
- 	
- 	public Date getRemoved() {
- 	    return removed;
- 	}
- 	
- 	@Override
- 	public String getUuid() {
- 		return this.uuid;
- 	}
- 	
- 	public void setUuid(String uuid) {
- 		this.uuid = uuid;
- 	}
+        return zoneToken;
+    }
+
+    public void setZoneToken(String zoneToken) {
+        this.zoneToken = zoneToken;
+    }
+
+    public Date getRemoved() {
+        return removed;
+    }
+
+    @Override
+    public String getUuid() {
+        return this.uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
 
     public long getMacAddress() {
         return macAddress;
@@ -457,23 +458,23 @@ public class DataCenterVO implements DataCenter, Identity {
         this.macAddress = macAddress;
     }
 
-	public String getOwner() {
-		return owner;
-	}
+    public String getOwner() {
+        return owner;
+    }
 
-	public void setOwner(String owner) {
-		this.owner = owner;
-	}
+    public void setOwner(String owner) {
+        this.owner = owner;
+    }
 
-	public Date getCreated() {
-		return created;
-	}
+    public Date getCreated() {
+        return created;
+    }
 
-	public Date getLastUpdated() {
-		return lastUpdated;
-	}
+    public Date getLastUpdated() {
+        return lastUpdated;
+    }
 
-	public State getState() {
-		return state;
-	}
+    public State getState() {
+        return state;
+    }
 }

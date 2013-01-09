@@ -16,6 +16,35 @@
 // under the License.
 package com.cloud.server;
 
+import java.io.DataInputStream;
+import java.io.EOFException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.security.NoSuchAlgorithmException;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.UUID;
+import java.util.regex.Pattern;
+
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+import javax.inject.Inject;
+
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.Resource;
@@ -45,7 +74,11 @@ import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.guru.*;
+import com.cloud.network.guru.ControlNetworkGuru;
+import com.cloud.network.guru.DirectPodBasedNetworkGuru;
+import com.cloud.network.guru.PodBasedNetworkGuru;
+import com.cloud.network.guru.PublicNetworkGuru;
+import com.cloud.network.guru.StorageNetworkGuru;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offerings.NetworkOfferingServiceMapVO;
@@ -63,7 +96,6 @@ import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.PropertiesUtil;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
@@ -71,20 +103,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
 import com.cloud.uuididentity.dao.IdentityDao;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
-
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
-import java.io.*;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.security.NoSuchAlgorithmException;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.*;
-import java.util.regex.Pattern;
 
 @Component
 public class ConfigurationServerImpl implements ConfigurationServer {
@@ -230,7 +248,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 
         // store the public and private keys in the database
         updateKeyPairs();
-        
+
         // generate a random password for system vm
         updateSystemvmPassword();
 
@@ -504,29 +522,29 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         if (!userid.startsWith("cloud")) {
             return;
         }
-        
+
         if (!Boolean.valueOf(_configDao.getValue("system.vm.random.password"))) {
-        	return;
+            return;
         }
 
-		String already = _configDao.getValue("system.vm.password");
-		if (already == null) {
-			Transaction txn = Transaction.currentTxn();
-			try {
-				String rpassword = PasswordGenerator.generatePresharedKey(8);
-				String wSql = "INSERT INTO `cloud`.`configuration` (category, instance, component, name, value, description) "
-				        + "VALUES ('Hidden','DEFAULT', 'management-server','system.vm.password', '" + rpassword
-				        + "','randmon password generated each management server starts for system vm')";
-				PreparedStatement stmt = txn.prepareAutoCloseStatement(wSql);
-				stmt.executeUpdate(wSql);
-				s_logger.info("Updated systemvm password in database");
-			} catch (SQLException e) {
-				s_logger.error("Cannot retrieve systemvm password", e);
-			}
-		}
+        String already = _configDao.getValue("system.vm.password");
+        if (already == null) {
+            Transaction txn = Transaction.currentTxn();
+            try {
+                String rpassword = PasswordGenerator.generatePresharedKey(8);
+                String wSql = "INSERT INTO `cloud`.`configuration` (category, instance, component, name, value, description) "
+                        + "VALUES ('Hidden','DEFAULT', 'management-server','system.vm.password', '" + rpassword
+                        + "','randmon password generated each management server starts for system vm')";
+                PreparedStatement stmt = txn.prepareAutoCloseStatement(wSql);
+                stmt.executeUpdate(wSql);
+                s_logger.info("Updated systemvm password in database");
+            } catch (SQLException e) {
+                s_logger.error("Cannot retrieve systemvm password", e);
+            }
+        }
 
-	}
-    
+    }
+
     @Override
     @DB
     public void updateKeyPairs() {
@@ -541,10 +559,10 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         String already = _configDao.getValue("ssh.privatekey");
         String homeDir = null;
         homeDir = Script.runSimpleBashScript("echo ~" + username);
-        	if (homeDir == null) {
+        if (homeDir == null) {
             throw new CloudRuntimeException("Cannot get home directory for account: " + username);
         }
-        
+
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Processing updateKeyPairs");
         }
@@ -622,11 +640,11 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         }
         s_logger.info("Going to update systemvm iso with generated keypairs if needed");
         try {
-        	injectSshKeysIntoSystemVmIsoPatch(pubkeyfile.getAbsolutePath(), privkeyfile.getAbsolutePath());
+            injectSshKeysIntoSystemVmIsoPatch(pubkeyfile.getAbsolutePath(), privkeyfile.getAbsolutePath());
         } catch (CloudRuntimeException e) {
-        	if (!devel) {
-        		throw new CloudRuntimeException(e.getMessage());
-        	}
+            if (!devel) {
+                throw new CloudRuntimeException(e.getMessage());
+            }
         }
     }
 
@@ -892,7 +910,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 
         defaultSharedSGNetworkOffering.setState(NetworkOffering.State.Enabled);
         defaultSharedSGNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultSharedSGNetworkOffering);
-        
+
         for (Service service : defaultSharedSGNetworkOfferingProviders.keySet()) {
             NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(defaultSharedSGNetworkOffering.getId(), service, defaultSharedSGNetworkOfferingProviders.get(service));
             _ntwkOfferingServiceMapDao.persist(offService);
@@ -967,7 +985,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             _ntwkOfferingServiceMapDao.persist(offService);
             s_logger.trace("Added service for the network offering: " + offService);
         }
-        
+
         // Offering #6
         NetworkOfferingVO defaultNetworkOfferingForVpcNetworks = new NetworkOfferingVO(
                 NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworks,
@@ -978,7 +996,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 
         defaultNetworkOfferingForVpcNetworks.setState(NetworkOffering.State.Enabled);
         defaultNetworkOfferingForVpcNetworks = _networkOfferingDao.persistDefaultNetworkOffering(defaultNetworkOfferingForVpcNetworks);
-        
+
         Map<Network.Service, Network.Provider> defaultVpcNetworkOfferingProviders = new HashMap<Network.Service, Network.Provider>();
         defaultVpcNetworkOfferingProviders.put(Service.Dhcp, Provider.VPCVirtualRouter);
         defaultVpcNetworkOfferingProviders.put(Service.Dns, Provider.VPCVirtualRouter);
@@ -990,14 +1008,14 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         defaultVpcNetworkOfferingProviders.put(Service.StaticNat, Provider.VPCVirtualRouter);
         defaultVpcNetworkOfferingProviders.put(Service.PortForwarding, Provider.VPCVirtualRouter);
         defaultVpcNetworkOfferingProviders.put(Service.Vpn, Provider.VPCVirtualRouter);
-        
+
         for (Service service : defaultVpcNetworkOfferingProviders.keySet()) {
             NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO
                     (defaultNetworkOfferingForVpcNetworks.getId(), service, defaultVpcNetworkOfferingProviders.get(service));
             _ntwkOfferingServiceMapDao.persist(offService);
             s_logger.trace("Added service for the network offering: " + offService);
         }
-        
+
         // Offering #7
         NetworkOfferingVO defaultNetworkOfferingForVpcNetworksNoLB = new NetworkOfferingVO(
                 NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworksNoLB,
@@ -1008,7 +1026,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 
         defaultNetworkOfferingForVpcNetworksNoLB.setState(NetworkOffering.State.Enabled);
         defaultNetworkOfferingForVpcNetworksNoLB = _networkOfferingDao.persistDefaultNetworkOffering(defaultNetworkOfferingForVpcNetworksNoLB);
-        
+
         Map<Network.Service, Network.Provider> defaultVpcNetworkOfferingProvidersNoLB = new HashMap<Network.Service, Network.Provider>();
         defaultVpcNetworkOfferingProvidersNoLB.put(Service.Dhcp, Provider.VPCVirtualRouter);
         defaultVpcNetworkOfferingProvidersNoLB.put(Service.Dns, Provider.VPCVirtualRouter);
@@ -1019,16 +1037,16 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         defaultVpcNetworkOfferingProvidersNoLB.put(Service.StaticNat, Provider.VPCVirtualRouter);
         defaultVpcNetworkOfferingProvidersNoLB.put(Service.PortForwarding, Provider.VPCVirtualRouter);
         defaultVpcNetworkOfferingProvidersNoLB.put(Service.Vpn, Provider.VPCVirtualRouter);
-        
+
         for (Service service : defaultVpcNetworkOfferingProvidersNoLB.keySet()) {
             NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO
                     (defaultNetworkOfferingForVpcNetworksNoLB.getId(), service, defaultVpcNetworkOfferingProvidersNoLB.get(service));
             _ntwkOfferingServiceMapDao.persist(offService);
             s_logger.trace("Added service for the network offering: " + offService);
         }
-        
-        
-        
+
+
+
         txn.commit();
     }
 

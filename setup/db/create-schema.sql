@@ -156,6 +156,7 @@ DROP TABLE IF EXISTS `cloud`.`autoscale_vmprofiles`;
 DROP TABLE IF EXISTS `cloud`.`autoscale_policies`;
 DROP TABLE IF EXISTS `cloud`.`counter`;
 DROP TABLE IF EXISTS `cloud`.`conditions`;
+DROP TABLE IF EXISTS `cloud`.`inline_load_balancer_nic_map`;
 
 CREATE TABLE `cloud`.`version` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',

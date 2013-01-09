@@ -35,18 +35,16 @@ import javax.persistence.InheritanceType;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
-import org.apache.cloudstack.api.Identity;
-import com.cloud.network.dao.FirewallRulesCidrsDaoImpl;
+import com.cloud.network.dao.FirewallRulesCidrsDao;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.NetUtils;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="firewall_rules")
 @Inheritance(strategy=InheritanceType.JOINED)
 @DiscriminatorColumn(name="purpose", discriminatorType=DiscriminatorType.STRING, length=32)
 public class FirewallRuleVO implements FirewallRule {
-    protected final FirewallRulesCidrsDaoImpl _firewallRulesCidrsDao = ComponentLocator.inject(FirewallRulesCidrsDaoImpl.class);
+    @Inject protected FirewallRulesCidrsDao _firewallRulesCidrsDao;
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
