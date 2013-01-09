@@ -27,7 +27,7 @@ import org.apache.cloudstack.api.response.ApiDiscoveryResponse;
 
 import org.apache.log4j.Logger;
 
-@APICommand(name = "listApis", responseObject = ApiDiscoveryResponse.class, description = "lists all apis available to the user as per their account type", since = "4.1.0")
+@APICommand(name = "listApis", responseObject = ApiDiscoveryResponse.class, description = "lists all available apis on the server, provided by Api Discovery plugin", since = "4.1.0")
 public class ListApisCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListApisCmd.class.getName());

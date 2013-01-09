@@ -34,7 +34,7 @@ public class ApiParameterResponse extends BaseResponse {
     @SerializedName(ApiConstants.LENGTH) @Param(description="length of the parameter")
     private int length;
 
-    @SerializedName(ApiConstants.REQUIRED) @Param(description="version of CloudStack the api was introduced in")
+    @SerializedName(ApiConstants.REQUIRED) @Param(description="true if this parameter is required for the api request")
     private Boolean required;
 
     @SerializedName(ApiConstants.SINCE) @Param(description="version of CloudStack the api was introduced in")
