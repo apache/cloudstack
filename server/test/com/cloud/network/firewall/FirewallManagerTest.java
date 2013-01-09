@@ -29,7 +29,9 @@ import java.util.List;
 
 import junit.framework.Assert;
 
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.junit.Before;
 import org.junit.Test;
 
 import com.cloud.exception.ResourceUnavailableException;
@@ -50,15 +52,31 @@ import com.cloud.utils.component.Adapter;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.ComponentLocator.ComponentInfo;
+import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.testcase.ComponentSetup;
 import com.cloud.utils.testcase.ComponentTestCase;
 
 @ComponentSetup(managerName="management-server", setupXml="network-mgr-component.xml")
 public class FirewallManagerTest extends ComponentTestCase {
     private static final Logger s_logger = Logger.getLogger(FirewallManagerTest.class);
+    
+    @Before
+    public void setUp() {
+        Logger componentlogger = Logger.getLogger(ComponentLocator.class);
+        Logger daoLogger = Logger.getLogger(GenericDaoBase.class);
+        Logger cloudLogger = Logger.getLogger("com.cloud");
+
+        componentlogger.setLevel(Level.WARN);
+        daoLogger.setLevel(Level.ERROR);
+        cloudLogger.setLevel(Level.ERROR);
+        s_logger.setLevel(Level.INFO);
+        super.setUp();
+    }
+    
 
     @Test
     public void testInjected() {
+        
         FirewallManagerImpl firewallMgr = (FirewallManagerImpl)ComponentLocator.getCurrentLocator().getManager(FirewallManager.class);
         Assert.assertTrue(firewallMgr._firewallElements.enumeration().hasMoreElements());
         Assert.assertTrue(firewallMgr._pfElements.enumeration().hasMoreElements());
