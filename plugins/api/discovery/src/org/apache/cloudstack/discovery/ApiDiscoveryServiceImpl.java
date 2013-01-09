@@ -139,6 +139,6 @@ public class ApiDiscoveryServiceImpl extends AdapterBase implements ApiDiscovery
 
     @Override
     public String[] getPropertiesFiles() {
-        return new String[]{"api-discovery_commands.properties"};
+        return new String[] { "api-discovery_commands.properties" };
     }
 }
