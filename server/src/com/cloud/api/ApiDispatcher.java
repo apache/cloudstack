@@ -149,31 +149,9 @@ public class ApiDispatcher {
         }
     }
 
-    private void checkACLOnCommand(BaseCmd cmd) {
-        // TODO Auto-generated method stub
-        //need to write an commandACLChecker adapter framework to check ACL on commands - default one will use the static roles by referring to commands.properties.
-        //one can write another commandACLChecker to check access via custom roles.
-    }
-
-    private List<Role> determineRole(Account caller) {
-        // TODO Auto-generated method stub
-        List<Role> effectiveRoles = new ArrayList<Role>();
-        return effectiveRoles;
-
-    }
-
     private void doAccessChecks(BaseCmd cmd, List<Object> entitiesToAccess) {
-		//owner
-		Account caller = UserContext.current().getCaller();
-		Account owner = _accountMgr.getActiveAccountById(cmd.getEntityOwnerId());
-
-        // REMOVE ME:
-		// List<Role> callerRoles = determineRole(caller);
-		// List<Role> ownerRoles = determineRole(owner);
-		// check permission to call this command for the caller
-		// this needs checking of static roles of the caller
-        // Role based acl is done in ApiServer before api gets to ApiDispatcher
-        // checkACLOnCommand(cmd);
+        Account caller = UserContext.current().getCaller();
+        Account owner = _accountMgr.getActiveAccountById(cmd.getEntityOwnerId());
 
         if(cmd instanceof BaseAsyncCreateCmd) {
             //check that caller can access the owner account.
@@ -188,13 +166,13 @@ public class ApiDispatcher {
                     _accountMgr.checkAccess(caller, null, true, (ControlledEntity) entity);
                 }
                 else if (entity instanceof InfrastructureEntity) {
-                    //do something here:D
+                    //FIXME: Move this code in adapter, remove code from Account manager
                 }
             }
         }
-	}
+    }
 
-	public void dispatch(BaseCmd cmd, Map<String, String> params) {
+    public void dispatch(BaseCmd cmd, Map<String, String> params) {
         try {
             processParameters(cmd, params);
             UserContext ctx = UserContext.current();
@@ -524,7 +502,6 @@ public class ApiDispatcher {
         }
         Long internalId = null;
         // If annotation's empty, the cmd existed before 3.x try conversion to long
-        // FIXME: Fails if someone adds since field for any pre 3.x apis
         boolean isPre3x = annotation.since().isEmpty();
         // Match against Java's UUID regex to check if input is uuid string
         boolean isUuid = uuid.matches("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$");
