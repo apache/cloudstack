@@ -25,9 +25,6 @@ import org.junit.Test;
 
 import com.cloud.network.element.DhcpServiceProvider;
 import com.cloud.network.element.IpDeployer;
-import com.cloud.network.firewall.FirewallManagerImpl;
-import com.cloud.network.firewall.FirewallManagerTest;
-import com.cloud.network.rules.FirewallManager;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.testcase.ComponentSetup;
 import com.cloud.utils.testcase.ComponentTestCase;

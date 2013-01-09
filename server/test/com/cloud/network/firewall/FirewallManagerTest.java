@@ -18,17 +18,38 @@
 package com.cloud.network.firewall;
 
 
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import junit.framework.Assert;
 
 import org.apache.log4j.Logger;
 import org.junit.Test;
 
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.Network;
+import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkRuleApplier;
 import com.cloud.network.element.FirewallServiceProvider;
 import com.cloud.network.element.NetworkACLServiceProvider;
 import com.cloud.network.element.PortForwardingServiceProvider;
 import com.cloud.network.element.StaticNatServiceProvider;
+import com.cloud.network.element.VirtualRouterElement;
+import com.cloud.network.element.VpcVirtualRouterElement;
 import com.cloud.network.rules.FirewallManager;
+import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.FirewallRule.Purpose;
+import com.cloud.network.rules.FirewallRuleVO;
+import com.cloud.utils.component.Adapter;
+import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.component.ComponentLocator.ComponentInfo;
 import com.cloud.utils.testcase.ComponentSetup;
 import com.cloud.utils.testcase.ComponentTestCase;
 
@@ -62,6 +83,75 @@ public class FirewallManagerTest extends ComponentTestCase {
         
         s_logger.info("Done testing injection of service elements into firewall manager");
 
+    }
+    
+    @Test
+    public void testApplyRules() {
+        List<FirewallRuleVO> ruleList = new ArrayList<FirewallRuleVO>();
+        FirewallRuleVO rule = 
+                new FirewallRuleVO("rule1", 1, 80, "TCP", 1, 2, 1, 
+                        FirewallRule.Purpose.Firewall, null, null, null, null);
+        ruleList.add(rule);
+        FirewallManagerImpl firewallMgr = (FirewallManagerImpl)ComponentLocator.getCurrentLocator().getManager(FirewallManager.class);
+        
+        NetworkManager netMgr = mock(NetworkManager.class);
+        firewallMgr._networkMgr = netMgr;
+        
+        try {
+            firewallMgr.applyRules(ruleList, false, false);
+            verify(netMgr)
+                   .applyRules(any(List.class), 
+                         any(FirewallRule.Purpose.class), 
+                         any(NetworkRuleApplier.class), 
+                         anyBoolean());
+            
+        } catch (ResourceUnavailableException e) {
+            Assert.fail("Unreachable code");
+        }
+    }
+    
+    @Test
+    public void testApplyFWRules() {
+        List<FirewallRuleVO> ruleList = new ArrayList<FirewallRuleVO>();
+        FirewallRuleVO rule = 
+                new FirewallRuleVO("rule1", 1, 80, "TCP", 1, 2, 1, 
+                        FirewallRule.Purpose.Firewall, null, null, null, null);
+        ruleList.add(rule);
+        FirewallManagerImpl firewallMgr = (FirewallManagerImpl)ComponentLocator.getCurrentLocator().getManager(FirewallManager.class);
+        VirtualRouterElement virtualRouter =  
+                mock(VirtualRouterElement.class);
+        VpcVirtualRouterElement vpcVirtualRouter =                  
+                mock(VpcVirtualRouterElement.class);
+        ComponentInfo<Adapter> c1 = 
+                new ComponentInfo<Adapter>("VirtualRouter", 
+                        VirtualRouterElement.class, virtualRouter);
+        ComponentInfo<Adapter> c2 = 
+                new ComponentInfo<Adapter>("VpcVirtualRouter", 
+                        VpcVirtualRouterElement.class, vpcVirtualRouter);
+        List<ComponentInfo<Adapter>> adapters = 
+                new ArrayList<ComponentLocator.ComponentInfo<Adapter>>();
+        adapters.add(c1);
+        adapters.add(c2);
+        Adapters<FirewallServiceProvider> fwElements = 
+                new Adapters<FirewallServiceProvider>("firewalElements", adapters);
+        firewallMgr._firewallElements = fwElements;
+        
+        try {
+            when(
+                  virtualRouter.applyFWRules(any(Network.class), any(List.class))
+                ).thenReturn(false);
+            when(
+                    vpcVirtualRouter.applyFWRules(any(Network.class), any(List.class))
+                  ).thenReturn(true);
+            //Network network, Purpose purpose, List<? extends FirewallRule> rules
+            firewallMgr.applyRules(mock(Network.class), Purpose.Firewall, ruleList);
+            verify(vpcVirtualRouter).applyFWRules(any(Network.class), any(List.class));
+            verify(virtualRouter).applyFWRules(any(Network.class), any(List.class));
+
+            
+        } catch (ResourceUnavailableException e) {
+            Assert.fail("Unreachable code");
+        }
     }
 
 }
