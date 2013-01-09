@@ -1833,4 +1833,25 @@ public class NetworkModelImpl  implements NetworkModel, Manager{
     public String getName() {
         return _name;
     }
+
+    @Override
+    public PublicIpAddress getSourceNatIpAddressForGuestNetwork(Account owner, Network guestNetwork) {
+        List<? extends IpAddress> addrs = listPublicIpsAssignedToGuestNtwk(owner.getId(), guestNetwork.getId(), true);
+        
+        IPAddressVO sourceNatIp = null;
+        if (addrs.isEmpty()) {
+            return null;
+        } else {
+            for (IpAddress addr : addrs) {
+                if (addr.isSourceNat()) {
+                    sourceNatIp = _ipAddressDao.findById(addr.getId());
+                    return new PublicIp(sourceNatIp, _vlanDao.findById(sourceNatIp.getVlanId()), 
+                            NetUtils.createSequenceBasedMacAddress(sourceNatIp.getMacAddress()));
+                }
+            }
+    
+        } 
+        
+        return null;
+    }
 }

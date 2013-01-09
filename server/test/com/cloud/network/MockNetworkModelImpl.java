@@ -795,4 +795,13 @@ public class MockNetworkModelImpl implements NetworkModel, Manager {
         return null;
     }
 
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkModel#getSourceNatIpAddressForGuestNetwork(com.cloud.user.Account, com.cloud.network.Network)
+     */
+    @Override
+    public PublicIpAddress getSourceNatIpAddressForGuestNetwork(Account owner, Network guestNetwork) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
 }

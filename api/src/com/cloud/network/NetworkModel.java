@@ -241,5 +241,7 @@ public interface NetworkModel {
     Set<Long> getAvailableIps(Network network, String requestedIp);
 
     String getDomainNetworkDomain(long domainId, long zoneId);
+    
+    PublicIpAddress getSourceNatIpAddressForGuestNetwork(Account owner, Network guestNetwork);
 
 }
