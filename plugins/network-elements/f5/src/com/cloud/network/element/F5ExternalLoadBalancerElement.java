@@ -260,8 +260,8 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
     }
 
     @Override
-    public String getPropertiesFile() {
-        return "f5bigip_commands.properties";
+    public String[] getPropertiesFiles() {
+        return new String[] { "f5bigip_commands.properties" };
     }
 
     @Override
