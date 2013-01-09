@@ -80,7 +80,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
-import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
@@ -113,8 +112,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     ConfigurationManager _configMgr;
     @Inject
     RulesManager _rulesMgr;
-    @Inject
-    UserVmManager _userVmMgr;
+   
     @Inject
     UserVmDao _userVmDao;
     @Inject

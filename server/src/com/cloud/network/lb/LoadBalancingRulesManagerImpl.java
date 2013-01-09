@@ -119,7 +119,6 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
-import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainService;
@@ -197,8 +196,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
     DomainService _domainMgr;
     @Inject
     ConfigurationManager _configMgr;
-    @Inject
-    TemplateManager _templateMgr;
+   
     @Inject
     ExternalLoadBalancerUsageManager _externalLBUsageMgr;
     @Inject
