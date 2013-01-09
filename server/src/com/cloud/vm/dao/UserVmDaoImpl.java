@@ -284,7 +284,6 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     @Override
     public List<UserVmVO> listByNetworkIdAndStates(long networkId, State... states) {
         if (UserVmSearch == null) {
-            NicDao _nicDao = ComponentLocator.getLocator("management-server").getDao(NicDao.class);
             SearchBuilder<NicVO> nicSearch = _nicDao.createSearchBuilder();
             nicSearch.and("networkId", nicSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
             nicSearch.and("ip4Address", nicSearch.entity().getIp4Address(), SearchCriteria.Op.NNULL);

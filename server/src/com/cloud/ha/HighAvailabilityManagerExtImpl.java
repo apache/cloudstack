@@ -41,21 +41,12 @@ public class HighAvailabilityManagerExtImpl extends HighAvailabilityManagerImpl 
 	
     @Inject
 	UsageJobDao _usageJobDao;
-    ConfigurationDao configDao;
+    
+    @Inject ConfigurationDao configDao;
     
 	@Override
 	public boolean configure(final String name, final Map<String, Object> xmlParams) throws ConfigurationException {
 		super.configure(name, xmlParams);
-
-		ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
-        
-        configDao = locator.getDao(ConfigurationDao.class);
-        if (configDao == null) 
-        {
-        	s_logger.warn("Unable to get a configuration dao to check config value for enableUsageServer");
-        	return false;
-        }
-
         return true;
 	}
 

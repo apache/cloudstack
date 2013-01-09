@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -42,8 +43,8 @@ public class GarbageCollectingStoragePoolAllocator extends AbstractStoragePoolAl
     
     StoragePoolAllocator _firstFitStoragePoolAllocator;
     StoragePoolAllocator _localStoragePoolAllocator;
-    StorageManager _storageMgr;
-    ConfigurationDao _configDao;
+    @Inject StorageManager _storageMgr;
+    @Inject ConfigurationDao _configDao;
     boolean _storagePoolCleanupEnabled;
     
     @Override
@@ -93,16 +94,6 @@ public class GarbageCollectingStoragePoolAllocator extends AbstractStoragePoolAl
         _firstFitStoragePoolAllocator.configure("GCFirstFitStoragePoolAllocator", params);
         _localStoragePoolAllocator = ComponentLocator.inject(LocalStoragePoolAllocator.class);
         _localStoragePoolAllocator.configure("GCLocalStoragePoolAllocator", params);
-        
-        _storageMgr = locator.getManager(StorageManager.class);
-        if (_storageMgr == null) {
-        	throw new ConfigurationException("Unable to get " + StorageManager.class.getName());
-        }
-        
-        _configDao = locator.getDao(ConfigurationDao.class);
-        if (_configDao == null) {
-            throw new ConfigurationException("Unable to get the configuration dao.");
-        }
         
         String storagePoolCleanupEnabled = _configDao.getValue("storage.pool.cleanup.enabled");
         _storagePoolCleanupEnabled = (storagePoolCleanupEnabled == null) ? true : Boolean.parseBoolean(storagePoolCleanupEnabled);

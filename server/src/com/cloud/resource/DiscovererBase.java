@@ -48,8 +48,7 @@ public abstract class DiscovererBase implements Discoverer {
     
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        ConfigurationDao dao = ComponentLocator.getCurrentLocator().getDao(ConfigurationDao.class);
-        _params = dao.getConfiguration(params);
+        _params = _configDao.getConfiguration(params);
         _name = name;
         
         return true;

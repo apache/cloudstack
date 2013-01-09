@@ -1018,8 +1018,6 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _name = name;
         
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        
         final Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
         _routerTemplateId = NumbersUtil.parseInt(configs.get("router.template.id"), 1);
 

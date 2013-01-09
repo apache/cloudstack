@@ -81,14 +81,6 @@ public class ConsoleProxyBalanceAllocator implements ConsoleProxyAllocator {
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _name = name;
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
-        if (configDao == null) {
-            throw new ConfigurationException("Unable to get the configuration dao.");
-        }
-        
-        Map<String, String> configs = configDao.getConfiguration();
-        
         return true;
     }
 	

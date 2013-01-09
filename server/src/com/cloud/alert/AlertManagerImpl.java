@@ -107,7 +107,6 @@ public class AlertManagerImpl implements AlertManager {
     @Inject private ConfigurationDao _configDao;
     @Inject private ResourceManager _resourceMgr;
     @Inject private ConfigurationManager _configMgr;   
-    
     private Timer _timer = null;
     private float _cpuOverProvisioningFactor = 1;
     private long _capacityCheckPeriod = 60L * 60L * 1000L; // one hour by default
@@ -127,14 +126,7 @@ public class AlertManagerImpl implements AlertManager {
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _name = name;
 
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
-        if (configDao == null) {
-            s_logger.error("Unable to get the configuration dao.");
-            return false;
-        }
-
-        Map<String, String> configs = configDao.getConfiguration("management-server", params);
+        Map<String, String> configs = _configDao.getConfiguration("management-server", params);
 
         // set up the email system for alerts
         String emailAddressList = configs.get("alert.email.addresses");

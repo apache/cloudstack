@@ -278,8 +278,6 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 	
 	@Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-		ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        _configDao = locator.getDao(ConfigurationDao.class);
 		_setupAgentPath = Script.findScript(getPatchPath(), "setup_agent.sh");
 		_kvmPrivateNic = _configDao.getValue(Config.KvmPrivateNetwork.key());
 		if (_kvmPrivateNic == null) {

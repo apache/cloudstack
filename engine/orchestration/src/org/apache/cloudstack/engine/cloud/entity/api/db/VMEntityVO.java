@@ -557,4 +557,10 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
 		this.networkIds = networkIds;
 	}
 
+	@Override
+	public long getDiskOfferingId() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
 }

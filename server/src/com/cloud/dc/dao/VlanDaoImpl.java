@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.springframework.stereotype.Component;
@@ -59,9 +60,9 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
 	protected SearchBuilder<VlanVO> NetworkVlanSearch;
 	protected SearchBuilder<VlanVO> PhysicalNetworkVlanSearch;
 
-	protected PodVlanMapDaoImpl _podVlanMapDao = new PodVlanMapDaoImpl();
-	protected AccountVlanMapDao _accountVlanMapDao = new AccountVlanMapDaoImpl();
-	protected IPAddressDao _ipAddressDao = null;
+	@Inject protected PodVlanMapDao _podVlanMapDao;
+	@Inject protected AccountVlanMapDao _accountVlanMapDao;
+	@Inject protected IPAddressDao _ipAddressDao;
 	 	
     @Override
     public VlanVO findByZoneAndVlanId(long zoneId, String vlanId) {
@@ -177,13 +178,6 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
 	public boolean configure(String name, Map<String, Object> params)
 			throws ConfigurationException {
 		boolean result = super.configure(name, params);
-		if (result) {
-	        final ComponentLocator locator = ComponentLocator.getCurrentLocator();
-			_ipAddressDao = locator.getDao(IPAddressDao.class);
-			if (_ipAddressDao == null) {
-				throw new ConfigurationException("Unable to get " + IPAddressDao.class.getName());
-			}
-		}
         ZoneTypeAllPodsSearch = createSearchBuilder();
         ZoneTypeAllPodsSearch.and("zoneId", ZoneTypeAllPodsSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         ZoneTypeAllPodsSearch.and("vlanType", ZoneTypeAllPodsSearch.entity().getVlanType(), SearchCriteria.Op.EQ);

@@ -19,6 +19,7 @@ package com.cloud.alert;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -29,8 +30,6 @@ import com.cloud.cluster.ClusterNodeJoinEventArgs;
 import com.cloud.cluster.ClusterNodeLeftEventArgs;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
-import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.events.EventArgs;
 import com.cloud.utils.events.SubscriptionMgr;
 
@@ -40,10 +39,9 @@ public class ClusterAlertAdapter implements AlertAdapter {
 
     private static final Logger s_logger = Logger.getLogger(ClusterAlertAdapter.class);
 
-    private AlertManager _alertMgr;
     private String _name;
-
-    private ManagementServerHostDao _mshostDao;
+    @Inject private AlertManager _alertMgr;
+    @Inject private ManagementServerHostDao _mshostDao;
 
     public void onClusterAlert(Object sender, EventArgs args) {
         if (s_logger.isDebugEnabled()) {
@@ -109,19 +107,7 @@ public class ClusterAlertAdapter implements AlertAdapter {
             s_logger.info("Start configuring cluster alert manager : " + name);
         }
 
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
-
-        _mshostDao = locator.getDao(ManagementServerHostDao.class);
-        if (_mshostDao == null) {
-            throw new ConfigurationException("Unable to get " + ManagementServerHostDao.class.getName());
-        }
-
-        _alertMgr = locator.getManager(AlertManager.class);
-        if (_alertMgr == null) {
-            throw new ConfigurationException("Unable to get " + AlertManager.class.getName());
-        }
-
-        try {
+         try {
             SubscriptionMgr.getInstance().subscribe(ClusterManager.ALERT_SUBJECT, this, "onClusterAlert");
         } catch (SecurityException e) {
             throw new ConfigurationException("Unable to register cluster event subscription");

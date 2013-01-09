@@ -73,7 +73,8 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
     @Inject protected SnapshotPolicyDao       _snapshotPolicyDao;
     @Inject protected AsyncJobManager         _asyncMgr;
     @Inject protected VolumeDao               _volsDao;
-
+    @Inject protected ConfigurationDao 		  _configDao;
+    
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 5;    // 5 seconds
     private int        _snapshotPollInterval;
     private Timer      _testClockTimer;
@@ -340,23 +341,16 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
     throws ConfigurationException {
         _name = name;
 
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
-
-        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
-        if (configDao == null) {
-            s_logger.error("Unable to get the configuration dao. " + ConfigurationDao.class.getName());
-            return false;
-        }
-        _snapshotPollInterval = NumbersUtil.parseInt(configDao.getValue("snapshot.poll.interval"), 300);
-        boolean snapshotsRecurringTest = Boolean.parseBoolean(configDao.getValue("snapshot.recurring.test"));
+     _snapshotPollInterval = NumbersUtil.parseInt(_configDao.getValue("snapshot.poll.interval"), 300);
+        boolean snapshotsRecurringTest = Boolean.parseBoolean(_configDao.getValue("snapshot.recurring.test"));
         if (snapshotsRecurringTest) {
             // look for some test values in the configuration table so that snapshots can be taken more frequently (QA test code)
-            int minutesPerHour = NumbersUtil.parseInt(configDao.getValue("snapshot.test.minutes.per.hour"), 60);
-            int hoursPerDay = NumbersUtil.parseInt(configDao.getValue("snapshot.test.hours.per.day"), 24);
-            int daysPerWeek = NumbersUtil.parseInt(configDao.getValue("snapshot.test.days.per.week"), 7);
-            int daysPerMonth = NumbersUtil.parseInt(configDao.getValue("snapshot.test.days.per.month"), 30);
-            int weeksPerMonth = NumbersUtil.parseInt(configDao.getValue("snapshot.test.weeks.per.month"), 4);
-            int monthsPerYear = NumbersUtil.parseInt(configDao.getValue("snapshot.test.months.per.year"), 12);
+            int minutesPerHour = NumbersUtil.parseInt(_configDao.getValue("snapshot.test.minutes.per.hour"), 60);
+            int hoursPerDay = NumbersUtil.parseInt(_configDao.getValue("snapshot.test.hours.per.day"), 24);
+            int daysPerWeek = NumbersUtil.parseInt(_configDao.getValue("snapshot.test.days.per.week"), 7);
+            int daysPerMonth = NumbersUtil.parseInt(_configDao.getValue("snapshot.test.days.per.month"), 30);
+            int weeksPerMonth = NumbersUtil.parseInt(_configDao.getValue("snapshot.test.weeks.per.month"), 4);
+            int monthsPerYear = NumbersUtil.parseInt(_configDao.getValue("snapshot.test.months.per.year"), 12);
 
             _testTimerTask = new TestClock(this, minutesPerHour, hoursPerDay, daysPerWeek, daysPerMonth, weeksPerMonth, monthsPerYear);
         }

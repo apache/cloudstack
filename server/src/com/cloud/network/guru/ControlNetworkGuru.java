@@ -61,6 +61,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
     private static final Logger s_logger = Logger.getLogger(ControlNetworkGuru.class);
     @Inject DataCenterDao _dcDao;
     @Inject NetworkManager _networkMgr;
+    @Inject ConfigurationDao _configDao;
     String _cidr;
     String _gateway;
     
@@ -211,10 +212,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
         
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        
-        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
-        Map<String, String> dbParams = configDao.getConfiguration(params);
+        Map<String, String> dbParams = _configDao.getConfiguration(params);
         
         _cidr = dbParams.get(Config.ControlCidr);
         if (_cidr == null) {

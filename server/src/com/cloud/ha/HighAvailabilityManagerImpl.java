@@ -141,7 +141,11 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
     AccountManager _accountMgr;
     @Inject
     ResourceManager _resourceMgr;
-
+    @Inject
+    ManagementServer _msServer;
+    @Inject
+    ConfigurationDao _configDao;
+    
     String _instance;
     ScheduledExecutorService _executor;
     int _stopRetryInterval;
@@ -690,15 +694,11 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
     @Override
     public boolean configure(final String name, final Map<String, Object> xmlParams) throws ConfigurationException {
         _name = name;
-        ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
 
-        _serverId = ((ManagementServer) ComponentLocator.getComponent(ManagementServer.Name)).getId();
+        _serverId = _msServer.getId();
 
         Map<String, String> params = new HashMap<String, String>();
-        final ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
-        if (configDao != null) {
-            params = configDao.getConfiguration(Long.toHexString(_serverId), xmlParams);
-        }
+        params = _configDao.getConfiguration(Long.toHexString(_serverId), xmlParams);
 
         String value = params.get(Config.HAWorkers.key());
         final int count = NumbersUtil.parseInt(value, 1);

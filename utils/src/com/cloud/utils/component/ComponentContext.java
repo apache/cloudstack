@@ -23,7 +23,6 @@ import org.apache.log4j.Logger;
 import org.springframework.aop.Advisor;
 import org.springframework.aop.framework.Advised;
 import org.springframework.aop.framework.ProxyFactory;
-import org.springframework.aop.support.AopUtils;
 import org.springframework.aop.support.DefaultPointcutAdvisor;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
@@ -85,9 +84,21 @@ public class ComponentContext implements ApplicationContextAware {
     }
     
     public static <T> boolean isPrimary(Object instance, Class<T> beanType) {
-		Map<String, T> matchedTypes = ComponentContext.getComponentsOfType(beanType);
+    	
+    	// we assume single line of interface inheritance of beanType
+    	Class<?> componentType = beanType;
+    	Class<?> targetClass = getTargetClass(instance);
+    	Class<?> interfaces[] = targetClass.getInterfaces();
+    	for(Class<?> intf : interfaces)  {
+    		if(beanType.isAssignableFrom(intf)) {
+    			componentType = intf;
+    			break;
+    		}
+    	}
+    	
+		Map<String, T> matchedTypes = (Map<String, T>)ComponentContext.getComponentsOfType(componentType);
 		if(matchedTypes.size() > 1) {
-			Primary primary = getTargetClass(instance).getAnnotation(Primary.class);
+			Primary primary = targetClass.getAnnotation(Primary.class);
 			if(primary != null)
 				return true;
 			
@@ -96,7 +107,7 @@ public class ComponentContext implements ApplicationContextAware {
     	
     	return true;
     }
-    
+     
     public static Class<?> getTargetClass(Object instance) {
 	    if(instance instanceof Advised) {
 	    	try {

@@ -59,6 +59,8 @@ public class CheckPointManagerImpl implements CheckPointManager, Manager, Cluste
     @Inject
     private ClusterManager _clusterMgr;
     
+    @Inject ConfigurationDao _configDao;
+    
     long _msId;
 
     private final ScheduledExecutorService _cleanupScheduler = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Task-Cleanup"));
@@ -79,10 +81,7 @@ public class CheckPointManagerImpl implements CheckPointManager, Manager, Cluste
 
         _clusterMgr.registerListener(this);
         
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
-        
-        Map<String, String> params = configDao.getConfiguration(xmlParams);
+        Map<String, String> params = _configDao.getConfiguration(xmlParams);
         
         _cleanupRetryInterval = NumbersUtil.parseInt(params.get(Config.TaskCleanupRetryInterval.key()), 600);
         _maidDao.takeover(_msId, _msId);

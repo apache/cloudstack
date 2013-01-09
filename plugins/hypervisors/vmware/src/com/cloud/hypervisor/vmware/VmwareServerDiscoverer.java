@@ -348,13 +348,6 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 
 		super.configure(name, params);
 
-		ComponentLocator locator = ComponentLocator.getCurrentLocator();
-		ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
-		if (configDao == null) {
-			throw new ConfigurationException(
-					"Unable to get the configuration dao.");
-		}
-
 		createVmwareToolsIso();
 
 		if (s_logger.isInfoEnabled()) {

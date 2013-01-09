@@ -381,7 +381,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 	protected String _instance;
 	protected String _zone;
 
-	private ConfigurationDao _configDao;
+	@Inject private ConfigurationDao _configDao;
 	private int _createprivatetemplatefromvolumewait;
 	private int _createprivatetemplatefromsnapshotwait;
 
@@ -1332,13 +1332,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 	public boolean configure(String name, Map<String, Object> params)
 			throws ConfigurationException {
 		_name = name;
-
-		ComponentLocator locator = ComponentLocator.getCurrentLocator();
-		_configDao = locator.getDao(ConfigurationDao.class);
-		if (_configDao == null) {
-			throw new ConfigurationException(
-					"Unable to get the configuration dao.");
-		}
 
 		Map<String, String> configs = _configDao.getConfiguration(
 				"AgentManager", params);

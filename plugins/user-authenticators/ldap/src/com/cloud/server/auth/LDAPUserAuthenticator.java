@@ -20,6 +20,7 @@ import java.util.Hashtable;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.AuthenticationException;
 import javax.naming.ConfigurationException;
 import javax.naming.Context;
@@ -48,8 +49,8 @@ import com.cloud.utils.crypt.DBEncryptionUtil;
 public class LDAPUserAuthenticator extends DefaultUserAuthenticator {
     public static final Logger s_logger = Logger.getLogger(LDAPUserAuthenticator.class);
 
-    private ConfigurationDao _configDao;
-    private UserAccountDao _userAccountDao;
+    @Inject private ConfigurationDao _configDao;
+    @Inject private UserAccountDao _userAccountDao;
     
     @Override
     public boolean authenticate(String username, String password, Long domainId, Map<String, Object[]> requestParameters ) {
@@ -156,9 +157,6 @@ public class LDAPUserAuthenticator extends DefaultUserAuthenticator {
     public boolean configure(String name, Map<String, Object> params)
             throws ConfigurationException {
         super.configure(name, params);
-        ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
-        _configDao = locator.getDao(ConfigurationDao.class);
-        _userAccountDao = locator.getDao(UserAccountDao.class);
         return true;
     }
 }

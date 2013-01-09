@@ -57,6 +57,7 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
 
     @Inject protected FirewallRulesCidrsDaoImpl _firewallRulesCidrsDao;
     @Inject ResourceTagsDaoImpl _tagsDao;
+    @Inject IPAddressDao _ipDao;
 
     protected FirewallRulesDaoImpl() {
         super();
@@ -184,8 +185,6 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
 
     @Override
     public List<FirewallRuleVO> listStaticNatByVmId(long vmId) {
-        IPAddressDao _ipDao = ComponentLocator.getLocator("management-server").getDao(IPAddressDao.class);
-
         if (VmSearch == null) {
             SearchBuilder<IPAddressVO> IpSearch = _ipDao.createSearchBuilder();
             IpSearch.and("associatedWithVmId", IpSearch.entity().getAssociatedWithVmId(), SearchCriteria.Op.EQ);

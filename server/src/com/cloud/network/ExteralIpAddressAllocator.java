@@ -144,8 +144,6 @@ public class ExteralIpAddressAllocator implements IpAddrAllocator{
 	
 	@Override
 	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-		ComponentLocator locator = ComponentLocator.getCurrentLocator();
-		_configDao = locator.getDao(ConfigurationDao.class);
 		_isExternalIpAllocatorEnabled = Boolean.parseBoolean(_configDao.getValue("direct.attach.network.externalIpAllocator.enabled"));
 		_externalIpAllocatorUrl = _configDao.getValue("direct.attach.network.externalIpAllocator.url");
 		_name = name;

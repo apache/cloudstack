@@ -183,6 +183,8 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     private VolumeDao _volumeDao;
     @Inject
     private ResourceTagDao _resourceTagDao;
+    @Inject
+    private ConfigurationDao _configDao;
     
     String _name;
     private int _totalRetries;
@@ -1330,23 +1332,16 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _name = name;
 
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
-
-        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
-        if (configDao == null) {
-            throw new ConfigurationException("Unable to get the configuration dao.");
-        }
-        
-        String value = configDao.getValue(Config.BackupSnapshotWait.toString());
+        String value = _configDao.getValue(Config.BackupSnapshotWait.toString());
         _backupsnapshotwait = NumbersUtil.parseInt(value, Integer.parseInt(Config.BackupSnapshotWait.getDefaultValue()));
 
-        Type.HOURLY.setMax(NumbersUtil.parseInt(configDao.getValue("snapshot.max.hourly"), HOURLYMAX));
-        Type.DAILY.setMax(NumbersUtil.parseInt(configDao.getValue("snapshot.max.daily"), DAILYMAX));
-        Type.WEEKLY.setMax(NumbersUtil.parseInt(configDao.getValue("snapshot.max.weekly"), WEEKLYMAX));
-        Type.MONTHLY.setMax(NumbersUtil.parseInt(configDao.getValue("snapshot.max.monthly"), MONTHLYMAX));
-        _deltaSnapshotMax = NumbersUtil.parseInt(configDao.getValue("snapshot.delta.max"), DELTAMAX);
-        _totalRetries = NumbersUtil.parseInt(configDao.getValue("total.retries"), 4);
-        _pauseInterval = 2 * NumbersUtil.parseInt(configDao.getValue("ping.interval"), 60);
+        Type.HOURLY.setMax(NumbersUtil.parseInt(_configDao.getValue("snapshot.max.hourly"), HOURLYMAX));
+        Type.DAILY.setMax(NumbersUtil.parseInt(_configDao.getValue("snapshot.max.daily"), DAILYMAX));
+        Type.WEEKLY.setMax(NumbersUtil.parseInt(_configDao.getValue("snapshot.max.weekly"), WEEKLYMAX));
+        Type.MONTHLY.setMax(NumbersUtil.parseInt(_configDao.getValue("snapshot.max.monthly"), MONTHLYMAX));
+        _deltaSnapshotMax = NumbersUtil.parseInt(_configDao.getValue("snapshot.delta.max"), DELTAMAX);
+        _totalRetries = NumbersUtil.parseInt(_configDao.getValue("total.retries"), 4);
+        _pauseInterval = 2 * NumbersUtil.parseInt(_configDao.getValue("ping.interval"), 60);
 
         s_logger.info("Snapshot Manager is configured.");
 

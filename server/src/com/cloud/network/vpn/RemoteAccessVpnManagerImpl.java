@@ -99,6 +99,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
     @Inject FirewallRulesDao _rulesDao;
     @Inject FirewallManager _firewallMgr;
     @Inject UsageEventDao _usageEventDao;
+    @Inject ConfigurationDao _configDao;
     
     int _userLimit;
     int _pskLength;
@@ -588,9 +589,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _name = name;
 
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
-        Map<String, String> configs = configDao.getConfiguration(params);
+        Map<String, String> configs = _configDao.getConfiguration(params);
 
         _userLimit = NumbersUtil.parseInt(configs.get(Config.RemoteAccessVpnUserLimit.key()), 8);
 

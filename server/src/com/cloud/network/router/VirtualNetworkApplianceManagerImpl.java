@@ -555,8 +555,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         _checkExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("RouterStatusMonitor"));
         _networkStatsUpdateExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("NetworkStatsUpdater"));
 
-        final ComponentLocator locator = ComponentLocator.getCurrentLocator();
-
         final Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
 
         _mgmt_host = configs.get("host");
@@ -587,11 +585,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         _dnsBasicZoneUpdates = String.valueOf(_configDao.getValue(Config.DnsBasicZoneUpdates.key()));
 
         s_logger.info("Router configurations: " + "ramsize=" + _routerRamSize);
-
-        final UserStatisticsDao statsDao = locator.getDao(UserStatisticsDao.class);
-        if (statsDao == null) {
-            throw new ConfigurationException("Unable to get " + UserStatisticsDao.class.getName());
-        }
 
         _agentMgr.registerForHostEvents(new SshKeysDistriMonitor(_agentMgr, _hostDao, _configDao), true, false, false);
         _itMgr.registerGuru(VirtualMachine.Type.DomainRouter, this);

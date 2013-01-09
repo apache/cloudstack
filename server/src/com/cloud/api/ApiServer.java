@@ -139,6 +139,7 @@ public class ApiServer implements HttpRequestHandler {
     private User _systemUser;
     
     @Inject List<PluggableService> _pluggableServices;
+    @Inject IdentityDao _identityDao;
 
     private static int _workerCount = 0;
 
@@ -769,10 +770,8 @@ public class ApiServer implements HttpRequestHandler {
     }
     
     public Long fetchDomainId(String domainUUID){
-        ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
-        IdentityDao identityDao = locator.getDao(IdentityDao.class);
         try{
-            Long domainId = identityDao.getIdentityId("domain", domainUUID);
+            Long domainId = _identityDao.getIdentityId("domain", domainUUID);
             return domainId;
         }catch(InvalidParameterValueException ex){
             return null;

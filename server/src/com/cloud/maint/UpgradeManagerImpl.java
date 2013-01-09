@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.commons.httpclient.HttpClient;
@@ -64,7 +65,8 @@ public class UpgradeManagerImpl implements UpgradeManager {
     String _agentPath;
     long _checkInterval;
     
-    AgentUpgradeDao _upgradeDao;
+    @Inject AgentUpgradeDao _upgradeDao;
+    @Inject ConfigurationDao _configDao;
     
     @Override
     public State registerForUpgrade(long hostId, String version) {
@@ -147,18 +149,7 @@ public class UpgradeManagerImpl implements UpgradeManager {
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _name = name;
 
-        final ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        _upgradeDao = locator.getDao(AgentUpgradeDao.class);
-        if (_upgradeDao == null) {
-            throw new ConfigurationException("Unable to retrieve the storage layer.");
-        }
-
-        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
-        if (configDao == null) {
-            throw new ConfigurationException("Unable to get the configuration dao.");
-        }
-
-        final Map<String, String> configs = configDao.getConfiguration("UpgradeManager", params);
+        final Map<String, String> configs = _configDao.getConfiguration("UpgradeManager", params);
 
         File agentUpgradeFile = PropertiesUtil.findConfigFile("agent-update.properties");
         Properties agentUpgradeProps = new Properties();
