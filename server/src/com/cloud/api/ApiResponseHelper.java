@@ -1265,6 +1265,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         templateResponse.setFeatured(template.isFeatured());
         templateResponse.setExtractable(template.isExtractable() && !(template.getTemplateType() == TemplateType.SYSTEM));
         templateResponse.setPasswordEnabled(template.getEnablePassword());
+        templateResponse.setSshKeyEnabled(template.getEnableSshKey());
         templateResponse.setCrossZones(template.isCrossZones());
         templateResponse.setFormat(template.getFormat());
         templateResponse.setDetails(template.getDetails());
@@ -1346,6 +1347,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         templateResponse.setFeatured(template.isFeatured());
         templateResponse.setExtractable(template.isExtractable() && !(template.getTemplateType() == TemplateType.SYSTEM));
         templateResponse.setPasswordEnabled(template.getEnablePassword());
+        templateResponse.setSshKeyEnabled(template.getEnableSshKey());
         templateResponse.setCrossZones(template.isCrossZones());
         templateResponse.setFormat(template.getFormat());
         if (template.getTemplateType() != null) {
