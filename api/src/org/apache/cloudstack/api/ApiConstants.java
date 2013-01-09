@@ -91,6 +91,7 @@ public class ApiConstants {
     public static final String INTERVAL_TYPE = "intervaltype";
     public static final String IP_ADDRESS = "ipaddress";
     public static final String IP_ADDRESS_ID = "ipaddressid";
+    public static final String IS_ASYNC = "isasync";
     public static final String IP_AVAILABLE = "ipavailable";
     public static final String IP_LIMIT = "iplimit";
     public static final String IP_TOTAL = "iptotal";
@@ -106,6 +107,7 @@ public class ApiConstants {
     public static final String JOB_STATUS = "jobstatus";
     public static final String LASTNAME = "lastname";
     public static final String LEVEL = "level";
+    public static final String LENGTH = "length";
     public static final String LIMIT_CPU_USE = "limitcpuuse";
     public static final String LOCK = "lock";
     public static final String LUN = "lun";
@@ -126,6 +128,7 @@ public class ApiConstants {
     public static final String OP = "op";
     public static final String OS_CATEGORY_ID = "oscategoryid";
     public static final String OS_TYPE_ID = "ostypeid";
+    public static final String PARAMS = "params";
     public static final String PARENT_DOMAIN_ID = "parentdomainid";
     public static final String PASSWORD = "password";
     public static final String NEW_PASSWORD = "new_password";
@@ -159,6 +162,7 @@ public class ApiConstants {
     public static final String SCHEDULE = "schedule";
     public static final String SCOPE = "scope";
     public static final String SECRET_KEY = "usersecretkey";
+    public static final String SINCE = "since";
     public static final String KEY = "key";
     public static final String SEARCH_BASE = "searchbase";
     public static final String SECURITY_GROUP_IDS = "securitygroupids";
@@ -324,6 +328,7 @@ public class ApiConstants {
     public static final String SOURCE_NAT_SUPPORTED = "sourcenatsupported";
     public static final String RESOURCE_STATE = "resourcestate";
     public static final String PROJECT_INVITE_REQUIRED = "projectinviterequired";
+    public static final String REQUIRED = "required";
     public static final String RESTART_REQUIRED = "restartrequired";
     public static final String ALLOW_USER_CREATE_PROJECTS = "allowusercreateprojects";
     public static final String CONSERVE_MODE = "conservemode";

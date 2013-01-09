@@ -50,6 +50,7 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import com.cloud.utils.ReflectUtil;
 import org.apache.cloudstack.acl.APIAccessChecker;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.*;
@@ -59,6 +60,7 @@ import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
+import org.apache.cloudstack.discovery.ApiDiscoveryService;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.ConnectionClosedException;
@@ -145,8 +147,11 @@ public class ApiServer implements HttpRequestHandler {
     @Inject private AccountManager _accountMgr = null;
     @Inject private DomainManager _domainMgr = null;
     @Inject private AsyncJobManager _asyncMgr = null;
+
     @Inject(adapter = APIAccessChecker.class)
     protected Adapters<APIAccessChecker> _apiAccessCheckers;
+    @Inject(adapter = ApiDiscoveryService.class)
+    protected Adapters<ApiDiscoveryService> _apiDiscoveryServices;
 
     private Account _systemAccount = null;
     private User _systemUser = null;
@@ -201,17 +206,8 @@ public class ApiServer implements HttpRequestHandler {
             }
         }
 
-        // Populate api name and cmd class mappings
-        Reflections reflections = new Reflections("org.apache.cloudstack.api");
-        Set<Class<?>> cmdClasses = reflections.getTypesAnnotatedWith(APICommand.class);
-        reflections = new Reflections("com.cloud.api");
-        cmdClasses.addAll(reflections.getTypesAnnotatedWith(APICommand.class));
-        for(Class<?> cmdClass: cmdClasses) {
-            String apiName = cmdClass.getAnnotation(APICommand.class).name();
-            if (_apiNameCmdClassMap.containsKey(apiName)) {
-                s_logger.error("API Cmd class " + cmdClass.getName() + " has non-unique apiname" + apiName);
-            }
-            _apiNameCmdClassMap.put(apiName, cmdClass);
+        for (ApiDiscoveryService discoveryService: _apiDiscoveryServices) {
+            _apiNameCmdClassMap.putAll(discoveryService.getApiNameCmdClassMapping());
         }
 
         encodeApiResponse = Boolean.valueOf(configDao.getValue(Config.EncodeApiResponse.key()));
