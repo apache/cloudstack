@@ -168,9 +168,7 @@ public class ApiServer implements HttpRequestHandler {
 
     public static void initApiServer(String[] apiConfig) {
         if (s_instance == null) {
-            //Injecting will create ApiServer object with all its
-            //vars injected as well, no need to do the following:
-            //s_instance = new ApiServer();
+            //Injection will create ApiServer and all its fields which have @Inject
             s_instance = ComponentLocator.inject(ApiServer.class);
             s_instance.init(apiConfig);
         }
@@ -178,7 +176,6 @@ public class ApiServer implements HttpRequestHandler {
 
     public static ApiServer getInstance() {
         // Assumption: CloudStartupServlet would initialize ApiServer
-        // initApiServer(null);
         if (s_instance == null) {
             s_logger.fatal("ApiServer instance failed to initialize");
         }
@@ -208,6 +205,11 @@ public class ApiServer implements HttpRequestHandler {
 
         for (ApiDiscoveryService discoveryService: _apiDiscoveryServices) {
             _apiNameCmdClassMap.putAll(discoveryService.getApiNameCmdClassMapping());
+        }
+
+        if (_apiNameCmdClassMap.size() == 0) {
+            s_logger.fatal("ApiServer failed to generate apiname, cmd class mappings."
+                         + "Please check and enable at least one ApiDiscovery adapter.");
         }
 
         encodeApiResponse = Boolean.valueOf(configDao.getValue(Config.EncodeApiResponse.key()));
