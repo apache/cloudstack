@@ -430,10 +430,9 @@ public class ApiDispatcher {
                                     switch (listType) {
                                         case LONG:
                                         case UUID:
-                                            List<Long> listParam = new ArrayList<Long>();
-                                            listParam = (List) field.get(cmd);
+                                            List<Long> listParam = (List<Long>) field.get(cmd);
                                             for (Long entityId : listParam) {
-                                                Object entityObj = s_instance._entityMgr.findById(entity, (Long) field.get(cmd));
+                                                Object entityObj = s_instance._entityMgr.findById(entity, entityId);
                                                 entitiesToAccess.add(entityObj);
                                             }
                                             break;
