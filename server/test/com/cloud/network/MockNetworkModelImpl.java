@@ -118,14 +118,7 @@ public class MockNetworkModelImpl implements NetworkModel, Manager {
         return null;
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.NetworkModel#validateRule(com.cloud.network.rules.FirewallRule)
-     */
-    @Override
-    public boolean validateRule(FirewallRule rule) {
-        // TODO Auto-generated method stub
-        return false;
-    }
+    
 
     /* (non-Javadoc)
      * @see com.cloud.network.NetworkModel#getPublicIpAddress(long)

@@ -131,16 +131,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
         return null;
     }
 
-   
-    @Override
-    public boolean isNetworkAvailableInDomain(long networkId, long domainId) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    
-
-   
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {

@@ -95,6 +95,7 @@ import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.element.LoadBalancingServiceProvider;
+import com.cloud.network.element.NetworkElement;
 import com.cloud.network.lb.LoadBalancingRule.LbAutoScalePolicy;
 import com.cloud.network.lb.LoadBalancingRule.LbAutoScaleVmGroup;
 import com.cloud.network.lb.LoadBalancingRule.LbAutoScaleVmProfile;
@@ -487,7 +488,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         List<LbStickinessPolicy> policyList = new ArrayList<LbStickinessPolicy>();
         policyList.add(new LbStickinessPolicy(cmd.getStickinessMethodName(), lbpolicy.getParams()));
         LoadBalancingRule lbRule = new LoadBalancingRule(loadBalancer, getExistingDestinations(lbpolicy.getId()), policyList);
-        if (!_networkModel.validateRule(lbRule)) {
+        if (!validateRule(lbRule)) {
             throw new InvalidParameterValueException("Failed to create Stickiness policy: Validation Failed " + cmd.getLbRuleId());
         }
 
@@ -498,6 +499,22 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         return policy;
     }
 
+    
+    private boolean validateRule(LoadBalancingRule lbRule) {
+        Network network = _networkDao.findById(lbRule.getNetworkId());
+        Purpose purpose = lbRule.getPurpose();
+        if (purpose != Purpose.LoadBalancing) {
+            s_logger.debug("Unable to validate network rules for purpose: " + purpose.toString());
+            return false;
+        }
+        for (LoadBalancingServiceProvider ne : _lbProviders) {
+            boolean validated = ne.validateLBRule(network,  lbRule);
+            if (!validated)
+                return false;
+        }
+        return true;
+    }
+    
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_LB_STICKINESSPOLICY_CREATE, eventDescription = "Apply Stickinesspolicy to load balancer ", async = true)

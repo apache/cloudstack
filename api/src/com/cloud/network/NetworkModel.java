@@ -31,7 +31,6 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.UserDataServiceProvider;
-import com.cloud.network.rules.FirewallRule;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.vm.Nic;
@@ -39,6 +38,12 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachine;
 
 
+/**
+ * The NetworkModel presents a read-only view into the Network data such as L2 networks,
+ * Nics, PublicIps, NetworkOfferings, traffic labels, physical networks and the like
+ * The idea is that only the orchestration core should be able to modify the data, while other 
+ * participants in the orchestration can use this interface to query the data.
+ */
 public interface NetworkModel {
 
     /**
@@ -59,8 +64,6 @@ public interface NetworkModel {
     List<? extends Nic> getNics(long vmId);
 
     String getNextAvailableMacAddressInNetwork(long networkConfigurationId) throws InsufficientAddressCapacityException;
-
-    boolean validateRule(FirewallRule rule);
 
     PublicIpAddress getPublicIpAddress(long ipAddressId);
 

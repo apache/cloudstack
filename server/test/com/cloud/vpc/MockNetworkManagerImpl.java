@@ -273,18 +273,6 @@ public class MockNetworkManagerImpl implements NetworkManager, NetworkService, M
 
 
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.NetworkService#isNetworkAvailableInDomain(long, long)
-     */
-    @Override
-    public boolean isNetworkAvailableInDomain(long networkId, long domainId) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-
-
-
 
     /* (non-Javadoc)
      * @see com.cloud.network.NetworkService#updateGuestNetwork(long, java.lang.String, java.lang.String, com.cloud.user.Account, com.cloud.user.User, java.lang.String, java.lang.Long, java.lang.Boolean)

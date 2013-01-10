@@ -65,11 +65,8 @@ import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
-import com.cloud.network.element.LoadBalancingServiceProvider;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.UserDataServiceProvider;
-import com.cloud.network.lb.LoadBalancingRule;
-import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
@@ -87,9 +84,9 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.JoinBuilder;
+import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
@@ -521,28 +518,7 @@ public class NetworkModelImpl  implements NetworkModel, Manager{
         return hasFreeIps;
     }
 
-    @Override
-    public boolean validateRule(FirewallRule rule) {
-        Network network = _networksDao.findById(rule.getNetworkId());
-        Purpose purpose = rule.getPurpose();
-        for (NetworkElement ne : _networkElements) {
-            boolean validated;
-            switch (purpose) {
-            case LoadBalancing:
-                if (!(ne instanceof LoadBalancingServiceProvider)) {
-                    continue;
-                }
-                validated = ((LoadBalancingServiceProvider) ne).validateLBRule(network, (LoadBalancingRule) rule);
-                if (!validated)
-                    return false;
-                break;
-            default:
-                s_logger.debug("Unable to validate network rules for purpose: " + purpose.toString());
-                validated = false;
-            }
-        }
-        return true;
-    }
+   
 
     @Override
     public Map<Service, Map<Capability, String>> getNetworkCapabilities(long networkId) {

@@ -229,8 +229,6 @@ public class NetworkServiceImpl implements  NetworkService, Manager {
     @Inject
     NetworkModel _networkModel;
 
-    private final HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
-
     int _cidrLimit;
     boolean _allowSubdomainNetworkAccess;
 
@@ -467,10 +465,6 @@ public class NetworkServiceImpl implements  NetworkService, Manager {
         return _networkMgr.allocateIp(ipOwner, isSystem, caller, zone);
     }
 
-   
-    
-
-
     @Override
     @DB
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
@@ -478,23 +472,6 @@ public class NetworkServiceImpl implements  NetworkService, Manager {
         _configs = _configDao.getConfiguration("Network", params);
 
         _cidrLimit = NumbersUtil.parseInt(_configs.get(Config.NetworkGuestCidrLimit.key()), 22);
-
-        NetworkOfferingVO publicNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemPublicNetwork, TrafficType.Public, true);
-        publicNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(publicNetworkOffering);
-        _systemNetworks.put(NetworkOfferingVO.SystemPublicNetwork, publicNetworkOffering);
-        NetworkOfferingVO managementNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemManagementNetwork, TrafficType.Management, false);
-        managementNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(managementNetworkOffering);
-        _systemNetworks.put(NetworkOfferingVO.SystemManagementNetwork, managementNetworkOffering);
-        NetworkOfferingVO controlNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemControlNetwork, TrafficType.Control, false);
-        controlNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(controlNetworkOffering);
-        _systemNetworks.put(NetworkOfferingVO.SystemControlNetwork, controlNetworkOffering);
-        NetworkOfferingVO storageNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemStorageNetwork, TrafficType.Storage, true);
-        storageNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(storageNetworkOffering);
-        _systemNetworks.put(NetworkOfferingVO.SystemStorageNetwork, storageNetworkOffering);
-        NetworkOfferingVO privateGatewayNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemPrivateGatewayNetworkOffering,
-                GuestType.Isolated);
-        privateGatewayNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(privateGatewayNetworkOffering);
-        _systemNetworks.put(NetworkOfferingVO.SystemPrivateGatewayNetworkOffering, privateGatewayNetworkOffering);
 
         _allowSubdomainNetworkAccess = Boolean.valueOf(_configs.get(Config.SubDomainNetworkAccess.key()));
 
@@ -2844,7 +2821,7 @@ public class NetworkServiceImpl implements  NetworkService, Manager {
         Account owner = _accountMgr.getAccount(networkOwnerId);
         
         // Get system network offeirng
-        NetworkOfferingVO ntwkOff = _systemNetworks.get(NetworkOffering.SystemPrivateGatewayNetworkOffering);
+        NetworkOfferingVO ntwkOff = findSystemNetworkOffering(NetworkOffering.SystemPrivateGatewayNetworkOffering);
         
         // Validate physical network
         PhysicalNetwork pNtwk = _physicalNetworkDao.findById(physicalNetworkId);
@@ -2915,6 +2892,17 @@ public class NetworkServiceImpl implements  NetworkService, Manager {
         s_logger.debug("Private network " + privateNetwork + " is created");
 
         return privateNetwork;
+    }
+
+    
+    private NetworkOfferingVO findSystemNetworkOffering(String offeringName) {
+        List<NetworkOfferingVO> allOfferings = _networkOfferingDao.listSystemNetworkOfferings();
+        for (NetworkOfferingVO offer: allOfferings){
+            if (offer.getName().equals(offeringName)) {
+                return offer;
+            }
+        }
+        return null;
     }
 
 }
