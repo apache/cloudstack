@@ -60,7 +60,6 @@ import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
-import org.apache.cloudstack.discovery.ApiDiscoveryService;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.ConnectionClosedException;
@@ -134,8 +133,6 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CSExceptionErrorCode;
 import com.cloud.uuididentity.dao.IdentityDao;
 
-import org.reflections.Reflections;
-
 public class ApiServer implements HttpRequestHandler {
     private static final Logger s_logger = Logger.getLogger(ApiServer.class.getName());
     private static final Logger s_accessLogger = Logger.getLogger("apiserver." + ApiServer.class.getName());
@@ -150,15 +147,13 @@ public class ApiServer implements HttpRequestHandler {
 
     @Inject(adapter = APIAccessChecker.class)
     protected Adapters<APIAccessChecker> _apiAccessCheckers;
-    @Inject(adapter = ApiDiscoveryService.class)
-    protected Adapters<ApiDiscoveryService> _apiDiscoveryServices;
 
     private Account _systemAccount = null;
     private User _systemUser = null;
     private static int _workerCount = 0;
     private static ApiServer s_instance = null;
     private static final DateFormat _dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
-    private Map<String, Class<?>> _apiNameCmdClassMap = new HashMap<String, Class<?>>();
+    private static Map<String, Class<?>> _apiNameCmdClassMap = new HashMap<String, Class<?>>();
 
     private static ExecutorService _executor = new ThreadPoolExecutor(10, 150, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("ApiServer"));
 
@@ -202,13 +197,16 @@ public class ApiServer implements HttpRequestHandler {
             }
         }
 
-        for (ApiDiscoveryService discoveryService: _apiDiscoveryServices) {
-            _apiNameCmdClassMap.putAll(discoveryService.getApiNameCmdClassMapping());
-        }
+        Set<Class<?>> cmdClasses = ReflectUtil.getClassesWithAnnotation(APICommand.class,
+                new String[]{"org.apache.cloudstack.api", "com.cloud.api"});
 
-        if (_apiNameCmdClassMap.size() == 0) {
-            s_logger.fatal("ApiServer failed to generate apiname, cmd class mappings."
-                         + "Please check and enable at least one ApiDiscovery adapter.");
+        for(Class<?> cmdClass: cmdClasses) {
+            String apiName = cmdClass.getAnnotation(APICommand.class).name();
+            if (_apiNameCmdClassMap.containsKey(apiName)) {
+                s_logger.error("API Cmd class " + cmdClass.getName() + " has non-unique apiname" + apiName);
+                continue;
+            }
+            _apiNameCmdClassMap.put(apiName, cmdClass);
         }
 
         encodeApiResponse = Boolean.valueOf(configDao.getValue(Config.EncodeApiResponse.key()));
