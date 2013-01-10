@@ -32,7 +32,7 @@ import com.cloud.host.Host;
 import com.cloud.network.NetworkUsageManager;
 import com.cloud.server.ManagementService;
 import org.apache.cloudstack.api.response.TrafficMonitorResponse;
-import com.cloud.utils.component.ComponentLocator;
+
 
 @APICommand(name = "listTrafficMonitors", description="List traffic monitor Hosts.", responseObject = TrafficMonitorResponse.class)
 public class ListTrafficMonitorsCmd extends BaseListCmd {

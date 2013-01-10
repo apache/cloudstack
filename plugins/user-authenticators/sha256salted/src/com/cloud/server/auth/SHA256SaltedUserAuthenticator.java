@@ -32,8 +32,8 @@ import com.cloud.server.ManagementServer;
 import com.cloud.servlet.CloudStartupServlet;
 import com.cloud.user.UserAccount;
 import com.cloud.user.dao.UserAccountDao;
-import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.Inject;
+
+
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Local(value={UserAuthenticator.class})

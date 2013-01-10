@@ -212,7 +212,7 @@ import com.cloud.storage.template.TemplateLocation;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PropertiesUtil;
-import com.cloud.utils.component.ComponentLocator;
+
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.OutputInterpreter;

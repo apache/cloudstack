@@ -30,7 +30,7 @@ import org.junit.After;
 import org.junit.Before;
 
 import com.cloud.upgrade.dao.VersionDaoImpl;
-import com.cloud.utils.component.ComponentLocator;
+
 import com.cloud.utils.db.DbTestUtils;
 import com.cloud.utils.db.Transaction;
 

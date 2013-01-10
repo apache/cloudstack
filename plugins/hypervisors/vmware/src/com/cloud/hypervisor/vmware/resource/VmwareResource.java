@@ -200,7 +200,7 @@ import com.cloud.storage.template.TemplateInfo;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
-import com.cloud.utils.component.ComponentLocator;
+
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionUtil;

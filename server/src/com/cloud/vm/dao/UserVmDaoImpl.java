@@ -37,7 +37,7 @@ import com.cloud.configuration.Resource;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.user.Account;
-import com.cloud.utils.component.ComponentLocator;
+
 import com.cloud.utils.db.Attribute;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;

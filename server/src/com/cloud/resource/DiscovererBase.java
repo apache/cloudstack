@@ -34,7 +34,7 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.NetworkManager;
-import com.cloud.utils.component.ComponentLocator;
+
 import com.cloud.utils.net.UrlUtil;
 
 public abstract class DiscovererBase implements Discoverer {

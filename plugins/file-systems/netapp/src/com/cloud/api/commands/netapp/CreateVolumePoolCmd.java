@@ -31,7 +31,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.netapp.NetappManager;
 import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.CreateVolumePoolCmdResponse;
-import com.cloud.utils.component.ComponentLocator;
+
 
 @APICommand(name = "createPool", description="Create a pool", responseObject = CreateVolumePoolCmdResponse.class)
 public class CreateVolumePoolCmd extends BaseCmd {

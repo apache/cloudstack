@@ -32,7 +32,7 @@ import com.cloud.usage.dao.UsageDao;
 import com.cloud.usage.dao.UsagePortForwardingRuleDao;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.ComponentLocator;
+
 
 public class PortForwardingUsageParser {
     public static final Logger s_logger = Logger.getLogger(PortForwardingUsageParser.class.getName());

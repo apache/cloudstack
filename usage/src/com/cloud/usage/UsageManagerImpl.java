@@ -66,8 +66,8 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserStatisticsDao;
-import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.Inject;
+
+
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;

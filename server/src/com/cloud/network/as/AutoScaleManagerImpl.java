@@ -23,27 +23,31 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.api.command.admin.autoscale.CreateCounterCmd;
-import org.apache.cloudstack.api.command.user.autoscale.*;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.ApiConstants;
-import com.cloud.api.ApiDBUtils;
-import com.cloud.api.ApiDispatcher;
 import org.apache.cloudstack.api.BaseListAccountResourcesCmd;
+import org.apache.cloudstack.api.command.admin.autoscale.CreateCounterCmd;
 import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScalePolicyCmd;
 import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScaleVmGroupCmd;
+import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScaleVmProfileCmd;
 import org.apache.cloudstack.api.command.user.autoscale.CreateConditionCmd;
-import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
+import org.apache.cloudstack.api.command.user.autoscale.ListAutoScalePoliciesCmd;
 import org.apache.cloudstack.api.command.user.autoscale.ListAutoScaleVmGroupsCmd;
+import org.apache.cloudstack.api.command.user.autoscale.ListAutoScaleVmProfilesCmd;
 import org.apache.cloudstack.api.command.user.autoscale.ListConditionsCmd;
+import org.apache.cloudstack.api.command.user.autoscale.ListCountersCmd;
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScalePolicyCmd;
+import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmGroupCmd;
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmProfileCmd;
+import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiDispatcher;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -81,7 +85,6 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;

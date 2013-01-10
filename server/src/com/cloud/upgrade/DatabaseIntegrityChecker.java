@@ -30,7 +30,7 @@ import org.springframework.stereotype.Component;
 import com.cloud.maint.Version;
 import com.cloud.upgrade.dao.VersionDao;
 import com.cloud.upgrade.dao.VersionDaoImpl;
-import com.cloud.utils.component.ComponentLocator;
+
 import com.cloud.utils.component.SystemIntegrityChecker;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.Transaction;

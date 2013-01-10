@@ -32,7 +32,6 @@ import com.cloud.network.rules.FirewallRule.TrafficType;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
@@ -286,11 +285,12 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
         if (purpose != null) {
             sc.setParameters("purpose", purpose);
         }
-        
+
         sc.setParameters("trafficType", trafficType);
 
         return listBy(sc);
     }
+    @Override
     @DB
     public boolean remove(Long id) {
         Transaction txn = Transaction.currentTxn();
@@ -316,7 +316,7 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
     public List<FirewallRuleVO> listByIpAndPurposeWithState(Long ipId, Purpose purpose, State state) {
         SearchCriteria<FirewallRuleVO> sc = AllFieldsSearch.create();
         sc.setParameters("ipId", ipId);
-        
+
         if (state != null) {
             sc.setParameters("state", state);
         }

@@ -55,7 +55,7 @@ import com.cloud.user.User;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.component.ComponentLocator;
+
 import com.cloud.utils.concurrency.TestClock;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;

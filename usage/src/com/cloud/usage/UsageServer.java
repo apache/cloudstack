@@ -18,7 +18,7 @@ package com.cloud.usage;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.utils.component.ComponentLocator;
+
 
 public class UsageServer {
     private static final Logger s_logger = Logger.getLogger(UsageServer.class.getName());

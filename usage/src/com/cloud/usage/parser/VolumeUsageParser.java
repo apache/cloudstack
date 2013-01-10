@@ -32,7 +32,7 @@ import com.cloud.usage.dao.UsageDao;
 import com.cloud.usage.dao.UsageVolumeDao;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.ComponentLocator;
+
 
 public class VolumeUsageParser {
     public static final Logger s_logger = Logger.getLogger(VolumeUsageParser.class.getName());

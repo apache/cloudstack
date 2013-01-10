@@ -20,7 +20,7 @@ import junit.framework.TestCase;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.utils.component.ComponentLocator;
+
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 

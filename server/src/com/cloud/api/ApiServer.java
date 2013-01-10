@@ -104,12 +104,12 @@ import org.apache.http.protocol.ResponseContent;
 import org.apache.http.protocol.ResponseDate;
 import org.apache.http.protocol.ResponseServer;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.async.AsyncJob;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
-import com.cloud.cluster.StackMaid;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -136,19 +136,20 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CSExceptionErrorCode;
 import com.cloud.uuididentity.dao.IdentityDao;
 
+@Component
 public class ApiServer implements HttpRequestHandler {
     private static final Logger s_logger = Logger.getLogger(ApiServer.class.getName());
     private static final Logger s_accessLogger = Logger.getLogger("apiserver." + ApiServer.class.getName());
 
     public static boolean encodeApiResponse = false;
     public static String jsonContentType = "text/javascript";
-    private ApiDispatcher _dispatcher;
+    @Inject ApiDispatcher _dispatcher;
 
-    @Inject private final AccountManager _accountMgr = null;
-    @Inject private final DomainManager _domainMgr = null;
-    @Inject private final AsyncJobManager _asyncMgr = null;
-    @Inject private ConfigurationDao _configDao;
-    @Inject protected List<APIAccessChecker> _apiAccessCheckers;
+    @Inject AccountManager _accountMgr;
+    @Inject DomainManager _domainMgr;
+    @Inject AsyncJobManager _asyncMgr;
+    @Inject ConfigurationDao _configDao;
+    @Inject List<APIAccessChecker> _apiAccessCheckers;
 
     @Inject List<PluggableService> _pluggableServices;
     @Inject IdentityDao _identityDao;
@@ -190,7 +191,6 @@ public class ApiServer implements HttpRequestHandler {
 
         _systemAccount = _accountMgr.getSystemAccount();
         _systemUser = _accountMgr.getSystemUser();
-        _dispatcher = ApiDispatcher.getInstance();
 
         Integer apiPort = null; // api port, null by default
         SearchCriteria<ConfigurationVO> sc = _configDao.createSearchCriteria();
@@ -907,12 +907,8 @@ public class ApiServer implements HttpRequestHandler {
             HttpContext context = new BasicHttpContext(null);
             try {
                 while (!Thread.interrupted() && _conn.isOpen()) {
-                    try {
-                        _httpService.handleRequest(_conn, context);
-                        _conn.close();
-                    } finally {
-                        StackMaid.current().exitCleanup();
-                    }
+                    _httpService.handleRequest(_conn, context);
+                    _conn.close();
                 }
             } catch (ConnectionClosedException ex) {
                 if (s_logger.isTraceEnabled()) {

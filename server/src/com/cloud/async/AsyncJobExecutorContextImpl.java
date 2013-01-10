@@ -36,7 +36,6 @@ import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.user.AccountManager;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.DomainRouterDao;
@@ -45,8 +44,8 @@ import com.cloud.vm.dao.UserVmDao;
 @Component
 @Local(value={AsyncJobExecutorContext.class})
 public class AsyncJobExecutorContextImpl implements AsyncJobExecutorContext {
-	private String _name;
-	
+    private String _name;
+
     @Inject private AgentManager _agentMgr;
     @Inject private NetworkManager _networkMgr;
     @Inject private UserVmManager _vmMgr;
@@ -62,98 +61,98 @@ public class AsyncJobExecutorContextImpl implements AsyncJobExecutorContext {
     @Inject private AsyncJobDao _jobDao;
     @Inject private UserDao _userDao;
     @Inject private VirtualMachineManager _itMgr;
-    
-    @Inject private ManagementServer _managementServer;
-    
-	@Override
-	public ManagementServer getManagementServer() {
-		return _managementServer;
-	}
 
-	@Override
-	public AgentManager getAgentMgr() {
-		return _agentMgr;
-	}
-	
-	@Override
-	public NetworkManager getNetworkMgr() {
-		return _networkMgr;
-	}
-	
-	@Override
-	public UserVmManager getVmMgr() {
-		return _vmMgr;
-	}
-	
-	@Override
-	public StorageManager getStorageMgr() {
-		return _storageMgr;
-	}
-	
-	/**server/src/com/cloud/async/AsyncJobExecutorContext.java
+    @Inject private ManagementServer _managementServer;
+
+    @Override
+    public ManagementServer getManagementServer() {
+        return _managementServer;
+    }
+
+    @Override
+    public AgentManager getAgentMgr() {
+        return _agentMgr;
+    }
+
+    @Override
+    public NetworkManager getNetworkMgr() {
+        return _networkMgr;
+    }
+
+    @Override
+    public UserVmManager getVmMgr() {
+        return _vmMgr;
+    }
+
+    @Override
+    public StorageManager getStorageMgr() {
+        return _storageMgr;
+    }
+
+    /**server/src/com/cloud/async/AsyncJobExecutorContext.java
      * @return the _snapMgr
      */
-	@Override
+    @Override
     public SnapshotManager getSnapshotMgr() {
         return _snapMgr;
     }
 
     @Override
-	public AccountManager getAccountMgr() {
-		return _accountMgr;
-	}
-	
-	@Override
-	public EventDao getEventDao() {
-		return _eventDao;
-	}
-	
-	@Override
-	public UserVmDao getVmDao() {
-		return _vmDao;
-	}
-	
-	@Override
-	public AccountDao getAccountDao() {
-		return _accountDao;
-	}
-	
-	@Override
-	public VolumeDao getVolumeDao() {
-		return _volumeDao;
-	}
+    public AccountManager getAccountMgr() {
+        return _accountMgr;
+    }
 
-	@Override
+    @Override
+    public EventDao getEventDao() {
+        return _eventDao;
+    }
+
+    @Override
+    public UserVmDao getVmDao() {
+        return _vmDao;
+    }
+
+    @Override
+    public AccountDao getAccountDao() {
+        return _accountDao;
+    }
+
+    @Override
+    public VolumeDao getVolumeDao() {
+        return _volumeDao;
+    }
+
+    @Override
     public DomainRouterDao getRouterDao() {
-		return _routerDao;
-	}
-	
-	@Override
+        return _routerDao;
+    }
+
+    @Override
     public IPAddressDao getIpAddressDao() {
-    	return _ipAddressDao;
+        return _ipAddressDao;
     }
-	
-	@Override
+
+    @Override
     public AsyncJobDao getJobDao() {
-    	return _jobDao;
+        return _jobDao;
     }
-	
-	@Override
+
+    @Override
     public UserDao getUserDao() {
-    	return _userDao;
+        return _userDao;
     }
-	
-	@Override
-	public VirtualMachineManager getItMgr() {
-		return _itMgr;
-	}
-	
+
+    @Override
+    public VirtualMachineManager getItMgr() {
+        return _itMgr;
+    }
+
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-    	_name = name;
-    	return true;
+        _name = name;
+        return true;
     }
-	
+
     @Override
     public boolean start() {
         return true;
@@ -163,9 +162,9 @@ public class AsyncJobExecutorContextImpl implements AsyncJobExecutorContext {
     public boolean stop() {
         return true;
     }
-    
+
     @Override
     public String getName() {
-    	return _name;
+        return _name;
     }
 }

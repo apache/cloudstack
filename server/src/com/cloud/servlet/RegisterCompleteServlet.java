@@ -37,7 +37,7 @@ import com.cloud.user.User;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.SerialVersionUID;
-import com.cloud.utils.component.ComponentLocator;
+
 
 public class RegisterCompleteServlet extends HttpServlet implements ServletContextListener {
 	public static final Logger s_logger = Logger.getLogger(RegisterCompleteServlet.class.getName());

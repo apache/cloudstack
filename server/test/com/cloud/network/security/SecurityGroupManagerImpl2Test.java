@@ -46,7 +46,7 @@ import com.cloud.user.MockAccountManagerImpl;
 import com.cloud.user.MockDomainManagerImpl;
 import com.cloud.user.dao.AccountDaoImpl;
 import com.cloud.utils.Profiler;
-import com.cloud.utils.component.ComponentLocator;
+
 import com.cloud.utils.component.MockComponentLocator;
 import com.cloud.vm.MockUserVmManagerImpl;
 import com.cloud.vm.MockVirtualMachineManagerImpl;

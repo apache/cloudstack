@@ -66,7 +66,6 @@ import com.cloud.agent.transport.Response;
 import com.cloud.alert.AlertManager;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.cluster.ManagementServerNode;
-import com.cloud.cluster.StackMaid;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterDetailsDao;
@@ -977,8 +976,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                 }
             } catch (final Exception e) {
                 s_logger.error("Exception caught while handling disconnect: ", e);
-            } finally {
-                StackMaid.current().exitCleanup();
             }
         }
     }
@@ -1150,7 +1147,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                 if (actionDelegate != null) {
                     actionDelegate.action(new Long(id));
                 }
-                StackMaid.current().exitCleanup();
             }
         }
     }
@@ -1381,7 +1377,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                     }
                 }
             } finally {
-                StackMaid.current().exitCleanup();
                 txn.close();
             }
         }

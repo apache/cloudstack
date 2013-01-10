@@ -8,7 +8,7 @@ import org.apache.cloudstack.storage.snapshot.SnapshotInfo;
 import org.apache.cloudstack.storage.volume.ObjectInDataStoreStateMachine.Event;
 import org.springframework.stereotype.Component;
 
-import com.cloud.utils.component.Inject;
+
 
 @Component
 public  class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {

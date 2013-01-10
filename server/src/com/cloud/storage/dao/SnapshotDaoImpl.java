@@ -34,7 +34,7 @@ import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
-import com.cloud.utils.component.ComponentLocator;
+
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;

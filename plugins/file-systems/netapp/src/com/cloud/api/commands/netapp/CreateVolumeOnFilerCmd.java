@@ -32,7 +32,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.netapp.NetappManager;
 import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.CreateVolumeOnFilerCmdResponse;
-import com.cloud.utils.component.ComponentLocator;
+
 
 @APICommand(name = "createVolumeOnFiler", description="Create a volume", responseObject = CreateVolumeOnFilerCmdResponse.class)
 public class CreateVolumeOnFilerCmd extends BaseCmd {

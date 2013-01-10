@@ -50,7 +50,7 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.storage.template.TemplateInfo;
-import com.cloud.utils.component.ComponentLocator;
+
 
 public class DummySecondaryStorageResource extends ServerResourceBase implements ServerResource {
     private static final Logger s_logger = Logger.getLogger(DummySecondaryStorageResource.class);

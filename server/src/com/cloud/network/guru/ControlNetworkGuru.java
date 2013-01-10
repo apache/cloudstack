@@ -46,7 +46,7 @@ import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
-import com.cloud.utils.component.ComponentLocator;
+
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic;

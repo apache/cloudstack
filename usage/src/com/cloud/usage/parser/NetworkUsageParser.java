@@ -31,7 +31,7 @@ import com.cloud.usage.dao.UsageDao;
 import com.cloud.usage.dao.UsageNetworkDao;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.ComponentLocator;
+
 import com.cloud.utils.db.SearchCriteria;
 
 public class NetworkUsageParser {

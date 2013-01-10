@@ -38,7 +38,7 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Volume;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.ComponentLocator;
+
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;

@@ -63,7 +63,7 @@ import com.cloud.upgrade.dao.VersionDao;
 import com.cloud.upgrade.dao.VersionDaoImpl;
 import com.cloud.upgrade.dao.VersionVO;
 import com.cloud.upgrade.dao.VersionVO.Step;
-import com.cloud.utils.component.ComponentLocator;
+
 import com.cloud.utils.component.SystemIntegrityChecker;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.ScriptRunner;

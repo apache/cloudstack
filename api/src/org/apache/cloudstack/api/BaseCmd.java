@@ -141,7 +141,7 @@ public abstract class BaseCmd {
 
     public static QueryService _queryService;
 
-    static void setComponents(ResponseGenerator generator) {
+    public static void setComponents(ResponseGenerator generator) {
         _mgr = ComponentContext.getComponent(ManagementService.class);
         _accountService = ComponentContext.getComponent(AccountService.class);
         _configService = ComponentContext.getComponent(ConfigurationService.class);

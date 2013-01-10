@@ -77,7 +77,7 @@ import com.cloud.storage.dao.VMTemplateS3Dao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.utils.S3Utils.ClientOptions;
-import com.cloud.utils.component.Inject;
+
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;

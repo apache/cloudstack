@@ -50,7 +50,7 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.ComponentLocator;
+
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vpc.dao.MockVpcDaoImpl;

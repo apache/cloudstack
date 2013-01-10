@@ -27,9 +27,6 @@ import javax.naming.ConfigurationException;
 
 import org.springframework.stereotype.Component;
 
-import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.vm.ConsoleProxyVO;
 
 import edu.emory.mathcs.backport.java.util.Collections;
@@ -37,45 +34,45 @@ import edu.emory.mathcs.backport.java.util.Collections;
 @Component
 @Local(value={ConsoleProxyAllocator.class})
 public class ConsoleProxyBalanceAllocator implements ConsoleProxyAllocator {
-	
+
     private String _name;
     private final Random _rand = new Random(System.currentTimeMillis());
-   
-    @Override
-	public ConsoleProxyVO allocProxy(List<ConsoleProxyVO> candidates, final Map<Long, Integer> loadInfo, long dataCenterId) {
-    	if(candidates != null) {
-    		
-    		List<ConsoleProxyVO> allocationList = new ArrayList<ConsoleProxyVO>();
-    		for(ConsoleProxyVO proxy : candidates) {
-				allocationList.add(proxy);
-    		}
-    		
-    		Collections.sort(candidates, new Comparator<ConsoleProxyVO> () {
-				@Override
-				public int compare(ConsoleProxyVO x, ConsoleProxyVO y) {
-					Integer loadOfX = loadInfo.get(x.getId());
-					Integer loadOfY = loadInfo.get(y.getId());
 
-					if(loadOfX != null && loadOfY != null) {
-						if(loadOfX < loadOfY)
-							return -1;
-						else if(loadOfX > loadOfY)
-							return 1;
-						return 0;
-					} else if(loadOfX == null && loadOfY == null) {
-						return 0;
-					} else {
-						if(loadOfX == null)
-							return -1;
-						return 1;
-					}
-				}
-    		});
-    		
-    		if(allocationList.size() > 0)
-    			return allocationList.get(0);
-    	}
-    	return null;
+    @Override
+    public ConsoleProxyVO allocProxy(List<ConsoleProxyVO> candidates, final Map<Long, Integer> loadInfo, long dataCenterId) {
+        if(candidates != null) {
+
+            List<ConsoleProxyVO> allocationList = new ArrayList<ConsoleProxyVO>();
+            for(ConsoleProxyVO proxy : candidates) {
+                allocationList.add(proxy);
+            }
+
+            Collections.sort(candidates, new Comparator<ConsoleProxyVO> () {
+                @Override
+                public int compare(ConsoleProxyVO x, ConsoleProxyVO y) {
+                    Integer loadOfX = loadInfo.get(x.getId());
+                    Integer loadOfY = loadInfo.get(y.getId());
+
+                    if(loadOfX != null && loadOfY != null) {
+                        if(loadOfX < loadOfY)
+                            return -1;
+                        else if(loadOfX > loadOfY)
+                            return 1;
+                        return 0;
+                    } else if(loadOfX == null && loadOfY == null) {
+                        return 0;
+                    } else {
+                        if(loadOfX == null)
+                            return -1;
+                        return 1;
+                    }
+                }
+            });
+
+            if(allocationList.size() > 0)
+                return allocationList.get(0);
+        }
+        return null;
     }
 
     @Override
@@ -83,7 +80,7 @@ public class ConsoleProxyBalanceAllocator implements ConsoleProxyAllocator {
         _name = name;
         return true;
     }
-	
+
     @Override
     public String getName() {
         return _name;

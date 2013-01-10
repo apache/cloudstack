@@ -25,7 +25,7 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.simulator.MockHostVO;
 import com.cloud.simulator.MockVMVO;
-import com.cloud.utils.component.Inject;
+
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;

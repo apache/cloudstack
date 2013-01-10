@@ -45,7 +45,7 @@ import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.user.AccountVO;
 import com.cloud.user.MockAccountManagerImpl;
 import com.cloud.user.dao.AccountDaoImpl;
-import com.cloud.utils.component.ComponentLocator;
+
 import com.cloud.utils.component.MockComponentLocator;
 import com.cloud.vm.dao.DomainRouterDaoImpl;
 import com.cloud.vpc.dao.MockNetworkDaoImpl;

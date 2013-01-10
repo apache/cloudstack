@@ -30,7 +30,7 @@ import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerDaoImpl;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.router.VirtualRouter.Role;
-import com.cloud.utils.component.ComponentLocator;
+
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;

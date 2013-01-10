@@ -21,7 +21,7 @@ import java.util.List;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.dao.SnapshotDaoImpl;
-import com.cloud.utils.component.ComponentLocator;
+
 
 import junit.framework.Assert;
 import junit.framework.TestCase;

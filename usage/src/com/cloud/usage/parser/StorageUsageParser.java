@@ -33,7 +33,7 @@ import com.cloud.usage.dao.UsageDao;
 import com.cloud.usage.dao.UsageStorageDao;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.ComponentLocator;
+
 
 public class StorageUsageParser {
     public static final Logger s_logger = Logger.getLogger(StorageUsageParser.class.getName());

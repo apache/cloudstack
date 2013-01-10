@@ -34,7 +34,7 @@ import com.cloud.netapp.NetappManager;
 import com.cloud.netapp.PoolVO;
 import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.ListVolumePoolsCmdResponse;
-import com.cloud.utils.component.ComponentLocator;
+
 
 @APICommand(name = "listPools", description="List Pool", responseObject = ListVolumePoolsCmdResponse.class)
 public class ListVolumePoolsCmd extends BaseCmd {

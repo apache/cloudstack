@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Vector;
 
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.utils.component.ComponentLocator;
+
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.net.NetUtils;

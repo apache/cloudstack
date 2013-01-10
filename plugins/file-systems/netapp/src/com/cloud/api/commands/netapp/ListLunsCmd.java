@@ -36,7 +36,7 @@ import com.cloud.netapp.LunVO;
 import com.cloud.netapp.NetappManager;
 import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.ListLunsCmdResponse;
-import com.cloud.utils.component.ComponentLocator;
+
 
 @APICommand(name = "listLunsOnFiler", description="List LUN", responseObject = ListLunsCmdResponse.class)
 public class ListLunsCmd extends BaseCmd 

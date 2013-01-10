@@ -28,7 +28,7 @@ import com.cloud.simulator.MockVMVO;
 import com.cloud.simulator.dao.MockConfigurationDao;
 import com.cloud.simulator.dao.MockHostDao;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.Inject;
+
 import com.cloud.utils.db.ConnectionConcierge;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;

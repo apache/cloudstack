@@ -30,7 +30,6 @@ import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
 import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.resource.ResourceManager;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.ConsoleProxyDao;
 
@@ -41,31 +40,31 @@ public class StaticConsoleProxyManager extends AgentBasedConsoleProxyManager imp
     @Inject ConsoleProxyDao _proxyDao;
     @Inject ResourceManager _resourceMgr;
     @Inject ConfigurationDao _configDao;
-    
+
     @Override
     protected HostVO findHost(VMInstanceVO vm) {
-        
+
         List<HostVO> hosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByType(Type.ConsoleProxy, vm.getDataCenterIdToDeployIn());
-        
+
         return hosts.isEmpty() ? null : hosts.get(0);
     }
-    
+
     @Override
     public ConsoleProxyInfo assignProxy(long dataCenterId, long userVmId) {
         return new ConsoleProxyInfo(false, _ip, _consoleProxyPort, _consoleProxyUrlPort, _consoleProxyUrlDomain);
     }
-    
+
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
-        
+
         Map<String, String> dbParams = _configDao.getConfiguration("ManagementServer", params);
-        
+
         _ip = dbParams.get("public.ip");
         if (_ip == null) {
             _ip = "127.0.0.1";
         }
-        
+
         return true;
     }
 }

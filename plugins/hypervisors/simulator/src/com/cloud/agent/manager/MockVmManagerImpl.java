@@ -46,7 +46,7 @@ import com.cloud.simulator.dao.MockSecurityRulesDao;
 import com.cloud.simulator.dao.MockVMDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.component.Inject;
+
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine.State;

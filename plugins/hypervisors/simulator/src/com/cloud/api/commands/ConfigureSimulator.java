@@ -31,7 +31,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.server.ManagementService;
 import com.cloud.user.Account;
-import com.cloud.utils.component.ComponentLocator;
+
 
 @APICommand(name = "configureSimulator", description="configure simulator", responseObject=SuccessResponse.class)
 public class ConfigureSimulator extends BaseCmd {

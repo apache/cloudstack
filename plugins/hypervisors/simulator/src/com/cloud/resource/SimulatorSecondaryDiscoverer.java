@@ -38,7 +38,7 @@ import com.cloud.host.Status;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.secondary.SecondaryStorageDiscoverer;
-import com.cloud.utils.component.Inject;
+
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.log4j.Logger;
 

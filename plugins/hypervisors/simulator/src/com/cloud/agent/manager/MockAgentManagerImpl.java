@@ -58,7 +58,7 @@ import com.cloud.simulator.MockVMVO;
 import com.cloud.simulator.dao.MockHostDao;
 import com.cloud.simulator.dao.MockVMDao;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.Inject;
+
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;

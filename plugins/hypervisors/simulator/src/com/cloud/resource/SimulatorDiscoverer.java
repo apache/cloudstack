@@ -54,7 +54,7 @@ import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
-import com.cloud.utils.component.Inject;
+
 
 @Local(value = Discoverer.class)
 public class SimulatorDiscoverer extends DiscovererBase implements Discoverer, Listener, ResourceStateAdapter {

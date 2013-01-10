@@ -62,7 +62,6 @@ import com.cloud.cluster.ClusterManagerListener;
 import com.cloud.cluster.ClusteredAgentRebalanceService;
 import com.cloud.cluster.ManagementServerHost;
 import com.cloud.cluster.ManagementServerHostVO;
-import com.cloud.cluster.StackMaid;
 import com.cloud.cluster.agentlb.AgentLoadBalancerPlanner;
 import com.cloud.cluster.agentlb.HostTransferMapVO;
 import com.cloud.cluster.agentlb.HostTransferMapVO.HostTransferState;
@@ -1120,8 +1119,6 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                 rebalanceHost(hostId, currentOwnerId, futureOwnerId);
             } catch (Exception e) {
                 s_logger.warn("Unable to rebalance host id=" + hostId, e);
-            } finally {
-                StackMaid.current().exitCleanup();
             }
         }
     }

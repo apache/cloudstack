@@ -26,7 +26,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.cloud.utils.component.ComponentLocator;
+
 import com.cloud.utils.exception.CloudRuntimeException;
 
 /**

@@ -34,7 +34,7 @@ import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.host.Host;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume.Type;
-import com.cloud.utils.component.ComponentLocator;
+
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;

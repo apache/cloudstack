@@ -25,7 +25,7 @@ import org.junit.After;
 import org.junit.Before;
 
 import com.cloud.upgrade.dao.VersionDaoImpl;
-import com.cloud.utils.component.ComponentLocator;
+
 
 public class AdvanceZone223To224UpgradeTest extends TestCase {
     private static final Logger s_logger = Logger.getLogger(AdvanceZone223To224UpgradeTest.class);

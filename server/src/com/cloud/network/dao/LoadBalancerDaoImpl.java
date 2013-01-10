@@ -29,7 +29,6 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.rules.FirewallRule.State;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -135,5 +134,5 @@ public class LoadBalancerDaoImpl extends GenericDaoBase<LoadBalancerVO, Long> im
         sc.setParameters("state", State.Add.toString(), State.Revoke.toString());
         return listBy(sc);
     }
-    
+
 }

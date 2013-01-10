@@ -24,7 +24,7 @@ import com.cloud.hypervisor.HypervisorGuruBase;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.dao.GuestOSDao;
-import com.cloud.utils.component.Inject;
+
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 

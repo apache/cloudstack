@@ -19,7 +19,7 @@ package com.cloud.vm.dao;
 import junit.framework.TestCase;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.utils.component.ComponentLocator;
+
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 

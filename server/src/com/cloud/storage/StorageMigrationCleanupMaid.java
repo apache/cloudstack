@@ -25,7 +25,7 @@ import com.cloud.cluster.CheckPointManager;
 import com.cloud.cluster.CleanupMaid;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.utils.component.ComponentLocator;
+
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;

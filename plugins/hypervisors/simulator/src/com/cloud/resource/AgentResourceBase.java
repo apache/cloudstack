@@ -43,7 +43,7 @@ import com.cloud.agent.manager.SimulatorManager.AgentType;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.simulator.MockHost;
-import com.cloud.utils.component.ComponentLocator;
+
 
 public class AgentResourceBase implements ServerResource {
 	private static final Logger s_logger = Logger

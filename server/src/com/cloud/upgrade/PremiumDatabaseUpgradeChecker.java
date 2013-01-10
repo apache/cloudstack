@@ -43,7 +43,7 @@ import com.cloud.upgrade.dao.Upgrade30to301;
 import com.cloud.upgrade.dao.UpgradeSnapshot217to224;
 import com.cloud.upgrade.dao.UpgradeSnapshot223to224;
 import com.cloud.upgrade.dao.VersionDaoImpl;
-import com.cloud.utils.component.ComponentLocator;
+
 import com.cloud.utils.component.SystemIntegrityChecker;
 
 @Component

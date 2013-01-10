@@ -30,7 +30,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.netapp.NetappManager;
 import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.DissociateLunCmdResponse;
-import com.cloud.utils.component.ComponentLocator;
+
 
 @APICommand(name = "dissociateLun", description="Dissociate a LUN", responseObject = DissociateLunCmdResponse.class)
 public class DissociateLunCmd extends BaseCmd {
