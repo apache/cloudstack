@@ -79,10 +79,6 @@ public class CreatePhysicalNetworkCmd extends BaseAsyncCreateCmd {
         return tags;
     }
 
-    @Override
-    public String getEntityTable() {
-        return "physical_network";
-    }
 
     public Long getZoneId() {
         return zoneId;
@@ -164,6 +160,7 @@ public class CreatePhysicalNetworkCmd extends BaseAsyncCreateCmd {
         PhysicalNetwork result = _networkService.createPhysicalNetwork(getZoneId(),getVlan(),getNetworkSpeed(), getIsolationMethods(),getBroadcastDomainRange(),getDomainId(), getTags(), getNetworkName());
         if (result != null) {
             setEntityId(result.getId());
+            setEntityUuid(result.getUuid());
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create physical network entity");
         }

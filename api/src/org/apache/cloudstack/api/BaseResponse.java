@@ -17,7 +17,6 @@
 package org.apache.cloudstack.api;
 
 import org.apache.cloudstack.api.ApiConstants;
-import com.cloud.utils.IdentityProxy;
 import org.apache.cloudstack.api.ResponseObject;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
@@ -46,6 +45,7 @@ public abstract class BaseResponse implements ResponseObject {
         this.objectName = objectName;
     }
 
+    @Override
     public String getObjectId() {
         return null;
     }
@@ -56,18 +56,22 @@ public abstract class BaseResponse implements ResponseObject {
     @SerializedName(ApiConstants.JOB_STATUS) @Param(description="the current status of the latest async job acting on this object")
     private Integer jobStatus;
 
+    @Override
     public String getJobId() {
         return jobId;
     }
 
+    @Override
     public void setJobId(String jobId) {
         this.jobId = jobId;
     }
 
+    @Override
     public Integer getJobStatus() {
         return jobStatus;
     }
 
+    @Override
     public void setJobStatus(Integer jobStatus) {
         this.jobStatus = jobStatus;
     }

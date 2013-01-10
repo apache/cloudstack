@@ -67,6 +67,7 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd{
         try {
             StaticRoute result = _vpcService.createStaticRoute(getGatewayId(), getCidr());
             setEntityId(result.getId());
+            setEntityUuid(result.getUuid());
         } catch (NetworkRuleConflictException ex) {
             s_logger.info("Network rule conflict: " + ex.getMessage());
             s_logger.trace("Network rule conflict: ", ex);
@@ -74,10 +75,6 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd{
         }
     }
 
-    @Override
-    public String getEntityTable() {
-        return "static_routes";
-    }
 
     @Override
     public String getEventType() {

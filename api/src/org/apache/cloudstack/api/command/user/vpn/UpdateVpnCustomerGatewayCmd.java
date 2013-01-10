@@ -78,11 +78,7 @@ public class UpdateVpnCustomerGatewayCmd extends BaseAsyncCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public String getEntityTable() {
-        return "s2s_customer_gateway";
-    }
-
-    public Long getId() {
+     public Long getId() {
         return id;
     }
 

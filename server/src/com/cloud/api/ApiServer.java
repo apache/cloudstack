@@ -61,7 +61,6 @@ import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
-import org.apache.cloudstack.discovery.ApiDiscoveryService;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.ConnectionClosedException;
@@ -135,8 +134,6 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CSExceptionErrorCode;
 import com.cloud.uuididentity.dao.IdentityDao;
 
-import org.reflections.Reflections;
-
 public class ApiServer implements HttpRequestHandler {
     private static final Logger s_logger = Logger.getLogger(ApiServer.class.getName());
     private static final Logger s_accessLogger = Logger.getLogger("apiserver." + ApiServer.class.getName());
@@ -154,15 +151,13 @@ public class ApiServer implements HttpRequestHandler {
     protected Adapters<APILimitChecker> _apiLimitCheckers;
     @Inject(adapter = APIAccessChecker.class)
     protected Adapters<APIAccessChecker> _apiAccessCheckers;
-    @Inject(adapter = ApiDiscoveryService.class)
-    protected Adapters<ApiDiscoveryService> _apiDiscoveryServices;
 
     private Account _systemAccount = null;
     private User _systemUser = null;
     private static int _workerCount = 0;
     private static ApiServer s_instance = null;
     private static final DateFormat _dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
-    private Map<String, Class<?>> _apiNameCmdClassMap = new HashMap<String, Class<?>>();
+    private static Map<String, Class<?>> _apiNameCmdClassMap = new HashMap<String, Class<?>>();
 
     private static ExecutorService _executor = new ThreadPoolExecutor(10, 150, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("ApiServer"));
 
@@ -170,23 +165,22 @@ public class ApiServer implements HttpRequestHandler {
         super();
     }
 
-    public static void initApiServer(String[] apiConfig) {
+    public static void initApiServer() {
         if (s_instance == null) {
             //Injection will create ApiServer and all its fields which have @Inject
             s_instance = ComponentLocator.inject(ApiServer.class);
-            s_instance.init(apiConfig);
+            s_instance.init();
         }
     }
 
     public static ApiServer getInstance() {
-        // Assumption: CloudStartupServlet would initialize ApiServer
         if (s_instance == null) {
-            s_logger.fatal("ApiServer instance failed to initialize");
+            ApiServer.initApiServer();
         }
         return s_instance;
     }
 
-    public void init(String[] apiConfig) {
+    public void init() {
         BaseCmd.setComponents(new ApiResponseHelper());
         BaseListCmd.configure();
 
@@ -207,13 +201,16 @@ public class ApiServer implements HttpRequestHandler {
             }
         }
 
-        for (ApiDiscoveryService discoveryService: _apiDiscoveryServices) {
-            _apiNameCmdClassMap.putAll(discoveryService.getApiNameCmdClassMapping());
-        }
+        Set<Class<?>> cmdClasses = ReflectUtil.getClassesWithAnnotation(APICommand.class,
+                new String[]{"org.apache.cloudstack.api", "com.cloud.api"});
 
-        if (_apiNameCmdClassMap.size() == 0) {
-            s_logger.fatal("ApiServer failed to generate apiname, cmd class mappings."
-                         + "Please check and enable at least one ApiDiscovery adapter.");
+        for(Class<?> cmdClass: cmdClasses) {
+            String apiName = cmdClass.getAnnotation(APICommand.class).name();
+            if (_apiNameCmdClassMap.containsKey(apiName)) {
+                s_logger.error("API Cmd class " + cmdClass.getName() + " has non-unique apiname" + apiName);
+                continue;
+            }
+            _apiNameCmdClassMap.put(apiName, cmdClass);
         }
 
         encodeApiResponse = Boolean.valueOf(configDao.getValue(Config.EncodeApiResponse.key()));
@@ -408,12 +405,12 @@ public class ApiServer implements HttpRequestHandler {
         // BaseAsyncCmd: cmd is processed and submitted as an AsyncJob, job related info is serialized and returned.
         if (cmdObj instanceof BaseAsyncCmd) {
             Long objectId = null;
-            String objectEntityTable = null;
+            String objectUuid = null;
             if (cmdObj instanceof BaseAsyncCreateCmd) {
                 BaseAsyncCreateCmd createCmd = (BaseAsyncCreateCmd) cmdObj;
                 _dispatcher.dispatchCreateCmd(createCmd, params);
                 objectId = createCmd.getEntityId();
-                objectEntityTable = createCmd.getEntityTable();
+                objectUuid = createCmd.getEntityUuid();
                 params.put("id", objectId.toString());
             } else {
                 ApiDispatcher.processParameters(cmdObj, params);
@@ -457,8 +454,8 @@ public class ApiServer implements HttpRequestHandler {
             }
 
             if (objectId != null) {
-                SerializationContext.current().setUuidTranslation(true);
-                return ((BaseAsyncCreateCmd) asyncCmd).getResponse(jobId, objectId, objectEntityTable);
+                String objUuid = (objectUuid == null) ? objectId.toString() : objectUuid;
+                return ((BaseAsyncCreateCmd) asyncCmd).getResponse(jobId, objUuid);
             }
 
             SerializationContext.current().setUuidTranslation(true);
@@ -468,6 +465,7 @@ public class ApiServer implements HttpRequestHandler {
 
             // if the command is of the listXXXCommand, we will need to also return the
             // the job id and status if possible
+            // For those listXXXCommand which we have already created DB views, this step is not needed since async job is joined in their db views.
             if (cmdObj instanceof BaseListCmd && !(cmdObj instanceof ListVMsCmd) && !(cmdObj instanceof ListRoutersCmd)
                     && !(cmdObj instanceof ListSecurityGroupsCmd)
                     && !(cmdObj instanceof ListTagsCmd)

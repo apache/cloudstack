@@ -65,9 +65,6 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
 
-    public String getEntityTable() {
-        return "snapshots";
-    }
 
     public String getAccountName() {
         return accountName;
@@ -153,6 +150,7 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
         Snapshot snapshot = _snapshotService.allocSnapshot(getVolumeId(), getPolicyId());
         if (snapshot != null) {
             this.setEntityId(snapshot.getId());
+            this.setEntityUuid(snapshot.getUuid());
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create snapshot");
         }

@@ -56,9 +56,6 @@ under the License.
         <adapters key="org.apache.cloudstack.acl.APIAccessChecker">
             <adapter name="StaticRoleBasedAPIAccessChecker" class="org.apache.cloudstack.acl.StaticRoleBasedAPIAccessChecker"/>
         </adapters>
-        <adapters key="org.apache.cloudstack.discovery.ApiDiscoveryService">
-            <adapter name="ApiDiscoveryService" class="org.apache.cloudstack.discovery.ApiDiscoveryServiceImpl"/>
-        </adapters>
         <adapters key="com.cloud.agent.manager.allocator.HostAllocator">
             <adapter name="FirstFitRouting" class="com.cloud.agent.manager.allocator.impl.FirstFitRoutingAllocator"/>
             <!--adapter name="FirstFitRouting" class="com.cloud.agent.manager.allocator.impl.RecreateHostAllocator"/-->

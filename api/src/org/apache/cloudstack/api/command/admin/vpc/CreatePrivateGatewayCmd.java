@@ -123,6 +123,7 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
 
         if (result != null) {
             this.setEntityId(result.getId());
+            this.setEntityUuid(result.getUuid());
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create private gateway");
         }
@@ -156,10 +157,6 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
         return  "creating private gateway";
     }
 
-    @Override
-    public String getEntityTable() {
-        return "vpc_gateways";
-    }
 
 
     @Override
