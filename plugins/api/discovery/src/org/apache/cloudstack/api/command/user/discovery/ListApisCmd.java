@@ -16,6 +16,9 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.discovery;
 
+import com.cloud.user.Account;
+import com.cloud.user.UserContext;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseListCmd;
@@ -39,7 +42,9 @@ public class ListApisCmd extends BaseListCmd {
     @Override
     public void execute() throws ServerApiException {
         if (_apiDiscoveryService != null) {
-            ListResponse<ApiDiscoveryResponse> response = (ListResponse<ApiDiscoveryResponse>) _apiDiscoveryService.listApis();
+            Account caller = UserContext.current().getCaller();
+            RoleType roleType = _accountService.getRoleType(UserContext.current().getCaller());
+            ListResponse<ApiDiscoveryResponse> response = (ListResponse<ApiDiscoveryResponse>) _apiDiscoveryService.listApis(roleType);
             if (response == null) {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Api Discovery plugin was unable to find and process any apis");
             }
