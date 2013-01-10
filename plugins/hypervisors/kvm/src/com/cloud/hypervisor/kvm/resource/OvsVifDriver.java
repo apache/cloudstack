@@ -84,11 +84,11 @@ public class OvsVifDriver extends VifDriverBase {
                     && !vlanId.equalsIgnoreCase("untagged")) {
                 if(trafficLabel != null && !trafficLabel.isEmpty()) {
                     s_logger.debug("creating a vlan dev and bridge for guest traffic per traffic label " + trafficLabel);
-                    intf.defBridgeNet(_pifs.get(trafficLabel), null, nic.getMac(), getGuestNicModel(guestOsType));
-                    intf.setVlanTag(Integer.parseInt(vlanId));
+                    String brName = createVlanBr(vlanId, _pifs.get(trafficLabel));
+                    intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType));
                 } else {
-                    intf.defBridgeNet(_pifs.get("private"), null, nic.getMac(), getGuestNicModel(guestOsType));
-                    intf.setVlanTag(Integer.parseInt(vlanId));
+                    String brName = createVlanBr(vlanId, _pifs.get("private"));
+                    intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType));
                 }
             } else if (nic.getBroadcastType() == Networks.BroadcastDomainType.Lswitch) {
             	s_logger.debug("nic " + nic + " needs to be connected to LogicalSwitch " + logicalSwitchUuid);
@@ -144,7 +144,7 @@ public class OvsVifDriver extends VifDriverBase {
         return brName;
     }
     
-	private void deleteExitingLinkLocalRoutTable(String linkLocalBr) {
+    private void deleteExitingLinkLocalRoutTable(String linkLocalBr) {
         Script command = new Script("/bin/bash", _timeout);
         command.add("-c");
         command.add("ip route | grep " + NetUtils.getLinkLocalCIDR());
