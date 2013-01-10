@@ -31,7 +31,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.Network;
 import com.cloud.user.UserContext;
 
-@APICommand(description="Creates a private network", responseObject=NetworkResponse.class)
+//@APICommand(description="Creates a private network", responseObject=NetworkResponse.class)
 public class CreatePrivateNetworkCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreatePrivateNetworkCmd.class.getName());
 
