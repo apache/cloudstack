@@ -400,12 +400,12 @@ public class ApiServer implements HttpRequestHandler {
         // BaseAsyncCmd: cmd is processed and submitted as an AsyncJob, job related info is serialized and returned.
         if (cmdObj instanceof BaseAsyncCmd) {
             Long objectId = null;
-            String objectEntityTable = null;
+            String objectUuid = null;
             if (cmdObj instanceof BaseAsyncCreateCmd) {
                 BaseAsyncCreateCmd createCmd = (BaseAsyncCreateCmd) cmdObj;
                 _dispatcher.dispatchCreateCmd(createCmd, params);
                 objectId = createCmd.getEntityId();
-                objectEntityTable = createCmd.getEntityTable();
+                objectUuid = createCmd.getEntityUuid();
                 params.put("id", objectId.toString());
             } else {
                 ApiDispatcher.processParameters(cmdObj, params);
@@ -449,8 +449,8 @@ public class ApiServer implements HttpRequestHandler {
             }
 
             if (objectId != null) {
-                SerializationContext.current().setUuidTranslation(true);
-                return ((BaseAsyncCreateCmd) asyncCmd).getResponse(jobId, objectId, objectEntityTable);
+                String objUuid = (objectUuid == null) ? objectId.toString() : objectUuid;
+                return ((BaseAsyncCreateCmd) asyncCmd).getResponse(jobId, objUuid);
             }
 
             SerializationContext.current().setUuidTranslation(true);
@@ -460,6 +460,7 @@ public class ApiServer implements HttpRequestHandler {
 
             // if the command is of the listXXXCommand, we will need to also return the
             // the job id and status if possible
+            // For those listXXXCommand which we have already created DB views, this step is not needed since async job is joined in their db views.
             if (cmdObj instanceof BaseListCmd && !(cmdObj instanceof ListVMsCmd) && !(cmdObj instanceof ListRoutersCmd)
                     && !(cmdObj instanceof ListSecurityGroupsCmd)
                     && !(cmdObj instanceof ListTagsCmd)

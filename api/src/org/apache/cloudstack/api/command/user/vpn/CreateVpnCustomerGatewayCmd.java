@@ -78,9 +78,6 @@ public class CreateVpnCustomerGatewayCmd extends BaseAsyncCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public String getEntityTable() {
-        return "s2s_customer_gateway";
-    }
 
     public String getName() {
         return name;

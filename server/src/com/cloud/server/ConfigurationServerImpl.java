@@ -103,7 +103,6 @@ public class ConfigurationServerImpl implements ConfigurationServer {
     private final AccountDao _accountDao;
     private final ResourceCountDao _resourceCountDao;
     private final NetworkOfferingServiceMapDao _ntwkOfferingServiceMapDao;
-    private final IdentityDao _identityDao;
 
     public ConfigurationServerImpl() {
         ComponentLocator locator = ComponentLocator.getLocator(Name);
@@ -120,7 +119,6 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         _accountDao = locator.getDao(AccountDao.class);
         _resourceCountDao = locator.getDao(ResourceCountDao.class);
         _ntwkOfferingServiceMapDao = locator.getDao(NetworkOfferingServiceMapDao.class);
-        _identityDao = locator.getDao(IdentityDao.class);
     }
 
     @Override

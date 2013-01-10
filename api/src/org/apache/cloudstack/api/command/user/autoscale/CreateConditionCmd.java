@@ -72,6 +72,7 @@ public class CreateConditionCmd extends BaseAsyncCreateCmd {
 
         if (condition != null) {
             this.setEntityId(condition.getId());
+            this.setEntityUuid(condition.getUuid());
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create condition.");
         }
@@ -146,8 +147,5 @@ public class CreateConditionCmd extends BaseAsyncCreateCmd {
         return accountId;
     }
 
-    @Override
-    public String getEntityTable() {
-        return "conditions";
-    }
+
 }

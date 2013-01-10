@@ -171,9 +171,6 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public String getEntityTable() {
-        return "vm_instance";
-    }
 
     public String getAccountName() {
         if (accountName == null) {
@@ -446,6 +443,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
 
             if (vm != null) {
                 setEntityId(vm.getId());
+                setEntityUuid(vm.getUuid());
             } else {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to deploy vm");
             }

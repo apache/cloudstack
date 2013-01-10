@@ -153,6 +153,7 @@ public class CreatePrivateNetworkCmd extends BaseAsyncCreateCmd {
 
         if (result != null) {
             this.setEntityId(result.getId());
+            this.setEntityUuid(result.getUuid());
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create a Private network");
         }
@@ -190,8 +191,4 @@ public class CreatePrivateNetworkCmd extends BaseAsyncCreateCmd {
 
     }
 
-    @Override
-    public String getEntityTable() {
-        return "networks";
-    }
 }

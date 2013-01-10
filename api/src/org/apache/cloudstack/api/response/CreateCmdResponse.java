@@ -16,24 +16,16 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import org.apache.cloudstack.api.ApiConstants;
-import com.cloud.utils.IdentityProxy;
-import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
 
 public class CreateCmdResponse extends BaseResponse {
-    @SerializedName(ApiConstants.ID)
-    private IdentityProxy id = new IdentityProxy();
+    private String id;
 
-    public Long getId() {
-        return id.getValue();
+    public String getId() {
+        return id;
     }
 
-    public void setId(Long id) {
-        this.id.setValue(id);
-    }
-
-    public void setIdEntityTable(String entityTable) {
-        this.id.setTableName(entityTable);
+    public void setId(String id) {
+        this.id = id;
     }
 }

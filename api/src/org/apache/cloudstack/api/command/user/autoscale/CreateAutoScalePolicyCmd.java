@@ -62,10 +62,6 @@ public class CreateAutoScalePolicyCmd extends BaseAsyncCreateCmd {
     private Long conditionDomainId;
     private Long conditionAccountId;
 
-    @Override
-    public String getEntityTable() {
-        return "autoscale_policies";
-    }
 
     public int getDuration() {
         return duration;
@@ -159,6 +155,7 @@ public class CreateAutoScalePolicyCmd extends BaseAsyncCreateCmd {
         AutoScalePolicy result = _autoScaleService.createAutoScalePolicy(this);
         if (result != null) {
             this.setEntityId(result.getId());
+            this.setEntityUuid(result.getUuid());
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create AutoScale Policy");
         }
