@@ -20,7 +20,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -32,16 +31,20 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
+import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
+import org.apache.cloudstack.api.command.admin.host.AddHostCmd;
+import org.apache.cloudstack.api.command.admin.host.AddSecondaryStorageCmd;
+import org.apache.cloudstack.api.command.admin.host.CancelMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.host.ReconnectHostCmd;
+import org.apache.cloudstack.api.command.admin.host.UpdateHostCmd;
+import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
+import org.apache.cloudstack.api.command.admin.storage.AddS3Cmd;
 import org.apache.cloudstack.api.command.admin.storage.ListS3sCmd;
 import org.apache.cloudstack.api.command.admin.swift.AddSwiftCmd;
-import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
-import org.apache.cloudstack.api.command.admin.host.*;
 import org.apache.cloudstack.api.command.admin.swift.ListSwiftsCmd;
-import org.apache.cloudstack.api.command.admin.storage.AddS3Cmd;
-import com.cloud.storage.S3;
-import com.cloud.storage.S3VO;
-import com.cloud.storage.s3.S3Manager;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -59,12 +62,7 @@ import com.cloud.agent.api.UpdateHostPasswordCommand;
 import com.cloud.agent.manager.AgentAttache;
 import com.cloud.agent.manager.allocator.PodAllocator;
 import com.cloud.agent.transport.Request;
-import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
-import org.apache.cloudstack.api.command.admin.host.AddHostCmd;
-import org.apache.cloudstack.api.command.admin.host.CancelMaintenanceCmd;
-import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
-import org.apache.cloudstack.api.command.admin.host.UpdateHostCmd;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
@@ -112,6 +110,8 @@ import com.cloud.org.Grouping.AllocationState;
 import com.cloud.org.Managed;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.GuestOSCategoryVO;
+import com.cloud.storage.S3;
+import com.cloud.storage.S3VO;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
@@ -125,6 +125,7 @@ import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.swift.SwiftManager;
 import com.cloud.template.VirtualMachineTemplate;
@@ -135,7 +136,6 @@ import com.cloud.user.UserContext;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.UriUtils;
-import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria;
@@ -219,7 +219,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     // @com.cloud.utils.component.Inject(adapter = PodAllocator.class)
     @Inject 
     protected List<PodAllocator> _podAllocators = null;
-    
+
     @Inject
     protected VMTemplateDao  _templateDao;
     @Inject
@@ -236,9 +236,9 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 
     @PostConstruct
     public void init() {
-    	// TODO initialize pod allocators here instead
+        // TODO initialize pod allocators here instead
     }
-    
+
     private void insertListener(Integer event, ResourceListener listener) {
         List<ResourceListener> lst = _lifeCycleListeners.get(event);
         if (lst == null) {
@@ -510,10 +510,10 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 
     @Override
     public Discoverer getMatchingDiscover(Hypervisor.HypervisorType hypervisorType) {
-    	for(Discoverer discoverer : _discoverers) {
+        for(Discoverer discoverer : _discoverers) {
             if (discoverer.getHypervisorType() == hypervisorType)
                 return discoverer;
-    	}
+        }
         return null;
     }
 
@@ -1629,7 +1629,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                     }
                 }
             }
-            
+
             if (s_logger.isDebugEnabled()) {
                 new Request(-1l, -1l, cmds, true, false).logD("Startup request from directly connected host: ", true);
             }
@@ -1670,7 +1670,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                         }
                     }
                 }
-                
+
                 if (tempHost != null) {
                     /* Change agent status to Alert */
                     _agentMgr.agentStatusTransitTo(tempHost, Status.Event.AgentDisconnected, _nodeId);
@@ -2179,7 +2179,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 
     @Override
     public Pair<HostPodVO, Long> findPod(VirtualMachineTemplate template, ServiceOfferingVO offering, DataCenterVO dc, long accountId, Set<Long> avoids) {
-    	for(PodAllocator allocator : _podAllocators) {
+        for(PodAllocator allocator : _podAllocators) {
             final Pair<HostPodVO, Long> pod = allocator.allocateTo(template, offering, dc, accountId, avoids);
             if (pod != null) {
                 return pod;

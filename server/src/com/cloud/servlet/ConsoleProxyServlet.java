@@ -27,15 +27,16 @@ import java.util.Map;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+import javax.inject.Inject;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import org.apache.cloudstack.api.IdentityService;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.IdentityService;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.HostVO;
 import com.cloud.server.ManagementServer;
@@ -46,7 +47,6 @@ import com.cloud.user.User;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
-
 import com.cloud.utils.db.Transaction;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -63,10 +63,10 @@ public class ConsoleProxyServlet extends HttpServlet {
     private static final int DEFAULT_THUMBNAIL_WIDTH = 144;
     private static final int DEFAULT_THUMBNAIL_HEIGHT = 110;
 
-    private final static AccountManager _accountMgr = ComponentLocator.getLocator(ManagementServer.Name).getManager(AccountManager.class);
-    private final static VirtualMachineManager _vmMgr = ComponentLocator.getLocator(ManagementServer.Name).getManager(VirtualMachineManager.class);
-    private final static ManagementServer _ms = (ManagementServer)ComponentLocator.getComponent(ManagementServer.Name);
-    private final static IdentityService _identityService = ComponentLocator.getLocator(ManagementServer.Name).getManager(IdentityService.class); 
+    @Inject AccountManager _accountMgr;
+    @Inject VirtualMachineManager _vmMgr;
+    @Inject ManagementServer _ms;
+    @Inject IdentityService _identityService; 
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) {
