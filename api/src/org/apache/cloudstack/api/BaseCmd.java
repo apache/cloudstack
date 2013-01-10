@@ -89,6 +89,7 @@ public abstract class BaseCmd {
     public static final int PARAM_ERROR = 431;
     public static final int UNSUPPORTED_ACTION_ERROR = 432;
     public static final int PAGE_LIMIT_EXCEED = 433;
+    public static final int API_LIMIT_EXCEED = 434;
 
     // Server error codes
     public static final int INTERNAL_ERROR = 530;

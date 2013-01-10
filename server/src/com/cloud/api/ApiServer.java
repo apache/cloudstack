@@ -52,6 +52,7 @@ import javax.servlet.http.HttpSession;
 
 import com.cloud.utils.ReflectUtil;
 import org.apache.cloudstack.acl.APIAccessChecker;
+import org.apache.cloudstack.acl.APILimitChecker;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
@@ -141,6 +142,7 @@ public class ApiServer implements HttpRequestHandler {
     private static final Logger s_accessLogger = Logger.getLogger("apiserver." + ApiServer.class.getName());
 
     public static boolean encodeApiResponse = false;
+    public static boolean apiThrottlingEnabled = true;
     public static String jsonContentType = "text/javascript";
     private ApiDispatcher _dispatcher;
 
@@ -148,6 +150,8 @@ public class ApiServer implements HttpRequestHandler {
     @Inject private DomainManager _domainMgr = null;
     @Inject private AsyncJobManager _asyncMgr = null;
 
+    @Inject(adapter = APILimitChecker.class)
+    protected Adapters<APILimitChecker> _apiLimitCheckers;
     @Inject(adapter = APIAccessChecker.class)
     protected Adapters<APIAccessChecker> _apiAccessCheckers;
     @Inject(adapter = ApiDiscoveryService.class)
@@ -217,6 +221,7 @@ public class ApiServer implements HttpRequestHandler {
         if (jsonType != null) {
             jsonContentType = jsonType;
         }
+        apiThrottlingEnabled = Boolean.valueOf(configDao.getValue(Config.ApiLimitEnabled.key()));
 
         if (apiPort != null) {
             ListenerThread listenerThread = new ListenerThread(this, apiPort);
@@ -552,6 +557,14 @@ public class ApiServer implements HttpRequestHandler {
             // if userId not null, that mean that user is logged in
             if (userId != null) {
             	User user = ApiDBUtils.findUserById(userId);
+            	if (apiThrottlingEnabled){
+            	    // go through each API limit checker
+            	    if (!isRequestAllowed(user)) {
+            	        //FIXME: more detailed message regarding when he/she can retry
+                        s_logger.warn("The given user has reached his/her account api limit, please retry later");
+                        throw new ServerApiException(BaseCmd.API_LIMIT_EXCEED, "The given user has reached his/her account api limit");
+            	    }
+            	}
                 if (!isCommandAvailable(user, commandName)) {
                     s_logger.warn("The given command:" + commandName + " does not exist or it is not available for user");
                     throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command does not exist or it is not available for user");
@@ -787,6 +800,20 @@ public class ApiServer implements HttpRequestHandler {
         if ((user == null) || (user.getRemoved() != null) || !user.getState().equals(Account.State.enabled) || (account == null) || !account.getState().equals(Account.State.enabled)) {
             s_logger.warn("Deleted/Disabled/Locked user with id=" + userId + " attempting to access public API");
             return false;
+        }
+        return true;
+    }
+
+    private boolean isRequestAllowed(User user) {
+        Account account = ApiDBUtils.findAccountById(user.getAccountId());
+        if ( _accountMgr.isRootAdmin(account.getType()) ){
+            // no api throttling for root admin
+            return true;
+        }
+        for (APILimitChecker apiChecker : _apiLimitCheckers) {
+            // Fail the checking if any checker fails to verify
+            if (!apiChecker.isUnderLimit(account))
+                return false;
         }
         return true;
     }
