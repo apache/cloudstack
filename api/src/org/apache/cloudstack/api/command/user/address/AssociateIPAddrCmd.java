@@ -87,9 +87,6 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public String getEntityTable() {
-        return "user_ip_address";
-    }
 
     public String getAccountName() {
         if (accountName != null) {
@@ -220,6 +217,7 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
 
             if (ip != null) {
                 this.setEntityId(ip.getId());
+                this.setEntityUuid(ip.getUuid());
             } else {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to allocate ip address");
             }

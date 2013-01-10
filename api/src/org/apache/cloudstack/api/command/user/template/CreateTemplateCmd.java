@@ -102,9 +102,6 @@ import com.cloud.user.UserContext;
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
 
-    public String getEntityTable() {
-        return "vm_template";
-    }
 
     public Integer getBits() {
         return bits;
@@ -240,13 +237,15 @@ import com.cloud.user.UserContext;
     public void create() throws ResourceAllocationException {
         if (isBareMetal()) {
             _bareMetalVmService.createPrivateTemplateRecord(this, _accountService.getAccount(getEntityOwnerId()));
-            /*Baremetal creates template record after taking image proceeded, use vmId as entity id here*/
+            /*Baremetal creates template record after taking image proceeded, use vmId as entity id and uuid here*/
             this.setEntityId(vmId);
+            this.setEntityUuid(vmId.toString());
         } else {
             VirtualMachineTemplate template = null;
             template = _userVmService.createPrivateTemplateRecord(this, _accountService.getAccount(getEntityOwnerId()));
             if (template != null) {
                 this.setEntityId(template.getId());
+                this.setEntityUuid(template.getUuid());
             } else {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR,
                 "Failed to create a template");

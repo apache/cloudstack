@@ -62,6 +62,9 @@ import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
@@ -72,9 +75,12 @@ import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
+<<<<<<< HEAD
 import org.apache.cloudstack.api.response.ExceptionResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.discovery.ApiDiscoveryService;
+=======
+>>>>>>> master
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.ConnectionClosedException;
 import org.apache.http.HttpException;
@@ -149,19 +155,19 @@ public class ApiServer implements HttpRequestHandler {
     @Inject DomainManager _domainMgr;
     @Inject AsyncJobManager _asyncMgr;
     @Inject ConfigurationDao _configDao;
-    @Inject List<APIAccessChecker> _apiAccessCheckers;
 
     @Inject List<PluggableService> _pluggableServices;
     @Inject IdentityDao _identityDao;
 
-    protected List<ApiDiscoveryService> _apiDiscoveryServices;
+    @Inject
+    protected List<APIAccessChecker> _apiAccessCheckers;
 
     private Account _systemAccount = null;
     private User _systemUser = null;
     private static int _workerCount = 0;
     private static ApiServer s_instance = null;
     private static final DateFormat _dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
-    private final Map<String, Class<?>> _apiNameCmdClassMap = new HashMap<String, Class<?>>();
+    private static Map<String, Class<?>> _apiNameCmdClassMap = new HashMap<String, Class<?>>();
 
     private static ExecutorService _executor = new ThreadPoolExecutor(10, 150, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("ApiServer"));
 
@@ -169,7 +175,7 @@ public class ApiServer implements HttpRequestHandler {
         super();
     }
 
-    public static void initApiServer(String[] apiConfig) {
+    public static void initApiServer() {
         if (s_instance == null) {
             s_instance = new ApiServer();
             s_instance = ComponentContext.inject(s_instance);
@@ -178,14 +184,13 @@ public class ApiServer implements HttpRequestHandler {
     }
 
     public static ApiServer getInstance() {
-        // Assumption: CloudStartupServlet would initialize ApiServer
         if (s_instance == null) {
-            s_logger.fatal("ApiServer instance failed to initialize");
+            ApiServer.initApiServer();
         }
         return s_instance;
     }
 
-    public void init(String[] apiConfig) {
+    public void init() {
         BaseCmd.setComponents(new ApiResponseHelper());
         BaseListCmd.configure();
 
@@ -203,13 +208,16 @@ public class ApiServer implements HttpRequestHandler {
             }
         }
 
-        for (ApiDiscoveryService discoveryService: _apiDiscoveryServices) {
-            _apiNameCmdClassMap.putAll(discoveryService.getApiNameCmdClassMapping());
-        }
+        Set<Class<?>> cmdClasses = ReflectUtil.getClassesWithAnnotation(APICommand.class,
+                new String[]{"org.apache.cloudstack.api", "com.cloud.api"});
 
-        if (_apiNameCmdClassMap.size() == 0) {
-            s_logger.fatal("ApiServer failed to generate apiname, cmd class mappings."
-                    + "Please check and enable at least one ApiDiscovery adapter.");
+        for(Class<?> cmdClass: cmdClasses) {
+            String apiName = cmdClass.getAnnotation(APICommand.class).name();
+            if (_apiNameCmdClassMap.containsKey(apiName)) {
+                s_logger.error("API Cmd class " + cmdClass.getName() + " has non-unique apiname" + apiName);
+                continue;
+            }
+            _apiNameCmdClassMap.put(apiName, cmdClass);
         }
 
         encodeApiResponse = Boolean.valueOf(_configDao.getValue(Config.EncodeApiResponse.key()));
@@ -403,12 +411,12 @@ public class ApiServer implements HttpRequestHandler {
         // BaseAsyncCmd: cmd is processed and submitted as an AsyncJob, job related info is serialized and returned.
         if (cmdObj instanceof BaseAsyncCmd) {
             Long objectId = null;
-            String objectEntityTable = null;
+            String objectUuid = null;
             if (cmdObj instanceof BaseAsyncCreateCmd) {
                 BaseAsyncCreateCmd createCmd = (BaseAsyncCreateCmd) cmdObj;
                 _dispatcher.dispatchCreateCmd(createCmd, params);
                 objectId = createCmd.getEntityId();
-                objectEntityTable = createCmd.getEntityTable();
+                objectUuid = createCmd.getEntityUuid();
                 params.put("id", objectId.toString());
             } else {
                 ApiDispatcher.processParameters(cmdObj, params);
@@ -452,8 +460,8 @@ public class ApiServer implements HttpRequestHandler {
             }
 
             if (objectId != null) {
-                SerializationContext.current().setUuidTranslation(true);
-                return ((BaseAsyncCreateCmd) asyncCmd).getResponse(jobId, objectId, objectEntityTable);
+                String objUuid = (objectUuid == null) ? objectId.toString() : objectUuid;
+                return ((BaseAsyncCreateCmd) asyncCmd).getResponse(jobId, objUuid);
             }
 
             SerializationContext.current().setUuidTranslation(true);
@@ -463,6 +471,7 @@ public class ApiServer implements HttpRequestHandler {
 
             // if the command is of the listXXXCommand, we will need to also return the
             // the job id and status if possible
+            // For those listXXXCommand which we have already created DB views, this step is not needed since async job is joined in their db views.
             if (cmdObj instanceof BaseListCmd && !(cmdObj instanceof ListVMsCmd) && !(cmdObj instanceof ListRoutersCmd)
                     && !(cmdObj instanceof ListSecurityGroupsCmd)
                     && !(cmdObj instanceof ListTagsCmd)
@@ -790,9 +799,39 @@ public class ApiServer implements HttpRequestHandler {
     }
 
     private boolean isCommandAvailable(User user, String commandName) {
+        if (user == null) {
+            return false;
+        }
+
+        Account account = _accountMgr.getAccount(user.getAccountId());
+        if (account == null) {
+            return false;
+        }
+
+        RoleType roleType = RoleType.Unknown;
+        short accountType = account.getType();
+
+        // Account type to role type translation
+        switch (accountType) {
+        case Account.ACCOUNT_TYPE_ADMIN:
+            roleType = RoleType.Admin;
+            break;
+        case Account.ACCOUNT_TYPE_DOMAIN_ADMIN:
+            roleType = RoleType.DomainAdmin;
+            break;
+        case Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN:
+            roleType = RoleType.ResourceAdmin;
+            break;
+        case Account.ACCOUNT_TYPE_NORMAL:
+            roleType = RoleType.User;
+            break;
+        default:
+            return false;
+        }
+
         for (APIAccessChecker apiChecker : _apiAccessCheckers) {
             // Fail the checking if any checker fails to verify
-            if (!apiChecker.canAccessAPI(user, commandName))
+            if (!apiChecker.canAccessAPI(roleType, commandName))
                 return false;
         }
         return true;

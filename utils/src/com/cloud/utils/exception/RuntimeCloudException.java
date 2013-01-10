@@ -17,7 +17,6 @@
 package com.cloud.utils.exception;
 
 import com.cloud.utils.AnnotationHelper;
-import com.cloud.utils.IdentityProxy;
 import java.util.ArrayList;
 
 /**

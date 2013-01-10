@@ -66,10 +66,6 @@ public class AddTrafficTypeCmd extends BaseAsyncCreateCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    @Override
-    public String getEntityTable() {
-        return "physical_network_traffic_types";
-    }
 
     public Long getPhysicalNetworkId() {
         return physicalNetworkId;
@@ -136,6 +132,7 @@ public class AddTrafficTypeCmd extends BaseAsyncCreateCmd {
         PhysicalNetworkTrafficType result = _networkService.addTrafficTypeToPhysicalNetwork(getPhysicalNetworkId(), getTrafficType(), getXenLabel(), getKvmLabel(), getVmwareLabel(), getSimulatorLabel(), getVlan());
         if (result != null) {
             setEntityId(result.getId());
+            setEntityUuid(result.getUuid());
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add traffic type to physical network");
         }

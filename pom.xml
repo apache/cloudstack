@@ -346,6 +346,7 @@
               <exclude>scripts/vm/systemvm/id_rsa.cloud</exclude>
               <exclude>tools/devcloud/basebuild/puppet-devcloudinitial/files/network.conf</exclude>
               <exclude>tools/devcloud/devcloud.cfg</exclude>
+              <exclude>tools/devcloud-kvm/devcloud-kvm.cfg</exclude>
               <exclude>ui/lib/flot/jquery.colorhelpers.js</exclude>
               <exclude>ui/lib/flot/jquery.flot.crosshair.js</exclude>
               <exclude>ui/lib/flot/jquery.flot.fillbetween.js</exclude>
@@ -472,6 +473,7 @@
         <module>developer</module>
         <module>tools/apidoc</module>
         <module>tools/devcloud</module>
+        <module>tools/devcloud-kvm</module>
         <module>tools/marvin</module>
         <module>tools/cli</module>
       </modules>

@@ -135,8 +135,8 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
     @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with tempate", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
 
-
-
+    @SerializedName(ApiConstants.SSHKEY_ENABLED) @Param(description="true if template is sshkey enabled, false otherwise")
+    private Boolean sshKeyEnabled;
 
     @Override
     public String getObjectId() {
@@ -290,4 +290,9 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
     public void setTags(List<ResourceTagResponse> tags) {
         this.tags = tags;
     }
+
+    public void setSshKeyEnabled(boolean sshKeyEnabled) {
+        this.sshKeyEnabled = sshKeyEnabled;
+    }
+
 }

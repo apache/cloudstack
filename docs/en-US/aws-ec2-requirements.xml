@@ -23,13 +23,14 @@
 -->
 
 <section id="aws-ec2-requirements">
-    <title>System Requirements</title>
+    <title>Supported API Version</title>
     <itemizedlist>
-        <listitem><para>This interface complies with Amazon's WDSL version dated November 15, 2010, available at
+        <listitem><para>The EC2 interface complies with Amazon's WDSL version dated November 15, 2010, available at
             <ulink url="http://ec2.amazonaws.com/doc/2010-11-15/">http://ec2.amazonaws.com/doc/2010-11-15/</ulink>.</para></listitem>
-        <listitem><para>Compatible with the EC2 command-line
+        <listitem><para>The interface is compatible with the EC2 command-line
             tools <emphasis>EC2 tools v. 1.3.6230</emphasis>, which can be downloaded at <ulink
             url="http://s3.amazonaws.com/ec2-downloads/ec2-api-tools-1.3-62308.zip">http://s3.amazonaws.com/ec2-downloads/ec2-api-tools-1.3-62308.zip</ulink>.</para>
         </listitem>
     </itemizedlist>
+    <note><para>Work is underway to support a more recent version of the EC2 API</para></note>
 </section>

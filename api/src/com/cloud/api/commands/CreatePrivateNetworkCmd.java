@@ -31,7 +31,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.Network;
 import com.cloud.user.UserContext;
 
-@APICommand(description="Creates a private network", responseObject=NetworkResponse.class)
+//@APICommand(description="Creates a private network", responseObject=NetworkResponse.class)
 public class CreatePrivateNetworkCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreatePrivateNetworkCmd.class.getName());
 
@@ -153,6 +153,7 @@ public class CreatePrivateNetworkCmd extends BaseAsyncCreateCmd {
 
         if (result != null) {
             this.setEntityId(result.getId());
+            this.setEntityUuid(result.getUuid());
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create a Private network");
         }
@@ -190,8 +191,4 @@ public class CreatePrivateNetworkCmd extends BaseAsyncCreateCmd {
 
     }
 
-    @Override
-    public String getEntityTable() {
-        return "networks";
-    }
 }

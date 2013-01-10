@@ -53,9 +53,6 @@ public class ResetVpnConnectionCmd extends BaseAsyncCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public String getEntityTable() {
-        return "s2s_vpn_connection";
-    }
 
     public Long getDomainId() {
         return domainId;

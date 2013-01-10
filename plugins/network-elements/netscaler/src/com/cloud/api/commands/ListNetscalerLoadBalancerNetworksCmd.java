@@ -49,7 +49,7 @@ public class ListNetscalerLoadBalancerNetworksCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.LOAD_BALANCER_DEVICE_ID, type=CommandType.UUID, entityType = NetscalerLoadBalancerResponse.class,            ,
+    @Parameter(name=ApiConstants.LOAD_BALANCER_DEVICE_ID, type=CommandType.UUID, entityType = NetscalerLoadBalancerResponse.class,
             required = true, description="netscaler load balancer device ID")
     private Long lbDeviceId;
 

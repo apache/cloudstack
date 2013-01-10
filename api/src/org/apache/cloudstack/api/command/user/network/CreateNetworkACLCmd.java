@@ -86,10 +86,6 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd implements FirewallR
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
 
-    public String getEntityTable() {
-        return "firewall_rules";
-    }
-
     public Long getIpAddressId() {
         return null;
     }
@@ -262,6 +258,7 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd implements FirewallR
         try {
             FirewallRule result = _networkACLService.createNetworkACL(this);
             setEntityId(result.getId());
+            setEntityUuid(result.getUuid());
         } catch (NetworkRuleConflictException ex) {
             s_logger.info("Network rule conflict: " + ex.getMessage());
             s_logger.trace("Network Rule Conflict: ", ex);

@@ -466,8 +466,8 @@ StaticNatServiceProvider {
     }
 
     @Override
-    public String getPropertiesFile() {
-        return "netscalerloadbalancer_commands.properties";
+    public String[] getPropertiesFiles() {
+        return new String[] { "netscalerloadbalancer_commands.properties" };
     }
 
     @Override

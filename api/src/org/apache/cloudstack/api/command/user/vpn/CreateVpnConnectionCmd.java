@@ -51,9 +51,6 @@ public class CreateVpnConnectionCmd extends BaseAsyncCreateCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public String getEntityTable() {
-        return "s2s_vpn_connection";
-    }
 
     public Long getVpnGatewayId() {
         return vpnGatewayId;
@@ -95,6 +92,7 @@ public class CreateVpnConnectionCmd extends BaseAsyncCreateCmd {
             Site2SiteVpnConnection conn = _s2sVpnService.createVpnConnection(this);
             if (conn != null) {
                 this.setEntityId(conn.getId());
+                this.setEntityUuid(conn.getUuid());
             } else {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create site to site vpn connection");
             }

@@ -53,10 +53,7 @@ public class CreateVirtualRouterElementCmd extends BaseAsyncCreateCmd {
         this.nspId = nspId;
     }
 
-    @Override
-    public String getEntityTable() {
-        return "virtual_router_providers";
-    }
+
 
     public Long getNspId() {
         return nspId;
@@ -94,6 +91,7 @@ public class CreateVirtualRouterElementCmd extends BaseAsyncCreateCmd {
         VirtualRouterProvider result = _service.addElement(getNspId(), VirtualRouterProviderType.VirtualRouter);
         if (result != null) {
             setEntityId(result.getId());
+            setEntityUuid(result.getUuid());
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add Virtual Router entity to physical network");
         }

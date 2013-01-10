@@ -70,6 +70,7 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd{
         VpcOffering vpcOff = _vpcService.createVpcOffering(getVpcOfferingName(), getDisplayText(), getSupportedServices());
         if (vpcOff != null) {
             this.setEntityId(vpcOff.getId());
+            this.setEntityUuid(vpcOff.getUuid());
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create a VPC offering");
         }
@@ -87,10 +88,6 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd{
         }
     }
 
-    @Override
-    public String getEntityTable() {
-       return "vpc_offerings";
-    }
 
     @Override
     public String getEventType() {

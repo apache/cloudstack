@@ -56,9 +56,6 @@ public class CreateProjectCmd extends BaseAsyncCreateCmd {
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
 
-    public String getEntityTable() {
-        return "projects";
-    }
 
     public String getAccountName() {
         if (accountName != null) {
@@ -127,6 +124,7 @@ public class CreateProjectCmd extends BaseAsyncCreateCmd {
         Project project = _projectService.createProject(getName(), getDisplayText(), getAccountName(), getDomainId());
         if (project != null) {
             this.setEntityId(project.getId());
+            this.setEntityUuid(project.getUuid());
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create a project");
         }

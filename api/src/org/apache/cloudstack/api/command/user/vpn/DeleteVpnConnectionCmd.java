@@ -44,9 +44,6 @@ public class DeleteVpnConnectionCmd extends BaseAsyncCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public String getEntityTable() {
-        return "s2s_vpn_connection";
-    }
 
     public Long getId() {
         return id;

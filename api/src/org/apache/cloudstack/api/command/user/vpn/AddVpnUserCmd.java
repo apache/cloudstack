@@ -103,9 +103,6 @@ public class AddVpnUserCmd extends BaseAsyncCreateCmd {
         return accountId;
     }
 
-    public String getEntityTable() {
-        return "vpn_users";
-    }
 
     @Override
     public String getEventDescription() {
@@ -150,5 +147,6 @@ public class AddVpnUserCmd extends BaseAsyncCreateCmd {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add vpn user");
         }
         setEntityId(vpnUser.getId());
+        setEntityUuid(vpnUser.getUuid());
     }
 }

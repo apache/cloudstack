@@ -27,7 +27,7 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.SnapshotScheduleResponse;
 import com.cloud.storage.snapshot.SnapshotSchedule;
 
-@APICommand(description="Lists recurring snapshot schedule", responseObject=SnapshotScheduleResponse.class)
+//@APICommand(description="Lists recurring snapshot schedule", responseObject=SnapshotScheduleResponse.class)
 public class ListRecurringSnapshotScheduleCmd extends BaseListCmd {
     private static final String s_name = "listrecurringsnapshotscheduleresponse";
 

@@ -19,7 +19,6 @@
 package org.apache.cloudstack.api.response;
 
 import com.cloud.serializer.Param;
-import com.cloud.utils.IdentityProxy;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
 
@@ -29,7 +28,7 @@ public class S3Response extends BaseResponse {
 
     @SerializedName(ID)
     @Param(description = "The ID of the S3 configuration")
-    private IdentityProxy id = new IdentityProxy("s3");
+    private String id;
 
     @SerializedName(S3_ACCESS_KEY)
     @Param(description = "The S3 access key")
@@ -135,11 +134,11 @@ public class S3Response extends BaseResponse {
 
     @Override
     public String getObjectId() {
-        return this.id.getValue().toString();
+        return this.id;
     }
 
-    public void setObjectId(Long id) {
-        this.id.setValue(id);
+    public void setObjectId(String id) {
+        this.id = id;
     }
 
     public String getAccessKey() {

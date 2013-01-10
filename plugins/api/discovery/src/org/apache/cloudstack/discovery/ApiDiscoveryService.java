@@ -16,14 +16,10 @@
 // under the License.
 package org.apache.cloudstack.discovery;
 
-import com.cloud.utils.component.Adapter;
 import com.cloud.utils.component.PluggableService;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 
-import java.util.Map;
-
-public interface ApiDiscoveryService extends Adapter, PluggableService {
+public interface ApiDiscoveryService extends PluggableService {
     ListResponse<? extends BaseResponse> listApis();
-    Map<String, Class<?>> getApiNameCmdClassMapping();
 }

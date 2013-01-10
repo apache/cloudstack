@@ -25,7 +25,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@APICommand(description="Destroys console proxy", responseObject=SuccessResponse.class)
+//@APICommand(description="Destroys console proxy", responseObject=SuccessResponse.class)
 public class DestroyConsoleProxyCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DestroyConsoleProxyCmd.class.getName());
 

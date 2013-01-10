@@ -23,9 +23,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
@@ -34,18 +36,13 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
-import com.cloud.user.User;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.PluggableService;
 
-/*
- * This is the default API access checker that grab's the user's account
- * based on the account type, access is granted referring to commands in all *.properties files.
- */
-
+// This is the default API access checker that grab's the user's account
+// based on the account type, access is granted
 @Local(value=APIAccessChecker.class)
 public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIAccessChecker {
 
@@ -54,53 +51,50 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
     public static final short DOMAIN_ADMIN_COMMAND = 4;
     public static final short RESOURCE_DOMAIN_ADMIN_COMMAND = 2;
     public static final short USER_COMMAND = 8;
-    private static List<String> s_userCommands = null;
-    private static List<String> s_resellerCommands = null; // AKA domain-admin
-    private static List<String> s_adminCommands = null;
-    private static List<String> s_resourceDomainAdminCommands = null;
-    private static List<String> s_allCommands = null;
 
     @Inject AccountManager _accountMgr;
     @Inject List<PluggableService> _services;
+    private static Set<String> s_userCommands = null;
+    private static Set<String> s_resellerCommands = null; // AKA domain-admin
+    private static Set<String> s_adminCommands = null;
+    private static Set<String> s_resourceDomainAdminCommands = null;
+    private static Set<String> s_allCommands = null;
 
     protected StaticRoleBasedAPIAccessChecker() {
         super();
-        s_allCommands = new ArrayList<String>();
-        s_userCommands = new ArrayList<String>();
-        s_resellerCommands = new ArrayList<String>();
-        s_adminCommands = new ArrayList<String>();
-        s_resourceDomainAdminCommands = new ArrayList<String>();
+        s_allCommands = new HashSet<String>();
+        s_userCommands = new HashSet<String>();
+        s_resellerCommands = new HashSet<String>();
+        s_adminCommands = new HashSet<String>();
+        s_resourceDomainAdminCommands = new HashSet<String>();
     }
 
     @Override
-    public boolean canAccessAPI(User user, String apiCommandName)
+    public boolean canAccessAPI(RoleType roleType, String apiCommandName)
             throws PermissionDeniedException{
 
         boolean commandExists = s_allCommands.contains(apiCommandName);
 
-        if(commandExists && user != null){
-            Long accountId = user.getAccountId();
-            Account userAccount = _accountMgr.getAccount(accountId);
-            short accountType = userAccount.getType();
-            return isCommandAvailableForAccount(accountType, apiCommandName);
+        if(commandExists) {
+            return isCommandAvailableForAccount(roleType, apiCommandName);
         }
 
         return commandExists;
     }
 
-    private static boolean isCommandAvailableForAccount(short accountType, String commandName) {
+    private static boolean isCommandAvailableForAccount(RoleType roleType, String commandName) {
         boolean isCommandAvailable = false;
-        switch (accountType) {
-        case Account.ACCOUNT_TYPE_ADMIN:
+        switch (roleType) {
+        case Admin:
             isCommandAvailable = s_adminCommands.contains(commandName);
             break;
-        case Account.ACCOUNT_TYPE_DOMAIN_ADMIN:
+        case DomainAdmin:
             isCommandAvailable = s_resellerCommands.contains(commandName);
             break;
-        case Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN:
+        case ResourceAdmin:
             isCommandAvailable = s_resourceDomainAdminCommands.contains(commandName);
             break;
-        case Account.ACCOUNT_TYPE_NORMAL:
+        case User:
             isCommandAvailable = s_userCommands.contains(commandName);
             break;
         }
@@ -154,16 +148,16 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
 
             try {
                 short cmdPermissions = Short.parseShort(mask);
-                if ((cmdPermissions & ADMIN_COMMAND) != 0) {
+                if ((cmdPermissions & Admin.getValue()) != 0) {
                     s_adminCommands.add((String) key);
                 }
-                if ((cmdPermissions & RESOURCE_DOMAIN_ADMIN_COMMAND) != 0) {
+                if ((cmdPermissions & ResourceAdmin.getValue()) != 0) {
                     s_resourceDomainAdminCommands.add((String) key);
                 }
-                if ((cmdPermissions & DOMAIN_ADMIN_COMMAND) != 0) {
+                if ((cmdPermissions & DomainAdmin.getValue()) != 0) {
                     s_resellerCommands.add((String) key);
                 }
-                if ((cmdPermissions & USER_COMMAND) != 0) {
+                if ((cmdPermissions & User.getValue()) != 0) {
                     s_userCommands.add((String) key);
                 }
                 s_allCommands.addAll(s_adminCommands);

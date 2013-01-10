@@ -17,7 +17,6 @@
 package org.apache.cloudstack.discovery;
 
 import com.cloud.utils.ReflectUtil;
-import com.cloud.utils.component.AdapterBase;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -30,7 +29,6 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.log4j.Logger;
 
 import javax.ejb.Local;
-import javax.naming.ConfigurationException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -39,36 +37,28 @@ import java.util.Map;
 import java.util.Set;
 
 @Local(value = ApiDiscoveryService.class)
-public class ApiDiscoveryServiceImpl extends AdapterBase implements ApiDiscoveryService {
-
+public class ApiDiscoveryServiceImpl implements ApiDiscoveryService {
     private static final Logger s_logger = Logger.getLogger(ApiDiscoveryServiceImpl.class);
-    private Map<String, Class<?>> _apiNameCmdClassMap;
-    private ListResponse<ApiDiscoveryResponse> _discoveryResponse;
+
+    private ListResponse<ApiDiscoveryResponse> _discoveryResponse = new ListResponse<ApiDiscoveryResponse>();
+
+    private Map<String, Class<?>> _apiNameCmdClassMap = new HashMap<String, Class<?>>();
 
     protected ApiDiscoveryServiceImpl() {
         super();
+        generateApiNameCmdClassMap();
+        cacheListApiResponse();
     }
 
-    private void generateApiNameCmdClassMapping() {
-        _apiNameCmdClassMap = new HashMap<String, Class<?>>();
-        Set<Class<?>> cmdClasses = ReflectUtil.getClassesWithAnnotation(APICommand.class, new String[]{"org.apache.cloudstack.api", "com.cloud.api"});
+    private void generateApiNameCmdClassMap() {
+        Set<Class<?>> cmdClasses = ReflectUtil.getClassesWithAnnotation(APICommand.class,
+                new String[]{"org.apache.cloudstack.api", "com.cloud.api"});
 
-        for(Class<?> cmdClass: cmdClasses) {
-            String apiName = cmdClass.getAnnotation(APICommand.class).name();
-            if (_apiNameCmdClassMap.containsKey(apiName)) {
-                s_logger.error("API Cmd class " + cmdClass.getName() + " has non-unique apiname" + apiName);
-                continue;
-            }
-            _apiNameCmdClassMap.put(apiName, cmdClass);
-        }
+        for(Class<?> cmdClass: cmdClasses)
+            _apiNameCmdClassMap.put(cmdClass.getAnnotation(APICommand.class).name(), cmdClass);
     }
 
-    private void precacheListApiResponse() {
-
-        if(_apiNameCmdClassMap == null)
-            return;
-
-        _discoveryResponse = new ListResponse<ApiDiscoveryResponse>();
+    private void cacheListApiResponse() {
 
         List<ApiDiscoveryResponse> apiDiscoveryResponses = new ArrayList<ApiDiscoveryResponse>();
 
@@ -115,21 +105,6 @@ public class ApiDiscoveryServiceImpl extends AdapterBase implements ApiDiscovery
             apiDiscoveryResponses.add(response);
         }
         _discoveryResponse.setResponses(apiDiscoveryResponses);
-    }
-
-    @Override
-    public boolean configure(String name, Map<String, Object> params)
-            throws ConfigurationException {
-        super.configure(name, params);
-
-        generateApiNameCmdClassMapping();
-        precacheListApiResponse();
-
-        return true;
-    }
-
-    public Map<String, Class<?>> getApiNameCmdClassMapping() {
-        return _apiNameCmdClassMap;
     }
 
     @Override

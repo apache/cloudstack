@@ -404,8 +404,8 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
     }
 
     @Override
-    public String getPropertiesFile() {
-        return "junipersrx_commands.properties";
+    public String[] getPropertiesFiles() {
+        return new String[] { "junipersrx_commands.properties"};
     }
 
     @Override

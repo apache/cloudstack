@@ -287,7 +287,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         _identityDao.initializeDefaultUuid("user_ip_address");
         _identityDao.initializeDefaultUuid("counter");
     }
-    */
+     */
 
     private String getMountParent() {
         return getEnvironmentProperty("mount.parent");
