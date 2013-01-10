@@ -33,6 +33,11 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.Pair;
 
+/**
+ * The NetworkService interface is the "public" api to entities that make requests to the orchestration engine
+ * Such entities are usually the admin and end-user API.
+ *
+ */
 public interface NetworkService {
 
     List<? extends Network> getIsolatedNetworksOwnedByAccountInZone(long zoneId, Account owner);
@@ -59,8 +64,6 @@ public interface NetworkService {
 
     IpAddress getIp(long id);
 
-
-    boolean isNetworkAvailableInDomain(long networkId, long domainId);
 
     Network updateGuestNetwork(long networkId, String name, String displayText, Account callerAccount, User callerUser,
             String domainSuffix, Long networkOfferingId, Boolean changeCidr);

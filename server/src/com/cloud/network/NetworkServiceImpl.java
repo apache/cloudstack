@@ -231,18 +231,13 @@ public class NetworkServiceImpl implements  NetworkService, Manager {
 
     private final HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
 
-    String _networkDomain;
     int _cidrLimit;
     boolean _allowSubdomainNetworkAccess;
 
     private Map<String, String> _configs;
 
-    
-   
-
     /* Get a list of IPs, classify them by service */
-    //@Override
-    public Map<PublicIp, Set<Service>> getIpToServices(List<PublicIp> publicIps, boolean rulesRevoked, boolean includingFirewall) {
+    protected Map<PublicIp, Set<Service>> getIpToServices(List<PublicIp> publicIps, boolean rulesRevoked, boolean includingFirewall) {
         Map<PublicIp, Set<Service>> ipToServices = new HashMap<PublicIp, Set<Service>>();
 
         if (publicIps != null && !publicIps.isEmpty()) {
@@ -333,7 +328,7 @@ public class NetworkServiceImpl implements  NetworkService, Manager {
         return ipToServices;
     }
 
-    public boolean canIpUsedForNonConserveService(PublicIp ip, Service service) {
+    protected boolean canIpUsedForNonConserveService(PublicIp ip, Service service) {
         // If it's non-conserve mode, then the new ip should not be used by any other services
         List<PublicIp> ipList = new ArrayList<PublicIp>();
         ipList.add(ip);
@@ -464,7 +459,6 @@ public class NetworkServiceImpl implements  NetworkService, Manager {
     protected IpAddress allocateIP(Account ipOwner, boolean isSystem, long zoneId) 
             throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException {
         Account caller = UserContext.current().getCaller();
-        long callerUserId = UserContext.current().getCallerUserId();
         // check permissions
         _accountMgr.checkAccess(caller, null, false, ipOwner);
         
@@ -481,11 +475,7 @@ public class NetworkServiceImpl implements  NetworkService, Manager {
     @DB
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         _name = name;
-
-        
-
         _configs = _configDao.getConfiguration("Network", params);
-        _networkDomain = _configs.get(Config.GuestDomainSuffix.key());
 
         _cidrLimit = NumbersUtil.parseInt(_configs.get(Config.NetworkGuestCidrLimit.key()), 22);
 
@@ -506,13 +496,9 @@ public class NetworkServiceImpl implements  NetworkService, Manager {
         privateGatewayNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(privateGatewayNetworkOffering);
         _systemNetworks.put(NetworkOfferingVO.SystemPrivateGatewayNetworkOffering, privateGatewayNetworkOffering);
 
-
-        
-
-
         _allowSubdomainNetworkAccess = Boolean.valueOf(_configs.get(Config.SubDomainNetworkAccess.key()));
 
-        s_logger.info("Network Manager is configured.");
+        s_logger.info("Network Service is configured.");
 
         return true;
     }
@@ -1408,7 +1394,7 @@ public class NetworkServiceImpl implements  NetworkService, Manager {
 
    
 
-    //@Override
+    
     protected Map<Capability, String> getNetworkOfferingServiceCapabilities(NetworkOffering offering, Service service) {
 
         if (!areServicesSupportedByNetworkOffering(offering.getId(), service)) {
@@ -1476,12 +1462,12 @@ public class NetworkServiceImpl implements  NetworkService, Manager {
         return false;
     }
 
-    //@Override
+    
     protected boolean areServicesSupportedByNetworkOffering(long networkOfferingId, Service... services) {
         return (_ntwkOfferingSrvcDao.areServicesSupportedByNetworkOffering(networkOfferingId, services));
     }
 
-    //@Override
+    
     protected boolean areServicesSupportedInNetwork(long networkId, Service... services) {
         return (_ntwkSrvcDao.areServicesSupportedInNetwork(networkId, services));
     }
@@ -1490,39 +1476,7 @@ public class NetworkServiceImpl implements  NetworkService, Manager {
         
    
 
-    @Override
-    public boolean isNetworkAvailableInDomain(long networkId, long domainId) {
-        Long networkDomainId = null;
-        Network network = getNetwork(networkId);
-        if (network.getGuestType() != Network.GuestType.Shared) {
-            s_logger.trace("Network id=" + networkId + " is not shared");
-            return false;
-        }
-
-        NetworkDomainVO networkDomainMap = _networkDomainDao.getDomainNetworkMapByNetworkId(networkId);
-        if (networkDomainMap == null) {
-            s_logger.trace("Network id=" + networkId + " is shared, but not domain specific");
-            return true;
-        } else {
-            networkDomainId = networkDomainMap.getDomainId();
-        }
-
-        if (domainId == networkDomainId.longValue()) {
-            return true;
-        }
-
-        if (networkDomainMap.subdomainAccess) {
-            Set<Long> parentDomains = _domainMgr.getDomainParentIds(domainId);
-
-            if (parentDomains.contains(domainId)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-  
+    
 
     private boolean checkForNonStoppedVmInNetwork(long networkId) {
         List<UserVmVO> vms = _userVmDao.listByNetworkIdAndStates(networkId, VirtualMachine.State.Starting, 
@@ -2222,7 +2176,7 @@ public class NetworkServiceImpl implements  NetworkService, Manager {
     }
 
     @DB
-    private void checkIfPhysicalNetworkIsDeletable(Long physicalNetworkId) {
+    protected void checkIfPhysicalNetworkIsDeletable(Long physicalNetworkId) {
         List<List<String>> tablesToCheck = new ArrayList<List<String>>();
 
         List<String> vnet = new ArrayList<String>();
@@ -2771,7 +2725,7 @@ public class NetworkServiceImpl implements  NetworkService, Manager {
 
 
 
-    @Override //TODO: duplicated in NetworkMgr
+    @Override //TODO: duplicated in NetworkModel
     public NetworkVO getExclusiveGuestNetwork(long zoneId) {
         List<NetworkVO> networks = _networksDao.listBy(Account.ACCOUNT_ID_SYSTEM, zoneId, GuestType.Shared, TrafficType.Guest);
         if (networks == null || networks.isEmpty()) {
@@ -2821,7 +2775,7 @@ public class NetworkServiceImpl implements  NetworkService, Manager {
         return nsp;
     }
 
-    //@Override
+    
     protected boolean isNetworkSystem(Network network) {
         NetworkOffering no = _networkOfferingDao.findByIdIncludingRemoved(network.getNetworkOfferingId());
         if (no.isSystemOnly()) {
@@ -2832,7 +2786,7 @@ public class NetworkServiceImpl implements  NetworkService, Manager {
     }
 
     
-    //@Override
+    
     private boolean getAllowSubdomainAccessGlobal() {
         return _allowSubdomainNetworkAccess;
     }
