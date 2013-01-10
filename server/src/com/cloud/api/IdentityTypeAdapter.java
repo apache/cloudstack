@@ -17,7 +17,6 @@
 package com.cloud.api;
 
 import java.lang.reflect.Type;
-import java.util.ArrayList;
 
 import com.cloud.uuididentity.dao.IdentityDao;
 import com.cloud.uuididentity.dao.IdentityDaoImpl;

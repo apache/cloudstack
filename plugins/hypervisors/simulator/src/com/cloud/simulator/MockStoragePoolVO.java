@@ -26,11 +26,12 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.storage.Storage.StoragePoolType;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="mockstoragepool")
 
-public class MockStoragePoolVO {
+public class MockStoragePoolVO implements InternalIdentity {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")

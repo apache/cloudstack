@@ -20,10 +20,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.cloud.api.commands.CreateNetworkCmd;
-import com.cloud.api.commands.ListNetworksCmd;
-import com.cloud.api.commands.ListTrafficTypeImplementorsCmd;
-import com.cloud.api.commands.RestartNetworkCmd;
+import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
+import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
+import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
+import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -40,7 +40,6 @@ import com.cloud.utils.Pair;
 public interface NetworkService {
 
     List<? extends Network> getIsolatedNetworksOwnedByAccountInZone(long zoneId, Account owner);
-
 
     IpAddress allocateIP(Account ipOwner, long zoneId, Long networkId) throws ResourceAllocationException,
         InsufficientAddressCapacityException, ConcurrentOperationException;
@@ -80,13 +79,13 @@ public interface NetworkService {
 
     Map<Service, Set<Provider>> getNetworkOfferingServiceProvidersMap(long networkOfferingId);
 
-    PhysicalNetwork createPhysicalNetwork(Long zoneId, String vnetRange, String networkSpeed, 
+    PhysicalNetwork createPhysicalNetwork(Long zoneId, String vnetRange, String networkSpeed,
             List<String> isolationMethods, String broadcastDomainRange, Long domainId, List<String> tags, String name);
 
-    Pair<List<? extends PhysicalNetwork>, Integer> searchPhysicalNetworks(Long id, Long zoneId, String keyword, 
+    Pair<List<? extends PhysicalNetwork>, Integer> searchPhysicalNetworks(Long id, Long zoneId, String keyword,
             Long startIndex, Long pageSize, String name);
 
-    PhysicalNetwork updatePhysicalNetwork(Long id, String networkSpeed, List<String> tags, 
+    PhysicalNetwork updatePhysicalNetwork(Long id, String networkSpeed, List<String> tags,
             String newVnetRangeString, String state);
 
     boolean deletePhysicalNetwork(Long id);
@@ -115,7 +114,7 @@ public interface NetworkService {
 
     long findPhysicalNetworkId(long zoneId, String tag, TrafficType trafficType);
 
-    PhysicalNetworkTrafficType addTrafficTypeToPhysicalNetwork(Long physicalNetworkId, String trafficType, 
+    PhysicalNetworkTrafficType addTrafficTypeToPhysicalNetwork(Long physicalNetworkId, String trafficType,
             String xenLabel, String kvmLabel, String vmwareLabel, String simulatorLabel, String vlan);
 
     PhysicalNetworkTrafficType getPhysicalNetworkTrafficType(Long id);
@@ -133,19 +132,19 @@ public interface NetworkService {
     List<Pair<TrafficType, String>> listTrafficTypeImplementor(ListTrafficTypeImplementorsCmd cmd);
 
     List<? extends Network> getIsolatedNetworksWithSourceNATOwnedByAccountInZone(long zoneId, Account owner);
-    
+
     List<? extends Network> listNetworksByVpc(long vpcId);
-    
+
     boolean isVmPartOfNetwork(long vmId, long ntwkId);
 
     /**
      * @param networkId
      * @param entityId
      * @return
-     * @throws ConcurrentOperationException 
-     * @throws ResourceUnavailableException 
-     * @throws ResourceAllocationException 
-     * @throws InsufficientAddressCapacityException 
+     * @throws ConcurrentOperationException
+     * @throws ResourceUnavailableException
+     * @throws ResourceAllocationException
+     * @throws InsufficientAddressCapacityException
      */
     IpAddress associateIPToNetwork(long ipId, long networkId) throws InsufficientAddressCapacityException,
         ResourceAllocationException, ResourceUnavailableException, ConcurrentOperationException;
@@ -162,12 +161,12 @@ public interface NetworkService {
      * @param networkOwnerId
      * @param vpcId TODO
      * @return
-     * @throws InsufficientCapacityException 
-     * @throws ConcurrentOperationException 
-     * @throws ResourceAllocationException 
+     * @throws InsufficientCapacityException
+     * @throws ConcurrentOperationException
+     * @throws ResourceAllocationException
      */
     Network createPrivateNetwork(String networkName, String displayText, long physicalNetworkId, String vlan,
-            String startIp, String endIP, String gateway, String netmask, long networkOwnerId, Long vpcId) 
+            String startIp, String endIP, String gateway, String netmask, long networkOwnerId, Long vpcId)
                     throws ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException;
     /**
      * @param network

@@ -52,7 +52,7 @@ import com.cloud.agent.api.proxy.StartConsoleProxyAgentHttpHandlerCommand;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
-import com.cloud.api.ServerApiException;
+import org.apache.cloudstack.api.ServerApiException;
 import com.cloud.api.commands.DestroyConsoleProxyCmd;
 import com.cloud.certificate.dao.CertificateDao;
 import com.cloud.cluster.ClusterManager;

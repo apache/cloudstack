@@ -19,6 +19,7 @@
 package com.cloud.storage;
 
 import com.cloud.utils.db.GenericDaoBase;
+import org.apache.cloudstack.api.InternalIdentity;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -32,7 +33,7 @@ import java.util.Date;
 
 @Entity
 @Table(name = "template_s3_ref")
-public class VMTemplateS3VO {
+public class VMTemplateS3VO implements InternalIdentity {
 
     public static final String S3_ID_COLUMN_NAME = "s3_id";
 

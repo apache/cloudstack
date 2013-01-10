@@ -23,7 +23,7 @@ import java.util.Random;
 import javax.ejb.Local;
 import javax.persistence.TableGenerator;
 
-import com.cloud.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;

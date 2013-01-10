@@ -16,6 +16,10 @@
 // under the License.
 package com.cloud.network;
 
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.network.ExternalNetworkDeviceManager;
+
 import java.util.UUID;
 
 import javax.persistence.Column;
@@ -33,7 +37,7 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name="external_load_balancer_devices")
-public class ExternalLoadBalancerDeviceVO {
+public class ExternalLoadBalancerDeviceVO implements InternalIdentity, Identity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

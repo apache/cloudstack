@@ -19,12 +19,12 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.manager.SimulatorManager;
-import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseCmd;
-import com.cloud.api.Implementation;
-import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
-import com.cloud.api.response.SuccessResponse;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
@@ -33,7 +33,7 @@ import com.cloud.server.ManagementService;
 import com.cloud.user.Account;
 import com.cloud.utils.component.ComponentLocator;
 
-@Implementation(description="configure simulator", responseObject=SuccessResponse.class)
+@APICommand(name = "configureSimulator", description="configure simulator", responseObject=SuccessResponse.class)
 public class ConfigureSimulator extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(ConfigureSimulator.class.getName());
     private static final String s_name = "configuresimulatorresponse";

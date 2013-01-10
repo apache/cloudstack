@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.netapp;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -25,9 +27,9 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name="netapp_pool")
-public class PoolVO {
+public class PoolVO implements InternalIdentity {
 	
-	public Long getId() {
+	public long getId() {
 		return id;
 	}
 

@@ -17,7 +17,7 @@
 package com.cloud.host;
 
 public interface HostStats {
-	
+
     // host related stats
     public double getCpuUtilization();
     public double getNetworkWriteKBs();
@@ -27,7 +27,7 @@ public interface HostStats {
     public String getEntityType();
     public double getUsedMemory();
     public HostStats getHostStats();
-    
+
     // public double getAverageLoad();
-    // public double getXapiMemoryUsageKBs();    
+    // public double getXapiMemoryUsageKBs();
 }

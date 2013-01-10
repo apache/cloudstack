@@ -17,12 +17,10 @@ package com.cloud.server.auth;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
 
 import javax.ejb.Local;
-import javax.naming.AuthenticationException;
 import javax.naming.ConfigurationException;
 import javax.naming.Context;
 import javax.naming.NamingEnumeration;
@@ -35,14 +33,12 @@ import javax.naming.directory.SearchResult;
 import org.apache.log4j.Logger;
 import org.bouncycastle.util.encoders.Base64;
 
-import com.cloud.api.ApiConstants.LDAPParams;
-import com.cloud.configuration.Config;
+import org.apache.cloudstack.api.ApiConstants.LDAPParams;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.server.ManagementServer;
 import com.cloud.user.UserAccount;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 

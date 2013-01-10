@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.network;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import java.util.UUID;
 
 import javax.persistence.Column;
@@ -27,7 +29,7 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name="external_nicira_nvp_devices")
-public class NiciraNvpDeviceVO {
+public class NiciraNvpDeviceVO implements InternalIdentity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

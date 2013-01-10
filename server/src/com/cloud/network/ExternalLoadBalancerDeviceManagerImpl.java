@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -36,11 +36,9 @@ import com.cloud.agent.api.routing.DestroyLoadBalancerApplianceCommand;
 import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
-import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.LoadBalancerTO;
-import com.cloud.agent.api.to.StaticNatRuleTO;
-import com.cloud.api.ApiConstants;
+import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
@@ -48,7 +46,6 @@ import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.Pod;
 import com.cloud.dc.Vlan.VlanType;
-import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
@@ -63,7 +60,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.ExternalLoadBalancerDeviceVO.LBDeviceAllocationState;
 import com.cloud.network.ExternalLoadBalancerDeviceVO.LBDeviceState;
-import com.cloud.network.ExternalNetworkDeviceManager.NetworkDevice;
+import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
@@ -89,11 +86,8 @@ import com.cloud.network.resource.CreateLoadBalancerApplianceAnswer;
 import com.cloud.network.resource.DestroyLoadBalancerApplianceAnswer;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
-import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.network.rules.StaticNatImpl;
-import com.cloud.network.rules.StaticNatRule;
-import com.cloud.network.rules.StaticNatRuleImpl;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -102,7 +96,7 @@ import com.cloud.resource.ResourceState;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
-import com.cloud.server.api.response.ExternalLoadBalancerResponse;
+import org.apache.cloudstack.api.response.ExternalLoadBalancerResponse;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.dao.AccountDao;
@@ -344,7 +338,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
     public ExternalLoadBalancerResponse createExternalLoadBalancerResponse(Host externalLoadBalancer) {
         Map<String, String> lbDetails = _hostDetailDao.findDetails(externalLoadBalancer.getId());
         ExternalLoadBalancerResponse response = new ExternalLoadBalancerResponse();
-        response.setId(externalLoadBalancer.getId());
+        response.setId(externalLoadBalancer.getUuid());
         response.setIpAddress(externalLoadBalancer.getPrivateIpAddress());
         response.setUsername(lbDetails.get("username"));
         response.setPublicInterface(lbDetails.get("publicInterface"));

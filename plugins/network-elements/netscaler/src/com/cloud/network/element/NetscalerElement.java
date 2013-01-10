@@ -11,7 +11,7 @@
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the 
+// KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.network.element;
@@ -35,7 +35,9 @@ import com.cloud.agent.api.routing.SetStaticNatRulesAnswer;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
-import com.cloud.api.ApiConstants;
+import org.apache.cloudstack.api.ApiConstants;
+
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.commands.AddNetscalerLoadBalancerCmd;
 import com.cloud.api.commands.ConfigureNetscalerLoadBalancerCmd;
 import com.cloud.api.commands.DeleteNetscalerLoadBalancerCmd;
@@ -65,7 +67,7 @@ import com.cloud.network.ExternalLoadBalancerDeviceManager;
 import com.cloud.network.ExternalLoadBalancerDeviceManagerImpl;
 import com.cloud.network.ExternalLoadBalancerDeviceVO;
 import com.cloud.network.ExternalLoadBalancerDeviceVO.LBDeviceState;
-import com.cloud.network.ExternalNetworkDeviceManager.NetworkDevice;
+import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
 import com.cloud.network.IpAddress;
 import com.cloud.network.NetScalerPodVO;
 import com.cloud.network.Network;
@@ -76,6 +78,7 @@ import com.cloud.network.NetworkExternalLoadBalancerVO;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PhysicalNetworkVO;
 import com.cloud.network.PublicIpAddress;
@@ -461,8 +464,8 @@ StaticNatServiceProvider {
     }
 
     @Override
-    public String getPropertiesFile() {
-        return "netscalerloadbalancer_commands.properties";
+    public String[] getPropertiesFiles() {
+        return new String[] { "netscalerloadbalancer_commands.properties" };
     }
 
     @Override
@@ -524,9 +527,12 @@ StaticNatServiceProvider {
         Host lbHost = _hostDao.findById(lbDeviceVO.getHostId());
         Map<String, String> lbDetails = _detailsDao.findDetails(lbDeviceVO.getHostId());
 
-        response.setId(lbDeviceVO.getId());
+        response.setId(lbDeviceVO.getUuid());
         response.setIpAddress(lbHost.getPrivateIpAddress());
-        response.setPhysicalNetworkId(lbDeviceVO.getPhysicalNetworkId());
+        PhysicalNetwork pnw = ApiDBUtils.findPhysicalNetworkById(lbDeviceVO.getPhysicalNetworkId());
+        if (pnw != null) {
+            response.setPhysicalNetworkId(pnw.getUuid());
+        }
         response.setPublicInterface(lbDetails.get("publicInterface"));
         response.setPrivateInterface(lbDetails.get("privateInterface"));
         response.setDeviceName(lbDeviceVO.getDeviceName());
@@ -603,13 +609,13 @@ StaticNatServiceProvider {
 
         // NetScaler can only act as Lb and Static Nat service provider
         if (services != null && !services.isEmpty() && !netscalerServices.containsAll(services)) {
-            s_logger.warn("NetScaler network element can only support LB and Static NAT services and service combination " 
+            s_logger.warn("NetScaler network element can only support LB and Static NAT services and service combination "
                 + services + " is not supported.");
             String servicesList = "";
             for (Service service : services) {
                 servicesList += service.getName() + " ";
             }
-            s_logger.warn("NetScaler network element can only support LB and Static NAT services and service combination " 
+            s_logger.warn("NetScaler network element can only support LB and Static NAT services and service combination "
                 + servicesList + " is not supported.");
             s_logger.warn("NetScaler network element can only support LB and Static NAT services and service combination "
                     + services + " is not supported.");

@@ -22,21 +22,21 @@ public abstract class ssCommand extends Command {
     private String secUrl;
 
 
-	public ssCommand() {	
+	public ssCommand() {
 	}
-	
+
     protected ssCommand(ssCommand that) {
         this.secUrl = that.secUrl;
     }
 	public ssCommand(String secUrl) {
 	    this.secUrl = secUrl;
     }
-	
+
 	@Override
     public boolean executeInSequence() {
         return true;
     }
-	
+
     public String getSecUrl() {
         return secUrl;
     }
@@ -44,5 +44,5 @@ public abstract class ssCommand extends Command {
     public void setSecUrl(String secUrl) {
         this.secUrl = secUrl;
     }
-	
+
 }

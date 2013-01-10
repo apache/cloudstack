@@ -19,14 +19,12 @@
 package com.cloud.storage;
 
 import com.cloud.agent.api.to.S3TO;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
 import java.util.Date;
 
-public interface S3 {
-
-    long getId();
-
-    String getUuid();
+public interface S3 extends InternalIdentity, Identity {
 
     String getAccessKey();
 

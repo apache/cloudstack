@@ -22,25 +22,25 @@ public class SavePasswordCommand extends NetworkElementCommand {
     String password;
     String vmIpAddress;
     String vmName;
-    
-    protected SavePasswordCommand() {	
+
+    protected SavePasswordCommand() {
     }
-    
+
     @Override
     public boolean executeInSequence() {
         return true;
     }
-    
+
     public SavePasswordCommand(String password, String vmIpAddress, String vmName) {
         this.password = password;
         this.vmIpAddress = vmIpAddress;
         this.vmName = vmName;
     }
-    
+
 	public String getPassword() {
 		return password;
 	}
-	
+
 	public String getVmIpAddress() {
 		return vmIpAddress;
 	}
@@ -48,7 +48,7 @@ public class SavePasswordCommand extends NetworkElementCommand {
     public String getVmName() {
         return vmName;
     }
-	
-	
-	
+
+
+
 }

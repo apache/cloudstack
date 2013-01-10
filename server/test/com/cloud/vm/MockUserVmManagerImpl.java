@@ -28,22 +28,24 @@ import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
-import com.cloud.api.commands.AssignVMCmd;
-import com.cloud.api.commands.AttachVolumeCmd;
-import com.cloud.api.commands.CreateTemplateCmd;
-import com.cloud.api.commands.CreateVMGroupCmd;
-import com.cloud.api.commands.DeleteVMGroupCmd;
-import com.cloud.api.commands.DeployVMCmd;
-import com.cloud.api.commands.DestroyVMCmd;
-import com.cloud.api.commands.DetachVolumeCmd;
-import com.cloud.api.commands.ListVMsCmd;
-import com.cloud.api.commands.RebootVMCmd;
-import com.cloud.api.commands.RecoverVMCmd;
-import com.cloud.api.commands.ResetVMPasswordCmd;
-import com.cloud.api.commands.RestoreVMCmd;
-import com.cloud.api.commands.StartVMCmd;
-import com.cloud.api.commands.UpdateVMCmd;
-import com.cloud.api.commands.UpgradeVMCmd;
+import com.cloud.api.query.vo.UserVmJoinVO;
+
+import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
+import org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;
+import org.apache.cloudstack.api.command.user.vm.*;
+import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
+import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
+import org.apache.cloudstack.api.command.user.template.CreateTemplateCmd;
+import org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;
+import org.apache.cloudstack.api.command.user.vm.DestroyVMCmd;
+import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
+import org.apache.cloudstack.api.command.user.vm.RebootVMCmd;
+import org.apache.cloudstack.api.command.user.vm.ResetVMPasswordCmd;
+import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
+import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
+import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
+import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
 import com.cloud.dc.DataCenter;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
@@ -192,7 +194,7 @@ public class MockUserVmManagerImpl implements UserVmManager, UserVmService, Mana
     }
 
     @Override
-    public Pair<List<UserVmVO>, Integer> searchForUserVMs(Criteria c, Account caller, Long domainId, boolean isRecursive, List<Long> permittedAccounts, boolean listAll, ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags) {
+    public Pair<List<UserVmJoinVO>, Integer> searchForUserVMs(Criteria c, Account caller, Long domainId, boolean isRecursive, List<Long> permittedAccounts, boolean listAll, ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -400,11 +402,7 @@ public class MockUserVmManagerImpl implements UserVmManager, UserVmService, Mana
 		return null;
 	}
 
-    @Override
-    public Pair<List<? extends UserVm>, Integer> searchForUserVMs(ListVMsCmd cmd) {
-        // TODO Auto-generated method stub
-        return null;
-    }
+
 
     @Override
     public Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long hostId, Map<VirtualMachineProfile.Param, Object> additionalParams) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
@@ -415,7 +413,7 @@ public class MockUserVmManagerImpl implements UserVmManager, UserVmService, Mana
 	@Override
 	public void prepareStop(VirtualMachineProfile<UserVmVO> profile) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
     /* (non-Javadoc)

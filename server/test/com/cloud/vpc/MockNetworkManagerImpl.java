@@ -16,11 +16,22 @@
 // under the License.
 package com.cloud.vpc;
 
-import com.cloud.acl.ControlledEntity.ACLType;
-import com.cloud.api.commands.CreateNetworkCmd;
-import com.cloud.api.commands.ListNetworksCmd;
-import com.cloud.api.commands.ListTrafficTypeImplementorsCmd;
-import com.cloud.api.commands.RestartNetworkCmd;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.ejb.Local;
+import javax.naming.ConfigurationException;
+
+import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
+import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
+import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
@@ -59,11 +70,6 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.*;
 import com.cloud.vpc.dao.MockVpcVirtualRouterElement;
-import org.apache.log4j.Logger;
-
-import javax.ejb.Local;
-import javax.naming.ConfigurationException;
-import java.util.*;
 
 @Local(value = { NetworkManager.class, NetworkService.class })
 public class MockNetworkManagerImpl implements NetworkManager, Manager{
@@ -97,7 +103,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager{
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.network.NetworkService#createGuestNetwork(com.cloud.api.commands.CreateNetworkCmd)
+     * @see com.cloud.network.NetworkService#createGuestNetwork(org.apache.cloudstack.api.commands.CreateNetworkCmd)
      */
     @Override
     public Network createGuestNetwork(CreateNetworkCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException {
@@ -106,7 +112,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager{
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.network.NetworkService#searchForNetworks(com.cloud.api.commands.ListNetworksCmd)
+     * @see com.cloud.network.NetworkService#searchForNetworks(org.apache.cloudstack.api.commands.ListNetworksCmd)
      */
     @Override
     public List<? extends Network> searchForNetworks(ListNetworksCmd cmd) {
@@ -124,7 +130,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager{
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.network.NetworkService#restartNetwork(com.cloud.api.commands.RestartNetworkCmd, boolean)
+     * @see com.cloud.network.NetworkService#restartNetwork(org.apache.cloudstack.api.commands.RestartNetworkCmd, boolean)
      */
     @Override
     public boolean restartNetwork(RestartNetworkCmd cmd, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
@@ -430,7 +436,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager{
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.network.NetworkService#listTrafficTypeImplementor(com.cloud.api.commands.ListTrafficTypeImplementorsCmd)
+     * @see com.cloud.network.NetworkService#listTrafficTypeImplementor(org.apache.cloudstack.api.commands.ListTrafficTypeImplementorsCmd)
      */
     @Override
     public List<Pair<TrafficType, String>> listTrafficTypeImplementor(ListTrafficTypeImplementorsCmd cmd) {
@@ -530,7 +536,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager{
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.network.NetworkManager#setupNetwork(com.cloud.user.Account, com.cloud.offerings.NetworkOfferingVO, com.cloud.network.Network, com.cloud.deploy.DeploymentPlan, java.lang.String, java.lang.String, boolean, java.lang.Long, com.cloud.acl.ControlledEntity.ACLType, java.lang.Boolean, java.lang.Long)
+     * @see com.cloud.network.NetworkManager#setupNetwork(com.cloud.user.Account, com.cloud.offerings.NetworkOfferingVO, com.cloud.network.Network, com.cloud.deploy.DeploymentPlan, java.lang.String, java.lang.String, boolean, java.lang.Long, org.apache.cloudstack.acl.ControlledEntity.ACLType, java.lang.Boolean, java.lang.Long)
      */
     @Override
     public List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan plan, String name, String displayText, boolean errorIfAlreadySetup, Long domainId, ACLType aclType,
@@ -722,7 +728,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager{
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.network.NetworkManager#createGuestNetwork(long, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, com.cloud.user.Account, java.lang.Long, com.cloud.network.PhysicalNetwork, long, com.cloud.acl.ControlledEntity.ACLType, java.lang.Boolean, java.lang.Long)
+     * @see com.cloud.network.NetworkManager#createGuestNetwork(long, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, com.cloud.user.Account, java.lang.Long, com.cloud.network.PhysicalNetwork, long, org.apache.cloudstack.acl.ControlledEntity.ACLType, java.lang.Boolean, java.lang.Long)
      */
     @Override
     public Network createGuestNetwork(long networkOfferingId, String name, String displayText, String gateway, String cidr, String vlanId, String networkDomain, Account owner, Long domainId,

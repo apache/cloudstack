@@ -22,7 +22,7 @@ public class DestroyAnswer extends Answer {
     public DestroyAnswer(DestroyCommand cmd, boolean result, String details) {
         super(cmd, result, details);
     }
-    
+
     // Constructor for gson.
     protected DestroyAnswer() {
         super();

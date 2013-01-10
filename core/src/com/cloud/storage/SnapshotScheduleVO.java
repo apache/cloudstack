@@ -28,18 +28,19 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
-import com.cloud.api.Identity;
+import org.apache.cloudstack.api.Identity;
 import com.cloud.storage.snapshot.SnapshotSchedule;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="snapshot_schedule")
-public class SnapshotScheduleVO implements SnapshotSchedule, Identity {
+public class SnapshotScheduleVO implements SnapshotSchedule {
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
 	@Column(name="id")
 	long id;
-	
+
     // DB constraint: For a given volume and policyId, there will only be one entry in this table.
     @Column(name="volume_id")
     long volumeId;
@@ -50,16 +51,16 @@ public class SnapshotScheduleVO implements SnapshotSchedule, Identity {
     @Column(name="scheduled_timestamp")
     @Temporal(value=TemporalType.TIMESTAMP)
     Date scheduledTimestamp;
-    
+
     @Column(name="async_job_id")
     Long asyncJobId;
-    
+
     @Column(name="snapshot_id")
     Long snapshotId;
 
     @Column(name="uuid")
     String uuid = UUID.randomUUID().toString();
-    
+
     public SnapshotScheduleVO() { }
 
     public SnapshotScheduleVO(long volumeId, long policyId, Date scheduledTimestamp) {
@@ -69,15 +70,15 @@ public class SnapshotScheduleVO implements SnapshotSchedule, Identity {
         this.snapshotId = null;
         this.asyncJobId = null;
     }
-    
+
     public long getId() {
         return id;
     }
-    
+
     public Long getVolumeId() {
         return volumeId;
     }
-    
+
     public Long getPolicyId() {
         return policyId;
     }
@@ -92,7 +93,7 @@ public class SnapshotScheduleVO implements SnapshotSchedule, Identity {
 	public Date getScheduledTimestamp() {
 		return scheduledTimestamp;
 	}
-	
+
 	public void setScheduledTimestamp(Date scheduledTimestamp) {
         this.scheduledTimestamp = scheduledTimestamp;
     }
@@ -100,24 +101,24 @@ public class SnapshotScheduleVO implements SnapshotSchedule, Identity {
     public Long getAsyncJobId() {
 	    return asyncJobId;
 	}
-	
+
 	public void setAsyncJobId(Long asyncJobId) {
 	    this.asyncJobId = asyncJobId;
 	}
-	
+
 	public Long getSnapshotId() {
 	    return snapshotId;
 	}
-	
+
 	public void setSnapshotId(Long snapshotId) {
 	    this.snapshotId = snapshotId;
 	}
-	
+
 	@Override
 	public String getUuid() {
 		return this.uuid;
 	}
-	
+
 	public void setUuid(String uuid) {
 		this.uuid = uuid;
 	}

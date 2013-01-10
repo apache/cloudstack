@@ -25,11 +25,12 @@ import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.utils.Pair;
+import com.cloud.utils.component.PluggableService;
 import com.cloud.vm.VirtualMachine;
 
 /**
  */
-public interface ManagementServer extends ManagementService {
+public interface ManagementServer extends ManagementService, PluggableService  {
     
     /**
      * returns the instance id of this management server.
@@ -43,8 +44,6 @@ public interface ManagementServer extends ManagementService {
     */
     @Override
     String getVersion();
-    
-    String[] getApiConfig();
 
     /**
      * Retrieves a host by id

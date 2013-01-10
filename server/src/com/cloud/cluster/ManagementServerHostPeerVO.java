@@ -30,10 +30,11 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 import com.cloud.utils.DateUtil;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="mshost_peer")
-public class ManagementServerHostPeerVO {
+public class ManagementServerHostPeerVO implements InternalIdentity {
     
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

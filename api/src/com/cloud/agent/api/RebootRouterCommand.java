@@ -18,7 +18,7 @@ package com.cloud.agent.api;
 
 
 public class RebootRouterCommand extends RebootCommand {
-	
+
 	protected String privateIp;
 
 	protected RebootRouterCommand() {

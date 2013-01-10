@@ -26,6 +26,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.script.Script;
+
 /**
  * @author htrippaers
  *
@@ -33,7 +36,7 @@ import java.sql.SQLException;
 public class Upgrade40to41 implements DbUpgrade {
 
 	/**
-	 * 
+	 *
 	 */
 	public Upgrade40to41() {
 		// TODO Auto-generated constructor stub
@@ -72,7 +75,7 @@ public class Upgrade40to41 implements DbUpgrade {
         if (script == null) {
             throw new CloudRuntimeException("Unable to find db/schema-40to410.sql");
         }
-        
+
         return new File[] { new File(script) };
 	}
 

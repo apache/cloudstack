@@ -26,20 +26,20 @@ public class CleanupSnapshotBackupCommand extends Command {
         private List<String> validBackupUUIDs;
 
     protected CleanupSnapshotBackupCommand() {
-        
+
     }
-                        
-     /*       
-     * @param secondaryStoragePoolURL    This is what shows up in the UI when you click on Secondary storage. 
+
+     /*
+     * @param secondaryStoragePoolURL    This is what shows up in the UI when you click on Secondary storage.
      *                                    In the code, it is present as: In the vmops.host_details table, there is a field mount.parent. This is the value of that field
-     *                                    If you have better ideas on how to get it, you are welcome. 
-     * @param validBackupUUID             The VHD which are valid   
+     *                                    If you have better ideas on how to get it, you are welcome.
+     * @param validBackupUUID             The VHD which are valid
      */
     public CleanupSnapshotBackupCommand(String secondaryStoragePoolURL,
                                        Long   dcId,
                                        Long   accountId,
                                        Long   volumeId,
-                                       List<String> validBackupUUIDs) 
+                                       List<String> validBackupUUIDs)
     {
         this.secondaryStoragePoolURL = secondaryStoragePoolURL;
         this.dcId = dcId;
@@ -67,7 +67,7 @@ public class CleanupSnapshotBackupCommand extends Command {
     public List<String> getValidBackupUUIDs() {
         return validBackupUUIDs;
     }
-    
+
     @Override
     public boolean executeInSequence() {
         return false;

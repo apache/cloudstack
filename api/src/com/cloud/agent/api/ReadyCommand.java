@@ -24,29 +24,29 @@ public class ReadyCommand extends Command {
 
 	private Long dcId;
 	private Long hostId;
-	
+
 	public ReadyCommand(Long dcId) {
 		super();
 		this.dcId = dcId;
 	}
-	
+
 	public ReadyCommand(Long dcId, Long hostId) {
 	    this(dcId);
 	    this.hostId = hostId;
 	}
-	
+
 	public void setDetails(String details) {
 		_details = details;
 	}
-	
+
 	public String getDetails() {
 		return _details;
 	}
-	
+
 	public Long getDataCenterId() {
 		return dcId;
 	}
-	
+
 	@Override
 	public boolean executeInSequence() {
 		return true;

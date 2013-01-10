@@ -22,11 +22,11 @@ import com.cloud.utils.exception.RuntimeCloudException;
 import com.cloud.utils.SerialVersionUID;
 
 /**
- * 
+ *
  */
 public class CloudExecutionException extends RuntimeCloudException {
     private final static long serialVersionUID = SerialVersionUID.CloudExecutionException;
-    
+
     private final ErrorCode code;
     private final HashMap<String, Object> details;
 
@@ -35,15 +35,15 @@ public class CloudExecutionException extends RuntimeCloudException {
         this.code = code;
         details = new HashMap<String, Object>();
     }
-    
+
     public ErrorCode getErrorCode() {
         return code;
     }
-    
+
     public String getErrorMessage() {
         return new StringBuilder("Error Code=").append(code).append("; Error Message=").append(super.toString()).toString();
     }
-    
+
     @Override
     public String toString() {
         StringBuilder buff = new StringBuilder();

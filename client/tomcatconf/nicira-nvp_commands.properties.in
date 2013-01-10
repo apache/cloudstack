@@ -20,10 +20,10 @@
 
 #### nicira nvp commands
 
-addNiciraNvpDevice = com.cloud.api.commands.AddNiciraNvpDeviceCmd;1
-deleteNiciraNvpDevice = com.cloud.api.commands.DeleteNiciraNvpDeviceCmd;1
-listNiciraNvpDevices = com.cloud.api.commands.ListNiciraNvpDevicesCmd;1
-listNiciraNvpDeviceNetworks = com.cloud.api.commands.ListNiciraNvpDeviceNetworksCmd;1
+addNiciraNvpDevice=1
+deleteNiciraNvpDevice=1
+listNiciraNvpDevices=1
+listNiciraNvpDeviceNetworks=1
 
 # Not implemented (yet)
-#configureNiciraNvpDevice = com.cloud.api.commands.ConfigureNiciraNvpDeviceCmd;1
+#configureNiciraNvpDevice=1

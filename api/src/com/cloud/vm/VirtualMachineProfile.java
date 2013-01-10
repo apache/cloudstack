@@ -30,7 +30,7 @@ import com.cloud.user.Account;
  * VirtualMachineProfile describes one virtual machine. This object
  * on what the virtual machine profile should look like before it is
  * actually started on the hypervisor.
- * 
+ *
  * @param <T>
  *            a VirtualMachine
  */

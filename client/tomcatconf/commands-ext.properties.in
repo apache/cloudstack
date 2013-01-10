@@ -20,13 +20,6 @@ generateUsageRecords=com.cloud.api.commands.GenerateUsageRecordsCmd;1
 listUsageRecords=com.cloud.api.commands.GetUsageRecordsCmd;1
 listUsageTypes=com.cloud.api.commands.ListUsageTypesCmd;1
 
-
-
-### Network Devices commands
-addNetworkDevice=com.cloud.api.commands.AddNetworkDeviceCmd;1
-listNetworkDevice=com.cloud.api.commands.ListNetworkDeviceCmd;1
-deleteNetworkDevice=com.cloud.api.commands.DeleteNetworkDeviceCmd;1
-
 #### traffic monitor commands
 addTrafficMonitor=com.cloud.api.commands.AddTrafficMonitorCmd;1
 deleteTrafficMonitor=com.cloud.api.commands.DeleteTrafficMonitorCmd;1

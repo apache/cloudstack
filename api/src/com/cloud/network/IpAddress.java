@@ -18,28 +18,30 @@ package com.cloud.network;
 
 import java.util.Date;
 
-import com.cloud.acl.ControlledEntity;
+import org.apache.cloudstack.acl.ControlledEntity;
 import com.cloud.utils.net.Ip;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
 /**
- * 
+ *
  * - Allocated = null
  * - AccountId = null
  * - DomainId = null
- * 
+ *
  * - State = Allocated
  * - AccountId = account owner.
  * - DomainId = domain of the account owner.
  * - Allocated = time it was allocated.
  */
-public interface IpAddress extends ControlledEntity {
+public interface IpAddress extends ControlledEntity, Identity, InternalIdentity {
     enum State {
         Allocating, // The IP Address is being propagated to other network elements and is not ready for use yet.
         Allocated, // The IP address is in used.
         Releasing, // The IP address is being released for other network elements and is not ready for allocation.
         Free // The IP address is ready to be allocated.
     }
-    
+
     enum Purpose {
         StaticNat,
         Lb
@@ -67,11 +69,6 @@ public interface IpAddress extends ControlledEntity {
 
     public Long getPhysicalNetworkId();
 
-    /**
-     * @return database id.
-     */
-    long getId();
-
     void setState(IpAddress.State state);
 
     Long getAllocatedToAccountId();
@@ -89,5 +86,4 @@ public interface IpAddress extends ControlledEntity {
      * @param vpcId
      */
     void setVpcId(Long vpcId);
-
 }

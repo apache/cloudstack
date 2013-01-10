@@ -20,11 +20,11 @@ public class SecStorageVMSetupCommand extends Command {
 	String [] allowedInternalSites = new String[0];
 	String copyUserName;
 	String copyPassword;
-	
+
 	public SecStorageVMSetupCommand() {
 		super();
 	}
-	
+
 	@Override
 	public boolean executeInSequence() {
 		return true;

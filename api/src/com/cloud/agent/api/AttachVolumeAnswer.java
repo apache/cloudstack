@@ -20,38 +20,38 @@ package com.cloud.agent.api;
 public class AttachVolumeAnswer extends Answer {
     private Long deviceId;
     private String chainInfo;
-    
+
     protected AttachVolumeAnswer() {
-        
+
     }
-    
+
     public AttachVolumeAnswer(AttachVolumeCommand cmd, String result) {
         super(cmd, false, result);
         this.deviceId = null;
     }
-    
+
     public AttachVolumeAnswer(AttachVolumeCommand cmd, Long deviceId) {
         super(cmd);
         this.deviceId = deviceId;
     }
 
-    
+
     public AttachVolumeAnswer(AttachVolumeCommand cmd) {
         super(cmd);
         this.deviceId = null;
     }
-    
+
     /**
      * @return the deviceId
      */
     public Long getDeviceId() {
         return deviceId;
     }
-    
+
     public void setChainInfo(String chainInfo) {
     	this.chainInfo = chainInfo;
     }
-    
+
     public String getChainInfo() {
     	return chainInfo;
     }

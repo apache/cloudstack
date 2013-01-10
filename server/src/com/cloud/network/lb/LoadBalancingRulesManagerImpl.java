@@ -30,15 +30,13 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.command.user.loadbalancer.*;
 import org.apache.log4j.Logger;
 
-import com.cloud.api.commands.CreateLBStickinessPolicyCmd;
-import com.cloud.api.commands.CreateLoadBalancerRuleCmd;
-import com.cloud.api.commands.ListLBStickinessPoliciesCmd;
-import com.cloud.api.commands.ListLoadBalancerRuleInstancesCmd;
-import com.cloud.api.commands.ListLoadBalancerRulesCmd;
-import com.cloud.api.commands.UpdateLoadBalancerRuleCmd;
-import com.cloud.api.response.ServiceResponse;
+import org.apache.cloudstack.api.command.user.loadbalancer.CreateLBStickinessPolicyCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.ListLoadBalancerRuleInstancesCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.ListLoadBalancerRulesCmd;
+import org.apache.cloudstack.api.response.ServiceResponse;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -125,7 +123,6 @@ import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Inject;

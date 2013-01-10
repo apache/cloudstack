@@ -73,6 +73,11 @@
       <version>${cs.discovery.version}</version>
     </dependency>
     <dependency>
+        <groupId>com.google.guava</groupId>
+        <artifactId>guava</artifactId>
+        <version>${cs.guava.version}</version>
+    </dependency>
+    <dependency>
       <groupId>commons-logging</groupId>
       <artifactId>commons-logging</artifactId>
       <version>${cs.logging.version}</version>
@@ -140,6 +145,11 @@
         <artifactId>commons-io</artifactId>
         <version>${cs.commons-io.version}</version>
         <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.reflections</groupId>
+      <artifactId>reflections</artifactId>
+      <version>${cs.reflections.version}</version>
     </dependency>
   </dependencies>
   <build>

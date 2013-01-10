@@ -23,25 +23,32 @@ import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 
+import org.apache.cloudstack.api.response.AccountResponse;
+import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiConstants;
+import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
-import com.cloud.api.BaseListCmd;
-import com.cloud.api.IdentityMapper;
-import com.cloud.api.Implementation;
-import com.cloud.api.Parameter;
-import com.cloud.api.response.ListResponse;
+import com.cloud.dc.DataCenter;
+import com.cloud.domain.Domain;
+
+import org.apache.cloudstack.api.BaseListCmd;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.projects.Project;
 import com.cloud.server.ManagementServerExt;
-import com.cloud.server.api.response.UsageRecordResponse;
+import org.apache.cloudstack.api.response.UsageRecordResponse;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.usage.UsageTypes;
 import com.cloud.usage.UsageVO;
 import com.cloud.user.Account;
 import com.cloud.uuididentity.dao.IdentityDao;
 import com.cloud.uuididentity.dao.IdentityDaoImpl;
+import com.cloud.vm.VMInstanceVO;
 
-@Implementation(description="Lists usage records for accounts", responseObject=UsageRecordResponse.class)
+@APICommand(name = "listUsageRecords", description="Lists usage records for accounts", responseObject=UsageRecordResponse.class)
 public class GetUsageRecordsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(GetUsageRecordsCmd.class.getName());
 
@@ -54,8 +61,8 @@ public class GetUsageRecordsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="List usage records for the specified user.")
     private String accountName;
 
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="List usage records for the specified domain.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType = DomainResponse.class,
+            description="List usage records for the specified domain.")
     private Long domainId;
 
     @Parameter(name=ApiConstants.END_DATE, type=CommandType.DATE, required=true, description="End date range for usage record query. Use yyyy-MM-dd as the date format, e.g. startDate=2009-06-03.")
@@ -63,15 +70,15 @@ public class GetUsageRecordsCmd extends BaseListCmd {
 
     @Parameter(name=ApiConstants.START_DATE, type=CommandType.DATE, required=true, description="Start date range for usage record query. Use yyyy-MM-dd as the date format, e.g. startDate=2009-06-01.")
     private Date startDate;
-    
-    @IdentityMapper(entityTableName="account")
-    @Parameter(name=ApiConstants.ACCOUNT_ID, type=CommandType.LONG, description="List usage records for the specified account")
+
+    @Parameter(name=ApiConstants.ACCOUNT_ID, type=CommandType.UUID, entityType = AccountResponse.class,
+            description="List usage records for the specified account")
     private Long accountId;
-    
-    @IdentityMapper(entityTableName="projects")
-    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="List usage records for specified project")
+
+    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.UUID, entityType = ProjectResponse.class,
+            description="List usage records for specified project")
     private Long projectId;
-    
+
     @Parameter(name=ApiConstants.TYPE, type=CommandType.LONG, description="List usage records for the specified usage type")
     private Long usageType;
 
@@ -94,7 +101,7 @@ public class GetUsageRecordsCmd extends BaseListCmd {
     public Date getStartDate() {
         return startDate;
     }
-    
+
     public Long getAccountId() {
         return accountId;
     }
@@ -102,11 +109,11 @@ public class GetUsageRecordsCmd extends BaseListCmd {
     public Long getUsageType() {
         return usageType;
     }
-    
+
     public Long getProjectId() {
         return projectId;
     }
-    
+
     /////////////////////////////////////////////////////
     ///////////////  Misc parameters  ///////////////////
     /////////////////////////////////////////////////////
@@ -162,7 +169,7 @@ public class GetUsageRecordsCmd extends BaseListCmd {
         } else {
             sb.append(hour+":");
         }
-        
+
         int minute = cal.get(Calendar.MINUTE);
         if (minute < 10) {
             sb.append("0" + minute + ":");
@@ -213,7 +220,7 @@ public class GetUsageRecordsCmd extends BaseListCmd {
 
         return sb.toString();
     }
-    
+
     @Override
     public void execute(){
         ManagementServerExt _mgrExt = (ManagementServerExt)_mgr;
@@ -225,28 +232,46 @@ public class GetUsageRecordsCmd extends BaseListCmd {
             UsageRecordResponse usageRecResponse = new UsageRecordResponse();
             if (usageRecordGeneric instanceof UsageVO) {
                 UsageVO usageRecord = (UsageVO)usageRecordGeneric;
-      
-                Account account = ApiDBUtils.findAccountByIdIncludingRemoved(usageRecord.getAccountId()); 
+
+                Account account = ApiDBUtils.findAccountByIdIncludingRemoved(usageRecord.getAccountId());
                 if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
                     //find the project
                     Project project = ApiDBUtils.findProjectByProjectAccountId(account.getId());
-                    usageRecResponse.setProjectId(project.getId());
+                    usageRecResponse.setProjectId(project.getUuid());
                     usageRecResponse.setProjectName(project.getName());
                 } else {
-                    usageRecResponse.setAccountId(account.getId());
+                    usageRecResponse.setAccountId(account.getUuid());
                     usageRecResponse.setAccountName(account.getAccountName());
                 }
-             
-                usageRecResponse.setDomainId(usageRecord.getDomainId());
-                
-                usageRecResponse.setZoneId(usageRecord.getZoneId());
+
+                Domain domain = ApiDBUtils.findDomainById(usageRecord.getDomainId());
+                if (domain != null) {
+                    usageRecResponse.setDomainId(domain.getUuid());
+                }
+
+                if (usageRecord.getZoneId() != null) {
+                    DataCenter zone = ApiDBUtils.findZoneById(usageRecord.getZoneId());
+                    if (zone != null) {
+                        usageRecResponse.setZoneId(zone.getUuid());
+                    }
+                }
                 usageRecResponse.setDescription(usageRecord.getDescription());
                 usageRecResponse.setUsage(usageRecord.getUsageDisplay());
                 usageRecResponse.setUsageType(usageRecord.getUsageType());
-                usageRecResponse.setVirtualMachineId(usageRecord.getVmInstanceId());
+                if (usageRecord.getVmInstanceId() != null) {
+                    VMInstanceVO vm = ApiDBUtils.findVMInstanceById(usageRecord.getVmInstanceId());
+                    if (vm != null) {
+                        usageRecResponse.setVirtualMachineId(vm.getUuid());
+                    }
+                }
                 usageRecResponse.setVmName(usageRecord.getVmName());
-                usageRecResponse.setTemplateId(usageRecord.getTemplateId());
-                
+                if (usageRecord.getTemplateId() != null) {
+                    VMTemplateVO template = ApiDBUtils.findTemplateById(usageRecord.getTemplateId());
+                    if (template != null) {
+                        usageRecResponse.setTemplateId(template.getUuid());
+                    }
+                }
+
                 if(usageRecord.getUsageType() == UsageTypes.RUNNING_VM || usageRecord.getUsageType() == UsageTypes.ALLOCATED_VM){
                 	//Service Offering Id
                 	usageRecResponse.setOfferingId(identityDao.getIdentityUuid("disk_offering", usageRecord.getOfferingId().toString()));
@@ -254,7 +279,7 @@ public class GetUsageRecordsCmd extends BaseListCmd {
                 	usageRecResponse.setUsageId(identityDao.getIdentityUuid("vm_instance", usageRecord.getUsageId().toString()));
                 	//Hypervisor Type
                 	usageRecResponse.setType(usageRecord.getType());
-                	
+
                 } else if(usageRecord.getUsageType() == UsageTypes.IP_ADDRESS){
                 	//isSourceNAT
                     usageRecResponse.setSourceNat((usageRecord.getType().equals("SourceNat"))?true:false);
@@ -262,7 +287,7 @@ public class GetUsageRecordsCmd extends BaseListCmd {
                     usageRecResponse.setSystem((usageRecord.getSize() == 1)?true:false);
                     //IP Address ID
                     usageRecResponse.setUsageId(identityDao.getIdentityUuid("user_ip_address", usageRecord.getUsageId().toString()));
-                    
+
                 } else if(usageRecord.getUsageType() == UsageTypes.NETWORK_BYTES_SENT || usageRecord.getUsageType() == UsageTypes.NETWORK_BYTES_RECEIVED){
                 	//Device Type
                 	usageRecResponse.setType(usageRecord.getType());
@@ -271,11 +296,11 @@ public class GetUsageRecordsCmd extends BaseListCmd {
                         usageRecResponse.setUsageId(identityDao.getIdentityUuid("vm_instance", usageRecord.getUsageId().toString()));
                 	} else {
                 		//External Device Host Id
-                		usageRecResponse.setUsageId(identityDao.getIdentityUuid("host", usageRecord.getUsageId().toString()));	
+                		usageRecResponse.setUsageId(identityDao.getIdentityUuid("host", usageRecord.getUsageId().toString()));
                 	}
                     //Network ID
                     usageRecResponse.setNetworkId(identityDao.getIdentityUuid("networks", usageRecord.getNetworkId().toString()));
-                    
+
                 } else if(usageRecord.getUsageType() == UsageTypes.VOLUME){
                     //Volume ID
                     usageRecResponse.setUsageId(identityDao.getIdentityUuid("volumes", usageRecord.getUsageId().toString()));
@@ -291,36 +316,36 @@ public class GetUsageRecordsCmd extends BaseListCmd {
                     usageRecResponse.setUsageId(identityDao.getIdentityUuid("vm_template", usageRecord.getUsageId().toString()));
                     //Template/ISO Size
                     usageRecResponse.setSize(usageRecord.getSize());
-                    
+
                 } else if(usageRecord.getUsageType() == UsageTypes.SNAPSHOT){
                     //Snapshot ID
                     usageRecResponse.setUsageId(identityDao.getIdentityUuid("snapshots", usageRecord.getUsageId().toString()));
                     //Snapshot Size
                     usageRecResponse.setSize(usageRecord.getSize());
-                    
+
                 } else if(usageRecord.getUsageType() == UsageTypes.LOAD_BALANCER_POLICY){
                     //Load Balancer Policy ID
                     usageRecResponse.setUsageId(usageRecord.getUsageId().toString());
-                    
+
                 } else if(usageRecord.getUsageType() == UsageTypes.PORT_FORWARDING_RULE){
                     //Port Forwarding Rule ID
                     usageRecResponse.setUsageId(usageRecord.getUsageId().toString());
-                    
+
                 } else if(usageRecord.getUsageType() == UsageTypes.NETWORK_OFFERING){
                 	//Network Offering Id
                 	usageRecResponse.setOfferingId(identityDao.getIdentityUuid("network_offerings", usageRecord.getOfferingId().toString()));
                 	//is Default
                 	usageRecResponse.setDefault((usageRecord.getUsageId() == 1)? true:false);
-                	
+
                 } else if(usageRecord.getUsageType() == UsageTypes.VPN_USERS){
                     //VPN User ID
                     usageRecResponse.setUsageId(usageRecord.getUsageId().toString());
-                    
+
                 } else if(usageRecord.getUsageType() == UsageTypes.SECURITY_GROUP){
                 	//Security Group Id
                 	usageRecResponse.setUsageId(identityDao.getIdentityUuid("security_group", usageRecord.getUsageId().toString()));
                 }
-                
+
                 if (usageRecord.getRawUsage() != null) {
                     DecimalFormat decimalFormat = new DecimalFormat("###########.######");
                     usageRecResponse.setRawUsage(decimalFormat.format(usageRecord.getRawUsage()));
@@ -332,7 +357,7 @@ public class GetUsageRecordsCmd extends BaseListCmd {
                 if (usageRecord.getEndDate() != null) {
                     usageRecResponse.setEndDate(getDateStringInternal(usageRecord.getEndDate()));
                 }
-            } 
+            }
 
             usageRecResponse.setObjectName("usagerecord");
             usageResponses.add(usageRecResponse);

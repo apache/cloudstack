@@ -18,7 +18,7 @@
 /* This file specifies default values that go into the database, before the Management Server is run. */
 
 /* Root Domain */
-INSERT INTO `cloud`.`domain` (id, name, parent, path, owner) VALUES (1, 'ROOT', NULL, '/', 2);
+INSERT INTO `cloud`.`domain` (id, uuid, name, parent, path, owner) VALUES (1, UUID(), 'ROOT', NULL, '/', 2);
 
 /* Configuration Table */
 

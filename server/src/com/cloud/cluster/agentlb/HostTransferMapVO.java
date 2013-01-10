@@ -26,11 +26,12 @@ import javax.persistence.InheritanceType;
 import javax.persistence.Table;
 
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "op_host_transfer")
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
-public class HostTransferMapVO {
+public class HostTransferMapVO implements InternalIdentity {
 
     public enum HostTransferState {
         TransferRequested, TransferStarted;

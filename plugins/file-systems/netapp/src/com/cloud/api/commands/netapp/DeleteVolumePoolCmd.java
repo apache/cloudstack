@@ -19,11 +19,11 @@ package com.cloud.api.commands.netapp;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseCmd;
-import com.cloud.api.Implementation;
-import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -35,7 +35,7 @@ import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.DeleteVolumePoolCmdResponse;
 import com.cloud.utils.component.ComponentLocator;
 
-@Implementation(description="Delete a pool", responseObject = DeleteVolumePoolCmdResponse.class)
+@APICommand(name = "deletePool", description="Delete a pool", responseObject = DeleteVolumePoolCmdResponse.class)
 public class DeleteVolumePoolCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(DeleteVolumePoolCmd.class.getName());
     private static final String s_name = "deletepoolresponse";

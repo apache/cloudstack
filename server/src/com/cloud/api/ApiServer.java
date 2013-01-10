@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -17,16 +17,14 @@
 package com.cloud.api;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InterruptedIOException;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.security.SecureRandom;
@@ -40,7 +38,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.ExecutorService;
@@ -53,13 +50,26 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import com.cloud.utils.ReflectUtil;
+import org.apache.cloudstack.acl.APIAccessChecker;
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.*;
+import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
+import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
+import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
+import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
+import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
+import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
+import org.apache.cloudstack.discovery.ApiDiscoveryService;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.ConnectionClosedException;
 import org.apache.http.HttpException;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpServerConnection;
 import org.apache.http.HttpStatus;
+import org.apache.http.NameValuePair;
 import org.apache.http.entity.BasicHttpEntity;
 import org.apache.http.impl.DefaultHttpResponseFactory;
 import org.apache.http.impl.DefaultHttpServerConnection;
@@ -81,9 +91,17 @@ import org.apache.http.protocol.ResponseDate;
 import org.apache.http.protocol.ResponseServer;
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
+import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
+import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
+import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
+import org.apache.cloudstack.api.command.user.project.ListProjectInvitationsCmd;
+import org.apache.cloudstack.api.command.user.project.ListProjectsCmd;
+import org.apache.cloudstack.api.command.user.securitygroup.ListSecurityGroupsCmd;
+import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
 import com.cloud.api.response.ApiResponseSerializer;
-import com.cloud.api.response.ExceptionResponse;
-import com.cloud.api.response.ListResponse;
+import org.apache.cloudstack.api.response.ExceptionResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
@@ -105,181 +123,75 @@ import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.user.UserContext;
 import com.cloud.user.UserVO;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.utils.Pair;
-import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.component.Adapters;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.PluggableService;
+import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CSExceptionErrorCode;
 import com.cloud.uuididentity.dao.IdentityDao;
 
+import org.reflections.Reflections;
 
 public class ApiServer implements HttpRequestHandler {
     private static final Logger s_logger = Logger.getLogger(ApiServer.class.getName());
     private static final Logger s_accessLogger = Logger.getLogger("apiserver." + ApiServer.class.getName());
 
-    public static final short ADMIN_COMMAND = 1;
-    public static final short DOMAIN_ADMIN_COMMAND = 4;
-    public static final short RESOURCE_DOMAIN_ADMIN_COMMAND = 2;
-    public static final short USER_COMMAND = 8;
     public static boolean encodeApiResponse = false;
     public static String jsonContentType = "text/javascript";
-    private Properties _apiCommands = null;
     private ApiDispatcher _dispatcher;
-    private AccountManager _accountMgr = null;
-    private DomainManager _domainMgr = null;
-    private AsyncJobManager _asyncMgr = null;
+
+    @Inject private AccountManager _accountMgr = null;
+    @Inject private DomainManager _domainMgr = null;
+    @Inject private AsyncJobManager _asyncMgr = null;
+
+    @Inject(adapter = APIAccessChecker.class)
+    protected Adapters<APIAccessChecker> _apiAccessCheckers;
+    @Inject(adapter = ApiDiscoveryService.class)
+    protected Adapters<ApiDiscoveryService> _apiDiscoveryServices;
+
     private Account _systemAccount = null;
     private User _systemUser = null;
-
     private static int _workerCount = 0;
-
     private static ApiServer s_instance = null;
-    private static List<String> s_userCommands = null;
-    private static List<String> s_resellerCommands = null; // AKA domain-admin
-    private static List<String> s_adminCommands = null;
-    private static List<String> s_resourceDomainAdminCommands = null;
-    private static List<String> s_allCommands = null;
-    private static List<String> s_pluggableServiceCommands = null;
     private static final DateFormat _dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+    private Map<String, Class<?>> _apiNameCmdClassMap = new HashMap<String, Class<?>>();
 
     private static ExecutorService _executor = new ThreadPoolExecutor(10, 150, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("ApiServer"));
 
-    static {
-        s_userCommands = new ArrayList<String>();
-        s_resellerCommands = new ArrayList<String>();
-        s_adminCommands = new ArrayList<String>();
-        s_resourceDomainAdminCommands = new ArrayList<String>();
-        s_allCommands = new ArrayList<String>();
-        s_pluggableServiceCommands = new ArrayList<String>();
-    }
-
-    private ApiServer() {
+    protected ApiServer() {
+        super();
     }
 
     public static void initApiServer(String[] apiConfig) {
         if (s_instance == null) {
-            s_instance = new ApiServer();
+            //Injection will create ApiServer and all its fields which have @Inject
+            s_instance = ComponentLocator.inject(ApiServer.class);
             s_instance.init(apiConfig);
         }
     }
 
     public static ApiServer getInstance() {
-        // initApiServer();
+        // Assumption: CloudStartupServlet would initialize ApiServer
+        if (s_instance == null) {
+            s_logger.fatal("ApiServer instance failed to initialize");
+        }
         return s_instance;
-    }
-
-    public Properties get_apiCommands() {
-        return _apiCommands;
-    }
-
-    public static boolean isPluggableServiceCommand(String cmdClassName) {
-        if (s_pluggableServiceCommands != null) {
-            if (s_pluggableServiceCommands.contains(cmdClassName)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private String[] getPluggableServicesApiConfigs() {
-        List<String> pluggableServicesApiConfigs = new ArrayList<String>();
-
-        ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
-        List<PluggableService> services = locator.getAllPluggableServices();
-        for (PluggableService service : services) {
-            pluggableServicesApiConfigs.add(service.getPropertiesFile());
-        }
-        return pluggableServicesApiConfigs.toArray(new String[0]);
-    }
-
-    private void processConfigFiles(String[] apiConfig, boolean pluggableServicesConfig) {
-        try {
-            if (_apiCommands == null) {
-                _apiCommands = new Properties();
-            }
-            Properties preProcessedCommands = new Properties();
-            if (apiConfig != null) {
-                for (String configFile : apiConfig) {
-                    File commandsFile = PropertiesUtil.findConfigFile(configFile);
-                    if (commandsFile != null) {
-                        try {
-                            preProcessedCommands.load(new FileInputStream(commandsFile));
-                        } catch (FileNotFoundException fnfex) {
-                            // in case of a file within a jar in classpath, try to open stream using url
-                            InputStream stream = PropertiesUtil.openStreamFromURL(configFile);
-                            if (stream != null) {
-                                preProcessedCommands.load(stream);
-                            } else {
-                                s_logger.error("Unable to find properites file", fnfex);
-                            }
-                        }
-                    }
-                }
-                for (Object key : preProcessedCommands.keySet()) {
-                    String preProcessedCommand = preProcessedCommands.getProperty((String) key);
-                    String[] commandParts = preProcessedCommand.split(";");
-                    _apiCommands.put(key, commandParts[0]);
-
-                    if (pluggableServicesConfig) {
-                        s_pluggableServiceCommands.add(commandParts[0]);
-                    }
-
-                    if (commandParts.length > 1) {
-                        try {
-                            short cmdPermissions = Short.parseShort(commandParts[1]);
-                            if ((cmdPermissions & ADMIN_COMMAND) != 0) {
-                                s_adminCommands.add((String) key);
-                            }
-                            if ((cmdPermissions & RESOURCE_DOMAIN_ADMIN_COMMAND) != 0) {
-                                s_resourceDomainAdminCommands.add((String) key);
-                            }
-                            if ((cmdPermissions & DOMAIN_ADMIN_COMMAND) != 0) {
-                                s_resellerCommands.add((String) key);
-                            }
-                            if ((cmdPermissions & USER_COMMAND) != 0) {
-                                s_userCommands.add((String) key);
-                            }
-                        } catch (NumberFormatException nfe) {
-                            s_logger.info("Malformed command.properties permissions value, key = " + key + ", value = " + preProcessedCommand);
-                        }
-                    }
-                }
-
-                s_allCommands.addAll(s_adminCommands);
-                s_allCommands.addAll(s_resourceDomainAdminCommands);
-                s_allCommands.addAll(s_userCommands);
-                s_allCommands.addAll(s_resellerCommands);
-            }
-        } catch (FileNotFoundException fnfex) {
-            s_logger.error("Unable to find properites file", fnfex);
-        } catch (IOException ioex) {
-            s_logger.error("Exception loading properties file", ioex);
-        }
     }
 
     public void init(String[] apiConfig) {
         BaseCmd.setComponents(new ApiResponseHelper());
         BaseListCmd.configure();
-        processConfigFiles(apiConfig, false);
 
-        // get commands for all pluggable services
-        String[] pluggableServicesApiConfigs = getPluggableServicesApiConfigs();
-        processConfigFiles(pluggableServicesApiConfigs, true);
-
-        ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
-        _accountMgr = locator.getManager(AccountManager.class);
-        _asyncMgr = locator.getManager(AsyncJobManager.class);
         _systemAccount = _accountMgr.getSystemAccount();
         _systemUser = _accountMgr.getSystemUser();
         _dispatcher = ApiDispatcher.getInstance();
-        _domainMgr = locator.getManager(DomainManager.class);
 
         Integer apiPort = null; // api port, null by default
+        ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
         ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
         SearchCriteria<ConfigurationVO> sc = configDao.createSearchCriteria();
         sc.addAnd("name", SearchCriteria.Op.EQ, "integration.api.port");
@@ -291,8 +203,16 @@ public class ApiServer implements HttpRequestHandler {
             }
         }
 
-        encodeApiResponse = Boolean.valueOf(configDao.getValue(Config.EncodeApiResponse.key()));
+        for (ApiDiscoveryService discoveryService: _apiDiscoveryServices) {
+            _apiNameCmdClassMap.putAll(discoveryService.getApiNameCmdClassMapping());
+        }
 
+        if (_apiNameCmdClassMap.size() == 0) {
+            s_logger.fatal("ApiServer failed to generate apiname, cmd class mappings."
+                         + "Please check and enable at least one ApiDiscovery adapter.");
+        }
+
+        encodeApiResponse = Boolean.valueOf(configDao.getValue(Config.EncodeApiResponse.key()));
         String jsonType = configDao.getValue(Config.JavaScriptDefaultContentType.key());
         if (jsonType != null) {
             jsonContentType = jsonType;
@@ -301,13 +221,17 @@ public class ApiServer implements HttpRequestHandler {
         if (apiPort != null) {
             ListenerThread listenerThread = new ListenerThread(this, apiPort);
             listenerThread.start();
-        } 
+        }
     }
 
+    // NOTE: handle() only handles over the wire (OTW) requests from integration.api.port 8096
+    // If integration api port is not configured, actual OTW requests will be received by ApiServlet
     @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
-    public void handle(HttpRequest request, HttpResponse response, HttpContext context) throws HttpException, IOException {
-        // get some information for the access log...
+    public void handle(HttpRequest request, HttpResponse response, HttpContext context)
+            throws HttpException, IOException {
+
+        // Create StringBuffer to log information in access log
         StringBuffer sb = new StringBuffer();
         HttpServerConnection connObj = (HttpServerConnection) context.getAttribute("http.connection");
         if (connObj instanceof SocketHttpServerConnection) {
@@ -317,36 +241,32 @@ public class ApiServer implements HttpRequestHandler {
         sb.append(StringUtils.cleanString(request.getRequestLine().toString()));
 
         try {
-            String uri = request.getRequestLine().getUri();
-            int requestParamsStartIndex = uri.indexOf('?');
-            if (requestParamsStartIndex >= 0) {
-                uri = uri.substring(requestParamsStartIndex + 1);
+            List<NameValuePair> paramList = null;
+            try {
+                paramList = URLEncodedUtils.parse(new URI(request.getRequestLine().getUri()), "UTF-8");
+            } catch (URISyntaxException e) {
+                s_logger.error("Error parsing url request", e);
             }
 
-            String[] paramArray = uri.split("&");
-            if (paramArray.length < 1) {
-                s_logger.info("no parameters received for request: " + uri + ", aborting...");
-                return;
-            }
-
+            // Use Multimap as the parameter map should be in the form (name=String, value=String[])
+            // So parameter values are stored in a list for the same name key
+            // APITODO: Use Guava's (import com.google.common.collect.Multimap;)
+            // (Immutable)Multimap<String, String> paramMultiMap = HashMultimap.create();
+            // Map<String, Collection<String>> parameterMap = paramMultiMap.asMap();
             Map parameterMap = new HashMap<String, String[]>();
-
-            String responseType = BaseCmd.RESPONSE_TYPE_XML;
-            for (String paramEntry : paramArray) {
-                String[] paramValue = paramEntry.split("=");
-                if (paramValue.length != 2) {
-                    s_logger.info("malformed parameter: " + paramEntry + ", skipping");
+            String responseType = BaseCmd.RESPONSE_TYPE_JSON;
+            for (NameValuePair param : paramList) {
+                if (param.getName().equalsIgnoreCase("response")) {
+                    responseType = param.getValue();
                     continue;
                 }
-                if ("response".equalsIgnoreCase(paramValue[0])) {
-                    responseType = paramValue[1];
-                } else {
-                    // according to the servlet spec, the parameter map should be in the form (name=String,
-                    // value=String[]), so
-                    // parameter values will be stored in an array
-                    parameterMap.put(/* name */paramValue[0], /* value */new String[] { paramValue[1] });
-                }
+                parameterMap.put(param.getName(), new String[] { param.getValue() });
             }
+
+            // Check responseType, if not among valid types, fallback to JSON
+            if (!(responseType.equals(BaseCmd.RESPONSE_TYPE_JSON) || responseType.equals(BaseCmd.RESPONSE_TYPE_XML)))
+                responseType = BaseCmd.RESPONSE_TYPE_JSON;
+
             try {
                 // always trust commands from API port, user context will always be UID_SYSTEM/ACCOUNT_ID_SYSTEM
                 UserContext.registerContext(_systemUser.getId(), _systemAccount, null, true);
@@ -356,7 +276,7 @@ public class ApiServer implements HttpRequestHandler {
 
                 writeResponse(response, responseText, HttpStatus.SC_OK, responseType, null);
             } catch (ServerApiException se) {
-                String responseText = getSerializedApiError(se.getErrorCode(), se.getDescription(), parameterMap, responseType, se);                
+                String responseText = getSerializedApiError(se.getErrorCode(), se.getDescription(), parameterMap, responseType, se);
                 writeResponse(response, responseText, se.getErrorCode(), responseType, se.getDescription());
                 sb.append(" " + se.getErrorCode() + " " + se.getDescription());
             } catch (RuntimeException e) {
@@ -414,9 +334,9 @@ public class ApiServer implements HttpRequestHandler {
                     }
                     paramMap.put(key, decodedValue);
                 }
-                String cmdClassName = _apiCommands.getProperty(command[0]);
-                if (cmdClassName != null) {
-                    Class<?> cmdClass = Class.forName(cmdClassName);
+
+                Class<?> cmdClass = getCmdClass(command[0]);
+                if (cmdClass != null) {
                     BaseCmd cmdObj = (BaseCmd) cmdClass.newInstance();
                     cmdObj.setFullUrlParams(paramMap);
                     cmdObj.setResponseType(responseType);
@@ -435,14 +355,13 @@ public class ApiServer implements HttpRequestHandler {
         } catch (Exception ex) {
             if (ex instanceof InvalidParameterValueException) {
             	InvalidParameterValueException ref = (InvalidParameterValueException)ex;
-            	ServerApiException e = new ServerApiException(BaseCmd.PARAM_ERROR, ex.getMessage());            	
+		ServerApiException e = new ServerApiException(BaseCmd.PARAM_ERROR, ex.getMessage());
                 // copy over the IdentityProxy information as well and throw the serverapiexception.
-                ArrayList<IdentityProxy> idList = ref.getIdProxyList();
+                ArrayList<String> idList = ref.getIdProxyList();
                 if (idList != null) {
                 	// Iterate through entire arraylist and copy over each proxy id.
                 	for (int i = 0 ; i < idList.size(); i++) {
-                		IdentityProxy obj = idList.get(i);
-                		e.addProxyObject(obj.getTableName(), obj.getValue(), obj.getidFieldName());
+                		e.addProxyObject(idList.get(i));
                 	}
                 }
                 // Also copy over the cserror code and the function/layer in which it was thrown.
@@ -452,12 +371,11 @@ public class ApiServer implements HttpRequestHandler {
             	PermissionDeniedException ref = (PermissionDeniedException)ex;
             	ServerApiException e = new ServerApiException(BaseCmd.ACCOUNT_ERROR, ex.getMessage());
                 // copy over the IdentityProxy information as well and throw the serverapiexception.
-            	ArrayList<IdentityProxy> idList = ref.getIdProxyList();
+            	ArrayList<String> idList = ref.getIdProxyList();
                 if (idList != null) {
                 	// Iterate through entire arraylist and copy over each proxy id.
                 	for (int i = 0 ; i < idList.size(); i++) {
-                		IdentityProxy obj = idList.get(i);
-                		e.addProxyObject(obj.getTableName(), obj.getValue(), obj.getidFieldName());
+                		e.addProxyObject(idList.get(i));
                 	}
                 }
                 e.setCSErrorCode(ref.getCSErrorCode());
@@ -478,6 +396,11 @@ public class ApiServer implements HttpRequestHandler {
         UserContext ctx = UserContext.current();
         Long callerUserId = ctx.getCallerUserId();
         Account caller = ctx.getCaller();
+
+        // Queue command based on Cmd super class:
+        // BaseCmd: cmd is dispatched to ApiDispatcher, executed, serialized and returned.
+        // BaseAsyncCreateCmd: cmd params are processed and create() is called, then same workflow as BaseAsyncCmd.
+        // BaseAsyncCmd: cmd is processed and submitted as an AsyncJob, job related info is serialized and returned.
         if (cmdObj instanceof BaseAsyncCmd) {
             Long objectId = null;
             String objectEntityTable = null;
@@ -488,8 +411,7 @@ public class ApiServer implements HttpRequestHandler {
                 objectEntityTable = createCmd.getEntityTable();
                 params.put("id", objectId.toString());
             } else {
-                ApiDispatcher.setupParameters(cmdObj, params);
-                ApiDispatcher.plugService(cmdObj);
+                ApiDispatcher.processParameters(cmdObj, params);
             }
 
             BaseAsyncCmd asyncCmd = (BaseAsyncCmd) cmdObj;
@@ -505,7 +427,7 @@ public class ApiServer implements HttpRequestHandler {
             asyncCmd.setStartEventId(startEventId);
 
             // save the scheduled event
-            Long eventId = EventUtils.saveScheduledEvent((callerUserId == null) ? User.UID_SYSTEM : callerUserId, 
+            Long eventId = EventUtils.saveScheduledEvent((callerUserId == null) ? User.UID_SYSTEM : callerUserId,
                     asyncCmd.getEntityOwnerId(), asyncCmd.getEventType(), asyncCmd.getEventDescription(),
                     startEventId);
             if (startEventId == 0) {
@@ -517,8 +439,8 @@ public class ApiServer implements HttpRequestHandler {
 
             ctx.setAccountId(asyncCmd.getEntityOwnerId());
 
-            Long instanceId = (objectId == null) ? asyncCmd.getInstanceId() : objectId;            
-            AsyncJobVO job = new AsyncJobVO(callerUserId, caller.getId(), cmdObj.getClass().getName(), 
+            Long instanceId = (objectId == null) ? asyncCmd.getInstanceId() : objectId;
+            AsyncJobVO job = new AsyncJobVO(callerUserId, caller.getId(), cmdObj.getClass().getName(),
                     ApiGsonHelper.getBuilder().create().toJson(params), instanceId, asyncCmd.getInstanceType());
 
             long jobId = _asyncMgr.submitAsyncJob(job);
@@ -541,7 +463,20 @@ public class ApiServer implements HttpRequestHandler {
 
             // if the command is of the listXXXCommand, we will need to also return the
             // the job id and status if possible
-            if (cmdObj instanceof BaseListCmd) {
+            if (cmdObj instanceof BaseListCmd && !(cmdObj instanceof ListVMsCmd) && !(cmdObj instanceof ListRoutersCmd)
+                    && !(cmdObj instanceof ListSecurityGroupsCmd)
+                    && !(cmdObj instanceof ListTagsCmd)
+                    && !(cmdObj instanceof ListEventsCmd)
+                    && !(cmdObj instanceof ListVMGroupsCmd)
+                    && !(cmdObj instanceof ListProjectsCmd)
+                    && !(cmdObj instanceof ListProjectAccountsCmd)
+                    && !(cmdObj instanceof ListProjectInvitationsCmd)
+                    && !(cmdObj instanceof ListHostsCmd)
+                    && !(cmdObj instanceof ListVolumesCmd)
+                    && !(cmdObj instanceof ListUsersCmd)
+                    && !(cmdObj instanceof ListAccountsCmd)
+                    && !(cmdObj instanceof ListStoragePoolsCmd)
+                    ) {
                 buildAsyncListResponse((BaseListCmd) cmdObj, caller);
             }
 
@@ -566,17 +501,22 @@ public class ApiServer implements HttpRequestHandler {
                 return;
             }
 
-            // Using maps might possibly be more efficient if the set is large enough but for now, we'll just do a
-            // comparison of two lists. Either way, there shouldn't be too many async jobs active for the account.
+            Map<String, AsyncJob> objectJobMap = new HashMap<String, AsyncJob>();
             for (AsyncJob job : jobs) {
                 if (job.getInstanceId() == null) {
                     continue;
                 }
-                for (ResponseObject response : responses) {
-                    if (response.getObjectId() != null && job.getInstanceId().longValue() == response.getObjectId().longValue()) {
-                        response.setJobId(job.getId());
-                        response.setJobStatus(job.getStatus());
-                    }
+                String instanceUuid = ApiDBUtils.findJobInstanceUuid(job);
+                if (instanceUuid != null) {
+                    objectJobMap.put(instanceUuid, job);
+                }
+            }
+
+            for (ResponseObject response : responses) {
+                if (response.getObjectId() != null && objectJobMap.containsKey(response.getObjectId())) {
+                    AsyncJob job = objectJobMap.get(response.getObjectId());
+                    response.setJobId(job.getUuid());
+                    response.setJobStatus(job.getStatus());
                 }
             }
         }
@@ -592,12 +532,6 @@ public class ApiServer implements HttpRequestHandler {
         } else {
             auditTrailSb.append(StringUtils.cleanString(result));
         }
-    }
-    
-    private static boolean isCommandAvailable(String commandName) {
-        boolean isCommandAvailable = false;
-        isCommandAvailable = s_allCommands.contains(commandName);
-        return isCommandAvailable;
     }
 
     public boolean verifyRequest(Map<String, Object[]> requestParameters, Long userId) throws ServerApiException {
@@ -617,20 +551,17 @@ public class ApiServer implements HttpRequestHandler {
 
             // if userId not null, that mean that user is logged in
             if (userId != null) {
-                Long accountId = ApiDBUtils.findUserById(userId).getAccountId();
-                Account userAccount = _accountMgr.getAccount(accountId);
-                short accountType = userAccount.getType();
-
-                if (!isCommandAvailable(accountType, commandName)) {
-                    s_logger.warn("The given command:" + commandName + " does not exist");
-                    throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command does not exist");
+            	User user = ApiDBUtils.findUserById(userId);
+                if (!isCommandAvailable(user, commandName)) {
+                    s_logger.warn("The given command:" + commandName + " does not exist or it is not available for user");
+                    throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command does not exist or it is not available for user");
                 }
                 return true;
             } else {
                 // check against every available command to see if the command exists or not
-                if (!isCommandAvailable(commandName) && !commandName.equals("login") && !commandName.equals("logout")) {
-                    s_logger.warn("The given command:" + commandName + " does not exist");
-                    throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command does not exist");
+                if (!isCommandAvailable(null, commandName) && !commandName.equals("login") && !commandName.equals("logout")) {
+                    s_logger.warn("The given command:" + commandName + " does not exist or it is not available for user");
+                    throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command does not exist or it is not available for user");
                 }
             }
 
@@ -722,9 +653,9 @@ public class ApiServer implements HttpRequestHandler {
 
             UserContext.updateContext(user.getId(), account, null);
 
-            if (!isCommandAvailable(account.getType(), commandName)) {
-                s_logger.warn("The given command:" + commandName + " does not exist");
-                throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command:" + commandName + " does not exist");
+            if (!isCommandAvailable(user, commandName)) {
+                s_logger.warn("The given command:" + commandName + " does not exist or it is not available for user");
+                throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command:" + commandName + " does not exist or it is not available for user");
             }
 
             // verify secret key exists
@@ -755,7 +686,7 @@ public class ApiServer implements HttpRequestHandler {
         }
         return false;
     }
-    
+
     public Long fetchDomainId(String domainUUID){
         ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
         IdentityDao identityDao = locator.getDao(IdentityDao.class);
@@ -806,19 +737,19 @@ public class ApiServer implements HttpRequestHandler {
             if(user.getUuid() != null){
                 session.setAttribute("user_UUID", user.getUuid());
             }
-            
+
             session.setAttribute("username", userAcct.getUsername());
             session.setAttribute("firstname", userAcct.getFirstname());
             session.setAttribute("lastname", userAcct.getLastname());
             session.setAttribute("accountobj", account);
             session.setAttribute("account", account.getAccountName());
-            
+
             session.setAttribute("domainid", account.getDomainId());
             DomainVO domain = (DomainVO) _domainMgr.getDomain(account.getDomainId());
             if(domain.getUuid() != null){
                 session.setAttribute("domain_UUID", domain.getUuid());
             }
-            
+
             session.setAttribute("type", Short.valueOf(account.getType()).toString());
             session.setAttribute("registrationtoken", userAcct.getRegistrationToken());
             session.setAttribute("registered", new Boolean(userAcct.isRegistered()).toString());
@@ -860,23 +791,17 @@ public class ApiServer implements HttpRequestHandler {
         return true;
     }
 
-    public static boolean isCommandAvailable(short accountType, String commandName) {
-        boolean isCommandAvailable = false;
-        switch (accountType) {
-        case Account.ACCOUNT_TYPE_ADMIN:
-            isCommandAvailable = s_adminCommands.contains(commandName);
-            break;
-        case Account.ACCOUNT_TYPE_DOMAIN_ADMIN:
-            isCommandAvailable = s_resellerCommands.contains(commandName);
-            break;
-        case Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN:
-            isCommandAvailable = s_resourceDomainAdminCommands.contains(commandName);
-            break;
-        case Account.ACCOUNT_TYPE_NORMAL:
-            isCommandAvailable = s_userCommands.contains(commandName);
-            break;
+    private boolean isCommandAvailable(User user, String commandName) {
+        for (APIAccessChecker apiChecker : _apiAccessCheckers) {
+            // Fail the checking if any checker fails to verify
+            if (!apiChecker.canAccessAPI(user, commandName))
+                return false;
         }
-        return isCommandAvailable;
+        return true;
+    }
+
+    private Class<?> getCmdClass(String cmdName) {
+        return _apiNameCmdClassMap.get(cmdName);
     }
 
     // FIXME: rather than isError, we might was to pass in the status code to give more flexibility
@@ -1012,8 +937,7 @@ public class ApiServer implements HttpRequestHandler {
 
     public String getSerializedApiError(int errorCode, String errorText, Map<String, Object[]> apiCommandParams, String responseType, Exception ex) {
         String responseName = null;
-        String cmdClassName = null;
-
+        Class<?> cmdClass = null;
         String responseText = null;
 
         try {
@@ -1024,10 +948,9 @@ public class ApiServer implements HttpRequestHandler {
                 // cmd name can be null when "command" parameter is missing in the request
                 if (cmdObj != null) {
                     String cmdName = ((String[]) cmdObj)[0];
-                    cmdClassName = _apiCommands.getProperty(cmdName);
-                    if (cmdClassName != null) {
-                        Class<?> claz = Class.forName(cmdClassName);
-                        responseName = ((BaseCmd) claz.newInstance()).getCommandName();
+                    cmdClass = getCmdClass(cmdName);
+                    if (cmdClass != null) {
+                        responseName = ((BaseCmd) cmdClass.newInstance()).getCommandName();
                     } else {
                         responseName = "errorresponse";
                     }
@@ -1048,34 +971,31 @@ public class ApiServer implements HttpRequestHandler {
             		// Cast the exception appropriately and retrieve the IdentityProxy
             		if (ex instanceof ServerApiException) {
             			ServerApiException ref = (ServerApiException) ex;
-            			ArrayList<IdentityProxy> idList = ref.getIdProxyList();
+            			ArrayList<String> idList = ref.getIdProxyList();
             			if (idList != null) {
             				for (int i=0; i < idList.size(); i++) {
-            					IdentityProxy id = idList.get(i);
-            					apiResponse.addProxyObject(id.getTableName(), id.getValue(), id.getidFieldName());
-            				}            				
+            					apiResponse.addProxyObject(idList.get(i));
+					}
             			}
             			// Also copy over the cserror code and the function/layer in which it was thrown.
             			apiResponse.setCSErrorCode(ref.getCSErrorCode());
             		} else if (ex instanceof PermissionDeniedException) {
             			PermissionDeniedException ref = (PermissionDeniedException) ex;
-            			ArrayList<IdentityProxy> idList = ref.getIdProxyList();
+            			ArrayList<String> idList = ref.getIdProxyList();
             			if (idList != null) {
             				for (int i=0; i < idList.size(); i++) {
-            					IdentityProxy id = idList.get(i);
-            					apiResponse.addProxyObject(id.getTableName(), id.getValue(), id.getidFieldName());
-            				}            				
+            					apiResponse.addProxyObject(idList.get(i));
+					}
             			}
             			// Also copy over the cserror code and the function/layer in which it was thrown.
             			apiResponse.setCSErrorCode(ref.getCSErrorCode());
             		} else if (ex instanceof InvalidParameterValueException) {
             			InvalidParameterValueException ref = (InvalidParameterValueException) ex;
-            			ArrayList<IdentityProxy> idList = ref.getIdProxyList();
+            			ArrayList<String> idList = ref.getIdProxyList();
             			if (idList != null) {
             				for (int i=0; i < idList.size(); i++) {
-            					IdentityProxy id = idList.get(i);
-            					apiResponse.addProxyObject(id.getTableName(), id.getValue(), id.getidFieldName());
-            				}            				
+            					apiResponse.addProxyObject(idList.get(i));
+					}
             			}
             			// Also copy over the cserror code and the function/layer in which it was thrown.
             			apiResponse.setCSErrorCode(ref.getCSErrorCode());
@@ -1086,7 +1006,7 @@ public class ApiServer implements HttpRequestHandler {
             responseText = ApiResponseSerializer.toSerializedString(apiResponse, responseType);
 
         } catch (Exception e) {
-            s_logger.error("Exception responding to http request", e);            
+            s_logger.error("Exception responding to http request", e);
         }
         return responseText;
     }

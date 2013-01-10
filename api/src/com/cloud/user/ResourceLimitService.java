@@ -28,7 +28,7 @@ public interface ResourceLimitService {
 
     /**
      * Updates an existing resource limit with the specified details. If a limit doesn't exist, will create one.
-     * 
+     *
      * @param accountId
      *            TODO
      * @param domainId
@@ -37,14 +37,14 @@ public interface ResourceLimitService {
      *            TODO
      * @param max
      *            TODO
-     * 
+     *
      * @return the updated/created resource limit
      */
     ResourceLimit updateResourceLimit(Long accountId, Long domainId, Integer resourceType, Long max);
 
     /**
      * Updates an existing resource count details for the account/domain
-     * 
+     *
      * @param accountId
      *            TODO
      * @param domainId
@@ -57,7 +57,7 @@ public interface ResourceLimitService {
 
     /**
      * Search for resource limits for the given id and/or account and/or type and/or domain.
-     * 
+     *
      * @param id
      *            TODO
      * @param accountId
@@ -73,7 +73,7 @@ public interface ResourceLimitService {
     /**
      * Finds the resource limit for a specified account and type. If the account has an infinite limit, will check
      * the account's parent domain, and if that limit is also infinite, will return the ROOT domain's limit.
-     * 
+     *
      * @param account
      * @param type
      * @return resource limit
@@ -81,9 +81,19 @@ public interface ResourceLimitService {
     public long findCorrectResourceLimitForAccount(Account account, ResourceType type);
 
     /**
+     * This call should be used when we have already queried resource limit for an account. This is to handle
+     * some corner cases where queried limit may be null.
+     * @param accountType
+     * @param limit
+     * @param type
+     * @return
+     */
+    public long findCorrectResourceLimitForAccount(short accountType, Long limit, ResourceType type);
+
+    /**
      * Finds the resource limit for a specified domain and type. If the domain has an infinite limit, will check
      * up the domain hierarchy
-     * 
+     *
      * @param account
      * @param type
      * @return resource limit
@@ -92,7 +102,7 @@ public interface ResourceLimitService {
 
     /**
      * Increments the resource count
-     * 
+     *
      * @param accountId
      * @param type
      * @param delta
@@ -101,7 +111,7 @@ public interface ResourceLimitService {
 
     /**
      * Decrements the resource count
-     * 
+     *
      * @param accountId
      * @param type
      * @param delta
@@ -110,7 +120,7 @@ public interface ResourceLimitService {
 
     /**
      * Checks if a limit has been exceeded for an account
-     * 
+     *
      * @param account
      * @param type
      * @param count
@@ -122,7 +132,7 @@ public interface ResourceLimitService {
 
     /**
      * Gets the count of resources for a resource type and account
-     * 
+     *
      * @param account
      * @param type
      * @return count of resources

@@ -30,10 +30,11 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="op_nwgrp_work")
-public class SecurityGroupWorkVO implements SecurityGroupWork{
+public class SecurityGroupWorkVO implements SecurityGroupWork, InternalIdentity {
 	
 	
     @Id
@@ -67,7 +68,7 @@ public class SecurityGroupWorkVO implements SecurityGroupWork{
     protected SecurityGroupWorkVO() {
     }
     
-    public Long getId() {
+    public long getId() {
         return id;
     }
     

@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -34,79 +34,80 @@ import javax.persistence.InheritanceType;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
-import com.cloud.api.Identity;
+import org.apache.cloudstack.api.Identity;
 import com.cloud.network.dao.FirewallRulesCidrsDaoImpl;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.NetUtils;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="firewall_rules")
 @Inheritance(strategy=InheritanceType.JOINED)
 @DiscriminatorColumn(name="purpose", discriminatorType=DiscriminatorType.STRING, length=32)
-public class FirewallRuleVO implements Identity, FirewallRule {
+public class FirewallRuleVO implements FirewallRule {
     protected final FirewallRulesCidrsDaoImpl _firewallRulesCidrsDao = ComponentLocator.inject(FirewallRulesCidrsDaoImpl.class);
-    
+
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
     long id;
-    
+
     @GeneratedValue(strategy=GenerationType.AUTO)
     @Column(name=GenericDao.XID_COLUMN)
     String xId;
 
     @Column(name="domain_id", updatable=false)
     long domainId;
-    
+
     @Column(name="account_id", updatable=false)
     long accountId;
-    
+
     @Column(name="ip_address_id", updatable=false)
     Long sourceIpAddressId;
-    
+
     @Column(name="start_port", updatable=false)
     Integer sourcePortStart;
 
     @Column(name="end_port", updatable=false)
     Integer sourcePortEnd;
-    
+
     @Column(name="protocol", updatable=false)
     String protocol = NetUtils.TCP_PROTO;
-    
+
     @Enumerated(value=EnumType.STRING)
     @Column(name="purpose")
     Purpose purpose;
-    
+
     @Enumerated(value=EnumType.STRING)
     @Column(name="state")
     State state;
-    
+
     @Column(name=GenericDao.CREATED_COLUMN)
     Date created;
-    
+
     @Column(name="network_id")
     long networkId;
-    
+
     @Column(name="icmp_code")
     Integer icmpCode;
-    
+
     @Column(name="icmp_type")
     Integer icmpType;
-    
+
 
     @Column(name="related")
     Long related;
-    
+
     @Column(name="type")
     @Enumerated(value=EnumType.STRING)
     FirewallRuleType type;
-    
+
     @Column(name="traffic_type")
     @Enumerated(value=EnumType.STRING)
     TrafficType trafficType;
-    
-    
+
+
     // This is a delayed load value.  If the value is null,
     // then this field has not been loaded yet.
     // Call firewallrules dao to load it.
@@ -124,7 +125,7 @@ public class FirewallRuleVO implements Identity, FirewallRule {
     public List<String> getSourceCidrList() {
         if (sourceCidrs == null && (purpose == Purpose.Firewall || purpose == Purpose.NetworkACL)) {
             return _firewallRulesCidrsDao.getSourceCidrs(id);
-        }   
+        }
         return sourceCidrs;
     }
 
@@ -167,7 +168,7 @@ public class FirewallRuleVO implements Identity, FirewallRule {
     public String getProtocol() {
         return protocol;
     }
-    
+
     public void setState(State state) {
         this.state = state;
     }
@@ -176,17 +177,17 @@ public class FirewallRuleVO implements Identity, FirewallRule {
     public Purpose getPurpose() {
         return purpose;
     }
-    
+
     @Override
     public State getState() {
         return state;
     }
-    
+
     @Override
     public long getNetworkId() {
         return networkId;
     }
-   
+
     @Override
     public FirewallRuleType getType() {
     	return type;
@@ -194,12 +195,12 @@ public class FirewallRuleVO implements Identity, FirewallRule {
     public Date getCreated() {
         return created;
     }
-    
+
     protected FirewallRuleVO() {
     	this.uuid = UUID.randomUUID().toString();
     }
-    
-    public FirewallRuleVO(String xId, Long ipAddressId, Integer portStart, Integer portEnd, String protocol, 
+
+    public FirewallRuleVO(String xId, Long ipAddressId, Integer portStart, Integer portEnd, String protocol,
             long networkId, long accountId, long domainId, Purpose purpose, List<String> sourceCidrs, Integer icmpCode,
             Integer icmpType, Long related, TrafficType trafficType) {
         this.xId = xId;
@@ -208,11 +209,11 @@ public class FirewallRuleVO implements Identity, FirewallRule {
         }
         this.accountId = accountId;
         this.domainId = domainId;
-        
+
         if (ipAddressId == null) {
             assert (purpose == Purpose.NetworkACL) : "ipAddressId can be null for " + Purpose.NetworkACL + " only";
         }
-        
+
         this.sourceIpAddressId = ipAddressId;
         this.sourcePortStart = portStart;
         this.sourcePortEnd = portEnd;
@@ -223,28 +224,28 @@ public class FirewallRuleVO implements Identity, FirewallRule {
         this.icmpCode = icmpCode;
         this.icmpType = icmpType;
         this.sourceCidrs = sourceCidrs;
-        
+
         if (related != null) {
             assert (purpose == Purpose.Firewall) : "related field can be set for rule of purpose " + Purpose.Firewall + " only";
         }
-        
+
         this.related = related;
     	this.uuid = UUID.randomUUID().toString();
     	this.type = FirewallRuleType.User;
     	this.trafficType = trafficType;
     }
-    
-    
-    public FirewallRuleVO(String xId, long ipAddressId, int port, String protocol, long networkId, long accountId, 
+
+
+    public FirewallRuleVO(String xId, long ipAddressId, int port, String protocol, long networkId, long accountId,
             long domainId, Purpose purpose, List<String> sourceCidrs, Integer icmpCode, Integer icmpType, Long related) {
         this(xId, ipAddressId, port, port, protocol, networkId, accountId, domainId, purpose, sourceCidrs, icmpCode, icmpType, related, null);
     }
-    
+
     @Override
     public String toString() {
         return new StringBuilder("Rule[").append(id).append("-").append(purpose).append("-").append(state).append("]").toString();
     }
-    
+
     @Override
     public Integer getIcmpCode() {
         return icmpCode;
@@ -259,16 +260,16 @@ public class FirewallRuleVO implements Identity, FirewallRule {
     public Long getRelated() {
         return related;
     }
-    
+
     @Override
     public String getUuid() {
     	return this.uuid;
     }
-    
+
     public void setUuid(String uuid) {
     	this.uuid = uuid;
     }
-    
+
     public void setType(FirewallRuleType type) {
     	this.type = type;
     }

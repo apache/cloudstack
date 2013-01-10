@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -24,6 +24,21 @@ import java.util.Map;
 import com.cloud.agent.manager.ClusteredAgentManagerImpl;
 import com.cloud.alert.AlertManagerImpl;
 import com.cloud.alert.dao.AlertDaoImpl;
+import com.cloud.api.query.QueryManagerImpl;
+import com.cloud.api.query.dao.AccountJoinDaoImpl;
+import com.cloud.api.query.dao.AsyncJobJoinDaoImpl;
+import com.cloud.api.query.dao.DomainRouterJoinDaoImpl;
+import com.cloud.api.query.dao.InstanceGroupJoinDaoImpl;
+import com.cloud.api.query.dao.ProjectAccountJoinDaoImpl;
+import com.cloud.api.query.dao.ProjectInvitationJoinDaoImpl;
+import com.cloud.api.query.dao.ProjectJoinDaoImpl;
+import com.cloud.api.query.dao.ResourceTagJoinDaoImpl;
+import com.cloud.api.query.dao.SecurityGroupJoinDaoImpl;
+import com.cloud.api.query.dao.StoragePoolJoinDaoImpl;
+import com.cloud.api.query.dao.UserAccountJoinDaoImpl;
+import com.cloud.api.query.dao.UserVmJoinDaoImpl;
+import com.cloud.api.query.dao.HostJoinDaoImpl;
+import com.cloud.api.query.dao.VolumeJoinDaoImpl;
 import com.cloud.async.AsyncJobExecutorContextImpl;
 import com.cloud.async.AsyncJobManagerImpl;
 import com.cloud.async.SyncQueueManagerImpl;
@@ -208,6 +223,8 @@ import com.cloud.vm.dao.SecondaryStorageVmDaoImpl;
 import com.cloud.vm.dao.UserVmDaoImpl;
 import com.cloud.vm.dao.UserVmDetailsDaoImpl;
 import com.cloud.vm.dao.VMInstanceDaoImpl;
+import com.cloud.event.dao.EventJoinDaoImpl;
+
 
 
 public class DefaultComponentLibrary extends ComponentLibraryBase implements ComponentLibrary {
@@ -305,6 +322,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("NetworkOfferingDao", NetworkOfferingDaoImpl.class);
         addDao("NicDao", NicDaoImpl.class);
         addDao("InstanceGroupDao", InstanceGroupDaoImpl.class);
+        addDao("InstanceGroupJoinDao", InstanceGroupJoinDaoImpl.class);
         addDao("InstanceGroupVMMapDao", InstanceGroupVMMapDaoImpl.class);
         addDao("RemoteAccessVpnDao", RemoteAccessVpnDaoImpl.class);
         addDao("VpnUserDao", VpnUserDaoImpl.class);
@@ -357,6 +375,21 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("Site2SiteVpnGatewayDao", Site2SiteVpnGatewayDaoImpl.class);
         addDao("Site2SiteCustomerGatewayDao", Site2SiteCustomerGatewayDaoImpl.class);
         addDao("Site2SiteVpnConnnectionDao", Site2SiteVpnConnectionDaoImpl.class);
+
+        addDao("UserVmJoinDao", UserVmJoinDaoImpl.class);
+        addDao("DomainRouterJoinDao", DomainRouterJoinDaoImpl.class);
+        addDao("SecurityGroupJoinDao", SecurityGroupJoinDaoImpl.class);
+        addDao("ResourceTagJoinDao", ResourceTagJoinDaoImpl.class);
+        addDao("EventJoinDao", EventJoinDaoImpl.class);
+        addDao("UserAccountJoinDao", UserAccountJoinDaoImpl.class);
+        addDao("ProjectJoinDao", ProjectJoinDaoImpl.class);
+        addDao("ProjectAccountJoinDao", ProjectAccountJoinDaoImpl.class);
+        addDao("ProjectInvitationJoinDao", ProjectInvitationJoinDaoImpl.class);
+        addDao("HostJoinDao", HostJoinDaoImpl.class);
+        addDao("VolumeJoinDao", VolumeJoinDaoImpl.class);
+        addDao("AccountJoinDao", AccountJoinDaoImpl.class);
+        addDao("AsyncJobJoinDao", AsyncJobJoinDaoImpl.class);
+        addDao("StoragePoolJoinDao", StoragePoolJoinDaoImpl.class);
     }
 
     @Override
@@ -364,6 +397,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         if (_daos.size() == 0) {
             populateDaos();
         }
+        //FIXME: Incorrect method return definition
         return _daos;
     }
 
@@ -417,6 +451,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addManager("NetworkACLManager", NetworkACLManagerImpl.class);
         addManager("TaggedResourcesManager", TaggedResourceManagerImpl.class);
         addManager("Site2SiteVpnManager", Site2SiteVpnManagerImpl.class);
+        addManager("QueryManager", QueryManagerImpl.class);
     }
 
     @Override

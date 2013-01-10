@@ -21,10 +21,10 @@ public class ClusterSyncCommand extends Command implements CronCommand {
     int _interval;
 
     long _clusterId;
-    
+
     public ClusterSyncCommand() {
     }
-    
+
     public ClusterSyncCommand(int interval, long clusterId){
         _interval = interval;
         _clusterId = clusterId;
@@ -34,7 +34,7 @@ public class ClusterSyncCommand extends Command implements CronCommand {
     public int getInterval() {
         return _interval;
     }
-    
+
     public long getClusterId() {
         return _clusterId;
     }
@@ -43,5 +43,5 @@ public class ClusterSyncCommand extends Command implements CronCommand {
     public boolean executeInSequence() {
         return false;
     }
-    
+
 }

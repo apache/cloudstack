@@ -34,10 +34,11 @@ import com.cloud.ha.HighAvailabilityManager.WorkType;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="op_ha_work")
-public class HaWorkVO {
+public class HaWorkVO implements InternalIdentity {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
@@ -87,7 +88,7 @@ public class HaWorkVO {
     protected HaWorkVO() {
     }
     
-    public Long getId() {
+    public long getId() {
         return id;
     }
     

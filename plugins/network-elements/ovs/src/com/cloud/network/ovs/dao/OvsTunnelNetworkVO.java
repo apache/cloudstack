@@ -17,6 +17,8 @@
 
 package com.cloud.network.ovs.dao;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -26,7 +28,7 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name=("ovs_tunnel_network"))
-public class OvsTunnelNetworkVO {
+public class OvsTunnelNetworkVO implements InternalIdentity {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "id")

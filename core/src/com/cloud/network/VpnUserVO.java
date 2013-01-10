@@ -27,12 +27,13 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.api.Identity;
+import org.apache.cloudstack.api.Identity;
 import com.cloud.utils.db.Encrypt;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name=("vpn_users"))
-public class VpnUserVO implements VpnUser, Identity {
+public class VpnUserVO implements VpnUser {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")

@@ -19,11 +19,9 @@ package com.cloud.user;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.acl.ControlledEntity;
-import com.cloud.acl.SecurityChecker.AccessType;
-import com.cloud.domain.Domain;
+import org.apache.cloudstack.acl.ControlledEntity;
+import com.cloud.api.query.vo.ControlledViewEntity;
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.utils.Pair;
@@ -93,8 +91,14 @@ public interface AccountManager extends AccountService {
 	void buildACLSearchBuilder(SearchBuilder<? extends ControlledEntity> sb, Long domainId,
 			boolean isRecursive, List<Long> permittedAccounts, ListProjectResourcesCriteria listProjectResourcesCriteria);
 
+    void buildACLViewSearchBuilder(SearchBuilder<? extends ControlledViewEntity> sb, Long domainId,
+            boolean isRecursive, List<Long> permittedAccounts, ListProjectResourcesCriteria listProjectResourcesCriteria);
+
 	void buildACLSearchCriteria(SearchCriteria<? extends ControlledEntity> sc,
 			Long domainId, boolean isRecursive, List<Long> permittedAccounts, ListProjectResourcesCriteria listProjectResourcesCriteria);
+
+    void buildACLViewSearchCriteria(SearchCriteria<? extends ControlledViewEntity> sc,
+            Long domainId, boolean isRecursive, List<Long> permittedAccounts, ListProjectResourcesCriteria listProjectResourcesCriteria);
 
 	void buildACLSearchParameters(Account caller, Long id,
 			String accountName, Long projectId, List<Long> permittedAccounts, Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject, boolean listAll, boolean forProjectInvitation);

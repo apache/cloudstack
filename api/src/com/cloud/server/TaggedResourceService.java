@@ -19,12 +19,10 @@ package com.cloud.server;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.api.commands.ListTagsCmd;
 import com.cloud.server.ResourceTag.TaggedResourceType;
-import com.cloud.utils.Pair;
 
 public interface TaggedResourceService {
-    
+
     TaggedResourceType getResourceType (String resourceTypeStr);
 
     /**
@@ -43,11 +41,6 @@ public interface TaggedResourceService {
      */
     String getUuid(String resourceId, TaggedResourceType resourceType);
 
-    /**
-     * @param listTagsCmd
-     * @return
-     */
-    Pair<List<? extends ResourceTag>, Integer> listTags(ListTagsCmd listTagsCmd);
 
     /**
      * @param resourceIds
@@ -56,6 +49,6 @@ public interface TaggedResourceService {
      * @return
      */
     boolean deleteTags(List<String> resourceIds, TaggedResourceType resourceType, Map<String, String> tags);
-    
+
     List<? extends ResourceTag> listByResourceTypeAndId(TaggedResourceType type, long resourceId);
 }

@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -16,11 +16,26 @@
 // under the License.
 package com.cloud.offerings;
 
-import com.cloud.api.Identity;
+import com.cloud.network.Networks;
+
+import java.util.Date;
+import java.util.UUID;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+import org.apache.cloudstack.api.Identity;
 import com.cloud.network.Network;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.InternalIdentity;
 
 import javax.persistence.*;
 import java.util.Date;
@@ -28,7 +43,7 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "network_offerings")
-public class NetworkOfferingVO implements NetworkOffering, Identity {
+public class NetworkOfferingVO implements NetworkOffering {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -303,7 +318,7 @@ public class NetworkOfferingVO implements NetworkOffering, Identity {
 
     /**
      * Network Offering for all system vms.
-     * 
+     *
      * @param name
      * @param trafficType
      * @param specifyIpRanges
@@ -313,9 +328,9 @@ public class NetworkOfferingVO implements NetworkOffering, Identity {
         this(name, "System Offering for " + name, trafficType, true, false, 0, 0, true, Availability.Required, null, null, true, specifyIpRanges);
         this.state = State.Enabled;
     }
-    
+
     public NetworkOfferingVO(String name, Network.GuestType guestType) {
-        this(name, "System Offering for " + name, TrafficType.Guest, true, true, 0, 0, true, Availability.Optional, 
+        this(name, "System Offering for " + name, TrafficType.Guest, true, true, 0, 0, true, Availability.Optional,
                 null, Network.GuestType.Isolated, true, false);
         this.state = State.Enabled;
     }

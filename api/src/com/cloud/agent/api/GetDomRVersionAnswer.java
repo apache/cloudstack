@@ -21,24 +21,24 @@ public class GetDomRVersionAnswer extends Answer {
     public static final String ROUTER_IP = "router.ip";
     String templateVersion;
     String scriptsVersion;
-    
+
     protected GetDomRVersionAnswer() {
     }
-    
+
     public GetDomRVersionAnswer(GetDomRVersionCmd cmd, String details, String templateVersion, String scriptsVersion) {
         super(cmd, true, details);
         this.templateVersion = templateVersion;
         this.scriptsVersion = scriptsVersion;
     }
-    
+
     public GetDomRVersionAnswer(GetDomRVersionCmd cmd, String details) {
         super(cmd, false, details);
     }
-    
+
     public String getTemplateVersion() {
         return this.templateVersion;
     }
-    
+
     public String getScriptsVersion() {
         return this.scriptsVersion;
     }

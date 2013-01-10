@@ -57,7 +57,7 @@ public class PxeServerManagerImpl implements PxeServerManager, ResourceStateAdap
 	@Inject ResourceManager _resourceMgr;
 	@Inject(adapter=PxeServerService.class)
 	protected Adapters<PxeServerService> _services;
-	
+
 	@Override
 	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
 		_name = name;
@@ -89,8 +89,8 @@ public class PxeServerManagerImpl implements PxeServerManager, ResourceStateAdap
 		}
 		return _service;
 	}
-	
-	
+
+
 	@Override
 	public Host addPxeServer(PxeServerProfile profile) {
 		return getServiceByType(profile.getType()).addPxeServer(profile);
@@ -99,7 +99,7 @@ public class PxeServerManagerImpl implements PxeServerManager, ResourceStateAdap
 	@Override
 	public PxeServerResponse getApiResponse(Host pxeServer) {
 		PxeServerResponse response = new PxeServerResponse();
-		response.setId(pxeServer.getId());
+		response.setId(pxeServer.getUuid());
 		return response;
 	}
 
@@ -112,7 +112,7 @@ public class PxeServerManagerImpl implements PxeServerManager, ResourceStateAdap
     public boolean prepareCreateTemplate(PxeServerType type, Long pxeServerId, UserVm vm, String templateUrl) {
         return getServiceByType(type.getName()).prepareCreateTemplate(pxeServerId, vm, templateUrl);
     }
-    
+
     @Override
     public PxeServerType getPxeServerType(HostVO host) {
         if (host.getResource().equalsIgnoreCase(PingPxeServerResource.class.getName())) {
@@ -134,7 +134,7 @@ public class PxeServerManagerImpl implements PxeServerManager, ResourceStateAdap
         if (!(startup[0] instanceof StartupPxeServerCommand)) {
             return null;
         }
-        
+
         host.setType(Host.Type.PxeServer);
         return host;
     }

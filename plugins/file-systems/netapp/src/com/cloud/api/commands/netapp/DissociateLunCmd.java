@@ -18,13 +18,10 @@ package com.cloud.api.commands.netapp;
 
 import java.rmi.ServerException;
 
+import org.apache.cloudstack.api.*;
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseCmd;
-import com.cloud.api.Implementation;
-import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
+import org.apache.cloudstack.api.APICommand;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -35,7 +32,7 @@ import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.DissociateLunCmdResponse;
 import com.cloud.utils.component.ComponentLocator;
 
-@Implementation(description="Dissociate a LUN", responseObject = DissociateLunCmdResponse.class)
+@APICommand(name = "dissociateLun", description="Dissociate a LUN", responseObject = DissociateLunCmdResponse.class)
 public class DissociateLunCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(DissociateLunCmd.class.getName());
     private static final String s_name = "dissociatelunresponse";

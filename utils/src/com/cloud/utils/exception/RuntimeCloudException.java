@@ -23,53 +23,53 @@ import java.util.ArrayList;
 /**
  * by the API response serializer. Any exceptions that are thrown by
  * class, which extends Exception instead of RuntimeException like this
- * class does. 
+ * class does.
  */
 
 public class RuntimeCloudException extends RuntimeException {
-    
+
 	// This holds a list of uuids and their names. Add uuid:fieldname pairs
-	protected ArrayList<IdentityProxy> idList = new ArrayList<IdentityProxy>();
-	
+	protected ArrayList<String> idList = new ArrayList<String>();
+
 	protected int csErrorCode;
-	
-	public void addProxyObject(String tableName, Long id, String idFieldName) {
-		idList.add(new IdentityProxy(tableName, id, idFieldName));
+
+	public void addProxyObject(String uuid) {
+		idList.add(uuid);
 		return;
 	}
-	
+
 	public RuntimeCloudException(String message) {
 		super(message);
 		setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
 	}
-	
+
     public RuntimeCloudException(String message, Throwable cause) {
         super(message, cause);
         setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
     }
-    
+
     public void addProxyObject(Object voObj, Long id, String idFieldName) {
     	// Get the VO object's table name.
     	String tablename = AnnotationHelper.getTableName(voObj);
     	if (tablename != null) {
-    		addProxyObject(tablename, id, idFieldName);    		
+    		addProxyObject(tablename, id, idFieldName);
     	}
     	return;
     }
-    	
+
 	public RuntimeCloudException() {
 		super();
 		setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
 	}
-	
-	public ArrayList<IdentityProxy> getIdProxyList() {
+
+	public ArrayList<String> getIdProxyList() {
 		return idList;
 	}
-	
+
 	public void setCSErrorCode(int cserrcode) {
 		this.csErrorCode = cserrcode;
 	}
-	
+
 	public int getCSErrorCode() {
 		return this.csErrorCode;
 	}

@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -17,13 +17,62 @@
 package com.cloud.api;
 
 import java.util.ArrayList;
-import java.util.Hashtable;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.cloudstack.api.ApiConstants.HostDetails;
+import org.apache.cloudstack.api.ApiConstants.VMDetails;
+import org.apache.cloudstack.api.response.AccountResponse;
+import org.apache.cloudstack.api.response.AsyncJobResponse;
+import org.apache.cloudstack.api.response.DomainRouterResponse;
+import org.apache.cloudstack.api.response.EventResponse;
+import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.InstanceGroupResponse;
+import org.apache.cloudstack.api.response.ProjectAccountResponse;
+import org.apache.cloudstack.api.response.ProjectInvitationResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
+import org.apache.cloudstack.api.response.ResourceTagResponse;
+import org.apache.cloudstack.api.response.SecurityGroupResponse;
+import org.apache.cloudstack.api.response.StoragePoolResponse;
+import org.apache.cloudstack.api.response.UserResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.VolumeResponse;
+
+import com.cloud.api.query.dao.AccountJoinDao;
+import com.cloud.api.query.dao.AsyncJobJoinDao;
+import com.cloud.api.query.dao.DomainRouterJoinDao;
+import com.cloud.api.query.dao.HostJoinDao;
+import com.cloud.api.query.dao.InstanceGroupJoinDao;
+import com.cloud.api.query.dao.ProjectAccountJoinDao;
+import com.cloud.api.query.dao.ProjectInvitationJoinDao;
+import com.cloud.api.query.dao.ProjectJoinDao;
+import com.cloud.api.query.dao.ResourceTagJoinDao;
+import com.cloud.api.query.dao.SecurityGroupJoinDao;
+import com.cloud.api.query.dao.StoragePoolJoinDao;
+import com.cloud.api.query.dao.UserAccountJoinDao;
+import com.cloud.api.query.dao.UserVmJoinDao;
+import com.cloud.api.query.dao.VolumeJoinDao;
+import com.cloud.api.query.vo.AccountJoinVO;
+import com.cloud.api.query.vo.AsyncJobJoinVO;
+import com.cloud.api.query.vo.DomainRouterJoinVO;
+import com.cloud.api.query.vo.EventJoinVO;
+import com.cloud.api.query.vo.HostJoinVO;
+import com.cloud.api.query.vo.InstanceGroupJoinVO;
+import com.cloud.api.query.vo.ProjectAccountJoinVO;
+import com.cloud.api.query.vo.ProjectInvitationJoinVO;
+import com.cloud.api.query.vo.ProjectJoinVO;
+import com.cloud.api.query.vo.ResourceTagJoinVO;
+import com.cloud.api.query.vo.SecurityGroupJoinVO;
+import com.cloud.api.query.vo.StoragePoolJoinVO;
+import com.cloud.api.query.vo.UserAccountJoinVO;
+import com.cloud.api.query.vo.UserVmJoinVO;
+import com.cloud.api.query.vo.VolumeJoinVO;
+import com.cloud.async.AsyncJob;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
+import com.cloud.async.dao.AsyncJobDao;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
@@ -44,6 +93,8 @@ import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.event.Event;
+import com.cloud.event.dao.EventJoinDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.Host;
@@ -63,37 +114,61 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.NetworkRuleConfigVO;
 import com.cloud.network.NetworkVO;
+import com.cloud.network.PhysicalNetworkServiceProvider;
+import com.cloud.network.PhysicalNetworkVO;
 import com.cloud.network.Site2SiteVpnGatewayVO;
 import com.cloud.network.Site2SiteCustomerGatewayVO;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.as.AutoScalePolicy;
 import com.cloud.network.as.AutoScalePolicyConditionMapVO;
+import com.cloud.network.as.AutoScalePolicyVO;
 import com.cloud.network.as.AutoScaleVmGroupPolicyMapVO;
+import com.cloud.network.as.AutoScaleVmGroupVO;
+import com.cloud.network.as.AutoScaleVmProfileVO;
 import com.cloud.network.as.ConditionVO;
 import com.cloud.network.as.CounterVO;
 import com.cloud.network.as.dao.AutoScalePolicyConditionMapDao;
 import com.cloud.network.as.dao.AutoScalePolicyDao;
+import com.cloud.network.as.dao.AutoScaleVmGroupDao;
 import com.cloud.network.as.dao.AutoScaleVmGroupPolicyMapDao;
+import com.cloud.network.as.dao.AutoScaleVmProfileDao;
 import com.cloud.network.as.dao.ConditionDao;
 import com.cloud.network.as.dao.CounterDao;
 import com.cloud.network.dao.FirewallRulesCidrsDao;
+import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.NetworkDomainDao;
 import com.cloud.network.dao.NetworkRuleConfigDao;
+import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
+import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
+import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
+import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
+import com.cloud.network.router.VirtualRouter;
+import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.security.dao.SecurityGroupDao;
+import com.cloud.network.vpc.StaticRouteVO;
+import com.cloud.network.vpc.VpcGatewayVO;
 import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpc.VpcOffering;
+import com.cloud.network.vpc.VpcVO;
+import com.cloud.network.vpc.dao.StaticRouteDao;
+import com.cloud.network.vpc.dao.VpcGatewayDao;
+import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.projects.Project;
+import com.cloud.projects.ProjectAccount;
+import com.cloud.projects.ProjectInvitation;
 import com.cloud.projects.ProjectService;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.Criteria;
@@ -111,6 +186,7 @@ import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
 import com.cloud.storage.UploadVO;
@@ -118,6 +194,7 @@ import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateS3VO;
 import com.cloud.storage.VMTemplateSwiftVO;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.Type;
 import com.cloud.storage.VolumeHostVO;
 import com.cloud.storage.VolumeVO;
@@ -125,6 +202,7 @@ import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.UploadDao;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -134,12 +212,14 @@ import com.cloud.storage.dao.VMTemplateS3Dao;
 import com.cloud.storage.dao.VMTemplateSwiftDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeHostDao;
+import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.cloud.user.Account;
 import com.cloud.user.AccountDetailsDao;
 import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.SSHKeyPairVO;
 import com.cloud.user.User;
+import com.cloud.user.UserAccount;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
@@ -152,6 +232,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.UserVmDetailVO;
@@ -163,9 +244,9 @@ import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.UserVmData;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.network.vpc.dao.VpcDao;
 
 public class ApiDBUtils {
     private static ManagementServer _ms;
@@ -183,12 +264,14 @@ public class ApiDBUtils {
     private static DiskOfferingDao _diskOfferingDao;
     private static DomainDao _domainDao;
     private static DomainRouterDao _domainRouterDao;
+    private static DomainRouterJoinDao _domainRouterJoinDao;
     private static GuestOSDao _guestOSDao;
     private static GuestOSCategoryDao _guestOSCategoryDao;
     private static HostDao _hostDao;
     private static IPAddressDao _ipAddressDao;
     private static LoadBalancerDao _loadBalancerDao;
     private static SecurityGroupDao _securityGroupDao;
+    private static SecurityGroupJoinDao _securityGroupJoinDao;
     private static NetworkRuleConfigDao _networkRuleConfigDao;
     private static HostPodDao _podDao;
     private static ServiceOfferingDao _serviceOfferingDao;
@@ -203,6 +286,7 @@ public class ApiDBUtils {
     private static UserDao _userDao;
     private static UserStatisticsDao _userStatsDao;
     private static UserVmDao _userVmDao;
+    private static UserVmJoinDao _userVmJoinDao;
     private static VlanDao _vlanDao;
     private static VolumeDao _volumeDao;
     private static Site2SiteVpnGatewayDao _site2SiteVpnGatewayDao;
@@ -211,6 +295,7 @@ public class ApiDBUtils {
     private static DataCenterDao _zoneDao;
     private static NetworkOfferingDao _networkOfferingDao;
     private static NetworkDao _networkDao;
+    private static PhysicalNetworkDao _physicalNetworkDao;
     private static ConfigurationService _configMgr;
     private static ConfigurationDao _configDao;
     private static ConsoleProxyDao _consoleProxyDao;
@@ -231,7 +316,32 @@ public class ApiDBUtils {
     private static AutoScalePolicyConditionMapDao _asPolicyConditionMapDao;
     private static AutoScaleVmGroupPolicyMapDao _asVmGroupPolicyMapDao;
     private static AutoScalePolicyDao _asPolicyDao;
+    private static AutoScaleVmProfileDao _asVmProfileDao;
+    private static AutoScaleVmGroupDao _asVmGroupDao;
     private static CounterDao _counterDao;
+    private static ResourceTagJoinDao _tagJoinDao;
+    private static EventJoinDao _eventJoinDao;
+    private static InstanceGroupJoinDao _vmGroupJoinDao;
+    private static UserAccountJoinDao _userAccountJoinDao;
+    private static ProjectJoinDao _projectJoinDao;
+    private static ProjectAccountJoinDao _projectAccountJoinDao;
+    private static ProjectInvitationJoinDao _projectInvitationJoinDao;
+    private static HostJoinDao _hostJoinDao;
+    private static VolumeJoinDao _volJoinDao;
+    private static StoragePoolJoinDao _poolJoinDao;
+    private static AccountJoinDao _accountJoinDao;
+    private static AsyncJobJoinDao _jobJoinDao;
+
+    private static PhysicalNetworkTrafficTypeDao _physicalNetworkTrafficTypeDao;
+    private static PhysicalNetworkServiceProviderDao _physicalNetworkServiceProviderDao;
+    private static FirewallRulesDao _firewallRuleDao;
+    private static StaticRouteDao _staticRouteDao;
+    private static VpcGatewayDao _vpcGatewayDao;
+    private static VpcDao _vpcDao;
+    private static VpcOfferingDao _vpcOfferingDao;
+    private static SnapshotPolicyDao _snapshotPolicyDao;
+    private static AsyncJobDao _asyncJobDao;
+
     static {
         _ms = (ManagementServer) ComponentLocator.getComponent(ManagementServer.Name);
         ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
@@ -249,6 +359,7 @@ public class ApiDBUtils {
         _diskOfferingDao = locator.getDao(DiskOfferingDao.class);
         _domainDao = locator.getDao(DomainDao.class);
         _domainRouterDao = locator.getDao(DomainRouterDao.class);
+        _domainRouterJoinDao = locator.getDao(DomainRouterJoinDao.class);
         _guestOSDao = locator.getDao(GuestOSDao.class);
         _guestOSCategoryDao = locator.getDao(GuestOSCategoryDao.class);
         _hostDao = locator.getDao(HostDao.class);
@@ -268,6 +379,7 @@ public class ApiDBUtils {
         _userDao = locator.getDao(UserDao.class);
         _userStatsDao = locator.getDao(UserStatisticsDao.class);
         _userVmDao = locator.getDao(UserVmDao.class);
+        _userVmJoinDao = locator.getDao(UserVmJoinDao.class);
         _vlanDao = locator.getDao(VlanDao.class);
         _volumeDao = locator.getDao(VolumeDao.class);
         _site2SiteVpnGatewayDao = locator.getDao(Site2SiteVpnGatewayDao.class);
@@ -275,8 +387,10 @@ public class ApiDBUtils {
         _volumeHostDao = locator.getDao(VolumeHostDao.class);
         _zoneDao = locator.getDao(DataCenterDao.class);
         _securityGroupDao = locator.getDao(SecurityGroupDao.class);
+        _securityGroupJoinDao = locator.getDao(SecurityGroupJoinDao.class);
         _networkOfferingDao = locator.getDao(NetworkOfferingDao.class);
         _networkDao = locator.getDao(NetworkDao.class);
+        _physicalNetworkDao = locator.getDao(PhysicalNetworkDao.class);
         _configDao = locator.getDao(ConfigurationDao.class);
         _consoleProxyDao = locator.getDao(ConsoleProxyDao.class);
         _firewallCidrsDao = locator.getDao(FirewallRulesCidrsDao.class);
@@ -296,8 +410,30 @@ public class ApiDBUtils {
         _asPolicyConditionMapDao = locator.getDao(AutoScalePolicyConditionMapDao.class);
         _counterDao = locator.getDao(CounterDao.class);
         _asVmGroupPolicyMapDao = locator.getDao(AutoScaleVmGroupPolicyMapDao.class);
-        _asVmGroupPolicyMapDao = locator.getDao(AutoScaleVmGroupPolicyMapDao.class);
-        _counterDao = locator.getDao(CounterDao.class);
+        _tagJoinDao = locator.getDao(ResourceTagJoinDao.class);
+        _vmGroupJoinDao = locator.getDao(InstanceGroupJoinDao.class);
+        _eventJoinDao = locator.getDao(EventJoinDao.class);
+        _userAccountJoinDao = locator.getDao(UserAccountJoinDao.class);
+        _projectJoinDao = locator.getDao(ProjectJoinDao.class);
+        _projectAccountJoinDao = locator.getDao(ProjectAccountJoinDao.class);
+        _projectInvitationJoinDao = locator.getDao(ProjectInvitationJoinDao.class);
+        _hostJoinDao = locator.getDao(HostJoinDao.class);
+        _volJoinDao = locator.getDao(VolumeJoinDao.class);
+        _poolJoinDao = locator.getDao(StoragePoolJoinDao.class);
+        _accountJoinDao = locator.getDao(AccountJoinDao.class);
+        _jobJoinDao = locator.getDao(AsyncJobJoinDao.class);
+
+        _physicalNetworkTrafficTypeDao = locator.getDao(PhysicalNetworkTrafficTypeDao.class);
+        _physicalNetworkServiceProviderDao = locator.getDao(PhysicalNetworkServiceProviderDao.class);
+        _firewallRuleDao = locator.getDao(FirewallRulesDao.class);
+        _staticRouteDao = locator.getDao(StaticRouteDao.class);
+        _vpcGatewayDao = locator.getDao(VpcGatewayDao.class);
+        _asVmProfileDao = locator.getDao(AutoScaleVmProfileDao.class);
+        _asVmGroupDao = locator.getDao(AutoScaleVmGroupDao.class);
+        _vpcDao = locator.getDao(VpcDao.class);
+        _vpcOfferingDao = locator.getDao(VpcOfferingDao.class);
+        _snapshotPolicyDao = locator.getDao(SnapshotPolicyDao.class);
+        _asyncJobDao = locator.getDao(AsyncJobDao.class);
 
         // Note: stats collector should already have been initialized by this time, otherwise a null instance is returned
         _statsCollector = StatsCollector.getInstance();
@@ -348,7 +484,7 @@ public class ApiDBUtils {
         return _ms.getVersion();
     }
 
-    public static List<UserVmVO> searchForUserVMs(Criteria c, List<Long> permittedAccounts) {
+    public static List<UserVmJoinVO> searchForUserVMs(Criteria c, List<Long> permittedAccounts) {
         return _userVmMgr.searchForUserVMs(c, _accountDao.findById(Account.ACCOUNT_ID_SYSTEM),
                 null, false, permittedAccounts, false, null, null).first();
     }
@@ -369,6 +505,10 @@ public class ApiDBUtils {
         }
 
         return _resourceLimitMgr.findCorrectResourceLimitForAccount(account, type);
+    }
+
+    public static long findCorrectResourceLimit(Long limit, short accountType, ResourceType type) {
+        return _resourceLimitMgr.findCorrectResourceLimitForAccount(accountType, limit, type);
     }
 
     public static AsyncJobVO findInstancePendingAsyncJob(String instanceType, long instanceId) {
@@ -402,8 +542,8 @@ public class ApiDBUtils {
         return _storageMgr.getStoragePoolTags(poolId);
     }
 
-    public static boolean isLocalStorageActiveOnHost(Host host) {
-        return _storageMgr.isLocalStorageActiveOnHost(host);
+    public static boolean isLocalStorageActiveOnHost(Long hostId) {
+        return _storageMgr.isLocalStorageActiveOnHost(hostId);
     }
 
     public static InstanceGroupVO findInstanceGroupForVM(long vmId) {
@@ -469,7 +609,7 @@ public class ApiDBUtils {
     public static DomainVO findDomainByIdIncludingRemoved(Long domainId) {
         return _domainDao.findByIdIncludingRemoved(domainId);
     }
-    
+
     public static boolean isChildDomain(long parentId, long childId) {
     	return _domainDao.isChildDomain(parentId, childId);
     }
@@ -610,11 +750,11 @@ public class ApiDBUtils {
     public static Site2SiteVpnGatewayVO findVpnGatewayById(Long vpnGatewayId) {
         return _site2SiteVpnGatewayDao.findById(vpnGatewayId);
     }
-    
-    public static Site2SiteCustomerGatewayVO findCustomerGatewayById(Long customerGatewayId) {    	
-    	return _site2SiteCustomerGatewayDao.findById(customerGatewayId);
+
+    public static Site2SiteCustomerGatewayVO findCustomerGatewayById(Long customerGatewayId) {
+        return _site2SiteCustomerGatewayDao.findById(customerGatewayId);
     }
-    
+
     public static List<UserVO> listUsersByAccount(long accountId) {
         return _userDao.listByAccount(accountId);
     }
@@ -691,6 +831,14 @@ public class ApiDBUtils {
         return _vlanDao.listVlansByNetworkId(networkId);
     }
 
+    public static PhysicalNetworkVO findPhysicalNetworkById(long id) {
+        return _physicalNetworkDao.findById(id);
+    }
+
+    public static PhysicalNetworkTrafficTypeVO findPhysicalNetworkTrafficTypeById(long id) {
+        return _physicalNetworkTrafficTypeDao.findById(id);
+    }
+
     public static NetworkVO findNetworkById(long id) {
         return _networkDao.findById(id);
     }
@@ -757,10 +905,6 @@ public class ApiDBUtils {
         return _firewallCidrsDao.getSourceCidrs(id);
     }
 
-    public static Hashtable<Long, UserVmData> listVmDetails(Hashtable<Long, UserVmData> vmData){
-        return _userVmDao.listVmDetails(vmData);
-    }
-
     public static Account getProjectOwner(long projectId) {
         return _projectMgr.getProjectOwner(projectId);
     }
@@ -768,11 +912,11 @@ public class ApiDBUtils {
     public static Project findProjectByProjectAccountId(long projectAccountId) {
         return _projectMgr.findByProjectAccountId(projectAccountId);
     }
-    
+
     public static Project findProjectByProjectAccountIdIncludingRemoved(long projectAccountId) {
         return _projectMgr.findByProjectAccountIdIncludingRemoved(projectAccountId);
     }
-    
+
     public static Project findProjectById(long projectId) {
         return _projectMgr.getProject(projectId);
     }
@@ -826,15 +970,15 @@ public class ApiDBUtils {
     public static String getHaTag() {
         return _haMgr.getHaTag();
     }
-    
+
     public static Map<Service, Set<Provider>> listVpcOffServices(long vpcOffId) {
         return _vpcMgr.getVpcOffSvcProvidersMap(vpcOffId);
     }
-    
+
     public static List<? extends Network> listVpcNetworks(long vpcId) {
         return _networkMgr.listNetworksByVpc(vpcId);
     }
-    
+
     public static boolean canUseForDeploy(Network network) {
         return _networkMgr.canUseForDeploy(network);
     }
@@ -842,7 +986,7 @@ public class ApiDBUtils {
     public static String getUuid(String resourceId, TaggedResourceType resourceType) {
         return _taggedResourceService.getUuid(resourceId, resourceType);
     }
-    
+
     public static boolean isOfferingForVpc(NetworkOffering offering) {
         boolean vpcProvider = _configMgr.isOfferingForVpc(offering);
         return vpcProvider;
@@ -900,4 +1044,356 @@ public class ApiDBUtils {
 
     public static CounterVO getCounter(long counterId) {
         return _counterDao.findById(counterId);
-    }}
+    }
+
+    public static ConditionVO findConditionById(long conditionId){
+        return _asConditionDao.findById(conditionId);
+    }
+
+    public static PhysicalNetworkServiceProviderVO findPhysicalNetworkServiceProviderById(long providerId){
+        return _physicalNetworkServiceProviderDao.findById(providerId);
+    }
+
+    public static FirewallRuleVO findFirewallRuleById(long ruleId){
+        return _firewallRuleDao.findById(ruleId);
+    }
+
+    public static StaticRouteVO findStaticRouteById(long routeId){
+        return _staticRouteDao.findById(routeId);
+    }
+
+    public static VpcGatewayVO findVpcGatewayById(long gatewayId){
+        return _vpcGatewayDao.findById(gatewayId);
+    }
+
+    public static AutoScalePolicyVO findAutoScalePolicyById(long policyId){
+        return _asPolicyDao.findById(policyId);
+    }
+
+    public static AutoScaleVmProfileVO findAutoScaleVmProfileById(long profileId){
+        return _asVmProfileDao.findById(profileId);
+    }
+
+    public static AutoScaleVmGroupVO findAutoScaleVmGroupById(long groupId){
+        return _asVmGroupDao.findById(groupId);
+    }
+
+    public static GuestOSCategoryVO findGuestOsCategoryById(long catId){
+        return _guestOSCategoryDao.findById(catId);
+    }
+
+    public static VpcVO findVpcById(long vpcId){
+        return _vpcDao.findById(vpcId);
+    }
+
+    public static SnapshotPolicy findSnapshotPolicyById(long policyId){
+        return _snapshotPolicyDao.findById(policyId);
+    }
+
+    public static VpcOffering findVpcOfferingById(long offeringId){
+        return _vpcOfferingDao.findById(offeringId);
+    }
+
+
+    public static AsyncJob findAsyncJobById(long jobId){
+        return _asyncJobDao.findById(jobId);
+    }
+
+    public static String findJobInstanceUuid(AsyncJob job){
+        if ( job == null )
+            return null;
+        String jobInstanceId = null;
+        if (job.getInstanceType() == AsyncJob.Type.Volume) {
+            VolumeVO volume = ApiDBUtils.findVolumeById(job.getInstanceId());
+            if (volume != null) {
+                jobInstanceId = volume.getUuid();
+            }
+        } else if (job.getInstanceType() == AsyncJob.Type.Template || job.getInstanceType() == AsyncJob.Type.Iso) {
+            VMTemplateVO template = ApiDBUtils.findTemplateById(job.getInstanceId());
+            if (template != null) {
+                jobInstanceId = template.getUuid();
+            }
+        } else if (job.getInstanceType() == AsyncJob.Type.VirtualMachine || job.getInstanceType() == AsyncJob.Type.ConsoleProxy
+                || job.getInstanceType() == AsyncJob.Type.SystemVm || job.getInstanceType() == AsyncJob.Type.DomainRouter) {
+            VMInstanceVO vm = ApiDBUtils.findVMInstanceById(job.getInstanceId());
+            if (vm != null) {
+                jobInstanceId = vm.getUuid();
+            }
+        } else if (job.getInstanceType() == AsyncJob.Type.Snapshot) {
+            Snapshot snapshot = ApiDBUtils.findSnapshotById(job.getInstanceId());
+            if (snapshot != null) {
+                jobInstanceId = snapshot.getUuid();
+            }
+        } else if (job.getInstanceType() == AsyncJob.Type.Host) {
+            Host host = ApiDBUtils.findHostById(job.getInstanceId());
+            if (host != null) {
+                jobInstanceId = host.getUuid();
+            }
+        } else if (job.getInstanceType() == AsyncJob.Type.StoragePool) {
+            StoragePoolVO spool = ApiDBUtils.findStoragePoolById(job.getInstanceId());
+            if (spool != null) {
+                jobInstanceId = spool.getUuid();
+            }
+        } else if (job.getInstanceType() == AsyncJob.Type.IpAddress) {
+            IPAddressVO ip = ApiDBUtils.findIpAddressById(job.getInstanceId());
+            if (ip != null) {
+                jobInstanceId = ip.getUuid();
+            }
+        } else if (job.getInstanceType() == AsyncJob.Type.SecurityGroup) {
+            SecurityGroup sg = ApiDBUtils.findSecurityGroupById(job.getInstanceId());
+            if (sg != null) {
+                jobInstanceId = sg.getUuid();
+            }
+        } else if (job.getInstanceType() == AsyncJob.Type.PhysicalNetwork) {
+            PhysicalNetworkVO pnet = ApiDBUtils.findPhysicalNetworkById(job.getInstanceId());
+            if (pnet != null) {
+                jobInstanceId = pnet.getUuid();
+            }
+        } else if (job.getInstanceType() == AsyncJob.Type.TrafficType) {
+            PhysicalNetworkTrafficTypeVO trafficType = ApiDBUtils.findPhysicalNetworkTrafficTypeById(job.getInstanceId());
+            if (trafficType != null) {
+                jobInstanceId = trafficType.getUuid();
+            }
+        } else if (job.getInstanceType() == AsyncJob.Type.PhysicalNetworkServiceProvider) {
+            PhysicalNetworkServiceProvider sp = ApiDBUtils.findPhysicalNetworkServiceProviderById(job.getInstanceId());
+            if (sp != null) {
+                jobInstanceId = sp.getUuid();
+            }
+        } else if (job.getInstanceType() == AsyncJob.Type.FirewallRule) {
+            FirewallRuleVO fw = ApiDBUtils.findFirewallRuleById(job.getInstanceId());
+            if (fw != null) {
+                jobInstanceId = fw.getUuid();
+            }
+        } else if (job.getInstanceType() == AsyncJob.Type.Account) {
+            Account acct = ApiDBUtils.findAccountById(job.getInstanceId());
+            if (acct != null) {
+                jobInstanceId = acct.getUuid();
+            }
+        } else if (job.getInstanceType() == AsyncJob.Type.User) {
+            User usr = ApiDBUtils.findUserById(job.getInstanceId());
+            if (usr != null) {
+                jobInstanceId = usr.getUuid();
+            }
+        } else if (job.getInstanceType() == AsyncJob.Type.StaticRoute) {
+            StaticRouteVO route = ApiDBUtils.findStaticRouteById(job.getInstanceId());
+            if (route != null) {
+                jobInstanceId = route.getUuid();
+            }
+        } else if (job.getInstanceType() == AsyncJob.Type.PrivateGateway) {
+            VpcGatewayVO gateway = ApiDBUtils.findVpcGatewayById(job.getInstanceId());
+            if (gateway != null) {
+                jobInstanceId = gateway.getUuid();
+            }
+        } else if (job.getInstanceType() == AsyncJob.Type.Counter) {
+            CounterVO counter = ApiDBUtils.getCounter(job.getInstanceId());
+            if (counter != null) {
+                jobInstanceId = counter.getUuid();
+            }
+        } else if (job.getInstanceType() == AsyncJob.Type.Condition) {
+            ConditionVO condition = ApiDBUtils.findConditionById(job.getInstanceId());
+            if (condition != null) {
+                jobInstanceId = condition.getUuid();
+            }
+        } else if (job.getInstanceType() == AsyncJob.Type.AutoScalePolicy) {
+            AutoScalePolicyVO policy = ApiDBUtils.findAutoScalePolicyById(job.getInstanceId());
+            if (policy != null) {
+                jobInstanceId = policy.getUuid();
+            }
+        } else if (job.getInstanceType() == AsyncJob.Type.AutoScaleVmProfile) {
+            AutoScaleVmProfileVO profile = ApiDBUtils.findAutoScaleVmProfileById(job.getInstanceId());
+            if (profile != null) {
+                jobInstanceId = profile.getUuid();
+            }
+        } else if (job.getInstanceType() == AsyncJob.Type.AutoScaleVmGroup) {
+            AutoScaleVmGroupVO group = ApiDBUtils.findAutoScaleVmGroupById(job.getInstanceId());
+            if (group != null) {
+                jobInstanceId = group.getUuid();
+            }
+        } else if (job.getInstanceType() != AsyncJob.Type.None) {
+            // TODO : when we hit here, we need to add instanceType -> UUID
+            // entity table mapping
+            assert (false);
+        }
+        return jobInstanceId;
+    }
+
+    ///////////////////////////////////////////////////////////////////////
+    //  Newly Added Utility Methods for List API refactoring             //
+    ///////////////////////////////////////////////////////////////////////
+
+    public static DomainRouterResponse newDomainRouterResponse(DomainRouterJoinVO vr, Account caller) {
+        return _domainRouterJoinDao.newDomainRouterResponse(vr, caller);
+    }
+
+    public static DomainRouterResponse fillRouterDetails(DomainRouterResponse vrData, DomainRouterJoinVO vr){
+         return _domainRouterJoinDao.setDomainRouterResponse(vrData, vr);
+    }
+
+    public static List<DomainRouterJoinVO> newDomainRouterView(VirtualRouter vr){
+        return _domainRouterJoinDao.newDomainRouterView(vr);
+    }
+
+    public static UserVmResponse newUserVmResponse(String objectName, UserVmJoinVO userVm, EnumSet<VMDetails> details, Account caller) {
+        return _userVmJoinDao.newUserVmResponse(objectName, userVm, details, caller);
+    }
+
+    public static UserVmResponse fillVmDetails(UserVmResponse vmData, UserVmJoinVO vm){
+         return _userVmJoinDao.setUserVmResponse(vmData, vm);
+    }
+
+    public static List<UserVmJoinVO> newUserVmView(UserVm... userVms){
+        return _userVmJoinDao.newUserVmView(userVms);
+    }
+
+    public static SecurityGroupResponse newSecurityGroupResponse(SecurityGroupJoinVO vsg, Account caller) {
+        return _securityGroupJoinDao.newSecurityGroupResponse(vsg, caller);
+    }
+
+    public static SecurityGroupResponse fillSecurityGroupDetails(SecurityGroupResponse vsgData, SecurityGroupJoinVO sg){
+         return _securityGroupJoinDao.setSecurityGroupResponse(vsgData, sg);
+    }
+
+    public static List<SecurityGroupJoinVO> newSecurityGroupView(SecurityGroup sg){
+        return _securityGroupJoinDao.newSecurityGroupView(sg);
+    }
+
+    public static List<SecurityGroupJoinVO> findSecurityGroupViewById(Long sgId){
+        return _securityGroupJoinDao.searchByIds(sgId);
+    }
+
+    public static ResourceTagResponse newResourceTagResponse(ResourceTagJoinVO vsg, boolean keyValueOnly) {
+        return _tagJoinDao.newResourceTagResponse(vsg, keyValueOnly);
+    }
+
+    public static ResourceTagJoinVO newResourceTagView(ResourceTag sg){
+        return _tagJoinDao.newResourceTagView(sg);
+    }
+
+    public static ResourceTagJoinVO findResourceTagViewById(Long tagId){
+        List<ResourceTagJoinVO> tags = _tagJoinDao.searchByIds(tagId);
+        if ( tags != null && tags.size() > 0 ){
+            return tags.get(0);
+        }
+        else{
+            return null;
+        }
+    }
+
+    public static EventResponse newEventResponse(EventJoinVO ve) {
+        return _eventJoinDao.newEventResponse(ve);
+    }
+
+    public static EventJoinVO newEventView(Event e){
+        return _eventJoinDao.newEventView(e);
+    }
+
+    public static InstanceGroupResponse newInstanceGroupResponse(InstanceGroupJoinVO ve) {
+        return _vmGroupJoinDao.newInstanceGroupResponse(ve);
+    }
+
+    public static InstanceGroupJoinVO newInstanceGroupView(InstanceGroup e){
+        return _vmGroupJoinDao.newInstanceGroupView(e);
+    }
+
+    public static UserResponse newUserResponse(UserAccountJoinVO usr) {
+        return _userAccountJoinDao.newUserResponse(usr);
+    }
+
+    public static UserAccountJoinVO newUserView(User usr){
+        return _userAccountJoinDao.newUserView(usr);
+    }
+
+    public static UserAccountJoinVO newUserView(UserAccount usr){
+        return _userAccountJoinDao.newUserView(usr);
+    }
+
+    public static ProjectResponse newProjectResponse(ProjectJoinVO proj) {
+        return _projectJoinDao.newProjectResponse(proj);
+    }
+
+    public static ProjectResponse fillProjectDetails(ProjectResponse rsp, ProjectJoinVO proj){
+         return _projectJoinDao.setProjectResponse(rsp,proj);
+    }
+
+    public static List<ProjectJoinVO> newProjectView(Project proj){
+        return _projectJoinDao.newProjectView(proj);
+    }
+
+    public static List<UserAccountJoinVO> findUserViewByAccountId(Long accountId){
+        return _userAccountJoinDao.searchByAccountId(accountId);
+    }
+
+    public static ProjectAccountResponse newProjectAccountResponse(ProjectAccountJoinVO proj) {
+        return _projectAccountJoinDao.newProjectAccountResponse(proj);
+    }
+
+    public static ProjectAccountJoinVO newProjectAccountView(ProjectAccount proj) {
+        return _projectAccountJoinDao.newProjectAccountView(proj);
+    }
+
+    public static ProjectInvitationResponse newProjectInvitationResponse(ProjectInvitationJoinVO proj) {
+        return _projectInvitationJoinDao.newProjectInvitationResponse(proj);
+    }
+
+    public static ProjectInvitationJoinVO newProjectInvitationView(ProjectInvitation proj) {
+        return _projectInvitationJoinDao.newProjectInvitationView(proj);
+    }
+
+    public static HostResponse newHostResponse(HostJoinVO vr, EnumSet<HostDetails> details) {
+        return _hostJoinDao.newHostResponse(vr, details);
+    }
+
+    public static HostResponse fillHostDetails(HostResponse vrData, HostJoinVO vr){
+         return _hostJoinDao.setHostResponse(vrData, vr);
+    }
+
+    public static List<HostJoinVO> newHostView(Host vr){
+        return _hostJoinDao.newHostView(vr);
+    }
+
+    public static VolumeResponse newVolumeResponse(VolumeJoinVO vr) {
+        return _volJoinDao.newVolumeResponse(vr);
+    }
+
+
+    public static VolumeResponse fillVolumeDetails(VolumeResponse vrData, VolumeJoinVO vr){
+        return _volJoinDao.setVolumeResponse(vrData, vr);
+   }
+
+   public static List<VolumeJoinVO> newVolumeView(Volume vr){
+       return _volJoinDao.newVolumeView(vr);
+   }
+
+   public static StoragePoolResponse newStoragePoolResponse(StoragePoolJoinVO vr) {
+       return _poolJoinDao.newStoragePoolResponse(vr);
+   }
+
+   public static StoragePoolResponse fillStoragePoolDetails(StoragePoolResponse vrData, StoragePoolJoinVO vr){
+        return _poolJoinDao.setStoragePoolResponse(vrData, vr);
+   }
+
+   public static List<StoragePoolJoinVO> newStoragePoolView(StoragePool vr){
+       return _poolJoinDao.newStoragePoolView(vr);
+   }
+
+
+   public static AccountResponse newAccountResponse(AccountJoinVO ve) {
+       return _accountJoinDao.newAccountResponse(ve);
+   }
+
+   public static AccountJoinVO newAccountView(Account e){
+       return _accountJoinDao.newAccountView(e);
+   }
+
+   public static AccountJoinVO findAccountViewById(Long accountId) {
+       return _accountJoinDao.findByIdIncludingRemoved(accountId);
+   }
+
+   public static AsyncJobResponse newAsyncJobResponse(AsyncJobJoinVO ve) {
+       return _jobJoinDao.newAsyncJobResponse(ve);
+   }
+
+   public static AsyncJobJoinVO newAsyncJobView(AsyncJob e){
+       return _jobJoinDao.newAsyncJobView(e);
+   }
+}

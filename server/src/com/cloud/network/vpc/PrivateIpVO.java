@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.network.vpc;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import java.util.Date;
 
 import javax.persistence.Column;
@@ -30,7 +32,7 @@ import javax.persistence.TemporalType;
 
 @Entity
 @Table(name="private_ip_address")
-public class PrivateIpVO{
+public class PrivateIpVO implements InternalIdentity {
     
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

@@ -22,8 +22,8 @@ public class PreparePxeServerAnswer extends Answer {
 	public PreparePxeServerAnswer(PreparePxeServerCommand cmd) {
 		super(cmd, true, "SUCCESS");
 	}
-	
+
 	public PreparePxeServerAnswer(PreparePxeServerCommand cmd, String details) {
 		super(cmd, false, details);
-	}	
+	}
 }

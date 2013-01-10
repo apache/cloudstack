@@ -20,26 +20,24 @@ import java.util.List;
 
 import javax.naming.NamingException;
 
-import com.cloud.api.commands.CreateDiskOfferingCmd;
-import com.cloud.api.commands.CreateNetworkOfferingCmd;
-import com.cloud.api.commands.CreateServiceOfferingCmd;
-import com.cloud.api.commands.CreateVlanIpRangeCmd;
-import com.cloud.api.commands.CreateZoneCmd;
-import com.cloud.api.commands.DeleteDiskOfferingCmd;
-import com.cloud.api.commands.DeleteNetworkOfferingCmd;
-import com.cloud.api.commands.DeletePodCmd;
-import com.cloud.api.commands.DeleteServiceOfferingCmd;
-import com.cloud.api.commands.DeleteVlanIpRangeCmd;
-import com.cloud.api.commands.DeleteZoneCmd;
-import com.cloud.api.commands.LDAPConfigCmd;
-import com.cloud.api.commands.LDAPRemoveCmd;
-import com.cloud.api.commands.ListNetworkOfferingsCmd;
-import com.cloud.api.commands.UpdateCfgCmd;
-import com.cloud.api.commands.UpdateDiskOfferingCmd;
-import com.cloud.api.commands.UpdateNetworkOfferingCmd;
-import com.cloud.api.commands.UpdatePodCmd;
-import com.cloud.api.commands.UpdateServiceOfferingCmd;
-import com.cloud.api.commands.UpdateZoneCmd;
+import org.apache.cloudstack.api.command.admin.ldap.LDAPRemoveCmd;
+import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.CreateServiceOfferingCmd;
+import org.apache.cloudstack.api.command.admin.vlan.CreateVlanIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.offering.*;
+import org.apache.cloudstack.api.command.admin.pod.DeletePodCmd;
+import org.apache.cloudstack.api.command.admin.vlan.DeleteVlanIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.zone.CreateZoneCmd;
+import org.apache.cloudstack.api.command.admin.offering.DeleteDiskOfferingCmd;
+import org.apache.cloudstack.api.command.admin.network.DeleteNetworkOfferingCmd;
+import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
+import org.apache.cloudstack.api.command.admin.ldap.LDAPConfigCmd;
+import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
+import org.apache.cloudstack.api.command.admin.network.UpdateNetworkOfferingCmd;
+import org.apache.cloudstack.api.command.admin.pod.UpdatePodCmd;
+import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
+import org.apache.cloudstack.api.command.admin.offering.UpdateDiskOfferingCmd;
+import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
 import com.cloud.dc.Vlan;
@@ -57,7 +55,7 @@ public interface ConfigurationService {
 
     /**
      * Updates a configuration entry with a new value
-     * 
+     *
      * @param cmd
      *            - the command wrapping name and value parameters
      * @return updated configuration object if successful
@@ -66,7 +64,7 @@ public interface ConfigurationService {
 
     /**
      * Create a service offering through the API
-     * 
+     *
      * @param cmd
      *            the command object that specifies the name, number of cpu cores, amount of RAM, etc. for the service
      *            offering
@@ -76,7 +74,7 @@ public interface ConfigurationService {
 
     /**
      * Updates a service offering
-     * 
+     *
      * @param serviceOfferingId
      * @param userId
      * @param name
@@ -90,7 +88,7 @@ public interface ConfigurationService {
 
     /**
      * Deletes a service offering
-     * 
+     *
      * @param userId
      * @param serviceOfferingId
      */
@@ -98,7 +96,7 @@ public interface ConfigurationService {
 
     /**
      * Updates a disk offering
-     * 
+     *
      * @param cmd
      *            - the command specifying diskOfferingId, name, description, tags
      * @return updated disk offering
@@ -108,7 +106,7 @@ public interface ConfigurationService {
 
     /**
      * Deletes a disk offering
-     * 
+     *
      * @param cmd
      *            - the command specifying disk offering id
      * @return true or false
@@ -118,7 +116,7 @@ public interface ConfigurationService {
 
     /**
      * Creates a new disk offering
-     * 
+     *
      * @param domainId
      * @param name
      * @param description
@@ -131,7 +129,7 @@ public interface ConfigurationService {
 
     /**
      * Creates a new pod based on the parameters specified in the command object
-     * 
+     *
      * @param zoneId
      *            TODO
      * @param name
@@ -154,7 +152,7 @@ public interface ConfigurationService {
 
     /**
      * Edits a pod in the database. Will not allow you to edit pods that are being used anywhere in the system.
-     * 
+     *
      * @param UpdatePodCmd
      *            api command
      */
@@ -162,7 +160,7 @@ public interface ConfigurationService {
 
     /**
      * Deletes a pod from the database. Will not allow you to delete pods that are being used anywhere in the system.
-     * 
+     *
      * @param cmd
      *            - the command containing podId
      * @return true or false
@@ -172,7 +170,7 @@ public interface ConfigurationService {
 
     /**
      * Creates a new zone
-     * 
+     *
      * @param cmd
      * @return the zone if successful, null otherwise
      * @throws
@@ -182,7 +180,7 @@ public interface ConfigurationService {
 
     /**
      * Edits a zone in the database. Will not allow you to edit DNS values if there are VMs in the specified zone.
-     * 
+     *
      * @param UpdateZoneCmd
      * @return Updated zone
      */
@@ -190,7 +188,7 @@ public interface ConfigurationService {
 
     /**
      * Deletes a zone from the database. Will not allow you to delete zones that are being used anywhere in the system.
-     * 
+     *
      * @param userId
      * @param zoneId
      */
@@ -200,7 +198,7 @@ public interface ConfigurationService {
      * Adds a VLAN to the database, along with an IP address range. Can add three types of VLANs: (1) zone-wide VLANs on
      * the
      * virtual public network (2) pod-wide direct attached VLANs (3) account-specific direct attached VLANs
-     * 
+     *
      * @param userId
      * @param vlanType
      *            - either "DomR" (VLAN for a virtual public network) or "DirectAttached" (VLAN for IPs that will be

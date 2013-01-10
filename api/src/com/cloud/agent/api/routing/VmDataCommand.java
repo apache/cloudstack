@@ -23,24 +23,24 @@ import com.cloud.agent.api.LogLevel;
 import com.cloud.agent.api.LogLevel.Log4jLevel;
 
 public class VmDataCommand extends NetworkElementCommand {
-    
+
 	String vmIpAddress;
 	String vmName;
 	@LogLevel(Log4jLevel.Trace)
 	List<String[]> vmData;
-	
+
     protected VmDataCommand() {
     }
-    
+
     @Override
     public boolean executeInSequence() {
         return true;
     }
-    
+
     public VmDataCommand(String vmIpAddress) {
     	this(vmIpAddress, null);
     }
-    
+
     public String getVmName() {
         return vmName;
     }
@@ -50,18 +50,18 @@ public class VmDataCommand extends NetworkElementCommand {
         this.vmIpAddress = vmIpAddress;
         this.vmData = new ArrayList<String[]>();
     }
-    
-	
+
+
 	public String getVmIpAddress() {
 		return vmIpAddress;
 	}
-	
+
 	public List<String[]> getVmData() {
 		return vmData;
 	}
-	
+
 	public void addVmData(String folder, String file, String contents) {
 		vmData.add(new String[]{folder, file, contents});
 	}
-	
+
 }

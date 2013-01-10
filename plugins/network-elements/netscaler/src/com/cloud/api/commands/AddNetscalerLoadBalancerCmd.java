@@ -15,15 +15,10 @@
 
 package com.cloud.api.commands;
 
+import org.apache.cloudstack.api.*;
+import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.log4j.Logger;
-import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseAsyncCmd;
-import com.cloud.api.BaseCmd;
-import com.cloud.api.IdentityMapper;
-import com.cloud.api.Implementation;
-import com.cloud.api.Parameter;
-import com.cloud.api.PlugService;
-import com.cloud.api.ServerApiException;
+import org.apache.cloudstack.api.APICommand;
 import com.cloud.api.response.NetscalerLoadBalancerResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -36,7 +31,7 @@ import com.cloud.network.element.NetscalerLoadBalancerElementService;
 import com.cloud.user.UserContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Implementation(responseObject=NetscalerLoadBalancerResponse.class, description="Adds a netscaler load balancer device")
+@APICommand(name = "addNetscalerLoadBalancer", responseObject=NetscalerLoadBalancerResponse.class, description="Adds a netscaler load balancer device")
 public class AddNetscalerLoadBalancerCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(AddNetscalerLoadBalancerCmd.class.getName());
@@ -47,8 +42,8 @@ public class AddNetscalerLoadBalancerCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="physical_network")
-    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, required=true, description="the Physical Network ID")
+    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.UUID, entityType = PhysicalNetworkResponse.class,
+            required=true, description="the Physical Network ID")
     private Long physicalNetworkId;
 
     @Parameter(name=ApiConstants.URL, type=CommandType.STRING, required = true, description="URL of the netscaler load balancer appliance.")

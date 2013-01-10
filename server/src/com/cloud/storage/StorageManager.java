@@ -53,28 +53,28 @@ public interface StorageManager extends StorageService, Manager {
      * @return absolute ISO path
      */
 	public Pair<String, String> getAbsoluteIsoPath(long templateId, long dataCenterId);
-	
+
 	/**
 	 * Returns the URL of the secondary storage host
 	 * @param zoneId
 	 * @return URL
 	 */
 	public String getSecondaryStorageURL(long zoneId);
-	
+
 	/**
 	 * Returns a comma separated list of tags for the specified storage pool
 	 * @param poolId
 	 * @return comma separated list of tags
 	 */
 	public String getStoragePoolTags(long poolId);
-	
+
 	/**
 	 * Returns the secondary storage host
 	 * @param zoneId
 	 * @return secondary storage host
 	 */
 	public HostVO getSecondaryStorageHost(long zoneId);
-	
+
 	/**
 	 * Returns the secondary storage host
 	 * @param zoneId
@@ -89,7 +89,7 @@ public interface StorageManager extends StorageService, Manager {
 	 * @param destPoolPodId
 	 * @param destPoolClusterId
 	 * @return VolumeVO
-	 * @throws ConcurrentOperationException 
+	 * @throws ConcurrentOperationException
 	 */
 	VolumeVO moveVolume(VolumeVO volume, long destPoolDcId, Long destPoolPodId, Long destPoolClusterId, HypervisorType dataDiskHyperType) throws ConcurrentOperationException;
 
@@ -114,10 +114,10 @@ public interface StorageManager extends StorageService, Manager {
 	/**
 	 * Marks the specified volume as destroyed in the management server database. The expunge thread will delete the volume from its storage pool.
 	 * @param volume
-	 * @return 
+	 * @return
 	 */
 	boolean destroyVolume(VolumeVO volume) throws ConcurrentOperationException;
-	
+
 	/** Create capacity entries in the op capacity table
 	 * @param storagePool
 	 */
@@ -136,7 +136,7 @@ public interface StorageManager extends StorageService, Manager {
     Answer[] sendToPool(StoragePool pool, Commands cmds) throws StorageUnavailableException;
 	Pair<Long, Answer[]> sendToPool(StoragePool pool, long[] hostIdsToTryFirst, List<Long> hostIdsToAvoid, Commands cmds) throws StorageUnavailableException;
 	Pair<Long, Answer> sendToPool(StoragePool pool, long[] hostIdsToTryFirst, List<Long> hostIdsToAvoid, Command cmd) throws StorageUnavailableException;
-	
+
 	/**
 	 * Checks that one of the following is true:
 	 * 1. The volume is not attached to any VM
@@ -145,21 +145,21 @@ public interface StorageManager extends StorageService, Manager {
 	 * @return true if one of the above conditions is true
 	 */
 	boolean volumeInactive(VolumeVO volume);
-	
+
 	String getVmNameOnVolume(VolumeVO volume);
-	
+
 	/**
 	 * Checks if a host has running VMs that are using its local storage pool.
 	 * @return true if local storage is active on the host
 	 */
-	boolean isLocalStorageActiveOnHost(Host host);
-	
+	boolean isLocalStorageActiveOnHost(Long hostId);
+
     /**
 	 * Cleans up storage pools by removing unused templates.
 	 * @param recurring - true if this cleanup is part of a recurring garbage collection thread
 	 */
 	void cleanupStorage(boolean recurring);
-	
+
     String getPrimaryStorageNameLabel(VolumeVO volume);
 
     /**
@@ -176,16 +176,16 @@ public interface StorageManager extends StorageService, Manager {
      */
     <T extends VMInstanceVO> DiskProfile allocateRawVolume(Type type, String name, DiskOfferingVO offering, Long size, T vm, Account owner);
     <T extends VMInstanceVO> DiskProfile allocateTemplatedVolume(Type type, String name, DiskOfferingVO offering, VMTemplateVO template, T vm, Account owner);
-    
+
 	void createCapacityEntry(StoragePoolVO storagePool, short capacityType, long allocated);
 
-    
+
     void prepare(VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest) throws StorageUnavailableException, InsufficientStorageCapacityException, ConcurrentOperationException;
 
 	void release(VirtualMachineProfile<? extends VMInstanceVO> profile);
 
 	void cleanupVolumes(long vmId) throws ConcurrentOperationException;
-	
+
 	void prepareForMigration(VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest);
 
 	Answer sendToPool(StoragePool pool, long[] hostIdsToTryFirst, Command cmd) throws StorageUnavailableException;
@@ -217,7 +217,7 @@ public interface StorageManager extends StorageService, Manager {
 
 	boolean stateTransitTo(Volume vol, Event event)
 			throws NoTransitionException;
-	
+
 	VolumeVO allocateDuplicateVolume(VolumeVO oldVol, Long templateId);
 
 	Host updateSecondaryStorage(long secStorageId, String newUrl);
@@ -237,6 +237,6 @@ public interface StorageManager extends StorageService, Manager {
 	HypervisorType getHypervisorTypeFromFormat(ImageFormat format);
 
     boolean storagePoolHasEnoughSpace(List<Volume> volume, StoragePool pool);
-	
+
     boolean deleteVolume(long volumeId, Account caller) throws ConcurrentOperationException;
 }

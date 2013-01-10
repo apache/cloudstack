@@ -19,7 +19,7 @@
 ### Please standardize naming conventions to camel-case (even for acronyms).
 
 #### Cisco Nexus 1000v Virtual Supervisor Module (VSM) commands
-deleteCiscoNexusVSM = com.cloud.api.commands.DeleteCiscoNexusVSMCmd;1
-enableCiscoNexusVSM = com.cloud.api.commands.EnableCiscoNexusVSMCmd;1
-disableCiscoNexusVSM = com.cloud.api.commands.DisableCiscoNexusVSMCmd;1
-listCiscoNexusVSMs = com.cloud.api.commands.ListCiscoNexusVSMsCmd;1
+deleteCiscoNexusVSM=1
+enableCiscoNexusVSM=1
+disableCiscoNexusVSM=1
+listCiscoNexusVSMs=1

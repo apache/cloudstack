@@ -29,13 +29,14 @@ import javax.persistence.SecondaryTables;
 import javax.persistence.Table;
 
 import com.cloud.utils.net.Ip;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = ("elastic_lb_vm_map"))
 @SecondaryTables({ 
         @SecondaryTable(name = "user_ip_address", pkJoinColumns = { @PrimaryKeyJoinColumn(name = "ip_addr_id", referencedColumnName = "id") })
         })
-public class ElasticLbVmMapVO {
+public class ElasticLbVmMapVO implements InternalIdentity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -66,7 +67,7 @@ public class ElasticLbVmMapVO {
         this.lbId = lbId;
     }
 
-    public Long getId() {
+    public long getId() {
         return id;
     }
 

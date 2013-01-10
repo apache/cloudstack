@@ -11,7 +11,7 @@
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the 
+// KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.network.element;
@@ -26,6 +26,7 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.commands.AddExternalLoadBalancerCmd;
 import com.cloud.api.commands.AddF5LoadBalancerCmd;
 import com.cloud.api.commands.ConfigureF5LoadBalancerCmd;
@@ -55,7 +56,7 @@ import com.cloud.network.ExternalLoadBalancerDeviceManager;
 import com.cloud.network.ExternalLoadBalancerDeviceManagerImpl;
 import com.cloud.network.ExternalLoadBalancerDeviceVO;
 import com.cloud.network.ExternalLoadBalancerDeviceVO.LBDeviceState;
-import com.cloud.network.ExternalNetworkDeviceManager.NetworkDevice;
+import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
@@ -64,6 +65,7 @@ import com.cloud.network.NetworkExternalLoadBalancerVO;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PhysicalNetworkVO;
 import com.cloud.network.PublicIpAddress;
@@ -78,7 +80,7 @@ import com.cloud.network.rules.LbStickinessMethod;
 import com.cloud.network.rules.LbStickinessMethod.StickinessMethodType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.resource.ServerResource;
-import com.cloud.server.api.response.ExternalLoadBalancerResponse;
+import org.apache.cloudstack.api.response.ExternalLoadBalancerResponse;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -258,8 +260,8 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
     }
 
     @Override
-    public String getPropertiesFile() {
-        return "f5bigip_commands.properties";
+    public String[] getPropertiesFiles() {
+        return new String[] { "f5bigip_commands.properties" };
     }
 
     @Override
@@ -440,9 +442,12 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
         Host lbHost = _hostDao.findById(lbDeviceVO.getHostId());
         Map<String, String> lbDetails = _detailsDao.findDetails(lbDeviceVO.getHostId());
 
-        response.setId(lbDeviceVO.getId());
+        response.setId(lbDeviceVO.getUuid());
         response.setIpAddress(lbHost.getPrivateIpAddress());
-        response.setPhysicalNetworkId(lbDeviceVO.getPhysicalNetworkId());
+        PhysicalNetwork pnw = ApiDBUtils.findPhysicalNetworkById(lbDeviceVO.getPhysicalNetworkId());
+        if (pnw != null) {
+            response.setPhysicalNetworkId(pnw.getUuid());
+        }
         response.setPublicInterface(lbDetails.get("publicInterface"));
         response.setPrivateInterface(lbDetails.get("privateInterface"));
         response.setDeviceName(lbDeviceVO.getDeviceName());

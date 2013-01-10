@@ -289,6 +289,7 @@
                 <configuration>
                   <srcFiles>
                     <srcFile>${basedir}/target/db/create-schema.sql</srcFile>
+                    <srcFile>${basedir}/target/db/create-schema-view.sql</srcFile>
                     <srcFile>${basedir}/target/db/create-schema-premium.sql</srcFile>
                     <srcFile>${basedir}/target/db/templates.sql</srcFile>
                     <srcFile>${basedir}/target/db/create-index-fk.sql</srcFile>

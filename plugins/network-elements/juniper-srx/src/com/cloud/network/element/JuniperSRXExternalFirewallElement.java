@@ -11,7 +11,7 @@
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the 
+// KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.network.element;
@@ -26,6 +26,7 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.commands.AddExternalFirewallCmd;
 import com.cloud.api.commands.AddSrxFirewallCmd;
 import com.cloud.api.commands.ConfigureSrxFirewallCmd;
@@ -55,7 +56,7 @@ import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.ExternalFirewallDeviceManagerImpl;
 import com.cloud.network.ExternalFirewallDeviceVO;
 import com.cloud.network.ExternalFirewallDeviceVO.FirewallDeviceState;
-import com.cloud.network.ExternalNetworkDeviceManager.NetworkDevice;
+import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
@@ -63,6 +64,7 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkExternalFirewallVO;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
+import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PhysicalNetworkVO;
 import com.cloud.network.PublicIpAddress;
@@ -80,7 +82,7 @@ import com.cloud.network.rules.StaticNat;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.resource.ServerResource;
-import com.cloud.server.api.response.ExternalFirewallResponse;
+import org.apache.cloudstack.api.response.ExternalFirewallResponse;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -400,8 +402,8 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
     }
 
     @Override
-    public String getPropertiesFile() {
-        return "junipersrx_commands.properties";
+    public String[] getPropertiesFiles() {
+        return new String[] { "junipersrx_commands.properties"};
     }
 
     @Override
@@ -510,8 +512,11 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
         Map<String, String> fwDetails = _hostDetailDao.findDetails(fwDeviceVO.getHostId());
         Host fwHost = _hostDao.findById(fwDeviceVO.getHostId());
 
-        response.setId(fwDeviceVO.getId());
-        response.setPhysicalNetworkId(fwDeviceVO.getPhysicalNetworkId());
+        response.setId(fwDeviceVO.getUuid());
+        PhysicalNetwork pnw = ApiDBUtils.findPhysicalNetworkById(fwDeviceVO.getPhysicalNetworkId());
+        if (pnw != null) {
+            response.setPhysicalNetworkId(pnw.getUuid());
+        }
         response.setDeviceName(fwDeviceVO.getDeviceName());
         if (fwDeviceVO.getCapacity() == 0) {
             long defaultFwCapacity = NumbersUtil.parseLong(_configDao.getValue(Config.DefaultExternalFirewallCapacity.key()), 50);

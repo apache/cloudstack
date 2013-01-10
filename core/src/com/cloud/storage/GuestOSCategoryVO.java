@@ -25,32 +25,33 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.api.Identity;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="guest_os_category")
-public class GuestOSCategoryVO implements GuestOsCategory, Identity {
+public class GuestOSCategoryVO implements GuestOsCategory {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
     long id;
-    
+
     @Column(name="name")
     String name;
-    
+
     @Column(name="uuid")
     String uuid = UUID.randomUUID().toString();
-    
+
     @Override
     public long getId() {
     	return id;
     }
-    
+
     @Override
     public String getName() {
-    	return name; 
+    	return name;
     }
-    
+
     @Override
     public void setName(String name) {
     	this.name = name;
@@ -60,7 +61,7 @@ public class GuestOSCategoryVO implements GuestOsCategory, Identity {
     public String getUuid() {
     	return this.uuid;
     }
-    
+
     public void setUuid(String uuid) {
     	this.uuid = uuid;
     }

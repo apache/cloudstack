@@ -21,12 +21,12 @@
 #### f5 big ip load balancer commands
 
 #Deprecated commands
-addExternalLoadBalancer = com.cloud.api.commands.AddExternalLoadBalancerCmd;1
-deleteExternalLoadBalancer = com.cloud.api.commands.DeleteExternalLoadBalancerCmd;1
-listExternalLoadBalancers = com.cloud.api.commands.ListExternalLoadBalancersCmd;1
+addExternalLoadBalancer=1
+deleteExternalLoadBalancer=1
+listExternalLoadBalancers=1
 
-addF5LoadBalancer = com.cloud.api.commands.AddF5LoadBalancerCmd;1
-configureF5LoadBalancer = com.cloud.api.commands.ConfigureF5LoadBalancerCmd;1
-deleteF5LoadBalancer = com.cloud.api.commands.DeleteF5LoadBalancerCmd;1
-listF5LoadBalancers = com.cloud.api.commands.ListF5LoadBalancersCmd;1
-listF5LoadBalancerNetworks = com.cloud.api.commands.ListF5LoadBalancerNetworksCmd;1
+addF5LoadBalancer=1
+configureF5LoadBalancer=1
+deleteF5LoadBalancer=1
+listF5LoadBalancers=1
+listF5LoadBalancerNetworks=1

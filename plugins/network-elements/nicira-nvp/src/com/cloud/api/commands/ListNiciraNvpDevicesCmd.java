@@ -19,17 +19,17 @@ package com.cloud.api.commands;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseListCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.PlugService;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseCmd;
-import com.cloud.api.BaseListCmd;
-import com.cloud.api.IdentityMapper;
-import com.cloud.api.Implementation;
-import com.cloud.api.Parameter;
-import com.cloud.api.PlugService;
-import com.cloud.api.ServerApiException;
-import com.cloud.api.response.ListResponse;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.api.response.NiciraNvpDeviceResponse;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -40,7 +40,7 @@ import com.cloud.network.NiciraNvpDeviceVO;
 import com.cloud.network.element.NiciraNvpElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Implementation(responseObject=NiciraNvpDeviceResponse.class, description="Lists Nicira NVP devices")
+@APICommand(name = "listNiciraNvpDevices", responseObject=NiciraNvpDeviceResponse.class, description="Lists Nicira NVP devices")
 public class ListNiciraNvpDevicesCmd extends BaseListCmd {
     private static final Logger s_logger = Logger.getLogger(ListNiciraNvpDevicesCmd.class.getName());
     private static final String s_name = "listniciranvpdeviceresponse";
@@ -50,12 +50,12 @@ public class ListNiciraNvpDevicesCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="physical_network")
-    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, description="the Physical Network ID")
+    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.UUID, entityType = PhysicalNetworkResponse.class,
+            description="the Physical Network ID")
     private Long physicalNetworkId;
 
-    @IdentityMapper(entityTableName="external_nicira_nvp_devices")
-    @Parameter(name=ApiConstants.NICIRA_NVP_DEVICE_ID, type=CommandType.LONG,  description="nicira nvp device ID")
+    @Parameter(name=ApiConstants.NICIRA_NVP_DEVICE_ID, type=CommandType.UUID, entityType = NiciraNvpDeviceResponse.class,
+            description="nicira nvp device ID")
     private Long niciraNvpDeviceId;
 
     /////////////////////////////////////////////////////

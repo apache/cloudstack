@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.vm;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -25,7 +27,7 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name="user_vm_details")
-public class UserVmDetailVO {
+public class UserVmDetailVO implements InternalIdentity {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")

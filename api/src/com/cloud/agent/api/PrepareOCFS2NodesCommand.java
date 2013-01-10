@@ -23,7 +23,7 @@ import com.cloud.utils.Ternary;
 public class PrepareOCFS2NodesCommand extends Command {
     List<Ternary<Integer, String, String>> nodes;
     String clusterName;
-    
+
     @Override
     public boolean executeInSequence() {
         return true;
@@ -33,11 +33,11 @@ public class PrepareOCFS2NodesCommand extends Command {
         this.nodes = nodes;
         this.clusterName = clusterName;
     }
-    
+
     public List<Ternary<Integer, String, String>> getNodes() {
         return nodes;
     }
-    
+
     public String getClusterName() {
         return clusterName;
     }

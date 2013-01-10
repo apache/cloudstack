@@ -166,6 +166,7 @@ CREATE TABLE `cloud`.`version` (
   INDEX `i_version__version`(`version`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+
 INSERT INTO `version` (`version`, `updated`, `step`) VALUES('4.1.0', now(), 'Complete');
 
 CREATE TABLE `cloud`.`op_it_work` (
@@ -1119,6 +1120,7 @@ CREATE TABLE  `cloud`.`upload` (
   `id` bigint unsigned NOT NULL auto_increment,
   `host_id` bigint unsigned NOT NULL,
   `type_id` bigint unsigned NOT NULL,
+  `uuid` varchar(40),
   `type` varchar(255),
   `mode` varchar(255),
   `created` DATETIME NOT NULL,
@@ -1341,7 +1343,7 @@ CREATE TABLE `cloud`.`async_job` (
   `session_key` varchar(64) COMMENT 'all async-job manage to apply session based security enforcement',
   `instance_type` varchar(64) COMMENT 'instance_type and instance_id work together to allow attaching an instance object to a job',			
   `instance_id` bigint unsigned,
-  `job_cmd` varchar(64) NOT NULL COMMENT 'command name',
+  `job_cmd` varchar(255) NOT NULL COMMENT 'command name',
   `job_cmd_originator` varchar(64) COMMENT 'command originator',
   `job_cmd_info` text COMMENT 'command parameter info',
   `job_cmd_ver` int(1) COMMENT 'command version',
@@ -2537,9 +2539,10 @@ CREATE TABLE `cloud`.`autoscale_vmgroup_policy_map` (
   INDEX `i_autoscale_vmgroup_policy_map__vmgroup_id`(`vmgroup_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-INSERT INTO `cloud`.`counter` (id, source, name, value,created) VALUES (1,'snmp','Linux User CPU - percentage', '1.3.6.1.4.1.2021.11.9.0', now());
-INSERT INTO `cloud`.`counter` (id, source, name, value,created) VALUES (2,'snmp','Linux System CPU - percentage', '1.3.6.1.4.1.2021.11.10.0', now());
-INSERT INTO `cloud`.`counter` (id, source, name, value,created) VALUES (3,'snmp','Linux CPU Idle - percentage', '1.3.6.1.4.1.2021.11.11.0', now());
-INSERT INTO `cloud`.`counter` (id, source, name, value,created) VALUES (100,'netscaler','Response Time - microseconds', 'RESPTIME', now());
+INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (1, UUID(), 'snmp','Linux User CPU - percentage', '1.3.6.1.4.1.2021.11.9.0', now());
+INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (2, UUID(), 'snmp','Linux System CPU - percentage', '1.3.6.1.4.1.2021.11.10.0', now());
+INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (3, UUID(), 'snmp','Linux CPU Idle - percentage', '1.3.6.1.4.1.2021.11.11.0', now());
+INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (100, UUID(), 'netscaler','Response Time - microseconds', 'RESPTIME', now());
 
 SET foreign_key_checks = 1;
+

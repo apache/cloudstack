@@ -16,16 +16,16 @@
 // under the License.
 package com.cloud.api.commands;
 
+import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseAsyncCmd;
-import com.cloud.api.BaseCmd;
-import com.cloud.api.IdentityMapper;
-import com.cloud.api.Implementation;
-import com.cloud.api.Parameter;
-import com.cloud.api.PlugService;
-import com.cloud.api.ServerApiException;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.PlugService;
+import org.apache.cloudstack.api.ServerApiException;
 import com.cloud.api.response.SrxFirewallResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -38,7 +38,7 @@ import com.cloud.network.element.JuniperSRXFirewallElementService;
 import com.cloud.user.UserContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Implementation(responseObject=SrxFirewallResponse.class, description="Adds a SRX firewall device")
+@APICommand(name = "addSrxFirewall", responseObject=SrxFirewallResponse.class, description="Adds a SRX firewall device")
 public class AddSrxFirewallCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AddSrxFirewallCmd.class.getName());
     private static final String s_name = "addsrxfirewallresponse";
@@ -48,8 +48,8 @@ public class AddSrxFirewallCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="physical_network")
-    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, required=true, description="the Physical Network ID")
+    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.UUID, entityType = PhysicalNetworkResponse.class,
+            required=true, description="the Physical Network ID")
     private Long physicalNetworkId;
 
     @Parameter(name=ApiConstants.URL, type=CommandType.STRING, required = true, description="URL of the SRX appliance.")

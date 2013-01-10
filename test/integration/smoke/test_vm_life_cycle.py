@@ -227,9 +227,9 @@ class TestDeployVM(cloudstackTestCase):
                         )
 
         self.assertEqual(
-                    vm_response.displayname,
-                    self.virtual_machine.displayname,
-                    "Check virtual machine displayname in listVirtualMachines"
+                    vm_response.name,
+                    self.virtual_machine.name,
+                    "Check virtual machine name in listVirtualMachines"
                     )
         return
 

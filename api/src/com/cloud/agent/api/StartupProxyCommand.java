@@ -21,12 +21,12 @@ import com.cloud.host.Host;
 public class StartupProxyCommand extends StartupCommand {
     private int proxyPort;
 	private long proxyVmId;
-    
+
 	public StartupProxyCommand() {
         super(Host.Type.ConsoleProxy);
         setIqn("NoIqn");
     }
-	
+
     @Override
     public boolean executeInSequence() {
         return true;
