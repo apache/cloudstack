@@ -790,37 +790,14 @@ public class ApiServer implements HttpRequestHandler {
         return true;
     }
 
-    private boolean isCommandAvailable(User user, String commandName) {
+    private boolean isCommandAvailable(User user, String commandName)
+            throws PermissionDeniedException {
         if (user == null) {
             return false;
         }
 
         Account account = _accountMgr.getAccount(user.getAccountId());
-        if (account == null) {
-            return false;
-        }
-
-        RoleType roleType = RoleType.Unknown;
-        short accountType = account.getType();
-
-        // Account type to role type translation
-        switch (accountType) {
-            case Account.ACCOUNT_TYPE_ADMIN:
-                roleType = RoleType.Admin;
-                break;
-            case Account.ACCOUNT_TYPE_DOMAIN_ADMIN:
-                roleType = RoleType.DomainAdmin;
-                break;
-            case Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN:
-                roleType = RoleType.ResourceAdmin;
-                break;
-            case Account.ACCOUNT_TYPE_NORMAL:
-                roleType = RoleType.User;
-                break;
-            default:
-                return false;
-        }
-
+        RoleType roleType = _accountMgr.getRoleType(account);
         for (APIAccessChecker apiChecker : _apiAccessCheckers) {
             // Fail the checking if any checker fails to verify
             if (!apiChecker.canAccessAPI(roleType, commandName))
