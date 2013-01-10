@@ -38,8 +38,7 @@ public class UsageServer {
     }
 
     public void start() {
-        final ComponentLocator _locator = ComponentLocator.getLocator(UsageServer.Name, "usage-components.xml", "log4j-cloud_usage");
-        UsageManager mgr = _locator.getManager(UsageManager.class);
+        UsageManager mgr = new UsageManager();
         if (mgr != null) {
             if (s_logger.isInfoEnabled()) {
                 s_logger.info("UsageServer ready...");

@@ -20,7 +20,7 @@ import junit.framework.TestCase;
 
 import org.apache.log4j.Logger;
 
-
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -48,9 +48,9 @@ public class CglibThrowableRendererTest extends TestCase {
             }
         }
     }
-    
+
     public void testException() {
-        Test test = ComponentLocator.inject(Test.class);
+        Test test = ComponentContext.inject(Test.class);
         try {
             test.exception();
         } catch (Exception e) {

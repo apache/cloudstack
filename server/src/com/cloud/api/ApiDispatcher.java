@@ -84,6 +84,10 @@ public class ApiDispatcher {
 
     private static ApiDispatcher s_instance;
 
+    public static ApiDispatcher getInstance() {
+        return s_instance;
+    }
+
     protected ApiDispatcher() {
         super();
         Map<String, String> configs = _configDao.getConfiguration();

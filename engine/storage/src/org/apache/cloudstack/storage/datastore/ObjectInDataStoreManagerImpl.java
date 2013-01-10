@@ -1,5 +1,7 @@
 package org.apache.cloudstack.storage.datastore;
 
+import javax.inject.Inject;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.db.ObjectInDataStoreDao;
 import org.apache.cloudstack.storage.db.ObjectInDataStoreVO;

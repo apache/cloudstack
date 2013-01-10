@@ -19,26 +19,28 @@ package com.cloud.api.commands;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.inject.Inject;
+
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseListCmd;
+import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.command.user.offering.ListServiceOfferingsCmd;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.TrafficMonitorResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseListCmd;
-import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.host.Host;
 import com.cloud.network.NetworkUsageManager;
-import com.cloud.server.ManagementService;
-import org.apache.cloudstack.api.response.TrafficMonitorResponse;
 
 
 @APICommand(name = "listTrafficMonitors", description="List traffic monitor Hosts.", responseObject = TrafficMonitorResponse.class)
 public class ListTrafficMonitorsCmd extends BaseListCmd {
-	public static final Logger s_logger = Logger.getLogger(ListServiceOfferingsCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(ListServiceOfferingsCmd.class.getName());
     private static final String s_name = "listtrafficmonitorsresponse";
 
+    @Inject NetworkUsageManager networkUsageMgr;
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
@@ -66,17 +68,15 @@ public class ListTrafficMonitorsCmd extends BaseListCmd {
 
     @Override
     public void execute(){
-        ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
-        NetworkUsageManager networkUsageMgr = locator.getManager(NetworkUsageManager.class);
-    	List<? extends Host> trafficMonitors = networkUsageMgr.listTrafficMonitors(this);
+        List<? extends Host> trafficMonitors = networkUsageMgr.listTrafficMonitors(this);
 
         ListResponse<TrafficMonitorResponse> listResponse = new ListResponse<TrafficMonitorResponse>();
         List<TrafficMonitorResponse> responses = new ArrayList<TrafficMonitorResponse>();
         for (Host trafficMonitor : trafficMonitors) {
             TrafficMonitorResponse response = networkUsageMgr.getApiResponse(trafficMonitor);
-        	response.setObjectName("trafficmonitor");
-        	response.setResponseName(getCommandName());
-        	responses.add(response);
+            response.setObjectName("trafficmonitor");
+            response.setResponseName(getCommandName());
+            responses.add(response);
         }
 
         listResponse.setResponses(responses);
