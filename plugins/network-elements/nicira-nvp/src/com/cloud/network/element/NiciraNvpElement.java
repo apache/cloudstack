@@ -27,6 +27,7 @@ import java.util.UUID;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.PropertiesUtil;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -540,8 +541,9 @@ public class NiciraNvpElement extends AdapterBase implements
 	}
 
 	@Override
-	public String[] getPropertiesFiles() {
-		return new String[] { "nicira-nvp_commands.properties" };
+	public Map<String, String> getProperties() {
+		return PropertiesUtil.processConfigFile(new String[]
+                { "nicira-nvp_commands.properties" });
 	}
 
 	@Override

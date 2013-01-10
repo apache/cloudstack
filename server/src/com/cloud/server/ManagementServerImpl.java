@@ -2297,8 +2297,9 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public String[] getPropertiesFiles() {
-        return new String[] { "commands.properties" };
+    public Map<String, String> getProperties() {
+        return PropertiesUtil.processConfigFile(new String[]
+                { "commands.properties" });
     }
 
     protected class EventPurgeTask implements Runnable {
