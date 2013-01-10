@@ -29,12 +29,14 @@ import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.configuration.Resource.ResourceType;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.UserResponse;
+import org.springframework.stereotype.Component;
+
 import com.cloud.user.Account;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
-
+@Component
 @Local(value={AccountJoinDao.class})
 public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> implements AccountJoinDao {
     public static final Logger s_logger = Logger.getLogger(AccountJoinDaoImpl.class);

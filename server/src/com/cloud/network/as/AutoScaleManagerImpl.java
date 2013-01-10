@@ -42,6 +42,8 @@ import org.apache.cloudstack.api.command.user.autoscale.ListAutoScaleVmGroupsCmd
 import org.apache.cloudstack.api.command.user.autoscale.ListConditionsCmd;
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScalePolicyCmd;
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmProfileCmd;
+import org.springframework.stereotype.Component;
+
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -93,6 +95,7 @@ import com.cloud.utils.net.NetUtils;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
+@Component
 @Local(value = { AutoScaleService.class, AutoScaleManager.class })
 public class AutoScaleManagerImpl<Type> implements AutoScaleManager, AutoScaleService, Manager {
     private static final Logger s_logger = Logger.getLogger(AutoScaleManagerImpl.class);

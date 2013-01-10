@@ -20,12 +20,15 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.network.as.AutoScaleVmGroupPolicyMapVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
+@Component
 @Local(value={AutoScaleVmGroupPolicyMapDao.class})
 public class AutoScaleVmGroupPolicyMapDaoImpl extends GenericDaoBase<AutoScaleVmGroupPolicyMapVO, Long> implements AutoScaleVmGroupPolicyMapDao {
 

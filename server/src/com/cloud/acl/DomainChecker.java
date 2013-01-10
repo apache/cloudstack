@@ -42,6 +42,7 @@ import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.AdapterBase;
 
+@Component
 @Local(value = SecurityChecker.class)
 public class DomainChecker extends AdapterBase implements SecurityChecker {
     

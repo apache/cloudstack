@@ -57,18 +57,15 @@ import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
 
 import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
+import org.springframework.stereotype.Component;
+
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.*;
 import com.cloud.dc.DataCenter.NetworkType;
-import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.Pod;
-import com.cloud.dc.PodVlanMapVO;
-import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
-import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.PodVlanMapDao;
@@ -111,13 +108,6 @@ import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.rules.*;
 import com.cloud.network.rules.FirewallRule.Purpose;
-import com.cloud.network.rules.FirewallRuleVO;
-import com.cloud.network.rules.PortForwardingRule;
-import com.cloud.network.rules.PortForwardingRuleVO;
-import com.cloud.network.rules.RulesManager;
-import com.cloud.network.rules.StaticNat;
-import com.cloud.network.rules.StaticNatRule;
-import com.cloud.network.rules.StaticNatRuleImpl;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.vpc.NetworkACLManager;
 import com.cloud.network.vpc.PrivateIpVO;
@@ -173,6 +163,7 @@ import java.util.*;
 /**
  * NetworkManagerImpl implements NetworkManager.
  */
+@Component
 @Local(value = { NetworkManager.class, NetworkService.class })
 public class NetworkManagerImpl implements NetworkManager, NetworkService, Manager, Listener {
     private static final Logger s_logger = Logger.getLogger(NetworkManagerImpl.class);

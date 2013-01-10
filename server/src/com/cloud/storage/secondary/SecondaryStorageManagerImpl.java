@@ -30,6 +30,8 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.context.annotation.Primary;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -153,6 +155,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 // Starting, HA, Migrating, Creating and Running state are all counted as "Open" for available capacity calculation
 // because sooner or later, it will be driven into Running state
 //
+@Component
 @Local(value = { SecondaryStorageVmManager.class })
 public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, VirtualMachineGuru<SecondaryStorageVmVO>, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
     private static final Logger s_logger = Logger.getLogger(SecondaryStorageManagerImpl.class);
@@ -217,7 +220,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     UserVmDetailsDao _vmDetailsDao;
     @Inject 
     protected ResourceManager _resourceMgr;
-    @Inject
+    //@Inject			// TODO this is a very strange usage, a singleton class need to inject itself?
     protected SecondaryStorageVmManager _ssvmMgr;
     @Inject
     NetworkDao _networkDao;
@@ -245,6 +248,10 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 
     private final GlobalLock _allocLock = GlobalLock.getInternLock(getAllocLockName());
 
+    public SecondaryStorageManagerImpl() {
+    	_ssvmMgr = this;
+    }
+    
     @Override
     public SecondaryStorageVmVO startSecStorageVm(long secStorageVmId) {
         try {
@@ -886,9 +893,6 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         }
         _resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
         return true;
-    }
-
-    protected SecondaryStorageManagerImpl() {
     }
 
     @Override

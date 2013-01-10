@@ -24,6 +24,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.CreateLogicalSwitchAnswer;
@@ -66,6 +67,7 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
+@Component
 @Local(value=NetworkGuru.class)
 public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
     private static final Logger s_logger = Logger.getLogger(NiciraNvpGuestNetworkGuru.class);

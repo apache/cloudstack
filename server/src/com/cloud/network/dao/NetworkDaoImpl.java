@@ -22,6 +22,7 @@ import java.util.Random;
 
 import javax.annotation.PostConstruct;
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.persistence.TableGenerator;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
@@ -78,12 +79,12 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     GenericSearchBuilder<NetworkVO, Long> VpcNetworksCount;
     SearchBuilder<NetworkVO> OfferingAccountNetworkSearch;
 
-    ResourceTagsDaoImpl _tagsDao = ComponentLocator.inject(ResourceTagsDaoImpl.class);
-    NetworkAccountDaoImpl _accountsDao = ComponentLocator.inject(NetworkAccountDaoImpl.class);
-    NetworkDomainDaoImpl _domainsDao = ComponentLocator.inject(NetworkDomainDaoImpl.class);
-    NetworkOpDaoImpl _opDao = ComponentLocator.inject(NetworkOpDaoImpl.class);
-    NetworkServiceMapDaoImpl _ntwkSvcMap = ComponentLocator.inject(NetworkServiceMapDaoImpl.class);
-    NetworkOfferingDaoImpl _ntwkOffDao = ComponentLocator.inject(NetworkOfferingDaoImpl.class);
+    @Inject ResourceTagsDaoImpl _tagsDao;
+    @Inject NetworkAccountDaoImpl _accountsDao;
+    @Inject NetworkDomainDaoImpl _domainsDao;
+    @Inject NetworkOpDaoImpl _opDao;
+    @Inject NetworkServiceMapDaoImpl _ntwkSvcMap;
+    @Inject NetworkOfferingDaoImpl _ntwkOffDao;
 
 
     TableGenerator _tgMacAddress;

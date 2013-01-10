@@ -33,6 +33,8 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.projects.Project;
 import org.apache.cloudstack.api.response.UsageTypeResponse;
+import org.springframework.stereotype.Component;
+
 import com.cloud.usage.UsageJobVO;
 import com.cloud.usage.UsageTypes;
 import com.cloud.usage.UsageVO;
@@ -46,6 +48,7 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 
+@Component
 public class ManagementServerExtImpl extends ManagementServerImpl implements ManagementServerExt {
     @Inject private AccountDao _accountDao;
     @Inject private DomainDao _domainDao;

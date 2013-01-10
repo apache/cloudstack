@@ -29,12 +29,15 @@ import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.configuration.dao.ConfigurationDao;
 
 import org.apache.cloudstack.api.response.ProjectResponse;
+import org.springframework.stereotype.Component;
+
 import com.cloud.projects.Project;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
+@Component
 @Local(value={ProjectJoinDao.class})
 public class ProjectJoinDaoImpl extends GenericDaoBase<ProjectJoinVO, Long> implements ProjectJoinDao {
     public static final Logger s_logger = Logger.getLogger(ProjectJoinDaoImpl.class);

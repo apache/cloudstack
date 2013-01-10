@@ -36,7 +36,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-
+@Component
 @Local(value={SyncQueueManager.class})
 public class SyncQueueManagerImpl implements SyncQueueManager {
     public static final Logger s_logger = Logger.getLogger(SyncQueueManagerImpl.class.getName());

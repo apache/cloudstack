@@ -381,8 +381,8 @@ public class ManagementServerImpl implements ManagementServer {
     S3Manager _s3Mgr;
 
     @Inject
-    ComponentContext _placeholder;
-
+    ComponentContext _placeholder;			// create a dependency to ComponentContext so that it can be loaded beforehead
+ 
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
     private KeystoreManager _ksMgr;
 
