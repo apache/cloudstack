@@ -195,7 +195,7 @@ public class Script implements Callable<String> {
             }
 
             Task task = null;
-            if (interpreter.drain()) {
+            if (interpreter != null && interpreter.drain()) {
                 task = new Task(interpreter, ir);
                 s_executors.execute(task);
             }
@@ -204,8 +204,13 @@ public class Script implements Callable<String> {
 				try {
 					if (_process.waitFor() == 0) {
 						_logger.debug("Execution is successful.");
-
-						return interpreter.drain() ? task.getResult() : interpreter.interpret(ir);
+						if (interpreter != null) {
+							return interpreter.drain() ? task.getResult() : interpreter.interpret(ir);
+						}
+						else {
+							// null return is ok apparently
+							return (_process.exitValue() == 0) ? "Ok" : "Failed, exit code " + _process.exitValue();
+						}
 					} else {
 						break;
 					}
@@ -239,7 +244,14 @@ public class Script implements Callable<String> {
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(_process.getInputStream()), 128);
 
-            String error = interpreter.processError(reader);
+            String error;
+            if (interpreter != null) {
+            	error = interpreter.processError(reader);
+            }
+            else {
+            	error = "Non zero exit code : " + _process.exitValue();
+            }
+            
             if (_logger.isDebugEnabled()) {
                 _logger.debug(error);
             }
