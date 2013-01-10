@@ -53,6 +53,7 @@ import javax.servlet.http.HttpSession;
 import com.cloud.utils.ReflectUtil;
 import org.apache.cloudstack.acl.APIAccessChecker;
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
@@ -790,9 +791,39 @@ public class ApiServer implements HttpRequestHandler {
     }
 
     private boolean isCommandAvailable(User user, String commandName) {
+        if (user == null) {
+            return false;
+        }
+
+        Account account = _accountMgr.getAccount(user.getAccountId());
+        if (account == null) {
+            return false;
+        }
+
+        RoleType roleType = RoleType.Unknown;
+        short accountType = account.getType();
+
+        // Account type to role type translation
+        switch (accountType) {
+            case Account.ACCOUNT_TYPE_ADMIN:
+                roleType = RoleType.Admin;
+                break;
+            case Account.ACCOUNT_TYPE_DOMAIN_ADMIN:
+                roleType = RoleType.DomainAdmin;
+                break;
+            case Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN:
+                roleType = RoleType.ResourceAdmin;
+                break;
+            case Account.ACCOUNT_TYPE_NORMAL:
+                roleType = RoleType.User;
+                break;
+            default:
+                return false;
+        }
+
         for (APIAccessChecker apiChecker : _apiAccessCheckers) {
             // Fail the checking if any checker fails to verify
-            if (!apiChecker.canAccessAPI(user, commandName))
+            if (!apiChecker.canAccessAPI(roleType, commandName))
                 return false;
         }
         return true;
