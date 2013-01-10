@@ -31,19 +31,14 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.storage.datastore.DataStoreStatus;
 import org.springframework.stereotype.Component;
 
-import com.cloud.storage.StoragePoolDetailVO;
-import com.cloud.storage.dao.StoragePoolDetailsDao;
-import com.cloud.storage.dao.StoragePoolDetailsDaoImpl;
-import com.cloud.utils.component.ComponentInject;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
@@ -101,7 +96,7 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<PrimaryDataStoreVO, 
         StatusCountSearch.select(null, Func.COUNT, null);
         StatusCountSearch.done();
 
-       // _detailsDao = ComponentInject.inject(PrimaryDataStoreDetailsDaoImpl.class);
+        // _detailsDao = ComponentInject.inject(PrimaryDataStoreDetailsDaoImpl.class);
     }
 
     @Override

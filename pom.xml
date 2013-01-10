@@ -43,6 +43,7 @@
   </issueManagement>
 
   <properties>
+    <skipTest>true</skipTest>
     <cs.jdk.version>1.6</cs.jdk.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
@@ -88,7 +89,6 @@
     <cs.lang.version>2.6</cs.lang.version>
     <cs.commons-io.version>1.4</cs.commons-io.version>
     <cs.reflections.version>0.9.8</cs.reflections.version>
-    <skipTests>true</skipTests>
   </properties>
 
   <distributionManagement>

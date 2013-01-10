@@ -64,12 +64,7 @@ import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.*;
 import com.cloud.dc.DataCenter.NetworkType;
-import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.Pod;
-import com.cloud.dc.PodVlanMapVO;
-import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
-import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.PodVlanMapDao;
@@ -112,13 +107,6 @@ import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.rules.*;
 import com.cloud.network.rules.FirewallRule.Purpose;
-import com.cloud.network.rules.FirewallRuleVO;
-import com.cloud.network.rules.PortForwardingRule;
-import com.cloud.network.rules.PortForwardingRuleVO;
-import com.cloud.network.rules.RulesManager;
-import com.cloud.network.rules.StaticNat;
-import com.cloud.network.rules.StaticNatRule;
-import com.cloud.network.rules.StaticNatRuleImpl;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.vpc.NetworkACLManager;
 import com.cloud.network.vpc.PrivateIpVO;
@@ -143,7 +131,7 @@ import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.utils.AnnotationHelper;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.Adapters;
+import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.JoinBuilder.JoinType;
@@ -306,7 +294,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     public NetworkElement getElementImplementingProvider(String providerName) {
         String elementName = s_providerToNetworkElementMap.get(providerName);
-        NetworkElement element = Adapters.getAdapterByName(_networkElements, elementName);
+        NetworkElement element = AdapterBase.getAdapterByName(_networkElements, elementName);
         return element;
     }
 
@@ -1813,7 +1801,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         
         NetworkVO ntwkVO = _networksDao.findById(network.getId());
         s_logger.debug("Allocating nic for vm " + vm.getVirtualMachine() + " in network " + network + " with requested profile " + requested);
-        NetworkGuru guru = Adapters.getAdapterByName(_networkGurus, ntwkVO.getGuruName());
+        NetworkGuru guru = AdapterBase.getAdapterByName(_networkGurus, ntwkVO.getGuruName());
 
         if (requested != null && requested.getMode() == null) {
             requested.setMode(network.getMode());
@@ -1958,7 +1946,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         try {
-            NetworkGuru guru = Adapters.getAdapterByName(_networkGurus, network.getGuruName());
+            NetworkGuru guru = AdapterBase.getAdapterByName(_networkGurus, network.getGuruName());
             Network.State state = network.getState();
             if (state == Network.State.Implemented || state == Network.State.Implementing) {
                 s_logger.debug("Network id=" + networkId + " is already implemented");
@@ -2165,7 +2153,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         
         Integer networkRate = getNetworkRate(network.getId(), vmProfile.getId());
-        NetworkGuru guru = Adapters.getAdapterByName(_networkGurus, network.getGuruName());
+        NetworkGuru guru = AdapterBase.getAdapterByName(_networkGurus, network.getGuruName());
         NicVO nic = _nicDao.findById(nicId);
         
         NicProfile profile = null;
@@ -2227,7 +2215,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             NetworkVO network = _networksDao.findById(nic.getNetworkId());
             Integer networkRate = getNetworkRate(network.getId(), vm.getId());
 
-            NetworkGuru guru = Adapters.getAdapterByName(_networkGurus, network.getGuruName());
+            NetworkGuru guru = AdapterBase.getAdapterByName(_networkGurus, network.getGuruName());
             NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate, 
                     isSecurityGroupSupportedInNetwork(network), getNetworkTag(vm.getHypervisorType(), network));
             guru.updateNicProfile(profile, network);
@@ -2271,7 +2259,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         if (originalState == Nic.State.Reserved || originalState == Nic.State.Reserving) {
             if (nic.getReservationStrategy() == Nic.ReservationStrategy.Start) {
-                NetworkGuru guru = Adapters.getAdapterByName(_networkGurus, network.getGuruName());
+                NetworkGuru guru = AdapterBase.getAdapterByName(_networkGurus, network.getGuruName());
                 nic.setState(Nic.State.Releasing);
                 _nicDao.update(nic.getId(), nic);
                 NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), null,
@@ -2321,7 +2309,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 NetworkVO network = _networksDao.findById(nic.getNetworkId());
                 Integer networkRate = getNetworkRate(network.getId(), vm.getId());
 
-                NetworkGuru guru = Adapters.getAdapterByName(_networkGurus, network.getGuruName());
+                NetworkGuru guru = AdapterBase.getAdapterByName(_networkGurus, network.getGuruName());
                 NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), 
                         networkRate, isSecurityGroupSupportedInNetwork(network), getNetworkTag(vm.getHypervisorType(), network));
                 guru.updateNicProfile(profile, network);
@@ -2342,7 +2330,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         NetworkVO network = _networksDao.findById(networkId);
         Integer networkRate = getNetworkRate(network.getId(), vm.getId());
     
-        NetworkGuru guru = Adapters.getAdapterByName(_networkGurus, network.getGuruName());
+        NetworkGuru guru = AdapterBase.getAdapterByName(_networkGurus, network.getGuruName());
         NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), 
                 networkRate, isSecurityGroupSupportedInNetwork(network), getNetworkTag(vm.getHypervisorType(), network));
         guru.updateNicProfile(profile, network);            
@@ -2497,7 +2485,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         NetworkVO network = _networksDao.findById(nic.getNetworkId());
         NicProfile profile = new NicProfile(nic, network, null, null, null,
                 isSecurityGroupSupportedInNetwork(network), getNetworkTag(vm.getHypervisorType(), network));
-        NetworkGuru guru = Adapters.getAdapterByName(_networkGurus, network.getGuruName());
+        NetworkGuru guru = AdapterBase.getAdapterByName(_networkGurus, network.getGuruName());
         guru.deallocate(network, profile, vm);
         _nicDao.remove(nic.getId());
         s_logger.debug("Removed nic id=" + nic.getId());
@@ -3560,7 +3548,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Network id=" + networkId + " is shutdown successfully, cleaning up corresponding resources now.");
             }
-            NetworkGuru guru = Adapters.getAdapterByName(_networkGurus, network.getGuruName());
+            NetworkGuru guru = AdapterBase.getAdapterByName(_networkGurus, network.getGuruName());
             NetworkProfile profile = convertNetworkToNetworkProfile(network.getId());
             guru.shutdown(profile, _networkOfferingDao.findById(network.getNetworkOfferingId()));
 
@@ -3726,7 +3714,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Network id=" + networkId + " is destroyed successfully, cleaning up corresponding resources now.");
             }
-            NetworkGuru guru = Adapters.getAdapterByName(_networkGurus, network.getGuruName());
+            NetworkGuru guru = AdapterBase.getAdapterByName(_networkGurus, network.getGuruName());
             Account owner = _accountMgr.getAccount(network.getAccountId());
 
             Transaction txn = Transaction.currentTxn();
@@ -4429,7 +4417,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     public NetworkProfile convertNetworkToNetworkProfile(long networkId) {
         NetworkVO network = _networksDao.findById(networkId);
-        NetworkGuru guru = Adapters.getAdapterByName(_networkGurus, network.getGuruName());
+        NetworkGuru guru = AdapterBase.getAdapterByName(_networkGurus, network.getGuruName());
         NetworkProfile profile = new NetworkProfile(network);
         guru.updateNetworkProfile(profile);
 

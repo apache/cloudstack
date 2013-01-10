@@ -6,7 +6,6 @@ import java.util.List;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity;
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
@@ -27,13 +26,12 @@ import org.apache.cloudstack.storage.volume.TemplatePrimaryDataStoreManager;
 import org.apache.cloudstack.storage.volume.VolumeObject;
 import org.apache.cloudstack.storage.volume.db.VolumeDao2;
 import org.apache.cloudstack.storage.volume.db.VolumeVO;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.utils.component.ComponentInject;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 import edu.emory.mathcs.backport.java.util.Collections;
@@ -55,42 +53,42 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
     private PrimaryDataStoreDao dataStoreDao;
     @Inject
     private TemplatePrimaryDataStoreManager templatePrimaryStoreMgr;
-    
+
     private DefaultPrimaryDataStore(PrimaryDataStoreVO pdsv) {
         this.pdsv = pdsv;
     }
-    
+
     public void setDriver(PrimaryDataStoreDriver driver) {
         driver.setDataStore(this);
         this.driver = driver;
     }
-    
+
     public void setLifeCycle(PrimaryDataStoreLifeCycle lifeCycle) {
         lifeCycle.setDataStore(this);
         this.lifeCycle = lifeCycle;
     }
-    
+
     public void setProvider(PrimaryDataStoreProvider provider) {
         this.provider = provider;
     }
-    
+
     public void setProtocolTransFormer(StorageProtocolTransformer transformer) {
         this.protocalTransformer = transformer;
     }
-    
+
     @Override
     public PrimaryDataStoreTO getDataStoreTO() {
         return this.protocalTransformer.getDataStoreTO(this);
     }
-    
+
     @Override
     public VolumeTO getVolumeTO(VolumeInfo volume) {
         return this.protocalTransformer.getVolumeTO(volume);
     }
-    
+
     public static DefaultPrimaryDataStore createDataStore(PrimaryDataStoreVO pdsv) {
         DefaultPrimaryDataStore dataStore = new DefaultPrimaryDataStore(pdsv);
-        return ComponentInject.inject(dataStore);
+        return ComponentContext.inject(dataStore);
     }
 
     @Override
@@ -130,12 +128,12 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
                 return new ArrayList<EndPoint>();
             }
         }
-        
+
         List<EndPoint> endpoints = new ArrayList<EndPoint>();
         List<HostVO> hosts = hostDao.findHypervisorHostInCluster(clusterId);
         for (HostVO host : hosts) {
             HypervisorHostEndPoint ep = new HypervisorHostEndPoint(host.getId(), host.getPrivateIpAddress());
-            ComponentInject.inject(ep);
+            ComponentContext.inject(ep);
             endpoints.add(ep);
         }
         Collections.shuffle(endpoints);
@@ -145,12 +143,12 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
     public void setSupportedHypervisor(HypervisorType type) {
         this.supportedHypervisor = type;
     }
-    
+
     @Override
     public boolean isHypervisorSupported(HypervisorType hypervisor) {
         return (this.supportedHypervisor == hypervisor) ? true : false;
     }
-    
+
     public void setLocalStorageFlag(boolean supported) {
         this.isLocalStorageSupported = supported;
     }
@@ -167,7 +165,7 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
 
     @Override
     public long getCapacity() {
-       return this.driver.getCapacity();
+        return this.driver.getCapacity();
     }
 
     @Override
@@ -219,7 +217,7 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
         //this.driver.createVolumeFromBaseImage(vo, template);
         return volume;
     }
-    
+
     @Override
     public void createVoluemFromBaseImageAsync(VolumeInfo volume, TemplateOnPrimaryDataStoreInfo templateStore, AsyncCompletionCallback<CommandResult> callback) {
         VolumeObject vo = (VolumeObject) volume;
@@ -227,7 +225,7 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
 
         this.driver.createVolumeFromBaseImageAsync(vo, templateStore, callback);
     }
-    
+
     @Override
     public boolean installTemplate(TemplateOnPrimaryDataStoreInfo template) {
         // TODO Auto-generated method stub
@@ -264,5 +262,5 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
         return this.provider;
     }
 
-    
+
 }

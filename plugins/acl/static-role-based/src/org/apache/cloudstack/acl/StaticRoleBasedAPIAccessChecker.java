@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -38,7 +39,6 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.User;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.PluggableService;
 
 /*
@@ -60,8 +60,8 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
     private static List<String> s_resourceDomainAdminCommands = null;
     private static List<String> s_allCommands = null;
 
-    protected @Inject AccountManager _accountMgr;
-    @Inject protected List<PluggableService> _services;
+    @Inject AccountManager _accountMgr;
+    @Inject List<PluggableService> _services;
 
     protected StaticRoleBasedAPIAccessChecker() {
         super();

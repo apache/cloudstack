@@ -13,13 +13,11 @@ import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeTypeHelper;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
 import org.apache.cloudstack.storage.volume.db.VolumeDao2;
 import org.apache.cloudstack.storage.volume.db.VolumeVO;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.State;
-import com.cloud.utils.component.ComponentInject;
-import com.cloud.utils.db.DB;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
@@ -41,13 +39,14 @@ public class VolumeObject implements VolumeInfo {
         this.volumeVO = volumeVO;
         this.dataStore = dataStore;
     }
-    
+
     public static VolumeObject getVolumeObject(PrimaryDataStore dataStore, VolumeVO volumeVO) {
         VolumeObject vo = new VolumeObject(dataStore, volumeVO);
-        vo = ComponentInject.inject(vo);
+        vo = ComponentContext.inject(vo);
         return vo;
     }
 
+    @Override
     public String getUuid() {
         return volumeVO.getUuid();
     }
@@ -56,14 +55,17 @@ public class VolumeObject implements VolumeInfo {
         volumeVO.setUuid(uuid);
     }
 
+    @Override
     public String getPath() {
         return volumeVO.getPath();
     }
 
+    @Override
     public String getTemplateUuid() {
         return null;
     }
 
+    @Override
     public String getTemplatePath() {
         return null;
     }
@@ -76,18 +78,22 @@ public class VolumeObject implements VolumeInfo {
         return volumeVO.getState();
     }
 
+    @Override
     public PrimaryDataStore getDataStore() {
         return dataStore;
     }
 
+    @Override
     public long getSize() {
         return volumeVO.getSize();
     }
 
+    @Override
     public VolumeDiskType getDiskType() {
         return diskTypeHelper.getDiskType(volumeVO.getDiskType());
     }
 
+    @Override
     public VolumeType getType() {
         return volumeTypeHelper.getType(volumeVO.getVolumeType());
     }
@@ -153,7 +159,7 @@ public class VolumeObject implements VolumeInfo {
         // TODO Auto-generated method stub
         return null;
     }
-    
+
     @Override
     public String getName() {
         return this.volumeVO.getName();

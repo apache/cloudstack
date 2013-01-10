@@ -45,11 +45,11 @@ public class CloudStartupServlet extends HttpServlet implements ServletContextLi
         initLog4j();
 
         // Save Configuration Values
-        ConfigurationServer c = ComponentContext.getCompanent(ConfigurationServer.class);
+        ConfigurationServer c = ComponentContext.getComponent(ConfigurationServer.class);
         try {
             c.persistDefaultValues();
 
-            ManagementServer ms = ComponentContext.getCompanent(ManagementServer.class);
+            ManagementServer ms = ComponentContext.getComponent(ManagementServer.class);
             ms.startup();
             ms.enableAdminUser("password");
             ApiServer.initApiServer(ms.getPropertiesFiles());

@@ -18,8 +18,6 @@
  */
 package org.apache.cloudstack.storage.image.provider;
 
-import java.util.Map;
-
 import javax.inject.Inject;
 
 import org.apache.cloudstack.storage.image.db.ImageDataStoreDao;
@@ -34,7 +32,7 @@ import org.apache.cloudstack.storage.image.store.lifecycle.DefaultImageDataStore
 import org.apache.cloudstack.storage.image.store.lifecycle.ImageDataStoreLifeCycle;
 import org.springframework.stereotype.Component;
 
-import com.cloud.utils.component.ComponentInject;
+import com.cloud.utils.component.ComponentContext;
 
 @Component
 public class DefaultImageDataStoreProvider implements ImageDataStoreProvider {
@@ -50,7 +48,7 @@ public class DefaultImageDataStoreProvider implements ImageDataStoreProvider {
         ImageDataStoreVO idsv = imageStoreDao.findById(imageStoreId);
         ImageDataStoreDriver driver = new ImageDataStoreDriverImpl();
         ImageDataStore ids = new ImageDataStoreImpl(idsv, driver, false);
-        ids = ComponentInject.inject(ids);
+        ids = ComponentContext.inject(ids);
         return ids;
     }
 
@@ -72,6 +70,6 @@ public class DefaultImageDataStoreProvider implements ImageDataStoreProvider {
 
     @Override
     public ImageDataStoreLifeCycle getLifeCycle() {
-    	return new DefaultImageDataStoreLifeCycle(this, provider, imageStoreDao);
+        return new DefaultImageDataStoreLifeCycle(this, provider, imageStoreDao);
     }
 }

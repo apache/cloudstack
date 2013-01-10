@@ -18,14 +18,13 @@
  */
 package org.apache.cloudstack.storage.datastore.configurator.vmware;
 
+import javax.inject.Inject;
+
 import org.apache.cloudstack.storage.datastore.configurator.validator.NfsProtocolTransformer;
 import org.apache.cloudstack.storage.datastore.configurator.validator.StorageProtocolTransformer;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
-
-import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.utils.component.Inject;
 
 @Component
 @Qualifier("defaultProvider")

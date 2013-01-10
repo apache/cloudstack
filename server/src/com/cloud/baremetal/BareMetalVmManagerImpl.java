@@ -81,7 +81,7 @@ import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.Adapters;
+import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -181,7 +181,7 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
          * prepare() will check if current account has right for creating
          * template
          */
-        TemplateAdapter adapter = Adapters.getAdapterByName(_adapters, TemplateAdapterType.BareMetal.getName());
+        TemplateAdapter adapter = AdapterBase.getAdapterByName(_adapters, TemplateAdapterType.BareMetal.getName());
         Long userId = UserContext.current().getCallerUserId();
         userId = (userId == null ? User.UID_SYSTEM : userId);
         AccountVO account = _accountDao.findById(vm.getAccountId());

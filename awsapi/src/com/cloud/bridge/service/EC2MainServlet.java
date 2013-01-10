@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.UUID;
 
+import javax.inject.Inject;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -30,50 +31,48 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.log4j.Logger;
 
 import com.cloud.bridge.persist.dao.CloudStackConfigurationDao;
-import com.cloud.bridge.persist.dao.CloudStackConfigurationDaoImpl;
 import com.cloud.bridge.util.ConfigurationHelper;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Transaction;
-
-import net.sf.ehcache.Cache;
 @DB
 public class EC2MainServlet extends HttpServlet{
 
-	private static final long serialVersionUID = 2201599478145974479L;
-	
-	public static final String EC2_REST_SERVLET_PATH="/rest/AmazonEC2/";
-	public static final String EC2_SOAP_SERVLET_PATH="/services/AmazonEC2/";
-	public static final String ENABLE_EC2_API="enable.ec2.api";
-	private static boolean isEC2APIEnabled = false;
-	public static final Logger logger = Logger.getLogger(EC2MainServlet.class);
-	CloudStackConfigurationDao csDao = ComponentLocator.inject(CloudStackConfigurationDaoImpl.class);
-	
-	/**
-	 * We build the path to where the keystore holding the WS-Security X509 certificates
-	 * are stored.
-	 */
-	@DB
-	public void init( ServletConfig config ) throws ServletException {
-		try{
-		    ConfigurationHelper.preConfigureConfigPathFromServletContext(config.getServletContext());
-    		// check if API is enabled
-    		String value = csDao.getConfigValue(ENABLE_EC2_API);
-    		if(value != null){
-    		    isEC2APIEnabled = Boolean.valueOf(value);
-    		}
-    		logger.info("Value of EC2 API Flag ::" + value);
-		}catch(Exception e){
-		    throw new ServletException("Error initializing awsapi: " + e.getMessage(), e);
-		}
-	}
-	
-	protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
-	    doGetOrPost(req, resp);
+    private static final long serialVersionUID = 2201599478145974479L;
+
+    public static final String EC2_REST_SERVLET_PATH="/rest/AmazonEC2/";
+    public static final String EC2_SOAP_SERVLET_PATH="/services/AmazonEC2/";
+    public static final String ENABLE_EC2_API="enable.ec2.api";
+    private static boolean isEC2APIEnabled = false;
+    public static final Logger logger = Logger.getLogger(EC2MainServlet.class);
+    @Inject CloudStackConfigurationDao csDao;
+
+    /**
+     * We build the path to where the keystore holding the WS-Security X509 certificates
+     * are stored.
+     */
+    @Override
+    @DB
+    public void init( ServletConfig config ) throws ServletException {
+        try{
+            ConfigurationHelper.preConfigureConfigPathFromServletContext(config.getServletContext());
+            // check if API is enabled
+            String value = csDao.getConfigValue(ENABLE_EC2_API);
+            if(value != null){
+                isEC2APIEnabled = Boolean.valueOf(value);
+            }
+            logger.info("Value of EC2 API Flag ::" + value);
+        }catch(Exception e){
+            throw new ServletException("Error initializing awsapi: " + e.getMessage(), e);
+        }
     }
-	
+
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
+        doGetOrPost(req, resp);
+    }
+
+    @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) {
-	    doGetOrPost(req, resp);
+        doGetOrPost(req, resp);
     }
 
     protected void doGetOrPost(HttpServletRequest request, HttpServletResponse response) {
@@ -84,30 +83,30 @@ public class EC2MainServlet extends HttpServlet{
             faultResponse(response, "404" , "EC2 API is disabled.");
             return;
         }
-        
-    	if(action != null){
-    		//We presume it's a Query/Rest call
-    		try {
-				RequestDispatcher dispatcher = request.getRequestDispatcher(EC2_REST_SERVLET_PATH);
-				dispatcher.forward(request, response);
-			} catch (ServletException e) {
-				throw new RuntimeException(e);
-			} catch (IOException e) {
-				throw new RuntimeException(e);
-			}
-    	}
-    	else {
-    		try {
-				request.getRequestDispatcher(EC2_SOAP_SERVLET_PATH).forward(request, response);
-			} catch (ServletException e) {
-				throw new RuntimeException(e);
-			} catch (IOException e) {
-				throw new RuntimeException(e);
-			}
-    	}
-    	
+
+        if(action != null){
+            //We presume it's a Query/Rest call
+            try {
+                RequestDispatcher dispatcher = request.getRequestDispatcher(EC2_REST_SERVLET_PATH);
+                dispatcher.forward(request, response);
+            } catch (ServletException e) {
+                throw new RuntimeException(e);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        else {
+            try {
+                request.getRequestDispatcher(EC2_SOAP_SERVLET_PATH).forward(request, response);
+            } catch (ServletException e) {
+                throw new RuntimeException(e);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
     }
-    
+
     private void faultResponse(HttpServletResponse response, String errorCode, String errorMessage) {
         try {
             OutputStreamWriter out = new OutputStreamWriter(response.getOutputStream());

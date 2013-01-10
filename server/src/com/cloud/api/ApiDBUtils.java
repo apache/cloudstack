@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.inject.Inject;
+
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.response.AccountResponse;
@@ -114,11 +116,11 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.NetworkRuleConfigVO;
 import com.cloud.network.NetworkVO;
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PhysicalNetworkVO;
-import com.cloud.network.Site2SiteVpnGatewayVO;
 import com.cloud.network.Site2SiteCustomerGatewayVO;
-import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.Site2SiteVpnGatewayVO;
 import com.cloud.network.as.AutoScalePolicy;
 import com.cloud.network.as.AutoScalePolicyConditionMapVO;
 import com.cloud.network.as.AutoScalePolicyVO;
@@ -139,15 +141,15 @@ import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.NetworkDomainDao;
 import com.cloud.network.dao.NetworkRuleConfigDao;
+import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
-import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
+import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.security.SecurityGroup;
@@ -160,6 +162,7 @@ import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.VpcOffering;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.StaticRouteDao;
+import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpc.dao.VpcGatewayDao;
 import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.offering.NetworkOffering;
@@ -229,7 +232,6 @@ import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.InstanceGroup;
@@ -246,194 +248,102 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.cloud.network.vpc.dao.VpcDao;
 
 public class ApiDBUtils {
     private static ManagementServer _ms;
-    public static AsyncJobManager _asyncMgr;
-    private static SecurityGroupManager _securityGroupMgr;
-    private static StorageManager _storageMgr;
-    private static UserVmManager _userVmMgr;
-    private static NetworkManager _networkMgr;
-    private static StatsCollector _statsCollector;
+    @Inject static AsyncJobManager _asyncMgr;
+    @Inject static SecurityGroupManager _securityGroupMgr;
+    @Inject static StorageManager _storageMgr;
+    @Inject static UserVmManager _userVmMgr;
+    @Inject static NetworkManager _networkMgr;
+    @Inject static StatsCollector _statsCollector;
 
-    private static AccountDao _accountDao;
-    private static AccountVlanMapDao _accountVlanMapDao;
-    private static ClusterDao _clusterDao;
-    private static CapacityDao _capacityDao;
-    private static DiskOfferingDao _diskOfferingDao;
-    private static DomainDao _domainDao;
-    private static DomainRouterDao _domainRouterDao;
-    private static DomainRouterJoinDao _domainRouterJoinDao;
-    private static GuestOSDao _guestOSDao;
-    private static GuestOSCategoryDao _guestOSCategoryDao;
-    private static HostDao _hostDao;
-    private static IPAddressDao _ipAddressDao;
-    private static LoadBalancerDao _loadBalancerDao;
-    private static SecurityGroupDao _securityGroupDao;
-    private static SecurityGroupJoinDao _securityGroupJoinDao;
-    private static NetworkRuleConfigDao _networkRuleConfigDao;
-    private static HostPodDao _podDao;
-    private static ServiceOfferingDao _serviceOfferingDao;
-    private static SnapshotDao _snapshotDao;
-    private static StoragePoolDao _storagePoolDao;
-    private static VMTemplateDao _templateDao;
-    private static VMTemplateDetailsDao _templateDetailsDao;
-    private static VMTemplateHostDao _templateHostDao;
-    private static VMTemplateSwiftDao _templateSwiftDao;
-    private static VMTemplateS3Dao _templateS3Dao;
-    private static UploadDao _uploadDao;
-    private static UserDao _userDao;
-    private static UserStatisticsDao _userStatsDao;
-    private static UserVmDao _userVmDao;
-    private static UserVmJoinDao _userVmJoinDao;
-    private static VlanDao _vlanDao;
-    private static VolumeDao _volumeDao;
-    private static Site2SiteVpnGatewayDao _site2SiteVpnGatewayDao;
-    private static Site2SiteCustomerGatewayDao _site2SiteCustomerGatewayDao;
-    private static VolumeHostDao _volumeHostDao;
-    private static DataCenterDao _zoneDao;
-    private static NetworkOfferingDao _networkOfferingDao;
-    private static NetworkDao _networkDao;
-    private static PhysicalNetworkDao _physicalNetworkDao;
-    private static ConfigurationService _configMgr;
-    private static ConfigurationDao _configDao;
-    private static ConsoleProxyDao _consoleProxyDao;
-    private static FirewallRulesCidrsDao _firewallCidrsDao;
-    private static VMInstanceDao _vmDao;
-    private static ResourceLimitService _resourceLimitMgr;
-    private static ProjectService _projectMgr;
-    private static ResourceManager _resourceMgr;
-    private static AccountDetailsDao _accountDetailsDao;
-    private static NetworkDomainDao _networkDomainDao;
-    private static HighAvailabilityManager _haMgr;
-    private static VpcManager _vpcMgr;
-    private static TaggedResourceService _taggedResourceService;
-    private static UserVmDetailsDao _userVmDetailsDao;
-    private static SSHKeyPairDao _sshKeyPairDao;
+    @Inject static AccountDao _accountDao;
+    @Inject static AccountVlanMapDao _accountVlanMapDao;
+    @Inject static ClusterDao _clusterDao;
+    @Inject static CapacityDao _capacityDao;
+    @Inject static DiskOfferingDao _diskOfferingDao;
+    @Inject static DomainDao _domainDao;
+    @Inject static DomainRouterDao _domainRouterDao;
+    @Inject static DomainRouterJoinDao _domainRouterJoinDao;
+    @Inject static GuestOSDao _guestOSDao;
+    @Inject static GuestOSCategoryDao _guestOSCategoryDao;
+    @Inject static HostDao _hostDao;
+    @Inject static IPAddressDao _ipAddressDao;
+    @Inject static LoadBalancerDao _loadBalancerDao;
+    @Inject static SecurityGroupDao _securityGroupDao;
+    @Inject static SecurityGroupJoinDao _securityGroupJoinDao;
+    @Inject static NetworkRuleConfigDao _networkRuleConfigDao;
+    @Inject static HostPodDao _podDao;
+    @Inject static ServiceOfferingDao _serviceOfferingDao;
+    @Inject static SnapshotDao _snapshotDao;
+    @Inject static StoragePoolDao _storagePoolDao;
+    @Inject static VMTemplateDao _templateDao;
+    @Inject static VMTemplateDetailsDao _templateDetailsDao;
+    @Inject static VMTemplateHostDao _templateHostDao;
+    @Inject static VMTemplateSwiftDao _templateSwiftDao;
+    @Inject static VMTemplateS3Dao _templateS3Dao;
+    @Inject static UploadDao _uploadDao;
+    @Inject static UserDao _userDao;
+    @Inject static UserStatisticsDao _userStatsDao;
+    @Inject static UserVmDao _userVmDao;
+    @Inject static UserVmJoinDao _userVmJoinDao;
+    @Inject static VlanDao _vlanDao;
+    @Inject static VolumeDao _volumeDao;
+    @Inject static Site2SiteVpnGatewayDao _site2SiteVpnGatewayDao;
+    @Inject static Site2SiteCustomerGatewayDao _site2SiteCustomerGatewayDao;
+    @Inject static VolumeHostDao _volumeHostDao;
+    @Inject static DataCenterDao _zoneDao;
+    @Inject static NetworkOfferingDao _networkOfferingDao;
+    @Inject static NetworkDao _networkDao;
+    @Inject static PhysicalNetworkDao _physicalNetworkDao;
+    @Inject static ConfigurationService _configMgr;
+    @Inject static ConfigurationDao _configDao;
+    @Inject static ConsoleProxyDao _consoleProxyDao;
+    @Inject static FirewallRulesCidrsDao _firewallCidrsDao;
+    @Inject static VMInstanceDao _vmDao;
+    @Inject static ResourceLimitService _resourceLimitMgr;
+    @Inject static ProjectService _projectMgr;
+    @Inject static ResourceManager _resourceMgr;
+    @Inject static AccountDetailsDao _accountDetailsDao;
+    @Inject static NetworkDomainDao _networkDomainDao;
+    @Inject static HighAvailabilityManager _haMgr;
+    @Inject static VpcManager _vpcMgr;
+    @Inject static TaggedResourceService _taggedResourceService;
+    @Inject static UserVmDetailsDao _userVmDetailsDao;
+    @Inject static SSHKeyPairDao _sshKeyPairDao;
 
-    private static ConditionDao _asConditionDao;
-    private static AutoScalePolicyConditionMapDao _asPolicyConditionMapDao;
-    private static AutoScaleVmGroupPolicyMapDao _asVmGroupPolicyMapDao;
-    private static AutoScalePolicyDao _asPolicyDao;
-    private static AutoScaleVmProfileDao _asVmProfileDao;
-    private static AutoScaleVmGroupDao _asVmGroupDao;
-    private static CounterDao _counterDao;
-    private static ResourceTagJoinDao _tagJoinDao;
-    private static EventJoinDao _eventJoinDao;
-    private static InstanceGroupJoinDao _vmGroupJoinDao;
-    private static UserAccountJoinDao _userAccountJoinDao;
-    private static ProjectJoinDao _projectJoinDao;
-    private static ProjectAccountJoinDao _projectAccountJoinDao;
-    private static ProjectInvitationJoinDao _projectInvitationJoinDao;
-    private static HostJoinDao _hostJoinDao;
-    private static VolumeJoinDao _volJoinDao;
-    private static StoragePoolJoinDao _poolJoinDao;
-    private static AccountJoinDao _accountJoinDao;
-    private static AsyncJobJoinDao _jobJoinDao;
+    @Inject static ConditionDao _asConditionDao;
+    @Inject static AutoScalePolicyConditionMapDao _asPolicyConditionMapDao;
+    @Inject static AutoScaleVmGroupPolicyMapDao _asVmGroupPolicyMapDao;
+    @Inject static AutoScalePolicyDao _asPolicyDao;
+    @Inject static AutoScaleVmProfileDao _asVmProfileDao;
+    @Inject static AutoScaleVmGroupDao _asVmGroupDao;
+    @Inject static CounterDao _counterDao;
+    @Inject static ResourceTagJoinDao _tagJoinDao;
+    @Inject static EventJoinDao _eventJoinDao;
+    @Inject static InstanceGroupJoinDao _vmGroupJoinDao;
+    @Inject static UserAccountJoinDao _userAccountJoinDao;
+    @Inject static ProjectJoinDao _projectJoinDao;
+    @Inject static ProjectAccountJoinDao _projectAccountJoinDao;
+    @Inject static ProjectInvitationJoinDao _projectInvitationJoinDao;
+    @Inject static HostJoinDao _hostJoinDao;
+    @Inject static VolumeJoinDao _volJoinDao;
+    @Inject static StoragePoolJoinDao _poolJoinDao;
+    @Inject static AccountJoinDao _accountJoinDao;
+    @Inject static AsyncJobJoinDao _jobJoinDao;
 
-    private static PhysicalNetworkTrafficTypeDao _physicalNetworkTrafficTypeDao;
-    private static PhysicalNetworkServiceProviderDao _physicalNetworkServiceProviderDao;
-    private static FirewallRulesDao _firewallRuleDao;
-    private static StaticRouteDao _staticRouteDao;
-    private static VpcGatewayDao _vpcGatewayDao;
-    private static VpcDao _vpcDao;
-    private static VpcOfferingDao _vpcOfferingDao;
-    private static SnapshotPolicyDao _snapshotPolicyDao;
-    private static AsyncJobDao _asyncJobDao;
+    @Inject static PhysicalNetworkTrafficTypeDao _physicalNetworkTrafficTypeDao;
+    @Inject static PhysicalNetworkServiceProviderDao _physicalNetworkServiceProviderDao;
+    @Inject static FirewallRulesDao _firewallRuleDao;
+    @Inject static StaticRouteDao _staticRouteDao;
+    @Inject static VpcGatewayDao _vpcGatewayDao;
+    @Inject static VpcDao _vpcDao;
+    @Inject static VpcOfferingDao _vpcOfferingDao;
+    @Inject static SnapshotPolicyDao _snapshotPolicyDao;
+    @Inject static AsyncJobDao _asyncJobDao;
 
     static {
-        _ms = (ManagementServer) ComponentLocator.getComponent(ManagementServer.Name);
-        ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
-        _asyncMgr = locator.getManager(AsyncJobManager.class);
-        _securityGroupMgr = locator.getManager(SecurityGroupManager.class);
-        _storageMgr = locator.getManager(StorageManager.class);
-        _userVmMgr = locator.getManager(UserVmManager.class);
-        _networkMgr = locator.getManager(NetworkManager.class);
-        _configMgr = locator.getManager(ConfigurationService.class);
-
-        _accountDao = locator.getDao(AccountDao.class);
-        _accountVlanMapDao = locator.getDao(AccountVlanMapDao.class);
-        _clusterDao = locator.getDao(ClusterDao.class);
-        _capacityDao = locator.getDao(CapacityDao.class);
-        _diskOfferingDao = locator.getDao(DiskOfferingDao.class);
-        _domainDao = locator.getDao(DomainDao.class);
-        _domainRouterDao = locator.getDao(DomainRouterDao.class);
-        _domainRouterJoinDao = locator.getDao(DomainRouterJoinDao.class);
-        _guestOSDao = locator.getDao(GuestOSDao.class);
-        _guestOSCategoryDao = locator.getDao(GuestOSCategoryDao.class);
-        _hostDao = locator.getDao(HostDao.class);
-        _ipAddressDao = locator.getDao(IPAddressDao.class);
-        _loadBalancerDao = locator.getDao(LoadBalancerDao.class);
-        _networkRuleConfigDao = locator.getDao(NetworkRuleConfigDao.class);
-        _podDao = locator.getDao(HostPodDao.class);
-        _serviceOfferingDao = locator.getDao(ServiceOfferingDao.class);
-        _snapshotDao = locator.getDao(SnapshotDao.class);
-        _storagePoolDao = locator.getDao(StoragePoolDao.class);
-        _templateDao = locator.getDao(VMTemplateDao.class);
-        _templateDetailsDao = locator.getDao(VMTemplateDetailsDao.class);
-        _templateHostDao = locator.getDao(VMTemplateHostDao.class);
-        _templateSwiftDao = locator.getDao(VMTemplateSwiftDao.class);
-        _templateS3Dao = locator.getDao(VMTemplateS3Dao.class);
-        _uploadDao = locator.getDao(UploadDao.class);
-        _userDao = locator.getDao(UserDao.class);
-        _userStatsDao = locator.getDao(UserStatisticsDao.class);
-        _userVmDao = locator.getDao(UserVmDao.class);
-        _userVmJoinDao = locator.getDao(UserVmJoinDao.class);
-        _vlanDao = locator.getDao(VlanDao.class);
-        _volumeDao = locator.getDao(VolumeDao.class);
-        _site2SiteVpnGatewayDao = locator.getDao(Site2SiteVpnGatewayDao.class);
-        _site2SiteCustomerGatewayDao = locator.getDao(Site2SiteCustomerGatewayDao.class);
-        _volumeHostDao = locator.getDao(VolumeHostDao.class);
-        _zoneDao = locator.getDao(DataCenterDao.class);
-        _securityGroupDao = locator.getDao(SecurityGroupDao.class);
-        _securityGroupJoinDao = locator.getDao(SecurityGroupJoinDao.class);
-        _networkOfferingDao = locator.getDao(NetworkOfferingDao.class);
-        _networkDao = locator.getDao(NetworkDao.class);
-        _physicalNetworkDao = locator.getDao(PhysicalNetworkDao.class);
-        _configDao = locator.getDao(ConfigurationDao.class);
-        _consoleProxyDao = locator.getDao(ConsoleProxyDao.class);
-        _firewallCidrsDao = locator.getDao(FirewallRulesCidrsDao.class);
-        _vmDao = locator.getDao(VMInstanceDao.class);
-        _resourceLimitMgr = locator.getManager(ResourceLimitService.class);
-        _projectMgr = locator.getManager(ProjectService.class);
-        _resourceMgr = locator.getManager(ResourceManager.class);
-        _accountDetailsDao = locator.getDao(AccountDetailsDao.class);
-        _networkDomainDao = locator.getDao(NetworkDomainDao.class);
-        _haMgr = locator.getManager(HighAvailabilityManager.class);
-        _vpcMgr = locator.getManager(VpcManager.class);
-        _taggedResourceService = locator.getManager(TaggedResourceService.class);
-        _sshKeyPairDao = locator.getDao(SSHKeyPairDao.class);
-        _userVmDetailsDao = locator.getDao(UserVmDetailsDao.class);
-        _asConditionDao = locator.getDao(ConditionDao.class);
-        _asPolicyDao = locator.getDao(AutoScalePolicyDao.class);
-        _asPolicyConditionMapDao = locator.getDao(AutoScalePolicyConditionMapDao.class);
-        _counterDao = locator.getDao(CounterDao.class);
-        _asVmGroupPolicyMapDao = locator.getDao(AutoScaleVmGroupPolicyMapDao.class);
-        _tagJoinDao = locator.getDao(ResourceTagJoinDao.class);
-        _vmGroupJoinDao = locator.getDao(InstanceGroupJoinDao.class);
-        _eventJoinDao = locator.getDao(EventJoinDao.class);
-        _userAccountJoinDao = locator.getDao(UserAccountJoinDao.class);
-        _projectJoinDao = locator.getDao(ProjectJoinDao.class);
-        _projectAccountJoinDao = locator.getDao(ProjectAccountJoinDao.class);
-        _projectInvitationJoinDao = locator.getDao(ProjectInvitationJoinDao.class);
-        _hostJoinDao = locator.getDao(HostJoinDao.class);
-        _volJoinDao = locator.getDao(VolumeJoinDao.class);
-        _poolJoinDao = locator.getDao(StoragePoolJoinDao.class);
-        _accountJoinDao = locator.getDao(AccountJoinDao.class);
-        _jobJoinDao = locator.getDao(AsyncJobJoinDao.class);
-
-        _physicalNetworkTrafficTypeDao = locator.getDao(PhysicalNetworkTrafficTypeDao.class);
-        _physicalNetworkServiceProviderDao = locator.getDao(PhysicalNetworkServiceProviderDao.class);
-        _firewallRuleDao = locator.getDao(FirewallRulesDao.class);
-        _staticRouteDao = locator.getDao(StaticRouteDao.class);
-        _vpcGatewayDao = locator.getDao(VpcGatewayDao.class);
-        _asVmProfileDao = locator.getDao(AutoScaleVmProfileDao.class);
-        _asVmGroupDao = locator.getDao(AutoScaleVmGroupDao.class);
-        _vpcDao = locator.getDao(VpcDao.class);
-        _vpcOfferingDao = locator.getDao(VpcOfferingDao.class);
-        _snapshotPolicyDao = locator.getDao(SnapshotPolicyDao.class);
-        _asyncJobDao = locator.getDao(AsyncJobDao.class);
 
         // Note: stats collector should already have been initialized by this time, otherwise a null instance is returned
         _statsCollector = StatsCollector.getInstance();
@@ -611,7 +521,7 @@ public class ApiDBUtils {
     }
 
     public static boolean isChildDomain(long parentId, long childId) {
-    	return _domainDao.isChildDomain(parentId, childId);
+        return _domainDao.isChildDomain(parentId, childId);
     }
 
     public static DomainRouterVO findDomainRouterById(Long routerId) {
@@ -1016,7 +926,7 @@ public class ApiDBUtils {
             else
                 scaleDownPolicyIds.add(autoScalePolicy.getId());
         }
-      }
+    }
     public static String getKeyPairName(String sshPublicKey) {
         SSHKeyPairVO sshKeyPair = _sshKeyPairDao.findByPublicKey(sshPublicKey);
         //key might be removed prior to this point
@@ -1226,7 +1136,7 @@ public class ApiDBUtils {
     }
 
     public static DomainRouterResponse fillRouterDetails(DomainRouterResponse vrData, DomainRouterJoinVO vr){
-         return _domainRouterJoinDao.setDomainRouterResponse(vrData, vr);
+        return _domainRouterJoinDao.setDomainRouterResponse(vrData, vr);
     }
 
     public static List<DomainRouterJoinVO> newDomainRouterView(VirtualRouter vr){
@@ -1238,7 +1148,7 @@ public class ApiDBUtils {
     }
 
     public static UserVmResponse fillVmDetails(UserVmResponse vmData, UserVmJoinVO vm){
-         return _userVmJoinDao.setUserVmResponse(vmData, vm);
+        return _userVmJoinDao.setUserVmResponse(vmData, vm);
     }
 
     public static List<UserVmJoinVO> newUserVmView(UserVm... userVms){
@@ -1250,7 +1160,7 @@ public class ApiDBUtils {
     }
 
     public static SecurityGroupResponse fillSecurityGroupDetails(SecurityGroupResponse vsgData, SecurityGroupJoinVO sg){
-         return _securityGroupJoinDao.setSecurityGroupResponse(vsgData, sg);
+        return _securityGroupJoinDao.setSecurityGroupResponse(vsgData, sg);
     }
 
     public static List<SecurityGroupJoinVO> newSecurityGroupView(SecurityGroup sg){
@@ -1312,7 +1222,7 @@ public class ApiDBUtils {
     }
 
     public static ProjectResponse fillProjectDetails(ProjectResponse rsp, ProjectJoinVO proj){
-         return _projectJoinDao.setProjectResponse(rsp,proj);
+        return _projectJoinDao.setProjectResponse(rsp,proj);
     }
 
     public static List<ProjectJoinVO> newProjectView(Project proj){
@@ -1344,7 +1254,7 @@ public class ApiDBUtils {
     }
 
     public static HostResponse fillHostDetails(HostResponse vrData, HostJoinVO vr){
-         return _hostJoinDao.setHostResponse(vrData, vr);
+        return _hostJoinDao.setHostResponse(vrData, vr);
     }
 
     public static List<HostJoinVO> newHostView(Host vr){
@@ -1358,42 +1268,42 @@ public class ApiDBUtils {
 
     public static VolumeResponse fillVolumeDetails(VolumeResponse vrData, VolumeJoinVO vr){
         return _volJoinDao.setVolumeResponse(vrData, vr);
-   }
+    }
 
-   public static List<VolumeJoinVO> newVolumeView(Volume vr){
-       return _volJoinDao.newVolumeView(vr);
-   }
+    public static List<VolumeJoinVO> newVolumeView(Volume vr){
+        return _volJoinDao.newVolumeView(vr);
+    }
 
-   public static StoragePoolResponse newStoragePoolResponse(StoragePoolJoinVO vr) {
-       return _poolJoinDao.newStoragePoolResponse(vr);
-   }
+    public static StoragePoolResponse newStoragePoolResponse(StoragePoolJoinVO vr) {
+        return _poolJoinDao.newStoragePoolResponse(vr);
+    }
 
-   public static StoragePoolResponse fillStoragePoolDetails(StoragePoolResponse vrData, StoragePoolJoinVO vr){
+    public static StoragePoolResponse fillStoragePoolDetails(StoragePoolResponse vrData, StoragePoolJoinVO vr){
         return _poolJoinDao.setStoragePoolResponse(vrData, vr);
-   }
+    }
 
-   public static List<StoragePoolJoinVO> newStoragePoolView(StoragePool vr){
-       return _poolJoinDao.newStoragePoolView(vr);
-   }
+    public static List<StoragePoolJoinVO> newStoragePoolView(StoragePool vr){
+        return _poolJoinDao.newStoragePoolView(vr);
+    }
 
 
-   public static AccountResponse newAccountResponse(AccountJoinVO ve) {
-       return _accountJoinDao.newAccountResponse(ve);
-   }
+    public static AccountResponse newAccountResponse(AccountJoinVO ve) {
+        return _accountJoinDao.newAccountResponse(ve);
+    }
 
-   public static AccountJoinVO newAccountView(Account e){
-       return _accountJoinDao.newAccountView(e);
-   }
+    public static AccountJoinVO newAccountView(Account e){
+        return _accountJoinDao.newAccountView(e);
+    }
 
-   public static AccountJoinVO findAccountViewById(Long accountId) {
-       return _accountJoinDao.findByIdIncludingRemoved(accountId);
-   }
+    public static AccountJoinVO findAccountViewById(Long accountId) {
+        return _accountJoinDao.findByIdIncludingRemoved(accountId);
+    }
 
-   public static AsyncJobResponse newAsyncJobResponse(AsyncJobJoinVO ve) {
-       return _jobJoinDao.newAsyncJobResponse(ve);
-   }
+    public static AsyncJobResponse newAsyncJobResponse(AsyncJobJoinVO ve) {
+        return _jobJoinDao.newAsyncJobResponse(ve);
+    }
 
-   public static AsyncJobJoinVO newAsyncJobView(AsyncJob e){
-       return _jobJoinDao.newAsyncJobView(e);
-   }
+    public static AsyncJobJoinVO newAsyncJobView(AsyncJob e){
+        return _jobJoinDao.newAsyncJobView(e);
+    }
 }
