@@ -18,15 +18,11 @@
  */
 package org.apache.cloudstack.storage.image.store;
 
+import org.apache.cloudstack.storage.datastore.DataStore;
 import org.apache.cloudstack.storage.image.TemplateObject;
 
 public interface ImageDataStore extends ImageDataStoreInfo {
     TemplateObject registerTemplate(long templateId);
-
-    String grantAccess(long templateId, long endPointId);
-
-    boolean revokeAccess(long templateId, long endPointId);
-
     boolean deleteTemplate(long templateId);
 
     boolean needDownloadToCacheStorage();

@@ -4,17 +4,17 @@ import org.apache.cloudstack.storage.to.ImageOnPrimayDataStoreTO;
 
 import com.cloud.agent.api.Command;
 
-public class CopyTemplateToPrimaryStorageCmd extends Command implements StorageSubSystemCommand {
+public class CopyCmd extends Command implements StorageSubSystemCommand {
 
     private ImageOnPrimayDataStoreTO imageTO;
 
-    protected CopyTemplateToPrimaryStorageCmd() {
+    protected CopyCmd() {
         super();
     }
 
-    public CopyTemplateToPrimaryStorageCmd(ImageOnPrimayDataStoreTO image) {
+    public CopyCmd(String destUri, String srcUri) {
         super();
-        this.imageTO = image;
+       // this.imageTO = image;
     }
     
     public ImageOnPrimayDataStoreTO getImage() {

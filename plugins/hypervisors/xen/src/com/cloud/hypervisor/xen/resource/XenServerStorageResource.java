@@ -30,7 +30,7 @@ import java.util.UUID;
 
 import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreAnswer;
 import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreCmd;
-import org.apache.cloudstack.storage.command.CopyTemplateToPrimaryStorageCmd;
+import org.apache.cloudstack.storage.command.CopyCmd;
 import org.apache.cloudstack.storage.command.CopyTemplateToPrimaryStorageAnswer;
 import org.apache.cloudstack.storage.command.CreatePrimaryDataStoreCmd;
 import org.apache.cloudstack.storage.command.CreateVolumeAnswer;
@@ -88,8 +88,8 @@ public class XenServerStorageResource {
     }
     
     public Answer handleStorageCommands(StorageSubSystemCommand command) {
-        if (command instanceof CopyTemplateToPrimaryStorageCmd) {
-            return this.execute((CopyTemplateToPrimaryStorageCmd)command);
+        if (command instanceof CopyCmd) {
+            return this.execute((CopyCmd)command);
         } else if (command instanceof AttachPrimaryDataStoreCmd) {
             return this.execute((AttachPrimaryDataStoreCmd)command);
         } else if (command instanceof CreatePrimaryDataStoreCmd) {
@@ -472,7 +472,7 @@ public class XenServerStorageResource {
        
     }
     
-    protected Answer directDownloadHttpTemplate(CopyTemplateToPrimaryStorageCmd cmd, TemplateTO template, PrimaryDataStoreTO primarDataStore) {
+    protected Answer directDownloadHttpTemplate(CopyCmd cmd, TemplateTO template, PrimaryDataStoreTO primarDataStore) {
         String primaryStoreUuid = primarDataStore.getUuid();
         Connection conn = hypervisorResource.getConnection();
         SR poolsr = null;
@@ -570,7 +570,7 @@ public class XenServerStorageResource {
         }
     }
     
-    protected Answer execute(CopyTemplateToPrimaryStorageCmd cmd) {
+    protected Answer execute(CopyCmd cmd) {
         ImageOnPrimayDataStoreTO imageTO = cmd.getImage();
         TemplateTO template = imageTO.getTemplate();
         if (template.getPath().startsWith("http")) {

@@ -29,9 +29,7 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.server.ManagementServer;
 import com.cloud.usage.dao.UsageJobDao;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.Transaction;
 
 @Component

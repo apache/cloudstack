@@ -13,7 +13,6 @@
                       http://www.springframework.org/schema/context/spring-context-3.0.xsd">                     
 
   <context:annotation-config />
-
   <context:component-scan base-package="org.apache.cloudstack, com.cloud" />
 
   <!--
@@ -57,7 +56,5 @@
   </bean>
 
   <bean id="eventBus" class = "org.apache.cloudstack.framework.eventbus.EventBusBase" />
-
-  <bean id="userVmManager" class ="com.cloud.vm.UserVmManagerImpl" />
 
 </beans>

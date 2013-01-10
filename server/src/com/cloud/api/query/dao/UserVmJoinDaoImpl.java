@@ -36,9 +36,10 @@ import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.springframework.stereotype.Component;
+
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -46,6 +47,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.VmStats;
 
 
+@Component
 @Local(value={UserVmJoinDao.class})
 public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implements UserVmJoinDao {
     public static final Logger s_logger = Logger.getLogger(UserVmJoinDaoImpl.class);

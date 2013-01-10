@@ -31,7 +31,7 @@ import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeTO;
 import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreInfo;
 
-public interface PrimaryDataStore extends PrimaryDataStoreInfo {
+public interface PrimaryDataStore extends DataStore, PrimaryDataStoreInfo {
     VolumeInfo getVolume(long id);
 
     List<VolumeInfo> getVolumes();
@@ -42,7 +42,7 @@ public interface PrimaryDataStore extends PrimaryDataStoreInfo {
 
     VolumeInfo createVoluemFromBaseImage(VolumeInfo volume, TemplateOnPrimaryDataStoreInfo templateStore);
     
-    void createVoluemFromBaseImageAsync(VolumeInfo volume, TemplateOnPrimaryDataStoreInfo templateStore, AsyncCompletionCallback<CommandResult> callback);
+    void createVoluemFromBaseImageAsync(VolumeInfo volume, TemplateInfo templateStore, AsyncCompletionCallback<CommandResult> callback);
     
     List<EndPoint> getEndPoints();
 

@@ -29,6 +29,8 @@ import com.cloud.configuration.dao.ConfigurationDao;
 
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.NicResponse;
+import org.springframework.stereotype.Component;
+
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.user.Account;
@@ -37,7 +39,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
-
+@Component
 @Local(value={DomainRouterJoinDao.class})
 public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, Long> implements DomainRouterJoinDao {
     public static final Logger s_logger = Logger.getLogger(DomainRouterJoinDaoImpl.class);

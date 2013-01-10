@@ -31,6 +31,8 @@ import com.cloud.configuration.dao.ConfigurationDao;
 
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.SecurityGroupRuleResponse;
+import org.springframework.stereotype.Component;
+
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityRule.SecurityRuleType;
 import com.cloud.user.Account;
@@ -39,6 +41,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
+@Component
 @Local(value={SecurityGroupJoinDao.class})
 public class SecurityGroupJoinDaoImpl extends GenericDaoBase<SecurityGroupJoinVO, Long> implements SecurityGroupJoinDao {
     public static final Logger s_logger = Logger.getLogger(SecurityGroupJoinDaoImpl.class);

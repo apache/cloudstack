@@ -19,6 +19,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreVO;
 import org.apache.cloudstack.storage.datastore.driver.PrimaryDataStoreDriver;
 import org.apache.cloudstack.storage.image.TemplateInfo;
+import org.apache.cloudstack.storage.snapshot.SnapshotInfo;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeTO;
 import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreInfo;
@@ -219,11 +220,11 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
     }
 
     @Override
-    public void createVoluemFromBaseImageAsync(VolumeInfo volume, TemplateOnPrimaryDataStoreInfo templateStore, AsyncCompletionCallback<CommandResult> callback) {
+    public void createVoluemFromBaseImageAsync(VolumeInfo volume, TemplateInfo templateStore, AsyncCompletionCallback<CommandResult> callback) {
         VolumeObject vo = (VolumeObject) volume;
-        vo.setVolumeDiskType(templateStore.getTemplate().getDiskType());
-
-        this.driver.createVolumeFromBaseImageAsync(vo, templateStore, callback);
+        vo.setVolumeDiskType(templateStore.getDiskType());
+        String templateUri = templateStore.getDataStore().grantAccess(templateStore, this.getEndPoints().get(0));
+        this.driver.createVolumeFromBaseImageAsync(vo, templateUri, callback);
     }
 
     @Override
@@ -262,5 +263,45 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
         return this.provider;
     }
 
+    @Override
+    public String grantAccess(VolumeInfo volume, EndPoint ep) {
+        return this.driver.grantAccess((VolumeObject)volume, ep);
+    }
+
+    @Override
+    public boolean revokeAccess(VolumeInfo volume, EndPoint ep) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public String grantAccess(TemplateInfo template, EndPoint ep) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public boolean revokeAccess(TemplateInfo template, EndPoint ep) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public String grantAccess(SnapshotInfo snapshot, EndPoint ep) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public boolean revokeAccess(SnapshotInfo snapshot, EndPoint ep) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public String getRole() {
+        // TODO Auto-generated method stub
+        return "volumeStore";
+    }
 
 }

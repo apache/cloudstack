@@ -46,7 +46,6 @@ import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementors
 import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -58,6 +57,8 @@ import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
 
 import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
+import org.springframework.stereotype.Component;
+
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;

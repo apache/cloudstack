@@ -30,8 +30,10 @@ import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcConext;
 import org.apache.cloudstack.storage.EndPoint;
 import org.apache.cloudstack.storage.command.CommandResult;
+import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
 import org.apache.cloudstack.storage.datastore.manager.PrimaryDataStoreManager;
+import org.apache.cloudstack.storage.db.ObjectInDataStoreVO;
 import org.apache.cloudstack.storage.image.TemplateInfo;
 import org.apache.cloudstack.storage.image.motion.ImageMotionService;
 import org.apache.cloudstack.storage.volume.VolumeService.VolumeApiResult;
@@ -54,7 +56,7 @@ public class VolumeServiceImpl implements VolumeService {
     @Inject
     PrimaryDataStoreManager dataStoreMgr;
     @Inject
-    TemplatePrimaryDataStoreManager templatePrimaryStoreMgr;
+    ObjectInDataStoreManager objectInDataStoreMgr;
     @Inject
     ImageMotionService imageMotion;
 
@@ -238,9 +240,9 @@ public class VolumeServiceImpl implements VolumeService {
     private class CreateBaseImageContext<T> extends AsyncRpcConext<T> {
         private final VolumeInfo volume;
         private final PrimaryDataStore dataStore;
-        private final TemplateOnPrimaryDataStoreObject template;
+        private final TemplateInfo template;
         private final AsyncCallFuture<VolumeApiResult> future;
-        public CreateBaseImageContext(AsyncCompletionCallback<T> callback, VolumeInfo volume, PrimaryDataStore datastore, TemplateOnPrimaryDataStoreObject template, 
+        public CreateBaseImageContext(AsyncCompletionCallback<T> callback, VolumeInfo volume, PrimaryDataStore datastore, TemplateInfo template, 
                 AsyncCallFuture<VolumeApiResult> future) {
             super(callback);
             this.volume = volume;
@@ -257,7 +259,7 @@ public class VolumeServiceImpl implements VolumeService {
             return this.dataStore;
         }
         
-        public TemplateOnPrimaryDataStoreObject getTemplate() {
+        public TemplateInfo getTemplate() {
             return this.template;
         }
         
@@ -268,15 +270,15 @@ public class VolumeServiceImpl implements VolumeService {
     }
     @DB
     protected void createBaseImageAsync(VolumeInfo volume, PrimaryDataStore dataStore, TemplateInfo template, AsyncCallFuture<VolumeApiResult> future) {
-        TemplateOnPrimaryDataStoreObject templateOnPrimaryStoreObj = (TemplateOnPrimaryDataStoreObject) templatePrimaryStoreMgr.createTemplateOnPrimaryDataStore(template, dataStore);
-        templateOnPrimaryStoreObj.stateTransit(TemplateOnPrimaryDataStoreStateMachine.Event.CreateRequested);
+        TemplateInfo templateOnPrimaryStoreObj = objectInDataStoreMgr.create(template, dataStore);
+        /*templateOnPrimaryStoreObj.stateTransit(ObjectInDataStoreStateMachine.Event.CreateRequested);
         templateOnPrimaryStoreObj.updateStatus(Status.CREATING);
         try {
             dataStore.installTemplate(templateOnPrimaryStoreObj);
             templateOnPrimaryStoreObj.updateStatus(Status.CREATED);
         } catch (Exception e) {
             templateOnPrimaryStoreObj.updateStatus(Status.ABANDONED);
-            templateOnPrimaryStoreObj.stateTransit(TemplateOnPrimaryDataStoreStateMachine.Event.OperationFailed);
+            templateOnPrimaryStoreObj.stateTransit(ObjectInDataStoreStateMachine.Event.OperationFailed);
             VolumeApiResult result = new VolumeApiResult(volume);
             result.setResult(e.toString());
             future.complete(result);
@@ -284,29 +286,30 @@ public class VolumeServiceImpl implements VolumeService {
         }
 
         templateOnPrimaryStoreObj.updateStatus(Status.DOWNLOAD_IN_PROGRESS);
-
+   */
         CreateBaseImageContext<VolumeApiResult> context = new CreateBaseImageContext<VolumeApiResult>(null, volume, dataStore, templateOnPrimaryStoreObj, future);
         AsyncCallbackDispatcher<VolumeServiceImpl, CommandResult> caller = AsyncCallbackDispatcher.create(this);
             caller.setCallback(caller.getTarget().createBaseImageCallback(null, null))
             .setContext(context);
+ 
+        objectInDataStoreMgr.update(templateOnPrimaryStoreObj, ObjectInDataStoreStateMachine.Event.CreateRequested);
 
-        imageMotion.copyTemplateAsync(templateOnPrimaryStoreObj, caller);
+        imageMotion.copyTemplateAsync(templateOnPrimaryStoreObj, template, caller);
     }
 
     @DB
     protected Void createBaseImageCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CommandResult> callback, CreateBaseImageContext<VolumeApiResult> context) {
         CommandResult result = callback.getResult();
-        TemplateOnPrimaryDataStoreObject templateOnPrimaryStoreObj = context.getTemplate();
+        TemplateInfo templateOnPrimaryStoreObj = context.getTemplate();
         if (result.isSuccess()) {
-            templateOnPrimaryStoreObj.stateTransit(TemplateOnPrimaryDataStoreStateMachine.Event.OperationSuccessed);
+            objectInDataStoreMgr.update(templateOnPrimaryStoreObj, ObjectInDataStoreStateMachine.Event.OperationSuccessed);
         } else {
-            templateOnPrimaryStoreObj.stateTransit(TemplateOnPrimaryDataStoreStateMachine.Event.OperationFailed);
+            objectInDataStoreMgr.update(templateOnPrimaryStoreObj, ObjectInDataStoreStateMachine.Event.OperationFailed);
         }
         
         AsyncCallFuture<VolumeApiResult> future = context.getFuture();
         VolumeInfo volume = context.getVolume();
         PrimaryDataStore pd = context.getDataStore();
-
         createVolumeFromBaseImageAsync(volume, templateOnPrimaryStoreObj, pd, future);
         return null;
     }
@@ -330,7 +333,7 @@ public class VolumeServiceImpl implements VolumeService {
     }
     
     @DB
-    protected void createVolumeFromBaseImageAsync(VolumeInfo volume, TemplateOnPrimaryDataStoreInfo templateOnPrimaryStore, PrimaryDataStore pd, AsyncCallFuture<VolumeApiResult> future) {
+    protected void createVolumeFromBaseImageAsync(VolumeInfo volume, TemplateInfo templateOnPrimaryStore, PrimaryDataStore pd, AsyncCallFuture<VolumeApiResult> future) {
         VolumeObject vo = (VolumeObject) volume;
         try {
             vo.stateTransit(Volume.Event.CreateRequested);
@@ -379,7 +382,7 @@ public class VolumeServiceImpl implements VolumeService {
             return future;
         }
             
-        createVolumeFromBaseImageAsync(volume, templateOnPrimaryStore, pd, future);
+        createVolumeFromBaseImageAsync(volume, template, pd, future);
         return future;
     }
 

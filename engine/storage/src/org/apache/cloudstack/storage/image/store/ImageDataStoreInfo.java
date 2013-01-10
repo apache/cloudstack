@@ -18,7 +18,9 @@
  */
 package org.apache.cloudstack.storage.image.store;
 
-public interface ImageDataStoreInfo {
+import org.apache.cloudstack.storage.datastore.DataStore;
+
+public interface ImageDataStoreInfo extends DataStore {
     public long getImageDataStoreId();
     public String getType();
     public String getUri();

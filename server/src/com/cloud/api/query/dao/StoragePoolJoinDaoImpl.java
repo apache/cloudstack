@@ -26,6 +26,7 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.configuration.dao.ConfigurationDao;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
+import org.springframework.stereotype.Component;
 
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StorageStats;
@@ -35,6 +36,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 
+@Component
 @Local(value={StoragePoolJoinDao.class})
 public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Long> implements StoragePoolJoinDao {
     public static final Logger s_logger = Logger.getLogger(StoragePoolJoinDaoImpl.class);

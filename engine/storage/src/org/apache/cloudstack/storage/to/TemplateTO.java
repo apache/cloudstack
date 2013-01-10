@@ -2,6 +2,7 @@ package org.apache.cloudstack.storage.to;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
 import org.apache.cloudstack.storage.image.TemplateInfo;
+import org.apache.cloudstack.storage.image.store.ImageDataStoreInfo;
 
 public class TemplateTO {
     private final String path;
@@ -13,7 +14,7 @@ public class TemplateTO {
         this.path = template.getPath();
         this.uuid = template.getUuid();
         this.diskType = template.getDiskType();
-        this.imageDataStore = new ImageDataStoreTO(template.getImageDataStore());
+        this.imageDataStore = new ImageDataStoreTO((ImageDataStoreInfo)template.getDataStore());
     }
     
     public String getPath() {

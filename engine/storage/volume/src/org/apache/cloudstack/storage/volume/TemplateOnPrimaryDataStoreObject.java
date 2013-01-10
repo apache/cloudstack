@@ -20,8 +20,8 @@ package org.apache.cloudstack.storage.volume;
 
 import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
 import org.apache.cloudstack.storage.image.TemplateInfo;
-import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreStateMachine.Event;
-import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreStateMachine.State;
+import org.apache.cloudstack.storage.volume.ObjectInDataStoreStateMachine.Event;
+import org.apache.cloudstack.storage.volume.ObjectInDataStoreStateMachine.State;
 import org.apache.cloudstack.storage.volume.db.TemplatePrimaryDataStoreDao;
 import org.apache.cloudstack.storage.volume.db.TemplatePrimaryDataStoreVO;
 
@@ -74,7 +74,7 @@ public class TemplateOnPrimaryDataStoreObject implements TemplateOnPrimaryDataSt
         vo = templateStoreDao.findById(vo.getId());
     }
     
-    public void stateTransit(TemplateOnPrimaryDataStoreStateMachine.Event event) {
+    public void stateTransit(ObjectInDataStoreStateMachine.Event event) {
         try {
             this.stateMachine.transitTo(vo, event, null, templateStoreDao);
             vo = templateStoreDao.findById(vo.getId());

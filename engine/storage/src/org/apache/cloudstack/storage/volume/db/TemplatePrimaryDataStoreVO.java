@@ -32,13 +32,13 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
-import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreStateMachine;
+import org.apache.cloudstack.storage.volume.ObjectInDataStoreStateMachine;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.fsm.StateObject;
 
 @Entity
 @Table(name = "template_spool_ref")
-public class TemplatePrimaryDataStoreVO implements StateObject<TemplateOnPrimaryDataStoreStateMachine.State> {
+public class TemplatePrimaryDataStoreVO implements StateObject<ObjectInDataStoreStateMachine.State> {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     long id;
@@ -83,7 +83,7 @@ public class TemplatePrimaryDataStoreVO implements StateObject<TemplateOnPrimary
     
     @Column(name = "state")
     @Enumerated(EnumType.STRING)
-    TemplateOnPrimaryDataStoreStateMachine.State state;
+    ObjectInDataStoreStateMachine.State state;
 
     @Column(name="update_count", updatable = true, nullable=false)
     protected long updatedCount;
@@ -165,7 +165,7 @@ public class TemplatePrimaryDataStoreVO implements StateObject<TemplateOnPrimary
         this.poolId = poolId;
         this.templateId = templateId;
         this.downloadState = Status.NOT_DOWNLOADED;
-        this.state = TemplateOnPrimaryDataStoreStateMachine.State.Allocated;
+        this.state = ObjectInDataStoreStateMachine.State.Allocated;
         this.markedForGC = false;
     }
 
@@ -246,7 +246,7 @@ public class TemplatePrimaryDataStoreVO implements StateObject<TemplateOnPrimary
     }
 
     @Override
-    public TemplateOnPrimaryDataStoreStateMachine.State getState() {
+    public ObjectInDataStoreStateMachine.State getState() {
         return this.state;
     }
 

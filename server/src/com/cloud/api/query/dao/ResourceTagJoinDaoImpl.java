@@ -28,13 +28,15 @@ import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.configuration.dao.ConfigurationDao;
 
 import org.apache.cloudstack.api.response.ResourceTagResponse;
+import org.springframework.stereotype.Component;
+
 import com.cloud.server.ResourceTag;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
-
+@Component
 @Local(value={ResourceTagJoinDao.class})
 public class ResourceTagJoinDaoImpl extends GenericDaoBase<ResourceTagJoinVO, Long> implements ResourceTagJoinDao {
     public static final Logger s_logger = Logger.getLogger(ResourceTagJoinDaoImpl.class);

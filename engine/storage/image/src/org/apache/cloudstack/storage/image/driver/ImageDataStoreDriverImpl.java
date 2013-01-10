@@ -18,7 +18,9 @@
  */
 package org.apache.cloudstack.storage.image.driver;
 
+import org.apache.cloudstack.storage.EndPoint;
 import org.apache.cloudstack.storage.image.TemplateInfo;
+import org.apache.cloudstack.storage.image.TemplateObject;
 
 public class ImageDataStoreDriverImpl implements ImageDataStoreDriver {
 
@@ -32,9 +34,8 @@ public class ImageDataStoreDriverImpl implements ImageDataStoreDriver {
     }
 
     @Override
-    public String grantAccess(long templateId, long endPointId) {
-        // TODO Auto-generated method stub
-        return null;
+    public String grantAccess(TemplateObject template, EndPoint endPointId) {
+        return template.getPath();
     }
 
     @Override

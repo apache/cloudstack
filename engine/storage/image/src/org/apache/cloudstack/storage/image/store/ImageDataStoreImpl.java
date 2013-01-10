@@ -20,11 +20,15 @@ package org.apache.cloudstack.storage.image.store;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.storage.EndPoint;
+import org.apache.cloudstack.storage.image.TemplateInfo;
 import org.apache.cloudstack.storage.image.TemplateObject;
 import org.apache.cloudstack.storage.image.db.ImageDataDao;
 import org.apache.cloudstack.storage.image.db.ImageDataStoreVO;
 import org.apache.cloudstack.storage.image.db.ImageDataVO;
 import org.apache.cloudstack.storage.image.driver.ImageDataStoreDriver;
+import org.apache.cloudstack.storage.snapshot.SnapshotInfo;
 
 public class ImageDataStoreImpl implements ImageDataStore {
     @Inject
@@ -46,18 +50,6 @@ public class ImageDataStoreImpl implements ImageDataStore {
      * template.setImageDataStoreId(imageDataStoreVO.getId()); return template;
      * } else { return null; } }
      */
-
-    @Override
-    public String grantAccess(long templateId, long endPointId) {
-        ImageDataVO idv = imageDao.findById(templateId);
-        return idv.getUrl();
-    }
-
-    @Override
-    public boolean revokeAccess(long templateId, long endPointId) {
-        // TODO Auto-generated method stub
-        return false;
-    }
 
     @Override
     public boolean deleteTemplate(long templateId) {
@@ -101,6 +93,51 @@ public class ImageDataStoreImpl implements ImageDataStore {
     public String getUri() {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    @Override
+    public String grantAccess(VolumeInfo volume, EndPoint ep) {
+        return null;
+    }
+
+    @Override
+    public boolean revokeAccess(VolumeInfo volume, EndPoint ep) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public String grantAccess(TemplateInfo template, EndPoint ep) {
+        return this.driver.grantAccess((TemplateObject)template, ep);
+    }
+
+    @Override
+    public boolean revokeAccess(TemplateInfo template, EndPoint ep) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public String grantAccess(SnapshotInfo snapshot, EndPoint ep) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public boolean revokeAccess(SnapshotInfo snapshot, EndPoint ep) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public String getRole() {
+        return "imageStore";
+    }
+
+    @Override
+    public long getId() {
+        // TODO Auto-generated method stub
+        return 0;
     }
 
 }

@@ -25,6 +25,7 @@ import javax.inject.Inject;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.EndPoint;
 import org.apache.cloudstack.storage.command.CommandResult;
+import org.apache.cloudstack.storage.db.ObjectInDataStoreVO;
 import org.apache.cloudstack.storage.image.ImageService;
 import org.apache.cloudstack.storage.image.TemplateInfo;
 import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreInfo;
@@ -48,11 +49,13 @@ public class ImageMotionServiceImpl implements ImageMotionService {
         return false;
     }
 
+  
+
     @Override
-    public boolean copyTemplate(TemplateOnPrimaryDataStoreInfo templateStore) {
+    public void copyTemplateAsync(TemplateInfo destTemplate, TemplateInfo srcTemplate, AsyncCompletionCallback<CommandResult> callback) {
         ImageMotionStrategy ims = null;
         for (ImageMotionStrategy strategy : motionStrategies) {
-            if (strategy.canHandle(templateStore)) {
+            if (strategy.canHandle(srcTemplate)) {
                 ims = strategy;
                 break;
             }
@@ -62,34 +65,11 @@ public class ImageMotionServiceImpl implements ImageMotionService {
             throw new CloudRuntimeException("Can't find proper image motion strategy");
         }
 
-        EndPoint ep = ims.getEndPoint(templateStore);
-
-        volumeService.grantAccess(templateStore, ep);
-        TemplateInfo template = templateStore.getTemplate();
-        imageService.grantTemplateAccess(template, ep);
-        return ims.copyTemplate(templateStore, ep);
-    }
-
-    @Override
-    public void copyTemplateAsync(TemplateOnPrimaryDataStoreInfo templateStore, AsyncCompletionCallback<CommandResult> callback) {
-        ImageMotionStrategy ims = null;
-        for (ImageMotionStrategy strategy : motionStrategies) {
-            if (strategy.canHandle(templateStore)) {
-                ims = strategy;
-                break;
-            }
-        }
-
-        if (ims == null) {
-            throw new CloudRuntimeException("Can't find proper image motion strategy");
-        }
-
-        EndPoint ep = ims.getEndPoint(templateStore);
-        volumeService.grantAccess(templateStore, ep);
-        TemplateInfo template = templateStore.getTemplate();
-        imageService.grantTemplateAccess(template, ep);
+        EndPoint ep = ims.getEndPoint(destTemplate, srcTemplate);
+        String srcUri = srcTemplate.getDataStore().grantAccess(srcTemplate, ep);
+        String destUri = destTemplate.getDataStore().grantAccess(destTemplate, ep);
         
-        ims.copyTemplateAsync(templateStore, ep, callback);
+        ims.copyTemplateAsync(destUri, srcUri, ep, callback);
     }
 
 

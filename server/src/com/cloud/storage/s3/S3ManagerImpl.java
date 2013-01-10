@@ -54,6 +54,8 @@ import com.cloud.agent.api.DownloadTemplateFromS3ToSecondaryStorageCommand;
 import com.cloud.agent.api.UploadTemplateToS3FromSecondaryStorageCommand;
 import com.cloud.agent.api.to.S3TO;
 import org.apache.cloudstack.api.command.admin.storage.ListS3sCmd;
+import org.springframework.stereotype.Component;
+
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
@@ -80,6 +82,7 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+@Component
 @Local(value = { S3Manager.class })
 public class S3ManagerImpl implements S3Manager {
 
