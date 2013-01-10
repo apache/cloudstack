@@ -166,23 +166,22 @@ public class ApiServer implements HttpRequestHandler {
         super();
     }
 
-    public static void initApiServer(String[] apiConfig) {
+    public static void initApiServer() {
         if (s_instance == null) {
             //Injection will create ApiServer and all its fields which have @Inject
             s_instance = ComponentLocator.inject(ApiServer.class);
-            s_instance.init(apiConfig);
+            s_instance.init();
         }
     }
 
     public static ApiServer getInstance() {
-        // Assumption: CloudStartupServlet would initialize ApiServer
         if (s_instance == null) {
-            s_logger.fatal("ApiServer instance failed to initialize");
+            ApiServer.initApiServer();
         }
         return s_instance;
     }
 
-    public void init(String[] apiConfig) {
+    public void init() {
         BaseCmd.setComponents(new ApiResponseHelper());
         BaseListCmd.configure();
 
