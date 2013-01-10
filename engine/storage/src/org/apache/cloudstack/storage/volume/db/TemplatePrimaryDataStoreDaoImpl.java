@@ -20,9 +20,9 @@ package org.apache.cloudstack.storage.volume.db;
 
 import java.util.Date;
 
-import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreStateMachine;
-import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreStateMachine.Event;
-import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreStateMachine.State;
+import org.apache.cloudstack.storage.volume.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.storage.volume.ObjectInDataStoreStateMachine.Event;
+import org.apache.cloudstack.storage.volume.ObjectInDataStoreStateMachine.State;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -58,7 +58,7 @@ public class TemplatePrimaryDataStoreDaoImpl extends GenericDaoBase<TemplatePrim
         SearchCriteriaService<TemplatePrimaryDataStoreVO, TemplatePrimaryDataStoreVO> sc = SearchCriteria2.create(TemplatePrimaryDataStoreVO.class);
         sc.addAnd(sc.getEntity().getTemplateId(), Op.EQ, templateId);
         sc.addAnd(sc.getEntity().getPoolId(), Op.EQ, poolId);
-        sc.addAnd(sc.getEntity().getState(), Op.EQ, TemplateOnPrimaryDataStoreStateMachine.State.Ready);
+        sc.addAnd(sc.getEntity().getState(), Op.EQ, ObjectInDataStoreStateMachine.State.Ready);
         return sc.find();
     }
 

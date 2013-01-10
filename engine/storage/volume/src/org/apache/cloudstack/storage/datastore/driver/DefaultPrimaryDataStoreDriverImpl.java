@@ -134,11 +134,10 @@ public class DefaultPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         
     }
     @Override
-    public void createVolumeFromBaseImageAsync(VolumeObject volume, TemplateOnPrimaryDataStoreInfo template, AsyncCompletionCallback<CommandResult> callback) {
+    public void createVolumeFromBaseImageAsync(VolumeObject volume, String template, AsyncCompletionCallback<CommandResult> callback) {
         VolumeTO vol = this.dataStore.getVolumeTO(volume);
-        ImageOnPrimayDataStoreTO image = new ImageOnPrimayDataStoreTO(template);
-        CreateVolumeFromBaseImageCommand cmd = new CreateVolumeFromBaseImageCommand(vol, image);
-        List<EndPoint> endPoints = template.getPrimaryDataStore().getEndPoints();
+        CreateVolumeFromBaseImageCommand cmd = new CreateVolumeFromBaseImageCommand(vol, template);
+        List<EndPoint> endPoints = this.dataStore.getEndPoints();
         EndPoint ep = endPoints.get(0);
         
         CreateVolumeFromBaseImageContext<CommandResult> context = new CreateVolumeFromBaseImageContext<CommandResult>(callback, volume);

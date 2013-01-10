@@ -33,7 +33,7 @@ public class TemplateObject implements TemplateInfo {
     }
 
     @Override
-    public ImageDataStoreInfo getImageDataStore() {
+    public ImageDataStoreInfo getDataStore() {
         return this.dataStore;
     }
 

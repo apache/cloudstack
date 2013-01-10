@@ -23,9 +23,10 @@ import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcConext;
 import org.apache.cloudstack.storage.EndPoint;
 import org.apache.cloudstack.storage.command.CommandResult;
-import org.apache.cloudstack.storage.command.CopyTemplateToPrimaryStorageCmd;
+import org.apache.cloudstack.storage.command.CopyCmd;
 import org.apache.cloudstack.storage.command.CopyTemplateToPrimaryStorageAnswer;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
+import org.apache.cloudstack.storage.image.TemplateInfo;
 import org.apache.cloudstack.storage.to.ImageOnPrimayDataStoreTO;
 import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreInfo;
 import org.springframework.stereotype.Component;
@@ -36,24 +37,12 @@ import com.cloud.agent.api.Answer;
 public class DefaultImageMotionStrategy implements ImageMotionStrategy {
 
     @Override
-    public boolean canHandle(TemplateOnPrimaryDataStoreInfo templateStore) {
+    public boolean canHandle(TemplateInfo templateStore) {
         // TODO Auto-generated method stub
         return true;
     }
 
-    @Override
-    public EndPoint getEndPoint(TemplateOnPrimaryDataStoreInfo templateStore) {
-        PrimaryDataStore pdi = templateStore.getPrimaryDataStore();
-        return pdi.getEndPoints().get(0);
-    }
 
-    @Override
-    public boolean copyTemplate(TemplateOnPrimaryDataStoreInfo templateStore, EndPoint ep) {
-        ImageOnPrimayDataStoreTO imageTo = new ImageOnPrimayDataStoreTO(templateStore);
-        CopyTemplateToPrimaryStorageCmd copyCommand = new CopyTemplateToPrimaryStorageCmd(imageTo);
-        ep.sendMessage(copyCommand);
-        return true;
-    }
     
     private class CreateTemplateContext<T> extends AsyncRpcConext<T> {
         private final TemplateOnPrimaryDataStoreInfo template;
@@ -69,10 +58,10 @@ public class DefaultImageMotionStrategy implements ImageMotionStrategy {
     }
 
     @Override
-    public void copyTemplateAsync(TemplateOnPrimaryDataStoreInfo templateStore, EndPoint ep, AsyncCompletionCallback<CommandResult> callback) {
-        ImageOnPrimayDataStoreTO imageTo = new ImageOnPrimayDataStoreTO(templateStore);
-        CopyTemplateToPrimaryStorageCmd copyCommand = new CopyTemplateToPrimaryStorageCmd(imageTo);
-        CreateTemplateContext<CommandResult> context = new CreateTemplateContext<CommandResult>(callback, templateStore);
+    public void copyTemplateAsync(String destUri, String srcUri, EndPoint ep, AsyncCompletionCallback<CommandResult> callback) {
+
+        CopyCmd copyCommand = new CopyCmd(destUri, srcUri);
+        CreateTemplateContext<CommandResult> context = new CreateTemplateContext<CommandResult>(callback, null);
         AsyncCallbackDispatcher<DefaultImageMotionStrategy, Answer> caller = AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().copyTemplateCallBack(null, null))
             .setContext(context);
@@ -95,6 +84,12 @@ public class DefaultImageMotionStrategy implements ImageMotionStrategy {
         }
 
         parentCall.complete(result);
+        return null;
+    }
+
+    @Override
+    public EndPoint getEndPoint(TemplateInfo destTemplate,
+            TemplateInfo srcTemplate) {
         return null;
     }
 

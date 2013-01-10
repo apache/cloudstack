@@ -12,7 +12,7 @@ import org.apache.cloudstack.storage.volume.VolumeObject;
 public interface PrimaryDataStoreDriver {
     void createVolumeAsync(VolumeObject vol, AsyncCompletionCallback<CommandResult> callback);
 
-    void createVolumeFromBaseImageAsync(VolumeObject volume, TemplateOnPrimaryDataStoreInfo template, AsyncCompletionCallback<CommandResult> callback);
+    void createVolumeFromBaseImageAsync(VolumeObject volume, String template, AsyncCompletionCallback<CommandResult> callback);
 
     void deleteVolumeAsync(VolumeObject vo, AsyncCompletionCallback<CommandResult> callback);
 

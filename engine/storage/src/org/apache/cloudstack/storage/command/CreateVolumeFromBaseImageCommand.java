@@ -27,9 +27,9 @@ public class CreateVolumeFromBaseImageCommand extends Command implements Storage
     private final VolumeTO volume;
     private final ImageOnPrimayDataStoreTO image;
 
-    public CreateVolumeFromBaseImageCommand(VolumeTO volume, ImageOnPrimayDataStoreTO image) {
+    public CreateVolumeFromBaseImageCommand(VolumeTO volume, String image) {
         this.volume = volume;
-        this.image = image;
+        this.image = null;
     }
     
     public VolumeTO getVolume() {

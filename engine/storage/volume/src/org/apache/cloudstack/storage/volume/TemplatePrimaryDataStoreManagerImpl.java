@@ -23,8 +23,8 @@ import javax.inject.Inject;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
 import org.apache.cloudstack.storage.image.TemplateInfo;
-import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreStateMachine.Event;
-import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreStateMachine.State;
+import org.apache.cloudstack.storage.volume.ObjectInDataStoreStateMachine.Event;
+import org.apache.cloudstack.storage.volume.ObjectInDataStoreStateMachine.State;
 import org.apache.cloudstack.storage.volume.db.TemplatePrimaryDataStoreDao;
 import org.apache.cloudstack.storage.volume.db.TemplatePrimaryDataStoreVO;
 import org.springframework.stereotype.Component;
@@ -45,14 +45,14 @@ public class TemplatePrimaryDataStoreManagerImpl implements TemplatePrimaryDataS
     protected StateMachine2<State, Event, TemplatePrimaryDataStoreVO> stateMachines;
     public TemplatePrimaryDataStoreManagerImpl() {
         stateMachines = new StateMachine2<State, Event, TemplatePrimaryDataStoreVO>();
-        stateMachines.addTransition(TemplateOnPrimaryDataStoreStateMachine.State.Allocated, Event.CreateRequested, TemplateOnPrimaryDataStoreStateMachine.State.Creating);
-        stateMachines.addTransition(TemplateOnPrimaryDataStoreStateMachine.State.Creating, Event.OperationSuccessed, TemplateOnPrimaryDataStoreStateMachine.State.Ready);
-        stateMachines.addTransition(TemplateOnPrimaryDataStoreStateMachine.State.Creating, Event.OperationFailed, TemplateOnPrimaryDataStoreStateMachine.State.Failed);
-        stateMachines.addTransition(TemplateOnPrimaryDataStoreStateMachine.State.Failed, Event.CreateRequested, TemplateOnPrimaryDataStoreStateMachine.State.Creating);
-        stateMachines.addTransition(TemplateOnPrimaryDataStoreStateMachine.State.Ready, Event.DestroyRequested, TemplateOnPrimaryDataStoreStateMachine.State.Destroying);
-        stateMachines.addTransition(TemplateOnPrimaryDataStoreStateMachine.State.Destroying, Event.OperationSuccessed, TemplateOnPrimaryDataStoreStateMachine.State.Destroyed);
-        stateMachines.addTransition(TemplateOnPrimaryDataStoreStateMachine.State.Destroying, Event.OperationFailed, TemplateOnPrimaryDataStoreStateMachine.State.Destroying);
-        stateMachines.addTransition(TemplateOnPrimaryDataStoreStateMachine.State.Destroying, Event.DestroyRequested, TemplateOnPrimaryDataStoreStateMachine.State.Destroying);
+        stateMachines.addTransition(ObjectInDataStoreStateMachine.State.Allocated, Event.CreateRequested, ObjectInDataStoreStateMachine.State.Creating);
+        stateMachines.addTransition(ObjectInDataStoreStateMachine.State.Creating, Event.OperationSuccessed, ObjectInDataStoreStateMachine.State.Ready);
+        stateMachines.addTransition(ObjectInDataStoreStateMachine.State.Creating, Event.OperationFailed, ObjectInDataStoreStateMachine.State.Failed);
+        stateMachines.addTransition(ObjectInDataStoreStateMachine.State.Failed, Event.CreateRequested, ObjectInDataStoreStateMachine.State.Creating);
+        stateMachines.addTransition(ObjectInDataStoreStateMachine.State.Ready, Event.DestroyRequested, ObjectInDataStoreStateMachine.State.Destroying);
+        stateMachines.addTransition(ObjectInDataStoreStateMachine.State.Destroying, Event.OperationSuccessed, ObjectInDataStoreStateMachine.State.Destroyed);
+        stateMachines.addTransition(ObjectInDataStoreStateMachine.State.Destroying, Event.OperationFailed, ObjectInDataStoreStateMachine.State.Destroying);
+        stateMachines.addTransition(ObjectInDataStoreStateMachine.State.Destroying, Event.DestroyRequested, ObjectInDataStoreStateMachine.State.Destroying);
     }
     
     private TemplatePrimaryDataStoreVO waitingForTemplateDownload(TemplateInfo template, PrimaryDataStoreInfo dataStore) {
@@ -98,7 +98,7 @@ public class TemplatePrimaryDataStoreManagerImpl implements TemplatePrimaryDataS
         }
         
         //If it's not a fresh template downloading, waiting for other people downloading finished.
-        if (!freshNewTemplate && templateStoreVO.getState() != TemplateOnPrimaryDataStoreStateMachine.State.Ready) {
+        if (!freshNewTemplate && templateStoreVO.getState() != ObjectInDataStoreStateMachine.State.Ready) {
             templateStoreVO = waitingForTemplateDownload(template, dataStore);
         }
 

@@ -20,7 +20,7 @@ package org.apache.cloudstack.storage.volume;
 
 import com.cloud.utils.fsm.StateObject;
 
-public interface TemplateOnPrimaryDataStoreStateMachine extends StateObject<TemplateOnPrimaryDataStoreStateMachine.State> {
+public interface ObjectInDataStoreStateMachine extends StateObject<ObjectInDataStoreStateMachine.State> {
     enum State {
         Allocated("The initial state"),
         Creating("The template is being downloading to data store"),
