@@ -113,6 +113,12 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     @Override
+    public Network getNetwork(String networkUuid) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
     public IpAddress getIp(long id) {
         // TODO Auto-generated method stub
         return null;
