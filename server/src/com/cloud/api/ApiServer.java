@@ -131,7 +131,6 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CSExceptionErrorCode;
-import com.cloud.uuididentity.dao.IdentityDao;
 
 public class ApiServer implements HttpRequestHandler {
     private static final Logger s_logger = Logger.getLogger(ApiServer.class.getName());
@@ -680,20 +679,13 @@ public class ApiServer implements HttpRequestHandler {
             if (ex instanceof ServerApiException && ((ServerApiException) ex).getErrorCode() == BaseCmd.UNSUPPORTED_ACTION_ERROR) {
                 throw (ServerApiException) ex;
             }
-            s_logger.error("unable to verifty request signature", ex);
+            s_logger.error("unable to verify request signature", ex);
         }
         return false;
     }
 
-    public Long fetchDomainId(String domainUUID){
-        ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
-        IdentityDao identityDao = locator.getDao(IdentityDao.class);
-        try{
-            Long domainId = identityDao.getIdentityId("domain", domainUUID);
-            return domainId;
-        }catch(InvalidParameterValueException ex){
-            return null;
-        }
+    public Long fetchDomainId(String domainUUID) {
+        return _domainMgr.getDomain(domainUUID).getId();
     }
 
     public void loginUser(HttpSession session, String username, String password, Long domainId, String domainPath, String loginIpAddress ,Map<String, Object[]> requestParameters) throws CloudAuthenticationException {
