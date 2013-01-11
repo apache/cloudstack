@@ -14,19 +14,24 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.server;
+package org.apache.cloudstack.acl;
 
+// Enum for default roles in CloudStack
+public enum RoleType {
 
-import com.cloud.utils.PropertiesUtil;
+    Admin(1),
+    ResourceAdmin(2),
+    DomainAdmin(4),
+    User(8),
+    Unknown(0);
 
-import java.util.Map;
+    private int mask;
 
-public class ManagementServerSimulatorImpl extends ManagementServerExtImpl {
-    @Override
-    public Map<String, String> getProperties() {
-        Map<String, String> apiNameRoleMaskMapping = super.getProperties();
-        apiNameRoleMaskMapping.putAll(PropertiesUtil.processConfigFile(new String[]
-                {"commands-simulator.properties"}));
-        return apiNameRoleMaskMapping;
+    private RoleType(int mask) {
+        this.mask = mask;
+    }
+
+    public int getValue() {
+        return mask;
     }
 }

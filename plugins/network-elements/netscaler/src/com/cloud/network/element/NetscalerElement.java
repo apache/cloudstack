@@ -27,6 +27,7 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.cloud.utils.PropertiesUtil;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -466,8 +467,9 @@ StaticNatServiceProvider {
     }
 
     @Override
-    public String[] getPropertiesFiles() {
-        return new String[] { "netscalerloadbalancer_commands.properties" };
+    public Map<String, String> getProperties() {
+        return PropertiesUtil.processConfigFile(new String[]
+                { "netscalerloadbalancer_commands.properties" });
     }
 
     @Override

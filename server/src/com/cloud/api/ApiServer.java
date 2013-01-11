@@ -52,6 +52,8 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.apache.cloudstack.acl.APIAccessChecker;
+import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
@@ -62,9 +64,6 @@ import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
-import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.acl.RoleType;
-import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
@@ -75,12 +74,8 @@ import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
-<<<<<<< HEAD
 import org.apache.cloudstack.api.response.ExceptionResponse;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.discovery.ApiDiscoveryService;
-=======
->>>>>>> master
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.ConnectionClosedException;
 import org.apache.http.HttpException;
@@ -133,6 +128,7 @@ import com.cloud.user.UserAccount;
 import com.cloud.user.UserContext;
 import com.cloud.user.UserVO;
 import com.cloud.utils.Pair;
+import com.cloud.utils.ReflectUtil;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.PluggableService;
@@ -179,7 +175,7 @@ public class ApiServer implements HttpRequestHandler {
         if (s_instance == null) {
             s_instance = new ApiServer();
             s_instance = ComponentContext.inject(s_instance);
-            s_instance.init(apiConfig);
+            s_instance.init();
         }
     }
 
@@ -798,37 +794,14 @@ public class ApiServer implements HttpRequestHandler {
         return true;
     }
 
-    private boolean isCommandAvailable(User user, String commandName) {
+    private boolean isCommandAvailable(User user, String commandName)
+            throws PermissionDeniedException {
         if (user == null) {
             return false;
         }
 
         Account account = _accountMgr.getAccount(user.getAccountId());
-        if (account == null) {
-            return false;
-        }
-
-        RoleType roleType = RoleType.Unknown;
-        short accountType = account.getType();
-
-        // Account type to role type translation
-        switch (accountType) {
-        case Account.ACCOUNT_TYPE_ADMIN:
-            roleType = RoleType.Admin;
-            break;
-        case Account.ACCOUNT_TYPE_DOMAIN_ADMIN:
-            roleType = RoleType.DomainAdmin;
-            break;
-        case Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN:
-            roleType = RoleType.ResourceAdmin;
-            break;
-        case Account.ACCOUNT_TYPE_NORMAL:
-            roleType = RoleType.User;
-            break;
-        default:
-            return false;
-        }
-
+        RoleType roleType = _accountMgr.getRoleType(account);
         for (APIAccessChecker apiChecker : _apiAccessCheckers) {
             // Fail the checking if any checker fails to verify
             if (!apiChecker.canAccessAPI(roleType, commandName))

@@ -16,7 +16,9 @@
 // under the License.
 package org.apache.cloudstack.discovery;
 
+import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.ReflectUtil;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -108,12 +110,14 @@ public class ApiDiscoveryServiceImpl implements ApiDiscoveryService {
     }
 
     @Override
-    public ListResponse<? extends BaseResponse> listApis() {
+    public ListResponse<? extends BaseResponse> listApis(RoleType roleType) {
         return _discoveryResponse;
     }
 
     @Override
-    public String[] getPropertiesFiles() {
-        return new String[] { "api-discovery_commands.properties" };
+    public Map<String, String> getProperties() {
+        Map<String, String> apiDiscoveryPropertyMap = new HashMap<String, String>();
+        apiDiscoveryPropertyMap.put("listApis", "15");
+        return apiDiscoveryPropertyMap;
     }
 }

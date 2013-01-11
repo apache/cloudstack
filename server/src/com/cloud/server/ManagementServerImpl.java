@@ -223,6 +223,7 @@ import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
+import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Adapter;
 import com.cloud.utils.component.ComponentContext;
@@ -2392,8 +2393,9 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public String[] getPropertiesFiles() {
-        return new String[] { "commands.properties" };
+    public Map<String, String> getProperties() {
+        return PropertiesUtil.processConfigFile(new String[]
+                { "commands.properties" });
     }
 
     protected class EventPurgeTask implements Runnable {

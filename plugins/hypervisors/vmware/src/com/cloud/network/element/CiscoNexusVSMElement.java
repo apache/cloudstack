@@ -17,6 +17,7 @@
 
 package com.cloud.network.element;
 
+import java.lang.String;
 import java.util.List;
 import java.util.Map;
 import java.util.ArrayList;
@@ -25,6 +26,7 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.cloud.utils.PropertiesUtil;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -239,7 +241,8 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
     }
 
     @Override
-    public String[] getPropertiesFiles() {
-        return new String[] { "cisconexusvsm_commands.properties" };
+    public Map<String, String> getProperties() {
+        return PropertiesUtil.processConfigFile(new String[]
+                { "cisconexusvsm_commands.properties" });
     }
 }

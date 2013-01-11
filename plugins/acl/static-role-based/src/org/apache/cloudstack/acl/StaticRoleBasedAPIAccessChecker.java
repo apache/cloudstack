@@ -16,17 +16,15 @@
 // under the License.
 package org.apache.cloudstack.acl;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
+import static org.apache.cloudstack.acl.RoleType.Admin;
+import static org.apache.cloudstack.acl.RoleType.DomainAdmin;
+import static org.apache.cloudstack.acl.RoleType.ResourceAdmin;
+import static org.apache.cloudstack.acl.RoleType.User;
+
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 
 import javax.ejb.Local;
@@ -37,7 +35,6 @@ import org.apache.log4j.Logger;
 
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.AccountManager;
-import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.PluggableService;
 
@@ -70,104 +67,70 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
     }
 
     @Override
-    public boolean canAccessAPI(RoleType roleType, String apiCommandName)
-            throws PermissionDeniedException{
+    public boolean canAccessAPI(RoleType roleType, String commandName)
+            throws PermissionDeniedException {
 
-        boolean commandExists = s_allCommands.contains(apiCommandName);
+        boolean commandExists = s_allCommands.contains(commandName);
+        boolean commandAccessible = false;
 
-        if(commandExists) {
-            return isCommandAvailableForAccount(roleType, apiCommandName);
+        if (commandExists) {
+            switch (roleType) {
+            case Admin:
+                commandAccessible = s_adminCommands.contains(commandName);
+                break;
+            case DomainAdmin:
+                commandAccessible = s_resellerCommands.contains(commandName);
+                break;
+            case ResourceAdmin:
+                commandAccessible = s_resourceDomainAdminCommands.contains(commandName);
+                break;
+            case User:
+                commandAccessible = s_userCommands.contains(commandName);
+                break;
+            }
         }
-
-        return commandExists;
-    }
-
-    private static boolean isCommandAvailableForAccount(RoleType roleType, String commandName) {
-        boolean isCommandAvailable = false;
-        switch (roleType) {
-        case Admin:
-            isCommandAvailable = s_adminCommands.contains(commandName);
-            break;
-        case DomainAdmin:
-            isCommandAvailable = s_resellerCommands.contains(commandName);
-            break;
-        case ResourceAdmin:
-            isCommandAvailable = s_resourceDomainAdminCommands.contains(commandName);
-            break;
-        case User:
-            isCommandAvailable = s_userCommands.contains(commandName);
-            break;
-        }
-        return isCommandAvailable;
+        return commandExists && commandAccessible;
     }
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
 
-        List<String> configFiles = new ArrayList<String>();
+        // Read command properties files to build the static map per role.
+        Map<String, String> configPropertiesMap = new HashMap<String, String>();
         for (PluggableService service : _services) {
-            configFiles.addAll(Arrays.asList(service.getPropertiesFiles()));
+            configPropertiesMap.putAll(service.getProperties());
         }
 
-        processConfigFiles(configFiles);
+        processConfigFiles(configPropertiesMap);
         return true;
     }
 
-    private void processConfigFiles(List<String> configFiles) {
-        Properties preProcessedCommands = new Properties();
-
-        for (String configFile : configFiles) {
-            File commandsFile = PropertiesUtil.findConfigFile(configFile);
-            if (commandsFile != null) {
-                try {
-                    preProcessedCommands.load(new FileInputStream(commandsFile));
-                } catch (FileNotFoundException fnfex) {
-                    // in case of a file within a jar in classpath, try to open stream using url
-                    InputStream stream = PropertiesUtil.openStreamFromURL(configFile);
-                    if (stream != null) {
-                        try {
-                            preProcessedCommands.load(stream);
-                        } catch (IOException e) {
-                            s_logger.error("IO Exception, unable to find properties file:", fnfex);
-                        }
-                    } else {
-                        s_logger.error("Unable to find properites file", fnfex);
-                    }
-                } catch (IOException ioe) {
-                    s_logger.error("IO Exception loading properties file", ioe);
-                }
-            }
-        }
-
-        for (Object key : preProcessedCommands.keySet()) {
-            String preProcessedCommand = preProcessedCommands.getProperty((String) key);
-            int splitIndex = preProcessedCommand.lastIndexOf(";");
-            // Backward compatible to old style, apiname=pkg;mask
-            String mask = preProcessedCommand.substring(splitIndex+1);
-
+    private void processConfigFiles(Map<String, String> config) {
+        for (Map.Entry<String, String> entry: config.entrySet()) {
+            String apiName = entry.getKey();
+            String roleMask = entry.getValue();
             try {
-                short cmdPermissions = Short.parseShort(mask);
+                short cmdPermissions = Short.parseShort(roleMask);
                 if ((cmdPermissions & Admin.getValue()) != 0) {
-                    s_adminCommands.add((String) key);
+                    s_adminCommands.add(apiName);
                 }
                 if ((cmdPermissions & ResourceAdmin.getValue()) != 0) {
-                    s_resourceDomainAdminCommands.add((String) key);
+                    s_resourceDomainAdminCommands.add(apiName);
                 }
                 if ((cmdPermissions & DomainAdmin.getValue()) != 0) {
-                    s_resellerCommands.add((String) key);
+                    s_resellerCommands.add(apiName);
                 }
                 if ((cmdPermissions & User.getValue()) != 0) {
-                    s_userCommands.add((String) key);
+                    s_userCommands.add(apiName);
                 }
-                s_allCommands.addAll(s_adminCommands);
-                s_allCommands.addAll(s_resourceDomainAdminCommands);
-                s_allCommands.addAll(s_userCommands);
-                s_allCommands.addAll(s_resellerCommands);
             } catch (NumberFormatException nfe) {
-                s_logger.info("Malformed command.properties permissions value, key = " + key + ", value = " + preProcessedCommand);
+                s_logger.info("Malformed commands.properties permissions value, for entry: " + entry.toString());
             }
         }
+        s_allCommands.addAll(s_adminCommands);
+        s_allCommands.addAll(s_resourceDomainAdminCommands);
+        s_allCommands.addAll(s_userCommands);
+        s_allCommands.addAll(s_resellerCommands);
     }
-
 }

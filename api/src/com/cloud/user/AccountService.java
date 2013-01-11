@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
@@ -192,6 +193,8 @@ public interface AccountService {
     public String[] createApiKeyAndSecretKey(RegisterCmd cmd);
 
     UserAccount getUserByApiKey(String apiKey);
+
+    RoleType getRoleType(Account account);
 
     void checkAccess(Account account, Domain domain) throws PermissionDeniedException;
 
