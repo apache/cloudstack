@@ -648,6 +648,7 @@ public class LibvirtVMDef {
         private nicModel _model;
         private String _virtualPortType;
         private String _virtualPortInterfaceId;
+        private int _vlanTag = -1;
 
         public void defBridgeNet(String brName, String targetBrName,
                 String macAddr, nicModel model) {
@@ -713,7 +714,15 @@ public class LibvirtVMDef {
         public String getVirtualPortInterfaceId() {
         	return _virtualPortInterfaceId;
         }
-
+        
+        public void setVlanTag(int vlanTag) {
+        	_vlanTag = vlanTag;
+        }
+        
+        public int getVlanTag() {
+        	return _vlanTag;
+        }
+        
         @Override
         public String toString() {
             StringBuilder netBuilder = new StringBuilder();
@@ -738,6 +747,9 @@ public class LibvirtVMDef {
             		netBuilder.append("<parameters interfaceid='" + _virtualPortInterfaceId + "'/>\n");
             	}
             	netBuilder.append("</virtualport>\n");
+            }
+            if (_vlanTag != -1) {
+            	netBuilder.append("<vlan trunk='no'>\n<tag id='" + _vlanTag + "'/>\n</vlan>");
             }
             netBuilder.append("</interface>\n");
             return netBuilder.toString();
