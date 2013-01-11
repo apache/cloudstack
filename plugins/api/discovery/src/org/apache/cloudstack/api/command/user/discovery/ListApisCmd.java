@@ -16,12 +16,12 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.discovery;
 
-import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.BaseListCmd;
+import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.PlugService;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -30,8 +30,8 @@ import org.apache.cloudstack.api.response.ApiDiscoveryResponse;
 
 import org.apache.log4j.Logger;
 
-@APICommand(name = "listApis", responseObject = ApiDiscoveryResponse.class, description = "lists all available apis on the server, provided by Api Discovery plugin", since = "4.1.0")
-public class ListApisCmd extends BaseListCmd {
+@APICommand(name = "listApis", responseObject = ApiDiscoveryResponse.class, description = "lists all available apis on the server, provided by the Api Discovery plugin", since = "4.1.0")
+public class ListApisCmd extends BaseCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListApisCmd.class.getName());
     private static final String s_name = "listapisresponse";
@@ -39,14 +39,16 @@ public class ListApisCmd extends BaseListCmd {
     @PlugService
     ApiDiscoveryService _apiDiscoveryService;
 
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="API name")
+    private String name;
+
     @Override
     public void execute() throws ServerApiException {
         if (_apiDiscoveryService != null) {
-            Account caller = UserContext.current().getCaller();
             RoleType roleType = _accountService.getRoleType(UserContext.current().getCaller());
-            ListResponse<ApiDiscoveryResponse> response = (ListResponse<ApiDiscoveryResponse>) _apiDiscoveryService.listApis(roleType);
+            ListResponse<ApiDiscoveryResponse> response = (ListResponse<ApiDiscoveryResponse>) _apiDiscoveryService.listApis(roleType, name);
             if (response == null) {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Api Discovery plugin was unable to find and process any apis");
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Api Discovery plugin was unable to find an api by that name or process any apis");
             }
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
@@ -56,5 +58,11 @@ public class ListApisCmd extends BaseListCmd {
     @Override
     public String getCommandName() {
         return s_name;
+    }
+
+    @Override
+    public long getEntityOwnerId() {
+        // no owner is needed for list command
+        return 0;
     }
 }

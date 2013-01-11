@@ -22,5 +22,5 @@ import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 
 public interface ApiDiscoveryService extends PluggableService {
-    ListResponse<? extends BaseResponse> listApis(RoleType roleType);
+    ListResponse<? extends BaseResponse> listApis(RoleType roleType, String apiName);
 }

@@ -16,13 +16,13 @@
 // under the License.
 package org.apache.cloudstack.discovery;
 
+import com.cloud.serializer.Param;
 import com.cloud.server.ManagementServer;
 import com.cloud.utils.ReflectUtil;
-import com.cloud.utils.component.Adapters;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.PluggableService;
-import org.apache.cloudstack.acl.APIChecker;
+import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseCmd;
@@ -32,6 +32,7 @@ import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ApiDiscoveryResponse;
 import org.apache.cloudstack.api.response.ApiParameterResponse;
+import org.apache.cloudstack.api.response.ApiResponseResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.log4j.Logger;
 
@@ -39,6 +40,7 @@ import javax.ejb.Local;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -47,19 +49,24 @@ import java.util.Set;
 public class ApiDiscoveryServiceImpl implements ApiDiscoveryService {
     private static final Logger s_logger = Logger.getLogger(ApiDiscoveryServiceImpl.class);
 
+    private static Map<RoleType, List<ApiDiscoveryResponse>> _roleTypeDiscoveryResponseListMap;
+
     private static Map<String, ApiDiscoveryResponse> _apiNameDiscoveryResponseMap =
             new HashMap<String, ApiDiscoveryResponse>();
-
-    private static Map<RoleType, List<ApiDiscoveryResponse>> _roleTypeDiscoveryResponseListMap =
-            new HashMap<RoleType, List<ApiDiscoveryResponse>>();
 
     private static Map<String, List<RoleType>> _apiNameRoleTypeListMap = null;
 
     protected ApiDiscoveryServiceImpl() {
         super();
-        for (RoleType roleType: RoleType.values())
-            _roleTypeDiscoveryResponseListMap.put(roleType, new ArrayList<ApiDiscoveryResponse>());
-        cacheListApiResponse();
+        if (_roleTypeDiscoveryResponseListMap == null) {
+            long startTime = System.nanoTime();
+            _roleTypeDiscoveryResponseListMap = new HashMap<RoleType, List<ApiDiscoveryResponse>>();
+            for (RoleType roleType: RoleType.values())
+                _roleTypeDiscoveryResponseListMap.put(roleType, new ArrayList<ApiDiscoveryResponse>());
+            cacheResponseMap();
+            long endTime = System.nanoTime();
+            s_logger.info("Api Discovery Service: Annotation, docstrings, api relation graph processed in " + (endTime - startTime) / 1000000.0 + " ms");
+        }
     }
 
     private Map<String, List<RoleType>> getApiNameRoleTypeListMap() {
@@ -86,9 +93,11 @@ public class ApiDiscoveryServiceImpl implements ApiDiscoveryService {
         return apiNameRoleTypeMap;
     }
 
-    private void cacheListApiResponse() {
+    private void cacheResponseMap() {
         Set<Class<?>> cmdClasses = ReflectUtil.getClassesWithAnnotation(APICommand.class,
                 new String[]{"org.apache.cloudstack.api", "com.cloud.api"});
+
+        Map<String, List<String>> responseApiNameListMap = new HashMap<String, List<String>>();
 
         for(Class<?> cmdClass: cmdClasses) {
             APICommand apiCmdAnnotation = cmdClass.getAnnotation(APICommand.class);
@@ -100,10 +109,32 @@ public class ApiDiscoveryServiceImpl implements ApiDiscoveryService {
                 continue;
 
             String apiName = apiCmdAnnotation.name();
+            String responseName = apiCmdAnnotation.responseObject().getName();
+            if (!responseName.contains("SuccessResponse")) {
+                if (!responseApiNameListMap.containsKey(responseName))
+                    responseApiNameListMap.put(responseName, new ArrayList<String>());
+                responseApiNameListMap.get(responseName).add(apiName);
+            }
             ApiDiscoveryResponse response = new ApiDiscoveryResponse();
             response.setName(apiName);
             response.setDescription(apiCmdAnnotation.description());
-            response.setSince(apiCmdAnnotation.since());
+            if (!apiCmdAnnotation.since().isEmpty())
+                response.setSince(apiCmdAnnotation.since());
+            response.setRelated(responseName);
+
+            Field[] responseFields = apiCmdAnnotation.responseObject().getDeclaredFields();
+            for(Field responseField: responseFields) {
+                SerializedName serializedName = responseField.getAnnotation(SerializedName.class);
+                if(serializedName != null) {
+                    ApiResponseResponse responseResponse = new ApiResponseResponse();
+                    responseResponse.setName(serializedName.value());
+                    Param param = responseField.getAnnotation(Param.class);
+                    if (param != null)
+                        responseResponse.setDescription(param.description());
+                    responseResponse.setType(responseField.getType().getSimpleName().toLowerCase());
+                    response.addApiResponse(responseResponse);
+                }
+            }
 
             Field[] fields = ReflectUtil.getAllFieldsForClass(cmdClass,
                     new Class<?>[] {BaseCmd.class, BaseAsyncCmd.class, BaseAsyncCreateCmd.class});
@@ -122,23 +153,50 @@ public class ApiDiscoveryServiceImpl implements ApiDiscoveryService {
                     ApiParameterResponse paramResponse = new ApiParameterResponse();
                     paramResponse.setName(parameterAnnotation.name());
                     paramResponse.setDescription(parameterAnnotation.description());
-                    paramResponse.setType(parameterAnnotation.type().toString());
+                    paramResponse.setType(parameterAnnotation.type().toString().toLowerCase());
                     paramResponse.setLength(parameterAnnotation.length());
                     paramResponse.setRequired(parameterAnnotation.required());
-                    paramResponse.setSince(parameterAnnotation.since());
+                    if (!parameterAnnotation.since().isEmpty())
+                        paramResponse.setSince(parameterAnnotation.since());
+                    paramResponse.setRelated(parameterAnnotation.entityType()[0].getName());
                     response.addParam(paramResponse);
                 }
             }
-            response.setObjectName("apis");
+            response.setObjectName("api");
+            _apiNameDiscoveryResponseMap.put(apiName, response);
+        }
+
+        for (String apiName: _apiNameDiscoveryResponseMap.keySet()) {
+            ApiDiscoveryResponse response = _apiNameDiscoveryResponseMap.get(apiName);
+            Set<ApiParameterResponse> processedParams = new HashSet<ApiParameterResponse>();
+            for (ApiParameterResponse param: response.getParams()) {
+                if (responseApiNameListMap.containsKey(param.getRelated())) {
+                    List<String> relatedApis = responseApiNameListMap.get(param.getRelated());
+                    param.setRelated(StringUtils.join(relatedApis, ","));
+                } else {
+                    param.setRelated(null);
+                }
+                processedParams.add(param);
+            }
+            response.setParams(processedParams);
+
+            if (responseApiNameListMap.containsKey(response.getRelated())) {
+                List<String> relatedApis = responseApiNameListMap.get(response.getRelated());
+                relatedApis.remove(apiName);
+                response.setRelated(StringUtils.join(relatedApis, ","));
+            } else {
+                response.setRelated(null);
+            }
             _apiNameDiscoveryResponseMap.put(apiName, response);
         }
     }
 
     @Override
-    public ListResponse<? extends BaseResponse> listApis(RoleType roleType) {
+    public ListResponse<? extends BaseResponse> listApis(RoleType roleType, String name) {
         // Creates roles based response list cache the first time listApis is called
         // Due to how adapters work, this cannot be done when mgmt loads
         if (_apiNameRoleTypeListMap == null) {
+            long startTime = System.nanoTime();
             _apiNameRoleTypeListMap = getApiNameRoleTypeListMap();
             for (Map.Entry<String, List<RoleType>> entry: _apiNameRoleTypeListMap.entrySet()) {
                 String apiName = entry.getKey();
@@ -147,9 +205,21 @@ public class ApiDiscoveryServiceImpl implements ApiDiscoveryService {
                             _apiNameDiscoveryResponseMap.get(apiName));
                 }
             }
+            long endTime = System.nanoTime();
+            s_logger.info("Api Discovery Service: List apis cached in " + (endTime - startTime) / 1000000.0 + " ms");
         }
         ListResponse<ApiDiscoveryResponse> response = new ListResponse<ApiDiscoveryResponse>();
-        response.setResponses(_roleTypeDiscoveryResponseListMap.get(roleType));
+        if (name != null) {
+            if (!_apiNameDiscoveryResponseMap.containsKey(name))
+                return null;
+
+             List<ApiDiscoveryResponse> singleResponse = new ArrayList<ApiDiscoveryResponse>();
+            singleResponse.add(_apiNameDiscoveryResponseMap.get(name));
+            response.setResponses(singleResponse);
+
+        } else {
+            response.setResponses(_roleTypeDiscoveryResponseListMap.get(roleType));
+        }
         return response;
     }
 
