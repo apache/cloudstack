@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.acl;
 
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.server.ManagementServer;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.ComponentLocator;
@@ -39,45 +38,20 @@ import org.apache.log4j.Logger;
 public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIAccessChecker {
 
     protected static final Logger s_logger = Logger.getLogger(StaticRoleBasedAPIAccessChecker.class);
-    private static Set<String> s_userCommands = null;
-    private static Set<String> s_resellerCommands = null; // AKA domain-admin
-    private static Set<String> s_adminCommands = null;
-    private static Set<String> s_resourceDomainAdminCommands = null;
-    private static Set<String> s_allCommands = null;
+
+    private static Map<RoleType, Set<String>> s_roleBasedApisMap =
+            new HashMap<RoleType, Set<String>>();
 
     protected StaticRoleBasedAPIAccessChecker() {
         super();
-        s_allCommands = new HashSet<String>();
-        s_userCommands = new HashSet<String>();
-        s_resellerCommands = new HashSet<String>();
-        s_adminCommands = new HashSet<String>();
-        s_resourceDomainAdminCommands = new HashSet<String>();
+        for (RoleType roleType: RoleType.values()) {
+            s_roleBasedApisMap.put(roleType, new HashSet<String>());
+        }
     }
 
     @Override
-    public boolean canAccessAPI(RoleType roleType, String commandName)
-            throws PermissionDeniedException {
-
-        boolean commandExists = s_allCommands.contains(commandName);
-        boolean commandAccessible = false;
-
-        if (commandExists) {
-            switch (roleType) {
-                case Admin:
-                    commandAccessible = s_adminCommands.contains(commandName);
-                    break;
-                case DomainAdmin:
-                    commandAccessible = s_resellerCommands.contains(commandName);
-                    break;
-                case ResourceAdmin:
-                    commandAccessible = s_resourceDomainAdminCommands.contains(commandName);
-                    break;
-                case User:
-                    commandAccessible = s_userCommands.contains(commandName);
-                    break;
-            }
-        }
-        return commandExists && commandAccessible;
+    public boolean canAccessAPI(RoleType roleType, String commandName) {
+            return s_roleBasedApisMap.get(roleType).contains(commandName);
     }
 
     @Override
@@ -98,31 +72,19 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
         return true;
     }
 
-    private void processConfigFiles(Map<String, String> config) {
-        for (Map.Entry<String, String> entry: config.entrySet()) {
+    private void processConfigFiles(Map<String, String> configMap) {
+        for (Map.Entry<String, String> entry: configMap.entrySet()) {
             String apiName = entry.getKey();
             String roleMask = entry.getValue();
             try {
                 short cmdPermissions = Short.parseShort(roleMask);
-                if ((cmdPermissions & Admin.getValue()) != 0) {
-                    s_adminCommands.add(apiName);
-                }
-                if ((cmdPermissions & ResourceAdmin.getValue()) != 0) {
-                    s_resourceDomainAdminCommands.add(apiName);
-                }
-                if ((cmdPermissions & DomainAdmin.getValue()) != 0) {
-                    s_resellerCommands.add(apiName);
-                }
-                if ((cmdPermissions & User.getValue()) != 0) {
-                    s_userCommands.add(apiName);
+                for (RoleType roleType: RoleType.values()) {
+                    if ((cmdPermissions & roleType.getValue()) != 0)
+                        s_roleBasedApisMap.get(roleType).add(apiName);
                 }
             } catch (NumberFormatException nfe) {
                 s_logger.info("Malformed commands.properties permissions value, for entry: " + entry.toString());
             }
         }
-        s_allCommands.addAll(s_adminCommands);
-        s_allCommands.addAll(s_resourceDomainAdminCommands);
-        s_allCommands.addAll(s_userCommands);
-        s_allCommands.addAll(s_resellerCommands);
     }
 }

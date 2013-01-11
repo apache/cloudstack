@@ -17,7 +17,6 @@
 package org.apache.cloudstack.acl;
 
 import org.apache.cloudstack.acl.RoleType;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.utils.component.Adapter;
 
 /**
@@ -25,5 +24,5 @@ import com.cloud.utils.component.Adapter;
  */
 public interface APIAccessChecker extends Adapter {
     // Interface for checking access to an API for an user
-    boolean canAccessAPI(RoleType roleType, String apiCommandName) throws PermissionDeniedException;
+    boolean canAccessAPI(RoleType roleType, String apiCommandName);
 }
