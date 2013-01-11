@@ -29,13 +29,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.apache.cloudstack.acl.RoleType.*;
 import org.apache.log4j.Logger;
 
 // This is the default API access checker that grab's the user's account
 // based on the account type, access is granted
-@Local(value=APIAccessChecker.class)
-public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIAccessChecker {
+@Local(value=APIChecker.class)
+public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIChecker {
 
     protected static final Logger s_logger = Logger.getLogger(StaticRoleBasedAPIAccessChecker.class);
 
@@ -50,8 +49,17 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
     }
 
     @Override
-    public boolean canAccessAPI(RoleType roleType, String commandName) {
+    public boolean checkAccess(RoleType roleType, String commandName) {
             return s_roleBasedApisMap.get(roleType).contains(commandName);
+    }
+
+    @Override
+    public boolean checkExistence(String apiName) {
+        for (RoleType roleType: RoleType.values()) {
+            if (s_roleBasedApisMap.get(roleType).contains(apiName))
+                return true;
+        }
+        return false;
     }
 
     @Override
