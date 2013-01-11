@@ -16,8 +16,13 @@
 // under the License.
 package org.apache.cloudstack.discovery;
 
-import com.cloud.utils.PropertiesUtil;
+import com.cloud.server.ManagementServer;
 import com.cloud.utils.ReflectUtil;
+import com.cloud.utils.component.Adapters;
+import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.component.Inject;
+import com.cloud.utils.component.PluggableService;
+import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseCmd;
@@ -42,30 +47,50 @@ import java.util.Set;
 public class ApiDiscoveryServiceImpl implements ApiDiscoveryService {
     private static final Logger s_logger = Logger.getLogger(ApiDiscoveryServiceImpl.class);
 
-    private ListResponse<ApiDiscoveryResponse> _discoveryResponse = new ListResponse<ApiDiscoveryResponse>();
+    private static Map<String, ApiDiscoveryResponse> _apiNameDiscoveryResponseMap =
+            new HashMap<String, ApiDiscoveryResponse>();
 
-    private Map<String, Class<?>> _apiNameCmdClassMap = new HashMap<String, Class<?>>();
+    private static Map<RoleType, List<ApiDiscoveryResponse>> _roleTypeDiscoveryResponseListMap =
+            new HashMap<RoleType, List<ApiDiscoveryResponse>>();
+
+    private static Map<String, List<RoleType>> _apiNameRoleTypeListMap = null;
 
     protected ApiDiscoveryServiceImpl() {
         super();
-        generateApiNameCmdClassMap();
+        for (RoleType roleType: RoleType.values())
+            _roleTypeDiscoveryResponseListMap.put(roleType, new ArrayList<ApiDiscoveryResponse>());
         cacheListApiResponse();
     }
 
-    private void generateApiNameCmdClassMap() {
-        Set<Class<?>> cmdClasses = ReflectUtil.getClassesWithAnnotation(APICommand.class,
-                new String[]{"org.apache.cloudstack.api", "com.cloud.api"});
-
-        for(Class<?> cmdClass: cmdClasses)
-            _apiNameCmdClassMap.put(cmdClass.getAnnotation(APICommand.class).name(), cmdClass);
+    private Map<String, List<RoleType>> getApiNameRoleTypeListMap() {
+        Map<String, List<RoleType>> apiNameRoleTypeMap = new HashMap<String, List<RoleType>>();
+        ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
+        List<PluggableService> services = locator.getAllPluggableServices();
+        services.add((PluggableService) ComponentLocator.getComponent(ManagementServer.Name));
+        for (PluggableService service : services) {
+            for (Map.Entry<String, String> entry: service.getProperties().entrySet()) {
+                String apiName = entry.getKey();
+                String roleMask = entry.getValue();
+                try {
+                    short cmdPermissions = Short.parseShort(roleMask);
+                    if (!apiNameRoleTypeMap.containsKey(apiName))
+                        apiNameRoleTypeMap.put(apiName, new ArrayList<RoleType>());
+                    for (RoleType roleType: RoleType.values()) {
+                        if ((cmdPermissions & roleType.getValue()) != 0)
+                            apiNameRoleTypeMap.get(apiName).add(roleType);
+                    }
+                } catch (NumberFormatException nfe) {
+                }
+            }
+        }
+        return apiNameRoleTypeMap;
     }
 
     private void cacheListApiResponse() {
+        Set<Class<?>> cmdClasses = ReflectUtil.getClassesWithAnnotation(APICommand.class,
+                new String[]{"org.apache.cloudstack.api", "com.cloud.api"});
 
-        List<ApiDiscoveryResponse> apiDiscoveryResponses = new ArrayList<ApiDiscoveryResponse>();
-
-        for(String key: _apiNameCmdClassMap.keySet()) {
-            Class<?> cmdClass = _apiNameCmdClassMap.get(key);
+        for(Class<?> cmdClass: cmdClasses) {
             APICommand apiCmdAnnotation = cmdClass.getAnnotation(APICommand.class);
             if (apiCmdAnnotation == null)
                 apiCmdAnnotation = cmdClass.getSuperclass().getAnnotation(APICommand.class);
@@ -74,8 +99,9 @@ public class ApiDiscoveryServiceImpl implements ApiDiscoveryService {
                     || apiCmdAnnotation.name().isEmpty())
                 continue;
 
+            String apiName = apiCmdAnnotation.name();
             ApiDiscoveryResponse response = new ApiDiscoveryResponse();
-            response.setName(apiCmdAnnotation.name());
+            response.setName(apiName);
             response.setDescription(apiCmdAnnotation.description());
             response.setSince(apiCmdAnnotation.since());
 
@@ -104,14 +130,27 @@ public class ApiDiscoveryServiceImpl implements ApiDiscoveryService {
                 }
             }
             response.setObjectName("apis");
-            apiDiscoveryResponses.add(response);
+            _apiNameDiscoveryResponseMap.put(apiName, response);
         }
-        _discoveryResponse.setResponses(apiDiscoveryResponses);
     }
 
     @Override
     public ListResponse<? extends BaseResponse> listApis(RoleType roleType) {
-        return _discoveryResponse;
+        // Creates roles based response list cache the first time listApis is called
+        // Due to how adapters work, this cannot be done when mgmt loads
+        if (_apiNameRoleTypeListMap == null) {
+            _apiNameRoleTypeListMap = getApiNameRoleTypeListMap();
+            for (Map.Entry<String, List<RoleType>> entry: _apiNameRoleTypeListMap.entrySet()) {
+                String apiName = entry.getKey();
+                for (RoleType roleTypeInList: entry.getValue()) {
+                    _roleTypeDiscoveryResponseListMap.get(roleTypeInList).add(
+                            _apiNameDiscoveryResponseMap.get(apiName));
+                }
+            }
+        }
+        ListResponse<ApiDiscoveryResponse> response = new ListResponse<ApiDiscoveryResponse>();
+        response.setResponses(_roleTypeDiscoveryResponseListMap.get(roleType));
+        return response;
     }
 
     @Override
