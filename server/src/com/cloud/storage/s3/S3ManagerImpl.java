@@ -41,6 +41,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 
+import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -119,10 +120,9 @@ public class S3ManagerImpl implements S3Manager {
     @Inject
     private SecondaryStorageVmManager secondaryStorageVMManager;
 
-    protected S3ManagerImpl() {
-        super();
+    public S3ManagerImpl() {
     }
-
+    
     private void verifyConnection(final S3TO s3) throws DiscoveryException {
 
         if (!canConnect(s3)) {

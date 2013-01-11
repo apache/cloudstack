@@ -85,14 +85,12 @@ import org.apache.cloudstack.api.command.user.zone.ListZonesByCmd;
 import org.apache.cloudstack.api.response.ExtractResponse;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
-import com.cloud.agent.manager.ClusteredAgentManagerImpl;
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.alert.Alert;
 import com.cloud.alert.AlertManager;

@@ -1098,7 +1098,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             s_logger.info("S3 secondary storage synchronization is disabled.");
         }
 
-        return false;
+        return true;
     }
     
     protected TemplateManagerImpl() {

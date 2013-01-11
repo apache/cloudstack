@@ -214,8 +214,7 @@ public class QueryManagerImpl implements QueryService, Manager {
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _name = name;
-        // _responseGenerator = new ViewResponseHelper();
-        return false;
+        return true;
     }
 
     @Override

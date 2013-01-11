@@ -133,6 +133,7 @@ import com.cloud.utils.AnnotationHelper;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.JoinBuilder.JoinType;
@@ -212,11 +213,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Inject
     PodVlanMapDao _podVlanMapDao;
     
-    //@com.cloud.utils.component.Inject(adapter = NetworkGuru.class)
     @Inject 
     List<NetworkGuru> _networkGurus;
 
-    // @com.cloud.utils.component.Inject(adapter = NetworkElement.class)
     @Inject 
     List<NetworkElement> _networkElements;
     
@@ -1540,6 +1539,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                             "multiple NetworkElements found for Provider: " + implementedProvider.getName());
                     return false;
                 }
+                s_logger.info("add element/provider mapping. provider: " + implementedProvider.getName() + " -> " + element.getName()
+                		+ ", class: " + ComponentContext.getTargetClass(element).getName());
                 s_providerToNetworkElementMap.put(implementedProvider.getName(), element.getName());
             }
             if (capabilities != null && implementedProvider != null) {

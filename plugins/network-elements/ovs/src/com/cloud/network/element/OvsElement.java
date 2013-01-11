@@ -22,8 +22,6 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.springframework.stereotype.Component;
-
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -42,7 +40,6 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
-@Component
 @Local(value = NetworkElement.class)
 public class OvsElement extends AdapterBase implements NetworkElement {
     @Inject

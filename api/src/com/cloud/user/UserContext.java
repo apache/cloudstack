@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.user;
 
-
 public class UserContext {
 
     private static ThreadLocal<UserContext> s_currentContext = new ThreadLocal<UserContext>();

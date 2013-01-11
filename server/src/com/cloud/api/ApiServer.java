@@ -148,8 +148,8 @@ public class ApiServer implements HttpRequestHandler {
     @Inject ApiDispatcher _dispatcher;
 
     @Inject private AccountManager _accountMgr;
-    @Inject private DomainManager _domainMgr = null;
-    @Inject private AsyncJobManager _asyncMgr = null;
+    @Inject private DomainManager _domainMgr;
+    @Inject private AsyncJobManager _asyncMgr;
     @Inject private ConfigurationDao _configDao;
 
     @Inject List<PluggableService> _pluggableServices;
@@ -552,7 +552,7 @@ public class ApiServer implements HttpRequestHandler {
             }
 
             String commandName = command[0];
-
+/*
             // if userId not null, that mean that user is logged in
             if (userId != null) {
                 User user = ApiDBUtils.findUserById(userId);
@@ -568,7 +568,7 @@ public class ApiServer implements HttpRequestHandler {
                     throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command does not exist or it is not available for user");
                 }
             }
-
+*/
             // - build a request string with sorted params, make sure it's all lowercase
             // - sign the request, verify the signature is the same
             List<String> parameterNames = new ArrayList<String>();
