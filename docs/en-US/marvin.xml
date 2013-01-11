@@ -29,4 +29,5 @@
         <para>Marvin's complete documenation is on the wiki at <ulink url="https://cwiki.apache.org/CLOUDSTACK/testing-with-python.html">https://cwiki.apache.org/CLOUDSTACK/testing-with-python.html</ulink></para>
         <para>The source code is located at <emphasis>tools/marvin</emphasis></para>
     </note>
+    <xi:include href="building-marvin.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
 </section>
