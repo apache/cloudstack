@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.event;
 
+import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.springframework.stereotype.Component;
@@ -33,6 +34,10 @@ public class EventUtils {
 	@Inject AccountDao _placeHoderAccountDao;
 	
 	public EventUtils() {
+	}
+	
+	@PostConstruct
+	void init() {
 		_eventDao = _placeHoderEventDao;
 		_accountDao = _placeHoderAccountDao;
 	}

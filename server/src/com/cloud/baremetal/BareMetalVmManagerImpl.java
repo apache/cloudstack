@@ -40,6 +40,9 @@ import com.cloud.agent.api.baremetal.IpmISetBootDevCommand;
 import com.cloud.agent.api.baremetal.IpmiBootorResetCommand;
 import com.cloud.agent.manager.Commands;
 import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
+import org.springframework.context.annotation.Primary;
+import org.springframework.stereotype.Component;
+
 import com.cloud.baremetal.PxeServerManager.PxeServerType;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -102,6 +105,8 @@ import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfile.Param;
 
+@Component
+@Primary
 @Local(value={BareMetalVmManager.class, BareMetalVmService.class})
 public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMetalVmManager, BareMetalVmService, Manager,
 		StateListener<State, VirtualMachine.Event, VirtualMachine> {
@@ -110,7 +115,6 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
 	@Inject PxeServerManager _pxeMgr;
 	@Inject ResourceManager _resourceMgr;
 	
-	// @com.cloud.utils.component.Inject (adapter=TemplateAdapter.class)
     @Inject protected List<TemplateAdapter> _adapters;
 
     @PostConstruct

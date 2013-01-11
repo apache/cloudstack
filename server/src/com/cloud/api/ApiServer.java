@@ -147,10 +147,10 @@ public class ApiServer implements HttpRequestHandler {
     public static String jsonContentType = "text/javascript";
     @Inject ApiDispatcher _dispatcher;
 
-    @Inject AccountManager _accountMgr;
-    @Inject DomainManager _domainMgr;
-    @Inject AsyncJobManager _asyncMgr;
-    @Inject ConfigurationDao _configDao;
+    @Inject private AccountManager _accountMgr;
+    @Inject private DomainManager _domainMgr = null;
+    @Inject private AsyncJobManager _asyncMgr = null;
+    @Inject private ConfigurationDao _configDao;
 
     @Inject List<PluggableService> _pluggableServices;
     @Inject IdentityDao _identityDao;

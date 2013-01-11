@@ -33,6 +33,7 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.async.SyncQueueItemVO;
 import com.cloud.utils.DateUtil;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
@@ -43,6 +44,7 @@ import com.cloud.utils.db.Transaction;
 
 @Component
 @Local(value = { SyncQueueItemDao.class })
+@DB
 public class SyncQueueItemDaoImpl extends GenericDaoBase<SyncQueueItemVO, Long> implements SyncQueueItemDao {
     private static final Logger s_logger = Logger.getLogger(SyncQueueItemDaoImpl.class);
     final GenericSearchBuilder<SyncQueueItemVO, Long> queueIdSearch;

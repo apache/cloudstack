@@ -58,6 +58,7 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.query.dao.AccountJoinDao;
 import com.cloud.api.query.dao.AsyncJobJoinDao;
@@ -128,6 +129,7 @@ import com.cloud.vm.dao.UserVmDao;
  * @author minc
  *
  */
+@Component
 @Local(value = {QueryService.class })
 public class QueryManagerImpl implements QueryService, Manager {
 
