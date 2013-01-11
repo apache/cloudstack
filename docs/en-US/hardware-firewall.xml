@@ -22,11 +22,8 @@
   <title>Hardware Firewall</title>
   <para>All deployments should have a firewall protecting the management server; see Generic
     Firewall Provisions. Optionally, some deployments may also have a Juniper SRX firewall that will
-    be the default gateway for the guest networks; see <xref
-      linkend="external-guest-firewall-integration"/>.</para>
+    be the default gateway for the guest networks; see <xref linkend="external-guest-firewall-integration"/>.</para>
   <xi:include href="generic-firewall-provisions.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-  <xi:include href="external-guest-firewall-integration.xml"
-    xmlns:xi="http://www.w3.org/2001/XInclude"/>
-  <xi:include href="lb-services.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-  <xi:include href="inline-config-lb-fw.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+  <xi:include href="external-guest-firewall-integration.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+  <xi:include href="external-guest-lb-integration.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
 </section>
