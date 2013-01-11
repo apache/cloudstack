@@ -16,8 +16,9 @@
 // under the License.
 package com.cloud.utils.exception;
 
-import com.cloud.utils.AnnotationHelper;
 import java.util.ArrayList;
+
+import com.cloud.utils.AnnotationHelper;
 
 /**
  * by the API response serializer. Any exceptions that are thrown by
@@ -27,20 +28,22 @@ import java.util.ArrayList;
 
 public class RuntimeCloudException extends RuntimeException {
 
-	// This holds a list of uuids and their names. Add uuid:fieldname pairs
-	protected ArrayList<String> idList = new ArrayList<String>();
+    private static final long serialVersionUID = 1783478684819198850L;
 
-	protected int csErrorCode;
+    // This holds a list of uuids and their names. Add uuid:fieldname pairs
+    protected ArrayList<String> idList = new ArrayList<String>();
 
-	public void addProxyObject(String uuid) {
-		idList.add(uuid);
-		return;
-	}
+    protected int csErrorCode;
 
-	public RuntimeCloudException(String message) {
-		super(message);
-		setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
-	}
+    public void addProxyObject(String uuid) {
+        idList.add(uuid);
+        return;
+    }
+
+    public RuntimeCloudException(String message) {
+        super(message);
+        setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
+    }
 
     public RuntimeCloudException(String message, Throwable cause) {
         super(message, cause);
@@ -48,28 +51,28 @@ public class RuntimeCloudException extends RuntimeException {
     }
 
     public void addProxyObject(Object voObj, Long id, String idFieldName) {
-    	// Get the VO object's table name.
-    	String tablename = AnnotationHelper.getTableName(voObj);
-    	if (tablename != null) {
-    		addProxyObject(tablename, id, idFieldName);
-    	}
-    	return;
+        // Get the VO object's table name.
+        String tablename = AnnotationHelper.getTableName(voObj);
+        if (tablename != null) {
+            addProxyObject(tablename, id, idFieldName);
+        }
+        return;
     }
 
-	public RuntimeCloudException() {
-		super();
-		setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
-	}
+    public RuntimeCloudException() {
+        super();
+        setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
+    }
 
-	public ArrayList<String> getIdProxyList() {
-		return idList;
-	}
+    public ArrayList<String> getIdProxyList() {
+        return idList;
+    }
 
-	public void setCSErrorCode(int cserrcode) {
-		this.csErrorCode = cserrcode;
-	}
+    public void setCSErrorCode(int cserrcode) {
+        this.csErrorCode = cserrcode;
+    }
 
-	public int getCSErrorCode() {
-		return this.csErrorCode;
-	}
+    public int getCSErrorCode() {
+        return this.csErrorCode;
+    }
 }

@@ -155,8 +155,7 @@ public class ApiServer implements HttpRequestHandler {
     @Inject List<PluggableService> _pluggableServices;
     @Inject IdentityDao _identityDao;
 
-    @Inject
-    protected List<APIAccessChecker> _apiAccessCheckers;
+    @Inject List<APIAccessChecker> _apiAccessCheckers;
 
     private Account _systemAccount = null;
     private User _systemUser = null;

@@ -60,16 +60,16 @@ public class MacAddress {
         StringBuilder buff = new StringBuilder();
         Formatter formatter = new Formatter(buff);
         formatter.format("%02x%s%02x%s%02x%s%02x%s%02x%s%02x",
-                         _addr >> 40 & 0xff, separator,
-                         _addr >> 32 & 0xff, separator,
-                         _addr >> 24 & 0xff, separator,
-                         _addr >> 16 & 0xff, separator,
-                         _addr >> 8 & 0xff, separator,
-                         _addr & 0xff);
+                _addr >> 40 & 0xff, separator,
+                _addr >> 32 & 0xff, separator,
+                _addr >> 24 & 0xff, separator,
+                _addr >> 16 & 0xff, separator,
+                _addr >> 8 & 0xff, separator,
+                _addr & 0xff);
         return buff.toString();
-        
+
         /*
-        
+
         String str = Long.toHexString(_addr);
 
         for (int i = str.length() - 1; i >= 0; i--) {
@@ -79,11 +79,11 @@ public class MacAddress {
             }
         }
         return buff.reverse().toString();
-        */
+         */
     }
 
     @Override
-	public String toString() {
+    public String toString() {
         return toString(":");
     }
 
@@ -102,7 +102,7 @@ public class MacAddress {
             } else if (osname.startsWith("Solaris") || osname.startsWith("SunOS")) {
                 // Solaris code must appear before the generic code
                 String hostName = MacAddress.getFirstLineOfCommand(new String[] { "uname",
-                                                                       "-n"});
+                "-n"});
                 if (hostName != null) {
                     p = Runtime.getRuntime().exec(new String[] { "/usr/sbin/arp", hostName}, null);
                 }
@@ -163,7 +163,7 @@ public class MacAddress {
                 clockSeqAndNode |= (long) (Math.random() * 0x7FFFFFFF);
             }
         }
-    	
+
         s_address = new MacAddress(clockSeqAndNode);
     }
 
@@ -261,9 +261,6 @@ public class MacAddress {
         System.out.println("addr in bytes is " + NumbersUtil.bytesToString(addr.toByteArray(), 0, addr.toByteArray().length));
         System.out.println("addr in char is " + addr.toString(":"));
     }
-
-private static final char[] DIGITS = { '0', '1', '2', '3', '4', '5', '6',
-            '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
 
     /**
      * Parses a <code>long</code> from a hex encoded number. This method will skip

@@ -32,6 +32,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.AccountManager;
@@ -40,6 +41,7 @@ import com.cloud.utils.component.PluggableService;
 
 // This is the default API access checker that grab's the user's account
 // based on the account type, access is granted
+@Component
 @Local(value=APIAccessChecker.class)
 public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIAccessChecker {
 
