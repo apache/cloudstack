@@ -20,12 +20,10 @@
 -->
 <section id="external-guest-lb-integration">
   <title>External Guest Load Balancer Integration (Optional)</title>
-  <note>
-    <para>External load balancer devices are not supported in shared networks.</para>
-  </note>
   <para>&PRODUCT; can optionally use a Citrix NetScaler or BigIP F5 load balancer to provide load
     balancing services to guests. If this is not enabled, &PRODUCT; will use the software load
     balancer in the virtual router.</para>
+  <para>To install and enable an external load balancer for &PRODUCT; management:</para>
   <orderedlist>
     <listitem>
       <para>Set up the appliance according to the vendor's directions.</para>
