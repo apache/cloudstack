@@ -84,11 +84,11 @@ public class OvsVifDriver extends VifDriverBase {
                     && !vlanId.equalsIgnoreCase("untagged")) {
                 if(trafficLabel != null && !trafficLabel.isEmpty()) {
                     s_logger.debug("creating a vlan dev and bridge for guest traffic per traffic label " + trafficLabel);
-                    String brName = createVlanBr(vlanId, _pifs.get(trafficLabel));
-                    intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType));
+                    intf.defBridgeNet(_pifs.get(trafficLabel), null, nic.getMac(), getGuestNicModel(guestOsType));
+                    intf.setVlanTag(Integer.parseInt(vlanId));
                 } else {
-                    String brName = createVlanBr(vlanId, _pifs.get("private"));
-                    intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType));
+                    intf.defBridgeNet(_pifs.get("private"), null, nic.getMac(), getGuestNicModel(guestOsType));
+                    intf.setVlanTag(Integer.parseInt(vlanId));
                 }
             } else if (nic.getBroadcastType() == Networks.BroadcastDomainType.Lswitch) {
             	s_logger.debug("nic " + nic + " needs to be connected to LogicalSwitch " + logicalSwitchUuid);
@@ -108,11 +108,11 @@ public class OvsVifDriver extends VifDriverBase {
                     && !vlanId.equalsIgnoreCase("untagged")) {
                 if(trafficLabel != null && !trafficLabel.isEmpty()){
                     s_logger.debug("creating a vlan dev and bridge for public traffic per traffic label " + trafficLabel);
-                    String brName = createVlanBr(vlanId, _pifs.get(trafficLabel));
-                    intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType));
+                    intf.defBridgeNet(_pifs.get(trafficLabel), null, nic.getMac(), getGuestNicModel(guestOsType));
+                    intf.setVlanTag(Integer.parseInt(vlanId));
                 } else {
-                    String brName = createVlanBr(vlanId, _pifs.get("public"));
-                    intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType));
+                    intf.defBridgeNet(_pifs.get("public"), null, nic.getMac(), getGuestNicModel(guestOsType));
+                    intf.setVlanTag(Integer.parseInt(vlanId));
                 }
             } else {
                 intf.defBridgeNet(_bridges.get("public"), null, nic.getMac(), getGuestNicModel(guestOsType));
@@ -142,28 +142,6 @@ public class OvsVifDriver extends VifDriverBase {
         }
 
         return brName;
-    }
-
-    private String createVlanBr(String vlanId, String nic)
-            throws InternalErrorException {
-        String brName = setVnetBrName(nic, vlanId);
-        createVnet(vlanId, nic, brName);
-        return brName;
-    }
-
-    private void createVnet(String vnetId, String pif, String brName)
-            throws InternalErrorException {
-        final Script command = new Script(_modifyVlanPath, _timeout, s_logger);
-        command.add("-v", vnetId);
-        command.add("-p", pif);
-        command.add("-b", brName);
-        command.add("-o", "add");
-
-        final String result = command.execute();
-        if (result != null) {
-            throw new InternalErrorException("Failed to create vnet " + vnetId
-                    + ": " + result);
-        }
     }
     
 	private void deleteExitingLinkLocalRoutTable(String linkLocalBr) {
