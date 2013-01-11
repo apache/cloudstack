@@ -2792,11 +2792,6 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public Long getIdentiyId(String tableName, String token) {
-        return ApiDispatcher.getIdentiyId(tableName, token);
-    }
-
-    @Override
     public ResourceTagResponse createResourceTagResponse(ResourceTag resourceTag, boolean keyValueOnly) {
         ResourceTagJoinVO rto = ApiDBUtils.newResourceTagView(resourceTag);
         return ApiDBUtils.newResourceTagResponse(rto, keyValueOnly);

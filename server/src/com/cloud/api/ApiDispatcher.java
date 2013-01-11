@@ -64,7 +64,6 @@ import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.exception.CSExceptionErrorCode;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.uuididentity.dao.IdentityDao;
 
 // ApiDispatcher: A class that dispatches API commands to the appropriate manager for execution.
 public class ApiDispatcher {
@@ -75,7 +74,6 @@ public class ApiDispatcher {
     @Inject private AsyncJobManager _asyncMgr = null;
     @Inject private AccountManager _accountMgr = null;
     @Inject EntityManager _entityMgr = null;
-    @Inject IdentityDao _identityDao = null;
 
     Map<String, Class<? extends GenericDao>> _daoNameMap = new HashMap<String, Class<? extends GenericDao>>();
     // singleton class
@@ -707,9 +705,5 @@ public class ApiDispatcher {
             s_logger.error("Error at plugService for command " + cmd.getCommandName() + ", field " + field.getName() + " is not accessible.");
             throw new CloudRuntimeException("Internal error at plugService for command " + cmd.getCommandName() + " [field " + field.getName() + " is not accessible]");
         }
-    }
-
-    public static Long getIdentiyId(String tableName, String token) {
-        return s_instance._identityDao.getIdentityId(tableName, token);
     }
 }
