@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>11.18. About Inter-VLAN Routing</title><link rel="stylesheet" type="text/css" href="Common_Content/css/default.css" /><link rel="stylesheet" media="print" href="Common_Content/css/print.css" type="text/css" /><meta name="generator" content="publican 2.8" /><meta name="package" content="Apache_CloudStack-Installation_Guide-4.0.1-incubating-en-US-1-" /><link rel="home" href="index.html" title="CloudStack Installation Guide" /><link rel="up" href="networks.html" title="Chapter 11. Managing Networks and Traffic" /><link rel="prev" href="vpn.html" title="11.17. VPN" /><link rel="next" href="configure-vpc.html" title="11.19. Configuring a Virtual Private Cloud" /></head><body><p id="title"><a class="left" href="http://cloudstack.org"><img src="Common_Content/images/image_left.png" alt="Product Site" /></a><a class="right" href="http://docs.cloudstack.org"><img src="Common_Content/images/image_right.png" alt="Documentation Site" /></a></p><ul class="docnav"><li class="previous"><a accesskey="p" href="vpn.html"><strong>Prev</strong></a></li><li class="next"><a accesskey="n" href="configure-vpc.html"><strong>Next</strong></a></li></ul><div xml:lang="en-US" class="section" id="inter-vlan-routing" lang="en-US"><div class="titlepage"><div><div><h2 class="title" id="inter-vlan-routing">11.18. About Inter-VLAN Routing</h2></div></div></div><div class="para">
+		Inter-VLAN Routing is the capability to route network traffic between VLANs. This feature enables you to build Virtual Private Clouds (VPC), an isolated segment of your cloud, that can hold multi-tier applications. These tiers are deployed on different VLANs that can communicate with each other. You provision VLANs to the tiers your create, and VMs can be deployed on different tiers. The VLANs are connected to a virtual router, which facilitates communication between the VMs. In effect, you can segment VMs by means of VLANs into different networks that can host multi-tier applications, such as Web, Application, or Database. Such segmentation by means of VLANs logically separate application VMs for higher security and lower broadcasts, while remaining physically connected to the same device.
+	</div><div class="para">
+		This feature is supported on XenServer and VMware hypervisors.
+	</div><div class="para">
+		The major advantages are:
+	</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+				The administrator can deploy a set of VLANs and allow users to deploy VMs on these VLANs. A guest VLAN is randomly alloted to an account from a pre-specified set of guest VLANs. All the VMs of a certain tier of an account reside on the guest VLAN allotted to that account.
+			</div><div class="note"><div class="admonition_header"><h2>Note</h2></div><div class="admonition"><div class="para">
+					A VLAN allocated for an account cannot be shared between multiple accounts.
+				</div></div></div></li><li class="listitem"><div class="para">
+				The administrator can allow users create their own VPC and deploy the application. In this scenario, the VMs that belong to the account are deployed on the VLANs allotted to that account.
+			</div></li><li class="listitem"><div class="para">
+				Both administrators and users can create multiple VPCs. The guest network NIC is plugged to the VPC virtual router when the first VM is deployed in a tier.
+			</div></li><li class="listitem"><div class="para">
+				The administrator can create the following gateways to send to or receive traffic from the VMs:
+			</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>VPN Gateway</strong></span>: For more information, see <a class="xref" href="vpn.html#create-vpn-gateway-for-vpc">Section 11.17.4.2, “Creating a VPN gateway for the VPC”</a>.
+					</div></li><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>Public Gateway</strong></span>: The public gateway for a VPC is added to the virtual router when the virtual router is created for VPC. The public gateway is not exposed to the end users. You are not allowed to list it, nor allowed to create any static routes.
+					</div></li><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>Private Gateway</strong></span>: For more information, see <a class="xref" href="configure-vpc.html#add-gateway-vpc">Section 11.19.5, “Adding a Private Gateway to a VPC”</a>.
+					</div></li></ul></div></li><li class="listitem"><div class="para">
+				Both administrators and users can create various possible destinations-gateway combinations. However, only one gateway of each type can be used in a deployment.
+			</div><div class="para">
+				For example:
+			</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>VLANs and Public Gateway</strong></span>: For example, an application is deployed in the cloud, and the Web application VMs communicate with the Internet.
+					</div></li><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>VLANs, VPN Gateway, and Public Gateway</strong></span>: For example, an application is deployed in the cloud; the Web application VMs communicate with the Internet; and the database VMs communicate with the on-premise devices.
+					</div></li></ul></div></li><li class="listitem"><div class="para">
+				The administrator can define Access Control List (ACL) on the virtual router to filter the traffic among the VLANs or between the Internet and a VLAN. You can define ACL based on CIDR, port range, protocol, type code (if ICMP protocol is selected) and Ingress/Egress type.
+			</div></li></ul></div><div class="para">
+		The following figure shows the possible deployment scenarios of a Inter-VLAN setup:
+	</div><div class="mediaobject"><img src="./images/multi-tier-app.png" width="444" alt="mutltier.png: a multi-tier setup." /></div><div class="para">
+		To set up a multi-tier Inter-VLAN deployment, see <a class="xref" href="configure-vpc.html">Section 11.19, “Configuring a Virtual Private Cloud”</a>.
+	</div></div><ul class="docnav"><li class="previous"><a accesskey="p" href="vpn.html"><strong>Prev</strong>11.17. VPN</a></li><li class="up"><a accesskey="u" href="#"><strong>Up</strong></a></li><li class="home"><a accesskey="h" href="index.html"><strong>Home</strong></a></li><li class="next"><a accesskey="n" href="configure-vpc.html"><strong>Next</strong>11.19. Configuring a Virtual Private Cloud</a></li></ul></body></html>

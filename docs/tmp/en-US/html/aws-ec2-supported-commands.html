@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>10.6. Supported AWS API Calls</title><link rel="stylesheet" type="text/css" href="Common_Content/css/default.css" /><link rel="stylesheet" media="print" href="Common_Content/css/print.css" type="text/css" /><meta name="generator" content="publican 2.8" /><meta name="package" content="Apache_CloudStack-Installation_Guide-4.0.1-incubating-en-US-1-" /><link rel="home" href="index.html" title="CloudStack Installation Guide" /><link rel="up" href="aws-interface-compatibility.html" title="Chapter 10. Amazon Web Service Interface Compatibility" /><link rel="prev" href="aws-ec2-timeouts.html" title="10.5. Using Timeouts to Ensure AWS API Command Completion" /><link rel="next" href="networks.html" title="Chapter 11. Managing Networks and Traffic" /></head><body><p id="title"><a class="left" href="http://cloudstack.org"><img src="Common_Content/images/image_left.png" alt="Product Site" /></a><a class="right" href="http://docs.cloudstack.org"><img src="Common_Content/images/image_right.png" alt="Documentation Site" /></a></p><ul class="docnav"><li class="previous"><a accesskey="p" href="aws-ec2-timeouts.html"><strong>Prev</strong></a></li><li class="next"><a accesskey="n" href="networks.html"><strong>Next</strong></a></li></ul><div xml:lang="en-US" class="section" id="aws-ec2-supported-commands" lang="en-US"><div class="titlepage"><div><div><h2 class="title" id="aws-ec2-supported-commands">10.6. Supported AWS API Calls</h2></div></div></div><div class="para">
+		The following Amazon EC2 commands are supported by CloudStack when the AWS API compatibility feature is enabled. For a few commands, there are differences between the CloudStack and Amazon EC2 versions, and these differences are noted. The underlying SOAP call for each command is also given, for those who have built tools using those calls.
+	</div><div class="table"><h6>Table 10.1. Elastic IP API mapping</h6><div class="table-contents"><table summary="Elastic IP API mapping" border="1"><colgroup><col width="33%" /><col width="33%" /><col width="33%" /></colgroup><thead><tr><th align="left">
+						EC2 command
+					</th><th align="left">
+						SOAP call
+					</th><th align="left">
+						CloudStack API call
+					</th></tr></thead><tbody><tr><td align="left">
+						ec2-allocate-address
+					</td><td align="left">
+						AllocateAddress
+					</td><td align="left">
+						associateIpAddress
+					</td></tr><tr><td align="left">
+						ec2-associate-address
+					</td><td align="left">
+						AssociateAddress
+					</td><td align="left">
+						enableStaticNat
+					</td></tr><tr><td align="left">
+						ec2-describe-addresses
+					</td><td align="left">
+						DescribeAddresses
+					</td><td align="left">
+						listPublicIpAddresses
+					</td></tr><tr><td align="left">
+						ec2-diassociate-address
+					</td><td align="left">
+						DisassociateAddress
+					</td><td align="left">
+						disableStaticNat
+					</td></tr><tr><td align="left">
+						ec2-release-address
+					</td><td align="left">
+						ReleaseAddress
+					</td><td align="left">
+						disassociateIpAddress
+					</td></tr></tbody></table></div></div><br class="table-break" /><div class="table"><h6>Table 10.2. Availability Zone API mapping</h6><div class="table-contents"><table summary="Availability Zone API mapping" border="1"><colgroup><col width="33%" /><col width="33%" /><col width="33%" /></colgroup><thead><tr><th align="left">
+						EC2 command
+					</th><th align="left">
+						SOAP call
+					</th><th align="left">
+						CloudStack API call
+					</th></tr></thead><tbody><tr><td align="left">
+						ec2-describe-availability-zones
+					</td><td align="left">
+						DescribeAvailabilityZones
+					</td><td align="left">
+						listZones
+					</td></tr></tbody></table></div></div><br class="table-break" /><div class="table"><h6>Table 10.3. Images API mapping</h6><div class="table-contents"><table summary="Images API mapping" border="1"><colgroup><col width="33%" /><col width="33%" /><col width="33%" /></colgroup><thead><tr><th align="left">
+						EC2 command
+					</th><th align="left">
+						SOAP call
+					</th><th align="left">
+						CloudStack API call
+					</th></tr></thead><tbody><tr><td align="left">
+						ec2-create-image
+					</td><td align="left">
+						CreateImage
+					</td><td align="left">
+						createTemplate
+					</td></tr><tr><td align="left">
+						ec2-deregister
+					</td><td align="left">
+						DeregisterImage
+					</td><td align="left">
+						DeleteTemplate
+					</td></tr><tr><td align="left">
+						ec2-describe-images
+					</td><td align="left">
+						DescribeImages
+					</td><td align="left">
+						listTemplates
+					</td></tr><tr><td align="left">
+						ec2-register
+					</td><td align="left">
+						RegisterImage
+					</td><td align="left">
+						registerTemplate
+					</td></tr></tbody></table></div></div><br class="table-break" /><div class="table"><h6>Table 10.4. Image Attributes API mapping</h6><div class="table-contents"><table summary="Image Attributes API mapping" border="1"><colgroup><col width="33%" /><col width="33%" /><col width="33%" /></colgroup><thead><tr><th align="left">
+						EC2 command
+					</th><th align="left">
+						SOAP call
+					</th><th align="left">
+						CloudStack API call
+					</th></tr></thead><tbody><tr><td align="left">
+						ec2-describe-image-attribute
+					</td><td align="left">
+						DescribeImageAttribute
+					</td><td align="left">
+						listTemplatePermissions
+					</td></tr><tr><td align="left">
+						ec2-modify-image-attribute
+					</td><td align="left">
+						ModifyImageAttribute
+					</td><td align="left">
+						updateTemplatePermissions
+					</td></tr><tr><td align="left">
+						ec2-reset-image-attribute
+					</td><td align="left">
+						ResetImageAttribute
+					</td><td align="left">
+						updateTemplatePermissions
+					</td></tr></tbody></table></div></div><br class="table-break" /><div class="table"><h6>Table 10.5. Instances API mapping</h6><div class="table-contents"><table summary="Instances API mapping" border="1"><colgroup><col width="33%" /><col width="33%" /><col width="33%" /></colgroup><thead><tr><th align="left">
+						EC2 command
+					</th><th align="left">
+						SOAP call
+					</th><th align="left">
+						CloudStack API call
+					</th></tr></thead><tbody><tr><td align="left">
+						ec2-describe-instances
+					</td><td align="left">
+						DescribeInstances
+					</td><td align="left">
+						listVirtualMachines
+					</td></tr><tr><td align="left">
+						ec2-run-instances
+					</td><td align="left">
+						RunInstances
+					</td><td align="left">
+						deployVirtualMachine
+					</td></tr><tr><td align="left">
+						ec2-reboot-instances
+					</td><td align="left">
+						RebootInstances
+					</td><td align="left">
+						rebootVirtualMachine
+					</td></tr><tr><td align="left">
+						ec2-start-instances
+					</td><td align="left">
+						StartInstances
+					</td><td align="left">
+						startVirtualMachine
+					</td></tr><tr><td align="left">
+						ec2-stop-instances
+					</td><td align="left">
+						StopInstances
+					</td><td align="left">
+						stopVirtualMachine
+					</td></tr><tr><td align="left">
+						ec2-terminate-instances
+					</td><td align="left">
+						TerminateInstances
+					</td><td align="left">
+						destroyVirtualMachine
+					</td></tr></tbody></table></div></div><br class="table-break" /><div class="table"><h6>Table 10.6. Instance Attributes Mapping</h6><div class="table-contents"><table summary="Instance Attributes Mapping" border="1"><colgroup><col width="33%" /><col width="33%" /><col width="33%" /></colgroup><thead><tr><th align="left">
+						EC2 command
+					</th><th align="left">
+						SOAP call
+					</th><th align="left">
+						CloudStack API call
+					</th></tr></thead><tbody><tr><td align="left">
+						ec2-describe-instance-attribute
+					</td><td align="left">
+						DescribeInstanceAttribute
+					</td><td align="left">
+						listVirtualMachines
+					</td></tr></tbody></table></div></div><br class="table-break" /><div class="table"><h6>Table 10.7. Keys Pairs Mapping</h6><div class="table-contents"><table summary="Keys Pairs Mapping" border="1"><colgroup><col width="33%" /><col width="33%" /><col width="33%" /></colgroup><thead><tr><th align="left">
+						EC2 command
+					</th><th align="left">
+						SOAP call
+					</th><th align="left">
+						CloudStack API call
+					</th></tr></thead><tbody><tr><td align="left">
+						ec2-add-keypair
+					</td><td align="left">
+						CreateKeyPair
+					</td><td align="left">
+						createSSHKeyPair
+					</td></tr><tr><td align="left">
+						ec2-delete-keypair
+					</td><td align="left">
+						DeleteKeyPair
+					</td><td align="left">
+						deleteSSHKeyPair
+					</td></tr><tr><td align="left">
+						ec2-describe-keypairs
+					</td><td align="left">
+						DescribeKeyPairs
+					</td><td align="left">
+						listSSHKeyPairs
+					</td></tr><tr><td align="left">
+						ec2-import-keypair
+					</td><td align="left">
+						ImportKeyPair
+					</td><td align="left">
+						registerSSHKeyPair
+					</td></tr></tbody></table></div></div><br class="table-break" /><div class="table"><h6>Table 10.8. Passwords API Mapping</h6><div class="table-contents"><table summary="Passwords API Mapping" border="1"><colgroup><col width="33%" /><col width="33%" /><col width="33%" /></colgroup><thead><tr><th align="left">
+						EC2 command
+					</th><th align="left">
+						SOAP call
+					</th><th align="left">
+						CloudStack API call
+					</th></tr></thead><tbody><tr><td align="left">
+						ec2-get-password
+					</td><td align="left">
+						GetPasswordData
+					</td><td align="left">
+						getVMPassword
+					</td></tr></tbody></table></div></div><br class="table-break" /><div class="table"><h6>Table 10.9. Security Groups API Mapping</h6><div class="table-contents"><table summary="Security Groups API Mapping" border="1"><colgroup><col width="33%" /><col width="33%" /><col width="33%" /></colgroup><thead><tr><th align="left">
+						EC2 command
+					</th><th align="left">
+						SOAP call
+					</th><th align="left">
+						CloudStack API call
+					</th></tr></thead><tbody><tr><td align="left">
+						ec2-authorize
+					</td><td align="left">
+						AuthorizeSecurityGroupIngress
+					</td><td align="left">
+						authorizeSecurityGroupIngress
+					</td></tr><tr><td align="left">
+						ec2-add-group
+					</td><td align="left">
+						CreateSecurityGroup
+					</td><td align="left">
+						createSecurityGroup
+					</td></tr><tr><td align="left">
+						ec2-delete-group
+					</td><td align="left">
+						DeleteSecurityGroup
+					</td><td align="left">
+						deleteSecurityGroup
+					</td></tr><tr><td align="left">
+						ec2-describe-group
+					</td><td align="left">
+						DescribeSecurityGroups
+					</td><td align="left">
+						listSecurityGroups
+					</td></tr><tr><td align="left">
+						ec2-revoke
+					</td><td align="left">
+						RevokeSecurityGroupIngress
+					</td><td align="left">
+						revokeSecurityGroupIngress
+					</td></tr></tbody></table></div></div><br class="table-break" /><div class="table"><h6>Table 10.10. Snapshots API Mapping</h6><div class="table-contents"><table summary="Snapshots API Mapping" border="1"><colgroup><col width="33%" /><col width="33%" /><col width="33%" /></colgroup><thead><tr><th align="left">
+						EC2 command
+					</th><th align="left">
+						SOAP call
+					</th><th align="left">
+						CloudStack API call
+					</th></tr></thead><tbody><tr><td align="left">
+						ec2-create-snapshot
+					</td><td align="left">
+						CreateSnapshot
+					</td><td align="left">
+						createSnapshot
+					</td></tr><tr><td align="left">
+						ec2-delete-snapshot
+					</td><td align="left">
+						DeleteSnapshot
+					</td><td align="left">
+						deleteSnapshot
+					</td></tr><tr><td align="left">
+						ec2-describe-snapshots
+					</td><td align="left">
+						DescribeSnapshots
+					</td><td align="left">
+						listSnapshots
+					</td></tr></tbody></table></div></div><br class="table-break" /><div class="table"><h6>Table 10.11. Volumes API Mapping</h6><div class="table-contents"><table summary="Volumes API Mapping" border="1"><colgroup><col width="33%" /><col width="33%" /><col width="33%" /></colgroup><thead><tr><th align="left">
+						EC2 command
+					</th><th align="left">
+						SOAP call
+					</th><th align="left">
+						CloudStack API call
+					</th></tr></thead><tbody><tr><td align="left">
+						ec2-attach-volume
+					</td><td align="left">
+						AttachVolume
+					</td><td align="left">
+						attachVolume
+					</td></tr><tr><td align="left">
+						ec2-create-volume
+					</td><td align="left">
+						CreateVolume
+					</td><td align="left">
+						createVolume
+					</td></tr><tr><td align="left">
+						ec2-delete-volume
+					</td><td align="left">
+						DeleteVolume
+					</td><td align="left">
+						deleteVolume
+					</td></tr><tr><td align="left">
+						ec2-describe-volume
+					</td><td align="left">
+						DescribeVolume
+					</td><td align="left">
+						listVolumes
+					</td></tr><tr><td align="left">
+						ec2-detach-volume
+					</td><td align="left">
+						DetachVolume
+					</td><td align="left">
+						detachVolume
+					</td></tr></tbody></table></div></div><br class="table-break" /></div><ul class="docnav"><li class="previous"><a accesskey="p" href="aws-ec2-timeouts.html"><strong>Prev</strong>10.5. Using Timeouts to Ensure AWS API Command Co...</a></li><li class="up"><a accesskey="u" href="#"><strong>Up</strong></a></li><li class="home"><a accesskey="h" href="index.html"><strong>Home</strong></a></li><li class="next"><a accesskey="n" href="networks.html"><strong>Next</strong>Chapter 11. Managing Networks and Traffic</a></li></ul></body></html>

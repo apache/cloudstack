@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>2.7. About Physical Networks</title><link rel="stylesheet" type="text/css" href="Common_Content/css/default.css" /><link rel="stylesheet" media="print" href="Common_Content/css/print.css" type="text/css" /><meta name="generator" content="publican 2.8" /><meta name="package" content="Apache_CloudStack-Installation_Guide-4.0.1-incubating-en-US-1-" /><link rel="home" href="index.html" title="CloudStack Installation Guide" /><link rel="up" href="cloud-infrastructure-concepts.html" title="Chapter 2. Cloud Infrastructure Concepts" /><link rel="prev" href="about-secondary-storage.html" title="2.6. About Secondary Storage" /><link rel="next" href="sect-source.html" title="Chapter 3. Building from Source" /></head><body><p id="title"><a class="left" href="http://cloudstack.org"><img src="Common_Content/images/image_left.png" alt="Product Site" /></a><a class="right" href="http://docs.cloudstack.org"><img src="Common_Content/images/image_right.png" alt="Documentation Site" /></a></p><ul class="docnav"><li class="previous"><a accesskey="p" href="about-secondary-storage.html"><strong>Prev</strong></a></li><li class="next"><a accesskey="n" href="sect-source.html"><strong>Next</strong></a></li></ul><div xml:lang="en-US" class="section" id="about-physical-networks" lang="en-US"><div class="titlepage"><div><div><h2 class="title" id="about-physical-networks">2.7. About Physical Networks</h2></div></div></div><div class="para">
+		Part of adding a zone is setting up the physical network. One or (in an advanced zone) more physical networks can be associated with each zone. The network corresponds to a NIC on the hypervisor host. Each physical network can carry one or more types of network traffic. The choices of traffic type for each network vary depending on whether you are creating a zone with basic networking or advanced networking.
+	</div><div class="para">
+		A physical network is the actual network hardware and wiring in a zone. A zone can have multiple physical networks. An administrator can:
+	</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+				Add/Remove/Update physical networks in a zone
+			</div></li><li class="listitem"><div class="para">
+				Configure VLANs on the physical network
+			</div></li><li class="listitem"><div class="para">
+				Configure a name so the network can be recognized by hypervisors
+			</div></li><li class="listitem"><div class="para">
+				Configure the service providers (firewalls, load balancers, etc.) available on a physical network
+			</div></li><li class="listitem"><div class="para">
+				Configure the IP addresses trunked to a physical network
+			</div></li><li class="listitem"><div class="para">
+				Specify what type of traffic is carried on the physical network, as well as other properties like network speed
+			</div></li></ul></div><div xml:lang="en-US" class="section" id="physical-network-configuration-settings" lang="en-US"><div class="titlepage"><div><div><h3 class="title" id="physical-network-configuration-settings">2.7.1. Configurable Characteristics of Physical Networks</h3></div></div></div><div class="para">
+		CloudStack provides configuration settings you can use to set up a physical network in a zone, including:
+	</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+				What type of network traffic it carries (guest, public, management, storage)
+			</div></li><li class="listitem"><div class="para">
+				VLANs
+			</div></li><li class="listitem"><div class="para">
+				Unique name that the hypervisor can use to find that particular network
+			</div></li><li class="listitem"><div class="para">
+				Enabled or disabled. When a network is first set up, it is disabled – not in use yet. The administrator sets the physical network to enabled, and it begins to be used. The administrator can later disable the network again, which prevents any new virtual networks from being created on that physical network; the existing network traffic continues even though the state is disabled.
+			</div></li><li class="listitem"><div class="para">
+				Speed
+			</div></li><li class="listitem"><div class="para">
+				Tags, so network offerings can be matched to physical networks
+			</div></li><li class="listitem"><div class="para">
+				Isolation method
+			</div></li></ul></div></div><div xml:lang="en-US" class="section" id="basic-zone-network-traffic-types" lang="en-US"><div class="titlepage"><div><div><h3 class="title" id="basic-zone-network-traffic-types">2.7.2. Basic Zone Network Traffic Types</h3></div></div></div><div class="para">
+		When basic networking is used, there can be only one physical network in the zone. That physical network carries the following traffic types:
+	</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+				Guest. When end users run VMs, they generate guest traffic. The guest VMs communicate with each other over a network that can be referred to as the guest network. Each pod in a basic zone is a broadcast domain, and therefore each pod has a different IP range for the guest network. The administrator must configure the IP range for each pod.
+			</div></li><li class="listitem"><div class="para">
+				Management. When CloudStack’s internal resources communicate with each other, they generate management traffic. This includes communication between hosts, system VMs (VMs used by CloudStack to perform various tasks in the cloud), and any other component that communicates directly with the CloudStack Management Server. You must configure the IP range for the system VMs to use.
+			</div><div class="note"><div class="admonition_header"><h2>Note</h2></div><div class="admonition"><div class="para">
+					We strongly recommend the use of separate NICs for management traffic and guest traffic.
+				</div></div></div></li><li class="listitem"><div class="para">
+				Public. Public traffic is generated when VMs in the cloud access the Internet. Publicly accessible IPs must be allocated for this purpose. End users can use the CloudStack UI to acquire these IPs to implement NAT between their guest network and the public network, as described in Acquiring a New IP Address.
+			</div></li><li class="listitem"><div class="para">
+				Storage. Traffic such as VM templates and snapshots, which is sent between the secondary storage VM and secondary storage servers. CloudStack uses a separate Network Interface Controller (NIC) named storage NIC for storage network traffic. Use of a storage NIC that always operates on a high bandwidth network allows fast template and snapshot copying. You must configure the IP range to use for the storage network.
+			</div></li></ul></div><div class="para">
+		In a basic network, configuring the physical network is fairly straightforward. In most cases, you only need to configure one guest network to carry traffic that is generated by guest VMs. If you use a NetScaler load balancer and enable its elastic IP and elastic load balancing (EIP and ELB) features, you must also configure a network to carry public traffic. CloudStack takes care of presenting the necessary network configuration steps to you in the UI when you add a new zone.
+	</div></div><div xml:lang="en-US" class="section" id="basic-zone-guest-ip-addresses" lang="en-US"><div class="titlepage"><div><div><h3 class="title" id="basic-zone-guest-ip-addresses">2.7.3. Basic Zone Guest IP Addresses</h3></div></div></div><div class="para">
+		When basic networking is used, CloudStack will assign IP addresses in the CIDR of the pod to the guests in that pod. The administrator must add a Direct IP range on the pod for this purpose. These IPs are in the same VLAN as the hosts.
+	</div></div><div xml:lang="en-US" class="section" id="advanced-zone-network-traffic-types" lang="en-US"><div class="titlepage"><div><div><h3 class="title" id="advanced-zone-network-traffic-types">2.7.4. Advanced Zone Network Traffic Types</h3></div></div></div><div class="para">
+		When advanced networking is used, there can be multiple physical networks in the zone. Each physical network can carry one or more traffic types, and you need to let CloudStack know which type of network traffic you want each network to carry. The traffic types in an advanced zone are:
+	</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+				Guest. When end users run VMs, they generate guest traffic. The guest VMs communicate with each other over a network that can be referred to as the guest network. This network can be isolated or shared. In an isolated guest network, the administrator needs to reserve VLAN ranges to provide isolation for each CloudStack account’s network (potentially a large number of VLANs). In a shared guest network, all guest VMs share a single network.
+			</div></li><li class="listitem"><div class="para">
+				Management. When CloudStack’s internal resources communicate with each other, they generate management traffic. This includes communication between hosts, system VMs (VMs used by CloudStack to perform various tasks in the cloud), and any other component that communicates directly with the CloudStack Management Server. You must configure the IP range for the system VMs to use.
+			</div></li><li class="listitem"><div class="para">
+				Public. Public traffic is generated when VMs in the cloud access the Internet. Publicly accessible IPs must be allocated for this purpose. End users can use the CloudStack UI to acquire these IPs to implement NAT between their guest network and the public network, as described in “Acquiring a New IP Address” in the Administration Guide.
+			</div></li><li class="listitem"><div class="para">
+				Storage. Traffic such as VM templates and snapshots, which is sent between the secondary storage VM and secondary storage servers. CloudStack uses a separate Network Interface Controller (NIC) named storage NIC for storage network traffic. Use of a storage NIC that always operates on a high bandwidth network allows fast template and snapshot copying. You must configure the IP range to use for the storage network.
+			</div></li></ul></div><div class="para">
+		These traffic types can each be on a separate physical network, or they can be combined with certain restrictions. When you use the Add Zone wizard in the UI to create a new zone, you are guided into making only valid choices.
+	</div></div><div xml:lang="en-US" class="section" id="advanced-zone-guest-ip-addresses" lang="en-US"><div class="titlepage"><div><div><h3 class="title" id="advanced-zone-guest-ip-addresses">2.7.5. Advanced Zone Guest IP Addresses</h3></div></div></div><div class="para">
+		When advanced networking is used, the administrator can create additional networks for use by the guests. These networks can span the zone and be available to all accounts, or they can be scoped to a single account, in which case only the named account may create guests that attach to these networks. The networks are defined by a VLAN ID, IP range, and gateway. The administrator may provision thousands of these networks if desired.
+	</div></div><div xml:lang="en-US" class="section" id="advanced-zone-public-ip-addresses" lang="en-US"><div class="titlepage"><div><div><h3 class="title" id="advanced-zone-public-ip-addresses">2.7.6. Advanced Zone Public IP Addresses</h3></div></div></div><div class="para">
+		When advanced networking is used, the administrator can create additional networks for use by the guests. These networks can span the zone and be available to all accounts, or they can be scoped to a single account, in which case only the named account may create guests that attach to these networks. The networks are defined by a VLAN ID, IP range, and gateway. The administrator may provision thousands of these networks if desired.
+	</div></div><div xml:lang="en-US" class="section" id="system-reserved-ip-addresses" lang="en-US"><div class="titlepage"><div><div><h3 class="title" id="system-reserved-ip-addresses">2.7.7. System Reserved IP Addresses</h3></div></div></div><div class="para">
+		In each zone, you need to configure a range of reserved IP addresses for the management network. This network carries communication between the CloudStack Management Server and various system VMs, such as Secondary Storage VMs, Console Proxy VMs, and DHCP.
+	</div><div class="para">
+		The reserved IP addresses must be unique across the cloud. You cannot, for example, have a host in one zone which has the same private IP address as a host in another zone.
+	</div><div class="para">
+		The hosts in a pod are assigned private IP addresses. These are typically RFC1918 addresses. The Console Proxy and Secondary Storage system VMs are also allocated private IP addresses in the CIDR of the pod that they are created in.
+	</div><div class="para">
+		Make sure computing servers and Management Servers use IP addresses outside of the System Reserved IP range. For example, suppose the System Reserved IP range starts at 192.168.154.2 and ends at 192.168.154.7. CloudStack can use .2 to .7 for System VMs. This leaves the rest of the pod CIDR, from .8 to .254, for the Management Server and hypervisor hosts.
+	</div><div class="para">
+		<span class="bold bold"><strong>In all zones:</strong></span>
+	</div><div class="para">
+		Provide private IPs for the system in each pod and provision them in CloudStack.
+	</div><div class="para">
+		For KVM and XenServer, the recommended number of private IPs per pod is one per host. If you expect a pod to grow, add enough private IPs now to accommodate the growth.
+	</div><div class="para">
+		<span class="bold bold"><strong>In a zone that uses advanced networking:</strong></span>
+	</div><div class="para">
+		For zones with advanced networking, we recommend provisioning enough private IPs for your total number of customers, plus enough for the required CloudStack System VMs. Typically, about 10 additional IPs are required for the System VMs. For more information about System VMs, see Working with System Virtual Machines in the Administrator's Guide.
+	</div><div class="para">
+		When advanced networking is being used, the number of private IP addresses available in each pod varies depending on which hypervisor is running on the nodes in that pod. Citrix XenServer and KVM use link-local addresses, which in theory provide more than 65,000 private IP addresses within the address block. As the pod grows over time, this should be more than enough for any reasonable number of hosts as well as IP addresses for guest virtual routers. VMWare ESXi, by contrast uses any administrator-specified subnetting scheme, and the typical administrator provides only 255 IPs per pod. Since these are shared by physical machines, the guest virtual router, and other entities, it is possible to run out of private IPs when scaling up a pod whose nodes are running ESXi.
+	</div><div class="para">
+		To ensure adequate headroom to scale private IP space in an ESXi pod that uses advanced networking, use one or both of the following techniques:
+	</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+				Specify a larger CIDR block for the subnet. A subnet mask with a /20 suffix will provide more than 4,000 IP addresses.
+			</div></li><li class="listitem"><div class="para">
+				Create multiple pods, each with its own subnet. For example, if you create 10 pods and each pod has 255 IPs, this will provide 2,550 IP addresses.
+			</div></li></ul></div></div></div><ul class="docnav"><li class="previous"><a accesskey="p" href="about-secondary-storage.html"><strong>Prev</strong>2.6. About Secondary Storage</a></li><li class="up"><a accesskey="u" href="#"><strong>Up</strong></a></li><li class="home"><a accesskey="h" href="index.html"><strong>Home</strong></a></li><li class="next"><a accesskey="n" href="sect-source.html"><strong>Next</strong>Chapter 3. Building from Source</a></li></ul></body></html>

@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>12.5. Hardware Firewall</title><link rel="stylesheet" type="text/css" href="Common_Content/css/default.css" /><link rel="stylesheet" media="print" href="Common_Content/css/print.css" type="text/css" /><meta name="generator" content="publican 2.8" /><meta name="package" content="Apache_CloudStack-Installation_Guide-4.0.0-incubating-en-US-1-" /><link rel="home" href="index.html" title="CloudStack Installation Guide" /><link rel="up" href="network-setup.html" title="Chapter 12. Network Setup" /><link rel="prev" href="layer2-switch.html" title="12.4. Layer-2 Switch" /><link rel="next" href="management-server-lb.html" title="12.6. Setting Zone VLAN and Running VM Maximums" /></head><body><p id="title"><a class="left" href="http://cloudstack.org"><img src="Common_Content/images/image_left.png" alt="Product Site" /></a><a class="right" href="http://docs.cloudstack.org"><img src="Common_Content/images/image_right.png" alt="Documentation Site" /></a></p><ul class="docnav"><li class="previous"><a accesskey="p" href="layer2-switch.html"><strong>Prev</strong></a></li><li class="next"><a accesskey="n" href="management-server-lb.html"><strong>Next</strong></a></li></ul><div xml:lang="en-US" class="section" id="hardware-firewall" lang="en-US"><div class="titlepage"><div><div><h2 class="title" id="hardware-firewall">12.5. Hardware Firewall</h2></div></div></div><div class="para">
+		All deployments should have a firewall protecting the management server; see Generic Firewall Provisions. Optionally, some deployments may also have a Juniper SRX firewall that will be the default gateway for the guest networks; see <a class="xref" href="hardware-firewall.html#external-guest-firewall-integration">Section 12.5.2, “External Guest Firewall Integration for Juniper SRX (Optional)”</a>.
+	</div><div xml:lang="en-US" class="section" id="generic-firewall-provisions" lang="en-US"><div class="titlepage"><div><div><h3 class="title" id="generic-firewall-provisions">12.5.1. Generic Firewall Provisions</h3></div></div></div><div class="para">
+		The hardware firewall is required to serve two purposes:
+	</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+				Protect the Management Servers. NAT and port forwarding should be configured to direct traffic from the public Internet to the Management Servers.
+			</div></li><li class="listitem"><div class="para">
+				Route management network traffic between multiple zones. Site-to-site VPN should be configured between multiple zones.
+			</div></li></ul></div><div class="para">
+		To achieve the above purposes you must set up fixed configurations for the firewall. Firewall rules and policies need not change as users are provisioned into the cloud. Any brand of hardware firewall that supports NAT and site-to-site VPN can be used.
+	</div></div><div xml:lang="en-US" class="section" id="external-guest-firewall-integration" lang="en-US"><div class="titlepage"><div><div><h3 class="title" id="external-guest-firewall-integration">12.5.2. External Guest Firewall Integration for Juniper SRX (Optional)</h3></div></div></div><div class="note"><div class="admonition_header"><h2>Note</h2></div><div class="admonition"><div class="para">
+			Available only for guests using advanced networking.
+		</div></div></div><div class="para">
+		CloudStack provides for direct management of the Juniper SRX series of firewalls. This enables CloudStack to establish static NAT mappings from public IPs to guest VMs, and to use the Juniper device in place of the virtual router for firewall services. You can have one or more Juniper SRX per zone. This feature is optional. If Juniper integration is not provisioned, CloudStack will use the virtual router for these services.
+	</div><div class="para">
+		The Juniper SRX can optionally be used in conjunction with an external load balancer. External Network elements can be deployed in a side-by-side or inline configuration.
+	</div><div class="mediaobject"><img src="./images/parallel-mode.png" width="444" alt="parallel-mode.png: adding a firewall and load balancer in parallel mode." /></div><div class="para">
+		CloudStack requires the Juniper to be configured as follows:
+	</div><div class="note"><div class="admonition_header"><h2>Note</h2></div><div class="admonition"><div class="para">
+			Supported SRX software version is 10.3 or higher.
+		</div></div></div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				Install your SRX appliance according to the vendor's instructions.
+			</div></li><li class="listitem"><div class="para">
+				Connect one interface to the management network and one interface to the public network. Alternatively, you can connect the same interface to both networks and a use a VLAN for the public network.
+			</div></li><li class="listitem"><div class="para">
+				Make sure "vlan-tagging" is enabled on the private interface.
+			</div></li><li class="listitem"><div class="para">
+				Record the public and private interface names. If you used a VLAN for the public interface, add a ".[VLAN TAG]" after the interface name. For example, if you are using ge-0/0/3 for your public interface and VLAN tag 301, your public interface name would be "ge-0/0/3.301". Your private interface name should always be untagged because the CloudStack software automatically creates tagged logical interfaces.
+			</div></li><li class="listitem"><div class="para">
+				Create a public security zone and a private security zone. By default, these will already exist and will be called "untrust" and "trust". Add the public interface to the public zone and the private interface to the private zone. Note down the security zone names.
+			</div></li><li class="listitem"><div class="para">
+				Make sure there is a security policy from the private zone to the public zone that allows all traffic.
+			</div></li><li class="listitem"><div class="para">
+				Note the username and password of the account you want the CloudStack software to log in to when it is programming rules.
+			</div></li><li class="listitem"><div class="para">
+				Make sure the "ssh" and "xnm-clear-text" system services are enabled.
+			</div></li><li class="listitem"><div class="para">
+				If traffic metering is desired:
+			</div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+						a. Create an incoming firewall filter and an outgoing firewall filter. These filters should be the same names as your public security zone name and private security zone name respectively. The filters should be set to be "interface-specific". For example, here is the configuration where the public zone is "untrust" and the private zone is "trust":
+					</div><pre class="programlisting">root@cloud-srx# show firewall
+filter trust {
+    interface-specific;
+}
+filter untrust {
+    interface-specific;
+}</pre></li><li class="listitem"><div class="para">
+						Add the firewall filters to your public interface. For example, a sample configuration output (for public interface ge-0/0/3.0, public security zone untrust, and private security zone trust) is:
+					</div><pre class="programlisting">ge-0/0/3 {
+    unit 0 {
+        family inet {
+            filter {
+                input untrust;
+                output trust;
+            }
+            address 172.25.0.252/16;
+        }
+    }
+}</pre></li></ol></div></li><li class="listitem"><div class="para">
+				Make sure all VLANs are brought to the private interface of the SRX.
+			</div></li><li class="listitem"><div class="para">
+				After the CloudStack Management Server is installed, log in to the CloudStack UI as administrator.
+			</div></li><li class="listitem"><div class="para">
+				In the left navigation bar, click Infrastructure.
+			</div></li><li class="listitem"><div class="para">
+				In Zones, click View More.
+			</div></li><li class="listitem"><div class="para">
+				Choose the zone you want to work with.
+			</div></li><li class="listitem"><div class="para">
+				Click the Network tab.
+			</div></li><li class="listitem"><div class="para">
+				In the Network Service Providers node of the diagram, click Configure. (You might have to scroll down to see this.)
+			</div></li><li class="listitem"><div class="para">
+				Click SRX.
+			</div></li><li class="listitem"><div class="para">
+				Click the Add New SRX button (+) and provide the following:
+			</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+						IP Address: The IP address of the SRX.
+					</div></li><li class="listitem"><div class="para">
+						Username: The user name of the account on the SRX that CloudStack should use.
+					</div></li><li class="listitem"><div class="para">
+						Password: The password of the account.
+					</div></li><li class="listitem"><div class="para">
+						Public Interface. The name of the public interface on the SRX. For example, ge-0/0/2. A ".x" at the end of the interface indicates the VLAN that is in use.
+					</div></li><li class="listitem"><div class="para">
+						Private Interface: The name of the private interface on the SRX. For example, ge-0/0/1.
+					</div></li><li class="listitem"><div class="para">
+						Usage Interface: (Optional) Typically, the public interface is used to meter traffic. If you want to use a different interface, specify its name here
+					</div></li><li class="listitem"><div class="para">
+						Number of Retries: The number of times to attempt a command on the SRX before failing. The default value is 2.
+					</div></li><li class="listitem"><div class="para">
+						Timeout (seconds): The time to wait for a command on the SRX before considering it failed. Default is 300 seconds.
+					</div></li><li class="listitem"><div class="para">
+						Public Network: The name of the public network on the SRX. For example, trust.
+					</div></li><li class="listitem"><div class="para">
+						Private Network: The name of the private network on the SRX. For example, untrust.
+					</div></li><li class="listitem"><div class="para">
+						Capacity: The number of networks the device can handle
+					</div></li><li class="listitem"><div class="para">
+						Dedicated: When marked as dedicated, this device will be dedicated to a single account. When Dedicated is checked, the value in the Capacity field has no significance implicitly, its value is 1
+					</div></li></ul></div></li><li class="listitem"><div class="para">
+				Click OK.
+			</div></li><li class="listitem"><div class="para">
+				Click Global Settings. Set the parameter external.network.stats.interval to indicate how often you want CloudStack to fetch network usage statistics from the Juniper SRX. If you are not using the SRX to gather network usage statistics, set to 0.
+			</div></li></ol></div></div><div xml:lang="en-US" class="section" id="external-guest-lb-integration" lang="en-US"><div class="titlepage"><div><div><h3 class="title" id="external-guest-lb-integration">12.5.3. External Guest Load Balancer Integration (Optional)</h3></div></div></div><div class="para">
+		CloudStack can optionally use a Citrix NetScaler or BigIP F5 load balancer to provide load balancing services to guests. If this is not enabled, CloudStack will use the software load balancer in the virtual router.
+	</div><div class="para">
+		To install and enable an external load balancer for CloudStack management:
+	</div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				Set up the appliance according to the vendor's directions.
+			</div></li><li class="listitem"><div class="para">
+				Connect it to the networks carrying public traffic and management traffic (these could be the same network).
+			</div></li><li class="listitem"><div class="para">
+				Record the IP address, username, password, public interface name, and private interface name. The interface names will be something like "1.1" or "1.2".
+			</div></li><li class="listitem"><div class="para">
+				Make sure that the VLANs are trunked to the management network interface.
+			</div></li><li class="listitem"><div class="para">
+				After the CloudStack Management Server is installed, log in as administrator to the CloudStack UI.
+			</div></li><li class="listitem"><div class="para">
+				In the left navigation bar, click Infrastructure.
+			</div></li><li class="listitem"><div class="para">
+				In Zones, click View More.
+			</div></li><li class="listitem"><div class="para">
+				Choose the zone you want to work with.
+			</div></li><li class="listitem"><div class="para">
+				Click the Network tab.
+			</div></li><li class="listitem"><div class="para">
+				In the Network Service Providers node of the diagram, click Configure. (You might have to scroll down to see this.)
+			</div></li><li class="listitem"><div class="para">
+				Click NetScaler or F5.
+			</div></li><li class="listitem"><div class="para">
+				Click the Add button (+) and provide the following:
+			</div><div class="para">
+				For NetScaler:
+			</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+						IP Address: The IP address of the SRX.
+					</div></li><li class="listitem"><div class="para">
+						Username/Password: The authentication credentials to access the device. CloudStack uses these credentials to access the device.
+					</div></li><li class="listitem"><div class="para">
+						Type: The type of device that is being added. It could be F5 Big Ip Load Balancer, NetScaler VPX, NetScaler MPX, or NetScaler SDX. For a comparison of the NetScaler types, see the CloudStack Administration Guide.
+					</div></li><li class="listitem"><div class="para">
+						Public interface: Interface of device that is configured to be part of the public network.
+					</div></li><li class="listitem"><div class="para">
+						Private interface: Interface of device that is configured to be part of the private network.
+					</div></li><li class="listitem"><div class="para">
+						Number of retries. Number of times to attempt a command on the device before considering the operation failed. Default is 2.
+					</div></li><li class="listitem"><div class="para">
+						Capacity: The number of networks the device can handle.
+					</div></li><li class="listitem"><div class="para">
+						Dedicated: When marked as dedicated, this device will be dedicated to a single account. When Dedicated is checked, the value in the Capacity field has no significance implicitly, its value is 1.
+					</div></li></ul></div></li><li class="listitem"><div class="para">
+				Click OK.
+			</div></li></ol></div><div class="para">
+		The installation and provisioning of the external load balancer is finished. You can proceed to add VMs and NAT or load balancing rules.
+	</div></div></div><ul class="docnav"><li class="previous"><a accesskey="p" href="layer2-switch.html"><strong>Prev</strong>12.4. Layer-2 Switch</a></li><li class="up"><a accesskey="u" href="#"><strong>Up</strong></a></li><li class="home"><a accesskey="h" href="index.html"><strong>Home</strong></a></li><li class="next"><a accesskey="n" href="management-server-lb.html"><strong>Next</strong>12.6. Setting Zone VLAN and Running VM Maximums</a></li></ul></body></html>

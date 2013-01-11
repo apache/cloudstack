@@ -1,0 +1,295 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>11.17. VPN</title><link rel="stylesheet" type="text/css" href="Common_Content/css/default.css" /><link rel="stylesheet" media="print" href="Common_Content/css/print.css" type="text/css" /><meta name="generator" content="publican 2.8" /><meta name="package" content="Apache_CloudStack-Installation_Guide-4.0.1-incubating-en-US-1-" /><link rel="home" href="index.html" title="CloudStack Installation Guide" /><link rel="up" href="networks.html" title="Chapter 11. Managing Networks and Traffic" /><link rel="prev" href="dns-dhcp.html" title="11.16. DNS and DHCP" /><link rel="next" href="inter-vlan-routing.html" title="11.18. About Inter-VLAN Routing" /></head><body><p id="title"><a class="left" href="http://cloudstack.org"><img src="Common_Content/images/image_left.png" alt="Product Site" /></a><a class="right" href="http://docs.cloudstack.org"><img src="Common_Content/images/image_right.png" alt="Documentation Site" /></a></p><ul class="docnav"><li class="previous"><a accesskey="p" href="dns-dhcp.html"><strong>Prev</strong></a></li><li class="next"><a accesskey="n" href="inter-vlan-routing.html"><strong>Next</strong></a></li></ul><div xml:lang="en-US" class="section" id="vpn" lang="en-US"><div class="titlepage"><div><div><h2 class="title" id="vpn">11.17. VPN</h2></div></div></div><div class="para">
+		CloudStack account owners can create virtual private networks (VPN) to access their virtual machines. If the guest network is instantiated from a network offering that offers the Remote Access VPN service, the virtual router (based on the System VM) is used to provide the service. CloudStack provides a L2TP-over-IPsec-based remote access VPN service to guest virtual networks. Since each network gets its own virtual router, VPNs are not shared across the networks. VPN clients native to Windows, Mac OS X and iOS can be used to connect to the guest networks. The account owner can create and manage users for their VPN. CloudStack does not use its account database for this purpose but uses a separate table. The VPN user database is shared across all the VPNs created by the account owner. All VPN users get access to all VPNs created by the account owner.
+	</div><div class="note"><div class="admonition_header"><h2>Note</h2></div><div class="admonition"><div class="para">
+			Make sure that not all traffic goes through the VPN. That is, the route installed by the VPN should be only for the guest network and not for all traffic.
+		</div></div></div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+				<span class="bold bold"><strong>Road Warrior / Remote Access</strong></span>. Users want to be able to connect securely from a home or office to a private network in the cloud. Typically, the IP address of the connecting client is dynamic and cannot be preconfigured on the VPN server.
+			</div></li><li class="listitem"><div class="para">
+				<span class="bold bold"><strong>Site to Site</strong></span>. In this scenario, two private subnets are connected over the public Internet with a secure VPN tunnel. The cloud user’s subnet (for example, an office network) is connected through a gateway to the network in the cloud. The address of the user’s gateway must be preconfigured on the VPN server in the cloud. Note that although L2TP-over-IPsec can be used to set up Site-to-Site VPNs, this is not the primary intent of this feature.
+			</div></li></ul></div><div xml:lang="en-US" class="section" id="configure-vpn" lang="en-US"><div class="titlepage"><div><div><h3 class="title" id="configure-vpn">11.17.1. Configuring VPN</h3></div></div></div><div class="para">
+		To set up VPN for the cloud:
+	</div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				Log in to the CloudStack UI as an administrator or end user.
+			</div></li><li class="listitem"><div class="para">
+				In the left navigation, click Global Settings.
+			</div></li><li class="listitem"><div class="para">
+				Set the following global configuration parameters.
+			</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+						remote.access.vpn.client.ip.range – The range of IP addressess to be allocated to remote access VPN clients. The first IP in the range is used by the VPN server.
+					</div></li><li class="listitem"><div class="para">
+						remote.access.vpn.psk.length – Length of the IPSec key.
+					</div></li><li class="listitem"><div class="para">
+						remote.access.vpn.user.limit – Maximum number of VPN users per account.
+					</div></li></ul></div></li></ol></div><div class="para">
+		To enable VPN for a particular network:
+	</div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				Log in as a user or administrator to the CloudStack UI.
+			</div></li><li class="listitem"><div class="para">
+				In the left navigation, click Network.
+			</div></li><li class="listitem"><div class="para">
+				Click the name of the network you want to work with.
+			</div></li><li class="listitem"><div class="para">
+				Click View IP Addresses.
+			</div></li><li class="listitem"><div class="para">
+				Click one of the displayed IP address names.
+			</div></li><li class="listitem"><div class="para">
+				Click the Enable VPN button 
+				<span class="inlinemediaobject"><img src="./images/vpn-icon.png" alt="AttachDiskButton.png: button to attach a volume" /></span>
+				.
+			</div><div class="para">
+				The IPsec key is displayed in a popup window.
+			</div></li></ol></div></div><div xml:lang="en-US" class="section" id="using-vpn-with-windows" lang="en-US"><div class="titlepage"><div><div><h3 class="title" id="using-vpn-with-windows">11.17.2. Using VPN with Windows</h3></div></div></div><div class="para">
+		The procedure to use VPN varies by Windows version. Generally, the user must edit the VPN properties and make sure that the default route is not the VPN. The following steps are for Windows L2TP clients on Windows Vista. The commands should be similar for other Windows versions.
+	</div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				Log in to the CloudStack UI and click on the source NAT IP for the account. The VPN tab should display the IPsec preshared key. Make a note of this and the source NAT IP. The UI also lists one or more users and their passwords. Choose one of these users, or, if none exists, add a user and password.
+			</div></li><li class="listitem"><div class="para">
+				On the Windows box, go to Control Panel, then select Network and Sharing center. Click Setup a connection or network.
+			</div></li><li class="listitem"><div class="para">
+				In the next dialog, select No, create a new connection.
+			</div></li><li class="listitem"><div class="para">
+				In the next dialog, select Use my Internet Connection (VPN).
+			</div></li><li class="listitem"><div class="para">
+				In the next dialog, enter the source NAT IP from step 1 and give the connection a name. Check Don't connect now.
+			</div></li><li class="listitem"><div class="para">
+				In the next dialog, enter the user name and password selected in step 1.
+			</div></li><li class="listitem"><div class="para">
+				Click Create.
+			</div></li><li class="listitem"><div class="para">
+				Go back to the Control Panel and click Network Connections to see the new connection. The connection is not active yet.
+			</div></li><li class="listitem"><div class="para">
+				Right-click the new connection and select Properties. In the Properties dialog, select the Networking tab.
+			</div></li><li class="listitem"><div class="para">
+				In Type of VPN, choose L2TP IPsec VPN, then click IPsec settings. Select Use preshared key. Enter the preshared key from Step 1.
+			</div></li><li class="listitem"><div class="para">
+				The connection is ready for activation. Go back to Control Panel -&gt; Network Connections and double-click the created connection.
+			</div></li><li class="listitem"><div class="para">
+				Enter the user name and password from Step 1.
+			</div></li></ol></div></div><div xml:lang="en-US" class="section" id="using-vpn-with-mac" lang="en-US"><div class="titlepage"><div><div><h3 class="title" id="using-vpn-with-mac">11.17.3. Using VPN with Mac OS X</h3></div></div></div><div class="para">
+		In Mac OS X, in Network Preferences - Advanced, make sure Send all traffic over VPN connection is not checked.
+	</div></div><div xml:lang="en-US" class="section" id="site-to-site-vpn" lang="en-US"><div class="titlepage"><div><div><h3 class="title" id="site-to-site-vpn">11.17.4. Setting Up a Site-to-Site VPN Connection</h3></div></div></div><div class="para">
+		A Site-to-Site VPN connection helps you establish a secure connection from an enterprise datacenter to the cloud infrastructure. This allows users to access the guest VMs by establishing a VPN connection to the virtual router of the account from a device in the datacenter of the enterprise. Having this facility eliminates the need to establish VPN connections to individual VMs.
+	</div><div class="para">
+		The supported endpoints on the remote datacenters are:
+	</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+				Cisco ISR with IOS 12.4 or later
+			</div></li><li class="listitem"><div class="para">
+				Juniper J-Series routers with JunOS 9.5 or later
+			</div></li></ul></div><div class="note"><div class="admonition_header"><h2>Note</h2></div><div class="admonition"><div class="para">
+			In addition to the specific Cisco and Juniper devices listed above, the expectation is that any Cisco or Juniper device running on the supported operating systems are able to establish VPN connections.
+		</div></div></div><div class="para">
+		To set up a Site-to-Site VPN connection, perform the following:
+	</div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				Create a Virtual Private Cloud (VPC).
+			</div><div class="para">
+				See <a class="xref" href="configure-vpc.html">Section 11.19, “Configuring a Virtual Private Cloud”</a>.
+			</div></li><li class="listitem"><div class="para">
+				Create a VPN Customer Gateway.
+			</div></li><li class="listitem"><div class="para">
+				Create a VPN gateway for the VPC that you created.
+			</div></li><li class="listitem"><div class="para">
+				Create VPN connection from the VPC VPN gateway to the customer VPN gateway.
+			</div></li></ol></div><div xml:lang="en-US" class="section" id="create-vpn-customer-gateway" lang="en-US"><div class="titlepage"><div><div><h4 class="title" id="create-vpn-customer-gateway">11.17.4.1. Creating and Updating a VPN Customer Gateway</h4></div></div></div><div class="note"><div class="admonition_header"><h2>Note</h2></div><div class="admonition"><div class="para">
+			A VPN customer gateway can be connected to only one VPN gateway at a time.
+		</div></div></div><div class="para">
+		To add a VPN Customer Gateway:
+	</div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				Log in to the CloudStack UI as an administrator or end user.
+			</div></li><li class="listitem"><div class="para">
+				In the left navigation, choose Network.
+			</div></li><li class="listitem"><div class="para">
+				In the Select view, select VPN Customer Gateway.
+			</div></li><li class="listitem"><div class="para">
+				Click Add site-to-site VPN.
+			</div><div class="mediaobject"><img src="./images/add-vpn-customer-gateway.png" alt="addvpncustomergateway.png: adding a customer gateway." /></div><div class="para">
+				Provide the following information:
+			</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>Name</strong></span>: A unique name for the VPN customer gateway you create.
+					</div></li><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>Gateway</strong></span>: The IP address for the remote gateway.
+					</div></li><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>CIDR list</strong></span>: The guest CIDR list of the remote subnets. Enter a CIDR or a comma-separated list of CIDRs. Ensure that a guest CIDR list is not overlapped with the VPC’s CIDR, or another guest CIDR. The CIDR must be RFC1918-compliant.
+					</div></li><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>IPsec Preshared Key</strong></span>: Preshared keying is a method where the endpoints of the VPN share a secret key. This key value is used to authenticate the customer gateway and the VPC VPN gateway to each other.
+					</div><div class="note"><div class="admonition_header"><h2>Note</h2></div><div class="admonition"><div class="para">
+							The IKE peers (VPN end points) authenticate each other by computing and sending a keyed hash of data that includes the Preshared key. If the receiving peer is able to create the same hash independently by using its Preshared key, it knows that both peers must share the same secret, thus authenticating the customer gateway.
+						</div></div></div></li><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>IKE Encryption</strong></span>: The Internet Key Exchange (IKE) policy for phase-1. The supported encryption algorithms are AES128, AES192, AES256, and 3DES. Authentication is accomplished through the Preshared Keys.
+					</div><div class="note"><div class="admonition_header"><h2>Note</h2></div><div class="admonition"><div class="para">
+							The phase-1 is the first phase in the IKE process. In this initial negotiation phase, the two VPN endpoints agree on the methods to be used to provide security for the underlying IP traffic. The phase-1 authenticates the two VPN gateways to each other, by confirming that the remote gateway has a matching Preshared Key.
+						</div></div></div></li><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>IKE Hash</strong></span>: The IKE hash for phase-1. The supported hash algorithms are SHA1 and MD5.
+					</div></li><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>IKE DH</strong></span>: A public-key cryptography protocol which allows two parties to establish a shared secret over an insecure communications channel. The 1536-bit Diffie-Hellman group is used within IKE to establish session keys. The supported options are None, Group-5 (1536-bit) and Group-2 (1024-bit).
+					</div></li><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>ESP Encryption</strong></span>: Encapsulating Security Payload (ESP) algorithm within phase-2. The supported encryption algorithms are AES128, AES192, AES256, and 3DES.
+					</div><div class="note"><div class="admonition_header"><h2>Note</h2></div><div class="admonition"><div class="para">
+							The phase-2 is the second phase in the IKE process. The purpose of IKE phase-2 is to negotiate IPSec security associations (SA) to set up the IPSec tunnel. In phase-2, new keying material is extracted from the Diffie-Hellman key exchange in phase-1, to provide session keys to use in protecting the VPN data flow.
+						</div></div></div></li><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>ESP Hash</strong></span>: Encapsulating Security Payload (ESP) hash for phase-2. Supported hash algorithms are SHA1 and MD5.
+					</div></li><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>Perfect Forward Secrecy</strong></span>: Perfect Forward Secrecy (or PFS) is the property that ensures that a session key derived from a set of long-term public and private keys will not be compromised. This property enforces a new Diffie-Hellman key exchange. It provides the keying material that has greater key material life and thereby greater resistance to cryptographic attacks. The available options are None, Group-5 (1536-bit) and Group-2 (1024-bit). The security of the key exchanges increase as the DH groups grow larger, as does the time of the exchanges.
+					</div><div class="note"><div class="admonition_header"><h2>Note</h2></div><div class="admonition"><div class="para">
+							When PFS is turned on, for every negotiation of a new phase-2 SA the two gateways must generate a new set of phase-1 keys. This adds an extra layer of protection that PFS adds, which ensures if the phase-2 SA’s have expired, the keys used for new phase-2 SA’s have not been generated from the current phase-1 keying material.
+						</div></div></div></li><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>IKE Lifetime (seconds)</strong></span>: The phase-1 lifetime of the security association in seconds. Default is 86400 seconds (1 day). Whenever the time expires, a new phase-1 exchange is performed.
+					</div></li><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>ESP Lifetime (seconds)</strong></span>: The phase-2 lifetime of the security association in seconds. Default is 3600 seconds (1 hour). Whenever the value is exceeded, a re-key is initiated to provide a new IPsec encryption and authentication session keys.
+					</div></li><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>Dead Peer Detection</strong></span>: A method to detect an unavailable Internet Key Exchange (IKE) peer. Select this option if you want the virtual router to query the liveliness of its IKE peer at regular intervals. It’s recommended to have the same configuration of DPD on both side of VPN connection.
+					</div></li></ul></div></li><li class="listitem"><div class="para">
+				Click OK.
+			</div></li></ol></div><div class="formalpara"><h5 class="formalpara" id="idp22500560">Updating and Removing a VPN Customer Gateway</h5>
+			You can update a customer gateway either with no VPN connection, or related VPN connection is in error state.
+		</div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				Log in to the CloudStack UI as an administrator or end user.
+			</div></li><li class="listitem"><div class="para">
+				In the left navigation, choose Network.
+			</div></li><li class="listitem"><div class="para">
+				In the Select view, select VPN Customer Gateway.
+			</div></li><li class="listitem"><div class="para">
+				Select the VPN customer gateway you want to work with.
+			</div></li><li class="listitem"><div class="para">
+				To modify the required parameters, click the Edit VPN Customer Gateway button
+				<span class="inlinemediaobject"><img src="./images/edit-icon.png" alt="edit.png: button to edit a VPN customer gateway" /></span>
+			</div></li><li class="listitem"><div class="para">
+				To remove the VPN customer gateway, click the Delete VPN Customer Gateway button
+				<span class="inlinemediaobject"><img src="./images/delete-button.png" alt="delete.png: button to remove a VPN customer gateway" /></span>
+			</div></li><li class="listitem"><div class="para">
+				Click OK.
+			</div></li></ol></div></div><div xml:lang="en-US" class="section" id="create-vpn-gateway-for-vpc" lang="en-US"><div class="titlepage"><div><div><h4 class="title" id="create-vpn-gateway-for-vpc">11.17.4.2. Creating a VPN gateway for the VPC</h4></div></div></div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				Log in to the CloudStack UI as an administrator or end user.
+			</div></li><li class="listitem"><div class="para">
+				In the left navigation, choose Network.
+			</div></li><li class="listitem"><div class="para">
+				In the Select view, select VPC.
+			</div><div class="para">
+				All the VPCs that you have created for the account is listed in the page.
+			</div></li><li class="listitem"><div class="para">
+				Click the Configure button of the VPC to which you want to deploy the VMs.
+			</div><div class="para">
+				The VPC page is displayed where all the tiers you created are listed in a diagram.
+			</div></li><li class="listitem"><div class="para">
+				Click the Settings icon.
+			</div><div class="para">
+				The following options are displayed.
+			</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+						IP Addresses
+					</div></li><li class="listitem"><div class="para">
+						Gateways
+					</div></li><li class="listitem"><div class="para">
+						Site-to-Site VPN
+					</div></li><li class="listitem"><div class="para">
+						Network ACLs
+					</div></li></ul></div></li><li class="listitem"><div class="para">
+				Select Site-to-Site VPN.
+			</div><div class="para">
+				If you are creating the VPN gateway for the first time, selecting Site-to-Site VPN prompts you to create a VPN gateway.
+			</div></li><li class="listitem"><div class="para">
+				In the confirmation dialog, click Yes to confirm.
+			</div><div class="para">
+				Within a few moments, the VPN gateway is created. You will be prompted to view the details of the VPN gateway you have created. Click Yes to confirm.
+			</div><div class="para">
+				The following details are displayed in the VPN Gateway page:
+			</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+						IP Address
+					</div></li><li class="listitem"><div class="para">
+						Account
+					</div></li><li class="listitem"><div class="para">
+						Domain
+					</div></li></ul></div></li></ol></div></div><div xml:lang="en-US" class="section" id="create-vpn-connection-vpc" lang="en-US"><div class="titlepage"><div><div><h4 class="title" id="create-vpn-connection-vpc">11.17.4.3. Creating a VPN Connection</h4></div></div></div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				Log in to the CloudStack UI as an administrator or end user.
+			</div></li><li class="listitem"><div class="para">
+				In the left navigation, choose Network.
+			</div></li><li class="listitem"><div class="para">
+				In the Select view, select VPC.
+			</div><div class="para">
+				All the VPCs that you create for the account are listed in the page.
+			</div></li><li class="listitem"><div class="para">
+				Click the Configure button of the VPC to which you want to deploy the VMs.
+			</div><div class="para">
+				The VPC page is displayed where all the tiers you created are listed in a diagram.
+			</div></li><li class="listitem"><div class="para">
+				Click the Settings icon.
+			</div><div class="para">
+				The following options are displayed.
+			</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+						IP Addresses
+					</div></li><li class="listitem"><div class="para">
+						Gateways
+					</div></li><li class="listitem"><div class="para">
+						Site-to-Site VPN
+					</div></li><li class="listitem"><div class="para">
+						Network ASLs
+					</div></li></ul></div></li><li class="listitem"><div class="para">
+				Select Site-to-Site VPN.
+			</div><div class="para">
+				The Site-to-Site VPN page is displayed.
+			</div></li><li class="listitem"><div class="para">
+				From the Select View drop-down, ensure that VPN Connection is selected.
+			</div></li><li class="listitem"><div class="para">
+				Click Create VPN Connection.
+			</div><div class="para">
+				The Create VPN Connection dialog is displayed:
+			</div><div class="mediaobject"><img src="./images/create-vpn-connection.png" alt="createvpnconnection.png: creating a vpn connection to the customer gateway." /></div></li><li class="listitem"><div class="para">
+				Select the desired customer gateway, then click OK to confirm.
+			</div><div class="para">
+				Within a few moments, the VPN Connection is displayed.
+			</div><div class="para">
+				The following information on the VPN connection is displayed:
+			</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+						IP Address
+					</div></li><li class="listitem"><div class="para">
+						Gateway
+					</div></li><li class="listitem"><div class="para">
+						State
+					</div></li><li class="listitem"><div class="para">
+						IPSec Preshared Key
+					</div></li><li class="listitem"><div class="para">
+						IKE Policy
+					</div></li><li class="listitem"><div class="para">
+						ESP Policy
+					</div></li></ul></div></li></ol></div></div><div xml:lang="en-US" class="section" id="delete-reset-vpn" lang="en-US"><div class="titlepage"><div><div><h4 class="title" id="delete-reset-vpn">11.17.4.4. Restarting and Removing a VPN Connection</h4></div></div></div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				Log in to the CloudStack UI as an administrator or end user.
+			</div></li><li class="listitem"><div class="para">
+				In the left navigation, choose Network.
+			</div></li><li class="listitem"><div class="para">
+				In the Select view, select VPC.
+			</div><div class="para">
+				All the VPCs that you have created for the account is listed in the page.
+			</div></li><li class="listitem"><div class="para">
+				Click the Configure button of the VPC to which you want to deploy the VMs.
+			</div><div class="para">
+				The VPC page is displayed where all the tiers you created are listed in a diagram.
+			</div></li><li class="listitem"><div class="para">
+				Click the Settings icon.
+			</div><div class="para">
+				The following options are displayed.
+			</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+						IP Addresses
+					</div></li><li class="listitem"><div class="para">
+						Gateways
+					</div></li><li class="listitem"><div class="para">
+						Site-to-Site VPN
+					</div></li><li class="listitem"><div class="para">
+						Network ASLs
+					</div></li></ul></div></li><li class="listitem"><div class="para">
+				Select Site-to-Site VPN.
+			</div><div class="para">
+				The Site-to-Site VPN page is displayed.
+			</div></li><li class="listitem"><div class="para">
+				From the Select View drop-down, ensure that VPN Connection is selected.
+			</div><div class="para">
+				All the VPN connections you created are displayed.
+			</div></li><li class="listitem"><div class="para">
+				Select the VPN connection you want to work with.
+			</div><div class="para">
+				The Details tab is displayed.
+			</div></li><li class="listitem"><div class="para">
+				To remove a VPN connection, click the Delete VPN connection button
+				<span class="inlinemediaobject"><img src="./images/remove-vpn.png" alt="remove-vpn.png: button to remove a VPN connection" /></span>
+			</div><div class="para">
+				To restart a VPN connection, click the Reset VPN connection button present in the Details tab.
+				<span class="inlinemediaobject"><img src="./images/reset-vpn.png" alt="reset-vpn.png: button to reset a VPN connection" /></span>
+			</div></li></ol></div></div></div></div><ul class="docnav"><li class="previous"><a accesskey="p" href="dns-dhcp.html"><strong>Prev</strong>11.16. DNS and DHCP</a></li><li class="up"><a accesskey="u" href="#"><strong>Up</strong></a></li><li class="home"><a accesskey="h" href="index.html"><strong>Home</strong></a></li><li class="next"><a accesskey="n" href="inter-vlan-routing.html"><strong>Next</strong>11.18. About Inter-VLAN Routing</a></li></ul></body></html>

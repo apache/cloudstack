@@ -1,0 +1,52 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
+<section id="nfs-shares-on-separate-server">
+    <title>Using a Separate NFS Server</title>
+    <para>This section tells how to set up NFS shares for secondary and (optionally) primary storage on an NFS server running on a separate node from the Management Server.</para> 
+    <para>The exact commands for the following steps may vary depending on your operating system version.</para>
+    <warning><para>(KVM only) Ensure that no volume is already mounted at your NFS mount point.</para></warning>
+    <orderedlist>
+        <listitem><para>On the storage server, create an NFS share for secondary storage and, if you are using NFS for primary storage as well, create a second NFS share. For example:</para>
+        <programlisting>
+# mkdir -p /export/primary
+# mkdir -p /export/secondary
+        </programlisting>
+        </listitem>
+        <listitem><para>To configure the new directories as NFS exports, edit /etc/exports. Export the NFS share(s) with rw,async,no_root_squash. For example:</para>
+            <programlisting># vi /etc/exports</programlisting>
+            <para>Insert the following line.</para>
+            <programlisting>/export  *(rw,async,no_root_squash)</programlisting>
+        </listitem>
+        <listitem><para>Export the /export directory.</para>
+            <programlisting># exportfs -a</programlisting>
+        </listitem>
+        <listitem><para>On the management server, create a mount point for secondary storage. For example:</para>
+            <programlisting># mkdir -p /mnt/secondary</programlisting>
+        </listitem>
+        <listitem><para>Mount the secondary storage on your Management Server. Replace the example NFS server name and NFS share paths below with your own.</para>
+            <programlisting># mount -t nfs nfsservername:/nfs/share/secondary /mnt/secondary</programlisting>
+        </listitem>
+    </orderedlist>
+</section>

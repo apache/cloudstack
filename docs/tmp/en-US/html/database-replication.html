@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>9.3. Database Replication (Optional)</title><link rel="stylesheet" type="text/css" href="Common_Content/css/default.css" /><link rel="stylesheet" media="print" href="Common_Content/css/print.css" type="text/css" /><meta name="generator" content="publican 2.8" /><meta name="package" content="Apache_CloudStack-Installation_Guide-4.0.0-incubating-en-US-1-" /><link rel="home" href="index.html" title="CloudStack Installation Guide" /><link rel="up" href="additional-installation-options.html" title="Chapter 9. Additional Installation Options" /><link rel="prev" href="ssl.html" title="9.2. SSL (Optional)" /><link rel="next" href="choosing-a-deployment_architecture.html" title="Chapter 10. Choosing a Deployment Architecture" /></head><body><p id="title"><a class="left" href="http://cloudstack.org"><img src="Common_Content/images/image_left.png" alt="Product Site" /></a><a class="right" href="http://docs.cloudstack.org"><img src="Common_Content/images/image_right.png" alt="Documentation Site" /></a></p><ul class="docnav"><li class="previous"><a accesskey="p" href="ssl.html"><strong>Prev</strong></a></li><li class="next"><a accesskey="n" href="choosing-a-deployment_architecture.html"><strong>Next</strong></a></li></ul><div xml:lang="en-US" class="section" id="database-replication" lang="en-US"><div class="titlepage"><div><div><h2 class="title" id="database-replication">9.3. Database Replication (Optional)</h2></div></div></div><div class="para">
+		CloudStack supports database replication from one MySQL node to another. This is achieved using standard MySQL replication. You may want to do this as insurance against MySQL server or storage loss. MySQL replication is implemented using a master/slave model. The master is the node that the Management Servers are configured to use. The slave is a standby node that receives all write operations from the master and applies them to a local, redundant copy of the database. The following steps are a guide to implementing MySQL replication.
+	</div><div class="note"><div class="admonition_header"><h2>Note</h2></div><div class="admonition"><div class="para">
+			Creating a replica is not a backup solution. You should develop a backup procedure for the MySQL data that is distinct from replication.
+		</div></div></div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				Ensure that this is a fresh install with no data in the master.
+			</div></li><li class="listitem"><div class="para">
+				Edit my.cnf on the master and add the following in the [mysqld] section below datadir.
+			</div><pre class="programlisting">
+log_bin=mysql-bin
+server_id=1
+</pre><div class="para">
+				The server_id must be unique with respect to other servers. The recommended way to achieve this is to give the master an ID of 1 and each slave a sequential number greater than 1, so that the servers are numbered 1, 2, 3, etc.
+			</div></li><li class="listitem"><div class="para">
+				Restart the MySQL service:
+			</div><pre class="programlisting">
+# service mysqld restart
+</pre></li><li class="listitem"><div class="para">
+				Create a replication account on the master and give it privileges. We will use the "cloud-repl" user with the password "password". This assumes that master and slave run on the 172.16.1.0/24 network.
+			</div><pre class="programlisting">
+# mysql -u root
+mysql&gt; create user 'cloud-repl'@'172.16.1.%' identified by 'password';
+mysql&gt; grant replication slave on *.* TO 'cloud-repl'@'172.16.1.%';
+mysql&gt; flush privileges;
+mysql&gt; flush tables with read lock;
+</pre></li><li class="listitem"><div class="para">
+				Leave the current MySQL session running.
+			</div></li><li class="listitem"><div class="para">
+				In a new shell start a second MySQL session.
+			</div></li><li class="listitem"><div class="para">
+				Retrieve the current position of the database.
+			</div><pre class="programlisting">
+# mysql -u root
+mysql&gt; show master status;
++------------------+----------+--------------+------------------+
+| File             | Position | Binlog_Do_DB | Binlog_Ignore_DB |
++------------------+----------+--------------+------------------+
+| mysql-bin.000001 |      412 |              |                  |
++------------------+----------+--------------+------------------+
+</pre></li><li class="listitem"><div class="para">
+				Note the file and the position that are returned by your instance.
+			</div></li><li class="listitem"><div class="para">
+				Exit from this session.
+			</div></li><li class="listitem"><div class="para">
+				Complete the master setup. Returning to your first session on the master, release the locks and exit MySQL.
+			</div><pre class="programlisting">
+mysql&gt; unlock tables;
+</pre></li><li class="listitem"><div class="para">
+				Install and configure the slave. On the slave server, run the following commands.
+			</div><pre class="programlisting">
+# yum install mysql-server
+# chkconfig mysqld on
+</pre></li><li class="listitem"><div class="para">
+				Edit my.cnf and add the following lines in the [mysqld] section below datadir.
+			</div><pre class="programlisting">
+server_id=2
+innodb_rollback_on_timeout=1
+innodb_lock_wait_timeout=600
+</pre></li><li class="listitem"><div class="para">
+				Restart MySQL.
+			</div><pre class="programlisting">
+# service mysqld restart
+</pre></li><li class="listitem"><div class="para">
+				Instruct the slave to connect to and replicate from the master. Replace the IP address, password, log file, and position with the values you have used in the previous steps.
+			</div><pre class="programlisting">
+mysql&gt; change master to
+    -&gt; master_host='172.16.1.217',
+    -&gt; master_user='cloud-repl',
+    -&gt; master_password='password',
+    -&gt; master_log_file='mysql-bin.000001',
+    -&gt; master_log_pos=412;
+</pre></li><li class="listitem"><div class="para">
+				Then start replication on the slave.
+			</div><pre class="programlisting">
+mysql&gt; start slave;
+</pre></li><li class="listitem"><div class="para">
+				Optionally, open port 3306 on the slave as was done on the master earlier.
+			</div><div class="para">
+				This is not required for replication to work. But if you choose not to do this, you will need to do it when failover to the replica occurs.
+			</div></li></ol></div><div class="section" id="database-failover"><div class="titlepage"><div><div><h3 class="title" id="database-failover">9.3.1. Failover</h3></div></div></div><div class="para">
+			This will provide for a replicated database that can be used to implement manual failover for the Management Servers. CloudStack failover from one MySQL instance to another is performed by the administrator. In the event of a database failure you should:
+		</div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+					Stop the Management Servers (via service cloud-management stop).
+				</div></li><li class="listitem"><div class="para">
+					Change the replica's configuration to be a master and restart it.
+				</div></li><li class="listitem"><div class="para">
+					Ensure that the replica's port 3306 is open to the Management Servers.
+				</div></li><li class="listitem"><div class="para">
+					Make a change so that the Management Server uses the new database. The simplest process here is to put the IP address of the new database server into each Management Server's /etc/cloud/management/db.properties.
+				</div></li><li class="listitem"><div class="para">
+					Restart the Management Servers:
+				</div><pre class="programlisting">
+# service cloud-management start
+</pre></li></ol></div></div></div><ul class="docnav"><li class="previous"><a accesskey="p" href="ssl.html"><strong>Prev</strong>9.2. SSL (Optional)</a></li><li class="up"><a accesskey="u" href="#"><strong>Up</strong></a></li><li class="home"><a accesskey="h" href="index.html"><strong>Home</strong></a></li><li class="next"><a accesskey="n" href="choosing-a-deployment_architecture.html"><strong>Next</strong>Chapter 10. Choosing a Deployment Architecture</a></li></ul></body></html>

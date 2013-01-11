@@ -1,0 +1,82 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+  http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+<section id="set-global-project-resource-limits">
+  <title>Setting the Global Project Resource Limits</title>
+  <orderedlist>
+    <listitem>
+      <para>Log in as administrator to the &PRODUCT; UI.</para>
+    </listitem>
+    <listitem>
+      <para>In the left navigation, click Global Settings.</para>
+    </listitem>
+    <listitem>
+      <para>In the search box, type max.projects and click the search button.</para>
+    </listitem>
+    <listitem>
+      <para>In the search results, you will see the parameters you can use to set per-project
+        maximum resource amounts that apply to all projects in the cloud. No project can have more
+        resources, but an individual project can have lower limits. Click the edit button to set
+        each parameter. <inlinemediaobject>
+          <imageobject>
+            <imagedata fileref="./images/edit-icon.png"/>
+          </imageobject>
+          <textobject>
+            <phrase>editbutton.png: Edits parameters</phrase>
+          </textobject>
+        </inlinemediaobject></para>
+      <informaltable>
+        <tgroup cols="2" align="left" colsep="1" rowsep="1">
+          <tbody>
+            <row>
+              <entry><para>max.project.public.ips</para></entry>
+              <entry><para>Maximum number of public IP addresses that can be owned by any project in
+                  the cloud. See About Public IP Addresses.</para></entry>
+            </row>
+            <row>
+              <entry><para>max.project.snapshots</para></entry>
+              <entry><para>Maximum number of snapshots that can be owned by any project in the
+                  cloud. See Working with Snapshots.</para></entry>
+            </row>
+            <row>
+              <entry><para>max.project.templates</para></entry>
+              <entry><para>Maximum number of templates that can be owned by any project in the
+                  cloud. See Working with Templates.</para></entry>
+            </row>
+            <row>
+              <entry><para>max.project.uservms</para></entry>
+              <entry><para>Maximum number of guest virtual machines that can be owned by any project
+                  in the cloud. See Working With Virtual Machines.</para></entry>
+            </row>
+            <row>
+              <entry><para>max.project.volumes</para></entry>
+              <entry><para>Maximum number of data volumes that can be owned by any project in the
+                  cloud. See Working with Volumes.</para></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </listitem>
+    <listitem>
+      <para>Restart the Management Server.</para>
+      <programlisting># service cloud-management restart</programlisting>
+    </listitem>
+  </orderedlist>
+</section>

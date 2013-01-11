@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>6.8. Initialize and Test</title><link rel="stylesheet" type="text/css" href="Common_Content/css/default.css" /><link rel="stylesheet" media="print" href="Common_Content/css/print.css" type="text/css" /><meta name="generator" content="publican 2.8" /><meta name="package" content="Apache_CloudStack-Installation_Guide-4.0.1-incubating-en-US-1-" /><link rel="home" href="index.html" title="CloudStack Installation Guide" /><link rel="up" href="provisioning-steps.html" title="Chapter 6. Steps to Provisioning Your Cloud Infrastructure" /><link rel="prev" href="secondary-storage-add.html" title="6.7. Add Secondary Storage" /><link rel="next" href="global-config.html" title="Chapter 7. Setting Global Configuration Parameters" /></head><body><p id="title"><a class="left" href="http://cloudstack.org"><img src="Common_Content/images/image_left.png" alt="Product Site" /></a><a class="right" href="http://docs.cloudstack.org"><img src="Common_Content/images/image_right.png" alt="Documentation Site" /></a></p><ul class="docnav"><li class="previous"><a accesskey="p" href="secondary-storage-add.html"><strong>Prev</strong></a></li><li class="next"><a accesskey="n" href="global-config.html"><strong>Next</strong></a></li></ul><div xml:lang="en-US" class="section" id="initialize-and-test" lang="en-US"><div class="titlepage"><div><div><h2 class="title" id="initialize-and-test">6.8. Initialize and Test</h2></div></div></div><div class="para">
+		After everything is configured, CloudStack will perform its initialization. This can take 30 minutes or more, depending on the speed of your network. When the initialization has completed successfully, the administrator's Dashboard should be displayed in the CloudStack UI.
+	</div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				Verify that the system is ready. In the left navigation bar, select Templates. Click on the CentOS 5.5 (64bit) no Gui (KVM) template. Check to be sure that the status is "Download Complete." Do not proceed to the next step until this status is displayed.
+			</div></li><li class="listitem"><div class="para">
+				Go to the Instances tab, and filter by My Instances.
+			</div></li><li class="listitem"><div class="para">
+				Click Add Instance and follow the steps in the wizard.
+			</div><div class="orderedlist"><ol class="loweralpha"><li class="listitem"><div class="para">
+						Choose the zone you just added.
+					</div></li><li class="listitem"><div class="para">
+						In the template selection, choose the template to use in the VM. If this is a fresh installation, likely only the provided CentOS template is available.
+					</div></li><li class="listitem"><div class="para">
+						Select a service offering. Be sure that the hardware you have allows starting the selected service offering.
+					</div></li><li class="listitem"><div class="para">
+						In data disk offering, if desired, add another data disk. This is a second volume that will be available to but not mounted in the guest. For example, in Linux on XenServer you will see /dev/xvdb in the guest after rebooting the VM. A reboot is not required if you have a PV-enabled OS kernel in use.
+					</div></li><li class="listitem"><div class="para">
+						In default network, choose the primary network for the guest. In a trial installation, you would have only one option here.
+					</div></li><li class="listitem"><div class="para">
+						Optionally give your VM a name and a group. Use any descriptive text you would like.
+					</div></li><li class="listitem"><div class="para">
+						Click Launch VM. Your VM will be created and started. It might take some time to download the template and complete the VM startup. You can watch the VM’s progress in the Instances screen.
+					</div></li></ol></div></li><li class="listitem"><div class="para">
+				To use the VM, click the View Console button. 
+				<span class="inlinemediaobject"><img src="./images/console-icon.png" alt="ConsoleButton.png: button to launch a console" /></span>
+
+			</div></li></ol></div><div class="para">
+		Congratulations! You have successfully completed a CloudStack Installation.
+	</div><div class="para">
+		If you decide to grow your deployment, you can add more hosts, primary storage, zones, pods, and clusters.
+	</div></div><ul class="docnav"><li class="previous"><a accesskey="p" href="secondary-storage-add.html"><strong>Prev</strong>6.7. Add Secondary Storage</a></li><li class="up"><a accesskey="u" href="#"><strong>Up</strong></a></li><li class="home"><a accesskey="h" href="index.html"><strong>Home</strong></a></li><li class="next"><a accesskey="n" href="global-config.html"><strong>Next</strong>Chapter 7. Setting Global Configuration Parameters</a></li></ul></body></html>

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>9.4. Network Offerings</title><link rel="stylesheet" type="text/css" href="Common_Content/css/default.css" /><link rel="stylesheet" media="print" href="Common_Content/css/print.css" type="text/css" /><meta name="generator" content="publican 2.8" /><meta name="package" content="Apache_CloudStack-Admin_Guide-4.0.0-incubating-en-US-1-" /><link rel="home" href="index.html" title="CloudStack Administrator's Guide" /><link rel="up" href="set-up-network-for-users.html" title="Chapter 9. Setting Up Networking for Users" /><link rel="prev" href="network-service-providers.html" title="9.3. Network Service Providers" /><link rel="next" href="virtual-machines.html" title="Chapter 10. Working With Virtual Machines" /></head><body><p id="title"><a class="left" href="http://cloudstack.org"><img src="Common_Content/images/image_left.png" alt="Product Site" /></a><a class="right" href="http://docs.cloudstack.org"><img src="Common_Content/images/image_right.png" alt="Documentation Site" /></a></p><ul class="docnav"><li class="previous"><a accesskey="p" href="network-service-providers.html"><strong>Prev</strong></a></li><li class="next"><a accesskey="n" href="virtual-machines.html"><strong>Next</strong></a></li></ul><div xml:lang="en-US" class="section" id="network-offerings" lang="en-US"><div class="titlepage"><div><div><h2 class="title" id="network-offerings">9.4. Network Offerings</h2></div></div></div><div class="note"><div class="admonition_header"><h2>Note</h2></div><div class="admonition"><div class="para">
+			For the most up-to-date list of supported network services, see the CloudStack UI or call listNetworkServices.
+		</div></div></div><div class="para">
+		A network offering is a named set of network services, such as:
+	</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+				DHCP
+			</div></li><li class="listitem"><div class="para">
+				DNS
+			</div></li><li class="listitem"><div class="para">
+				Source NAT
+			</div></li><li class="listitem"><div class="para">
+				Static NAT
+			</div></li><li class="listitem"><div class="para">
+				Port Forwarding
+			</div></li><li class="listitem"><div class="para">
+				Load Balancing
+			</div></li><li class="listitem"><div class="para">
+				Firewall
+			</div></li><li class="listitem"><div class="para">
+				VPN
+			</div></li><li class="listitem"><div class="para">
+				Optional) Name one of several available providers to use for a given service, such as Juniper for the firewall
+			</div></li><li class="listitem"><div class="para">
+				(Optional) Network tag to specify which physical network to use
+			</div></li></ul></div><div class="para">
+		When creating a new VM, the user chooses one of the available network offerings, and that determines which network services the VM can use.
+	</div><div class="para">
+		The CloudStack administrator can create any number of custom network offerings, in addition to the default network offerings provided by CloudStack. By creating multiple custom network offerings, you can set up your cloud to offer different classes of service on a single multi-tenant physical network. For example, while the underlying physical wiring may be the same for two tenants, tenant A may only need simple firewall protection for their website, while tenant B may be running a web server farm and require a scalable firewall solution, load balancing solution, and alternate networks for accessing the database backend.
+	</div><div class="note"><div class="admonition_header"><h2>Note</h2></div><div class="admonition"><div class="para">
+			If you create load balancing rules while using a network service offering that includes an external load balancer device such as NetScaler, and later change the network service offering to one that uses the CloudStack virtual router, you must create a firewall rule on the virtual router for each of your existing load balancing rules so that they continue to function.
+		</div></div></div><div class="para">
+		When creating a new virtual network, the CloudStack administrator chooses which network offering to enable for that network. Each virtual network is associated with one network offering. A virtual network can be upgraded or downgraded by changing its associated network offering. If you do this, be sure to reprogram the physical network to match.
+	</div><div class="para">
+		CloudStack also has internal network offerings for use by CloudStack system VMs. These network offerings are not visible to users but can be modified by administrators.
+	</div></div><ul class="docnav"><li class="previous"><a accesskey="p" href="network-service-providers.html"><strong>Prev</strong>9.3. Network Service Providers</a></li><li class="up"><a accesskey="u" href="#"><strong>Up</strong></a></li><li class="home"><a accesskey="h" href="index.html"><strong>Home</strong></a></li><li class="next"><a accesskey="n" href="virtual-machines.html"><strong>Next</strong>Chapter 10. Working With Virtual Machines</a></li></ul></body></html>

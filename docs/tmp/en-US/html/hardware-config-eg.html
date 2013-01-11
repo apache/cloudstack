@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>12.3. Example Hardware Configuration</title><link rel="stylesheet" type="text/css" href="Common_Content/css/default.css" /><link rel="stylesheet" media="print" href="Common_Content/css/print.css" type="text/css" /><meta name="generator" content="publican 2.8" /><meta name="package" content="Apache_CloudStack-Installation_Guide-4.0.0-incubating-en-US-1-" /><link rel="home" href="index.html" title="CloudStack Installation Guide" /><link rel="up" href="network-setup.html" title="Chapter 12. Network Setup" /><link rel="prev" href="vlan-allocation-eg.html" title="12.2. VLAN Allocation Example" /><link rel="next" href="layer2-switch.html" title="12.4. Layer-2 Switch" /></head><body><p id="title"><a class="left" href="http://cloudstack.org"><img src="Common_Content/images/image_left.png" alt="Product Site" /></a><a class="right" href="http://docs.cloudstack.org"><img src="Common_Content/images/image_right.png" alt="Documentation Site" /></a></p><ul class="docnav"><li class="previous"><a accesskey="p" href="vlan-allocation-eg.html"><strong>Prev</strong></a></li><li class="next"><a accesskey="n" href="layer2-switch.html"><strong>Next</strong></a></li></ul><div xml:lang="en-US" class="section" id="hardware-config-eg" lang="en-US"><div class="titlepage"><div><div><h2 class="title" id="hardware-config-eg">12.3. Example Hardware Configuration</h2></div></div></div><div class="para">
+		This section contains an example configuration of specific switch models for zone-level layer-3 switching. It assumes VLAN management protocols, such as VTP or GVRP, have been disabled. The example scripts must be changed appropriately if you choose to use VTP or GVRP.
+	</div><div xml:lang="en-US" class="section" id="dell62xx-hardware" lang="en-US"><div class="titlepage"><div><div><h3 class="title" id="dell62xx-hardware">12.3.1. Dell 62xx</h3></div></div></div><div class="para">
+		The following steps show how a Dell 62xx is configured for zone-level layer-3 switching. These steps assume VLAN 201 is used to route untagged private IPs for pod 1, and pod 1’s layer-2 switch is connected to Ethernet port 1/g1.
+	</div><div class="para">
+		The Dell 62xx Series switch supports up to 1024 VLANs.
+	</div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				Configure all the VLANs in the database.
+			</div><pre class="programlisting">vlan database
+vlan 200-999
+exit</pre></li><li class="listitem"><div class="para">
+				Configure Ethernet port 1/g1.
+			</div><pre class="programlisting">interface ethernet 1/g1
+switchport mode general
+switchport general pvid 201
+switchport general allowed vlan add 201 untagged
+switchport general allowed vlan add 300-999 tagged
+exit</pre></li></ol></div><div class="para">
+		The statements configure Ethernet port 1/g1 as follows:
+	</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+				VLAN 201 is the native untagged VLAN for port 1/g1.
+			</div></li><li class="listitem"><div class="para">
+				All VLANs (300-999) are passed to all the pod-level layer-2 switches.
+			</div></li></ul></div></div><div xml:lang="en-US" class="section" id="cisco3750-hardware" lang="en-US"><div class="titlepage"><div><div><h3 class="title" id="cisco3750-hardware">12.3.2. Cisco 3750</h3></div></div></div><div class="para">
+		The following steps show how a Cisco 3750 is configured for zone-level layer-3 switching. These steps assume VLAN 201 is used to route untagged private IPs for pod 1, and pod 1’s layer-2 switch is connected to GigabitEthernet1/0/1.
+	</div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				Setting VTP mode to transparent allows us to utilize VLAN IDs above 1000. Since we only use VLANs up to 999, vtp transparent mode is not strictly required.
+			</div><pre class="programlisting">vtp mode transparent
+vlan 200-999
+exit</pre></li><li class="listitem"><div class="para">
+				Configure GigabitEthernet1/0/1.
+			</div><pre class="programlisting">interface GigabitEthernet1/0/1
+switchport trunk encapsulation dot1q
+switchport mode trunk
+switchport trunk native vlan 201
+exit</pre></li></ol></div><div class="para">
+		The statements configure GigabitEthernet1/0/1 as follows:
+	</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+				VLAN 201 is the native untagged VLAN for port GigabitEthernet1/0/1.
+			</div></li><li class="listitem"><div class="para">
+				Cisco passes all VLANs by default. As a result, all VLANs (300-999) are passed to all the pod-level layer-2 switches.
+			</div></li></ul></div></div></div><ul class="docnav"><li class="previous"><a accesskey="p" href="vlan-allocation-eg.html"><strong>Prev</strong>12.2. VLAN Allocation Example</a></li><li class="up"><a accesskey="u" href="#"><strong>Up</strong></a></li><li class="home"><a accesskey="h" href="index.html"><strong>Home</strong></a></li><li class="next"><a accesskey="n" href="layer2-switch.html"><strong>Next</strong>12.4. Layer-2 Switch</a></li></ul></body></html>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>1.2. What Can CloudStack Do?</title><link rel="stylesheet" type="text/css" href="Common_Content/css/default.css" /><link rel="stylesheet" media="print" href="Common_Content/css/print.css" type="text/css" /><meta name="generator" content="publican 2.8" /><meta name="package" content="Apache_CloudStack-Installation_Guide-4.0.1-incubating-en-US-1-" /><link rel="home" href="index.html" title="CloudStack Installation Guide" /><link rel="up" href="concepts.html" title="Chapter 1. Concepts" /><link rel="prev" href="whatis.html" title="1.1. What Is CloudStack?" /><link rel="next" href="deployment-architecture-overview.html" title="1.3. Deployment Architecture Overview" /></head><body><p id="title"><a class="left" href="http://cloudstack.org"><img src="Common_Content/images/image_left.png" alt="Product Site" /></a><a class="right" href="http://docs.cloudstack.org"><img src="Common_Content/images/image_right.png" alt="Documentation Site" /></a></p><ul class="docnav"><li class="previous"><a accesskey="p" href="whatis.html"><strong>Prev</strong></a></li><li class="next"><a accesskey="n" href="deployment-architecture-overview.html"><strong>Next</strong></a></li></ul><div xml:lang="en-US" class="section" id="feature-overview" lang="en-US"><div class="titlepage"><div><div><h2 class="title" id="feature-overview">1.2. What Can CloudStack Do?</h2></div></div></div><div class="para">
+		<span class="bold bold"><strong>Multiple Hypervisor Support</strong></span>
+	</div><div class="para">
+		CloudStack works with a variety of hypervisors, and a single cloud deployment can contain multiple hypervisor implementations. The current release of CloudStack supports pre-packaged enterprise solutions like Citrix XenServer and VMware vSphere, as well as KVM or Xen running on Ubuntu or CentOS.
+	</div><div class="para">
+		<span class="bold bold"><strong>Massively Scalable Infrastructure Management</strong></span>
+	</div><div class="para">
+		CloudStack can manage tens of thousands of servers installed in multiple geographically distributed datacenters. The centralized management server scales linearly, eliminating the need for intermediate cluster-level management servers. No single component failure can cause cloud-wide outage. Periodic maintenance of the management server can be performed without affecting the functioning of virtual machines running in the cloud.
+	</div><div class="para">
+		<span class="bold bold"><strong>Automatic Configuration Management</strong></span>
+	</div><div class="para">
+		CloudStack automatically configures each guest virtual machine’s networking and storage settings.
+	</div><div class="para">
+		CloudStack internally manages a pool of virtual appliances to support the cloud itself. These appliances offer services such as firewalling, routing, DHCP, VPN access, console proxy, storage access, and storage replication. The extensive use of virtual appliances simplifies the installation, configuration, and ongoing management of a cloud deployment.
+	</div><div class="para">
+		<span class="bold bold"><strong>Graphical User Interface</strong></span>
+	</div><div class="para">
+		CloudStack offers an administrator's Web interface, used for provisioning and managing the cloud, as well as an end-user's Web interface, used for running VMs and managing VM templates. The UI can be customized to reflect the desired service provider or enterprise look and feel.
+	</div><div class="para">
+		<span class="bold bold"><strong>API and Extensibility</strong></span>
+	</div><div class="para">
+		CloudStack provides an API that gives programmatic access to all the management features available in the UI. The API is maintained and documented. This API enables the creation of command line tools and new user interfaces to suit particular needs. See the Developer’s Guide and API Reference, both available at <a href="http://incubator.apache.org/cloudstack/docs">Apache CloudStack Guides</a> and <a href="http://incubator.apache.org/cloudstack/docs/api">Apache CloudStack API Reference</a> respectively.
+	</div><div class="para">
+		The CloudStack pluggable allocation architecture allows the creation of new types of allocators for the selection of storage and Hosts. See the Allocator Implementation Guide (<a href="http://docs.cloudstack.org/CloudStack_Documentation/Allocator_Implementation_Guide">http://docs.cloudstack.org/CloudStack_Documentation/Allocator_Implementation_Guide</a>).
+	</div><div class="para">
+		<span class="bold bold"><strong>High Availability</strong></span>
+	</div><div class="para">
+		CloudStack has a number of features to increase the availability of the system. The Management Server itself may be deployed in a multi-node installation where the servers are load balanced. MySQL may be configured to use replication to provide for a manual failover in the event of database loss. For the hosts, CloudStack supports NIC bonding and the use of separate networks for storage as well as iSCSI Multipath.
+	</div></div><ul class="docnav"><li class="previous"><a accesskey="p" href="whatis.html"><strong>Prev</strong>1.1. What Is CloudStack?</a></li><li class="up"><a accesskey="u" href="#"><strong>Up</strong></a></li><li class="home"><a accesskey="h" href="index.html"><strong>Home</strong></a></li><li class="next"><a accesskey="n" href="deployment-architecture-overview.html"><strong>Next</strong>1.3. Deployment Architecture Overview</a></li></ul></body></html>

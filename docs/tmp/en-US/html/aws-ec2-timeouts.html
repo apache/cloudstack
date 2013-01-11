@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>10.5. Using Timeouts to Ensure AWS API Command Completion</title><link rel="stylesheet" type="text/css" href="Common_Content/css/default.css" /><link rel="stylesheet" media="print" href="Common_Content/css/print.css" type="text/css" /><meta name="generator" content="publican 2.8" /><meta name="package" content="Apache_CloudStack-Installation_Guide-4.0.1-incubating-en-US-1-" /><link rel="home" href="index.html" title="CloudStack Installation Guide" /><link rel="up" href="aws-interface-compatibility.html" title="Chapter 10. Amazon Web Service Interface Compatibility" /><link rel="prev" href="aws-ec2-user-setup.html" title="10.4. AWS API User Setup Steps" /><link rel="next" href="aws-ec2-supported-commands.html" title="10.6. Supported AWS API Calls" /></head><body><p id="title"><a class="left" href="http://cloudstack.org"><img src="Common_Content/images/image_left.png" alt="Product Site" /></a><a class="right" href="http://docs.cloudstack.org"><img src="Common_Content/images/image_right.png" alt="Documentation Site" /></a></p><ul class="docnav"><li class="previous"><a accesskey="p" href="aws-ec2-user-setup.html"><strong>Prev</strong></a></li><li class="next"><a accesskey="n" href="aws-ec2-supported-commands.html"><strong>Next</strong></a></li></ul><div xml:lang="en-US" class="section" id="aws-ec2-timeouts" lang="en-US"><div class="titlepage"><div><div><h2 class="title" id="aws-ec2-timeouts">10.5. Using Timeouts to Ensure AWS API Command Completion</h2></div></div></div><div class="para">
+		The Amazon EC2 command-line tools have a default connection timeout. When used with CloudStack, a longer timeout might be needed for some commands. If you find that commands are not completing due to timeouts, you can gain more time for commands to finish by overriding the default timeouts on individual commands. You can add the following optional command-line parameters to any CloudStack-supported EC2 command:
+	</div><div class="informaltable"><table border="1"><colgroup><col align="left" class="c1" width="50%" /><col align="left" class="c2" width="50%" /></colgroup><tbody><tr><td align="left">
+						
+<pre class="programlisting">--connection-timeout <em class="replaceable"><code>TIMEOUT</code></em></pre>
+					</td><td align="left">
+						Specifies a connection timeout (in seconds). Example: 
+<pre class="programlisting">--connection-timeout 30</pre>
+
+					</td></tr><tr><td align="left">
+						
+<pre class="programlisting">--request-timeout <em class="replaceable"><code>TIMEOUT</code></em></pre>
+					</td><td align="left">
+						Specifies a request timeout (in seconds). Example: 
+<pre class="programlisting">--request-timeout 45</pre>
+
+					</td></tr></tbody></table></div><div class="para">
+		Example:
+	</div><pre class="programlisting">ec2-run-instances 2 –z us-test1 –n 1-3 --connection-timeout 120 --request-timeout 120</pre></div><ul class="docnav"><li class="previous"><a accesskey="p" href="aws-ec2-user-setup.html"><strong>Prev</strong>10.4. AWS API User Setup Steps</a></li><li class="up"><a accesskey="u" href="#"><strong>Up</strong></a></li><li class="home"><a accesskey="h" href="index.html"><strong>Home</strong></a></li><li class="next"><a accesskey="n" href="aws-ec2-supported-commands.html"><strong>Next</strong>10.6. Supported AWS API Calls</a></li></ul></body></html>

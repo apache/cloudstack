@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>11.7. Examples</title><link rel="stylesheet" type="text/css" href="Common_Content/css/default.css" /><link rel="stylesheet" media="print" href="Common_Content/css/print.css" type="text/css" /><meta name="generator" content="publican 2.8" /><meta name="package" content="Apache_CloudStack-Installation_Guide-4.0.0-incubating-en-US-1-" /><link rel="home" href="index.html" title="CloudStack Installation Guide" /><link rel="up" href="aws-interface-compatibility.html" title="Chapter 11. Amazon Web Services Compatible Interface" /><link rel="prev" href="aws-ec2-supported-commands.html" title="11.6. Supported AWS API Calls" /><link rel="next" href="network-setup.html" title="Chapter 12. Network Setup" /></head><body><p id="title"><a class="left" href="http://cloudstack.org"><img src="Common_Content/images/image_left.png" alt="Product Site" /></a><a class="right" href="http://docs.cloudstack.org"><img src="Common_Content/images/image_right.png" alt="Documentation Site" /></a></p><ul class="docnav"><li class="previous"><a accesskey="p" href="aws-ec2-supported-commands.html"><strong>Prev</strong></a></li><li class="next"><a accesskey="n" href="network-setup.html"><strong>Next</strong></a></li></ul><div xml:lang="en-US" class="section" id="aws-api-examples" lang="en-US"><div class="titlepage"><div><div><h2 class="title" id="aws-api-examples">11.7. Examples</h2></div></div></div><div class="para">
+		There are many tools available to interface with a AWS compatible API. In this section we provide a few examples that users of CloudStack can build upon.
+	</div><div class="section" id="aws-api-boto-examples"><div class="titlepage"><div><div><h3 class="title" id="aws-api-boto-examples">11.7.1. Boto Examples</h3></div></div></div><div class="para">
+			Boto is one of them. It is a Python package available at https://github.com/boto/boto. In this section we provide two examples of Python scripts that use Boto and have been tested with the CloudStack AWS API Interface.
+		</div><div class="para">
+			First is an EC2 example. Replace the Access and Secret Keys with your own and update the endpoint.
+		</div><div class="para">
+			<div class="example"><h6>Example 11.1. An EC2 Boto example</h6><div class="example-contents"><pre class="programlisting">#!/usr/bin/env python
+
+import sys
+import os
+import boto
+import boto.ec2
+
+region = boto.ec2.regioninfo.RegionInfo(name="ROOT",endpoint="localhost")
+apikey='GwNnpUPrO6KgIdZu01z_ZhhZnKjtSdRwuYd4DvpzvFpyxGMvrzno2q05MB0ViBoFYtdqKd'
+secretkey='t4eXLEYWw7chBhDlaKf38adCMSHx_wlds6JfSx3z9fSpSOm0AbP9Moj0oGIzy2LSC8iw'
+
+def main():
+	'''Establish connection to EC2 cloud'''
+        conn =boto.connect_ec2(aws_access_key_id=apikey,
+                       aws_secret_access_key=secretkey,
+                       is_secure=False,
+                       region=region,
+                       port=7080,
+                       path="/awsapi",
+                       api_version="2010-11-15")
+
+        '''Get list of images that I own'''
+	images = conn.get_all_images()
+	print images
+	myimage = images[0]
+	'''Pick an instance type'''
+	vm_type='m1.small'
+	reservation = myimage.run(instance_type=vm_type,security_groups=['default'])
+
+if __name__ == '__main__':
+	main()
+</pre></div></div><br class="example-break" />
+
+		</div><div class="para">
+			Second is an S3 example. Replace the Access and Secret keys with your own, as well as the endpoint of the service. Be sure to also update the file paths to something that exists on your machine.
+		</div><div class="para">
+			<div class="example"><h6>Example 11.2. An S3 Boto Example</h6><div class="example-contents"><pre class="programlisting">#!/usr/bin/env python
+
+import sys
+import os
+from boto.s3.key import Key
+from boto.s3.connection import S3Connection
+from boto.s3.connection import OrdinaryCallingFormat
+
+apikey='ChOw-pwdcCFy6fpeyv6kUaR0NnhzmG3tE7HLN2z3OB_s-ogF5HjZtN4rnzKnq2UjtnHeg_yLA5gOw'
+secretkey='IMY8R7CJQiSGFk4cHwfXXN3DUFXz07cCiU80eM3MCmfLs7kusgyOfm0g9qzXRXhoAPCH-IRxXc3w'
+
+cf=OrdinaryCallingFormat()
+
+def main():	
+	'''Establish connection to S3 service'''
+        conn =S3Connection(aws_access_key_id=apikey,aws_secret_access_key=secretkey, \
+                          is_secure=False, \
+                          host='localhost', \
+                          port=7080, \
+                          calling_format=cf, \
+                          path="/awsapi/rest/AmazonS3")
+
+        try:
+            bucket=conn.create_bucket('cloudstack')
+            k = Key(bucket)
+            k.key = 'test'
+            try:
+               k.set_contents_from_filename('/Users/runseb/Desktop/s3cs.py')
+            except:
+               print 'could not write file'
+               pass
+        except:
+            bucket = conn.get_bucket('cloudstack')
+            k = Key(bucket)
+            k.key = 'test'
+            try:
+               k.get_contents_to_filename('/Users/runseb/Desktop/foobar')
+            except:
+               print 'Could not get file'
+               pass
+
+        try:
+           bucket1=conn.create_bucket('teststring')
+           k=Key(bucket1)
+           k.key('foobar')
+           k.set_contents_from_string('This is my silly test')
+        except:
+           bucket1=conn.get_bucket('teststring')
+           k = Key(bucket1)
+           k.key='foobar'
+           k.get_contents_as_string()
+	
+if __name__ == '__main__':
+	main()
+
+</pre></div></div><br class="example-break" />
+
+		</div></div><div class="section" id="aws-api-jclouds-examples"><div class="titlepage"><div><div><h3 class="title" id="aws-api-jclouds-examples">11.7.2. JClouds Examples</h3></div></div></div><div class="para">
+		</div></div></div><ul class="docnav"><li class="previous"><a accesskey="p" href="aws-ec2-supported-commands.html"><strong>Prev</strong>11.6. Supported AWS API Calls</a></li><li class="up"><a accesskey="u" href="#"><strong>Up</strong></a></li><li class="home"><a accesskey="h" href="index.html"><strong>Home</strong></a></li><li class="next"><a accesskey="n" href="network-setup.html"><strong>Next</strong>Chapter 12. Network Setup</a></li></ul></body></html>

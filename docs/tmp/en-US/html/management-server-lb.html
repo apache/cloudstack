@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>12.6. Setting Zone VLAN and Running VM Maximums</title><link rel="stylesheet" type="text/css" href="Common_Content/css/default.css" /><link rel="stylesheet" media="print" href="Common_Content/css/print.css" type="text/css" /><meta name="generator" content="publican 2.8" /><meta name="package" content="Apache_CloudStack-Installation_Guide-4.0.0-incubating-en-US-1-" /><link rel="home" href="index.html" title="CloudStack Installation Guide" /><link rel="up" href="network-setup.html" title="Chapter 12. Network Setup" /><link rel="prev" href="hardware-firewall.html" title="12.5. Hardware Firewall" /><link rel="next" href="topology-req.html" title="12.7. Topology Requirements" /></head><body><p id="title"><a class="left" href="http://cloudstack.org"><img src="Common_Content/images/image_left.png" alt="Product Site" /></a><a class="right" href="http://docs.cloudstack.org"><img src="Common_Content/images/image_right.png" alt="Documentation Site" /></a></p><ul class="docnav"><li class="previous"><a accesskey="p" href="hardware-firewall.html"><strong>Prev</strong></a></li><li class="next"><a accesskey="n" href="topology-req.html"><strong>Next</strong></a></li></ul><div xml:lang="en-US" class="section" id="management-server-lb" lang="en-US"><div class="titlepage"><div><div><h2 class="title" id="management-server-lb">12.6. Setting Zone VLAN and Running VM Maximums</h2></div></div></div><div class="para">
+		CloudStack can use a load balancer to provide a virtual IP for multiple Management Servers. The administrator is responsible for creating the load balancer rules for the Management Servers. The application requires persistence or stickiness across multiple sessions. The following chart lists the ports that should be load balanced and whether or not persistence is required.
+	</div><div class="para">
+		Even if persistence is not required, enabling it is permitted.
+	</div><div class="informaltable"><table border="1"><colgroup><col width="25%" /><col width="25%" /><col width="25%" /><col width="25%" /></colgroup><thead><tr><th align="left">
+						<div class="para">
+							Source Port
+						</div>
+					</th><th align="left">
+						<div class="para">
+							Destination Port
+						</div>
+					</th><th align="left">
+						<div class="para">
+							Protocol
+						</div>
+					</th><th align="left">
+						<div class="para">
+							Persistence Required?
+						</div>
+					</th></tr></thead><tbody><tr><td align="left">
+						<div class="para">
+							80 or 443
+						</div>
+					</td><td align="left">
+						<div class="para">
+							8080 (or 20400 with AJP)
+						</div>
+					</td><td align="left">
+						<div class="para">
+							HTTP (or AJP)
+						</div>
+					</td><td align="left">
+						<div class="para">
+							Yes
+						</div>
+					</td></tr><tr><td align="left">
+						<div class="para">
+							8250
+						</div>
+					</td><td align="left">
+						<div class="para">
+							8250
+						</div>
+					</td><td align="left">
+						<div class="para">
+							TCP
+						</div>
+					</td><td align="left">
+						<div class="para">
+							Yes
+						</div>
+					</td></tr><tr><td align="left">
+						<div class="para">
+							8096
+						</div>
+					</td><td align="left">
+						<div class="para">
+							8096
+						</div>
+					</td><td align="left">
+						<div class="para">
+							HTTP
+						</div>
+					</td><td align="left">
+						<div class="para">
+							No
+						</div>
+					</td></tr></tbody></table></div></div><ul class="docnav"><li class="previous"><a accesskey="p" href="hardware-firewall.html"><strong>Prev</strong>12.5. Hardware Firewall</a></li><li class="up"><a accesskey="u" href="#"><strong>Up</strong></a></li><li class="home"><a accesskey="h" href="index.html"><strong>Home</strong></a></li><li class="next"><a accesskey="n" href="topology-req.html"><strong>Next</strong>12.7. Topology Requirements</a></li></ul></body></html>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>12.6. Creating a Template from an Existing Virtual Machine</title><link rel="stylesheet" type="text/css" href="Common_Content/css/default.css" /><link rel="stylesheet" media="print" href="Common_Content/css/print.css" type="text/css" /><meta name="generator" content="publican 2.8" /><meta name="package" content="Apache_CloudStack-Admin_Guide-4.0.0-incubating-en-US-1-" /><link rel="home" href="index.html" title="CloudStack Administrator's Guide" /><link rel="up" href="working-with-templates.html" title="Chapter 12. Working with Templates" /><link rel="prev" href="private-public-template.html" title="12.5. Private and Public Templates" /><link rel="next" href="create-template-from-snapshot.html" title="12.7. Creating a Template from a Snapshot" /></head><body><p id="title"><a class="left" href="http://cloudstack.org"><img src="Common_Content/images/image_left.png" alt="Product Site" /></a><a class="right" href="http://docs.cloudstack.org"><img src="Common_Content/images/image_right.png" alt="Documentation Site" /></a></p><ul class="docnav"><li class="previous"><a accesskey="p" href="private-public-template.html"><strong>Prev</strong></a></li><li class="next"><a accesskey="n" href="create-template-from-snapshot.html"><strong>Next</strong></a></li></ul><div xml:lang="en-US" class="section" id="create-template-from-existing-vm" lang="en-US"><div class="titlepage"><div><div><h2 class="title" id="create-template-from-existing-vm">12.6. Creating a Template from an Existing Virtual Machine</h2></div></div></div><div class="para">
+		Once you have at least one VM set up in the way you want, you can use it as the prototype for other VMs.
+	</div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				Create and start a virtual machine using any of the techniques given in <a class="xref" href="creating-vms.html">Section 10.4, “Creating VMs”</a>.
+			</div></li><li class="listitem"><div class="para">
+				Make any desired configuration changes on the running VM, then click Stop.
+			</div></li><li class="listitem"><div class="para">
+				Wait for the VM to stop. When the status shows Stopped, go to the next step.
+			</div></li><li class="listitem"><div class="para">
+				Click Create Template and provide the following:
+			</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>Name and Display Text</strong></span>. These will be shown in the UI, so choose something descriptive.
+					</div></li><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>OS Type</strong></span>. This helps CloudStack and the hypervisor perform certain operations and make assumptions that improve the performance of the guest. Select one of the following.
+					</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+								If the operating system of the stopped VM is listed, choose it.
+							</div></li><li class="listitem"><div class="para">
+								If the OS type of the stopped VM is not listed, choose Other.
+							</div></li><li class="listitem"><div class="para">
+								If you want to boot from this template in PV mode, choose Other PV (32-bit) or Other PV (64-bit). This choice is available only for XenServere:
+							</div><div class="note"><div class="admonition_header"><h2>Note</h2></div><div class="admonition"><div class="para">
+									Note: Generally you should not choose an older version of the OS than the version in the image. For example, choosing CentOS 5.4 to support a CentOS 6.2 image will in general not work. In those cases you should choose Other.
+								</div></div></div></li></ul></div></li><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>Public</strong></span>. Choose Yes to make this template accessible to all users of this CloudStack installation. The template will appear in the Community Templates list. See <a class="xref" href="private-public-template.html">Section 12.5, “Private and Public Templates”</a>.
+					</div></li><li class="listitem"><div class="para">
+						<span class="bold bold"><strong>Password Enabled</strong></span>. Choose Yes if your template has the CloudStack password change script installed. See Adding Password Management to Your Templates.
+					</div></li></ul></div></li><li class="listitem"><div class="para">
+				Click Add.
+			</div></li></ol></div><div class="para">
+		The new template will be visible in the Templates section when the template creation process has been completed. The template is then available when creating a new VM
+	</div></div><ul class="docnav"><li class="previous"><a accesskey="p" href="private-public-template.html"><strong>Prev</strong>12.5. Private and Public Templates</a></li><li class="up"><a accesskey="u" href="#"><strong>Up</strong></a></li><li class="home"><a accesskey="h" href="index.html"><strong>Home</strong></a></li><li class="next"><a accesskey="n" href="create-template-from-snapshot.html"><strong>Next</strong>12.7. Creating a Template from a Snapshot</a></li></ul></body></html>

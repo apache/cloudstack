@@ -1,0 +1,333 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>4.5. Management Server Installation</title><link rel="stylesheet" type="text/css" href="Common_Content/css/default.css" /><link rel="stylesheet" media="print" href="Common_Content/css/print.css" type="text/css" /><meta name="generator" content="publican 2.8" /><meta name="package" content="Apache_CloudStack-Installation_Guide-4.0.1-incubating-en-US-1-" /><link rel="home" href="index.html" title="CloudStack Installation Guide" /><link rel="up" href="installation.html" title="Chapter 4. Installation" /><link rel="prev" href="configure-package-repository.html" title="4.4. Configure package repository" /><link rel="next" href="ui.html" title="Chapter 5. User Interface" /></head><body><p id="title"><a class="left" href="http://cloudstack.org"><img src="Common_Content/images/image_left.png" alt="Product Site" /></a><a class="right" href="http://docs.cloudstack.org"><img src="Common_Content/images/image_right.png" alt="Documentation Site" /></a></p><ul class="docnav"><li class="previous"><a accesskey="p" href="configure-package-repository.html"><strong>Prev</strong></a></li><li class="next"><a accesskey="n" href="ui.html"><strong>Next</strong></a></li></ul><div xml:lang="en-US" class="section" id="management-server-install-flow" lang="en-US"><div class="titlepage"><div><div><h2 class="title" id="management-server-install-flow">4.5. Management Server Installation</h2></div></div></div><div xml:lang="en-US" class="section" id="management-server-installation-overview" lang="en-US"><div class="titlepage"><div><div><h3 class="title" id="management-server-installation-overview">4.5.1. Management Server Installation Overview</h3></div></div></div><div class="para">
+		This section describes installing the Management Server. There are two slightly different installation flows, depending on how many Management Server nodes will be in your cloud:
+	</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+				A single Management Server node, with MySQL on the same node.
+			</div></li><li class="listitem"><div class="para">
+				Multiple Management Server nodes, with MySQL on a node separate from the Management Servers.
+			</div></li></ul></div><div class="para">
+		In either case, each machine must meet the system requirements described in System Requirements.
+	</div><div class="warning"><div class="admonition_header"><h2>Warning</h2></div><div class="admonition"><div class="para">
+			For the sake of security, be sure the public Internet can not access port 8096 or port 8250 on the Management Server.
+		</div></div></div><div class="para">
+		The procedure for installing the Management Server is:
+	</div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				Prepare the Operating System
+			</div></li><li class="listitem"><div class="para">
+				Download and install vhd-util.
+			</div></li><li class="listitem"><div class="para">
+				Install the First Management Server
+			</div></li><li class="listitem"><div class="para">
+				Install and Configure the MySQL database
+			</div></li><li class="listitem"><div class="para">
+				Prepare NFS Shares
+			</div></li><li class="listitem"><div class="para">
+				Prepare and Start Additional Management Servers (optional)
+			</div></li><li class="listitem"><div class="para">
+				Prepare the System VM Template
+			</div></li></ol></div></div><div xml:lang="en-US" class="section" id="prepare-os" lang="en-US"><div class="titlepage"><div><div><h3 class="title" id="prepare-os">4.5.2. Prepare the Operating System</h3></div></div></div><div class="para">
+		The OS must be prepared to host the Management Server using the following steps. These steps must be performed on each Management Server node.
+	</div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				Log in to your OS as root.
+			</div></li><li class="listitem"><div class="para">
+				Check for a fully qualified hostname.
+			</div><pre class="programlisting"><span class="perl_BString">hostname</span> --fqdn</pre><div class="para">
+				This should return a fully qualified hostname such as "managament1.lab.example.org". If it does not, edit /etc/hosts so that it does.
+			</div></li><li class="listitem"><div class="para">
+				Make sure that the machine can reach the Internet.
+			</div><pre class="programlisting"><span class="perl_BString">ping</span> www.cloudstack.org</pre></li><li class="listitem"><div class="para">
+				Turn on NTP for time synchronization.
+			</div><div class="note"><div class="admonition_header"><h2>Note</h2></div><div class="admonition"><div class="para">
+					NTP is required to synchronize the clocks of the servers in your cloud.
+				</div></div></div><div class="orderedlist"><ol class="loweralpha"><li class="listitem"><div class="para">
+						Install NTP.
+					</div><pre class="programlisting">yum <span class="perl_BString">install</span> ntp</pre><pre class="programlisting">apt-get <span class="perl_BString">install</span> openntpd</pre></li></ol></div></li><li class="listitem"><div class="para">
+				Repeat all of these steps on every host where the Management Server will be installed.
+			</div></li></ol></div></div><div xml:lang="en-US" class="section" id="management-server-install" lang="en-US"><div class="titlepage"><div><div><h3 class="title" id="management-server-install">4.5.3. Install the Management Server on the First Host</h3></div></div></div><div class="para">
+		The first step in installation, whether you are installing the Management Server on one host or many, is to install the software on a single node.
+	</div><div class="note"><div class="admonition_header"><h2>Note</h2></div><div class="admonition"><div class="para">
+			If you are planning to install the Management Server on multiple nodes for high availability, do not proceed to the additional nodes yet. That step will come later.
+		</div></div></div><div class="para">
+		The CloudStack Management server can be installed using either RPM or DEB packages. These packages will depend on everything you need to run the Management server.
+	</div><div class="section" id="vhd-util"><div class="titlepage"><div><div><h4 class="title" id="vhd-util">4.5.3.1. Downloading vhd-util</h4></div></div></div><div class="para">
+			Before setting up the Management Server, download vhd-util from <a href="http://download.cloud.com.s3.amazonaws.com/tools/vhd-util">vhd-util</a>
+		</div><div class="para">
+			If the Management Server is RHEL or CentOS, copy vhd-util to /usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver.
+		</div><div class="para">
+			If the Management Server is Ubuntu, copy vhd-util to /usr/lib/cloud/common/scripts/vm/hypervisor/xenserver/vhd-util.
+		</div></div><div class="section" id="management-server-install-rhel"><div class="titlepage"><div><div><h4 class="title" id="management-server-install-rhel">4.5.3.2. Install on CentOS/RHEL</h4></div></div></div><div class="para">
+			We start by installing the required packages:
+		</div><pre class="programlisting">yum <span class="perl_BString">install</span> cloud-client</pre></div><div class="section" id="management-server-install-ubuntu"><div class="titlepage"><div><div><h4 class="title" id="management-server-install-ubuntu">4.5.3.3. Install on Ubuntu</h4></div></div></div><pre class="programlisting">apt-get <span class="perl_BString">install</span> cloud-client</pre></div></div><div xml:lang="en-US" class="section" id="management-server-install-db" lang="en-US"><div class="titlepage"><div><div><h3 class="title" id="management-server-install-db">4.5.4. Install the database server</h3></div></div></div><div class="para">
+		The CloudStack management server uses a MySQL database server to store it's data. When you are installing the management server on a single node you can install the MySQL server locally. When using a multi-node installation the MySQL database has to run on an external node.
+	</div><div class="para">
+		CloudStack has been tested with MySQL 5.1 and 5.5, both should work fine. These versions are included in RHEL/CentOS and Ubuntu.
+	</div><div xml:lang="en-US" class="section" id="management-server-install-db-local" lang="en-US"><div class="titlepage"><div><div><h4 class="title" id="management-server-install-db-local">4.5.4.1. Install the Database on the Management Server Node</h4></div></div></div><div class="para">
+		This section describes how to install MySQL on the same machine with the Management Server. This technique is intended for a simple deployment that has a single Management Server node. If you have a multi-node Management Server deployment, you will typically use a separate node for MySQL. See <a class="xref" href="management-server-install-flow.html#management-server-install-db-external">Section 4.5.4.2, “Install the Database on a Separate Node”</a>.
+	</div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				Install MySQL from the package repository from your distribution:
+			</div><pre class="programlisting">yum <span class="perl_BString">install</span> mysql-server</pre><pre class="programlisting">apt-get <span class="perl_BString">install</span> mysql-server</pre></li><li class="listitem"><div class="para">
+				Edit the MySQL configuration (/etc/my.cnf or /etc/mysql/my.cnf, depending on your OS) and insert the following lines in the [mysqld] section. You can put these lines below the datadir line. The max_connections parameter should be set to 350 multiplied by the number of Management Servers you are deploying. This example assumes one Management Server.
+			</div><div class="note"><div class="admonition_header"><h2>Note</h2></div><div class="admonition"><div class="para">
+					On Ubuntu you can also create a file /etc/mysql/conf.d/cloudstack.cnf and add these directives there. Don't forget to add [mysqld] on the first line of the file.
+				</div></div></div><pre class="programlisting">
+innodb_rollback_on_timeout=1
+innodb_lock_wait_timeout=600
+max_connections=350
+log-bin=mysql-bin
+binlog-format = 'ROW'
+</pre></li><li class="listitem"><div class="para">
+				On RHEL/CentOS MySQL doesn't start after installation, start it manually.
+			</div><pre class="programlisting">service mysqld start</pre></li><li class="listitem"><div class="warning"><div class="admonition_header"><h2>Warning</h2></div><div class="admonition"><div class="para">
+					On RHEL and CentOS, MySQL does not set a root password by default. It is very strongly recommended that you set a root password as a security precaution. Run the following commands, and substitute your own desired root password. This step is not required on Ubuntu as it asks for a root password during installation.
+				</div></div></div><div class="para">
+				Run this command to secure your installation. Since we are running MySQL locally you can answer "Y" to all questions.
+			</div><pre class="programlisting">mysql_secure_installation</pre></li><li class="listitem"><div class="para">
+				Set up the database. The following command creates the "cloud" user on the database.
+			</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+						In dbpassword, specify the password to be assigned to the "cloud" user. You can choose to provide no password although that is not recommended.
+					</div></li><li class="listitem"><div class="para">
+						In deploy-as, specify the username and password of the user deploying the database. In the following command, it is assumed the root user is deploying the database and creating the "cloud" user.
+					</div></li><li class="listitem"><div class="para">
+						(Optional) For encryption_type, use file or web to indicate the technique used to pass in the database encryption password. Default: file. See About Password and Key Encryption.
+					</div></li><li class="listitem"><div class="para">
+						(Optional) For management_server_key, substitute the default key that is used to encrypt confidential parameters in the CloudStack properties file. Default: password. It is highly recommended that you replace this with a more secure value. See About Password and Key Encryption.
+					</div></li><li class="listitem"><div class="para">
+						(Optional) For database_key, substitute the default key that is used to encrypt confidential parameters in the CloudStack database. Default: password. It is highly recommended that you replace this with a more secure value. See About Password and Key Encryption.
+					</div></li></ul></div><pre class="programlisting">cloud-setup-databases cloud:<span class="perl_Operator">&lt;</span>dbpassword<span class="perl_Operator">&gt;</span>@localhost \
+                --deploy-as=root:<span class="perl_Operator">&lt;</span>password<span class="perl_Operator">&gt;</span> \
+                -e <span class="perl_Operator">&lt;</span>encryption_type<span class="perl_Operator">&gt;</span> \
+                -m <span class="perl_Operator">&lt;</span>management_server_key<span class="perl_Operator">&gt;</span> \
+                -k <span class="perl_Operator">&lt;</span>database_key<span class="perl_Operator">&gt;</span></pre><div class="para">
+				When this script is finished, you should see a message like “Successfully initialized the database.”
+			</div></li></ol></div></div><div xml:lang="en-US" class="section" id="management-server-install-db-external" lang="en-US"><div class="titlepage"><div><div><h4 class="title" id="management-server-install-db-external">4.5.4.2. Install the Database on a Separate Node</h4></div></div></div><div class="para">
+		This section describes how to install MySQL on a standalone machine, separate from the Management Server. This technique is intended for a deployment that includes several Management Server nodes. If you have a single-node Management Server deployment, you will typically use the same node for MySQL. See <a class="xref" href="management-server-install-flow.html#management-server-install-db-local">Section 4.5.4.1, “Install the Database on the Management Server Node”</a>.
+	</div><div class="note"><div class="admonition_header"><h2>Note</h2></div><div class="admonition"><div class="para">
+			The management server doesn't require a specific distribution for the MySQL node. You can use a distribution or Operating System of your choice. Using the same distribution as the management server is recommended, but not required. See <a class="xref" href="minimum-system-requirements.html#management-server-system-requirements">Section 4.3.1, “Management Server, Database, and Storage System Requirements”</a>.
+		</div></div></div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				Install MySQL from the package repository from your distribution:
+			</div><pre class="programlisting">yum <span class="perl_BString">install</span> mysql-server</pre><pre class="programlisting">apt-get <span class="perl_BString">install</span> mysql-server</pre></li><li class="listitem"><div class="para">
+				Edit the MySQL configuration (/etc/my.cnf or /etc/mysql/my.cnf, depending on your OS) and insert the following lines in the [mysqld] section. You can put these lines below the datadir line. The max_connections parameter should be set to 350 multiplied by the number of Management Servers you are deploying. This example assumes two Management Servers.
+			</div><div class="note"><div class="admonition_header"><h2>Note</h2></div><div class="admonition"><div class="para">
+					On Ubuntu you can also create a file /etc/mysql/conf.d/cloudstack.cnf and add these directives there. Don't forget to add [mysqld] on the first line of the file.
+				</div></div></div><pre class="programlisting">
+innodb_rollback_on_timeout=1
+innodb_lock_wait_timeout=600
+max_connections=700
+log-bin=mysql-bin
+binlog-format = 'ROW'
+bind-address = 0.0.0.0
+</pre></li><li class="listitem"><div class="para">
+				On RHEL/CentOS MySQL doesn't start after installation, start it manually.
+			</div><pre class="programlisting">service mysqld start</pre></li><li class="listitem"><div class="warning"><div class="admonition_header"><h2>Warning</h2></div><div class="admonition"><div class="para">
+					On RHEL and CentOS, MySQL does not set a root password by default. It is very strongly recommended that you set a root password as a security precaution. Run the following commands, and substitute your own desired root password. This step is not required on Ubuntu as it asks for a root password during installation.
+				</div></div></div><div class="para">
+				Run this command to secure your installation. You can answer "Y" to all questions except to "Disallow root login remotely?". This is required to set up the databases.
+			</div><pre class="programlisting">mysql_secure_installation</pre></li><li class="listitem"><div class="para">
+				If a firewall is present on the system, open TCP port 3306 so external MySQL connections can be established.
+			</div><div class="orderedlist"><ol class="loweralpha"><li class="listitem"><div class="para">
+						On RHEL/CentOS:
+					</div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+								Edit the /etc/sysconfig/iptables file and add the following line at the beginning of the INPUT chain.
+							</div><pre class="programlisting">-A INPUT -p tcp --dport 3306 -j ACCEPT</pre></li><li class="listitem"><div class="para">
+								Now reload the iptables rules.
+							</div><pre class="programlisting">service iptables restart</pre></li></ol></div></li><li class="listitem"><div class="para">
+						On Ubuntu:
+					</div><div class="para">
+						UFW is the default firewall on Ubuntu, open the port with this command:
+					</div><pre class="programlisting">ufw allow mysql</pre></li></ol></div></li><li class="listitem"><div class="para">
+				Set up the database. The following command creates the cloud user on the database.
+			</div><div class="note"><div class="admonition_header"><h2>Note</h2></div><div class="admonition"><div class="para">
+					This command should be run on the first Management server node!
+				</div></div></div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+						In dbpassword, specify the password to be assigned to the cloud user. You can choose to provide no password.
+					</div></li><li class="listitem"><div class="para">
+						In deploy-as, specify the username and password of the user deploying the database. In the following command, it is assumed the root user is deploying the database and creating the cloud user.
+					</div></li><li class="listitem"><div class="para">
+						(Optional) For encryption_type, use file or web to indicate the technique used to pass in the database encryption password. Default: file. See About Password and Key Encryption.
+					</div></li><li class="listitem"><div class="para">
+						(Optional) For management_server_key, substitute the default key that is used to encrypt confidential parameters in the CloudStack properties file. Default: password. It is highly recommended that you replace this with a more secure value. See About Password and Key Encryption.
+					</div></li><li class="listitem"><div class="para">
+						(Optional) For database_key, substitute the default key that is used to encrypt confidential parameters in the CloudStack database. Default: password. It is highly recommended that you replace this with a more secure value. See About Password and Key Encryption.
+					</div></li></ul></div><pre class="programlisting">cloud-setup-databases cloud:<span class="perl_Operator">&lt;</span>dbpassword<span class="perl_Operator">&gt;</span>@<span class="perl_Operator">&lt;</span>ip address mysql server<span class="perl_Operator">&gt;</span> \
+                --deploy-as=root:<span class="perl_Operator">&lt;</span>password<span class="perl_Operator">&gt;</span> \
+                -e <span class="perl_Operator">&lt;</span>encryption_type<span class="perl_Operator">&gt;</span> \
+                -m <span class="perl_Operator">&lt;</span>management_server_key<span class="perl_Operator">&gt;</span> \
+                -k <span class="perl_Operator">&lt;</span>database_key<span class="perl_Operator">&gt;</span></pre><div class="para">
+				When this script is finished, you should see a message like “Successfully initialized the database.”
+			</div></li></ol></div></div></div><div xml:lang="en-US" class="section" id="prepare-nfs-shares" lang="en-US"><div class="titlepage"><div><div><h3 class="title" id="prepare-nfs-shares">4.5.5. Prepare NFS Shares</h3></div></div></div><div class="para">
+		CloudStack needs a place to keep primary and secondary storage (see Cloud Infrastructure Overview). Both of these can be NFS shares. This section tells how to set up the NFS shares before adding the storage to CloudStack.
+	</div><div class="note"><div class="admonition_header"><h2>Alternative Storage</h2></div><div class="admonition"><div class="para">
+			NFS is not the only option for primary or secondary storage. For example, you may use a Ceph RDB cluster, GlusterFS, iSCSI, and otthers.
+		</div></div></div><div class="para">
+		The requirements for primary and secondary storage are described in:
+	</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+				<a class="xref" href="about-primary-storage.html">Section 2.5, “About Primary Storage”</a>
+			</div></li><li class="listitem"><div class="para">
+				<a class="xref" href="about-secondary-storage.html">Section 2.6, “About Secondary Storage”</a>
+			</div></li></ul></div><div class="para">
+		A production installation typically uses a separate NFS server. See <a class="xref" href="management-server-install-flow.html#nfs-shares-on-separate-server">Section 4.5.5.1, “Using a Separate NFS Server”</a>.
+	</div><div class="para">
+		You can also use the Management Server node as the NFS server. This is more typical of a trial installation, but is technically possible in a larger deployment. See <a class="xref" href="management-server-install-flow.html#nfs-shares-on-management-server">Section 4.5.5.2, “Using the Management Server as the NFS Server”</a>.
+	</div><div xml:lang="en-US" class="section" id="nfs-shares-on-separate-server" lang="en-US"><div class="titlepage"><div><div><h4 class="title" id="nfs-shares-on-separate-server">4.5.5.1. Using a Separate NFS Server</h4></div></div></div><div class="para">
+		This section tells how to set up NFS shares for secondary and (optionally) primary storage on an NFS server running on a separate node from the Management Server.
+	</div><div class="para">
+		The exact commands for the following steps may vary depending on your operating system version.
+	</div><div class="warning"><div class="admonition_header"><h2>Warning</h2></div><div class="admonition"><div class="para">
+			(KVM only) Ensure that no volume is already mounted at your NFS mount point.
+		</div></div></div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				On the storage server, create an NFS share for secondary storage and, if you are using NFS for primary storage as well, create a second NFS share. For example:
+			</div><pre class="programlisting">
+# mkdir -p /export/primary
+# mkdir -p /export/secondary
+</pre></li><li class="listitem"><div class="para">
+				To configure the new directories as NFS exports, edit /etc/exports. Export the NFS share(s) with rw,async,no_root_squash. For example:
+			</div><pre class="programlisting"># vi /etc/exports</pre><div class="para">
+				Insert the following line.
+			</div><pre class="programlisting">/export  *(rw,async,no_root_squash)</pre></li><li class="listitem"><div class="para">
+				Export the /export directory.
+			</div><pre class="programlisting"># exportfs -a</pre></li><li class="listitem"><div class="para">
+				On the management server, create a mount point for secondary storage. For example:
+			</div><pre class="programlisting"># mkdir -p /mnt/secondary</pre></li><li class="listitem"><div class="para">
+				Mount the secondary storage on your Management Server. Replace the example NFS server name and NFS share paths below with your own.
+			</div><pre class="programlisting"># mount -t nfs nfsservername:/nfs/share/secondary /mnt/secondary</pre></li></ol></div></div><div xml:lang="en-US" class="section" id="nfs-shares-on-management-server" lang="en-US"><div class="titlepage"><div><div><h4 class="title" id="nfs-shares-on-management-server">4.5.5.2. Using the Management Server as the NFS Server</h4></div></div></div><div class="para">
+		This section tells how to set up NFS shares for primary and secondary storage on the same node with the Management Server. This is more typical of a trial installation, but is technically possible in a larger deployment. It is assumed that you will have less than 16TB of storage on the host.
+	</div><div class="para">
+		The exact commands for the following steps may vary depending on your operating system version.
+	</div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				On Ubuntu/Debian systems, you'll need to install the nfs-kernel-server package:
+			</div><pre class="programlisting">
+$ sudo apt-get install nfs-kernel-server
+</pre></li><li class="listitem"><div class="para">
+				On the Management Server host, create two directories that you will use for primary and secondary storage. For example:
+			</div><pre class="programlisting">
+# mkdir -p /export/primary
+# mkdir -p /export/secondary
+</pre></li><li class="listitem"><div class="para">
+				To configure the new directories as NFS exports, edit /etc/exports. Export the NFS share(s) with rw,async,no_root_squash. For example:
+			</div><pre class="programlisting"># vi /etc/exports</pre><div class="para">
+				Insert the following line.
+			</div><pre class="programlisting">/export  *(rw,async,no_root_squash)</pre></li><li class="listitem"><div class="para">
+				Export the /export directory.
+			</div><pre class="programlisting"># exportfs -a</pre></li><li class="listitem"><div class="para">
+				Edit the /etc/sysconfig/nfs file.
+			</div><pre class="programlisting"># vi /etc/sysconfig/nfs</pre><div class="para">
+				Uncomment the following lines:
+			</div><pre class="programlisting">
+LOCKD_TCPPORT=32803
+LOCKD_UDPPORT=32769
+MOUNTD_PORT=892
+RQUOTAD_PORT=875
+STATD_PORT=662
+STATD_OUTGOING_PORT=2020
+</pre></li><li class="listitem"><div class="para">
+				Edit the /etc/sysconfig/iptables file.
+			</div><pre class="programlisting"># vi /etc/sysconfig/iptables</pre><div class="para">
+				Add the following lines at the beginning of the INPUT chain where &lt;NETWORK&gt; is the network that you'll be using:
+			</div><pre class="programlisting">
+-A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p udp --dport 111 -j ACCEPT
+-A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p tcp --dport 111 -j ACCEPT
+-A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p tcp --dport 2049 -j ACCEPT
+-A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p tcp --dport 32803 -j ACCEPT
+-A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p udp --dport 32769 -j ACCEPT
+-A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p tcp --dport 892 -j ACCEPT
+-A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p udp --dport 892 -j ACCEPT
+-A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p tcp --dport 875 -j ACCEPT
+-A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p udp --dport 875 -j ACCEPT
+-A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p tcp --dport 662 -j ACCEPT
+-A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p udp --dport 662 -j ACCEPT                
+</pre></li><li class="listitem"><div class="para">
+				Run the following commands:
+			</div><pre class="programlisting">
+# service iptables restart
+# service iptables save
+</pre></li><li class="listitem"><div class="para">
+				If NFS v4 communication is used between client and server, add your domain to /etc/idmapd.conf on both the hypervisor host and Management Server.
+			</div><pre class="programlisting"># vi /etc/idmapd.conf</pre><div class="para">
+				Remove the character # from the beginning of the Domain line in idmapd.conf and replace the value in the file with your own domain. In the example below, the domain is company.com.
+			</div><pre class="programlisting">Domain = company.com</pre></li><li class="listitem"><div class="para">
+				Reboot the Management Server host.
+			</div><div class="para">
+				Two NFS shares called /export/primary and /export/secondary are now set up.
+			</div></li><li class="listitem"><div class="para">
+				It is recommended that you test to be sure the previous steps have been successful.
+			</div><div class="orderedlist"><ol class="loweralpha"><li class="listitem"><div class="para">
+						Log in to the hypervisor host.
+					</div></li><li class="listitem"><div class="para">
+						Be sure NFS and rpcbind are running. The commands might be different depending on your OS. For example:
+					</div><pre class="programlisting">
+# service rpcbind start
+# service nfs start
+# chkconfig nfs on
+# chkconfig rpcbind on
+# reboot                        
+</pre></li><li class="listitem"><div class="para">
+						Log back in to the hypervisor host and try to mount the /export directories. For example (substitute your own management server name):
+					</div><pre class="programlisting">
+# mkdir /primarymount
+# mount -t nfs &lt;management-server-name&gt;:/export/primary /primarymount
+# umount /primarymount
+# mkdir /secondarymount
+# mount -t nfs &lt;management-server-name&gt;:/export/secondary /secondarymount
+# umount /secondarymount                        
+</pre></li></ol></div></li></ol></div></div></div><div xml:lang="en-US" class="section" id="install-management-server-multi-nodes" lang="en-US"><div class="titlepage"><div><div><h3 class="title" id="install-management-server-multi-nodes">4.5.6. Prepare and Start Additional Management Servers</h3></div></div></div><div class="para">
+		For your second and subsequent Management Servers, you will install the Management Server software, connect it to the database, and set up the OS for the Management Server.
+	</div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				Perform the steps in <a class="xref" href="management-server-install-flow.html#prepare-os">Section 4.5.2, “Prepare the Operating System”</a> and <a class="xref" href="sect-source-buildrpm.html">Section 3.6, “Building RPMs”</a> or <a class="xref" href="sect-source-builddebs.html">Section 3.5, “Building DEB packages”</a> as appropriate.
+			</div></li><li class="listitem"><div class="para">
+				Download vhd-util from <a href="http://download.cloud.com.s3.amazonaws.com/tools/vhd-util">vhd-util</a>
+			</div><div class="para">
+				If the Management Server is RHEL or CentOS, copy vhd-util to /usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver.
+			</div><div class="para">
+				If the Management Server is Ubuntu, copy vhd-util to /usr/lib/cloud/common/scripts/vm/hypervisor/xenserver/vhd-util.
+			</div></li><li class="listitem"><div class="para">
+				Ensure that necessary services are started and set to start on boot. 
+<pre class="programlisting"><code class="prompt">#</code> <code class="command">service</code> rpcbind start
+<code class="prompt">#</code> <code class="command">service</code> nfs start
+<code class="prompt">#</code> <code class="command">chkconfig</code> nfs on
+<code class="prompt">#</code> <code class="command">chkconfig</code> rpcbind on</pre>
+
+			</div></li><li class="listitem"><div class="para">
+				Configure the database client. Note the absence of the --deploy-as argument in this case. (For more details about the arguments to this command, see <a class="xref" href="management-server-install-flow.html#management-server-install-db-external">Section 4.5.4.2, “Install the Database on a Separate Node”</a>.)
+			</div><pre class="programlisting"><code class="prompt">#</code> <code class="command">cloud-setup-databases</code> cloud:<em class="replaceable"><code>dbpassword</code></em>@<em class="replaceable"><code>dbhost</code></em> -e <em class="replaceable"><code>encryption_type</code></em> -m <em class="replaceable"><code>management_server_key</code></em> -k <em class="replaceable"><code>database_key</code></em></pre></li><li class="listitem"><div class="para">
+				Configure the OS and start the Management Server:
+			</div><pre class="programlisting"><code class="prompt">#</code> <code class="command">cloud-setup-management</code></pre><div class="para">
+				The Management Server on this node should now be running.
+			</div></li><li class="listitem"><div class="para">
+				Repeat these steps on each additional Management Server.
+			</div></li><li class="listitem"><div class="para">
+				Be sure to configure a load balancer for the Management Servers. See Management Server Load Balancing.
+			</div></li></ol></div></div><div xml:lang="en-US" class="section" id="prepare-system-vm-template" lang="en-US"><div class="titlepage"><div><div><h3 class="title" id="prepare-system-vm-template">4.5.7. Prepare the System VM Template</h3></div></div></div><div class="para">
+		Secondary storage must be seeded with a template that is used for CloudStack system VMs.
+	</div><div class="note"><div class="admonition_header"><h2>Note</h2></div><div class="admonition"><div class="para">
+			When copying and pasting a command, be sure the command has pasted as a single line before executing. Some document viewers may introduce unwanted line breaks in copied text.
+		</div></div></div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+				On the Management Server, run one or more of the following cloud-install-sys-tmplt commands to retrieve and decompress the system VM template. Run the command for each hypervisor type that you expect end users to run in this Zone.
+			</div><div class="para">
+				If your secondary storage mount point is not named /mnt/secondary, substitute your own mount point name.
+			</div><div class="para">
+				If you set the CloudStack database encryption type to "web" when you set up the database, you must now add the parameter -s &lt;management-server-secret-key&gt;. See About Password and Key Encryption.
+			</div><div class="para">
+				This process will require approximately 5 GB of free space on the local file system and up to 30 minutes each time it runs.
+			</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+						For XenServer:
+					</div><pre class="programlisting"># /usr/lib64/cloud/common/scripts/storage/secondary/cloud-install-sys-tmplt -m /mnt/secondary -u http://download.cloud.com/templates/acton/acton-systemvm-02062012.vhd.bz2 -h xenserver -s &lt;optional-management-server-secret-key&gt; -F</pre></li><li class="listitem"><div class="para">
+						For vSphere:
+					</div><pre class="programlisting"># /usr/lib64/cloud/common/scripts/storage/secondary/cloud-install-sys-tmplt -m /mnt/secondary -u http://download.cloud.com/templates/burbank/burbank-systemvm-08012012.ova -h vmware -s &lt;optional-management-server-secret-key&gt;  -F</pre></li><li class="listitem"><div class="para">
+						For KVM:
+					</div><pre class="programlisting"># /usr/lib64/cloud/common/scripts/storage/secondary/cloud-install-sys-tmplt -m /mnt/secondary -u http://download.cloud.com/templates/acton/acton-systemvm-02062012.qcow2.bz2 -h kvm -s &lt;optional-management-server-secret-key&gt; -F</pre></li></ul></div></li><li class="listitem"><div class="para">
+				If you are using a separate NFS server, perform this step. If you are using the Management Server as the NFS server, you MUST NOT perform this step.
+			</div><div class="para">
+				When the script has finished, unmount secondary storage and remove the created directory.
+			</div><pre class="programlisting"># umount /mnt/secondary
+# rmdir /mnt/secondary</pre></li><li class="listitem"><div class="para">
+				Repeat these steps for each secondary storage server.
+			</div></li></ol></div></div><div xml:lang="en-US" class="section" id="installation-complete" lang="en-US"><div class="titlepage"><div><div><h3 class="title" id="installation-complete">4.5.8. Installation Complete! Next Steps</h3></div></div></div><div class="para">
+		Congratulations! You have now installed CloudStack Management Server and the database it uses to persist system data.
+	</div><div class="mediaobject"><img src="./images/installation-complete.png" width="444" alt="installation-complete.png: Finished installs with single Management Server and multiple Management Servers" /></div><div class="para">
+		What should you do next?
+	</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+				Even without adding any cloud infrastructure, you can run the UI to get a feel for what's offered and how you will interact with CloudStack on an ongoing basis. See Log In to the UI.
+			</div></li><li class="listitem"><div class="para">
+				When you're ready, add the cloud infrastructure and try running some virtual machines on it, so you can watch how CloudStack manages the infrastructure. See Provision Your Cloud Infrastructure.
+			</div></li></ul></div></div></div><ul class="docnav"><li class="previous"><a accesskey="p" href="configure-package-repository.html"><strong>Prev</strong>4.4. Configure package repository</a></li><li class="up"><a accesskey="u" href="#"><strong>Up</strong></a></li><li class="home"><a accesskey="h" href="index.html"><strong>Home</strong></a></li><li class="next"><a accesskey="n" href="ui.html"><strong>Next</strong>Chapter 5. User Interface</a></li></ul></body></html>

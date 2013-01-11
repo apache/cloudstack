@@ -1,0 +1,164 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+  http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+<section id="added-API-commands-4.0">
+  <title>Added API Commands in 4.0.0-incubating</title>
+  <itemizedlist>
+    <listitem>
+      <para>createCounter (Adds metric counter)</para>
+    </listitem>
+    <listitem>
+      <para>deleteCounter (Deletes a counter)</para>
+    </listitem>
+    <listitem>
+      <para>listCounters (List the counters)</para>
+    </listitem>
+    <listitem>
+      <para>createCondition (Creates a condition)</para>
+    </listitem>
+    <listitem>
+      <para>deleteCondition (Removes a condition)</para>
+    </listitem>
+    <listitem>
+      <para>listConditions (List Conditions for the specific user)</para>
+    </listitem>
+    <listitem>
+      <para>createTags. Add tags to one or more resources. Example:
+        <programlisting>command=createTags
+&amp;resourceIds=1,10,12
+&amp;resourceType=userVm
+&amp;tags[0].key=region
+&amp;tags[0].value=canada
+&amp;tags[1].key=city
+&amp;tags[1].value=Toronto				</programlisting></para>
+    </listitem>
+    <listitem>
+      <para>deleteTags. Remove tags from one or more resources. Example:
+        <programlisting>command=deleteTags
+&amp;resourceIds=1,12
+&amp;resourceType=Snapshot
+&amp;tags[0].key=city								</programlisting></para>
+    </listitem>
+    <listitem>
+      <para>listTags (Show currently defined resource tags)</para>
+    </listitem>
+    <listitem>
+      <para>createVPC (Creates a VPC)</para>
+    </listitem>
+    <listitem>
+      <para>listVPCs (Lists VPCs)</para>
+    </listitem>
+    <listitem>
+      <para>deleteVPC (Deletes a VPC)</para>
+    </listitem>
+    <listitem>
+      <para>updateVPC (Updates a VPC)</para>
+    </listitem>
+    <listitem>
+      <para>restartVPC (Restarts a VPC)</para>
+    </listitem>
+    <listitem>
+      <para>createVPCOffering (Creates VPC offering)</para>
+    </listitem>
+    <listitem>
+      <para>updateVPCOffering (Updates VPC offering)</para>
+    </listitem>
+    <listitem>
+      <para>deleteVPCOffering (Deletes VPC offering)</para>
+    </listitem>
+    <listitem>
+      <para>listVPCOfferings (Lists VPC offerings)</para>
+    </listitem>
+    <listitem>
+      <para>createPrivateGateway (Creates a private gateway)</para>
+    </listitem>
+    <listitem>
+      <para>listPrivateGateways (List private gateways)</para>
+    </listitem>
+    <listitem>
+      <para>deletePrivateGateway (Deletes a Private gateway)</para>
+    </listitem>
+    <listitem>
+      <para>createNetworkACL (Creates a ACL rule the given network (the network has to belong to
+        VPC))</para>
+    </listitem>
+    <listitem>
+      <para>deleteNetworkACL (Deletes a Network ACL)</para>
+    </listitem>
+    <listitem>
+      <para>listNetworkACLs (Lists all network ACLs)</para>
+    </listitem>
+    <listitem>
+      <para>createStaticRoute (Creates a static route)</para>
+    </listitem>
+    <listitem>
+      <para>deleteStaticRoute (Deletes a static route)</para>
+    </listitem>
+    <listitem>
+      <para>listStaticRoutes (Lists all static routes)</para>
+    </listitem>
+    <listitem>
+      <para>createVpnCustomerGateway (Creates site to site vpn customer gateway)</para>
+    </listitem>
+    <listitem>
+      <para>createVpnGateway (Creates site to site vpn local gateway)</para>
+    </listitem>
+    <listitem>
+      <para>createVpnConnection (Create site to site vpn connection)</para>
+    </listitem>
+    <listitem>
+      <para>deleteVpnCustomerGateway (Delete site to site vpn customer gateway)</para>
+    </listitem>
+    <listitem>
+      <para>deleteVpnGateway (Delete site to site vpn gateway)</para>
+    </listitem>
+    <listitem>
+      <para>deleteVpnConnection (Delete site to site vpn connection)</para>
+    </listitem>
+    <listitem>
+      <para>updateVpnCustomerGateway (Update site to site vpn customer gateway)</para>
+    </listitem>
+    <listitem>
+      <para>resetVpnConnection (Reset site to site vpn connection)</para>
+    </listitem>
+    <listitem>
+      <para>listVpnCustomerGateways (Lists site to site vpn customer gateways)</para>
+    </listitem>
+    <listitem>
+      <para>listVpnGateways (Lists site 2 site vpn gateways)</para>
+    </listitem>
+    <listitem>
+      <para>listVpnConnections (Lists site to site vpn connection gateways)</para>
+    </listitem>
+    <listitem>
+      <para>enableCiscoNexusVSM (Enables Nexus 1000v dvSwitch in &PRODUCT;.)</para>
+    </listitem>
+    <listitem>
+      <para>disableCiscoNexusVSM (Disables Nexus 1000v dvSwitch in &PRODUCT;.)</para>
+    </listitem>
+    <listitem>
+      <para>deleteCiscoNexusVSM (Deletes Nexus 1000v dvSwitch in &PRODUCT;.)</para>
+    </listitem>
+    <listitem>
+      <para>listCiscoNexusVSMs (Lists the control VLAN ID, packet VLAN ID, and data VLAN ID, as well
+        as the IP address of the Nexus 1000v dvSwitch.)</para>
+    </listitem>
+  </itemizedlist>
+</section>

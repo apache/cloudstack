@@ -1,0 +1,370 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>8.3. VMware vSphere Installation and Configuration</title><link rel="stylesheet" type="text/css" href="Common_Content/css/default.css" /><link rel="stylesheet" media="print" href="Common_Content/css/print.css" type="text/css" /><meta name="generator" content="publican 2.8" /><meta name="package" content="Apache_CloudStack-Installation_Guide-4.0.1-incubating-en-US-1-" /><link rel="home" href="index.html" title="CloudStack Installation Guide" /><link rel="up" href="hypervisor-installation.html" title="Chapter 8. Hypervisor Installation" /><link rel="prev" href="citrix-xenserver-installation.html" title="8.2. Citrix XenServer Installation for CloudStack" /><link rel="next" href="choosing-a-deployment_architecture.html" title="Chapter 9. Choosing a Deployment Architecture" /></head><body><p id="title"><a class="left" href="http://cloudstack.org"><img src="Common_Content/images/image_left.png" alt="Product Site" /></a><a class="right" href="http://docs.cloudstack.org"><img src="Common_Content/images/image_right.png" alt="Documentation Site" /></a></p><ul class="docnav"><li class="previous"><a accesskey="p" href="citrix-xenserver-installation.html"><strong>Prev</strong></a></li><li class="next"><a accesskey="n" href="choosing-a-deployment_architecture.html"><strong>Next</strong></a></li></ul><div xml:lang="en-US" class="section" id="vmware-install" lang="en-US"><div class="titlepage"><div><div><h2 class="title" id="vmware-install">8.3. VMware vSphere Installation and Configuration</h2></div></div></div><div class="para">
+		If you want to use the VMware vSphere hypervisor to run guest virtual machines, install vSphere on the host(s) in your cloud.
+	</div><div xml:lang="en-US" class="section" id="vmware-requirements" lang="en-US"><div class="titlepage"><div><div><h3 class="title" id="vmware-requirements">8.3.1. System Requirements for vSphere Hosts</h3></div></div></div><div class="section" id="vmware-requirements-software"><div class="titlepage"><div><div><h4 class="title" id="vmware-requirements-software">8.3.1.1. Software requirements:</h4></div></div></div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+					vSphere and vCenter, both version 4.1 or 5.0.
+				</div><div class="para">
+					vSphere Standard is recommended. Note however that customers need to consider the CPU constraints in place with vSphere licensing. See <a href="http://www.vmware.com/files/pdf/vsphere_pricing.pdf">http://www.vmware.com/files/pdf/vsphere_pricing.pdf</a> and discuss with your VMware sales representative.
+				</div><div class="para">
+					vCenter Server Standard is recommended.
+				</div></li><li class="listitem"><div class="para">
+					Be sure all the hotfixes provided by the hypervisor vendor are applied. Track the release of hypervisor patches through your hypervisor vendor's support channel, and apply patches as soon as possible after they are released. CloudStack will not track or notify you of required hypervisor patches. It is essential that your hosts are completely up to date with the provided hypervisor patches. The hypervisor vendor is likely to refuse to support any system that is not up to date with patches.
+				</div></li></ul></div><div class="warning"><div class="admonition_header"><h2>Apply All Necessary Hotfixes</h2></div><div class="admonition"><div class="para">
+				The lack of up-do-date hotfixes can lead to data corruption and lost VMs.
+			</div></div></div></div><div class="section" id="vmware-requirements-hardware"><div class="titlepage"><div><div><h4 class="title" id="vmware-requirements-hardware">8.3.1.2. Hardware requirements:</h4></div></div></div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+					The host must be certified as compatible with vSphere. See the VMware Hardware Compatibility Guide at <a href="http://www.vmware.com/resources/compatibility/search.php">http://www.vmware.com/resources/compatibility/search.php</a>.
+				</div></li><li class="listitem"><div class="para">
+					All hosts must be 64-bit and must support HVM (Intel-VT or AMD-V enabled).
+				</div></li><li class="listitem"><div class="para">
+					All hosts within a cluster must be homogenous. That means the CPUs must be of the same type, count, and feature flags.
+				</div></li><li class="listitem"><div class="para">
+					64-bit x86 CPU (more cores results in better performance)
+				</div></li><li class="listitem"><div class="para">
+					Hardware virtualization support required
+				</div></li><li class="listitem"><div class="para">
+					4 GB of memory
+				</div></li><li class="listitem"><div class="para">
+					36 GB of local disk
+				</div></li><li class="listitem"><div class="para">
+					At least 1 NIC
+				</div></li><li class="listitem"><div class="para">
+					Statically allocated IP Address
+				</div></li></ul></div></div><div class="section" id="vmware-requirements-vcenter"><div class="titlepage"><div><div><h4 class="title" id="vmware-requirements-vcenter">8.3.1.3. vCenter Server requirements:</h4></div></div></div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+					Processor - 2 CPUs 2.0GHz or higher Intel or AMD x86 processors. Processor requirements may be higher if the database runs on the same machine.
+				</div></li><li class="listitem"><div class="para">
+					Memory - 3GB RAM. RAM requirements may be higher if your database runs on the same machine.
+				</div></li><li class="listitem"><div class="para">
+					Disk storage - 2GB. Disk requirements may be higher if your database runs on the same machine.
+				</div></li><li class="listitem"><div class="para">
+					Microsoft SQL Server 2005 Express disk requirements. The bundled database requires up to 2GB free disk space to decompress the installation archive.
+				</div></li><li class="listitem"><div class="para">
+					Networking - 1Gbit or 10Gbit.
+				</div></li></ul></div><div class="para">
+			For more information, see "vCenter Server and the vSphere Client Hardware Requirements" at <a href="http://pubs.vmware.com/vsp40/wwhelp/wwhimpl/js/html/wwhelp.htm#href=install/c_vc_hw.html">http://pubs.vmware.com/vsp40/wwhelp/wwhimpl/js/html/wwhelp.htm#href=install/c_vc_hw.html</a>.
+		</div></div><div class="section" id="vmware-requirements-other"><div class="titlepage"><div><div><h4 class="title" id="vmware-requirements-other">8.3.1.4. Other requirements:</h4></div></div></div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+					VMware vCenter Standard Edition 4.1 or 5.0 must be installed and available to manage the vSphere hosts.
+				</div></li><li class="listitem"><div class="para">
+					vCenter must be configured to use the standard port 443 so that it can communicate with the CloudStack Management Server.
+				</div></li><li class="listitem"><div class="para">
+					You must re-install VMware ESXi if you are going to re-use a host from a previous install.
+				</div></li><li class="listitem"><div class="para">
+					CloudStack requires VMware vSphere 4.1 or 5.0. VMware vSphere 4.0 is not supported.
+				</div></li><li class="listitem"><div class="para">
+					All hosts must be 64-bit and must support HVM (Intel-VT or AMD-V enabled). All hosts within a cluster must be homogenous. That means the CPUs must be of the same type, count, and feature flags.
+				</div></li><li class="listitem"><div class="para">
+					The CloudStack management network must not be configured as a separate virtual network. The CloudStack management network is the same as the vCenter management network, and will inherit its configuration. See <a class="xref" href="vmware-install.html#vmware-physical-host-networking-config-vcenter-mgt">Section 8.3.5.2, “Configure vCenter Management Network”</a>.
+				</div></li><li class="listitem"><div class="para">
+					CloudStack requires ESXi. ESX is not supported.
+				</div></li><li class="listitem"><div class="para">
+					All resources used for CloudStack must be used for CloudStack only. CloudStack cannot share instance of ESXi or storage with other management consoles. Do not share the same storage volumes that will be used by CloudStack with a different set of ESXi servers that are not managed by CloudStack.
+				</div></li><li class="listitem"><div class="para">
+					Put all target ESXi hypervisors in a cluster in a separate Datacenter in vCenter.
+				</div></li><li class="listitem"><div class="para">
+					The cluster that will be managed by CloudStack should not contain any VMs. Do not run the management server, vCenter or any other VMs on the cluster that is designated for CloudStack use. Create a separate cluster for use of CloudStack and make sure that they are no VMs in this cluster.
+				</div></li><li class="listitem"><div class="para">
+					All the required VLANS must be trunked into all network switches that are connected to the ESXi hypervisor hosts. These would include the VLANS for Management, Storage, vMotion, and guest VLANs. The guest VLAN (used in Advanced Networking; see Network Setup) is a contiguous range of VLANs that will be managed by CloudStack. 
+				</div></li></ul></div></div></div><div class="section" id="vmware-preparation-checklist"><div class="titlepage"><div><div><h3 class="title" id="vmware-preparation-checklist">8.3.2. Preparation Checklist for VMware</h3></div></div></div><div class="para">
+			For a smoother installation, gather the following information before you start:
+		</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+					Information listed in <a class="xref" href="vmware-install.html#vmware-vcenter-checklist">Section 8.3.2.1, “vCenter Checklist”</a>
+				</div></li><li class="listitem"><div class="para">
+					Information listed in <a class="xref" href="vmware-install.html#vmware-network-checklist">Section 8.3.2.2, “Networking Checklist for VMware”</a>
+				</div></li></ul></div><div class="section" id="vmware-vcenter-checklist"><div class="titlepage"><div><div><h4 class="title" id="vmware-vcenter-checklist">8.3.2.1. vCenter Checklist</h4></div></div></div><div class="para">
+				You will need the following information about vCenter.
+			</div><div class="informaltable"><table border="1"><colgroup><col align="left" class="c1" width="33%" /><col align="left" class="c2" width="33%" /><col align="left" class="c3" width="33%" /></colgroup><thead><tr><th align="left">
+								<div class="para">
+									vCenter Requirement
+								</div>
+							</th><th align="left">
+								<div class="para">
+									Value
+								</div>
+							</th><th align="left">
+								<div class="para">
+									Notes
+								</div>
+							</th></tr></thead><tbody><tr><td align="left">
+								<div class="para">
+									vCenter User
+								</div>
+							</td><td align="left">
+								<div class="para">
+								</div>
+							</td><td align="left">
+								<div class="para">
+									This user must have admin privileges.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									vCenter User Password
+								</div>
+							</td><td align="left">
+								<div class="para">
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Password for the above user.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									vCenter Datacenter Name
+								</div>
+							</td><td align="left">
+								<div class="para">
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Name of the datacenter.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									vCenter Cluster Name
+								</div>
+							</td><td align="left">
+								<div class="para">
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Name of the cluster.
+								</div>
+							</td></tr></tbody></table></div></div><div class="section" id="vmware-network-checklist"><div class="titlepage"><div><div><h4 class="title" id="vmware-network-checklist">8.3.2.2. Networking Checklist for VMware</h4></div></div></div><div class="para">
+				You will need the following information about VLAN.
+			</div><div class="informaltable"><table border="1"><colgroup><col align="left" class="c1" width="33%" /><col align="left" class="c2" width="33%" /><col align="left" class="c3" width="33%" /></colgroup><thead><tr><th align="left">
+								<div class="para">
+									VLAN Information
+								</div>
+							</th><th align="left">
+								<div class="para">
+									Value
+								</div>
+							</th><th align="left">
+								<div class="para">
+									Notes
+								</div>
+							</th></tr></thead><tbody><tr><td align="left">
+								<div class="para">
+									ESXi VLAN
+								</div>
+							</td><td align="left">
+								<div class="para">
+								</div>
+							</td><td align="left">
+								<div class="para">
+									VLAN on which all your ESXi hypervisors reside.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									ESXI VLAN IP Address
+								</div>
+							</td><td align="left">
+								<div class="para">
+								</div>
+							</td><td align="left">
+								<div class="para">
+									IP Address Range in the ESXi VLAN. One address per Virtual Router is used from this range.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									ESXi VLAN IP Gateway
+								</div>
+							</td><td align="left">
+								<div class="para">
+								</div>
+							</td><td align="left">
+								<div class="para">
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									ESXi VLAN Netmask
+								</div>
+							</td><td align="left">
+								<div class="para">
+								</div>
+							</td><td align="left">
+								<div class="para">
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									Management Server VLAN
+								</div>
+							</td><td align="left">
+								<div class="para">
+								</div>
+							</td><td align="left">
+								<div class="para">
+									VLAN on which the CloudStack Management server is installed.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									Public VLAN
+								</div>
+							</td><td align="left">
+								<div class="para">
+								</div>
+							</td><td align="left">
+								<div class="para">
+									VLAN for the Public Network.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									Public VLAN Gateway
+								</div>
+							</td><td align="left">
+								<div class="para">
+								</div>
+							</td><td align="left">
+								<div class="para">
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									Public VLAN Netmask
+								</div>
+							</td><td align="left">
+								<div class="para">
+								</div>
+							</td><td align="left">
+								<div class="para">
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									Public VLAN IP Address Range
+								</div>
+							</td><td align="left">
+								<div class="para">
+								</div>
+							</td><td align="left">
+								<div class="para">
+									Range of Public IP Addresses available for CloudStack use. These addresses will be used for virtual router on CloudStack to route private traffic to external networks.
+								</div>
+							</td></tr><tr><td align="left">
+								<div class="para">
+									VLAN Range for Customer use
+								</div>
+							</td><td align="left">
+								<div class="para">
+								</div>
+							</td><td align="left">
+								<div class="para">
+									A contiguous range of non-routable VLANs. One VLAN will be assigned for each customer.
+								</div>
+							</td></tr></tbody></table></div></div></div><div class="section" id="vmware-vsphere-installation-steps"><div class="titlepage"><div><div><h3 class="title" id="vmware-vsphere-installation-steps">8.3.3. vSphere Installation Steps</h3></div></div></div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+					If you haven't already, you'll need to download and purchase vSphere from the VMware Website (<a href="https://www.vmware.com/tryvmware/index.php?p=vmware-vsphere&amp;lp=1">https://www.vmware.com/tryvmware/index.php?p=vmware-vsphere&amp;lp=1</a>) and install it by following the VMware vSphere Installation Guide.
+				</div></li><li class="listitem"><div class="para">
+					Following installation, perform the following configuration, which are described in the next few sections:
+				</div><div class="informaltable"><table border="1"><colgroup><col align="left" class="c1" width="50%" /><col align="left" class="c2" width="50%" /></colgroup><thead><tr><th align="left">
+									<div class="para">
+										Required
+									</div>
+								</th><th align="left">
+									<div class="para">
+										Optional
+									</div>
+								</th></tr></thead><tbody><tr><td align="left">
+									<div class="para">
+										ESXi host setup
+									</div>
+								</td><td align="left">
+									<div class="para">
+										NIC bonding
+									</div>
+								</td></tr><tr><td align="left">
+									<div class="para">
+										Configure host physical networking, virtual switch, vCenter Management Network, and extended port range
+									</div>
+								</td><td align="left">
+									<div class="para">
+										Multipath storage
+									</div>
+								</td></tr><tr><td align="left">
+									<div class="para">
+										Prepare storage for iSCSI
+									</div>
+								</td><td align="left">
+									<div class="para">
+									</div>
+								</td></tr><tr><td align="left">
+									<div class="para">
+										Configure clusters in vCenter and add hosts to them, or add hosts without clusters to vCenter
+									</div>
+								</td><td align="left">
+									<div class="para">
+									</div>
+								</td></tr></tbody></table></div></li></ol></div></div><div class="section" id="vmware-esxi-host-setup"><div class="titlepage"><div><div><h3 class="title" id="vmware-esxi-host-setup">8.3.4. ESXi Host setup</h3></div></div></div><div class="para">
+			All ESXi hosts should enable CPU hardware virtualization support in BIOS. Please note hardware virtualization support is not enabled by default on most servers.
+		</div></div><div class="section" id="vmware-physical-host-networking"><div class="titlepage"><div><div><h3 class="title" id="vmware-physical-host-networking">8.3.5. Physical Host Networking</h3></div></div></div><div class="para">
+			You should have a plan for cabling the vSphere hosts. Proper network configuration is required before adding a vSphere host to CloudStack. To configure an ESXi host, you can use vClient to add it as standalone host to vCenter first. Once you see the host appearing in the vCenter inventory tree, click the host node in the inventory tree, and navigate to the Configuration tab.
+		</div><div class="mediaobject"><img src="./images/vmware-physical-network.png" width="444" alt="vsphereclient.png: vSphere client" /></div><div class="para">
+			In the host configuration tab, click the "Hardware/Networking" link to bring up the networking configuration page as above.
+		</div><div class="section" id="vmware-physical-host-networking-config-vswitch"><div class="titlepage"><div><div><h4 class="title" id="vmware-physical-host-networking-config-vswitch">8.3.5.1. Configure Virtual Switch</h4></div></div></div><div class="para">
+				A default virtual switch vSwitch0 is created. CloudStack requires all ESXi hosts in the cloud to use the same set of virtual switch names. If you change the default virtual switch name, you will need to configure one or more CloudStack configuration variables as well.
+			</div><div class="section" id="vmware-physical-host-networking-config-vswitch-separate-traffic"><div class="titlepage"><div><div><h5 class="title" id="vmware-physical-host-networking-config-vswitch-separate-traffic">8.3.5.1.1. Separating Traffic</h5></div></div></div><div class="para">
+					CloudStack allows you to use vCenter to configure three separate networks per ESXi host. These networks are identified by the name of the vSwitch they are connected to. The allowed networks for configuration are public (for traffic to/from the public internet), guest (for guest-guest traffic), and private (for management and usually storage traffic). You can use the default virtual switch for all three, or create one or two other vSwitches for those traffic types.
+				</div><div class="para">
+					If you want to separate traffic in this way you should first create and configure vSwitches in vCenter according to the vCenter instructions. Take note of the vSwitch names you have used for each traffic type. You will configure CloudStack to use these vSwitches.
+				</div></div><div class="section" id="vmware-physical-host-networking-config-vswitch-increasing-port"><div class="titlepage"><div><div><h5 class="title" id="vmware-physical-host-networking-config-vswitch-increasing-port">8.3.5.1.2. Increasing Ports</h5></div></div></div><div class="para">
+					By default a virtual switch on ESXi hosts is created with 56 ports. We recommend setting it to 4088, the maximum number of ports allowed. To do that, click the "Properties..." link for virtual switch (note this is not the Properties link for Networking).
+				</div><div class="mediaobject"><img src="./images/vmware-increase-ports.png" width="444" alt="vsphereclient.png: vSphere client" /></div><div class="para">
+					In vSwitch properties dialog, select the vSwitch and click Edit. You should see the following dialog:
+				</div><div class="mediaobject"><img src="./images/vmware-vswitch-properties.png" width="444" alt="vsphereclient.png: vSphere client" /></div><div class="para">
+					In this dialog, you can change the number of switch ports. After you've done that, ESXi hosts are required to reboot in order for the setting to take effect.
+				</div></div></div><div class="section" id="vmware-physical-host-networking-config-vcenter-mgt"><div class="titlepage"><div><div><h4 class="title" id="vmware-physical-host-networking-config-vcenter-mgt">8.3.5.2. Configure vCenter Management Network</h4></div></div></div><div class="para">
+				In the vSwitch properties dialog box, you may see a vCenter management network. This same network will also be used as the CloudStack management network. CloudStack requires the vCenter management network to be configured properly. Select the management network item in the dialog, then click Edit.
+			</div><div class="mediaobject"><img src="./images/vmware-mgt-network-properties.png" width="444" alt="vsphereclient.png: vSphere client" /></div><div class="para">
+				Make sure the following values are set:
+			</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+						VLAN ID set to the desired ID
+					</div></li><li class="listitem"><div class="para">
+						vMotion enabled.
+					</div></li><li class="listitem"><div class="para">
+						Management traffic enabled.
+					</div></li></ul></div><div class="para">
+				If the ESXi hosts have multiple VMKernel ports, and ESXi is not using the default value "Management Network" as the management network name, you must follow these guidelines to configure the management network port group so that CloudStack can find it:
+			</div><div class="itemizedlist"><ul><li class="listitem"><div class="para">
+						Use one label for the management network port across all ESXi hosts.
+					</div></li><li class="listitem"><div class="para">
+						In the CloudStack UI, go to Configuration - Global Settings and set vmware.management.portgroup to the management network label from the ESXi hosts.
+					</div></li></ul></div></div><div class="section" id="vmware-physical-networking-extend-port-console-proxy"><div class="titlepage"><div><div><h4 class="title" id="vmware-physical-networking-extend-port-console-proxy">8.3.5.3. Extend Port Range for CloudStack Console Proxy</h4></div></div></div><div class="para">
+				(Applies only to VMware vSphere version 4.x)
+			</div><div class="para">
+				You need to extend the range of firewall ports that the console proxy works with on the hosts. This is to enable the console proxy to work with VMware-based VMs. The default additional port range is 59000-60000. To extend the port range, log in to the VMware ESX service console on each host and run the following commands:
+			</div><pre class="programlisting">
+esxcfg-firewall -o 59000-60000,tcp,in,vncextras
+esxcfg-firewall -o 59000-60000,tcp,out,vncextras
+</pre></div><div class="section" id="vmware-physical-networking-config-vsphere-nic-bond"><div class="titlepage"><div><div><h4 class="title" id="vmware-physical-networking-config-vsphere-nic-bond">8.3.5.4. Configure NIC Bonding for vSphere</h4></div></div></div><div class="para">
+				NIC bonding on vSphere hosts may be done according to the vSphere installation guide.
+			</div></div></div><div class="section" id="vmware-vsphere-iscsi-storage-preparation"><div class="titlepage"><div><div><h3 class="title" id="vmware-vsphere-iscsi-storage-preparation">8.3.6. Storage Preparation for vSphere (iSCSI only)</h3></div></div></div><div class="para">
+			Use of iSCSI requires preparatory work in vCenter. You must add an iSCSI target and create an iSCSI datastore.
+		</div><div class="para">
+			If you are using NFS, skip this section.
+		</div><div class="section" id="vmware-vsphere-iscsi-storage-enable-initiator"><div class="titlepage"><div><div><h4 class="title" id="vmware-vsphere-iscsi-storage-enable-initiator">8.3.6.1. Enable iSCSI initiator for ESXi hosts</h4></div></div></div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+						In vCenter, go to hosts and Clusters/Configuration, and click Storage Adapters link. You will see:
+					</div><div class="mediaobject"><img src="./images/vmware-iscsi-initiator.png" width="444" alt="vsphereclient.png: vSphere client" /></div></li><li class="listitem"><div class="para">
+						Select iSCSI software adapter and click Properties.
+					</div><div class="mediaobject"><img src="./images/vmware-iscsi-initiator-properties.png" width="444" alt="vsphereclient.png: vSphere client" /></div></li><li class="listitem"><div class="para">
+						Click the Configure... button.
+					</div><div class="mediaobject"><img src="./images/vmware-iscsi-general.png" alt="vsphereclient.png: vSphere client" /></div></li><li class="listitem"><div class="para">
+						Check Enabled to enable the initiator.
+					</div></li><li class="listitem"><div class="para">
+						Click OK to save.
+					</div></li></ol></div></div><div class="section" id="vmware-vsphere-iscsi-storage-add-target"><div class="titlepage"><div><div><h4 class="title" id="vmware-vsphere-iscsi-storage-add-target">8.3.6.2. Add iSCSI target</h4></div></div></div><div class="para">
+				Under the properties dialog, add the iSCSI target info:
+			</div><div class="mediaobject"><img src="./images/vmware-iscsi-target-add.png" alt="vsphereclient.png: vSphere client" /></div><div class="para">
+				Repeat these steps for all ESXi hosts in the cluster.
+			</div></div><div class="section" id="vmware-vsphere-iscsi-storage-create-datastore"><div class="titlepage"><div><div><h4 class="title" id="vmware-vsphere-iscsi-storage-create-datastore">8.3.6.3. Create an iSCSI datastore</h4></div></div></div><div class="para">
+				You should now create a VMFS datastore. Follow these steps to do so:
+			</div><div class="orderedlist"><ol><li class="listitem"><div class="para">
+						Select Home/Inventory/Datastores.
+					</div></li><li class="listitem"><div class="para">
+						Right click on the datacenter node.
+					</div></li><li class="listitem"><div class="para">
+						Choose Add Datastore... command.
+					</div></li><li class="listitem"><div class="para">
+						Follow the wizard to create a iSCSI datastore.
+					</div></li></ol></div><div class="para">
+				This procedure should be done on one host in the cluster. It is not necessary to do this on all hosts.
+			</div><div class="mediaobject"><img src="./images/vmware-iscsi-datastore.png" width="444" alt="vsphereclient.png: vSphere client" /></div></div><div class="section" id="vmware-vsphere-iscsi-storage-multipathing"><div class="titlepage"><div><div><h4 class="title" id="vmware-vsphere-iscsi-storage-multipathing">8.3.6.4. Multipathing for vSphere (Optional)</h4></div></div></div><div class="para">
+				Storage multipathing on vSphere nodes may be done according to the vSphere installation guide.
+			</div></div></div><div class="section" id="vmware-add-hosts-config-vsphere-cluster"><div class="titlepage"><div><div><h3 class="title" id="vmware-add-hosts-config-vsphere-cluster">8.3.7. Add Hosts or Configure Clusters (vSphere)</h3></div></div></div><div class="para">
+			Use vCenter to create a vCenter cluster and add your desired hosts to the cluster. You will later add the entire cluster to CloudStack. (see <a class="xref" href="cluster-add.html#add-clusters-vsphere">Section 6.4.2, “Add Cluster: vSphere”</a>).
+		</div></div></div><ul class="docnav"><li class="previous"><a accesskey="p" href="citrix-xenserver-installation.html"><strong>Prev</strong>8.2. Citrix XenServer Installation for CloudStack</a></li><li class="up"><a accesskey="u" href="#"><strong>Up</strong></a></li><li class="home"><a accesskey="h" href="index.html"><strong>Home</strong></a></li><li class="next"><a accesskey="n" href="choosing-a-deployment_architecture.html"><strong>Next</strong>Chapter 9. Choosing a Deployment Architecture</a></li></ul></body></html>

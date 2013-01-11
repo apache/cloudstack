@@ -1,0 +1,36 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
+<section id="accept-membership-invite">
+    <title>Accepting a Membership Invitation</title>
+    <para>If you have received an invitation to join a &PRODUCT; project, and you want to accept the invitation, follow these steps:</para>
+  <orderedlist>
+      <listitem><para>Log in to the &PRODUCT; UI.</para></listitem>
+      <listitem><para>In the left navigation, click Projects.</para></listitem>
+      <listitem><para>In Select View, choose Invitations.</para></listitem>
+      <listitem><para>If you see the invitation listed onscreen, click the Accept button.</para> <para>Invitations listed on screen were sent to you using your &PRODUCT; account name.</para></listitem>
+      <listitem><para>If you received an email invitation, click the Enter Token button, and provide the project ID and unique ID code (token) from the email.</para></listitem>
+   </orderedlist>
+   </section>
+      

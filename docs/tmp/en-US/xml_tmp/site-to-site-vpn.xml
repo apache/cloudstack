@@ -1,0 +1,62 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+<section id="site-to-site-vpn">
+  <title>Setting Up a Site-to-Site VPN Connection</title>
+  <para>A Site-to-Site VPN connection helps you establish a secure connection from an enterprise
+    datacenter to the cloud infrastructure. This allows users to access the guest VMs by
+    establishing a VPN connection to the virtual router of the account from a device in the
+    datacenter of the enterprise. Having this facility eliminates the need to establish VPN
+    connections to individual VMs.</para>
+  <para>The supported endpoints on the remote datacenters are: </para>
+  <itemizedlist>
+    <listitem>
+      <para>Cisco ISR with IOS 12.4 or later</para>
+    </listitem>
+    <listitem>
+      <para>Juniper J-Series routers with JunOS 9.5 or later</para>
+    </listitem>
+  </itemizedlist>
+  <note>
+    <para>In addition to the specific Cisco and Juniper devices listed above, the expectation is
+      that any Cisco or Juniper device running on the supported operating systems are able to
+      establish VPN connections.</para>
+  </note>
+  <para> To set up a Site-to-Site VPN connection, perform the following:</para>
+  <orderedlist>
+    <listitem>
+      <para>Create a Virtual Private Cloud (VPC).</para>
+      <para>See <xref linkend="configure-vpc"/>.</para>
+    </listitem>
+    <listitem>
+      <para>Create a VPN Customer Gateway.</para>
+    </listitem>
+    <listitem>
+      <para>Create a VPN gateway for the VPC that you created.</para>
+    </listitem>
+    <listitem>
+      <para>Create VPN connection from the VPC VPN gateway to the customer VPN gateway.</para>
+    </listitem>
+  </orderedlist>
+  <xi:include href="create-vpn-customer-gateway.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+  <xi:include href="create-vpn-gateway-for-vpc.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+  <xi:include href="create-vpn-connection-vpc.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+  <xi:include href="delete-reset-vpn.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+</section>

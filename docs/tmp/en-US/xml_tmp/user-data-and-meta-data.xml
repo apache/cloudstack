@@ -1,0 +1,45 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
+<section id="user-data-and-meta-data">
+    <title>User Data and Meta Data</title>
+    <para>&PRODUCT; provides API access to attach user data to a deployed VM. Deployed VMs also have access to instance metadata via the virtual router.</para>
+    <para>User data can be accessed once the IP address of the virtual router is known. Once the IP address is known, use the following steps to access the user data:</para>
+    <orderedlist>
+        <listitem><para>Run the following command to find the virtual router.</para>
+            <programlisting># cat /var/lib/dhclient/dhclient-eth0.leases | grep dhcp-server-identifier | tail -1</programlisting>
+        </listitem>
+        <listitem><para>Access user data by running the following command using the result of the above command</para><programlisting># curl http://10.1.1.1/latest/user-data</programlisting></listitem>
+    </orderedlist>
+    <para>Meta Data can be accessed similarly, using a URL of the form http://10.1.1.1/latest/meta-data/{metadata type}. (For backwards compatibility, the previous URL http://10.1.1.1/latest/{metadata type} is also supported.) For metadata type, use one of the following:</para>
+    <itemizedlist>
+        <listitem><para>service-offering. A description of the VMs service offering</para></listitem>
+        <listitem><para>availability-zone. The Zone name</para></listitem>
+        <listitem><para>local-ipv4. The guest IP of the VM</para></listitem>
+        <listitem><para>local-hostname. The hostname of the VM</para></listitem>
+        <listitem><para>public-ipv4. The first public IP for the router. (E.g. the first IP of eth2)</para></listitem>
+        <listitem><para>public-hostname. This is the same as public-ipv4</para></listitem>
+        <listitem><para>instance-id. The instance name of the VM</para></listitem>
+    </itemizedlist>
+</section>
