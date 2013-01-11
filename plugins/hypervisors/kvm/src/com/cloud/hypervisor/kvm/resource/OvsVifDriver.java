@@ -84,11 +84,11 @@ public class OvsVifDriver extends VifDriverBase {
                     && !vlanId.equalsIgnoreCase("untagged")) {
                 if(trafficLabel != null && !trafficLabel.isEmpty()) {
                     s_logger.debug("creating a vlan dev and bridge for guest traffic per traffic label " + trafficLabel);
-                    String brName = createVlanBr(vlanId, _pifs.get(trafficLabel));
-                    intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType));
+                    intf.defBridgeNet(_pifs.get(trafficLabel), null, nic.getMac(), getGuestNicModel(guestOsType));
+                    intf.setVlanTag(Integer.parseInt(vlanId));
                 } else {
-                    String brName = createVlanBr(vlanId, _pifs.get("private"));
-                    intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType));
+                    intf.defBridgeNet(_pifs.get("private"), null, nic.getMac(), getGuestNicModel(guestOsType));
+                    intf.setVlanTag(Integer.parseInt(vlanId));
                 }
             } else if (nic.getBroadcastType() == Networks.BroadcastDomainType.Lswitch) {
             	s_logger.debug("nic " + nic + " needs to be connected to LogicalSwitch " + logicalSwitchUuid);
