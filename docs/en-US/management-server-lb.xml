@@ -19,12 +19,12 @@
   under the License.
 -->
 <section id="management-server-lb">
-  <title>Setting Zone VLAN and Running VM Maximums</title>
-  <para>&PRODUCT; can use a load balancer to provide a virtual IP for multiple Management
-    Servers. The administrator is responsible for creating the load balancer rules for the
-    Management Servers. The application requires persistence or stickiness across multiple sessions.
-    The following chart lists the ports that should be load balanced and whether or not persistence
-    is required.</para>
+  <title>Management Server Load Balancing</title>
+  <para>&PRODUCT; can use a load balancer to provide a virtual IP for multiple Management Servers.
+    The administrator is responsible for creating the load balancer rules for the Management
+    Servers. The application requires persistence or stickiness across multiple sessions. The
+    following chart lists the ports that should be load balanced and whether or not persistence is
+    required.</para>
   <para>Even if persistence is not required, enabling it is permitted.</para>
   <informaltable>
     <tgroup cols="4" align="left" colsep="1" rowsep="1">

@@ -14,19 +14,12 @@
   Unless required by applicable law or agreed to in writing,
   software distributed under the License is distributed on an
   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-  KIND, either express or implied.  See the License for the
+  KIND, either express or implied. See the License for the
   specific language governing permissions and limitations
   under the License.
 -->
-<section id="hardware-firewall">
-  <title>Hardware Firewall</title>
-  <para>All deployments should have a firewall protecting the management server; see Generic
-    Firewall Provisions. Optionally, some deployments may also have a Juniper SRX firewall that will
-    be the default gateway for the guest networks; see <xref
-      linkend="external-guest-firewall-integration"/>.</para>
-  <xi:include href="generic-firewall-provisions.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-  <xi:include href="external-guest-firewall-integration.xml"
-    xmlns:xi="http://www.w3.org/2001/XInclude"/>
-  <xi:include href="lb-services.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-  <xi:include href="inline-config-lb-fw.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+<section id="lb-services">
+  <title>Load Balancing Services</title>
+  <xi:include href="external-guest-lb-integration.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+  <xi:include href="management-server-lb.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
 </section>
