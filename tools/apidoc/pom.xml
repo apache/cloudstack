@@ -57,7 +57,7 @@
                                 <argument>${client.config.jars}</argument>
                                 <argument>./target</argument>
                                 <argument>-f</argument>
-                                <argument>${client.config.conf}/commands.properties,${client.config.conf}/commands-ext.properties,${client.config.conf}/virtualrouter_commands.properties,${client.config.conf}/nicira-nvp_commands.properties,${client.config.conf}/api-discovery_commands.properties </argument>
+                                <argument>${client.config.conf}/commands.properties,${client.config.conf}/commands-ext.properties,${client.config.conf}/virtualrouter_commands.properties,${client.config.conf}/nicira-nvp_commands.properties</argument>
                             </arguments>
                         </configuration>
                     </execution>

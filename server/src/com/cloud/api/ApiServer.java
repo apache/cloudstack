@@ -51,9 +51,9 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import com.cloud.utils.ReflectUtil;
-import org.apache.cloudstack.acl.APIAccessChecker;
 import org.apache.cloudstack.acl.APILimitChecker;
-import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.APIChecker;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
@@ -149,8 +149,8 @@ public class ApiServer implements HttpRequestHandler {
 
     @Inject(adapter = APILimitChecker.class)
     protected Adapters<APILimitChecker> _apiLimitCheckers;
-    @Inject(adapter = APIAccessChecker.class)
-    protected Adapters<APIAccessChecker> _apiAccessCheckers;
+    @Inject(adapter = APIChecker.class)
+    protected Adapters<APIChecker> _apiAccessCheckers;
 
     private Account _systemAccount = null;
     private User _systemUser = null;
@@ -564,14 +564,14 @@ public class ApiServer implements HttpRequestHandler {
             	    }
             	}
                 if (!isCommandAvailable(user, commandName)) {
-                    s_logger.warn("The given command:" + commandName + " does not exist or it is not available for user");
+                    s_logger.debug("The given command:" + commandName + " does not exist or it is not available for user with id:" + userId);
                     throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command does not exist or it is not available for user");
                 }
                 return true;
             } else {
                 // check against every available command to see if the command exists or not
-                if (!isCommandAvailable(null, commandName) && !commandName.equals("login") && !commandName.equals("logout")) {
-                    s_logger.warn("The given command:" + commandName + " does not exist or it is not available for user");
+                if (!doesCommandExist(commandName) && !commandName.equals("login") && !commandName.equals("logout")) {
+                    s_logger.debug("The given command:" + commandName + " does not exist or it is not available for user with id:" + userId);
                     throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command does not exist or it is not available for user");
                 }
             }
@@ -665,8 +665,8 @@ public class ApiServer implements HttpRequestHandler {
             UserContext.updateContext(user.getId(), account, null);
 
             if (!isCommandAvailable(user, commandName)) {
-                s_logger.warn("The given command:" + commandName + " does not exist or it is not available for user");
-                throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command:" + commandName + " does not exist or it is not available for user");
+                s_logger.debug("The given command:" + commandName + " does not exist or it is not available for user");
+                throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command:" + commandName + " does not exist or it is not available for user with id:" + userId);
             }
 
             // verify secret key exists
@@ -802,6 +802,7 @@ public class ApiServer implements HttpRequestHandler {
         return true;
     }
 
+
     private boolean isRequestAllowed(User user) {
         Account account = ApiDBUtils.findAccountById(user.getAccountId());
         if ( _accountMgr.isRootAdmin(account.getType()) ){
@@ -816,10 +817,25 @@ public class ApiServer implements HttpRequestHandler {
         return true;
     }
 
+    private boolean doesCommandExist(String apiName) {
+        for (APIChecker apiChecker : _apiAccessCheckers) {
+            // If any checker has api info on the command, return true
+            if (apiChecker.checkExistence(apiName))
+                return true;
+        }
+        return false;
+    }
+
     private boolean isCommandAvailable(User user, String commandName) {
-        for (APIAccessChecker apiChecker : _apiAccessCheckers) {
+        if (user == null) {
+            return false;
+        }
+
+        Account account = _accountMgr.getAccount(user.getAccountId());
+        RoleType roleType = _accountMgr.getRoleType(account);
+        for (APIChecker apiChecker : _apiAccessCheckers) {
             // Fail the checking if any checker fails to verify
-            if (!apiChecker.canAccessAPI(user, commandName))
+            if (!apiChecker.checkAccess(roleType, commandName))
                 return false;
         }
         return true;

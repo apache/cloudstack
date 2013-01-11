@@ -14,19 +14,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.server;
+package org.apache.cloudstack.acl;
 
+import org.apache.cloudstack.acl.RoleType;
+import com.cloud.utils.component.Adapter;
 
-import com.cloud.utils.PropertiesUtil;
-
-import java.util.Map;
-
-public class ManagementServerSimulatorImpl extends ManagementServerExtImpl {
-    @Override
-    public Map<String, String> getProperties() {
-        Map<String, String> apiNameRoleMaskMapping = super.getProperties();
-        apiNameRoleMaskMapping.putAll(PropertiesUtil.processConfigFile(new String[]
-                {"commands-simulator.properties"}));
-        return apiNameRoleMaskMapping;
-    }
+// APIChecker checks the ownership and access control to API requests
+public interface APIChecker extends Adapter {
+    // Interface for checking access for a role using apiname
+    boolean checkAccess(RoleType roleType, String apiCommandName);
+    // Interface for checking existence of an api by name
+    boolean checkExistence(String apiCommandName);
 }
