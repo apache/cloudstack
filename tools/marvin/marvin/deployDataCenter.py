@@ -289,7 +289,7 @@ class deployDataCenters():
             for pnet in zone.physical_networks:
                 phynetwrk = self.createPhysicalNetwork(pnet, zoneId)
                 self.configureProviders(phynetwrk, pnet.providers)
-                self.updatePhysicalNetwork(phynetwrk.id, "Enabled", vlan=zone.vlan)
+                self.updatePhysicalNetwork(phynetwrk.id, "Enabled", vlan=pnet.vlan)
 
             if zone.networktype == "Basic":
                 listnetworkoffering = listNetworkOfferings.listNetworkOfferingsCmd()
