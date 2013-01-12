@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.annotation.PostConstruct;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
@@ -36,6 +37,7 @@ import javax.servlet.http.HttpSession;
 import org.apache.cloudstack.api.IdentityService;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.HostVO;
@@ -57,6 +59,7 @@ import com.cloud.vm.VirtualMachineManager;
  * Console access : /conosole?cmd=access&vm=xxx
  * Authentication : /console?cmd=auth&vm=xxx&sid=xxx
  */
+@Component("consoleServlet")
 public class ConsoleProxyServlet extends HttpServlet {
     private static final long serialVersionUID = -5515382620323808168L;
     public static final Logger s_logger = Logger.getLogger(ConsoleProxyServlet.class.getName());
@@ -68,6 +71,15 @@ public class ConsoleProxyServlet extends HttpServlet {
     @Inject ManagementServer _ms;
     @Inject IdentityService _identityService; 
 
+    static ManagementServer s_ms;
+    public ConsoleProxyServlet() {
+    }
+    
+    @PostConstruct
+    void initComponent() {
+    	s_ms = _ms;
+    }
+    
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) {
         doGet(req, resp);
@@ -398,7 +410,7 @@ public class ConsoleProxyServlet extends HttpServlet {
 
             long ts = normalizedHashTime.getTime();
             ts = ts/60000;		// round up to 1 minute
-            String secretKey = _ms.getHashKey();
+            String secretKey = s_ms.getHashKey();
 
             SecretKeySpec keySpec = new SecretKeySpec(secretKey.getBytes(), "HmacSHA1");
             mac.init(keySpec);

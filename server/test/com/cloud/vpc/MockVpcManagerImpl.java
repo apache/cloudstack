@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
@@ -57,7 +58,7 @@ import com.cloud.vpc.dao.MockVpcDaoImpl;
 
 @Local(value = { VpcManager.class, VpcService.class })
 public class MockVpcManagerImpl implements VpcManager, Manager{
-    MockVpcDaoImpl _vpcDao = ComponentLocator.inject(MockVpcDaoImpl.class);
+    @Inject MockVpcDaoImpl _vpcDao;
 
     /* (non-Javadoc)
      * @see com.cloud.network.vpc.VpcService#getVpcOffering(long)

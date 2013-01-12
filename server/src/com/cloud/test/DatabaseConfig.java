@@ -359,7 +359,7 @@ public class DatabaseConfig {
             s_logger.error("error starting database config, missing initial data file");
         } else {
             try {
-                DatabaseConfig config = ComponentContext.inject(DatabaseConfig.class, args[0]);
+                DatabaseConfig config = ComponentContext.inject(DatabaseConfig.class);
                 config.doVersionCheck();
                 config.doConfig();
                 System.exit(0);

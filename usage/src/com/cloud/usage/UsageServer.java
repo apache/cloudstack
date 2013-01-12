@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.usage;
 
+import javax.inject.Inject;
+
 import org.apache.log4j.Logger;
 
 
@@ -24,6 +26,7 @@ public class UsageServer {
     private static final Logger s_logger = Logger.getLogger(UsageServer.class.getName());
     public static final String Name = "usage-server";
 
+    @Inject UsageManager mgr; 
     /**
      * @param args
      */
@@ -38,7 +41,6 @@ public class UsageServer {
     }
 
     public void start() {
-        UsageManager mgr = new UsageManager();
         if (mgr != null) {
             if (s_logger.isInfoEnabled()) {
                 s_logger.info("UsageServer ready...");

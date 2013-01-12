@@ -67,7 +67,7 @@ public class TestSyncQueueManager extends TestCase {
                         mgr.purgeItem(item.getId());
                     }
                     try {
-                        Thread.sleep(getRandomMilliseconds(1, 10));
+                        Thread.sleep(100);
                     } catch (InterruptedException e) {
                     }
                 }
@@ -90,7 +90,7 @@ public class TestSyncQueueManager extends TestCase {
                     }
 
                     try {
-                        Thread.sleep(getRandomMilliseconds(1, 10));
+                        Thread.sleep(100);
                     } catch (InterruptedException e) {
                     }
                 }
@@ -138,7 +138,7 @@ public class TestSyncQueueManager extends TestCase {
                         }
                     }
                     try {
-                        Thread.sleep(getRandomMilliseconds(1, 10));
+                        Thread.sleep(100);
                     } catch (InterruptedException e) {
                     }
                 }
@@ -162,7 +162,7 @@ public class TestSyncQueueManager extends TestCase {
                     }
 
                     try {
-                        Thread.sleep(getRandomMilliseconds(1, 10));
+                        Thread.sleep(100);
                     } catch (InterruptedException e) {
                     }
                 }

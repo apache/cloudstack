@@ -22,6 +22,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.usage.UsageVPNUserVO;
@@ -37,9 +40,17 @@ import com.cloud.utils.Pair;
 public class VPNUserUsageParser {
     public static final Logger s_logger = Logger.getLogger(VPNUserUsageParser.class.getName());
     
-    private static ComponentLocator _locator = ComponentLocator.getLocator(UsageServer.Name, "usage-components.xml", "log4j-cloud_usage");
-    private static UsageDao m_usageDao = _locator.getDao(UsageDao.class);
-    private static UsageVPNUserDao m_usageVPNUserDao = _locator.getDao(UsageVPNUserDao.class);
+    private static UsageDao m_usageDao;
+    private static UsageVPNUserDao m_usageVPNUserDao;
+
+    @Inject private UsageDao _usageDao;
+    @Inject private UsageVPNUserDao _usageVPNUserDao;
+    
+    @PostConstruct
+    void init() {
+    	m_usageDao = _usageDao;
+    	m_usageVPNUserDao = _usageVPNUserDao;
+    }
     
     public static boolean parse(AccountVO account, Date startDate, Date endDate) {
         if (s_logger.isDebugEnabled()) {

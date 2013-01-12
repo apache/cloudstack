@@ -23,6 +23,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
+import javax.inject.Inject;
+
 import junit.framework.TestCase;
 
 import org.apache.log4j.Logger;
@@ -36,6 +38,9 @@ import com.cloud.utils.db.Transaction;
 
 public class InstanceGroup218To224UpgradeTest extends TestCase {
     private static final Logger s_logger = Logger.getLogger(InstanceGroup218To224UpgradeTest.class);
+
+    @Inject VersionDaoImpl dao;
+    @Inject DatabaseUpgradeChecker checker;
 
     @Override
     @Before
@@ -54,9 +59,6 @@ public class InstanceGroup218To224UpgradeTest extends TestCase {
         
         PreparedStatement pstmt;
         ResultSet rs;
-        
-        VersionDaoImpl dao = ComponentLocator.inject(VersionDaoImpl.class);
-        DatabaseUpgradeChecker checker = ComponentLocator.inject(DatabaseUpgradeChecker.class);
         
         String version = dao.getCurrentVersion();
         

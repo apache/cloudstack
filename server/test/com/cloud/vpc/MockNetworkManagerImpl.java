@@ -66,7 +66,6 @@ import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.*;
 import com.cloud.vpc.dao.MockVpcVirtualRouterElement;

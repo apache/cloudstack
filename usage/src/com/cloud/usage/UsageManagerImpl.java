@@ -30,6 +30,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -89,23 +90,23 @@ public class UsageManagerImpl implements UsageManager, Runnable {
     private static final int THREE_DAYS_IN_MINUTES = 60 * 24 * 3;
     private static final int USAGE_AGGREGATION_RANGE_MIN = 10;
 
-    private final ComponentLocator _locator = ComponentLocator.getLocator(UsageServer.Name, "usage-components.xml", "log4j-cloud_usage");
-    private final AccountDao m_accountDao = _locator.getDao(AccountDao.class);
-    private final UserStatisticsDao m_userStatsDao = _locator.getDao(UserStatisticsDao.class);
-    private final UsageDao m_usageDao = _locator.getDao(UsageDao.class);
-    private final UsageVMInstanceDao m_usageInstanceDao = _locator.getDao(UsageVMInstanceDao.class);
-    private final UsageIPAddressDao m_usageIPAddressDao = _locator.getDao(UsageIPAddressDao.class);
-    private final UsageNetworkDao m_usageNetworkDao = _locator.getDao(UsageNetworkDao.class);
-    private final UsageVolumeDao m_usageVolumeDao = _locator.getDao(UsageVolumeDao.class);
-    private final UsageStorageDao m_usageStorageDao = _locator.getDao(UsageStorageDao.class);
-    private final UsageLoadBalancerPolicyDao m_usageLoadBalancerPolicyDao = _locator.getDao(UsageLoadBalancerPolicyDao.class);
-    private final UsagePortForwardingRuleDao m_usagePortForwardingRuleDao = _locator.getDao(UsagePortForwardingRuleDao.class);
-    private final UsageNetworkOfferingDao m_usageNetworkOfferingDao = _locator.getDao(UsageNetworkOfferingDao.class);
-    private final UsageVPNUserDao m_usageVPNUserDao = _locator.getDao(UsageVPNUserDao.class);
-    private final UsageSecurityGroupDao m_usageSecurityGroupDao = _locator.getDao(UsageSecurityGroupDao.class);
-    private final UsageJobDao m_usageJobDao = _locator.getDao(UsageJobDao.class);
+    @Inject private AccountDao m_accountDao;
+    @Inject private UserStatisticsDao m_userStatsDao;
+    @Inject private UsageDao m_usageDao;
+    @Inject private UsageVMInstanceDao m_usageInstanceDao;
+    @Inject private UsageIPAddressDao m_usageIPAddressDao;
+    @Inject private UsageNetworkDao m_usageNetworkDao;
+    @Inject private UsageVolumeDao m_usageVolumeDao;
+    @Inject private UsageStorageDao m_usageStorageDao;
+    @Inject private UsageLoadBalancerPolicyDao m_usageLoadBalancerPolicyDao;
+    @Inject private UsagePortForwardingRuleDao m_usagePortForwardingRuleDao;
+    @Inject private UsageNetworkOfferingDao m_usageNetworkOfferingDao;
+    @Inject private UsageVPNUserDao m_usageVPNUserDao;
+    @Inject private UsageSecurityGroupDao m_usageSecurityGroupDao;
+    @Inject private UsageJobDao m_usageJobDao;
     @Inject protected AlertManager _alertMgr;
     @Inject protected UsageEventDao _usageEventDao;
+    @Inject ConfigurationDao _configDao;
 
     private String m_version = null;
     private String m_name = null;
@@ -152,14 +153,7 @@ public class UsageManagerImpl implements UsageManager, Runnable {
 
         m_name = name;
 
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
-        if (configDao == null) {
-            s_logger.error("Unable to get the configuration dao.");
-            return false;
-        }
-
-        Map<String, String> configs = configDao.getConfiguration(params);
+        Map<String, String> configs = _configDao.getConfiguration(params);
 
         if (params != null) {
             mergeConfigs(configs, params);

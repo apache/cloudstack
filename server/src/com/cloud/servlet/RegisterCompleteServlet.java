@@ -27,6 +27,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Configuration;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -37,7 +38,7 @@ import com.cloud.user.UserVO;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.SerialVersionUID;
 
-
+@Component("registerCompleteServlet")
 public class RegisterCompleteServlet extends HttpServlet implements ServletContextListener {
     public static final Logger s_logger = Logger.getLogger(RegisterCompleteServlet.class.getName());
 

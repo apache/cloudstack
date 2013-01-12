@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.vm.dao;
 
+import javax.inject.Inject;
+
 import junit.framework.TestCase;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -25,8 +27,9 @@ import com.cloud.vm.VirtualMachine;
 
 
 public class UserVmDaoImplTest extends TestCase {
-    public void testPersist() {
-        UserVmDao dao = ComponentLocator.inject(UserVmDaoImpl.class);
+    @Inject UserVmDao dao;
+     
+	public void testPersist() {
         
         dao.expunge(1000l);
         

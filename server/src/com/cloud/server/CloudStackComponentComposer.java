@@ -30,7 +30,6 @@ import com.cloud.api.query.QueryManagerImpl;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.SyncQueueManager;
 import com.cloud.capacity.CapacityManagerImpl;
-import com.cloud.cluster.CheckPointManagerImpl;
 import com.cloud.cluster.ClusterFenceManagerImpl;
 import com.cloud.cluster.ClusterManagerImpl;
 import com.cloud.configuration.ConfigurationManager;
@@ -75,7 +74,7 @@ import com.cloud.vm.VirtualMachineManager;
 
 @Component
 public class CloudStackComponentComposer {
-	@Inject CheckPointManagerImpl _checkPointMgr;
+	// @Inject CheckPointManagerImpl _checkPointMgr;
     @Inject ClusterManagerImpl _clusterMgr;
     @Inject ClusterFenceManagerImpl _clusterFenceMgr;
     @Inject AgentManager _AgentMgr;
@@ -130,7 +129,7 @@ public class CloudStackComponentComposer {
     
     @PostConstruct
     void init() {
-    	_managers.add(_checkPointMgr);
+    	// _managers.add(_checkPointMgr);
         _managers.add(_clusterMgr);
         _managers.add(_clusterFenceMgr);
         _managers.add(_AgentMgr);

@@ -200,12 +200,12 @@ public class TestAsyncJobManager extends TestCase {
                             if(host != null) {
                                 s_logger.info("Thread " + (current + 1) + " acquired lock");
 
-                                try { Thread.sleep(getRandomMilliseconds(1000, 5000)); } catch (InterruptedException e) {}
+                                try { Thread.sleep(1000); } catch (InterruptedException e) {}
 
                                 s_logger.info("Thread " + (current + 1) + " released lock");
                                 hostDao.releaseFromLockTable(host.getId());
 
-                                try { Thread.sleep(getRandomMilliseconds(1000, 5000)); } catch (InterruptedException e) {}
+                                try { Thread.sleep(1000); } catch (InterruptedException e) {}
                             } else {
                                 s_logger.info("Thread " + (current + 1) + " is not able to acquire lock");
                             }
@@ -226,7 +226,6 @@ public class TestAsyncJobManager extends TestCase {
     }
 
     public void testDomain() {
-        getRandomMilliseconds(1, 100);		
         DomainDao domainDao = new DomainDaoImpl();
 
         DomainVO domain1 = new DomainVO("d1", 2L, 1L, null);
