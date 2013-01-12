@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.acl;
 
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.server.ManagementServer;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.ComponentLocator;
@@ -48,17 +49,13 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIC
     }
 
     @Override
-    public boolean checkAccess(RoleType roleType, String commandName) {
-            return s_roleBasedApisMap.get(roleType).contains(commandName);
-    }
-
-    @Override
-    public boolean checkExistence(String apiName) {
-        for (RoleType roleType: RoleType.values()) {
-            if (s_roleBasedApisMap.get(roleType).contains(apiName))
-                return true;
+    public boolean checkAccess(RoleType roleType, String commandName)
+            throws PermissionDeniedException {
+        boolean isAllowed = s_roleBasedApisMap.get(roleType).contains(commandName);
+        if (!isAllowed) {
+            throw new PermissionDeniedException("The API does not exist or is blacklisted. Role type=" + roleType.toString() + " is not allowed to request the api: " + commandName);
         }
-        return false;
+        return isAllowed;
     }
 
     @Override

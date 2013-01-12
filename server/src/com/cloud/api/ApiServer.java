@@ -556,7 +556,7 @@ public class ApiServer implements HttpRequestHandler {
                 return true;
             } else {
                 // check against every available command to see if the command exists or not
-                if (!doesCommandExist(commandName) && !commandName.equals("login") && !commandName.equals("logout")) {
+                if (!_apiNameCmdClassMap.containsKey(commandName) && !commandName.equals("login") && !commandName.equals("logout")) {
                     s_logger.debug("The given command:" + commandName + " does not exist or it is not available for user with id:" + userId);
                     throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command does not exist or it is not available for user");
                 }
@@ -780,18 +780,9 @@ public class ApiServer implements HttpRequestHandler {
         return true;
     }
 
-    private boolean doesCommandExist(String apiName) {
-        for (APIChecker apiChecker : _apiAccessCheckers) {
-            // If any checker has api info on the command, return true
-            if (apiChecker.checkExistence(apiName))
-                return true;
-        }
-        return false;
-    }
-
-    private boolean isCommandAvailable(User user, String commandName) {
+    private boolean isCommandAvailable(User user, String commandName) throws PermissionDeniedException {
         if (user == null) {
-            return false;
+            throw new PermissionDeniedException("User is null for role based API access check for command" + commandName);
         }
 
         Account account = _accountMgr.getAccount(user.getAccountId());
