@@ -601,30 +601,29 @@ public class ApiServer implements HttpRequestHandler {
 
             // if api/secret key are passed to the parameters
             if ((signature == null) || (apiKey == null)) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.info("expired session, missing signature, or missing apiKey -- ignoring request...sig: " + signature + ", apiKey: " + apiKey);
-                }
+                s_logger.debug("Expired session, missing signature, or missing apiKey -- ignoring request. Signature: " + signature + ", apiKey: " + apiKey);
                 return false; // no signature, bad request
             }
 
             Date expiresTS = null;
+            // FIXME: Hard coded signature, why not have an enum
             if ("3".equals(signatureVersion)) {
                 // New signature authentication. Check for expire parameter and its validity
                 if (expires == null) {
-                    s_logger.info("missing Expires parameter -- ignoring request...sig: " + signature + ", apiKey: " + apiKey);
+                    s_logger.debug("Missing Expires parameter -- ignoring request. Signature: " + signature + ", apiKey: " + apiKey);
                     return false;
                 }
                 synchronized (_dateFormat) {
                     try {
                         expiresTS = _dateFormat.parse(expires);
                     } catch (ParseException pe) {
-                        s_logger.info("Incorrect date format for Expires parameter", pe);
+                        s_logger.debug("Incorrect date format for Expires parameter", pe);
                         return false;
                     }
                 }
                 Date now = new Date(System.currentTimeMillis());
                 if (expiresTS.before(now)) {
-                    s_logger.info("Request expired -- ignoring ...sig: " + signature + ", apiKey: " + apiKey);
+                    s_logger.debug("Request expired -- ignoring ...sig: " + signature + ", apiKey: " + apiKey);
                     return false;
                 }
             }
@@ -635,7 +634,7 @@ public class ApiServer implements HttpRequestHandler {
             // verify there is a user with this api key
             Pair<User, Account> userAcctPair = _accountMgr.findUserByApiKey(apiKey);
             if (userAcctPair == null) {
-                s_logger.info("apiKey does not map to a valid user -- ignoring request, apiKey: " + apiKey);
+                s_logger.debug("apiKey does not map to a valid user -- ignoring request, apiKey: " + apiKey);
                 return false;
             }
 
