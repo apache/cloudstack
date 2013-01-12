@@ -147,10 +147,9 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     private List<String> securityGroupNameList;
 
     @ACL(checkKeyAccess=true)
-    @Parameter(name = ApiConstants.IP_NETWORK_LIST, type = CommandType.MAP, entityType={Network.class,IpAddress.class},
+    @Parameter(name = ApiConstants.IP_NETWORK_LIST, type = CommandType.MAP, entityType={Network.class, IpAddress.class},
             description = "ip to network mapping. Can't be specified with networkIds parameter." +
-                    " Example: iptonetworklist[0].ip=10.10.10.11&iptonetworklist[0].networkid=204 - requests to" +
-                    " use ip 10.10.10.11 in network id=204")
+                    " Example: iptonetworklist[0].ip=10.10.10.11&iptonetworklist[0].networkid=uuid - requests to use ip 10.10.10.11 in network id=uuid")
     private Map ipToNetworkList;
 
     @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, description="the ip address for default vm's network")
@@ -284,7 +283,17 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
             Iterator iter = ipsCollection.iterator();
             while (iter.hasNext()) {
                 HashMap<String, String> ips = (HashMap<String, String>) iter.next();
-                Long networkId = Long.valueOf(_responseGenerator.getIdentiyId("networks", ips.get("networkid")));
+                Long networkId;
+                Network network = _networkService.getNetwork(ips.get("networkid"));
+                if (network != null) {
+                    networkId = network.getId();
+                } else {
+                    try {
+                        networkId = Long.parseLong(ips.get("networkid"));
+                    } catch(NumberFormatException e) {
+                        throw new InvalidParameterValueException("Unable to translate and find entity with networkId: " + ips.get("networkid"));
+                    }
+                }
                 String requestedIp = (String) ips.get("ip");
                 ipToNetworkMap.put(networkId, requestedIp);
             }

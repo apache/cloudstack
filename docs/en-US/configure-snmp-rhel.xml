@@ -1,0 +1,86 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+  http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+<section id="configure-snmp-rhel">
+  <title>Configuring SNMP Community String on a RHEL Server</title>
+  <para>The SNMP Community string is similar to a user id or password that provides access to a
+    network device, such as router. This string is sent along with all SNMP requests. If the
+    community string is correct, the device responds with the requested information. If the
+    community string is incorrect, the device discards the request and does not respond.</para>
+  <para>The NetScaler device uses SNMP to communicate with the VMs. You must install SNMP and
+    configure SNMP Community string for a secure communication between the NetScaler device and the
+    RHEL machine.</para>
+  <orderedlist>
+    <listitem>
+      <para>Ensure that you installed SNMP on RedHat. If not, run the following command:</para>
+      <screen>yum install net-snmp-utils</screen>
+    </listitem>
+    <listitem>
+      <para>Edit the /etc/snmp/snmpd.conf file to allow the SNMP polling from the NetScaler
+        device.</para>
+      <orderedlist>
+        <listitem>
+          <para>Map the community name into a security name (local and mynetwork, depending on where
+            the request is coming from):</para>
+          <note>
+            <para>Use a strong password instead of public when you edit the following table.</para>
+          </note>
+          <screen>#         sec.name   source        community
+com2sec    local      localhost     public
+com2sec   mynetwork   0.0.0.0       public</screen>
+          <note>
+            <para>Setting to 0.0.0.0 allows all IPs to poll the NetScaler server.</para>
+          </note>
+        </listitem>
+        <listitem>
+          <para>Map the security names into group names: </para>
+          <screen>#      group.name   sec.model  sec.name
+group   MyRWGroup     v1         local
+group   MyRWGroup     v2c        local
+group   MyROGroup     v1        mynetwork
+group   MyROGroup     v2c       mynetwork</screen>
+        </listitem>
+        <listitem>
+          <para>Create a view to allow the groups to have the permission to:</para>
+          <screen>incl/excl subtree mask view all included .1 </screen>
+        </listitem>
+        <listitem>
+          <para>Grant access with different write permissions to the two groups to the view you
+            created.</para>
+          <screen># context     sec.model     sec.level     prefix     read     write     notif
+  access      MyROGroup ""  any noauth     exact      all      none     none
+  access      MyRWGroup ""  any noauth     exact      all      all      all </screen>
+        </listitem>
+      </orderedlist>
+    </listitem>
+    <listitem>
+      <para>Unblock SNMP in iptables.</para>
+      <screen>iptables -A INPUT -p udp --dport 161 -j ACCEPT</screen>
+    </listitem>
+    <listitem>
+      <para>Start the SNMP service:</para>
+      <screen>service snmpd start</screen>
+    </listitem>
+    <listitem>
+      <para>Ensure that the SNMP service is started automatically during the system startup:</para>
+      <screen>chkconfig snmpd on</screen>
+    </listitem>
+  </orderedlist>
+</section>

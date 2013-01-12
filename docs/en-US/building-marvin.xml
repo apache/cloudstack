@@ -1,0 +1,46 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
+<section id="building-marvin">
+    <title>Building and Installing Marvin</title>
+    <para>Marvin is built with Maven and is dependent on APIdoc. To build it do the following in the root tree of &PRODUCT;:</para>
+    <programlisting>mvn -P developer -l :cloud-apidoc</programlisting>
+    <programlisting>mvn -P developer -l :cloud-marvin</programlisting>
+    <para>If successfull the build will have created the cloudstackAPI Python package under tools/marvin/marvin/cloudstackAPI as well as a gziped Marvin package under tools/marvin dist. To install the Python Marvin module do the following in tools/marvin:</para>
+    <programlisting>sudo python ./setup.py install</programlisting>
+    <para>The dependencies will be downloaded the Python module installed and you should be able to use Marvin in Python. Check that you can import the module before starting to use it.</para>
+    <programlisting>$ python
+Python 2.7.3 (default, Nov 17 2012, 19:54:34) 
+[GCC 4.2.1 Compatible Apple Clang 4.1 ((tags/Apple/clang-421.11.66))] on darwin
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import marvin
+>>> from marvin.cloudstackAPI import *
+>>> </programlisting>
+
+   <para>You could also install it using <emphasis>pip</emphasis> or <emphasis>easy_install</emphasis> using the local distribution package in tools/marvin/dist :</para>
+   <programlisting>pip install tools/marvin/dist/Marvin-0.1.0.tar.gz</programlisting>
+   <para>Or:</para>
+   <programlisting>easy_install tools/marvin/dist/Marvin-0.1.0.tar.gz</programlisting>   
+
+</section>

@@ -16,8 +16,8 @@
   <!--
       Configurable components
   -->
-  <bean id="ManagementServerExtImpl" class ="com.cloud.server.ManagementServerExtImpl" />
-
+  <bean id="management-server" class ="com.cloud.server.ManagementServerExtImpl" />
+  <bean id="configuration-server" class="com.cloud.server.ConfigurationServerImpl" />
    
   <!--
       Network Elements

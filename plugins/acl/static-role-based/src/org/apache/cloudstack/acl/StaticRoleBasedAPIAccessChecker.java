@@ -34,105 +34,67 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.server.ManagementServer;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.PluggableService;
 
 // This is the default API access checker that grab's the user's account
 // based on the account type, access is granted
 @Component
-@Local(value=APIAccessChecker.class)
-public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIAccessChecker {
+@Local(value=APIChecker.class)
+public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIChecker {
 
     protected static final Logger s_logger = Logger.getLogger(StaticRoleBasedAPIAccessChecker.class);
-    public static final short ADMIN_COMMAND = 1;
-    public static final short DOMAIN_ADMIN_COMMAND = 4;
-    public static final short RESOURCE_DOMAIN_ADMIN_COMMAND = 2;
-    public static final short USER_COMMAND = 8;
 
-    @Inject AccountManager _accountMgr;
+    private static Map<RoleType, Set<String>> s_roleBasedApisMap =
+            new HashMap<RoleType, Set<String>>();
+
     @Inject List<PluggableService> _services;
-    private static Set<String> s_userCommands = null;
-    private static Set<String> s_resellerCommands = null; // AKA domain-admin
-    private static Set<String> s_adminCommands = null;
-    private static Set<String> s_resourceDomainAdminCommands = null;
-    private static Set<String> s_allCommands = null;
 
     protected StaticRoleBasedAPIAccessChecker() {
         super();
-        s_allCommands = new HashSet<String>();
-        s_userCommands = new HashSet<String>();
-        s_resellerCommands = new HashSet<String>();
-        s_adminCommands = new HashSet<String>();
-        s_resourceDomainAdminCommands = new HashSet<String>();
+        for (RoleType roleType: RoleType.values())
+            s_roleBasedApisMap.put(roleType, new HashSet<String>());
     }
 
     @Override
-    public boolean canAccessAPI(RoleType roleType, String commandName)
+    public boolean checkAccess(RoleType roleType, String commandName)
             throws PermissionDeniedException {
-
-        boolean commandExists = s_allCommands.contains(commandName);
-        boolean commandAccessible = false;
-
-        if (commandExists) {
-            switch (roleType) {
-            case Admin:
-                commandAccessible = s_adminCommands.contains(commandName);
-                break;
-            case DomainAdmin:
-                commandAccessible = s_resellerCommands.contains(commandName);
-                break;
-            case ResourceAdmin:
-                commandAccessible = s_resourceDomainAdminCommands.contains(commandName);
-                break;
-            case User:
-                commandAccessible = s_userCommands.contains(commandName);
-                break;
-            }
+        boolean isAllowed = s_roleBasedApisMap.get(roleType).contains(commandName);
+        if (!isAllowed) {
+            throw new PermissionDeniedException("The API does not exist or is blacklisted. Role type=" + roleType.toString() + " is not allowed to request the api: " + commandName);
         }
-        return commandExists && commandAccessible;
+        return isAllowed;
     }
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
-
-        // Read command properties files to build the static map per role.
-        Map<String, String> configPropertiesMap = new HashMap<String, String>();
+        _services.add((PluggableService) ComponentContext.getComponent(ManagementServer.Name));
         for (PluggableService service : _services) {
-            configPropertiesMap.putAll(service.getProperties());
+            processConfigFiles(service.getProperties(), service.getClass().toString());
+            s_logger.info("Processed role based acl for: " + service.toString());
         }
-
-        processConfigFiles(configPropertiesMap);
         return true;
     }
 
-    private void processConfigFiles(Map<String, String> config) {
-        for (Map.Entry<String, String> entry: config.entrySet()) {
+    private void processConfigFiles(Map<String, String> configMap, String service) {
+        for (Map.Entry<String, String> entry: configMap.entrySet()) {
             String apiName = entry.getKey();
             String roleMask = entry.getValue();
             try {
                 short cmdPermissions = Short.parseShort(roleMask);
-                if ((cmdPermissions & Admin.getValue()) != 0) {
-                    s_adminCommands.add(apiName);
-                }
-                if ((cmdPermissions & ResourceAdmin.getValue()) != 0) {
-                    s_resourceDomainAdminCommands.add(apiName);
-                }
-                if ((cmdPermissions & DomainAdmin.getValue()) != 0) {
-                    s_resellerCommands.add(apiName);
-                }
-                if ((cmdPermissions & User.getValue()) != 0) {
-                    s_userCommands.add(apiName);
+                for (RoleType roleType: RoleType.values()) {
+                    if ((cmdPermissions & roleType.getValue()) != 0)
+                        s_roleBasedApisMap.get(roleType).add(apiName);
                 }
             } catch (NumberFormatException nfe) {
-                s_logger.info("Malformed commands.properties permissions value, for entry: " + entry.toString());
+                s_logger.info("Malformed getProperties() value for service: " + service
+                        + " for entry: " + entry.toString());
             }
         }
-        s_allCommands.addAll(s_adminCommands);
-        s_allCommands.addAll(s_resourceDomainAdminCommands);
-        s_allCommands.addAll(s_userCommands);
-        s_allCommands.addAll(s_resellerCommands);
     }
 }

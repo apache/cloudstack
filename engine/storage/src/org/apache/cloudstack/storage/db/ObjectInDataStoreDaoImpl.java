@@ -1,13 +1,12 @@
 package org.apache.cloudstack.storage.db;
-
-
+import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.storage.volume.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.storage.volume.ObjectInDataStoreStateMachine.State;
 
 import com.cloud.utils.db.GenericDaoBase;
 
-
+@Component
 public class ObjectInDataStoreDaoImpl extends GenericDaoBase<ObjectInDataStoreVO, Long> implements ObjectInDataStoreDao {
 
     @Override

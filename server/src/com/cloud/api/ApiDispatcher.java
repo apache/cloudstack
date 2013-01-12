@@ -69,7 +69,6 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.ReflectUtil;
 import com.cloud.utils.exception.CSExceptionErrorCode;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.uuididentity.dao.IdentityDao;
 
 @Component
 public class ApiDispatcher {
@@ -79,8 +78,6 @@ public class ApiDispatcher {
     @Inject AsyncJobManager _asyncMgr = null;
     @Inject AccountManager _accountMgr = null;
     @Inject EntityManager _entityMgr = null;
-    @Inject IdentityDao _identityDao = null;
-    @Inject ConfigurationDao _configDao = null;
 
     private static ApiDispatcher s_instance;
 
@@ -90,18 +87,11 @@ public class ApiDispatcher {
 
     protected ApiDispatcher() {
         super();
-        Map<String, String> configs = _configDao.getConfiguration();
-        String strSnapshotLimit = configs.get(Config.ConcurrentSnapshotsThresholdPerHost.key());
-        if (strSnapshotLimit != null) {
-            Long snapshotLimit = NumbersUtil.parseLong(strSnapshotLimit, 1L);
-            if (snapshotLimit <= 0) {
-                s_logger.debug("Global config parameter " + Config.ConcurrentSnapshotsThresholdPerHost.toString()
-                        + " is less or equal 0; defaulting to unlimited");
-            } else {
-                _createSnapshotQueueSizeLimit = snapshotLimit;
-            }
-        }
         s_instance = this;
+    }
+
+    public void setCreateSnapshotQueueSizeLimit(Long snapshotLimit) {
+        _createSnapshotQueueSizeLimit = snapshotLimit;
     }
 
     public void dispatchCreateCmd(BaseAsyncCreateCmd cmd, Map<String, String> params) {
@@ -700,9 +690,5 @@ public class ApiDispatcher {
             s_logger.error("Error at plugService for command " + cmd.getCommandName() + ", field " + field.getName() + " is not accessible.");
             throw new CloudRuntimeException("Internal error at plugService for command " + cmd.getCommandName() + " [field " + field.getName() + " is not accessible]");
         }
-    }
-
-    public static Long getIdentiyId(String tableName, String token) {
-        return s_instance._identityDao.getIdentityId(tableName, token);
     }
 }

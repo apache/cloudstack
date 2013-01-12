@@ -14,13 +14,32 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.discovery;
+package org.apache.cloudstack.api.response;
 
-import com.cloud.utils.component.PluggableService;
-import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.api.ApiConstants;
+import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.api.response.ListResponse;
 
-public interface ApiDiscoveryService extends PluggableService {
-    ListResponse<? extends BaseResponse> listApis(RoleType roleType, String apiName);
+public class ApiResponseResponse extends BaseResponse {
+    @SerializedName(ApiConstants.NAME) @Param(description="the name of the api response field")
+    private String name;
+
+    @SerializedName(ApiConstants.DESCRIPTION) @Param(description="description of the api response field")
+    private String description;
+
+    @SerializedName(ApiConstants.TYPE) @Param(description="response field type")
+    private String type;
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
 }

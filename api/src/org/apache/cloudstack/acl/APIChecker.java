@@ -16,14 +16,12 @@
 // under the License.
 package org.apache.cloudstack.acl;
 
-import org.apache.cloudstack.acl.RoleType;
 import com.cloud.exception.PermissionDeniedException;
+import org.apache.cloudstack.acl.RoleType;
 import com.cloud.utils.component.Adapter;
 
-/**
- * APIAccessChecker checks the ownership and access control to API requests
- */
-public interface APIAccessChecker extends Adapter {
-    // Interface for checking access to an API for an user
-    boolean canAccessAPI(RoleType roleType, String apiCommandName) throws PermissionDeniedException;
+// APIChecker checks the ownership and access control to API requests
+public interface APIChecker extends Adapter {
+    // Interface for checking access for a role using apiname
+    boolean checkAccess(RoleType roleType, String apiCommandName) throws PermissionDeniedException;
 }

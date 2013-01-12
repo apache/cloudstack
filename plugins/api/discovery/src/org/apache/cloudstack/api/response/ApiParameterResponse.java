@@ -40,6 +40,9 @@ public class ApiParameterResponse extends BaseResponse {
     @SerializedName(ApiConstants.SINCE) @Param(description="version of CloudStack the api was introduced in")
     private String since;
 
+    @SerializedName("related") @Param(description="comma separated related apis to get the parameter")
+    private String related;
+
     public ApiParameterResponse(){
     }
 
@@ -65,6 +68,14 @@ public class ApiParameterResponse extends BaseResponse {
 
     public void setSince(String since) {
         this.since = since;
+    }
+
+    public String getRelated() {
+        return related;
+    }
+
+    public void setRelated(String related) {
+        this.related = related;
     }
 
  }

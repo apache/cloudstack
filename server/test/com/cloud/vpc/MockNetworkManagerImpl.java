@@ -156,6 +156,12 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager{
         return null;
     }
 
+    @Override
+    public Network getNetwork(String networkUuid) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
     /* (non-Javadoc)
      * @see com.cloud.network.NetworkService#getIp(long)
      */

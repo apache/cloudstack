@@ -2439,6 +2439,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
+    @DB
+    public Network getNetwork(String uuid) {
+        return _networksDao.findByUuid(uuid);
+    }
+
+    @Override
     public List<? extends RemoteAccessVPNServiceProvider> getRemoteAccessVpnElements() {
         List<RemoteAccessVPNServiceProvider> elements = new ArrayList<RemoteAccessVPNServiceProvider>();
         for (NetworkElement element : _networkElements) {

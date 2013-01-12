@@ -37,4 +37,4 @@ INSERT INTO `cloud`.`configuration` (instance, name, value) VALUE('DEFAULT', 'se
 UPDATE `cloud`.`configuration` SET value='10' where name = 'storage.overprovisioning.factor';
 UPDATE `cloud`.`configuration` SET value='10' where name = 'cpu.overprovisioning.factor';
 UPDATE `cloud`.`configuration` SET value='10' where name = 'mem.overprovisioning.factor';
-UPDATE `cloud`.`vm_template` SET unique_name="tiny Linux",name="tiny Linux",url="https://dl.dropbox.com/u/678991/cloudstack-extras/ttylinux_pv.qcow2",checksum="81dcf4b4ca05a3b637a040e851568f29",display_text="tiny Linux",format='QCOW2',hypervisor_type='KVM' where id=5;
+UPDATE `cloud`.`vm_template` SET unique_name="tiny Linux",name="tiny Linux",url="http://marcus.mlsorensen.com/cloudstack-extras/ttylinux_pv.qcow2",checksum="81dcf4b4ca05a3b637a040e851568f29",display_text="tiny Linux",format='QCOW2',hypervisor_type='KVM' where id=5;

@@ -47,6 +47,12 @@ public class MockDomainManagerImpl implements  Manager, DomainManager {
     }
 
     @Override
+    public Domain getDomain(String uuid) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
     public boolean isChildDomain(Long parentId, Long childId) {
         // TODO Auto-generated method stub
         return false;
