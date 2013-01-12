@@ -43,9 +43,8 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIC
 
     protected StaticRoleBasedAPIAccessChecker() {
         super();
-        for (RoleType roleType: RoleType.values()) {
+        for (RoleType roleType: RoleType.values())
             s_roleBasedApisMap.put(roleType, new HashSet<String>());
-        }
     }
 
     @Override
@@ -71,16 +70,14 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIC
         List<PluggableService> services = locator.getAllPluggableServices();
         services.add((PluggableService) ComponentLocator.getComponent(ManagementServer.Name));
 
-        Map<String, String> configPropertiesMap = new HashMap<String, String>();
         for (PluggableService service : services) {
-            configPropertiesMap.putAll(service.getProperties());
+            processConfigFiles(service.getProperties(), service.getClass().toString());
+            s_logger.info("Processed role based acl for: " + service.toString());
         }
-
-        processConfigFiles(configPropertiesMap);
         return true;
     }
 
-    private void processConfigFiles(Map<String, String> configMap) {
+    private void processConfigFiles(Map<String, String> configMap, String service) {
         for (Map.Entry<String, String> entry: configMap.entrySet()) {
             String apiName = entry.getKey();
             String roleMask = entry.getValue();
@@ -91,7 +88,8 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIC
                         s_roleBasedApisMap.get(roleType).add(apiName);
                 }
             } catch (NumberFormatException nfe) {
-                s_logger.info("Malformed commands.properties permissions value, for entry: " + entry.toString());
+                s_logger.info("Malformed getProperties() value for service: " + service
+                        + " for entry: " + entry.toString());
             }
         }
     }
