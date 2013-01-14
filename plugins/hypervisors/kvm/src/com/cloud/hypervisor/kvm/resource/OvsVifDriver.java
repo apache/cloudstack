@@ -37,7 +37,7 @@ import com.cloud.utils.script.Script;
 
 public class OvsVifDriver extends VifDriverBase {
     private static final Logger s_logger = Logger
-            .getLogger(BridgeVifDriver.class);
+            .getLogger(OvsVifDriver.class);
     private int _timeout;
     private String _modifyVlanPath;
     
