@@ -16,17 +16,22 @@
 // under the License.
 package com.cloud.servlet;
 
+import java.io.File;
+
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 
 import org.apache.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
+import org.apache.log4j.xml.DOMConfigurator;
 
 import com.cloud.api.ApiServer;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.server.ConfigurationServer;
 import com.cloud.server.ManagementServer;
+import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.SerialVersionUID;
 import com.cloud.utils.component.ComponentContext;
 
@@ -37,10 +42,12 @@ public class CloudStartupServlet extends HttpServlet implements ServletContextLi
 
     @Override
     public void init() throws ServletException {
+    	initLog4j();
         ConfigurationServer c = (ConfigurationServer)ComponentContext.getComponent(ConfigurationServer.Name);
         try {
             c.persistDefaultValues();
             ManagementServer ms = (ManagementServer)ComponentContext.getComponent(ManagementServer.Name);
+            ms.startup();
             ms.enableAdminUser("password");
             ApiServer.initApiServer();
         } catch (InvalidParameterValueException ipve) {
@@ -65,4 +72,18 @@ public class CloudStartupServlet extends HttpServlet implements ServletContextLi
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
     }
+    
+    private void initLog4j() {
+    	File file = PropertiesUtil.findConfigFile("log4j-cloud.xml");
+    	if (file != null) {
+        s_logger.info("log4j configuration found at " + file.getAbsolutePath());
+        DOMConfigurator.configureAndWatch(file.getAbsolutePath());
+	    } else {
+	        file = PropertiesUtil.findConfigFile("log4j-cloud.properties");
+	        if (file != null) {
+	            s_logger.info("log4j configuration found at " + file.getAbsolutePath());
+	            PropertyConfigurator.configureAndWatch(file.getAbsolutePath());
+	        }
+	    }
+   }
 }
