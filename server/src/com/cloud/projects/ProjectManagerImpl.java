@@ -131,7 +131,9 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
 
         Map<String, String> configs = _configDao.getConfiguration(params);
         _invitationRequired = Boolean.valueOf(configs.get(Config.ProjectInviteRequired.key()));
-        _invitationTimeOut = Long.valueOf(configs.get(Config.ProjectInvitationExpirationTime.key()))*1000;
+        
+        String value = configs.get(Config.ProjectInvitationExpirationTime.key());
+        _invitationTimeOut = Long.valueOf(value != null ? value : "86400")*1000;
         _allowUserToCreateProject = Boolean.valueOf(configs.get(Config.AllowUserToCreateProject.key()));
 
 

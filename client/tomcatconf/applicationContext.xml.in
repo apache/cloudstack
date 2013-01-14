@@ -50,6 +50,7 @@
   <!--
     RPC/Async/EventBus
   -->
+
   <bean id="onwireRegistry" class="org.apache.cloudstack.framework.serializer.OnwireClassRegistry"
     init-method="scan" >
     <property name="packages">

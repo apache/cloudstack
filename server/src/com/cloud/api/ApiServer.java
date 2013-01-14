@@ -45,6 +45,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import javax.annotation.PostConstruct;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
@@ -131,7 +132,6 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.ReflectUtil;
 import com.cloud.utils.StringUtils;
-import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.SearchCriteria;
@@ -165,22 +165,16 @@ public class ApiServer implements HttpRequestHandler {
 
     private static ExecutorService _executor = new ThreadPoolExecutor(10, 150, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("ApiServer"));
 
-    protected ApiServer() {
-        super();
+    public ApiServer() {
     }
-
-    public static void initApiServer() {
-        if (s_instance == null) {
-            s_instance = new ApiServer();
-            s_instance = ComponentContext.inject(s_instance);
-            s_instance.init();
-        }
+    
+    @PostConstruct
+    void initComponent() {
+    	s_instance = this;
+    	init();
     }
 
     public static ApiServer getInstance() {
-        if (s_instance == null) {
-            ApiServer.initApiServer();
-        }
         return s_instance;
     }
 

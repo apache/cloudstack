@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 
+import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.ControlledEntity;
@@ -65,8 +66,8 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.UserContext;
 import com.cloud.utils.DateUtil;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.ReflectUtil;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.exception.CSExceptionErrorCode;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -85,9 +86,12 @@ public class ApiDispatcher {
         return s_instance;
     }
 
-    protected ApiDispatcher() {
-        super();
-        s_instance = this;
+    public ApiDispatcher() {
+    }
+    
+    @PostConstruct
+    void init() {
+    	s_instance = this;
     }
 
     public void setCreateSnapshotQueueSizeLimit(Long snapshotLimit) {
@@ -475,7 +479,7 @@ public class ApiDispatcher {
         }
 
         //check access on the entities.
-        s_instance.doAccessChecks(cmd, entitiesToAccess);
+        getInstance().doAccessChecks(cmd, entitiesToAccess);
 
     }
 

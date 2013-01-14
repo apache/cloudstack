@@ -32,25 +32,29 @@ import javax.servlet.http.HttpSession;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.UserContext;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+@Component("apiServlet")
 @SuppressWarnings("serial")
 public class ApiServlet extends HttpServlet {
     public static final Logger s_logger = Logger.getLogger(ApiServlet.class.getName());
     private static final Logger s_accessLogger = Logger.getLogger("apiserver." + ApiServer.class.getName());
 
     ApiServer _apiServer;
-    @Inject AccountService _accountMgr;
+    AccountService _accountMgr;
 
     public ApiServlet() {
         super();
         _apiServer = ApiServer.getInstance();
+        _accountMgr = ComponentContext.getComponent(AccountService.class);
         if (_apiServer == null) {
             throw new CloudRuntimeException("ApiServer not initialized");
         }
