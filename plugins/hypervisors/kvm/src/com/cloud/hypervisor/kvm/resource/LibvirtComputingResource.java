@@ -786,8 +786,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements
         // Load the vif driver
         String vifDriverName = (String) params.get("libvirt.vif.driver");
         if (vifDriverName == null) {
-        	s_logger.info("No libvirt.vif.driver specififed. Defaults to BridgeVifDriver.");
-        	vifDriverName = "com.cloud.hypervisor.kvm.resource.BridgeVifDriver";
+        	if (_bridgeType == BridgeType.OPENVSWITCH) {
+        		s_logger.info("No libvirt.vif.driver specififed. Defaults to OvsVifDriver.");
+        		vifDriverName = "com.cloud.hypervisor.kvm.resource.OvsVifDriver";
+        	}
+        	else {
+        		s_logger.info("No libvirt.vif.driver specififed. Defaults to BridgeVifDriver.");
+        		vifDriverName = "com.cloud.hypervisor.kvm.resource.BridgeVifDriver";
+        	}
         }
 
         params.put("libvirt.computing.resource", (Object) this);
