@@ -27,7 +27,6 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.log4j.xml.DOMConfigurator;
 
-import com.cloud.api.ApiServer;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.server.ConfigurationServer;
 import com.cloud.server.ManagementServer;
@@ -49,7 +48,7 @@ public class CloudStartupServlet extends HttpServlet implements ServletContextLi
             ManagementServer ms = (ManagementServer)ComponentContext.getComponent(ManagementServer.Name);
             ms.startup();
             ms.enableAdminUser("password");
-            ApiServer.initApiServer();
+            //ApiServer.initApiServer();
         } catch (InvalidParameterValueException ipve) {
             s_logger.error("Exception starting management server ", ipve);
             throw new ServletException (ipve.getMessage());
