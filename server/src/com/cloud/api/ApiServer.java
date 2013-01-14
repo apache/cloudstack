@@ -785,11 +785,9 @@ public class ApiServer implements HttpRequestHandler {
             throw new PermissionDeniedException("User is null for role based API access check for command" + commandName);
         }
 
-        Account account = _accountMgr.getAccount(user.getAccountId());
-        RoleType roleType = _accountMgr.getRoleType(account);
         for (APIChecker apiChecker : _apiAccessCheckers) {
             // Fail the checking if any checker fails to verify
-            if (!apiChecker.checkAccess(roleType, commandName))
+            if (!apiChecker.checkAccess(user, commandName))
                 return false;
         }
         return true;

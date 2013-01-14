@@ -18,6 +18,9 @@ package org.apache.cloudstack.acl;
 
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.server.ManagementServer;
+import com.cloud.user.Account;
+import com.cloud.user.AccountService;
+import com.cloud.user.User;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.PluggableService;
@@ -42,6 +45,8 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIC
     private static Map<RoleType, Set<String>> s_roleBasedApisMap =
             new HashMap<RoleType, Set<String>>();
 
+    private static AccountService s_accountService;
+
     protected StaticRoleBasedAPIAccessChecker() {
         super();
         for (RoleType roleType: RoleType.values())
@@ -49,8 +54,10 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIC
     }
 
     @Override
-    public boolean checkAccess(RoleType roleType, String commandName)
+    public boolean checkAccess(User user, String commandName)
             throws PermissionDeniedException {
+        Account account = s_accountService.getAccount(user.getAccountId());
+        RoleType roleType = s_accountService.getRoleType(account);
         boolean isAllowed = s_roleBasedApisMap.get(roleType).contains(commandName);
         if (!isAllowed) {
             throw new PermissionDeniedException("The API does not exist or is blacklisted. Role type=" + roleType.toString() + " is not allowed to request the api: " + commandName);
@@ -64,6 +71,9 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIC
 
         // Read command properties files to build the static map per role.
         ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
+
+        s_accountService = locator.getManager(AccountService.class);
+
         List<PluggableService> services = locator.getAllPluggableServices();
         services.add((PluggableService) ComponentLocator.getComponent(ManagementServer.Name));
 
