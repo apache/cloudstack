@@ -1324,7 +1324,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     NicTO[] nics = vmSpec.getNics();
                     boolean secGrpEnabled = false;
                     for (NicTO nic : nics) {
-                        if (nic.getIsolationUri() != null && nic.getIsolationUri().getScheme().equalsIgnoreCase(IsolationType.Ec2.toString())) {
+                        if (nic.isSecurityGroupEnabled() || (nic.getIsolationUri() != null
+                                       && nic.getIsolationUri().getScheme().equalsIgnoreCase(IsolationType.Ec2.toString()))) {
                             secGrpEnabled = true;
                             break;
                         }
@@ -1342,7 +1343,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     //For user vm, program the rules for each nic if the isolation uri scheme is ec2
                     NicTO[] nics = vmSpec.getNics();
                     for (NicTO nic : nics) {
-                        if (nic.getIsolationUri() != null && nic.getIsolationUri().getScheme().equalsIgnoreCase(IsolationType.Ec2.toString())) {
+                        if ( nic.isSecurityGroupEnabled() || nic.getIsolationUri() != null
+                                   && nic.getIsolationUri().getScheme().equalsIgnoreCase(IsolationType.Ec2.toString())) {
                             result = callHostPlugin(conn, "vmops", "default_network_rules", "vmName", vmName, "vmIP", nic.getIp(), "vmMAC", nic.getMac(), "vmID", Long.toString(vmSpec.getId()));
 
                             if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {

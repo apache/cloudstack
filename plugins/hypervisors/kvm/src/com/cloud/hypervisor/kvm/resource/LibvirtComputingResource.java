@@ -2901,9 +2901,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 
             NicTO[] nics = vmSpec.getNics();
             for (NicTO nic : nics) {
-                if (nic.getIsolationUri() != null
-                        && nic.getIsolationUri().getScheme()
-                                .equalsIgnoreCase(IsolationType.Ec2.toString())) {
+                if (nic.isSecurityGroupEnabled() || ( nic.getIsolationUri() != null
+                         && nic.getIsolationUri().getScheme().equalsIgnoreCase(IsolationType.Ec2.toString()))) {
                     if (vmSpec.getType() != VirtualMachine.Type.User) {
                         default_network_rules_for_systemvm(conn, vmName);
                         break;
