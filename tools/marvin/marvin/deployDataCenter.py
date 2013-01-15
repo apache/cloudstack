@@ -258,10 +258,10 @@ class deployDataCenters():
         traffic_type = addTrafficType.addTrafficTypeCmd()
         traffic_type.physicalnetworkid = physical_network_id
         traffic_type.traffictype = traffictype.typ
-        if traffictype.labeldict is not None:
-            traffic_type.kvmnetworklabel = traffictype.labeldict.kvm
-            traffic_type.xennetworklabel = traffictype.labeldict.xen
-            traffic_type.vmwarenetworklabel = traffictype.labeldict.vmware
+        traffic_type.kvmnetworklabel = traffictype.kvm if traffictype.kvm is not None else None
+        traffic_type.xennetworklabel = traffictype.xen if traffictype.xen is not None else None
+        traffictype.vmwarenetworklabel = traffictype.vmware if traffictype.vmware is not None else None
+        traffictype.simulatorlabel = traffictype.simulator if traffictype.simulator is not None else None
         return self.apiClient.addTrafficType(traffic_type)
 
     def enableZone(self, zoneid, allocation_state="Enabled"):
