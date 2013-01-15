@@ -33,7 +33,7 @@
   <context:annotation-config />
 
   <context:component-scan base-package="org.apache.cloudstack, com.cloud" />
-
+  
   <!--
     @DB support
   -->
@@ -44,7 +44,7 @@
       <aop:around pointcut-ref="captureAnyMethod" method="AroundAnyMethod"/> 
     </aop:aspect>
   </aop:config>
-
+  
   <bean id="transactionContextBuilder" class="com.cloud.utils.db.TransactionContextBuilder" />
 
   <!--

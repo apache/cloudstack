@@ -37,6 +37,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDaoImpl;
 import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.utils.Pair;
 
@@ -85,7 +86,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     protected SearchBuilder<VMInstanceVO> NetworkTypeSearch;
     protected GenericSearchBuilder<VMInstanceVO, String> DistinctHostNameSearch;
     
-    @Inject ResourceTagsDaoImpl _tagsDao;
+    @Inject ResourceTagDao _tagsDao;
     @Inject NicDao _nicDao;
     
     protected Attribute _updateTimeAttr;
@@ -103,7 +104,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     		                                                            " AND host.pod_id = ? AND host.cluster_id = ? AND host.type = 'Routing' " +
     		                                                            " GROUP BY host.id ORDER BY 2 ASC ";
 
-    @Inject protected HostDaoImpl _hostDao;
+    @Inject protected HostDao _hostDao;
     
     public VMInstanceDaoImpl() {
     }

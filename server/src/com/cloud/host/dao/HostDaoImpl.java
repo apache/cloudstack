@@ -34,8 +34,10 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.cluster.agentlb.HostTransferMapVO;
+import com.cloud.cluster.agentlb.dao.HostTransferMapDao;
 import com.cloud.cluster.agentlb.dao.HostTransferMapDaoImpl;
 import com.cloud.dc.ClusterVO;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.ClusterDaoImpl;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
@@ -115,10 +117,10 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected Attribute _msIdAttr;
     protected Attribute _pingTimeAttr;
 
-    @Inject protected HostDetailsDaoImpl _detailsDao;
-    @Inject protected HostTagsDaoImpl _hostTagsDao;
-    @Inject protected HostTransferMapDaoImpl _hostTransferDao;
-    @Inject protected ClusterDaoImpl _clusterDao;
+    @Inject protected HostDetailsDao _detailsDao;
+    @Inject protected HostTagsDao _hostTagsDao;
+    @Inject protected HostTransferMapDao _hostTransferDao;
+    @Inject protected ClusterDao _clusterDao;
 
     public HostDaoImpl() {
     }

@@ -40,13 +40,14 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.dao.VMInstanceDaoImpl;
 
 @Component
 @Local(value={HostPodDao.class})
 public class HostPodDaoImpl extends GenericDaoBase<HostPodVO, Long> implements HostPodDao {
     private static final Logger s_logger = Logger.getLogger(HostPodDaoImpl.class);
-    @Inject VMInstanceDaoImpl _vmDao;
+    @Inject VMInstanceDao _vmDao;
 
     protected SearchBuilder<HostPodVO> DataCenterAndNameSearch;
     protected SearchBuilder<HostPodVO> DataCenterIdSearch;
