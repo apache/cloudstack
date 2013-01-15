@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.network.element;
 
+import java.lang.Class;
 import java.lang.String;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -262,9 +263,17 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
     }
 
     @Override
-    public Map<String, String> getProperties() {
-        return PropertiesUtil.processConfigFile(new String[]
-                { "f5bigip_commands.properties" });
+    public List<Class<?>> getCommands() {
+        List<Class<?>> cmdList = new ArrayList<Class<?>>();
+        cmdList.add(AddExternalLoadBalancerCmd.class);
+        cmdList.add(AddF5LoadBalancerCmd.class);
+        cmdList.add(ConfigureF5LoadBalancerCmd.class);
+        cmdList.add(DeleteExternalLoadBalancerCmd.class);
+        cmdList.add(DeleteF5LoadBalancerCmd.class);
+        cmdList.add(ListExternalLoadBalancersCmd.class);
+        cmdList.add(ListF5LoadBalancerNetworksCmd.class);
+        cmdList.add(ListF5LoadBalancersCmd.class);
+        return cmdList;
     }
 
     @Override

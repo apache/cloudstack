@@ -207,9 +207,9 @@ public class ManagementServerExtImpl extends ManagementServerImpl implements Man
     }
 
     @Override
-    public Map<String, String> getProperties() {
-        return PropertiesUtil.processConfigFile(new String[]
-                { "commands.properties", "commands-ext.properties" });
+    public List<Class<?>> getCommands() {
+        //TODO: Add api cmd classes
+        return null;
     }
 
     private Date computeAdjustedTime(Date initialDate, TimeZone targetTZ, boolean adjustToDayStart) {

@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.network.element;
 
+import java.lang.Class;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -465,9 +466,14 @@ StaticNatServiceProvider {
     }
 
     @Override
-    public Map<String, String> getProperties() {
-        return PropertiesUtil.processConfigFile(new String[]
-                { "netscalerloadbalancer_commands.properties" });
+    public List<Class<?>> getCommands() {
+        List<Class<?>> cmdList = new ArrayList<Class<?>>();
+        cmdList.add(AddNetscalerLoadBalancerCmd.class);
+        cmdList.add(ConfigureNetscalerLoadBalancerCmd.class);
+        cmdList.add(DeleteNetscalerLoadBalancerCmd.class);
+        cmdList.add(ListNetscalerLoadBalancerNetworksCmd.class);
+        cmdList.add(ListNetscalerLoadBalancersCmd.class);
+        return cmdList;
     }
 
     @Override

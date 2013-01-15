@@ -541,9 +541,13 @@ public class NiciraNvpElement extends AdapterBase implements
 	}
 
 	@Override
-	public Map<String, String> getProperties() {
-		return PropertiesUtil.processConfigFile(new String[]
-                { "nicira-nvp_commands.properties" });
+	public List<Class<?>> getCommands() {
+        List<Class<?>> cmdList = new ArrayList<Class<?>>();
+        cmdList.add(AddNiciraNvpDeviceCmd.class);
+        cmdList.add(DeleteNiciraNvpDeviceCmd.class);
+        cmdList.add(ListNiciraNvpDeviceNetworksCmd.class);
+        cmdList.add(ListNiciraNvpDevicesCmd.class);
+        return cmdList;
 	}
 
 	@Override
