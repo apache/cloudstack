@@ -18,7 +18,7 @@
  */
 package org.apache.cloudstack.storage.datastore.lifecycle;
 
-import org.apache.cloudstack.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreCmd;
 import org.apache.cloudstack.storage.command.CreatePrimaryDataStoreCmd;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -39,8 +39,9 @@ public class DefaultXenPrimaryDataStoreLifeCycle extends DefaultPrimaryDataStore
     
     @Override
     public void attachCluster() {
+        String result = null;
         //send one time is enough, as xenserver is clustered
-        CreatePrimaryDataStoreCmd cmd = new CreatePrimaryDataStoreCmd(this.dataStore.getDataStoreTO());
+        /*CreatePrimaryDataStoreCmd cmd = new CreatePrimaryDataStoreCmd(this.dataStore.getDataStoreTO());
         String result = null;
         for (EndPoint ep : dataStore.getEndPoints()) {
             Answer answer = ep.sendMessage(cmd);
@@ -48,7 +49,7 @@ public class DefaultXenPrimaryDataStoreLifeCycle extends DefaultPrimaryDataStore
                 return;
             }
             result = answer.getDetails();
-        }
+        }*/
         
         if (result != null)
             throw new CloudRuntimeException("AttachPrimaryDataStoreCmd failed: " + result);

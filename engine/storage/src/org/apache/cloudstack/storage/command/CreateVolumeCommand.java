@@ -18,16 +18,14 @@
  */
 package org.apache.cloudstack.storage.command;
 
-import org.apache.cloudstack.storage.to.VolumeTO;
-
 import com.cloud.agent.api.Command;
 
 public class CreateVolumeCommand extends Command implements StorageSubSystemCommand {
-    protected VolumeTO volumeTO;
+    protected String volumeUri;
 
-    public CreateVolumeCommand(VolumeTO volumeTO) {
+    public CreateVolumeCommand(String volumeUri) {
         super();
-        this.volumeTO = volumeTO;
+        this.volumeUri = volumeUri;
     }
 
     protected CreateVolumeCommand() {
@@ -40,8 +38,8 @@ public class CreateVolumeCommand extends Command implements StorageSubSystemComm
         return false;
     }
     
-    public VolumeTO getVolume() {
-        return this.volumeTO;
+    public String getVolume() {
+        return this.volumeUri;
     }
 
 }

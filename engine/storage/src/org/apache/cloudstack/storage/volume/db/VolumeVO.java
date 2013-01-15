@@ -33,7 +33,7 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.engine.subsystem.api.storage.disktype.Unknown;
+import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
 
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume;
@@ -113,7 +113,7 @@ public class VolumeVO implements Identity, StateObject<Volume.State> {
     StoragePoolType poolType;
 
     @Column(name = "disk_type")
-    String diskType = new Unknown().toString();
+    DiskFormat diskType;
 
     @Column(name = GenericDao.REMOVED_COLUMN)
     Date removed;
@@ -406,11 +406,11 @@ public class VolumeVO implements Identity, StateObject<Volume.State> {
         this.uuid = uuid;
     }
 
-    public String getDiskType() {
+    public DiskFormat getDiskType() {
         return diskType;
     }
 
-    public void setDiskType(String type) {
+    public void setDiskType(DiskFormat type) {
         diskType = type;
     }
 }

@@ -18,24 +18,52 @@
  */
 package org.apache.cloudstack.storage.image.manager;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import javax.inject.Inject;
 
-import org.apache.cloudstack.storage.image.db.ImageDataStoreDao;
+import org.apache.cloudstack.storage.datastore.provider.DataStoreProvider;
+import org.apache.cloudstack.storage.datastore.provider.DataStoreProviderManager;
+import org.apache.cloudstack.storage.image.ImageDataStoreDriver;
+import org.apache.cloudstack.storage.image.datastore.ImageDataStore;
+import org.apache.cloudstack.storage.image.datastore.ImageDataStoreManager;
 import org.apache.cloudstack.storage.image.db.ImageDataDao;
+import org.apache.cloudstack.storage.image.db.ImageDataStoreDao;
 import org.apache.cloudstack.storage.image.db.ImageDataStoreVO;
-import org.apache.cloudstack.storage.image.store.ImageDataStore;
+import org.apache.cloudstack.storage.image.store.ImageDataStoreImpl;
+import org.apache.cloudstack.storage.volume.PrimaryDataStoreDriver;
+import org.springframework.stereotype.Component;
 
+@Component
 public class ImageDataStoreManagerImpl implements ImageDataStoreManager {
     @Inject
     ImageDataStoreDao dataStoreDao;
     @Inject
     ImageDataDao imageDataDao;
+    @Inject
+    DataStoreProviderManager providerManager;
+    Map<String, ImageDataStoreDriver> driverMaps = new HashMap<String, ImageDataStoreDriver>();
 
     @Override
     public ImageDataStore getImageDataStore(long dataStoreId) {
         ImageDataStoreVO dataStore = dataStoreDao.findById(dataStoreId);
+        long providerId = dataStore.getProvider();
+        DataStoreProvider provider = providerManager.getDataStoreProviderById(providerId);
+        ImageDataStore imgStore = new ImageDataStoreImpl(dataStore, 
+                driverMaps.get(provider.getUuid())
+                );
         // TODO Auto-generated method stub
-        return null;
+        return imgStore;
+    }
+
+    @Override
+    public boolean registerDriver(String uuid, ImageDataStoreDriver driver) {
+        if (driverMaps.containsKey(uuid)) {
+            return false;
+        }
+        driverMaps.put(uuid, driver);
+        return true;
     }
 
 }

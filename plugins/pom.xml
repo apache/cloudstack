@@ -50,6 +50,8 @@
     <module>user-authenticators/plain-text</module>
     <module>user-authenticators/sha256salted</module>
     <module>network-elements/dns-notifier</module>
+    <module>storage/image/s3</module>
+    <module>storage/volume/solidfire</module>
   </modules>
 
   <dependencies>

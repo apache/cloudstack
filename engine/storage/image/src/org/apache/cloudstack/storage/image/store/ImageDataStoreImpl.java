@@ -18,17 +18,25 @@
  */
 package org.apache.cloudstack.storage.image.store;
 
+import java.util.Set;
+
 import javax.inject.Inject;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
-import org.apache.cloudstack.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+import org.apache.cloudstack.storage.image.ImageDataStoreDriver;
 import org.apache.cloudstack.storage.image.TemplateInfo;
-import org.apache.cloudstack.storage.image.TemplateObject;
+import org.apache.cloudstack.storage.image.datastore.ImageDataStore;
 import org.apache.cloudstack.storage.image.db.ImageDataDao;
 import org.apache.cloudstack.storage.image.db.ImageDataStoreVO;
 import org.apache.cloudstack.storage.image.db.ImageDataVO;
-import org.apache.cloudstack.storage.image.driver.ImageDataStoreDriver;
 import org.apache.cloudstack.storage.snapshot.SnapshotInfo;
+
 
 public class ImageDataStoreImpl implements ImageDataStore {
     @Inject
@@ -37,102 +45,36 @@ public class ImageDataStoreImpl implements ImageDataStore {
     ImageDataStoreVO imageDataStoreVO;
     boolean needDownloadToCacheStorage = false;
 
-    public ImageDataStoreImpl(ImageDataStoreVO dataStoreVO, ImageDataStoreDriver driver, boolean needDownloadToCacheStorage) {
-        this.driver = driver;
-        this.needDownloadToCacheStorage = needDownloadToCacheStorage;
+    public ImageDataStoreImpl(ImageDataStoreVO dataStoreVO, ImageDataStoreDriver imageDataStoreDriver) {
+        this.driver = imageDataStoreDriver;
         this.imageDataStoreVO = dataStoreVO;
     }
 
-    /*
-     * @Override public TemplateInfo registerTemplate(long templateId) {
-     * ImageDataVO idv = imageDao.findById(templateId); TemplateInfo template =
-     * new TemplateInfo(this, idv); if (driver.registerTemplate(template)) {
-     * template.setImageDataStoreId(imageDataStoreVO.getId()); return template;
-     * } else { return null; } }
-     */
+   
 
     @Override
-    public boolean deleteTemplate(long templateId) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public boolean needDownloadToCacheStorage() {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public long getImageDataStoreId() {
-        return imageDataStoreVO.getId();
-    }
-
-    @Override
-    public TemplateObject registerTemplate(long templateId) {
-        ImageDataVO image = imageDao.findById(templateId);
-        image.setImageDataStoreId(this.getImageDataStoreId());
-        imageDao.update(templateId, image);
-        return getTemplate(templateId);
-    }
-
-    @Override
-    public TemplateObject getTemplate(long templateId) {
-        ImageDataVO image = imageDao.findById(templateId);
-        TemplateObject to = new TemplateObject(image, this);
-        return to;
-    }
-
-    @Override
-    public String getType() {
+    public Set<TemplateInfo> listTemplates() {
         // TODO Auto-generated method stub
         return null;
     }
 
+
+
     @Override
-    public String getUri() {
+    public DataStoreDriver getDriver() {
         // TODO Auto-generated method stub
         return null;
     }
 
-    @Override
-    public String grantAccess(VolumeInfo volume, EndPoint ep) {
-        return null;
-    }
+
 
     @Override
-    public boolean revokeAccess(VolumeInfo volume, EndPoint ep) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public String grantAccess(TemplateInfo template, EndPoint ep) {
-        return this.driver.grantAccess((TemplateObject)template, ep);
-    }
-
-    @Override
-    public boolean revokeAccess(TemplateInfo template, EndPoint ep) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public String grantAccess(SnapshotInfo snapshot, EndPoint ep) {
+    public DataStoreRole getRole() {
         // TODO Auto-generated method stub
         return null;
     }
 
-    @Override
-    public boolean revokeAccess(SnapshotInfo snapshot, EndPoint ep) {
-        // TODO Auto-generated method stub
-        return false;
-    }
 
-    @Override
-    public String getRole() {
-        return "imageStore";
-    }
 
     @Override
     public long getId() {
@@ -140,4 +82,51 @@ public class ImageDataStoreImpl implements ImageDataStore {
         return 0;
     }
 
+
+
+    @Override
+    public String getUri() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+
+
+    @Override
+    public Scope getScope() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+
+
+    @Override
+    public TemplateInfo getTemplate(long templateId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+
+
+    @Override
+    public VolumeInfo getVolume(long volumeId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+
+
+    @Override
+    public SnapshotInfo getSnapshot(long snapshotId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+
+
+    @Override
+    public boolean exists(DataObject object) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 }

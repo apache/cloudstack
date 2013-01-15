@@ -20,15 +20,17 @@ package org.apache.cloudstack.storage.datastore;
 
 import java.util.List;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.CommandResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
+import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
-import org.apache.cloudstack.storage.EndPoint;
-import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.image.TemplateInfo;
-import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
-import org.apache.cloudstack.storage.to.VolumeTO;
+import org.apache.cloudstack.storage.snapshot.SnapshotInfo;
+import org.apache.cloudstack.storage.volume.PrimaryDataStoreDriver;
 import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreInfo;
 
 public interface PrimaryDataStore extends DataStore, PrimaryDataStoreInfo {
@@ -36,27 +38,28 @@ public interface PrimaryDataStore extends DataStore, PrimaryDataStoreInfo {
 
     List<VolumeInfo> getVolumes();
 
-    void deleteVolumeAsync(VolumeInfo volume, AsyncCompletionCallback<CommandResult> callback);
+/*    void deleteVolumeAsync(VolumeInfo volume, AsyncCompletionCallback<CommandResult> callback);
 
     void createVolumeAsync(VolumeInfo vo, VolumeDiskType diskType, AsyncCompletionCallback<CommandResult> callback);
 
-    VolumeInfo createVoluemFromBaseImage(VolumeInfo volume, TemplateOnPrimaryDataStoreInfo templateStore);
-    
     void createVoluemFromBaseImageAsync(VolumeInfo volume, TemplateInfo templateStore, AsyncCompletionCallback<CommandResult> callback);
+ */   
+
+    boolean exists(DataObject data);
+
+    TemplateInfo getTemplate(long templateId);
     
-    List<EndPoint> getEndPoints();
+    SnapshotInfo getSnapshot(long snapshotId);
 
-    boolean exists(VolumeInfo vi);
 
-    boolean templateExists(TemplateInfo template);
+    DiskFormat getDefaultDiskType();
 
-    TemplateOnPrimaryDataStoreInfo getTemplate(TemplateInfo template);
+/*    void takeSnapshot(SnapshotInfo snapshot,
+            AsyncCompletionCallback<CommandResult> callback);
 
-    boolean installTemplate(TemplateOnPrimaryDataStoreInfo template);
+    void revertSnapshot(SnapshotInfo snapshot,
+            AsyncCompletionCallback<CommandResult> callback);
 
-    VolumeDiskType getDefaultDiskType();
-
-    PrimaryDataStoreTO getDataStoreTO();
-
-    VolumeTO getVolumeTO(VolumeInfo volume);
+    void deleteSnapshot(SnapshotInfo snapshot,
+            AsyncCompletionCallback<CommandResult> callback);*/
 }
