@@ -21,6 +21,8 @@ package com.cloud.network;
 import junit.framework.Assert;
 
 import org.apache.log4j.Logger;
+import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.cloud.network.element.DhcpServiceProvider;
@@ -29,10 +31,16 @@ import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.testcase.ComponentSetup;
 import com.cloud.utils.testcase.ComponentTestCase;
 
+@Ignore("Requires database to be set up")
 @ComponentSetup(managerName="management-server", setupXml="network-mgr-component.xml")
 public class NetworkManagerTest extends ComponentTestCase {
     private static final Logger s_logger = Logger.getLogger(NetworkManagerTest.class);
-
+    @Before
+    @Override
+    protected void setUp() {
+        super.setUp();
+    }
+    
     @Test
     public void testInjected() {
         NetworkManagerImpl networkMgr = (NetworkManagerImpl)ComponentLocator.getCurrentLocator().getManager(NetworkManager.class);
