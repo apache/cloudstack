@@ -1699,6 +1699,13 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             }
             NetworkOfferingVO publicOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemPublicNetwork).get(0);
             List<NetworkVO> publicNetworks = _networkMgr.setupNetwork(_systemAcct, publicOffering, plan, null, null, false);
+            String publicIp = defaultNic.getIp4Address();
+            // We want to use the identical MAC address for RvR on public interface if possible
+            NicVO peerNic = _nicDao.findByIp4AddressAndNetworkId(publicIp, publicNetworks.get(0).getId());
+            if (peerNic != null) {
+                s_logger.info("Use same MAC as previous RvR, the MAC is " + peerNic.getMacAddress());
+                defaultNic.setMacAddress(peerNic.getMacAddress());
+            }
             networks.add(new Pair<NetworkVO, NicProfile>(publicNetworks.get(0), defaultNic));
         }
 
