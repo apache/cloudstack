@@ -27,6 +27,8 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.OperationTimedoutException;
 
 public class HypervisorHostEndPoint implements EndPoint {
     private static final Logger s_logger = Logger.getLogger(HypervisorHostEndPoint.class);
