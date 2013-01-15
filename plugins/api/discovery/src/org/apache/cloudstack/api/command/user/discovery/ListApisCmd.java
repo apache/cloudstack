@@ -16,7 +16,10 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.discovery;
 
+import com.cloud.user.AccountService;
+import com.cloud.user.User;
 import com.cloud.user.UserContext;
+import com.cloud.utils.component.Inject;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -39,14 +42,17 @@ public class ListApisCmd extends BaseCmd {
     @PlugService
     ApiDiscoveryService _apiDiscoveryService;
 
+    @Inject
+    private AccountService _accountService;
+
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="API name")
     private String name;
 
     @Override
     public void execute() throws ServerApiException {
         if (_apiDiscoveryService != null) {
-            RoleType roleType = _accountService.getRoleType(UserContext.current().getCaller());
-            ListResponse<ApiDiscoveryResponse> response = (ListResponse<ApiDiscoveryResponse>) _apiDiscoveryService.listApis(roleType, name);
+            User user = _accountService.getActiveUser(UserContext.current().getCallerUserId());
+            ListResponse<ApiDiscoveryResponse> response = (ListResponse<ApiDiscoveryResponse>) _apiDiscoveryService.listApis(user, name);
             if (response == null) {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Api Discovery plugin was unable to find an api by that name or process any apis");
             }
