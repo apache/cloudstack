@@ -20,24 +20,15 @@ import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 
 import org.aspectj.lang.ProceedingJoinPoint;
-import org.aspectj.lang.annotation.Around;
-import org.aspectj.lang.annotation.Aspect;
-import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
 
 import com.cloud.user.UserContext;
 
-@Aspect
 public class ActionEventInterceptor {
 
 	public ActionEventInterceptor() {
 	}
 
-	@Pointcut(value="execution( * *(..))")
-	public void anyMethod() {
-	}
-
-	@Around("anyMethod() && @annotation(ActionEvent)")
 	public Object AroundAnyMethod(ProceedingJoinPoint call) throws Throwable {
 		MethodSignature methodSignature = (MethodSignature)call.getSignature();
         Method targetMethod = methodSignature.getMethod();	

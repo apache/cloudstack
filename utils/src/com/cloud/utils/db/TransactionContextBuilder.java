@@ -63,14 +63,14 @@ public class TransactionContextBuilder implements MethodInterceptor {
 	private boolean needToIntercept(Method method) {
         DB db = method.getAnnotation(DB.class);
         if (db != null) {
-            return db.txn();
+            return true;
         }
         
         Class<?> clazz = method.getDeclaringClass();
         do {
             db = clazz.getAnnotation(DB.class);
             if (db != null) {
-                return db.txn();
+                return true;
             }
             clazz = clazz.getSuperclass();
         } while (clazz != Object.class && clazz != null);

@@ -53,8 +53,6 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.async.AsyncCommandQueued;
 import com.cloud.async.AsyncJobManager;
-import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dao.EntityManager;
 import com.cloud.exception.AccountLimitException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -67,7 +65,6 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.UserContext;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.ReflectUtil;
-import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.exception.CSExceptionErrorCode;
 import com.cloud.utils.exception.CloudRuntimeException;
 

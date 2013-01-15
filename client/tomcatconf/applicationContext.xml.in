@@ -39,13 +39,25 @@
   -->
   <aop:config proxy-target-class="true">
     <aop:aspect id="dbContextBuilder" ref="transactionContextBuilder">
-    <aop:pointcut id="captureAnyMethod"
-      expression="execution(* *(..))" />
-      <aop:around pointcut-ref="captureAnyMethod" method="AroundAnyMethod"/> 
+        <aop:pointcut id="captureAnyMethod"
+            expression="execution(* *(..))" 
+        />
+        
+        <aop:around pointcut-ref="captureAnyMethod" method="AroundAnyMethod"/> 
     </aop:aspect>
+
+    <aop:aspect id="actionEventInterceptorAspect" ref="actionEventInterceptor">
+        <aop:pointcut id="captureEventMethod"
+            expression="execution(* *(..)) and @annotation(com.cloud.event.ActionEvent)" 
+        />
+        <aop:around pointcut-ref="captureEventMethod" method="AroundAnyMethod"/> 
+    </aop:aspect>
+
   </aop:config>
   
   <bean id="transactionContextBuilder" class="com.cloud.utils.db.TransactionContextBuilder" />
+  <bean id="actionEventInterceptor" class="com.cloud.event.ActionEventInterceptor" />
+
 
   <!--
     RPC/Async/EventBus
@@ -76,5 +88,7 @@
   </bean>
 
   <bean id="eventBus" class = "org.apache.cloudstack.framework.eventbus.EventBusBase" />
+
+  <bean id="apiServlet" class = "com.cloud.api.ApiServlet" />
 
 </beans>

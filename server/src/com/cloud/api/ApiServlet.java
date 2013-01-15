@@ -48,8 +48,8 @@ public class ApiServlet extends HttpServlet {
     public static final Logger s_logger = Logger.getLogger(ApiServlet.class.getName());
     private static final Logger s_accessLogger = Logger.getLogger("apiserver." + ApiServer.class.getName());
 
-    ApiServer _apiServer;
-    AccountService _accountMgr;
+    @Inject ApiServer _apiServer;
+    @Inject AccountService _accountMgr;
 
     public ApiServlet() {
         super();

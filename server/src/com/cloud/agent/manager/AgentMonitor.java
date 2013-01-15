@@ -76,6 +76,7 @@ public class AgentMonitor extends Thread implements Listener {
     private Map<Long, Long> _pingMap;
 
     public AgentMonitor() {
+        _pingMap = new ConcurrentHashMap<Long, Long>(10007);
     }
 
     public AgentMonitor(long msId, HostDao hostDao, VMInstanceDao vmDao, DataCenterDao dcDao, HostPodDao podDao, AgentManagerImpl agentMgr, AlertManager alertMgr, long pingTimeout) {

@@ -44,9 +44,9 @@ public class RegisterCompleteServlet extends HttpServlet implements ServletConte
 
     static final long serialVersionUID = SerialVersionUID.CloudStartupServlet;
 
-    @Inject AccountService _accountSvc = null;
-    @Inject ConfigurationDao _configDao = null;
-    @Inject UserDao _userDao = null;
+    @Inject AccountService _accountSvc;
+    @Inject ConfigurationDao _configDao;
+    @Inject UserDao _userDao;
 
     @Override
     public void contextInitialized(ServletContextEvent sce) {
