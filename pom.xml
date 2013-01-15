@@ -244,10 +244,6 @@
               <exclude>dist/console-proxy/js/jquery.js</exclude>
               <exclude>scripts/vm/systemvm/id_rsa.cloud</exclude>
               <exclude>tools/devcloud/basebuild/puppet-devcloudinitial/files/network.conf</exclude>
-              <exclude>tools/devcloud/devcloud.cfg</exclude>
-              <exclude>tools/devcloud/devcloud-advanced.cfg</exclude>
-              <exclude>tools/devcloud-kvm/devcloud-kvm.cfg</exclude>
-              <exclude>tools/devcloud-kvm/devcloud-kvm-advanced.cfg</exclude>
               <exclude>ui/lib/flot/jquery.colorhelpers.js</exclude>
               <exclude>ui/lib/flot/jquery.flot.crosshair.js</exclude>
               <exclude>ui/lib/flot/jquery.flot.fillbetween.js</exclude>
