@@ -549,7 +549,10 @@ public class ApiServer implements HttpRequestHandler {
             // if userId not null, that mean that user is logged in
             if (userId != null) {
             	User user = ApiDBUtils.findUserById(userId);
-                if (!isCommandAvailable(user, commandName)) {
+            	try{
+            	    checkCommandAvailable(user, commandName);
+            	}
+            	catch (PermissionDeniedException ex){
                     s_logger.debug("The given command:" + commandName + " does not exist or it is not available for user with id:" + userId);
                     throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command does not exist or it is not available for user");
                 }
@@ -649,7 +652,10 @@ public class ApiServer implements HttpRequestHandler {
 
             UserContext.updateContext(user.getId(), account, null);
 
-            if (!isCommandAvailable(user, commandName)) {
+            try{
+                checkCommandAvailable(user, commandName);
+            }
+            catch (PermissionDeniedException ex){
                 s_logger.debug("The given command:" + commandName + " does not exist or it is not available for user");
                 throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command:" + commandName + " does not exist or it is not available for user with id:" + userId);
             }
@@ -780,7 +786,7 @@ public class ApiServer implements HttpRequestHandler {
         return true;
     }
 
-    private boolean isCommandAvailable(User user, String commandName) throws PermissionDeniedException {
+    private void checkCommandAvailable(User user, String commandName) throws PermissionDeniedException {
         if (user == null) {
             throw new PermissionDeniedException("User is null for role based API access check for command" + commandName);
         }
@@ -788,7 +794,6 @@ public class ApiServer implements HttpRequestHandler {
         for (APIChecker apiChecker : _apiAccessCheckers) {
             apiChecker.checkAccess(user, commandName);
         }
-        return true;
     }
 
     private Class<?> getCmdClass(String cmdName) {
