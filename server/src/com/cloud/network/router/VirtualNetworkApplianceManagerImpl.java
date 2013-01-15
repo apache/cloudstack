@@ -1469,31 +1469,15 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     offeringId = _offering.getId();
                 }
 
+                PublicIp sourceNatIp = null;
+                if (publicNetwork) {
+                    sourceNatIp = _networkMgr.assignSourceNatIpAddressToGuestNetwork(owner, guestNetwork);
+                }
+
                 // 3) deploy virtual router(s)
                 int count = routerCount - routers.size();
                 DeploymentPlan plan = planAndRouters.first();
                 for (int i = 0; i < count; i++) {
-                    PublicIp sourceNatIp = null;
-                    if (publicNetwork) {
-                        int failCount = 0;
-                        // Generate different MAC for VR
-                        while (sourceNatIp == null) {
-                            sourceNatIp = _networkMgr.assignSourceNatIpAddressToGuestNetwork(owner, guestNetwork);
-                            NicVO nic = _nicDao.findByMacAddress(sourceNatIp.getMacAddress());
-                            // We got duplicate MAC here, so regenerate the mac
-                            if (nic != null) {
-                                s_logger.debug("Failed to find a different mac for redundant router. Try again. The current mac is " + sourceNatIp.getMacAddress());
-                                sourceNatIp = null;
-                                failCount ++;
-                            }
-                            //Prevent infinite loop
-                            if (failCount > 3) {
-                                s_logger.error("Failed to find a different mac for redundant router! Abort operation!");
-                                throw new InsufficientAddressCapacityException("Failed to find a different mac for redundant router", null, offeringId);
-                            }
-                        }
-                    }
-                    
                     List<Pair<NetworkVO, NicProfile>> networks = createRouterNetworks(owner, isRedundant, plan, guestNetwork,
                             new Pair<Boolean, PublicIp>(publicNetwork, sourceNatIp));
                     //don't start the router as we are holding the network lock that needs to be released at the end of router allocation
