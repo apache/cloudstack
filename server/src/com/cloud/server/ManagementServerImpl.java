@@ -760,7 +760,6 @@ public class ManagementServerImpl implements ManagementServer {
             sc.addAnd("vm_type", SearchCriteria.Op.EQ, vmTypeStr);
         }
 
-        sc.addAnd("systemUse", SearchCriteria.Op.EQ, isSystem);
         sc.addAnd("removed", SearchCriteria.Op.NULL);
         return _offeringsDao.search(sc, searchFilter);
 
