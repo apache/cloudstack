@@ -548,7 +548,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 
         String username = System.getProperty("user.name");
         Boolean devel = Boolean.valueOf(_configDao.getValue("developer"));
-        if (!username.equalsIgnoreCase("cloud") || !devel) {
+        if (!username.equalsIgnoreCase("cloud") && !devel) {
             s_logger.warn("Systemvm keypairs could not be set. Management server should be run as cloud user, or in development mode.");
             return;
         }
