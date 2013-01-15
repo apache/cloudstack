@@ -47,7 +47,7 @@ public class StoreEntryImpl implements StoreEntry {
         if ( isExpired() )
             return 0; // already expired
         else {
-            return (expiry - System.currentTimeMillis()) * 1000;
+            return expiry - System.currentTimeMillis();
         }
     }
 

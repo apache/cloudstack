@@ -556,12 +556,9 @@ public class ApiServer implements HttpRequestHandler {
             if (userId != null) {
             	User user = ApiDBUtils.findUserById(userId);
             	if (apiThrottlingEnabled){
-            	    // go through each API limit checker
-            	    if (!isRequestAllowed(user)) {
-            	        //FIXME: more detailed message regarding when he/she can retry
-                        s_logger.warn("The given user has reached his/her account api limit, please retry later");
-                        throw new ServerApiException(BaseCmd.API_LIMIT_EXCEED, "The given user has reached his/her account api limit");
-            	    }
+            	    // go through each API limit checker, throw exception inside adapter implementation so that message
+            	    // can contain some detailed information only known for each adapter implementation.
+            	    checkRequestLimit(user);
             	}
                 if (!isCommandAvailable(user, commandName)) {
                     s_logger.debug("The given command:" + commandName + " does not exist or it is not available for user with id:" + userId);
@@ -803,19 +800,18 @@ public class ApiServer implements HttpRequestHandler {
     }
 
 
-    private boolean isRequestAllowed(User user) {
+    private void checkRequestLimit(User user) throws ServerApiException {
         Account account = ApiDBUtils.findAccountById(user.getAccountId());
         if ( _accountMgr.isRootAdmin(account.getType()) ){
             // no api throttling for root admin
-            return true;
+            return;
         }
         for (APILimitChecker apiChecker : _apiLimitCheckers) {
             // Fail the checking if any checker fails to verify
-            if (!apiChecker.isUnderLimit(account))
-                return false;
-        }
-        return true;
+            apiChecker.checkLimit(account);
+         }
     }
+
 
     private boolean doesCommandExist(String apiName) {
         for (APIChecker apiChecker : _apiAccessCheckers) {

@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api.commands.admin.ratelimit;
+package org.apache.cloudstack.api.command.admin.ratelimit;
 
 import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.response.AccountResponse;

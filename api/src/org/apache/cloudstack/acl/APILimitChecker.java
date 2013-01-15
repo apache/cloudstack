@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.acl;
 
+import org.apache.cloudstack.api.ServerApiException;
+
 import com.cloud.user.Account;
 import com.cloud.utils.component.Adapter;
 
@@ -24,5 +26,5 @@ import com.cloud.utils.component.Adapter;
  */
 public interface APILimitChecker extends Adapter {
     // Interface for checking if the account is over its api limit
-    boolean isUnderLimit(Account account);
+    void checkLimit(Account account) throws ServerApiException;
 }

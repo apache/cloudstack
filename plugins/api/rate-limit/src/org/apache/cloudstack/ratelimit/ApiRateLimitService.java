@@ -16,8 +16,8 @@
 // under the License.
 package org.apache.cloudstack.ratelimit;
 
+import org.apache.cloudstack.api.command.admin.ratelimit.ResetApiLimitCmd;
 import org.apache.cloudstack.api.command.user.ratelimit.GetApiLimitCmd;
-import org.apache.cloudstack.api.commands.admin.ratelimit.ResetApiLimitCmd;
 import org.apache.cloudstack.api.response.ApiLimitResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 

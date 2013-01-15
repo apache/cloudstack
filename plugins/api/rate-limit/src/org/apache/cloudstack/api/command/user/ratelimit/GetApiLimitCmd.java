@@ -27,7 +27,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.PlugService;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.BaseCmd.CommandType;
-import org.apache.cloudstack.api.commands.admin.ratelimit.ResetApiLimitCmd;
+import org.apache.cloudstack.api.command.admin.ratelimit.ResetApiLimitCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.ApiLimitResponse;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;

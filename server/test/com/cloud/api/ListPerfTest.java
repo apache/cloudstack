@@ -17,6 +17,9 @@
 package com.cloud.api;
 
 import java.util.HashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -163,6 +166,57 @@ public class ListPerfTest extends APITest {
 
     }
 
+    @Test
+    public void testMultiListAccounts() throws Exception {
+        // log in using normal user
+        login("demo", "password");
+        // issue list Accounts calls
+        final HashMap<String, String> params = new HashMap<String, String>();
+        params.put("response", "json");
+        params.put("listAll", "true");
+        params.put("sessionkey", sessionKey);
+        int clientCount = 6;
+        Runnable[] clients = new Runnable[clientCount];
+        final boolean[] isUsable = new boolean[clientCount];
 
+        final CountDownLatch startGate = new CountDownLatch(1);
+
+        final CountDownLatch endGate = new CountDownLatch(clientCount);
+
+
+        for (int i = 0; i < isUsable.length; ++i) {
+            final int j = i;
+            clients[j] = new Runnable() {
+
+                /**
+                 * {@inheritDoc}
+                 */
+                @Override
+                public void run() {
+                    try {
+                        startGate.await();
+
+                        System.out.println(sendRequest("listAccounts", params));
+
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    } finally {
+                        endGate.countDown();
+                    }
+                }
+            };
+        }
+
+        ExecutorService executor = Executors.newFixedThreadPool(clientCount);
+
+        for (Runnable runnable : clients) {
+            executor.execute(runnable);
+        }
+
+        startGate.countDown();
+
+        endGate.await();
+
+    }
 
 }

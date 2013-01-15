@@ -361,9 +361,7 @@ public enum Config {
 	                null, "Limits number of snapshots that can be handled by the host concurrently; default is NULL - unlimited", null),
 
 	// API throttling
-    ApiLimitInterval("Advanced", ManagementServer.class, Long.class, "api.throttling.interval", "1", "The default time interval in seconds used to set account based api limit", null),
-    ApiLimitMax("Advanced", ManagementServer.class, Long.class, "api.throttling.max", "25", "The max number of API requests within api.throttling.interval duration", null),
-    ApiLimitEnabled("Advanced", ManagementServer.class, Boolean.class, "api.throttling.enabled", "true", "If true, api throttline feature is enabled", "true,false");
+    ApiLimitEnabled("Advanced", ManagementServer.class, Boolean.class, "api.throttling.enable", "true", "If true, api throttline feature is enabled", "true,false");
 
 	private final String _category;
 	private final Class<?> _componentClass;

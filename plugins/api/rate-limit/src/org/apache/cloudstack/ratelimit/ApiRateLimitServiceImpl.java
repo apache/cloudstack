@@ -25,19 +25,18 @@ import net.sf.ehcache.CacheManager;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
 import org.apache.cloudstack.acl.APILimitChecker;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.admin.ratelimit.ResetApiLimitCmd;
 import org.apache.cloudstack.api.command.user.ratelimit.GetApiLimitCmd;
-import org.apache.cloudstack.api.commands.admin.ratelimit.ResetApiLimitCmd;
 import org.apache.cloudstack.api.response.ApiLimitResponse;
-import com.cloud.network.element.NetworkElement;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
+import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.utils.component.Inject;
 
-@Local(value = NetworkElement.class)
+@Local(value = APILimitChecker.class)
 public class ApiRateLimitServiceImpl extends AdapterBase implements APILimitChecker, ApiRateLimitService {
 	private static final Logger s_logger = Logger.getLogger(ApiRateLimitServiceImpl.class);
 
@@ -51,33 +50,40 @@ public class ApiRateLimitServiceImpl extends AdapterBase implements APILimitChec
 	 */
 	private int maxAllowed = 30;
 
-	@Inject
-	ConfigurationDao _configDao;
-
-	private LimitStore _store;
+	private LimitStore _store = null;
 
 
 	@Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
-        // get global configured duration and max values
-        String duration = _configDao.getValue(Config.ApiLimitInterval.key());
-        if (duration != null ){
-            timeToLive = Integer.parseInt(duration);
+
+        if (_store == null) {
+            // not configured yet, note that since this class is both adapter
+            // and pluggableService, so this method
+            // may be invoked twice in ComponentLocator.
+            // get global configured duration and max values
+            Object duration = params.get("api.throttling.interval");
+            if (duration != null) {
+                timeToLive = Integer.parseInt((String) duration);
+            }
+            Object maxReqs = params.get("api.throttling.max");
+            if (maxReqs != null) {
+                maxAllowed = Integer.parseInt((String) maxReqs);
+            }
+            // create limit store
+            EhcacheLimitStore cacheStore = new EhcacheLimitStore();
+            int maxElements = 10000;
+            Object cachesize = params.get("api.throttling.cachesize");
+            if ( cachesize != null ){
+                maxElements = Integer.parseInt((String)cachesize);
+            }
+            CacheManager cm = CacheManager.create();
+            Cache cache = new Cache("api-limit-cache", maxElements, false, false, timeToLive, timeToLive);
+            cm.addCache(cache);
+            s_logger.info("Limit Cache created: " + cache.toString());
+            cacheStore.setCache(cache);
+            _store = cacheStore;
         }
-        String maxReqs = _configDao.getValue(Config.ApiLimitMax.key());
-        if ( maxReqs != null){
-            maxAllowed = Integer.parseInt(maxReqs);
-        }
-        // create limit store
-        EhcacheLimitStore cacheStore = new EhcacheLimitStore();
-        int maxElements = 10000;  //TODO: what should be the proper number here?
-        CacheManager cm = CacheManager.create();
-        Cache cache = new Cache("api-limit-cache", maxElements, true, false, timeToLive, timeToLive);
-        cm.addCache(cache);
-        s_logger.info("Limit Cache created: " + cache.toString());
-        cacheStore.setCache(cache);
-        _store = cacheStore;
 
         return true;
 
@@ -123,9 +129,8 @@ public class ApiRateLimitServiceImpl extends AdapterBase implements APILimitChec
     }
 
 
-
     @Override
-    public boolean isUnderLimit(Account account) {
+    public void checkLimit(Account account) throws ServerApiException {
 
         Long accountId = account.getId();
         StoreEntry entry = _store.get(accountId);
@@ -140,17 +145,21 @@ public class ApiRateLimitServiceImpl extends AdapterBase implements APILimitChec
         int current = entry.incrementAndGet();
 
         if (current <= maxAllowed) {
-            return true;
+            return;
         } else {
-            return false;
+            long expireAfter = entry.getExpireDuration();
+            s_logger.warn("The given user has reached his/her account api limit, please retry after " + expireAfter + " ms.");
+            throw new ServerApiException(BaseCmd.API_LIMIT_EXCEED, "The given user has reached his/her account api limit, please retry after " +
+                    expireAfter + " ms.");
         }
     }
 
 
 
     @Override
-    public String[] getPropertiesFiles() {
-        return new String[] { "api-limit_commands.properties" };
+    public Map<String, String> getProperties() {
+        return PropertiesUtil.processConfigFile(new String[]
+                { "api-limit_commands.properties" });
     }
 
 
