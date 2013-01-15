@@ -14,14 +14,3 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.storage;
-
-import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
-
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.Command;
-
-public interface EndPoint {
-	public Answer sendMessage(Command cmd);
-	public void sendMessageAsync(Command cmd, AsyncCompletionCallback<Answer> callback);
-}

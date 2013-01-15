@@ -19,13 +19,13 @@
 package org.apache.cloudstack.storage.volume;
 
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
+import org.apache.cloudstack.engine.subsystem.api.storage.CommandResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
+import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
 import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeType;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
-import org.apache.cloudstack.storage.EndPoint;
-import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.image.TemplateInfo;
 
 public interface VolumeService {
@@ -52,7 +52,7 @@ public interface VolumeService {
      * 
      * @return the volume object
      */
-    AsyncCallFuture<VolumeApiResult> createVolumeAsync(VolumeInfo volume, long dataStoreId, VolumeDiskType diskType);
+    AsyncCallFuture<VolumeApiResult> createVolumeAsync(VolumeInfo volume, long dataStoreId);
 
     /**
      * Delete volume
@@ -87,5 +87,5 @@ public interface VolumeService {
 
     VolumeEntity getVolumeEntity(long volumeId);
 
-    AsyncCallFuture<VolumeApiResult> createVolumeFromTemplateAsync(VolumeInfo volume, long dataStoreId, VolumeDiskType diskType, TemplateInfo template);
+    AsyncCallFuture<VolumeApiResult> createVolumeFromTemplateAsync(VolumeInfo volume, long dataStoreId, TemplateInfo template);
 }

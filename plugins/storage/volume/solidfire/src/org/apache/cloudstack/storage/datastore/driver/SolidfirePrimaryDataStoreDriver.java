@@ -16,82 +16,83 @@
 // under the License.
 package org.apache.cloudstack.storage.datastore.driver;
 
-import java.util.Map;
+import java.util.Set;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
-import org.apache.cloudstack.storage.EndPoint;
-import org.apache.cloudstack.storage.command.CommandResult;
-import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
-import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreInfo;
-import org.apache.cloudstack.storage.volume.VolumeObject;
+import org.apache.cloudstack.storage.snapshot.SnapshotInfo;
+import org.apache.cloudstack.storage.volume.PrimaryDataStoreDriver;
 
 public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
-
-	@Override
-	public String grantAccess(VolumeObject vol, EndPoint ep) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public boolean revokeAccess(VolumeObject vol, EndPoint ep) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
     @Override
-    public long getCapacity() {
+    public String grantAccess(DataObject data,
+            org.apache.cloudstack.engine.subsystem.api.storage.EndPoint ep) {
         // TODO Auto-generated method stub
-        return 0;
+        return null;
     }
 
     @Override
-    public long getAvailableCapacity() {
-        // TODO Auto-generated method stub
-        return 0;
-    }
-
-    @Override
-    public boolean initialize(Map<String, String> params) {
+    public boolean revokeAccess(DataObject data,
+            org.apache.cloudstack.engine.subsystem.api.storage.EndPoint ep) {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public boolean grantAccess(EndPoint ep) {
+    public Set<DataObject> listObjects(DataStore store) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public void createAsync(DataObject data,
+            AsyncCompletionCallback<CreateCmdResult> callback) {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void deleteAsync(
+            DataObject data,
+            AsyncCompletionCallback<org.apache.cloudstack.engine.subsystem.api.storage.CommandResult> callback) {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void copyAsync(DataObject srcdata, DataObject destData,
+            AsyncCompletionCallback<CopyCommandResult> callback) {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public boolean canCopy(DataObject srcData, DataObject destData) {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public boolean revokeAccess(EndPoint ep) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public void setDataStore(PrimaryDataStore dataStore) {
+    public void takeSnapshot(
+            SnapshotInfo snapshot,
+            AsyncCompletionCallback<org.apache.cloudstack.engine.subsystem.api.storage.CommandResult> callback) {
         // TODO Auto-generated method stub
         
     }
 
     @Override
-    public void createVolumeFromBaseImageAsync(VolumeObject volume, TemplateOnPrimaryDataStoreInfo template, AsyncCompletionCallback<CommandResult> callback) {
+    public void revertSnapshot(
+            SnapshotInfo snapshot,
+            AsyncCompletionCallback<org.apache.cloudstack.engine.subsystem.api.storage.CommandResult> callback) {
         // TODO Auto-generated method stub
         
     }
 
-    @Override
-    public void createVolumeAsync(VolumeObject vol, AsyncCompletionCallback<CommandResult> callback) {
-        // TODO Auto-generated method stub
-        
-    }
 
-    @Override
-    public void deleteVolumeAsync(VolumeObject vo, AsyncCompletionCallback<CommandResult> callback) {
-        // TODO Auto-generated method stub
-        
-    }
+	
 
 }

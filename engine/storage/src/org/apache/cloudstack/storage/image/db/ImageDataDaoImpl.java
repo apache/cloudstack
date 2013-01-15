@@ -32,6 +32,8 @@ import java.util.Set;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.storage.image.TemplateEvent;
+import org.apache.cloudstack.storage.image.TemplateState;
 import org.apache.cloudstack.storage.image.format.ISO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -923,5 +925,12 @@ public class ImageDataDaoImpl extends GenericDaoBase<ImageDataVO, Long> implemen
 
     private boolean isAdmin(short accountType) {
         return ((accountType == Account.ACCOUNT_TYPE_ADMIN) || (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) || (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) || (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
+    }
+
+    @Override
+    public boolean updateState(TemplateState currentState, TemplateEvent event,
+            TemplateState nextState, ImageDataVO vo, Object data) {
+        // TODO Auto-generated method stub
+        return false;
     }
 }

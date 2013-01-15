@@ -18,66 +18,131 @@ package org.apache.cloudstack.storage.datastore;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.db.ObjectInDataStoreDao;
 import org.apache.cloudstack.storage.db.ObjectInDataStoreVO;
+import org.apache.cloudstack.storage.image.ImageDataFactory;
 import org.apache.cloudstack.storage.image.TemplateInfo;
 import org.apache.cloudstack.storage.snapshot.SnapshotInfo;
+import org.apache.cloudstack.storage.volume.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.storage.volume.ObjectInDataStoreStateMachine.Event;
+import org.apache.cloudstack.storage.volume.ObjectInDataStoreStateMachine.State;
 import org.springframework.stereotype.Component;
 
-
+import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.SearchCriteria2;
+import com.cloud.utils.db.SearchCriteriaService;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.fsm.NoTransitionException;
+import com.cloud.utils.fsm.StateMachine2;
 
 @Component
-public  class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
+public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
+    @Inject
+    ImageDataFactory imageFactory;
+    @Inject
+    VolumeDataFactory volumeFactory;
     @Inject
     ObjectInDataStoreDao objectDataStoreDao;
+    protected StateMachine2<State, Event, ObjectInDataStoreVO> stateMachines;
+
+    public ObjectInDataStoreManagerImpl() {
+        stateMachines = new StateMachine2<State, Event, ObjectInDataStoreVO>();
+        stateMachines.addTransition(State.Allocated, Event.CreateRequested,
+                State.Creating);
+        stateMachines.addTransition(State.Creating, Event.OperationSuccessed,
+                State.Created);
+        stateMachines.addTransition(State.Creating, Event.OperationFailed,
+                State.Failed);
+        stateMachines.addTransition(State.Failed, Event.CreateRequested,
+                State.Creating);
+        stateMachines.addTransition(State.Ready, Event.DestroyRequested,
+                State.Destroying);
+        stateMachines.addTransition(State.Destroying, Event.OperationSuccessed,
+                State.Destroyed);
+        stateMachines.addTransition(State.Destroying, Event.OperationFailed,
+                State.Destroying);
+        stateMachines.addTransition(State.Destroying, Event.DestroyRequested,
+                State.Destroying);
+        stateMachines.addTransition(State.Created, Event.CopyingRequested,
+                State.Copying);
+        stateMachines.addTransition(State.Copying, Event.OperationFailed,
+                State.Created);
+        stateMachines.addTransition(State.Copying, Event.OperationSuccessed,
+                State.Ready);
+        stateMachines.addTransition(State.Allocated, Event.CreateOnlyRequested,
+                State.Creating2);
+        stateMachines.addTransition(State.Creating2, Event.OperationFailed,
+                State.Failed);
+        stateMachines.addTransition(State.Creating2, Event.OperationSuccessed,
+                State.Ready);
+    }
+
     @Override
     public TemplateInfo create(TemplateInfo template, DataStore dataStore) {
         ObjectInDataStoreVO vo = new ObjectInDataStoreVO();
         vo.setDataStoreId(dataStore.getId());
-        vo.setDataStoreType(dataStore.getRole());
+        vo.setDataStoreRole(dataStore.getRole());
         vo.setObjectId(template.getId());
-        vo.setObjectType("template");
+
+        vo.setObjectType(template.getType());
         vo = objectDataStoreDao.persist(vo);
-        TemplateInDataStore tmpl = new TemplateInDataStore(template, dataStore, vo);
-        return tmpl;
+
+        return imageFactory.getTemplate(template.getId(), dataStore);
+
     }
 
     @Override
-    public ObjectInDataStoreVO create(VolumeInfo volume, DataStore dataStore) {
+    public VolumeInfo create(VolumeInfo volume, DataStore dataStore) {
+        ObjectInDataStoreVO vo = new ObjectInDataStoreVO();
+        vo.setDataStoreId(dataStore.getId());
+        vo.setDataStoreRole(dataStore.getRole());
+        vo.setObjectId(volume.getId());
+        vo.setObjectType(volume.getType());
+        vo = objectDataStoreDao.persist(vo);
+
+        return volumeFactory.getVolume(volume.getId(), dataStore);
+    }
+
+    @Override
+    public SnapshotInfo create(SnapshotInfo snapshot, DataStore dataStore) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public ObjectInDataStoreVO create(SnapshotInfo snapshot, DataStore dataStore) {
-        // TODO Auto-generated method stub
-        return null;
+    public ObjectInDataStoreVO findObject(long objectId, DataObjectType type,
+            long dataStoreId, DataStoreRole role) {
+        SearchCriteriaService<ObjectInDataStoreVO, ObjectInDataStoreVO> sc = SearchCriteria2
+                .create(ObjectInDataStoreVO.class);
+        sc.addAnd(sc.getEntity().getObjectId(), Op.EQ, objectId);
+        sc.addAnd(sc.getEntity().getDataStoreId(), Op.EQ, dataStoreId);
+        sc.addAnd(sc.getEntity().getObjectType(), Op.EQ, type);
+        sc.addAnd(sc.getEntity().getDataStoreRole(), Op.EQ, role);
+        sc.addAnd(sc.getEntity().getState(), Op.NIN,
+                ObjectInDataStoreStateMachine.State.Destroyed,
+                ObjectInDataStoreStateMachine.State.Failed);
+        ObjectInDataStoreVO objectStoreVO = sc.find();
+        return objectStoreVO;
+
     }
 
     @Override
-    public TemplateInfo findTemplate(TemplateInfo template, DataStore dataStore) {
-        // TODO Auto-generated method stub
-        return null;
-    }
+    public boolean update(DataObject data, Event event)
+            throws NoTransitionException {
+        ObjectInDataStoreVO obj = this.findObject(data.getId(), data.getType(),
+                data.getDataStore().getId(), data.getDataStore().getRole());
+        if (obj == null) {
+            throw new CloudRuntimeException(
+                    "can't find mapping in ObjectInDataStore table for: "
+                            + data);
+        }
+        return this.stateMachines.transitTo(obj, event, null,
+                objectDataStoreDao);
 
-    @Override
-    public VolumeInfo findVolume(VolumeInfo volume, DataStore dataStore) {
-        // TODO Auto-generated method stub
-        return null;
     }
-
-    @Override
-    public SnapshotInfo findSnapshot(SnapshotInfo snapshot, DataStore dataStore) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public boolean update(TemplateInfo vo, Event event) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
 }

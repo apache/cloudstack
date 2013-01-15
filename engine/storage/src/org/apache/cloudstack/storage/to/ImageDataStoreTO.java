@@ -16,7 +16,7 @@
 // under the License.
 package org.apache.cloudstack.storage.to;
 
-import org.apache.cloudstack.storage.image.store.ImageDataStoreInfo;
+import org.apache.cloudstack.storage.image.datastore.ImageDataStoreInfo;
 
 public class ImageDataStoreTO {
     private final String type;

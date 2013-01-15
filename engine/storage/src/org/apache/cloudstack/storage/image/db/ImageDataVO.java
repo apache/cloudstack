@@ -34,16 +34,18 @@ import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
 import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.storage.image.TemplateState;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.fsm.StateObject;
 
 @Entity
 @Table(name = "vm_template")
-public class ImageDataVO implements Identity {
+public class ImageDataVO implements Identity, StateObject<TemplateState> {
     @Id
     @TableGenerator(name = "vm_template_sq", table = "sequence", pkColumnName = "name", valueColumnName = "value", pkColumnValue = "vm_template_seq", allocationSize = 1)
     @Column(name = "id", nullable = false)
@@ -132,6 +134,12 @@ public class ImageDataVO implements Identity {
 
     @Column(name = "image_data_store_id")
     private long imageDataStoreId;
+    
+    @Column(name = "size")
+    private long size;
+    
+    @Column(name = "state")
+    private TemplateState state;
 
     @Transient
     Map details;
@@ -146,6 +154,7 @@ public class ImageDataVO implements Identity {
 
     public ImageDataVO() {
         this.uuid = UUID.randomUUID().toString();
+        this.state = TemplateState.Allocated;
     }
 
     public boolean getEnablePassword() {
@@ -396,6 +405,18 @@ public class ImageDataVO implements Identity {
 
     public void setImageDataStoreId(long dataStoreId) {
         this.imageDataStoreId = dataStoreId;
+    }
+    
+    public void setSize(long size) {
+        this.size = size;
+    }
+    
+    public long getSize() {
+        return this.size;
+    }
+    
+    public TemplateState getState() {
+        return this.state;
     }
 
 }

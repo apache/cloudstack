@@ -24,12 +24,9 @@ import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
-
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
-
 import org.apache.cloudstack.storage.HostEndpointRpcServer;
 import org.apache.cloudstack.storage.HypervisorHostEndPoint;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -37,9 +34,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
-import com.cloud.utils.component.ComponentInject;
-import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.component.ComponentContext;
 
 
 public class MockHostEndpointRpcServerDirectCallResource implements HostEndpointRpcServer {
@@ -53,7 +48,7 @@ public class MockHostEndpointRpcServerDirectCallResource implements HostEndpoint
     
     public void sendCommandAsync(HypervisorHostEndPoint host, final Command command, final AsyncCompletionCallback<Answer> callback) {
        // new MockRpcCallBack(host.getHostId(), command, callback);
-        MockRpcCallBack run = ComponentInject.inject(MockRpcCallBack.class);
+        MockRpcCallBack run = ComponentContext.inject(MockRpcCallBack.class);
         run.setCallback(callback);
         run.setCmd(command);
         run.setHostId(host.getHostId());

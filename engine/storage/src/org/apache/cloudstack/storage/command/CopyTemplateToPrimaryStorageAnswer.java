@@ -14,20 +14,3 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.storage.command;
-
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.Command;
-
-public class CopyTemplateToPrimaryStorageAnswer extends Answer {
-    private final String path;
-    
-    public CopyTemplateToPrimaryStorageAnswer(Command cmd, String path) {
-        super(cmd);
-        this.path = path;
-    }
-    
-    public String getPath() {
-        return this.path;
-    }
-}

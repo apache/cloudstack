@@ -22,7 +22,6 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -31,50 +30,37 @@ import java.util.UUID;
 import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreAnswer;
 import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreCmd;
 import org.apache.cloudstack.storage.command.CopyCmd;
-import org.apache.cloudstack.storage.command.CopyTemplateToPrimaryStorageAnswer;
+import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CreatePrimaryDataStoreCmd;
 import org.apache.cloudstack.storage.command.CreateVolumeAnswer;
 import org.apache.cloudstack.storage.command.CreateVolumeCommand;
 import org.apache.cloudstack.storage.command.CreateVolumeFromBaseImageCommand;
-import org.apache.cloudstack.storage.command.DeleteVolumeCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.datastore.protocol.DataStoreProtocol;
-import org.apache.cloudstack.storage.to.ImageDataStoreTO;
 import org.apache.cloudstack.storage.to.ImageOnPrimayDataStoreTO;
 import org.apache.cloudstack.storage.to.NfsPrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateTO;
 import org.apache.cloudstack.storage.to.VolumeTO;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpHead;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.ModifyStoragePoolAnswer;
-import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
-import com.cloud.agent.api.to.StorageFilerTO;
+import com.cloud.agent.api.storage.DeleteVolumeCommand;
 import com.cloud.hypervisor.xen.resource.CitrixResourceBase.SRType;
 import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.storage.template.TemplateInfo;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
 import com.xensource.xenapi.PBD;
-import com.xensource.xenapi.Pool;
 import com.xensource.xenapi.SR;
 import com.xensource.xenapi.Types;
-import com.xensource.xenapi.VBD;
 import com.xensource.xenapi.Types.BadServerResponse;
 import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VDI;
@@ -129,7 +115,7 @@ public class XenServerStorageResource {
     }
     
     protected CreateVolumeAnswer execute(CreateVolumeCommand cmd) {
-        VolumeTO volume = cmd.getVolume();
+        VolumeTO volume = null;
         PrimaryDataStoreTO primaryDataStore = volume.getDataStore();
         Connection conn = hypervisorResource.getConnection();
         VDI vdi = null;
@@ -164,7 +150,7 @@ public class XenServerStorageResource {
     }
     
     protected Answer execute(DeleteVolumeCommand cmd) {
-        VolumeTO volume = cmd.getVolume();
+        VolumeTO volume = null;
         Connection conn = hypervisorResource.getConnection();
         String errorMsg = null;
         try {
@@ -516,7 +502,7 @@ public class XenServerStorageResource {
             //downloadHttpToLocalFile(vdiPath, template.getPath());
             hypervisorResource.callHostPlugin(conn, "storagePlugin", "downloadTemplateFromUrl", "destPath", vdiPath, "srcUrl", template.getPath());
             result = true;
-            return new CopyTemplateToPrimaryStorageAnswer(cmd, vdi.getUuid(conn));
+            return new CopyCmdAnswer(cmd, vdi.getUuid(conn));
         } catch (BadServerResponse e) {
             s_logger.debug("Failed to download template", e);
         } catch (XenAPIException e) {
@@ -542,7 +528,7 @@ public class XenServerStorageResource {
     }
     
     protected Answer execute(AttachPrimaryDataStoreCmd cmd) {
-        PrimaryDataStoreTO dataStore = cmd.getDataStore();
+        PrimaryDataStoreTO dataStore = null;
         Connection conn = hypervisorResource.getConnection();
         try {
             SR sr = hypervisorResource.getStorageRepository(conn, dataStore.getUuid());

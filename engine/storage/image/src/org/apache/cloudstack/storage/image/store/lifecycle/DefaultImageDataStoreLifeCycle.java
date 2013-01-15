@@ -20,35 +20,72 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.image.db.ImageDataStoreDao;
-import org.apache.cloudstack.storage.image.db.ImageDataStoreProviderVO;
-import org.apache.cloudstack.storage.image.db.ImageDataStoreVO;
-import org.apache.cloudstack.storage.image.provider.ImageDataStoreProvider;
-import org.apache.cloudstack.storage.image.store.ImageDataStore;
 
 public class DefaultImageDataStoreLifeCycle implements ImageDataStoreLifeCycle {
-	protected ImageDataStoreProvider provider;
-	protected ImageDataStoreProviderVO providerVO;
+    @Inject
 	protected ImageDataStoreDao imageStoreDao;
-	@Override
-	public ImageDataStore registerDataStore(String name,
-			Map<String, String> params) {
-		ImageDataStoreVO dataStore = imageStoreDao.findByName(name);
-		if (dataStore == null) {
-			dataStore = new ImageDataStoreVO();
-			dataStore.setName(name);
-			dataStore.setProvider(providerVO.getId());
-			dataStore = imageStoreDao.persist(dataStore);
-		}
-		return provider.getImageDataStore(dataStore.getId());
-	}
 	
-	public DefaultImageDataStoreLifeCycle(ImageDataStoreProvider provider,
-			ImageDataStoreProviderVO providerVO,
-			ImageDataStoreDao dao) {
-		this.provider = provider;
-		this.providerVO = providerVO;
-		this.imageStoreDao = dao;
+	public DefaultImageDataStoreLifeCycle() {
 	}
+
+
+    @Override
+    public boolean initialize(DataStore store, Map<String, String> dsInfos) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+
+    @Override
+    public boolean attachCluster(DataStore store, ClusterScope scope) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+
+    @Override
+    public boolean attachZone(DataStore dataStore, ZoneScope scope) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+
+    @Override
+    public boolean dettach() {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+
+    @Override
+    public boolean unmanaged() {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+
+    @Override
+    public boolean maintain() {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+
+    @Override
+    public boolean cancelMaintain() {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+
+    @Override
+    public boolean deleteDataStore() {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
 }

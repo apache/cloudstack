@@ -19,28 +19,12 @@
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
 
-import java.util.Date;
+import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
-import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeType;
-
-import com.cloud.storage.Volume;
-
-public interface VolumeInfo {
-	public long getSize();
+public interface VolumeInfo extends DataObject {
 	public String getUuid();
-	public String getPath();
-	public PrimaryDataStoreInfo getDataStore() ;
-	public String getTemplateUuid();
-	public String getTemplatePath();
-	public VolumeType getType();
-	public VolumeDiskType getDiskType();
 	public long getId();
-	public Volume.State getCurrentState();
-	public Volume.State getDesiredState();
-	public Date getCreatedDate();
-	public Date getUpdatedDate();
-	public String getOwner();
-	public String getName();
+
 	public boolean isAttachedVM();
+	public String getPath();
 }

@@ -16,29 +16,30 @@
 // under the License.
 package org.apache.cloudstack.storage.to;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
+import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
 import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeType;
 
 public class VolumeTO {
     private final String uuid;
     private final String path;
-    private final VolumeType volumeType;
-    private final VolumeDiskType diskType;
+    private  VolumeType volumeType;
+    private  DiskFormat diskType;
     private PrimaryDataStoreTO dataStore;
-    private final String name;
+    private  String name;
     private final long size;
     public VolumeTO(VolumeInfo volume) {
         this.uuid = volume.getUuid();
-        this.path = volume.getPath();
-        this.volumeType = volume.getType();
-        this.diskType = volume.getDiskType();
+        this.path = volume.getUri();
+        //this.volumeType = volume.getType();
+        //this.diskType = volume.getDiskType();
         if (volume.getDataStore() != null) {
-            this.dataStore = new PrimaryDataStoreTO(volume.getDataStore());
+            this.dataStore = new PrimaryDataStoreTO((PrimaryDataStoreInfo)volume.getDataStore());
         } else {
             this.dataStore = null;
         }
-        this.name = volume.getName();
+        //this.name = volume.getName();
         this.size = volume.getSize();
     }
     
@@ -54,7 +55,7 @@ public class VolumeTO {
         return this.volumeType;
     }
     
-    public VolumeDiskType getDiskType() {
+    public DiskFormat getDiskType() {
         return this.diskType;
     }
     
