@@ -404,9 +404,17 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
     }
 
     @Override
-    public Map<String, String> getProperties() {
-        return PropertiesUtil.processConfigFile(new String[]
-                { "junipersrx_commands.properties"});
+    public List<Class<?>> getCommands() {
+        List<Class<?>> cmdList = new ArrayList<Class<?>>();
+        cmdList.add(AddExternalFirewallCmd.class);
+        cmdList.add(AddSrxFirewallCmd.class);
+        cmdList.add(ConfigureSrxFirewallCmd.class);
+        cmdList.add(DeleteExternalFirewallCmd.class);
+        cmdList.add(DeleteSrxFirewallCmd.class);
+        cmdList.add(ListExternalFirewallsCmd.class);
+        cmdList.add(ListSrxFirewallNetworksCmd.class);
+        cmdList.add(ListSrxFirewallsCmd.class);
+        return cmdList;
     }
 
     @Override

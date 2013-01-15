@@ -142,8 +142,6 @@ UPDATE `cloud`.`conditions` set uuid=id WHERE uuid is NULL;
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', '"detail.batch.query.size"', '2000', 'Default entity detail batch query size for listing');
 
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'api.throttling.enabled', 'true, 'enable api rate limiting');
-
 --- DB views for list api ---
 use cloud;
 

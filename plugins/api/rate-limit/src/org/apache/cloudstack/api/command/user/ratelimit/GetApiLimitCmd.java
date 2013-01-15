@@ -78,7 +78,8 @@ public class GetApiLimitCmd extends BaseListCmd {
 
     @Override
     public void execute(){
-        ApiLimitResponse response = _apiLimitService.searchApiLimit(this);
+        Account caller = UserContext.current().getCaller();
+        ApiLimitResponse response = _apiLimitService.searchApiLimit(caller);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

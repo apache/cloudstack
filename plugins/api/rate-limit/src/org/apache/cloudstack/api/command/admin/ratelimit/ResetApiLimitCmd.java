@@ -83,7 +83,7 @@ public class ResetApiLimitCmd extends BaseCmd {
 
     @Override
     public void execute(){
-        boolean result = _apiLimitService.resetApiLimit(this);
+        boolean result = _apiLimitService.resetApiLimit(this.accountId);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);

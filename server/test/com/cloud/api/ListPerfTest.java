@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.api;
 
+import static org.junit.Assert.*;
+
 import java.util.HashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -23,6 +25,8 @@ import java.util.concurrent.Executors;
 
 import org.junit.Before;
 import org.junit.Test;
+
+import com.cloud.utils.exception.CloudRuntimeException;
 
 
 /**
@@ -175,7 +179,8 @@ public class ListPerfTest extends APITest {
         params.put("response", "json");
         params.put("listAll", "true");
         params.put("sessionkey", sessionKey);
-        int clientCount = 6;
+        // assuming ApiRateLimitService set api.throttling.max = 25
+        int clientCount = 26;
         Runnable[] clients = new Runnable[clientCount];
         final boolean[] isUsable = new boolean[clientCount];
 
@@ -196,8 +201,13 @@ public class ListPerfTest extends APITest {
                     try {
                         startGate.await();
 
-                        System.out.println(sendRequest("listAccounts", params));
+                        sendRequest("listAccounts", params);
 
+                        isUsable[j] = true;
+
+                    } catch (CloudRuntimeException e){
+                        isUsable[j] = false;
+                        e.printStackTrace();
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     } finally {
@@ -216,6 +226,14 @@ public class ListPerfTest extends APITest {
         startGate.countDown();
 
         endGate.await();
+
+        int rejectCount = 0;
+        for ( int i = 0; i < isUsable.length; ++i){
+            if ( !isUsable[i])
+                rejectCount++;
+        }
+
+        assertEquals("Only one request should be rejected!", 1, rejectCount);
 
     }
 

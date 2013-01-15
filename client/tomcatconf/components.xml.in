@@ -54,15 +54,13 @@ under the License.
              <param name="premium">true</param>
         </dao>
         <adapters key="org.apache.cloudstack.acl.APIChecker">
-            <adapter name="StaticRoleBasedAPIAccessChecker" class="org.apache.cloudstack.acl.StaticRoleBasedAPIAccessChecker"/>
-        </adapters>
-        <adapters key="org.apache.cloudstack.acl.APILimitChecker">
             <adapter name="AccountBasedAPIRateLimit" class="org.apache.cloudstack.ratelimit.ApiRateLimitServiceImpl" singleton="true">
                  <param name="api.throttling.interval">1</param>
                  <param name="api.throttling.max">25</param>
                  <param name="api.throttling.cachesize">50000</param>
-            </adapter>
-        </adapters>        
+            </adapter>        
+            <adapter name="StaticRoleBasedAPIAccessChecker" class="org.apache.cloudstack.acl.StaticRoleBasedAPIAccessChecker"/>
+        </adapters>
         <adapters key="com.cloud.agent.manager.allocator.HostAllocator">
             <adapter name="FirstFitRouting" class="com.cloud.agent.manager.allocator.impl.FirstFitRoutingAllocator"/>
             <!--adapter name="FirstFitRouting" class="com.cloud.agent.manager.allocator.impl.RecreateHostAllocator"/-->

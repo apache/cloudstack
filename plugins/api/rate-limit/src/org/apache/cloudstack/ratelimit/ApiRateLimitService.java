@@ -16,11 +16,8 @@
 // under the License.
 package org.apache.cloudstack.ratelimit;
 
-import org.apache.cloudstack.api.command.admin.ratelimit.ResetApiLimitCmd;
-import org.apache.cloudstack.api.command.user.ratelimit.GetApiLimitCmd;
 import org.apache.cloudstack.api.response.ApiLimitResponse;
-import org.apache.cloudstack.api.response.ListResponse;
-
+import com.cloud.user.Account;
 import com.cloud.utils.component.PluggableService;
 
 /**
@@ -30,9 +27,9 @@ import com.cloud.utils.component.PluggableService;
  */
 public interface ApiRateLimitService extends PluggableService{
 
-    public ApiLimitResponse searchApiLimit(GetApiLimitCmd cmd);
+    public ApiLimitResponse searchApiLimit(Account caller);
 
-    public boolean resetApiLimit(ResetApiLimitCmd cmd);
+    public boolean resetApiLimit(Long accountId);
 
     public void setTimeToLive(int timeToLive);
 

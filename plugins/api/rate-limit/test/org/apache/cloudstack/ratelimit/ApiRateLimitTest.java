@@ -23,20 +23,18 @@ import java.util.concurrent.Executors;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.admin.ratelimit.ResetApiLimitCmd;
-import org.apache.cloudstack.api.command.user.ratelimit.GetApiLimitCmd;
 import org.apache.cloudstack.api.response.ApiLimitResponse;
 import org.apache.cloudstack.ratelimit.ApiRateLimitServiceImpl;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.exception.RequestLimitException;
 import com.cloud.user.Account;
+import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
-import com.cloud.user.UserContext;
+import com.cloud.user.User;
+import com.cloud.user.UserVO;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -44,25 +42,45 @@ import static org.mockito.Mockito.*;
 public class ApiRateLimitTest {
 
 	static ApiRateLimitServiceImpl _limitService = new ApiRateLimitServiceImpl();
-	private static long acctIdSeq = 0L;
+	static AccountService _accountService = mock(AccountService.class);
+	private static long acctIdSeq = 5L;
+	private static Account testAccount;
 
 	@BeforeClass
 	public static void setUp() throws ConfigurationException {
 
 		_limitService.configure("ApiRateLimitTest", Collections.<String, Object> emptyMap());
+
+	    _limitService._accountService = _accountService;
+
+	    // Standard responses
+	    AccountVO acct = new AccountVO(acctIdSeq);
+	    acct.setType(Account.ACCOUNT_TYPE_NORMAL);
+	    acct.setAccountName("demo");
+	    testAccount = acct;
+
+	    when(_accountService.getAccount(5L)).thenReturn(testAccount);
+	    when(_accountService.isRootAdmin(Account.ACCOUNT_TYPE_NORMAL)).thenReturn(false);
 	}
 
+    @Before
+    public void testSetUp() {
+        // reset counter for each test
+        _limitService.resetApiLimit(null);
+    }
 
-	private Account createFakeAccount(){
-	    return new AccountVO(acctIdSeq++);
+	private User createFakeUser(){
+	    UserVO user = new UserVO();
+	    user.setAccountId(acctIdSeq);
+	    return user;
 	}
 
-	private boolean isUnderLimit(Account key){
+	private boolean isUnderLimit(User key){
 	    try{
-	        _limitService.checkLimit(key);
+	       _limitService.checkAccess(key, null);
 	        return true;
 	    }
-	    catch (ServerApiException ex){
+	    catch (RequestLimitException ex){
 	        return false;
 	    }
 	}
@@ -73,7 +91,7 @@ public class ApiRateLimitTest {
         _limitService.setMaxAllowed(allowedRequests);
         _limitService.setTimeToLive(1);
 
-        Account key = createFakeAccount();
+        User key = createFakeUser();
         assertTrue("Allow for the first request", isUnderLimit(key));
 
         assertFalse("Second request should be blocked, since we assume that the two api "
@@ -86,10 +104,10 @@ public class ApiRateLimitTest {
         _limitService.setMaxAllowed(allowedRequests);
         _limitService.setTimeToLive(1);
 
-        Account key = createFakeAccount();
+        User key = createFakeUser();
 
         for (int i = 0; i < allowedRequests; i++) {
-            assertTrue("We should allow " + allowedRequests + " requests per second", isUnderLimit(key));
+            assertTrue("We should allow " + allowedRequests + " requests per second, but failed at request " + i, isUnderLimit(key));
         }
 
 
@@ -103,7 +121,7 @@ public class ApiRateLimitTest {
         _limitService.setTimeToLive(1);
 
 
-        final Account key = createFakeAccount();
+        final User key = createFakeUser();
 
         int clientCount = allowedRequests;
         Runnable[] clients = new Runnable[clientCount];
@@ -158,7 +176,7 @@ public class ApiRateLimitTest {
         _limitService.setMaxAllowed(allowedRequests);
         _limitService.setTimeToLive(1);
 
-        Account key = this.createFakeAccount();
+        User key = this.createFakeUser();
 
         assertTrue("The first request should be allowed", isUnderLimit(key));
 
@@ -174,41 +192,35 @@ public class ApiRateLimitTest {
         _limitService.setMaxAllowed(allowedRequests);
         _limitService.setTimeToLive(1);
 
-        Account key = this.createFakeAccount();
+        User key = this.createFakeUser();
 
         assertTrue("The first request should be allowed", isUnderLimit(key));
 
         assertFalse("Another request should be blocked", isUnderLimit(key));
 
-        ResetApiLimitCmd cmd = new ResetApiLimitCmd();
-        cmd.setAccountId(key.getId());
-
-        _limitService.resetApiLimit(cmd);
+        _limitService.resetApiLimit(key.getAccountId());
 
         assertTrue("Another request should be allowed after reset counter", isUnderLimit(key));
     }
 
-    /* Disable this since I cannot mock Static method UserContext.current()
+
     @Test
     public void verifySearchCounter() throws Exception {
         int allowedRequests = 10;
         _limitService.setMaxAllowed(allowedRequests);
         _limitService.setTimeToLive(1);
 
-        Account key = this.createFakeAccount();
+        User key = this.createFakeUser();
 
         for ( int i = 0; i < 5; i++ ){
             assertTrue("Issued 5 requests", isUnderLimit(key));
         }
 
-        GetApiLimitCmd cmd = new GetApiLimitCmd();
-        UserContext ctx = mock(UserContext.class);
-        when(UserContext.current().getCaller()).thenReturn(key);
-        ApiLimitResponse response = _limitService.searchApiLimit(cmd);
+        ApiLimitResponse response = _limitService.searchApiLimit(testAccount);
         assertEquals("apiIssued is incorrect", 5, response.getApiIssued());
         assertEquals("apiAllowed is incorrect", 5, response.getApiAllowed());
-        assertTrue("expiredAfter is incorrect", response.getExpireAfter() < 1);
+        assertTrue("expiredAfter is incorrect", response.getExpireAfter() < 1000);
 
     }
-    */
+
 }

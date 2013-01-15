@@ -915,7 +915,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
 
     @Override @DB(txn=false)
     @SuppressWarnings("unchecked")
-    public T findByUuid(final ID uuid) {
+    public T findByUuid(final String uuid) {
         SearchCriteria<T> sc = createSearchCriteria();
         sc.addAnd("uuid", SearchCriteria.Op.EQ, uuid);
         return findOneBy(sc);

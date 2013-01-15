@@ -96,6 +96,10 @@ def writeProgressBar(msg, result):
         output = "[%-6s]\n"%"Failed"
     sys.stdout.write(output)
     sys.stdout.flush()
+
+class UnknownSystemException(Exception):
+    "This Excption is raised if the current operating enviornment is unknown"
+    pass
  
 class Distribution:
     def __init__(self):
@@ -120,7 +124,7 @@ class Distribution:
             self.arch = bash("uname -m").getStdout()
             
         else: 
-            self.distro = "Unknown" 
+            raise UnknownSystemException
 
     def getVersion(self):
         return self.distro 

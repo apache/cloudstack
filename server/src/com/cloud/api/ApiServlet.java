@@ -128,7 +128,7 @@ public class ApiServlet extends HttpServlet {
             reqStr = auditTrailSb.toString() + " " + req.getQueryString();
             s_logger.debug("===START=== " + StringUtils.cleanString(reqStr));
         }
-        
+
         try {
             HttpSession session = req.getSession(false);
             Object[] responseTypeParam = params.get("response");
@@ -298,24 +298,16 @@ public class ApiServlet extends HttpServlet {
                  * params.put(BaseCmd.Properties.ACCOUNT_OBJ.getName(), new Object[] { accountObj }); } else {
                  * params.put(BaseCmd.Properties.USER_ID.getName(), new String[] { userId });
                  * params.put(BaseCmd.Properties.ACCOUNT_OBJ.getName(), new Object[] { accountObj }); } }
-                 * 
+                 *
                  * // update user context info here so that we can take information if the request is authenticated // via api
                  * key mechanism updateUserContext(params, session != null ? session.getId() : null);
                  */
 
-                auditTrailSb.insert(0,
-                        "(userId=" + UserContext.current().getCallerUserId() + " accountId=" + UserContext.current().getCaller().getId() + " sessionId=" + (session != null ? session.getId() : null)
-                                + ")");
+                auditTrailSb.insert(0, "(userId=" + UserContext.current().getCallerUserId() + " accountId="
+                        + UserContext.current().getCaller().getId() + " sessionId=" + (session != null ? session.getId() : null) + ")");
 
-                try {
-                    String response = _apiServer.handleRequest(params, false, responseType, auditTrailSb);
-                    writeResponse(resp, response != null ? response : "", HttpServletResponse.SC_OK, responseType);
-                } catch (ServerApiException se) {
-                    String serializedResponseText = _apiServer.getSerializedApiError(se.getErrorCode(), se.getDescription(), params, responseType, null);
-                    resp.setHeader("X-Description", se.getDescription());
-                    writeResponse(resp, serializedResponseText, se.getErrorCode(), responseType);
-                    auditTrailSb.append(" " + se.getErrorCode() + " " + se.getDescription());
-                }
+                String response = _apiServer.handleRequest(params, false, responseType, auditTrailSb);
+                writeResponse(resp, response != null ? response : "", HttpServletResponse.SC_OK, responseType);
             } else {
                 if (session != null) {
                     try {
@@ -329,17 +321,14 @@ public class ApiServlet extends HttpServlet {
                 writeResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType);
 
             }
+        } catch (ServerApiException se) {
+            String serializedResponseText = _apiServer.getSerializedApiError(se.getErrorCode(), se.getDescription(), params, responseType, null);
+            resp.setHeader("X-Description", se.getDescription());
+            writeResponse(resp, serializedResponseText, se.getErrorCode(), responseType);
+            auditTrailSb.append(" " + se.getErrorCode() + " " + se.getDescription());
         } catch (Exception ex) {
-            if (ex instanceof ServerApiException && ((ServerApiException) ex).getErrorCode() == BaseCmd.UNSUPPORTED_ACTION_ERROR) {
-                ServerApiException se = (ServerApiException) ex;
-                String serializedResponseText = _apiServer.getSerializedApiError(se.getErrorCode(), se.getDescription(), params, responseType, null);
-                resp.setHeader("X-Description", se.getDescription());
-                writeResponse(resp, serializedResponseText, se.getErrorCode(), responseType);
-                auditTrailSb.append(" " + se.getErrorCode() + " " + se.getDescription());
-            } else {
-                s_logger.error("unknown exception writing api response", ex);
-                auditTrailSb.append(" unknown exception writing api response");
-            }
+            s_logger.error("unknown exception writing api response", ex);
+            auditTrailSb.append(" unknown exception writing api response");
         } finally {
             s_accessLogger.info(auditTrailSb.toString());
             if (s_logger.isDebugEnabled()) {
@@ -354,9 +343,9 @@ public class ApiServlet extends HttpServlet {
      * private void updateUserContext(Map<String, Object[]> requestParameters, String sessionId) { String userIdStr =
      * (String)(requestParameters.get(BaseCmd.Properties.USER_ID.getName())[0]); Account accountObj =
      * (Account)(requestParameters.get(BaseCmd.Properties.ACCOUNT_OBJ.getName())[0]);
-     * 
+     *
      * Long userId = null; Long accountId = null; if(userIdStr != null) userId = Long.parseLong(userIdStr);
-     * 
+     *
      * if(accountObj != null) accountId = accountObj.getId(); UserContext.updateContext(userId, accountId, sessionId); }
      */
 
@@ -386,7 +375,7 @@ public class ApiServlet extends HttpServlet {
     private String getLoginSuccessResponse(HttpSession session, String responseType) {
         StringBuffer sb = new StringBuffer();
         int inactiveInterval = session.getMaxInactiveInterval();
-        
+
         String user_UUID = (String)session.getAttribute("user_UUID");
         session.removeAttribute("user_UUID");
 

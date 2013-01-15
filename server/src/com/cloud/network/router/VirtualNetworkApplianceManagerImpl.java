@@ -1381,9 +1381,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             assert guestNetwork.getTrafficType() == TrafficType.Guest;
         
             // 1) Get deployment plan and find out the list of routers
-            boolean isPodBased = (dest.getDataCenter().getNetworkType() == NetworkType.Basic ||
-                    _networkMgr.areServicesSupportedInNetwork(guestNetwork.getId(), Service.SecurityGroup))
-                    && guestNetwork.getTrafficType() == TrafficType.Guest;
+            boolean isPodBased = (dest.getDataCenter().getNetworkType() == NetworkType.Basic);
 
             // dest has pod=null, for Basic Zone findOrDeployVRs for all Pods
             List<DeployDestination> destinations = new ArrayList<DeployDestination>();

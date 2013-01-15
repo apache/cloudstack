@@ -760,7 +760,6 @@ public class ManagementServerImpl implements ManagementServer {
             sc.addAnd("vm_type", SearchCriteria.Op.EQ, vmTypeStr);
         }
 
-        sc.addAnd("systemUse", SearchCriteria.Op.EQ, isSystem);
         sc.addAnd("removed", SearchCriteria.Op.NULL);
         return _offeringsDao.search(sc, searchFilter);
 
@@ -2298,9 +2297,9 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public Map<String, String> getProperties() {
-        return PropertiesUtil.processConfigFile(new String[]
-                { "commands.properties" });
+    public List<Class<?>> getCommands() {
+        //TODO: Add cmd classes
+        return null;
     }
 
     protected class EventPurgeTask implements Runnable {

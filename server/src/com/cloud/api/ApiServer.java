@@ -115,6 +115,7 @@ import com.cloud.event.EventUtils;
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.RequestLimitException;
 import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -132,14 +133,12 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CSExceptionErrorCode;
-import com.cloud.uuididentity.dao.IdentityDao;
 
 public class ApiServer implements HttpRequestHandler {
     private static final Logger s_logger = Logger.getLogger(ApiServer.class.getName());
     private static final Logger s_accessLogger = Logger.getLogger("apiserver." + ApiServer.class.getName());
 
     public static boolean encodeApiResponse = false;
-    public static boolean apiThrottlingEnabled = true;
     public static String jsonContentType = "text/javascript";
     private ApiDispatcher _dispatcher;
 
@@ -218,7 +217,6 @@ public class ApiServer implements HttpRequestHandler {
         if (jsonType != null) {
             jsonContentType = jsonType;
         }
-        apiThrottlingEnabled = Boolean.valueOf(configDao.getValue(Config.ApiLimitEnabled.key()));
 
         if (apiPort != null) {
             ListenerThread listenerThread = new ListenerThread(this, apiPort);
@@ -555,19 +553,22 @@ public class ApiServer implements HttpRequestHandler {
             // if userId not null, that mean that user is logged in
             if (userId != null) {
             	User user = ApiDBUtils.findUserById(userId);
-            	if (apiThrottlingEnabled){
-            	    // go through each API limit checker, throw exception inside adapter implementation so that message
-            	    // can contain some detailed information only known for each adapter implementation.
-            	    checkRequestLimit(user);
+
+            	try{
+            	    checkCommandAvailable(user, commandName);
             	}
-                if (!isCommandAvailable(user, commandName)) {
+            	catch (PermissionDeniedException ex){
                     s_logger.debug("The given command:" + commandName + " does not exist or it is not available for user with id:" + userId);
                     throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command does not exist or it is not available for user");
+                }
+                catch (RequestLimitException ex){
+                    s_logger.debug(ex.getMessage());
+                    throw new ServerApiException(BaseCmd.API_LIMIT_EXCEED, ex.getMessage());
                 }
                 return true;
             } else {
                 // check against every available command to see if the command exists or not
-                if (!doesCommandExist(commandName) && !commandName.equals("login") && !commandName.equals("logout")) {
+                if (!_apiNameCmdClassMap.containsKey(commandName) && !commandName.equals("login") && !commandName.equals("logout")) {
                     s_logger.debug("The given command:" + commandName + " does not exist or it is not available for user with id:" + userId);
                     throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command does not exist or it is not available for user");
                 }
@@ -612,30 +613,29 @@ public class ApiServer implements HttpRequestHandler {
 
             // if api/secret key are passed to the parameters
             if ((signature == null) || (apiKey == null)) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.info("expired session, missing signature, or missing apiKey -- ignoring request...sig: " + signature + ", apiKey: " + apiKey);
-                }
+                s_logger.debug("Expired session, missing signature, or missing apiKey -- ignoring request. Signature: " + signature + ", apiKey: " + apiKey);
                 return false; // no signature, bad request
             }
 
             Date expiresTS = null;
+            // FIXME: Hard coded signature, why not have an enum
             if ("3".equals(signatureVersion)) {
                 // New signature authentication. Check for expire parameter and its validity
                 if (expires == null) {
-                    s_logger.info("missing Expires parameter -- ignoring request...sig: " + signature + ", apiKey: " + apiKey);
+                    s_logger.debug("Missing Expires parameter -- ignoring request. Signature: " + signature + ", apiKey: " + apiKey);
                     return false;
                 }
                 synchronized (_dateFormat) {
                     try {
                         expiresTS = _dateFormat.parse(expires);
                     } catch (ParseException pe) {
-                        s_logger.info("Incorrect date format for Expires parameter", pe);
+                        s_logger.debug("Incorrect date format for Expires parameter", pe);
                         return false;
                     }
                 }
                 Date now = new Date(System.currentTimeMillis());
                 if (expiresTS.before(now)) {
-                    s_logger.info("Request expired -- ignoring ...sig: " + signature + ", apiKey: " + apiKey);
+                    s_logger.debug("Request expired -- ignoring ...sig: " + signature + ", apiKey: " + apiKey);
                     return false;
                 }
             }
@@ -646,7 +646,7 @@ public class ApiServer implements HttpRequestHandler {
             // verify there is a user with this api key
             Pair<User, Account> userAcctPair = _accountMgr.findUserByApiKey(apiKey);
             if (userAcctPair == null) {
-                s_logger.info("apiKey does not map to a valid user -- ignoring request, apiKey: " + apiKey);
+                s_logger.debug("apiKey does not map to a valid user -- ignoring request, apiKey: " + apiKey);
                 return false;
             }
 
@@ -661,7 +661,10 @@ public class ApiServer implements HttpRequestHandler {
 
             UserContext.updateContext(user.getId(), account, null);
 
-            if (!isCommandAvailable(user, commandName)) {
+            try{
+                checkCommandAvailable(user, commandName);
+            }
+            catch (PermissionDeniedException ex){
                 s_logger.debug("The given command:" + commandName + " does not exist or it is not available for user");
                 throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command:" + commandName + " does not exist or it is not available for user with id:" + userId);
             }
@@ -686,24 +689,16 @@ public class ApiServer implements HttpRequestHandler {
                 s_logger.info("User signature: " + signature + " is not equaled to computed signature: " + computedSignature);
             }
             return equalSig;
-        } catch (Exception ex) {
-            if (ex instanceof ServerApiException && ((ServerApiException) ex).getErrorCode() == BaseCmd.UNSUPPORTED_ACTION_ERROR) {
-                throw (ServerApiException) ex;
-            }
-            s_logger.error("unable to verifty request signature", ex);
+        } catch (ServerApiException ex){
+            throw ex;
+        } catch (Exception ex){
+            s_logger.error("unable to verify request signature");
         }
         return false;
     }
 
-    public Long fetchDomainId(String domainUUID){
-        ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
-        IdentityDao identityDao = locator.getDao(IdentityDao.class);
-        try{
-            Long domainId = identityDao.getIdentityId("domain", domainUUID);
-            return domainId;
-        }catch(InvalidParameterValueException ex){
-            return null;
-        }
+    public Long fetchDomainId(String domainUUID) {
+        return _domainMgr.getDomain(domainUUID).getId();
     }
 
     public void loginUser(HttpSession session, String username, String password, Long domainId, String domainPath, String loginIpAddress ,Map<String, Object[]> requestParameters) throws CloudAuthenticationException {
@@ -800,41 +795,14 @@ public class ApiServer implements HttpRequestHandler {
     }
 
 
-    private void checkRequestLimit(User user) throws ServerApiException {
-        Account account = ApiDBUtils.findAccountById(user.getAccountId());
-        if ( _accountMgr.isRootAdmin(account.getType()) ){
-            // no api throttling for root admin
-            return;
-        }
-        for (APILimitChecker apiChecker : _apiLimitCheckers) {
-            // Fail the checking if any checker fails to verify
-            apiChecker.checkLimit(account);
-         }
-    }
-
-
-    private boolean doesCommandExist(String apiName) {
-        for (APIChecker apiChecker : _apiAccessCheckers) {
-            // If any checker has api info on the command, return true
-            if (apiChecker.checkExistence(apiName))
-                return true;
-        }
-        return false;
-    }
-
-    private boolean isCommandAvailable(User user, String commandName) {
+    private void checkCommandAvailable(User user, String commandName) throws PermissionDeniedException {
         if (user == null) {
-            return false;
+            throw new PermissionDeniedException("User is null for role based API access check for command" + commandName);
         }
 
-        Account account = _accountMgr.getAccount(user.getAccountId());
-        RoleType roleType = _accountMgr.getRoleType(account);
         for (APIChecker apiChecker : _apiAccessCheckers) {
-            // Fail the checking if any checker fails to verify
-            if (!apiChecker.checkAccess(roleType, commandName))
-                return false;
+            apiChecker.checkAccess(user, commandName);
         }
-        return true;
     }
 
     private Class<?> getCmdClass(String cmdName) {

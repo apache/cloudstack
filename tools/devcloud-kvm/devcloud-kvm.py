@@ -37,33 +37,32 @@ def getGlobalSettings(config):
         yield cfg
 
 
-def describeResources(config):
+def describeDevcloudKvmResources(config):
     zs = cloudstackConfiguration()
 
     z = zone()
     z.dns1 = config.get('environment', 'dns')
     z.internaldns1 = config.get('environment', 'dns')
-    z.name = 'Sandbox-%s'%(config.get('cloudstack', 'hypervisor'))
+    z.name = 'Devcloud-%s'%(config.get('cloudstack', 'hypervisor'))
     z.networktype = 'Advanced'
     z.guestcidraddress = '10.1.1.0/24'
+    z.localstorageenabled = 'true'
     
     vpcprovider = provider()
     vpcprovider.name = 'VpcVirtualRouter'
     
     pn = physical_network()
-    pn.name = "Sandbox-pnet"
+    pn.name = "eth0"
     pn.vlan = config.get('cloudstack', 'pnet.vlan')
-    pn.tags = ["cloud-simulator-public"]
-    pn.traffictypes = [traffictype("Guest"),
-            traffictype("Management", {"simulator" : "cloud-simulator-mgmt"}),
-            traffictype("Public", {"simulator":"cloud-simulator-public"})]
+    pn.tags = ["devcloud-guest"]
+    pn.traffictypes = [traffictype("Guest", {"kvm" :"kvm-guest" }), traffictype("Management")]
     pn.providers.append(vpcprovider)
 
     pn2 = physical_network()
-    pn2.name = "Sandbox-pnet2"
+    pn2.name = "eth1"
     pn2.vlan = config.get('cloudstack', 'pnet2.vlan')
-    pn2.tags = ["cloud-simulator-guest"]
-    pn2.traffictypes = [traffictype('Guest', {'simulator': 'cloud-simulator-guest'})]
+    pn2.tags = ["devcloud-public"]
+    pn2.traffictypes = [traffictype("Public", {"kvm" : "kvm-public"})]
     pn2.providers.append(vpcprovider)
     
     z.physical_networks.append(pn)
@@ -145,7 +144,7 @@ if __name__ == '__main__':
     parser = OptionParser()
     parser.add_option('-i', '--input', action='store', default='setup.properties', \
                       dest='input', help='file containing environment setup information')
-    parser.add_option('-o', '--output', action='store', default='./sandbox.cfg', \
+    parser.add_option('-o', '--output', action='store', default='./devcloud-kvm-advanced.cfg', \
                       dest='output', help='path where environment json will be generated')
 
 
@@ -154,5 +153,5 @@ if __name__ == '__main__':
     cfg_parser = SafeConfigParser()
     cfg_parser.read(opts.input)
 
-    cfg = describeResources(cfg_parser)
+    cfg = describeDevcloudKvmResources(cfg_parser)
     generate_setup_config(cfg, opts.output)

@@ -358,10 +358,7 @@ public enum Config {
     DetailBatchQuerySize("Advanced", ManagementServer.class, Integer.class, "detail.batch.query.size", "2000", "Default entity detail batch query size for listing", null),
 
 	ConcurrentSnapshotsThresholdPerHost("Advanced", ManagementServer.class, Long.class, "concurrent.snapshots.threshold.perhost",
-	                null, "Limits number of snapshots that can be handled by the host concurrently; default is NULL - unlimited", null),
-
-	// API throttling
-    ApiLimitEnabled("Advanced", ManagementServer.class, Boolean.class, "api.throttling.enable", "true", "If true, api throttline feature is enabled", "true,false");
+	                null, "Limits number of snapshots that can be handled by the host concurrently; default is NULL - unlimited", null);
 
 	private final String _category;
 	private final Class<?> _componentClass;

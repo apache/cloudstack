@@ -424,3 +424,92 @@ resetVpnConnection=15
 listVpnCustomerGateways=15
 listVpnGateways=15
 listVpnConnections=15
+
+#### router commands
+createVirtualRouterElement=7
+configureVirtualRouterElement=7
+listVirtualRouterElements=7
+
+#### usage commands
+generateUsageRecords=1
+listUsageRecords=1
+listUsageTypes=1
+
+#### traffic monitor commands
+addTrafficMonitor=1
+deleteTrafficMonitor=1
+listTrafficMonitors=1
+
+#### Cisco Nexus 1000v Virtual Supervisor Module (VSM) commands
+deleteCiscoNexusVSM=1
+enableCiscoNexusVSM=1
+disableCiscoNexusVSM=1
+listCiscoNexusVSMs=1
+
+#### f5 big ip load balancer commands
+
+#Deprecated commands
+addExternalLoadBalancer=1
+deleteExternalLoadBalancer=1
+listExternalLoadBalancers=1
+
+addF5LoadBalancer=1
+configureF5LoadBalancer=1
+deleteF5LoadBalancer=1
+listF5LoadBalancers=1
+listF5LoadBalancerNetworks=1
+
+#### juniper srx firewall commands
+addExternalFirewall=1
+deleteExternalFirewall=1
+listExternalFirewalls=1
+
+addSrxFirewall=1
+deleteSrxFirewall=1
+configureSrxFirewall=1
+listSrxFirewalls=1
+listSrxFirewallNetworks=1
+
+####Netapp integration commands
+createVolumeOnFiler=15
+destroyVolumeOnFiler=15
+listVolumesOnFiler=15
+createLunOnFiler=15
+destroyLunOnFiler=15
+listLunsOnFiler=15
+associateLun=15
+dissociateLun=15
+createPool=15
+deletePool=15
+modifyPool=15
+listPools=15
+
+#### netscaler load balancer commands
+addNetscalerLoadBalancer=1
+deleteNetscalerLoadBalancer=1
+configureNetscalerLoadBalancer=1
+listNetscalerLoadBalancers=1
+listNetscalerLoadBalancerNetworks=1
+
+#### nicira nvp commands
+
+addNiciraNvpDevice=1
+deleteNiciraNvpDevice=1
+listNiciraNvpDevices=1
+listNiciraNvpDeviceNetworks=1
+
+# Not implemented (yet)
+#configureNiciraNvpDevice=1
+
+#### host simulator commands
+
+configureSimulator=1
+
+#### api discovery commands
+
+listApis=15
+
+#### API Rate Limit service command
+
+getApiLimit=15
+resetApiLimit=1
