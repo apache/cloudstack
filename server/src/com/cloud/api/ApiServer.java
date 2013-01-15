@@ -786,9 +786,7 @@ public class ApiServer implements HttpRequestHandler {
         }
 
         for (APIChecker apiChecker : _apiAccessCheckers) {
-            // Fail the checking if any checker fails to verify
-            if (!apiChecker.checkAccess(user, commandName))
-                return false;
+            apiChecker.checkAccess(user, commandName);
         }
         return true;
     }
