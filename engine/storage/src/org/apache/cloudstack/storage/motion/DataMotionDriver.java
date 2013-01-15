@@ -18,8 +18,8 @@
  */
 package org.apache.cloudstack.storage.motion;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStream;
 
 public interface DataMotionDriver {
-    public void copy(DataObject srcObj, DataObject destObj);
+    public void copy(DataStream srcObj, DataStream destObj);
 }

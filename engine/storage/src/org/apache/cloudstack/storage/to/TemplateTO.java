@@ -27,7 +27,7 @@ public class TemplateTO {
     private final ImageDataStoreTO imageDataStore;
 
     public TemplateTO(TemplateInfo template) {
-        this.path = template.getPath();
+        this.path = null;
         this.uuid = template.getUuid();
         //this.diskType = template.getDiskType();
         this.imageDataStore = new ImageDataStoreTO((ImageDataStoreInfo)template.getDataStore());

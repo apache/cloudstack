@@ -71,12 +71,6 @@ public class TemplateObject implements TemplateInfo {
     }
 
     @Override
-    public String getPath() {
-        //TODO: add installation path if it's downloaded to cache storage already
-        return this.imageVO.getUrl();
-    }
-
-    @Override
     public String getUuid() {
         // TODO Auto-generated method stub
         return null;
@@ -84,7 +78,7 @@ public class TemplateObject implements TemplateInfo {
 
     @Override
     public String getUri() {
-        return this.dataStore.getUri() + "template/" + this.getPath();
+        return this.dataStore.getUri() + "template/" + this.imageVO.getUrl();
     }
 
     @Override
@@ -103,7 +97,6 @@ public class TemplateObject implements TemplateInfo {
         return DiskFormat.getFormat(this.imageVO.getFormat());
     }
     
-    @Override
     public boolean stateTransit(TemplateEvent e) throws NoTransitionException {
         return imageMgr.getStateMachine().transitTo(this.imageVO, e, null, imageDao);
     }

@@ -27,18 +27,14 @@ import org.apache.cloudstack.storage.snapshot.db.SnapshotVO;
 public class SnapshotObject implements SnapshotInfo {
     private SnapshotVO snapshot;
     private DataStore store;
-    
+
     public SnapshotObject(SnapshotVO snapshot, DataStore store) {
         this.snapshot = snapshot;
         this.store = store;
     }
-    
+
     public DataStore getStore() {
         return this.store;
-    }
-    @Override
-    public String getName() {
-        return this.snapshot.getName();
     }
 
     @Override
@@ -91,6 +87,12 @@ public class SnapshotObject implements SnapshotInfo {
 
     @Override
     public DiskFormat getFormat() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public String getUuid() {
         // TODO Auto-generated method stub
         return null;
     }

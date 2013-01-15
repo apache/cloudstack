@@ -18,9 +18,9 @@
  */
 package org.apache.cloudstack.storage.endpoint;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStream;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 
 public interface EndPointSelector {
-    public EndPoint select(DataObject srcData, DataObject destData);
+    public EndPoint select(DataStream srcData, DataStream destData);
 }

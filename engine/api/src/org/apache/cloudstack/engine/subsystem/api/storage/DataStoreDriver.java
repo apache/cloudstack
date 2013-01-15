@@ -23,11 +23,11 @@ import java.util.Set;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 
 public interface DataStoreDriver {
-    public String grantAccess(DataObject data, EndPoint ep);
-    public boolean revokeAccess(DataObject data, EndPoint ep);
-    public Set<DataObject> listObjects(DataStore store);
-    public void createAsync(DataObject data, AsyncCompletionCallback<CreateCmdResult> callback);
-    public void deleteAsync(DataObject data, AsyncCompletionCallback<CommandResult> callback);
-    public void copyAsync(DataObject srcdata, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback);
-    public boolean canCopy(DataObject srcData, DataObject destData);
+    public String grantAccess(DataStream data, EndPoint ep);
+    public boolean revokeAccess(DataStream data, EndPoint ep);
+    public Set<DataStream> listObjects(DataStore store);
+    public void createAsync(DataStream data, AsyncCompletionCallback<CreateCmdResult> callback);
+    public void deleteAsync(DataStream data, AsyncCompletionCallback<CommandResult> callback);
+    public void copyAsync(DataStream srcdata, DataStream destData, AsyncCompletionCallback<CopyCommandResult> callback);
+    public boolean canCopy(DataStream srcData, DataStream destData);
 }

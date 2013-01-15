@@ -18,7 +18,7 @@ package org.apache.cloudstack.storage.datastore;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStream;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
@@ -132,7 +132,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
     }
 
     @Override
-    public boolean update(DataObject data, Event event)
+    public boolean update(DataStream data, Event event)
             throws NoTransitionException {
         ObjectInDataStoreVO obj = this.findObject(data.getId(), data.getType(),
                 data.getDataStore().getId(), data.getDataStore().getRole());

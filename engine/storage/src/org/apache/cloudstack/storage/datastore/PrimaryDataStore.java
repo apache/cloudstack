@@ -21,7 +21,7 @@ package org.apache.cloudstack.storage.datastore;
 import java.util.List;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.CommandResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStream;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
@@ -45,7 +45,7 @@ public interface PrimaryDataStore extends DataStore, PrimaryDataStoreInfo {
     void createVoluemFromBaseImageAsync(VolumeInfo volume, TemplateInfo templateStore, AsyncCompletionCallback<CommandResult> callback);
  */   
 
-    boolean exists(DataObject data);
+    boolean exists(DataStream data);
 
     TemplateInfo getTemplate(long templateId);
     

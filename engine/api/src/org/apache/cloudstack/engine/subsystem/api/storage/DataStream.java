@@ -20,11 +20,12 @@ package org.apache.cloudstack.engine.subsystem.api.storage;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
 
-public interface DataObject {
+public interface DataStream {
     public long getId();
     public String getUri();
     public DataStore getDataStore();
     public long getSize();
     public DataObjectType getType();
     public DiskFormat getFormat();
+    public String getUuid();
 }

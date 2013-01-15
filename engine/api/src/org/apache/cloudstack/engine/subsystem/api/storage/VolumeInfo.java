@@ -18,13 +18,6 @@
  */
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
-
-import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
-
-public interface VolumeInfo extends DataObject {
-	public String getUuid();
-	public long getId();
-
+public interface VolumeInfo extends DataStream {
 	public boolean isAttachedVM();
-	public String getPath();
 }

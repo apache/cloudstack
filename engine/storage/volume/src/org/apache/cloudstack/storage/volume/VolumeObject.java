@@ -43,12 +43,14 @@ public class VolumeObject implements VolumeInfo {
     VolumeDao2 volumeDao;
     @Inject
     VolumeManager volumeMgr;
+
     private VolumeObject(DataStore dataStore, VolumeVO volumeVO) {
         this.volumeVO = volumeVO;
         this.dataStore = dataStore;
     }
 
-    public static VolumeObject getVolumeObject(DataStore dataStore, VolumeVO volumeVO) {
+    public static VolumeObject getVolumeObject(DataStore dataStore,
+            VolumeVO volumeVO) {
         VolumeObject vo = new VolumeObject(dataStore, volumeVO);
         vo = ComponentContext.inject(vo);
         return vo;
@@ -62,14 +64,6 @@ public class VolumeObject implements VolumeInfo {
     public void setPath(String uuid) {
         volumeVO.setPath(uuid);
     }
-
-    @Override
-    public String getPath() {
-        return volumeVO.getPath();
-    }
-
-  
-
 
     public Volume.State getState() {
         return volumeVO.getState();
@@ -85,21 +79,19 @@ public class VolumeObject implements VolumeInfo {
         return volumeVO.getSize();
     }
 
-
-
-
     public long getVolumeId() {
         return volumeVO.getId();
     }
-
 
     public boolean stateTransit(Volume.Event event) {
         boolean result = false;
         _volStateMachine = volumeMgr.getStateMachine();
         try {
-            result = _volStateMachine.transitTo(volumeVO, event, null, volumeDao);
+            result = _volStateMachine.transitTo(volumeVO, event, null,
+                    volumeDao);
         } catch (NoTransitionException e) {
-            String errorMessage = "Failed to transit volume: " + this.getVolumeId() + ", due to: " + e.toString();
+            String errorMessage = "Failed to transit volume: "
+                    + this.getVolumeId() + ", due to: " + e.toString();
             s_logger.debug(errorMessage);
             throw new CloudRuntimeException(errorMessage);
         }
@@ -117,7 +109,6 @@ public class VolumeObject implements VolumeInfo {
         return 0;
     }
 
-  
     @Override
     public boolean isAttachedVM() {
         return (this.volumeVO.getInstanceId() == null) ? false : true;
@@ -125,12 +116,13 @@ public class VolumeObject implements VolumeInfo {
 
     @Override
     public String getUri() {
-        return this.dataStore.getUri() + File.separator + "?type=volume&path=" + this.volumeVO.getPath();
+        return this.dataStore.getUri() + File.separator + "?type=volume&path="
+                + this.volumeVO.getPath();
     }
 
     @Override
     public DataObjectType getType() {
-       return DataObjectType.VOLUME;
+        return DataObjectType.VOLUME;
     }
 
     @Override

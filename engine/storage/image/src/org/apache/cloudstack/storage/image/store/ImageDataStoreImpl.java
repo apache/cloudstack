@@ -22,7 +22,7 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStream;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
@@ -125,7 +125,7 @@ public class ImageDataStoreImpl implements ImageDataStore {
 
 
     @Override
-    public boolean exists(DataObject object) {
+    public boolean exists(DataStream object) {
         // TODO Auto-generated method stub
         return false;
     }

@@ -23,7 +23,7 @@ import java.util.Set;
 import org.apache.cloudstack.engine.subsystem.api.storage.CommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStream;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
@@ -35,45 +35,45 @@ public class DefaultImageDataStoreDriverImpl implements ImageDataStoreDriver {
     }
 
     @Override
-    public String grantAccess(DataObject data, EndPoint ep) {
+    public String grantAccess(DataStream data, EndPoint ep) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public boolean revokeAccess(DataObject data, EndPoint ep) {
+    public boolean revokeAccess(DataStream data, EndPoint ep) {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public Set<DataObject> listObjects(DataStore store) {
+    public Set<DataStream> listObjects(DataStore store) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public void createAsync(DataObject data,
+    public void createAsync(DataStream data,
             AsyncCompletionCallback<CreateCmdResult> callback) {
         // TODO Auto-generated method stub
         
     }
 
     @Override
-    public void deleteAsync(DataObject data,
+    public void deleteAsync(DataStream data,
             AsyncCompletionCallback<CommandResult> callback) {
         // TODO Auto-generated method stub
         
     }
 
     @Override
-    public boolean canCopy(DataObject srcData, DataObject destData) {
+    public boolean canCopy(DataStream srcData, DataStream destData) {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public void copyAsync(DataObject srcdata, DataObject destData,
+    public void copyAsync(DataStream srcdata, DataStream destData,
             AsyncCompletionCallback<CopyCommandResult> callback) {
         // TODO Auto-generated method stub
         

@@ -16,7 +16,7 @@
 // under the License.
 package org.apache.cloudstack.storage.datastore;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStream;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
@@ -35,5 +35,5 @@ public interface ObjectInDataStoreManager {
     public SnapshotInfo create(SnapshotInfo snapshot, DataStore dataStore);
     public ObjectInDataStoreVO findObject(long objectId, DataObjectType type,
             long dataStoreId, DataStoreRole role);
-    public boolean update(DataObject vo, Event event) throws NoTransitionException;
+    public boolean update(DataStream vo, Event event) throws NoTransitionException;
 }
