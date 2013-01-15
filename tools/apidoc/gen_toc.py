@@ -129,6 +129,7 @@ known_categories = {
     'AutoScale': 'AutoScale',
     'Counter': 'AutoScale',
     'Condition': 'AutoScale',
+    'Api': 'API Discovery',
     }
 
 
