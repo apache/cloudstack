@@ -36,16 +36,15 @@ import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 
 public class OvsVifDriver extends VifDriverBase {
-    private static final Logger s_logger = Logger
-            .getLogger(OvsVifDriver.class);
+    private static final Logger s_logger = Logger.getLogger(OvsVifDriver.class);
     private int _timeout;
     private String _modifyVlanPath;
     
-	@Override
-	public void configure(Map<String, Object> params) throws ConfigurationException {
-		super.configure(params);
+    @Override
+    public void configure(Map<String, Object> params) throws ConfigurationException {
+        super.configure(params);
 
-		String networkScriptsDir = (String) params.get("network.scripts.dir");
+        String networkScriptsDir = (String) params.get("network.scripts.dir");
         if (networkScriptsDir == null) {
             networkScriptsDir = "scripts/vm/network/vnet";
         }
@@ -58,12 +57,12 @@ public class OvsVifDriver extends VifDriverBase {
             throw new ConfigurationException("Unable to find modifyvlan.sh");
         }       
         
-        createControlNetwork(_bridges.get("linklocal"));		
-	}
-	
-	@Override
-	public InterfaceDef plug(NicTO nic, String guestOsType)
-			throws InternalErrorException, LibvirtException {
+        createControlNetwork(_bridges.get("linklocal"));
+    }
+
+    @Override
+    public InterfaceDef plug(NicTO nic, String guestOsType)
+            throws InternalErrorException, LibvirtException {
         s_logger.debug("plugging nic=" + nic);
 
         LibvirtVMDef.InterfaceDef intf = new LibvirtVMDef.InterfaceDef();
@@ -76,7 +75,7 @@ public class OvsVifDriver extends VifDriverBase {
             vlanId = broadcastUri.getHost();
         }
         else if (nic.getBroadcastType() == Networks.BroadcastDomainType.Lswitch) {
-        	logicalSwitchUuid = nic.getBroadcastUri().getSchemeSpecificPart();
+            logicalSwitchUuid = nic.getBroadcastUri().getSchemeSpecificPart();
         }
         String trafficLabel = nic.getName();
         if (nic.getType() == Networks.TrafficType.Guest) {
@@ -91,11 +90,11 @@ public class OvsVifDriver extends VifDriverBase {
                     intf.setVlanTag(Integer.parseInt(vlanId));
                 }
             } else if (nic.getBroadcastType() == Networks.BroadcastDomainType.Lswitch) {
-            	s_logger.debug("nic " + nic + " needs to be connected to LogicalSwitch " + logicalSwitchUuid);
-            	intf.setVirtualPortInterfaceId(nic.getUuid());
-            	String brName = (trafficLabel != null && !trafficLabel.isEmpty()) ? _pifs.get(trafficLabel) : _pifs.get("private");
+                s_logger.debug("nic " + nic + " needs to be connected to LogicalSwitch " + logicalSwitchUuid);
+                intf.setVirtualPortInterfaceId(nic.getUuid());
+                String brName = (trafficLabel != null && !trafficLabel.isEmpty()) ? _pifs.get(trafficLabel) : _pifs.get("private");
                 intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType));
-            }	
+            }
             else {
                 intf.defBridgeNet(_bridges.get("guest"), null, nic.getMac(), getGuestNicModel(guestOsType));
             }
@@ -127,11 +126,11 @@ public class OvsVifDriver extends VifDriverBase {
         return intf;
     }
 
-	@Override
-	public void unplug(InterfaceDef iface) {
-		// Libvirt apparently takes care of this, see BridgeVifDriver unplug
-	}
-	
+    @Override
+    public void unplug(InterfaceDef iface) {
+        // Libvirt apparently takes care of this, see BridgeVifDriver unplug
+    }
+
     private String setVnetBrName(String pifName, String vnetId) {
         String brName = "br" + pifName + "-"+ vnetId;
         String oldStyleBrName = "cloudVirBr" + vnetId;
@@ -167,14 +166,13 @@ public class OvsVifDriver extends VifDriverBase {
                     NetUtils.getLinkLocalCIDR() + " dev " + linkLocalBr + " src " + NetUtils.getLinkLocalGateway());
         }
     }
-	
+
     private void createControlNetwork(String privBrName) {
         deleteExitingLinkLocalRoutTable(privBrName);
         if (!isBridgeExists(privBrName)) {
             Script.runSimpleBashScript("ovs-vsctl add-br " + privBrName + "; ifconfig " + privBrName + " up; ifconfig " +
                     privBrName + " 169.254.0.1", _timeout);
         }
-
     }
 
     private boolean isBridgeExists(String bridgeName) {

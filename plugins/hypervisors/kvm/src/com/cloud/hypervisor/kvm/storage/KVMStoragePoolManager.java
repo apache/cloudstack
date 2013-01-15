@@ -38,10 +38,10 @@ public class KVMStoragePoolManager {
     private final Map<String, StorageAdaptor> _storageMapper = new HashMap<String, StorageAdaptor>();
 
     private StorageAdaptor getStorageAdaptor(StoragePoolType type) {
-    	// type can be null: LibVirtComputingResource:3238
-    	if (type == null) {
-    		return _storageMapper.get("libvirt");
-    	}
+        // type can be null: LibVirtComputingResource:3238
+        if (type == null) {
+            return _storageMapper.get("libvirt");
+        }
         StorageAdaptor adaptor = _storageMapper.get(type.toString());
         if (adaptor == null) {
             // LibvirtStorageAdaptor is selected by default

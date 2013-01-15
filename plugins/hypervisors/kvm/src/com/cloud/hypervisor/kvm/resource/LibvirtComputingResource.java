@@ -364,7 +364,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
     private int _dom0MinMem;
     
     protected enum BridgeType {
-    	NATIVE, OPENVSWITCH
+        NATIVE, OPENVSWITCH
     }
 
     protected enum defineOps {
@@ -483,10 +483,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements
         
         String bridgeType = (String) params.get("network.bridge.type");
         if (bridgeType == null) {
-        	_bridgeType = BridgeType.NATIVE;
+            _bridgeType = BridgeType.NATIVE;
         }
         else {
-        	_bridgeType = BridgeType.valueOf(bridgeType.toUpperCase());
+            _bridgeType = BridgeType.valueOf(bridgeType.toUpperCase());
         }
 
         params.put("domr.scripts.dir", domrScriptsDir);
@@ -664,19 +664,18 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 
         LibvirtConnection.initialize(_hypervisorURI);
         Connect conn = null;
-		try {
-			conn = LibvirtConnection.getConnection();
+        try {
+            conn = LibvirtConnection.getConnection();
 
-			if (_bridgeType == BridgeType.OPENVSWITCH) {
-				if (conn.getLibVirVersion() < (9 * 1000 + 11)) {
-					throw new ConfigurationException(
-							"LibVirt version 0.9.11 required for openvswitch support, but version "
-									+ conn.getLibVirVersion() + " detected");
-				}
-			}
-		} catch (LibvirtException e) {
-			throw new CloudRuntimeException(e.getMessage());
-		}
+            if (_bridgeType == BridgeType.OPENVSWITCH) {
+                if (conn.getLibVirVersion() < (9 * 1000 + 11)) {
+                    throw new ConfigurationException("LibVirt version 0.9.11 required for openvswitch support, but version "
+                            + conn.getLibVirVersion() + " detected");
+                }
+            }
+        } catch (LibvirtException e) {
+            throw new CloudRuntimeException(e.getMessage());
+        }
 
         /* Does node support HVM guest? If not, exit */
         if (!IsHVMEnabled(conn)) {
@@ -720,14 +719,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements
         }
 
         switch (_bridgeType) {
-        case NATIVE:
-    		getPifs();
-    		break;
         case OPENVSWITCH:
-        	getOvsPifs();
-        	break;
+            getOvsPifs();
+            break;
+        case NATIVE:
+        default:
+            getPifs();
+            break;
         }
-        
+
         if (_pifs.get("private") == null) {
             s_logger.debug("Failed to get private nic name");
             throw new ConfigurationException("Failed to get private nic name");
@@ -786,30 +786,28 @@ public class LibvirtComputingResource extends ServerResourceBase implements
         // Load the vif driver
         String vifDriverName = (String) params.get("libvirt.vif.driver");
         if (vifDriverName == null) {
-        	if (_bridgeType == BridgeType.OPENVSWITCH) {
-        		s_logger.info("No libvirt.vif.driver specififed. Defaults to OvsVifDriver.");
-        		vifDriverName = "com.cloud.hypervisor.kvm.resource.OvsVifDriver";
-        	}
-        	else {
-        		s_logger.info("No libvirt.vif.driver specififed. Defaults to BridgeVifDriver.");
-        		vifDriverName = "com.cloud.hypervisor.kvm.resource.BridgeVifDriver";
-        	}
+            if (_bridgeType == BridgeType.OPENVSWITCH) {
+                s_logger.info("No libvirt.vif.driver specififed. Defaults to OvsVifDriver.");
+                vifDriverName = "com.cloud.hypervisor.kvm.resource.OvsVifDriver";
+            } else {
+                s_logger.info("No libvirt.vif.driver specififed. Defaults to BridgeVifDriver.");
+                vifDriverName = "com.cloud.hypervisor.kvm.resource.BridgeVifDriver";
+            }
         }
 
         params.put("libvirt.computing.resource", (Object) this);
 
         try {
-        	Class<?> clazz = Class.forName(vifDriverName);
-        	_vifDriver = (VifDriver) clazz.newInstance();
-        	_vifDriver.configure(params);
+            Class<?> clazz = Class.forName(vifDriverName);
+            _vifDriver = (VifDriver) clazz.newInstance();
+            _vifDriver.configure(params);
         } catch (ClassNotFoundException e) {
-        	throw new ConfigurationException("Unable to find class for libvirt.vif.driver " + e);
+            throw new ConfigurationException("Unable to find class for libvirt.vif.driver " + e);
         } catch (InstantiationException e) {
-        	throw new ConfigurationException("Unable to instantiate class for libvirt.vif.driver " + e);
+            throw new ConfigurationException("Unable to instantiate class for libvirt.vif.driver " + e);
         } catch (Exception e) {
-        	throw new ConfigurationException("Failed to initialize libvirt.vif.driver " + e);
+            throw new ConfigurationException("Failed to initialize libvirt.vif.driver " + e);
         }
-
 
         return true;
     }
@@ -834,15 +832,16 @@ public class LibvirtComputingResource extends ServerResourceBase implements
     }
     
     private void getOvsPifs() {
-    	String cmdout = Script.runSimpleBashScript("ovs-vsctl list-br | sed '{:q;N;s/\\n/%/g;t q}'");
+        String cmdout = Script.runSimpleBashScript("ovs-vsctl list-br | sed '{:q;N;s/\\n/%/g;t q}'");
         s_logger.debug("cmdout was " + cmdout);
         List<String> bridges = Arrays.asList(cmdout.split("%"));
         for (String bridge : bridges) {
             s_logger.debug("looking for pif for bridge " + bridge);
-            //String pif = getOvsPif(bridge);
-            // Not really interested in the pif name at this point for ovs bridges
+            // String pif = getOvsPif(bridge);
+            // Not really interested in the pif name at this point for ovs
+            // bridges
             String pif = bridge;
-            if(_publicBridgeName != null && bridge.equals(_publicBridgeName)){
+            if (_publicBridgeName != null && bridge.equals(_publicBridgeName)) {
                 _pifs.put("public", pif);
             }
             if (_guestBridgeName != null && bridge.equals(_guestBridgeName)) {
@@ -850,7 +849,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
             }
             _pifs.put(bridge, pif);
         }
-        s_logger.debug("done looking for pifs, no more bridges");    	
+        s_logger.debug("done looking for pifs, no more bridges");
     }
 
     private String getPif(String bridge) {
@@ -875,10 +874,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements
         }
 
         if (_bridgeType == BridgeType.OPENVSWITCH) {
-        	return checkOvsNetwork(networkName);
+            return checkOvsNetwork(networkName);
         }
         else {
-        	return checkBridgeNetwork(networkName);
+            return checkBridgeNetwork(networkName);
         }
     }
 
@@ -897,11 +896,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements
     }
     
     private boolean checkOvsNetwork(String networkName) {
-    	s_logger.debug("Checking if network " + networkName + " exists as openvswitch bridge");
-    	if (networkName == null) {
-    		return true;
-    	}
-    	
+        s_logger.debug("Checking if network " + networkName + " exists as openvswitch bridge");
+        if (networkName == null) {
+            return true;
+        }
+
         Script command = new Script("/bin/sh", _timeout);
         command.add("-c");
         command.add("ovs-vsctl br-exists " + networkName);

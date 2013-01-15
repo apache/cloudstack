@@ -86,7 +86,7 @@ public class BridgeVifDriver extends VifDriverBase {
             vlanId = broadcastUri.getHost();
         }
         else if (nic.getBroadcastType() == Networks.BroadcastDomainType.Lswitch) {
-        	throw new InternalErrorException("Nicira NVP Logicalswitches are not supported by the BridgeVifDriver");
+            throw new InternalErrorException("Nicira NVP Logicalswitches are not supported by the BridgeVifDriver");
         }
         String trafficLabel = nic.getName();
         if (nic.getType() == Networks.TrafficType.Guest) {

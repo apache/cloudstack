@@ -700,27 +700,27 @@ public class LibvirtVMDef {
         }
         
         public void setVirtualPortType(String virtualPortType) {
-        	_virtualPortType = virtualPortType;
+            _virtualPortType = virtualPortType;
         }
-        
+
         public String getVirtualPortType() {
-        	return _virtualPortType;
+            return _virtualPortType;
         }
-        
+
         public void setVirtualPortInterfaceId(String virtualPortInterfaceId) {
-        	_virtualPortInterfaceId = virtualPortInterfaceId;
+            _virtualPortInterfaceId = virtualPortInterfaceId;
         }
-        
+
         public String getVirtualPortInterfaceId() {
-        	return _virtualPortInterfaceId;
+            return _virtualPortInterfaceId;
         }
-        
+
         public void setVlanTag(int vlanTag) {
-        	_vlanTag = vlanTag;
+            _vlanTag = vlanTag;
         }
-        
+
         public int getVlanTag() {
-        	return _vlanTag;
+            return _vlanTag;
         }
         
         @Override
@@ -742,14 +742,14 @@ public class LibvirtVMDef {
                 netBuilder.append("<model type='" + _model + "'/>\n");
             }
             if (_virtualPortType != null) {
-            	netBuilder.append("<virtualport type='" + _virtualPortType + "'>\n");
-            	if (_virtualPortInterfaceId != null) {
-            		netBuilder.append("<parameters interfaceid='" + _virtualPortInterfaceId + "'/>\n");
-            	}
-            	netBuilder.append("</virtualport>\n");
+                netBuilder.append("<virtualport type='" + _virtualPortType + "'>\n");
+                if (_virtualPortInterfaceId != null) {
+                    netBuilder.append("<parameters interfaceid='" + _virtualPortInterfaceId + "'/>\n");
+                }
+                netBuilder.append("</virtualport>\n");
             }
             if (_vlanTag != -1) {
-            	netBuilder.append("<vlan trunk='no'>\n<tag id='" + _vlanTag + "'/>\n</vlan>");
+                netBuilder.append("<vlan trunk='no'>\n<tag id='" + _vlanTag + "'/>\n</vlan>");
             }
             netBuilder.append("</interface>\n");
             return netBuilder.toString();

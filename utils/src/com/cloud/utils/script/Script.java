@@ -200,56 +200,58 @@ public class Script implements Callable<String> {
                 s_executors.execute(task);
             }
 
-			while (true) {
-				try {
-					if (_process.waitFor() == 0) {
-						_logger.debug("Execution is successful.");
-						if (interpreter != null) {
-							return interpreter.drain() ? task.getResult() : interpreter.interpret(ir);
-						}
-						else {
-							// null return is ok apparently
-							return (_process.exitValue() == 0) ? "Ok" : "Failed, exit code " + _process.exitValue();
-						}
-					} else {
-						break;
-					}
-				} catch (InterruptedException e) {
-					if (!_isTimeOut) {
-						/* This is not timeout, we are interrupted by others, continue */
-						_logger.debug("We are interrupted but it's not a timeout, just continue");
-						continue;
-					}
-					
-					TimedOutLogger log = new TimedOutLogger(_process);
-					Task timedoutTask = new Task(log, ir);
+            while (true) {
+                try {
+                    if (_process.waitFor() == 0) {
+                        _logger.debug("Execution is successful.");
+                        if (interpreter != null) {
+                            return interpreter.drain() ? task.getResult() : interpreter.interpret(ir);
+                        } else {
+                            // null return is ok apparently
+                            return (_process.exitValue() == 0) ? "Ok" : "Failed, exit code " + _process.exitValue();
+                        }
+                    } else {
+                        break;
+                    }
+                } catch (InterruptedException e) {
+                    if (!_isTimeOut) {
+                        /*
+                         * This is not timeout, we are interrupted by others,
+                         * continue
+                         */
+                        _logger.debug("We are interrupted but it's not a timeout, just continue");
+                        continue;
+                    }
 
-					timedoutTask.run();
-					if (!_passwordCommand) {
-						_logger.warn("Timed out: " + buildCommandLine(command) + ".  Output is: " + timedoutTask.getResult());
-					} else {
-						_logger.warn("Timed out: " + buildCommandLine(command));
-					}
+                    TimedOutLogger log = new TimedOutLogger(_process);
+                    Task timedoutTask = new Task(log, ir);
 
-					return ERR_TIMEOUT;
-				} finally {
-					if (future != null) {
-						future.cancel(false);
-					}
-					Thread.interrupted();
-				}
-			}
+                    timedoutTask.run();
+                    if (!_passwordCommand) {
+                        _logger.warn("Timed out: " + buildCommandLine(command) + ".  Output is: " + timedoutTask.getResult());
+                    } else {
+                        _logger.warn("Timed out: " + buildCommandLine(command));
+                    }
 
-			_logger.debug("Exit value is " + _process.exitValue());
+                    return ERR_TIMEOUT;
+                } finally {
+                    if (future != null) {
+                        future.cancel(false);
+                    }
+                    Thread.interrupted();
+                }
+            }
+
+            _logger.debug("Exit value is " + _process.exitValue());
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(_process.getInputStream()), 128);
 
             String error;
             if (interpreter != null) {
-            	error = interpreter.processError(reader);
+                error = interpreter.processError(reader);
             }
             else {
-            	error = "Non zero exit code : " + _process.exitValue();
+                error = "Non zero exit code : " + _process.exitValue();
             }
             
             if (_logger.isDebugEnabled()) {
